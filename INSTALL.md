@@ -18,8 +18,7 @@ libraries.
 - **About 250 MB** of disk space, plus a few MB for saves.
 - A keyboard. A joystick, yoke, throttle quadrant, rudder pedals or gamepad are optional; all can be
   bound in game with F8.
-- For way A: a **GitHub account** with access to this repository. GitHub only lets signed-in users
-  download CI builds.
+- For way A: a **GitHub account** (free). GitHub only lets signed-in users download CI builds.
 
 ---
 
@@ -27,10 +26,9 @@ libraries.
 
 ### 1. Get the zip
 
-1. Open the repository on GitHub and click **Actions** (top bar).
+1. Open <https://github.com/jawaman14/skyrunner> and click **Actions** (top bar).
 2. On the left, choose the workflow **Skyrunner beta builds**.
-3. Click the newest run with a **green tick** ✓. Runs on the `claude/cargo-flight-game-2g413p`
-   branch hold the beta.
+3. Click the newest run on the `main` branch with a **green tick** ✓.
 4. Scroll to **Artifacts** at the bottom of the run's page and download the one for your system:
 
    | Artifact | System | Size |
@@ -105,19 +103,18 @@ chmod +x Skyrunner.x86_64      # GitHub's zip drops the executable bit
 2. **Get the code**:
 
    ```bash
-   git clone <this repository's URL>
-   cd AutoGPT
-   git checkout claude/cargo-flight-game-2g413p
+   git clone https://github.com/jawaman14/skyrunner
+   cd skyrunner
    ```
-   Or GitHub → **Code → Download ZIP** on that branch.
+   Or GitHub → **Code → Download ZIP**.
 3. **Open the project**: start Godot, click **Import**, choose
-   `games/skyrunner-godot/project.godot`, then **Import & Edit**. The first import takes a minute.
+   `project.godot` in the folder you cloned, then **Import & Edit**. The first import takes a minute.
 4. **Play**: press **F5**, or the ▶ button top right.
 
 From a terminal, without the editor:
 
 ```bash
-cd games/skyrunner-godot
+cd skyrunner
 godot --path .                          # the lobby
 godot --path . -- --unlocks open        # straight into open mode
 ./tools/test.sh                         # the test suite (headless, ~7 minutes)

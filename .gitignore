@@ -5,3 +5,4 @@ export/
 .build/
 # raw seasons (11 MB): regenerate with cli.gd -- strategic
 sim-results/strategic.json
+__pycache__/

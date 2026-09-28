@@ -11,7 +11,7 @@ import os
 import random
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "skyrunner"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "reference", "python"))
 from skyrunner import jobs as J  # noqa: E402
 from skyrunner.bots.hq import LAW_POLICIES, RUNNER_POLICIES  # noqa: E402
 from skyrunner.game import Session  # noqa: E402

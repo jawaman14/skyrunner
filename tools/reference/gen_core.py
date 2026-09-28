@@ -5,7 +5,7 @@ Reference values from the Python game for the Godot port's parity tests.
 
   python3 tools/reference/gen_core.py > tests/fixtures/core_ref.json
 
-Needs the Python game next door (../skyrunner) and its requirements.
+Needs the Python game in reference/python and its requirements.
 """
 import itertools
 import json
@@ -13,7 +13,7 @@ import os
 import random
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "skyrunner"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "reference", "python"))
 from skyrunner import jobs as J  # noqa: E402
 from skyrunner.aircraft import ROSTER  # noqa: E402
 from skyrunner.fdm import FlightModel  # noqa: E402

@@ -11,7 +11,7 @@ import os
 import sys
 from dataclasses import asdict
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "skyrunner"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "reference", "python"))
 from skyrunner import jobs as J  # noqa: E402
 from skyrunner.sim.feasibility import landing_trial, takeoff_trial  # noqa: E402
 from skyrunner.sim.tactical import run_trial  # noqa: E402

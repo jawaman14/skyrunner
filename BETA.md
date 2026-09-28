@@ -9,7 +9,7 @@ confuses you and where it's no fun.
 Step-by-step instructions per system, and troubleshooting:
 **[INSTALL.md](INSTALL.md)**. In short:
 
-Builds come from the CI run of the `claude/cargo-flight-game-2g413p` branch (GitHub → Actions →
+Builds come from the CI runs on `main` at <https://github.com/jawaman14/skyrunner> (Actions →
 **Skyrunner beta builds** → the latest green run → *Artifacts*): `skyrunner-linux`,
 `skyrunner-windows`, `skyrunner-macos`. Or open the project folder in Godot 4.7 and press play.
 

@@ -10,7 +10,7 @@ import json
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "skyrunner"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "reference", "python"))
 from skyrunner import jobs as J  # noqa: E402
 from skyrunner.bots.pilot import Leg, PilotBot, fly, plan_approach, plan_departure  # noqa: E402
 from skyrunner.bots.route import plan_route  # noqa: E402

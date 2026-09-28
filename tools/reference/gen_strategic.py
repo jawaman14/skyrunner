@@ -9,12 +9,12 @@ import json
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "skyrunner"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "reference", "python"))
 from skyrunner.hq import Calibration  # noqa: E402
 from skyrunner.sim.strategic import action_values, dominance, equilibrium, matrix, play_season, run_matrix, summary  # noqa: E402
 from skyrunner.sim.tactical import calibrate  # noqa: E402
 
-cal = Calibration(**json.load(open(os.path.join(os.path.dirname(__file__), "..", "..", "..", "skyrunner", "sim-results", "calibration.json"))))
+cal = Calibration(**json.load(open(os.path.join(os.path.dirname(__file__), "..", "..", "reference", "python", "sim-results", "calibration.json"))))
 out = {"cal": cal.__dict__, "seasons": []}
 for args in [("smart", "adaptive", 17, None, None, ()), ("cautious", "investigator", 1017, None, cal, ()),
              ("random", "random", 2017, None, cal, ("recruit",)), ("greedy", "random", 3017, None, None, ("comeback",)),
@@ -29,6 +29,6 @@ out["matrix"] = {"runners": R, "laws": L, "m": m.tolist(), "p": p.tolist(), "q":
                  "dominance": dominance(m, R, L), "summary": summary(res),
                  "action_values": {s: {k: list(x) for k, x in action_values(res, s).items()} for s in ("runner", "law")},
                  "results": [{k: r[k] for k in ("runner", "law", "seed", "winner", "reason", "nights", "halftime", "margin")} for r in res]}
-tac = json.load(open(os.path.join(os.path.dirname(__file__), "..", "..", "..", "skyrunner", "sim-results", "tactical.json")))
+tac = json.load(open(os.path.join(os.path.dirname(__file__), "..", "..", "reference", "python", "sim-results", "tactical.json")))
 out["calibrate_tactical"] = calibrate(tac).__dict__
 json.dump(out, sys.stdout)

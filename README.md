@@ -4,7 +4,7 @@ Bush flying, weight and balance, and the long arm of the law, on a fictional Car
 1979-89. Pure Godot 4: GDScript all the way down, with its own 6-DOF flight model reading
 [JSBSim](https://github.com/JSBSim-Team/jsbsim)-format aircraft data. No plug-ins, no compiler: a stock Godot
 4.7 opens it, plays it and exports it to Linux, Windows and macOS. This is the game. (It started as a Python prototype in
-`../skyrunner/`, kept only as the archival reference that generated the frozen parity fixtures in
+`reference/python/`, kept only as the archival reference that generated the frozen parity fixtures in
 `tests/fixtures/`; you never need it to build, play or test.)
 
 **Get it:** [INSTALL.md](INSTALL.md) walks through downloading a build for Windows, Linux or macOS
@@ -384,7 +384,7 @@ Players: [INSTALL.md](INSTALL.md) is the step-by-step install guide. Beta tester
 for what to test and how to report problems (F12).
 
 ```bash
-cd games/skyrunner-godot
+git clone https://github.com/jawaman14/skyrunner && cd skyrunner
 GODOT=$(./tools/get_godot.sh)        # pinned Godot 4.7.2 into .tools/ (or use your own 4.7 install)
 $GODOT --path .                      # lobby: pick a mode, or join a friend's game
 $GODOT --path . -- --mode campaign   # or skip the lobby with flags (below)
@@ -457,6 +457,8 @@ Results go to `sim-results/*.json` and the report to [docs/BALANCE.md](docs/BALA
 - [docs/BALANCE.md](docs/BALANCE.md): the Godot build's balance report, rival cartel included.
 
 ## Licences
+
+The game's own code and content are MIT ([LICENSE](LICENSE)).
 
 The aircraft, engine and propeller descriptions in `data/jsbsim/` come from the JSBSim project and
 are LGPL-2.1 (licence in `data/jsbsim/COPYING.LGPL`); they are data, read by the game's own flight
