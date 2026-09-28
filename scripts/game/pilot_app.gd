@@ -8,6 +8,10 @@ extends Node3D
 
 const CAM_MODES := ["chase", "cockpit", "tower"]
 
+## The pause menu's way out: "load" (the last save), "lobby" or "desktop". Main
+## acts on it; with nobody listening, "desktop" quits here and the rest do too.
+signal leave(to: String)
+
 ## The flight keys are rebindable actions (ControlsConfig: F8), the analogue axes FlightAxes.
 const CREW_KEYS := {KEY_N: "transponder", KEY_U: "autopilot", KEY_K: "kick", KEY_O: "call_boat", KEY_V: "pump", KEY_I: "turn_around"}
 const PRESS_KEYS := {KEY_ENTER: "confirm", KEY_KP_ENTER: "confirm"}
@@ -36,7 +40,7 @@ On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mou
 Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT: upgrade trees)
 Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)   U autopilot
          K kick a bale   O call the boat (SHIFT+O: the 1 s codeword - harder to DF)
-         V ferry fuel pump   I push aircraft round (stopped)   ENTER continue   ESC close menu / quit
+         V ferry fuel pump   I push aircraft round (stopped)   ENTER continue   ESC close menu / pause menu
 Family   SHIFT+F sit down with Sal Moretti: hear the offer, your man's read on it, press him for
          another, take it or leave it; pay or stall the tribute (1-4 answer, ENTER go on, ESC leave)
          SHIFT+Y / SHIFT+N take or turn down the newest offer without the talk, SHIFT+P pay the tribute
@@ -310,8 +314,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 					if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 						Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 					else:
-						s.save()
-						get_tree().quit()
+						open_pause()
 				KEY_M:
 					hud.minimap.toggle()
 				KEY_F1:
@@ -378,8 +381,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			if help.visible:
 				help.visible = false
 			else:
-				s.save()
-				get_tree().quit()
+				open_pause()
 		elif k == KEY_C:
 			cam_mode = CAM_MODES[(CAM_MODES.find(cam_mode) + 1) % CAM_MODES.size()]
 			_cam_pos = null
@@ -529,18 +531,69 @@ func toggle_controls() -> void:
 		_menu_closed())
 
 
+var pause_menu: PauseMenu = null
+var _paused_before := false  ## P had paused the game before the menu opened
+
+
+## ESC: the pause menu. The game stops under it, unless friends are flying in it.
+func open_pause() -> void:
+	if pause_menu != null and is_instance_valid(pause_menu):
+		return
+	var hosting := server != null
+	pause_menu = PauseMenu.new().setup({"save": s.save_path != "", "load": s.save_path != "" and not hosting,
+		"graphics": true, "controls": true, "lobby": true},
+		"The game runs on: remote seats are live." if hosting else "Paused")
+	ui.add_child(pause_menu)
+	pause_menu.chosen.connect(_on_pause_choice)
+	_paused_before = paused
+	if not hosting:
+		paused = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if walker != null:
+		walker.look_enabled = false
+
+
+func close_pause() -> void:
+	if pause_menu == null or not is_instance_valid(pause_menu):
+		return
+	pause_menu.close()
+	pause_menu = null
+	paused = _paused_before
+	_menu_closed()
+
+
+func _on_pause_choice(action: String) -> void:
+	match action:
+		"resume":
+			close_pause()
+		"save":
+			s.save()
+			pause_menu.say("Saved." if s.parked else "Saved: in the air, so you'll start again at %s." % World.airfield(s.save_location()).name)
+		"controls":
+			close_pause()
+			toggle_controls()
+		"load", "lobby", "desktop":
+			if action != "load":
+				s.save()
+			close_pause()
+			if leave.get_connections().is_empty():
+				get_tree().quit()
+			else:
+				leave.emit(action)
+
+
 func _unhandled_key_input(_ev: InputEvent) -> void:
 	pass
 
 
 func _input(ev: InputEvent) -> void:
 	# click to grab the mouse again while walking
-	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null:
+	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _menu_closed() -> void:
-	if on_foot:
+	if on_foot and pause_menu == null:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		walker.look_enabled = true
 
@@ -651,7 +704,7 @@ func _gather_input() -> ControlMapper.InputFrame:
 	var inp := ControlMapper.InputFrame.new()
 	inp.pressed = _pressed
 	_pressed = {}
-	var menu_open := _active_menu() != null or controls_menu != null
+	var menu_open := _active_menu() != null or controls_menu != null or pause_menu != null
 	if not menu_open:
 		for action in ControlsConfig.HELD:
 			if Input.is_action_pressed(ControlsConfig.action(action)):
