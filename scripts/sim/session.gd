@@ -15,6 +15,11 @@ const START_MONEY := 3000
 const OPEN_FLOAT := 10000  ## open mode's start: every system live from the first minute (BALANCE entry 34)
 const START_FIELD := "HAR"
 const OFF_FIELD_MAX_GS_KTS := 15.0
+const GEAR_MARGIN := 1.25  ## the gear holds to this multiple of its rated sink rate; between 1x and 1.25x is a hard landing
+const WINGTIP_STRIKE_ROLL_DEG := 18.0  ## on the ground: a Cessna's wingtip is about 1.8 m up, half a span out
+## The graded ground beside a strip (Terrain._shape_fields levels it out to 50 m) is part of the field for the
+## "ran off" check, so a rollout that drifts onto the shoulder is a scare, not a crash. Pits and cliffs get none.
+const SHOULDER_M := {"flat": 25.0, "beach": 25.0, "plateau": 20.0, "pit": 5.0}
 const KICK_MAX_KTS := 130.0
 const KICK_TIME := {"copilot": 2.0, "pilot": 4.0}
 const PUMP_RATE_LB_MIN := {"copilot": 60.0, "pilot": 25.0}
@@ -96,6 +101,10 @@ var maritime: Maritime
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
+var keyboard_assist := false:  ## wings level / pitch hold on the keyboard (the player's setting; never the bots')
+	set(v):
+		keyboard_assist = v
+		mapper.assist = v
 var autopilot: Autopilot
 var log: FlightLog
 var time := 0.0
@@ -1564,7 +1573,7 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 	elif autopilot.engaged and (_any_held(inp, ["pitch_up", "pitch_down", "roll_left", "roll_right"]) or inp.stick != null):
 		autopilot.disengage()
 		say("Autopilot disconnected")
-	var controls := mapper.update(dt, inp)
+	var controls := mapper.update(dt, inp, state)
 	if bot_controls != null and not pilot_aft:
 		controls = bot_controls
 	elif state != null and autopilot.engaged:
@@ -1919,24 +1928,24 @@ func _rules(dt: float, s: FlightModel.FlightState) -> void:
 		lg.max_touchdown_fpm = maxf(lg.max_touchdown_fpm, fpm)
 		var limit := spec.gear_limit_fpm * (0.75 if loadout.compute(null, false).overweight_lb > 0 else 1.0) \
 			* (1.5 if upgrades["runner"].has("heavy_gear") else 1.0)
-		if fpm > limit:
+		if fpm > limit * GEAR_MARGIN:
 			_crash("Gear collapsed on a %s fpm touchdown" % Py.f(fpm, 0))
 			return
 		if lg.airborne:
-			say("Touchdown %s fpm" % Py.f(fpm, 0) + (" - butter!" if fpm < 150 else ""))
+			say("Touchdown %s fpm" % Py.f(fpm, 0) + (" - butter!" if fpm < 150 else (" - hard landing!" if fpm > limit else "")))
 
 	if s.on_ground:
 		autopilot.disengage()
 		if world.is_water(s.x, s.y) and af_here == null:
 			_crash("Ditched in the sea")
 			return
-		if absf(s.roll) > 12:
+		if absf(s.roll) > WINGTIP_STRIKE_ROLL_DEG:
 			_crash("Wingtip strike")
 			return
 		if s.pitch < -7:
 			_crash("Prop strike - nosed over")
 			return
-		if af_here == null and s.gs_kts > OFF_FIELD_MAX_GS_KTS:
+		if af_here == null and s.gs_kts > OFF_FIELD_MAX_GS_KTS and not _on_shoulder(s.x, s.y):
 			_crash("Ran off the strip into rough ground")
 			return
 		if s.gs_kts < 1.0 and lg.airborne:
@@ -1944,6 +1953,14 @@ func _rules(dt: float, s: FlightModel.FlightState) -> void:
 			var af_stop: Airfield = af_here if af_here != null else world.airfield_at(s.x, s.y, ARRIVE_MARGIN_M)
 			if af_stop != null:
 				_arrive(af_stop, s)
+
+
+## On the graded shoulder of a strip: flat, cleared ground beside it.
+func _on_shoulder(x: float, y: float) -> bool:
+	for af in world.airfields:
+		if af.contains(x, y, float(SHOULDER_M.get(af.setting, 25.0))):
+			return true
+	return false
 
 
 func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:

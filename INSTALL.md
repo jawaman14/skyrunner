@@ -141,7 +141,7 @@ are already set up; Godot offers to download the export templates), or
    | W / S or Up / Down | pitch |
    | A / D or Left / Right | roll |
    | Q / E | rudder and nosewheel |
-   | R / F, or PgUp / PgDn | throttle (Z full, X cut) |
+   | R / F, or PgUp / PgDn | throttle: hold to move it, a tap is a few percent (Z ramps to full, X to idle; press again for instant) |
    | G / T | flaps down / up |
    | B or Space | brakes |
    | C | camera (chase, cockpit, tower) |
