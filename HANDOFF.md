@@ -1,0 +1,104 @@
+# Handoff: cloud session → local development (2026-09-28)
+
+**The project lives at https://github.com/jawaman14/skyrunner (`main`).** It moved out of the AutoGPT
+fork on 2026-09-28 with full history (`git subtree split` of `games/skyrunner-godot`).
+jawaman14/AutoGPT#5 is closed, and the `claude/cargo-flight-game-2g413p` branch there is an archive:
+don't develop on it. Everything from the cloud session is committed and pushed here; nothing was left
+uncommitted, stashed or on other branches.
+
+Read these with this file:
+- `CLAUDE.md`: commands and conventions;
+- `docs/ROADMAP.md`: the prioritised queue;
+- `docs/DESIGN.md`: the systems.
+
+## Current state
+- **Beta 0.9.0-beta.1.** Pure GDScript on Godot 4.7.2: no GDExtension, no JSBSim library. The game's
+  own 6-DOF model (`scripts/sim/flight/`) reads JSBSim-format XML as data.
+- **Tests:** 469/469 pass (`./tools/test.sh`, about 7.5 min headless on 4 cores).
+- **CI** (`.github/workflows/skyrunner-beta.yml`) runs on `main`, pull requests and manual dispatch:
+  - tests;
+  - exports for Linux, Windows and macOS (universal, ad-hoc signed);
+  - a headless AI-flown smoke run on Linux and Windows;
+  - an llvmpipe screenshot on Linux.
+  - Builds are the run's artifacts.
+- **Terrain:** the built-in maps' terrain is baked in `data/terrain/*.bin` (zstd). Generated islands
+  are cached in `user://terrain`.
+
+## What was in progress / next
+1. **Balance re-fly (K3).** The balance was measured with JSBSim, and the Godot model flies differently.
+   - The tactical sweep hadn't finished when the session moved, and `sim-results/tactical.json` and
+     `calibration.json` are still the JSBSim-era numbers.
+   - Steps: re-run tactical, then feasibility, then strategic, then live_balance, and write BALANCE
+     entry 35. Commands and targets are in `docs/ROADMAP.md` §1.
+   - The pilot bot fixes that led up to it are committed:
+     - the approach speed floor;
+     - holding the glide path altitude en route to hilltop strips;
+     - the go-around window;
+     - `Session.ARRIVE_MARGIN_M`;
+     - the C182/PA-28 castering mains.
+2. **The playtest feedback list** in `docs/ROADMAP.md` §2. None of it is started. The first wave:
+   - the Esc pause menu (Esc currently quits: `pilot_app.gd` about lines 309 and 377,
+     `station_app.gd` about line 319);
+   - runways and landing;
+   - throttle steps;
+   - F1 scrolling;
+   - a compass with wind;
+   - the tutorial's red squares;
+   - crew auto-hire and instant deaths;
+   - the autopilot circling, its routing, and flying differently with illegal cargo.
+
+## Open bugs and known issues
+- **Windows + AMD (RX 7900 XT), Vulkan:** the CI build crashes at startup with 0xC0000374 (heap
+  corruption) after shader compilation. Seen from local testing.
+  - The log shows duplicate `VK_LAYER_AMD_switchable_graphics` layers and a missing Rockstar Social
+    Club Vulkan layer. These are implicit layers registered by other software.
+  - It runs fine with `--rendering-driver opengl3`.
+  - Suspects, most likely first:
+    1. a broken implicit layer. Test with `VK_LOADER_LAYERS_DISABLE=~implicit~` (Vulkan loader
+       ≥ 1.3.234), or remove the stale Social Club layer from
+       `HKLM\SOFTWARE\Khronos\Vulkan\ImplicitLayers`;
+    2. the driver version;
+    3. a Godot 4.7.2 Vulkan bug. Try the plain editor build, `--gpu-validation` and `--verbose`.
+  - Once this is confirmed, INSTALL.md troubleshooting should mention it, and possibly an automatic
+    fallback (`rendering/rendering_device/fallback_to_opengl3`).
+- **DHC-6 flaps:** the aircraft balloons when its flaps are lowered at speed. The aero data is at
+  fault (it did the same under JSBSim). Documented in BETA.md.
+- **Hands off at high power,** some aircraft roll slowly left from propeller torque. That's
+  intended, and the tests allow for it.
+- **Leak messages:** headless test runs end with "RID allocations leaked at exit" errors. They're
+  harmless, and the runner's own summary line is what counts.
+
+## Conventions the next agent must follow
+Details are in CLAUDE.md. The ones that bite:
+- **Warnings are errors.** Type any variable whose value comes from a Variant, or the script
+  silently fails to parse, which looks like a hang.
+- **Determinism.**
+  - New randomness goes on a new RNG stream.
+  - New systems go behind a static switch that the parity tests turn off.
+  - Never regenerate the Python-frozen fixtures.
+  - Regenerate the Godot golden fixtures (`tools/regen_flight_golden.gd`) only for an intended
+    flight change, and say so in the commit.
+- **Keep the repo clean.** Scratch scripts go outside it; `sim-results/strategic.json` (11 MB)
+  stays gitignored.
+- **Keep it fictional:** no real people, organisations or brands.
+- **Workflow:** a feature branch, then a PR to `main`, and the CI must be green.
+
+## Testing
+- **Full suite:** `./tools/test.sh`, or `./tools/test.sh flight` to filter by file name.
+  - It needs bash. On Windows use Git Bash, with `GODOT` pointing at the Godot 4.7.2 console exe,
+    e.g. `export GODOT="/c/Godot/Godot_v4.7.2-stable_win64_console.exe"`.
+  - `TEST_TIMEOUT` (default 900 s) raises the limit.
+- **Smoke:** `"$GODOT" --headless --path . -- --unlocks open --watch --new --smoke 1800`, which
+  prints `SMOKE OK`.
+- **Screenshot:** `"$GODOT" --path . -- --new --shot out.png --frames 240`.
+- **Export:** Project → Export, or `--export-release Windows export/windows/Skyrunner.exe`. This
+  needs the 4.7.2 export templates.
+
+## Environment not in the repo (all regenerable)
+- The Godot binary: `./tools/get_godot.sh` fetches the Linux one into `.tools/`. On Windows, install
+  Godot 4.7.2 yourself.
+- The export templates, in `~/.local/share/godot/export_templates/4.7.2.stable/` on Linux or
+  `%APPDATA%\Godot\export_templates\4.7.2.stable\` on Windows.
+- `user://` holds saves, `terrain/` caches and `feedback/`. Nothing there is needed for development.
+- `sim-results/strategic.json` is regenerated by `cli.gd -- strategic`.
+- No environment variables beyond `GODOT` and `TEST_TIMEOUT`, and no secrets.
