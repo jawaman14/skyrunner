@@ -11,18 +11,18 @@ The balance numbers were measured with JSBSim; the game now flies its own model.
 4. `tools/live_balance.gd -- 80 3` and `-- 40 12 story`; BALANCE entry 35; BETA.md's balance note.
 
 ## 2. Playtest feedback (first real play session)
-First wave, small and high value:
-- **Esc menu.** Esc quits the game today (`pilot_app.gd` on foot and in flight, `station_app.gd`).
-  Make it a pause menu instead: resume, save, load a save, settings (graphics, controls F8,
-  palette, audio), and quit to the lobby or desktop. This also frees the keys it replaces.
-- **Runways.** They look wrong and landing is impossible. Check the runway mesh against the
-  levelled terrain (`Terrain._shape_fields`), the threshold markings, and `Session._arrive`/the
-  crash checks on touchdown.
-- **Throttle.** Z/X are full and cut; R/F and PgUp/PgDn should step smoothly. Make that clearer, or
-  give Z/X a graduated rate.
+First wave, small and high value. **Done (in PRs):** the Esc pause menu; runways and landing (keyboard
+flight assist, ramped throttle and brake, gentler ground steering, fairer touchdown rules, visible
+runways, the strip audit in docs/STRIPS.md); throttle steps. **Still to do:** F1 scrolling, the compass,
+the tutorial's red squares, crew, autopilot.
+- **Esc menu.** Done: resume, save, load, settings (graphics, volume, colours, flight assist, controls),
+  quit to lobby or desktop.
+- **Runways.** Done, see docs/STRIPS.md. Open there: mountain strips versus the Cessna 182 and half loads.
+- **Throttle.** Done: Z/X ramp (twice for instant), R/F a finer step.
 - **F1 help** isn't scrollable: put it in a ScrollContainer.
 - **Compass.** Add a HUD heading tape or rose with a wind arrow overlaid.
-- **Tutorial:** explain the four red squares shown in flight.
+- **Tutorial:** explain the four red squares shown in flight (they are the PAPI lights: white over white
+  is high, red over red is low).
 - **Crew:**
   - hired crew die at once;
   - the AI hires on the player's behalf without asking;
@@ -52,9 +52,14 @@ Second wave, larger features:
     and hauled cargo in Logistics; (3) squads built of agents; (4) the 3D side shows every agent;
     (5) the pathfinding upgrade; each step keeps the parity tests green and gets its own PR and BALANCE
     entry (agents change travel times, so the balance moves).
+- **Roads (next up, asked for in playtest).** The five roads in `MapCity.ROADS` are hand-drawn
+  polylines with 2-3 km straight legs that ignore the ground. Replace them with a planned network:
+  a seeded, terrain-aware A* between the places that matter (strips, town, stashes, HQs, farms) with
+  cost by grade (about 8% ceiling), no water, smoothed curves, junctions merged, and bridges where a
+  river has to be crossed (deck drawn, walkable). Then bake the terrain again and re-run the balance:
+  the roads are what trucks, squads and the ground war travel on.
 - **Map:**
-  - some roads are too steep or in the wrong place;
-  - bridges over streams;
+  - bridges over streams (with the roads);
   - a starter car at the airport.
 - **Physical logistics by truck, boat or plane.** Player-set pick-up and drop-off jobs for hired
   bots, multi-stop routes, and automatic refuelling at fuel stations. Fuel prices join the economy.
