@@ -412,6 +412,8 @@ func _dispatch(c: Dictionary, a: Vector2, b: Vector2) -> void:
 		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / StashNet.TRUCK_MS
 	elif sn.rng.random() < clampf(risk, 0.0, 0.8) and not t.waved:
 		t.stop_at = sn.rng.uniform(0.2, 0.9)
+	if Agent.ENABLED:
+		t.start_agent()
 	sn.trucks.append(t)
 	convoys[t.job_id] = c
 
@@ -440,7 +442,7 @@ func _pull_over(dt: float) -> void:
 				ahead = true
 				break
 		if ahead:
-			t.t0 += dt  # parked in a side street, engine off
+			t.hold(dt)  # parked in a side street, engine off
 			var c: Dictionary = convoys[t.job_id]
 			if not c.get("waiting", false):
 				c["waiting"] = true

@@ -2104,6 +2104,8 @@ func _truck_out(job: Jobs.Job, af: Airfield) -> void:
 		t.route = ground.graph.route(Vector2(af.x, af.y), Vector2(st.x, st.y))
 		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / StashNet.TRUCK_MS
 		t.stop_at = -1.0
+	if Agent.ENABLED:
+		t.start_agent()  # last: the driver, the road and the time it takes are all settled by now
 	active_jobs.erase(job)
 	loadout.remove_job(job.id)
 	say("Load's on the truck to %s: about %d min by road." % [stash_net.get_stash(job.stash).name, int(ceil(t.dur / 60.0))])

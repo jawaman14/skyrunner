@@ -13,6 +13,7 @@ func before_each() -> void:
 	GroundWar.ENABLED = false
 	Chronicle.ENABLED = false
 	Agency.ENABLED = false
+	Agent.ENABLED = false
 
 
 func after_each() -> void:
@@ -22,6 +23,7 @@ func after_each() -> void:
 	GroundWar.ENABLED = true
 	Chronicle.ENABLED = true
 	Agency.ENABLED = true
+	Agent.ENABLED = true
 
 
 func _match(got: Dictionary, want: Dictionary, what: String) -> void:
