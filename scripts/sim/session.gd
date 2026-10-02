@@ -136,6 +136,7 @@ var foot: FootCombat = null  ## the pilot on foot with a gun (sessions with a gr
 var chronicle: Chronicle = null  ## the news and the breaks between runs (Chronicle; live play asks for it)
 var renown: Renown = null  ## how big the name is (Renown; `renown: true` asks for it)
 var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets: true` with a ground war)
+var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
 var ai_law_upgrades := false  ## the AI chief buys law upgrades as money comes in (live play; off in sims and tests)
@@ -241,6 +242,8 @@ func _init(opts := {}) -> void:
 		renown = Renown.new(self)
 	if opts.get("rackets", false) and Rackets.ENABLED and ground != null:
 		rackets = Rackets.new(self)
+	if opts.get("races", false) and Races.ENABLED:
+		races = Races.new(self)
 	radio.df_stations = []
 	for a in world.airfields:
 		if a.police:
@@ -294,6 +297,7 @@ func dispose() -> void:
 	chronicle = null
 	renown = null
 	rackets = null
+	races = null
 	ground = null
 	if nights != null:
 		nights.sess = null
@@ -1784,6 +1788,8 @@ func _update_world(dt: float) -> void:
 	if foot != null and foot.active:
 		foot.update(dt)
 	_update_economy(dt)
+	if races != null:
+		races.update(dt)
 	if chronicle != null:
 		chronicle.update(dt)
 	if agency != null:
@@ -2390,6 +2396,14 @@ func _cmd_rackets(role: String, a: Dictionary):
 ## Build at a stash house: {stash, what: vault | guard}.
 func _cmd_stash_works(role: String, a: Dictionary):
 	var err := StashWorks.build(self, str(a.get("stash", "")), str(a.get("what", "")))
+	return err if err != "" else null
+
+
+## Enter a race at this airfield: {id}.
+func _cmd_race_enter(role: String, a: Dictionary):
+	if races == null:
+		return "There is no arena here."
+	var err: String = races.enter(str(a.get("id", "")))
 	return err if err != "" else null
 
 

@@ -177,7 +177,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
@@ -190,6 +190,8 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 		m.setup(sess)
 		m.closed.connect(_menu_closed)
 		menus[k[0]] = m
+	if sess.races != null:
+		add_child(RaceMarkers.new().setup(sess))
 	foot_prompt = UIStyle.label("", 20, UIStyle.WHITE)
 	foot_prompt.add_theme_stylebox_override("normal", UIStyle.panel_box(Color(0, 0, 0, 0.55)))
 	foot_prompt.set_anchors_preset(Control.PRESET_CENTER)
@@ -757,6 +759,8 @@ func _phone_call(action: String) -> void:
 			_open("taxi")
 		"rackets":
 			_open("rackets")
+		"track":
+			_open("track")
 		_:
 			var tk := open_talk(action)
 			if tk != null and on_foot and walker != null:
@@ -918,6 +922,12 @@ func _field_order(what: String) -> void:
 		s.say(r[1])
 
 
+## The street race counts the car's gates.
+func _car_race() -> void:
+	if driving != null and s.races != null and s.races.active():
+		s.races.feed("car", driving.game_xy(), 0.0)
+
+
 ## R, and the tuning keys, in the car: the radio on / off, the next station up, the next down.
 func _radio_key(what: String) -> void:
 	if radio == null:
@@ -948,6 +958,10 @@ func _exit_car() -> void:
 	walker.look_enabled = true
 	walker.place(out.x, -out.z, driving.heading_deg())
 	walker.cam.current = true
+	if s.races != null and s.races.active() and float(s.races.run.t0) >= 0.0:
+		var rc = s.races.course(str(s.races.run.id))
+		if rc != null and rc.kind == "car":
+			s.races.abort("you left the car")
 	if radio != null:
 		radio.active = false
 	driving.driven = false
@@ -1073,6 +1087,7 @@ func _process(delta: float) -> void:
 	if on_foot:
 		_foot_hud()
 		_car_checkpoints()
+		_car_race()
 	if m == null:
 		hud.refresh()
 	elif not s.parked:

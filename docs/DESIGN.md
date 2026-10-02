@@ -855,3 +855,21 @@ and the raid all read them where they stand.
 | Guard post | $2,000 | $5,000 | traffic warms the house 20% less, and its heat cools 25% faster, a level |
 
 A burned house cannot be improved. `StashWorks.ENABLED` switches it off (every level then counts as 0).
+
+## 29. The arena (Mount & Blade's tournaments)
+
+`scripts/sim/races.gd`, `scripts/game/race_markers.gd`; the phone's **The track** lists the courses at the strip you
+are at (`race_enter` is the pilot's, the boss's and the lieutenant's command).
+
+| Course | Where | Gates | Par | Entry | Prize |
+|---|---|---|---|---|---|
+| Street race (the car) | the roads from the strip to the club, the farthest stash house within 6 km, and back; needs a ground war | every 500 m, 24 m radius | length / 19 m/s | $70 | $700 |
+| Air circuit (the aircraft) | six gates 2.5 km from the strip, round and back to the first | 130 m radius, 180 m above the ground, 110 m tolerance up or down | length / 42 m/s | $140 | $1,400 |
+
+The first gate is the start: the clock begins when you cross it and the gates have to be taken in order (the next one
+is a glowing ring with a beam, the one after it a dim ring). A field of four rivals runs at par x 0.85 to 1.35 (their
+times come from a stream seeded by the session and the course, so the field is the same every time). Your place in
+the field is the prize: first the whole prize, second half, third a quarter, and renown +6 / +3 / +1. A course pays
+once an hour (after that it is for the glory). You are out, and the fee is gone, if you get out of the car mid-race,
+land from the circuit or take three times par. The save keeps what each course last paid and the winnings.
+`Races.ENABLED` switches it off.
