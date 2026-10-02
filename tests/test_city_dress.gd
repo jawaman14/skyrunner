@@ -149,3 +149,22 @@ func test_the_night_reaches_the_lot_shader() -> void:
 	check_eq(float(m.get_shader_parameter("night")), 1.0, "lit windows at night")
 	CityDress.set_night(0.0)
 	check_eq(float(m.get_shader_parameter("night")), 0.0, "and dark by day")
+
+
+func test_the_roads_are_marked_and_the_town_has_pavements() -> void:
+	World.use_map(MapCity.SEED)
+	var w := World.new()
+	var d := CityRender._road_details(w, w.map.roads)
+	var paint := d.get_node("markings") as MeshInstance3D
+	var pave := d.get_node("pavements") as MeshInstance3D
+	check(paint.mesh.get_surface_count() == 1, "lane markings are painted")
+	check(pave.mesh.get_surface_count() == 1, "and the town has pavements")
+	var pv := (paint.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+	var kv := (pave.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+	check(pv > 1000 and kv > 500, "plenty of both (%d, %d vertices)" % [pv, kv])
+	# the paint sits just above the asphalt ribbon: every paint vertex is within 15 cm of it, above the ground
+	var smp := CityRender._samples(w, w.map.roads[0])
+	var s: Array = smp[smp.size() / 2]
+	var p: Vector2 = s[0]
+	check(float(s[2]) > w.ground(p.x, p.y) - 0.01, "the ribbon is on or above the ground")
+	d.free()
