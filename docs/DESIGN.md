@@ -727,6 +727,8 @@ In the 1980s cocaine trade, the product and the money were both physical, heavy 
   - or a note from the seat's UI: the load planner opened, stepping out on foot, a talk opened.
 - The first lesson not yet done whose system is in the game is the one shown. So the list grows as the game does, and the panel counts only what can be taught now ("2/9").
 - In the story, a newly opened faction's lesson comes up when its chapter begins.
+- **Everything added since the first cut is taught too:** the phone, the starter car, the car radio, squad orders (Z/X/C/V), renown, the collectors, stash works, rounds, the arena (each waits for its system; `renown`, `rackets` and `races` are needs like `trade`). They finish on the thing itself: a menu opened (`menu_phone`, `menu_rackets`), the car entered, the radio on, the command succeeding (`field_order`, `stash_works`, `cash_round`/`goods_round`), a race run (`race_run`), a name of 40 points. A one-off tip says what to do with prisoners.
+- **The ending.** When the last lesson the game can teach is finished a closing card ("TUTORIAL COMPLETE - That's the tour") stays up 40 seconds (`Tutorial.GRADUATION_S`); new lessons appear later if more of the game opens up.
 
 **Tips.** Tips are one-off. They fire on the moment (wanted, fuel under a quarter, busted with a court, fog, storm, a payday the safe can't cover, a raid, a stopped truck, the connection) and stay on screen for 20 seconds.
 

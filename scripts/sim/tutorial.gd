@@ -40,6 +40,24 @@ const LESSONS := [
 		"The growers and the connection want cash on the strip: before you take our own load,\nload cash bags (SHIFT+H, C) where you keep the money - and fly them out."],
 	["on_foot", "ground_war", "On foot",
 		"Parked: TAB climbs out. WASD walk, E use, 1-4 draw a gun from the armoury, LMB fire,\nI your pack. TAB again to get back in."],
+	["phone", "ground_war", "The phone",
+		"T on foot takes the phone out: the hiring hall, the buyers, the lawyer, the desk and dispatch without the walk -\nand a taxi to the aircraft, the desk or a stash house. It is also where the collectors and the track are."],
+	["car", "ground_war", "The car",
+		"A car stands by the aircraft's right wing once you have stepped out. E at it to get in: W/S throttle and brake,\nA/D steer, SPACE the handbrake, E to get out. Roads are fast, fields a crawl; a police checkpoint run at speed is noticed."],
+	["car_radio", "ground_war", "The car radio",
+		"In the car: R turns the radio on, ',' and '.' tune. Real broadcasts from Miami and around the Caribbean, 1979-86,\nalways on air - tune away and back and it has moved on. Your own recordings go in the radio folder (assets/radio/README.md)."],
+	["squad_orders", "ground_war", "Order your squad",
+		"On foot with a squad out: Z holds the nearest one, X calls it to you, C sends it at the nearest rival or police squad\nit can see, V pulls it back to cover. Squads that survive fights rank up: more fire, steadier nerve, dearer upkeep."],
+	["renown", "renown", "A name",
+		"Deliveries, sales and verdicts won make a name; busts and raids cost it. A bigger name draws better recruits and\nbetter prices - and the task force watches you closer. The phone's title line shows where you stand."],
+	["rackets", "rackets", "The collectors",
+		"Phone, The collectors: streets where you hold over half the ground pay tribute (squeeze pays double; the street resents it).\nPrisoners from won fights can be ransomed, put on the payroll or let go."],
+	["works", "logistics", "Build at a stash house",
+		"In logistics (SHIFT+H) pick a house under 'from' and build a hidden vault (a raid finds less) or a guard post\n(the house runs cooler). They are paid from the safe."],
+	["round", "logistics", "One truck, several stashes",
+		"Logistics: add stops, then Collect cash round or Deliver round - one truck works through them all (75 s a stop).\nAll cash home does it for you when two stashes hold cash. Trucks burn fuel, so rounds also save money."],
+	["arena", "races", "The track",
+		"Phone, The track: a street race in the car and an air circuit at the strip. The first gate starts the clock, the rest\nin order; first place takes the prize and a name. A course pays once an hour."],
 	["buyers", "trade", "Sell in bulk",
 		"SHIFT+B: Benny Ruiz and the buyers. The Morettis, the Company and (guns only) Los Cuervos\ntake lots at a discount - and every sale moves the street and the wars."],
 	["family", "family", "The Family",
@@ -117,8 +135,11 @@ const TIPS := {
 	"raided": "A stash was raided: what was in it is gone, cash too. Heat builds with every truck and delivery - spread the traffic.",
 	"truck": "A truck was stopped. Roads near police strips and checkpoints are the risk; a soldier escort or a good driver helps.",
 	"connection": "The Colombians called: cocaine jobs are on the shady strips' boards now. Much more money per pound - and per year inside.",
+	"prisoners": "You are holding prisoners: Phone > The collectors, A ransoms them, F puts them on the payroll, G lets them go. A few get away every ten minutes.",
 	"papi": "Those four squares are the PAPI: red over red is too low, white over white too high, two and two is right on the glide path.",
 }
+
+const GRADUATION_S := 40.0  ## how long the closing card stays up
 
 var sess
 var enabled := true
@@ -131,6 +152,7 @@ var _t0 := -1.0
 var _sub := false
 var _xpdr = null  ## the transponder when the lesson began
 var desk_done := {}  ## role -> {lesson id: true}
+var graduated_at := -1e9  ## when the last lesson there was to teach was finished (the closing card shows for a while)
 
 
 func _init(state = null) -> void:
@@ -186,6 +208,12 @@ func _needs_ok(needs: String) -> bool:
 			return sess.island != null
 		"agency":
 			return sess.agency != null and sess.agency.active()
+		"renown":
+			return sess.renown != null
+		"rackets":
+			return sess.rackets != null
+		"races":
+			return sess.races != null
 	return false
 
 
@@ -214,6 +242,7 @@ func complete(id: String) -> void:
 	if enabled and c != null:
 		sess.say("TUTORIAL - done: %s. Next: %s" % [_title(id), c[2]])
 	elif enabled:
+		graduated_at = sess.time
 		sess.say("TUTORIAL - that's everything for now. New lessons appear as the game opens up.")
 
 
@@ -257,6 +286,8 @@ func _on_event(ev: EventBus.Event) -> void:
 			complete("buyers")
 		"island_shipment":
 			complete("island")
+		"race_run":
+			complete("arena")
 		"stash_raided":
 			_show("raided")
 		"truck_seized":
@@ -285,6 +316,18 @@ func tick(s) -> void:
 		complete("dealer")
 	if _notes.has("on_foot"):
 		complete("on_foot")
+	if _notes.has("menu_phone"):
+		complete("phone")
+	if _notes.has("driving"):
+		complete("car")
+	if _notes.has("radio_on"):
+		complete("car_radio")
+	if s.renown != null and s.renown.tier() >= 1:
+		complete("renown")
+	if _notes.has("menu_rackets"):
+		complete("rackets")
+	if s.rackets != null and s.rackets.held > 0 and enabled:
+		_show("prisoners")
 	if _notes.has("talk_family") or (s.family != null and s.family.accepted > 0):
 		complete("family")
 	if _notes.has("talk_general"):
@@ -326,6 +369,9 @@ func _show(id: String) -> void:
 func view() -> Dictionary:
 	var c = current()
 	var p := progress()
+	if c == null and enabled and sess != null and sess.time - graduated_at < GRADUATION_S:
+		return {"on": true, "id": "complete", "title": "That's the tour", "text": "You have seen every lesson this game can teach so far.\nF1 lists every key, ESC is the menu, SHIFT+F10 turns this panel off. New lessons appear if more of the game opens up.",
+			"step": p[1], "of": p[1], "tip": tip}
 	return {"on": enabled, "id": c[0] if c != null else "", "title": c[2] if c != null else "", "text": c[3] if c != null else "",
 		"step": p[0], "of": p[1], "tip": tip}
 
@@ -343,6 +389,17 @@ func desk_current(role: String) -> Variant:
 
 ## Session.command calls this after a command succeeds.
 func command_done(role: String, name: String) -> void:
+	match name:
+		"field_order":
+			complete("squad_orders")
+		"rackets":
+			complete("rackets")
+		"stash_works":
+			complete("works")
+		"cash_round", "goods_round":
+			complete("round")
+		"race_enter":
+			complete("arena")
 	for l in DESK_LESSONS.get(role, []):
 		if name in l[4] and not desk_done.get(role, {}).has(l[0]):
 			if not desk_done.has(role):
