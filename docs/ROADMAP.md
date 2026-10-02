@@ -143,7 +143,19 @@ Second wave, larger features:
       **Not done yet, deliberately:** contact, cover and losses still come from the squad's point and
       its men count (the "turf war" bullet above); that is the step that moves the balance, so it
       gets its own PR and BALANCE entry once the 3D side (step 4) can show whether the men look
-      right. Next: step 4, the 3D side draws every agent.
+      right.
+    - **(4) done for squads (a PR):** `Squad.dict()` carries `at`, where each man stands, and
+      `SquadRender` draws every man there instead of on its own 4-column grid, so the figures you see
+      (and that `Gunplay` aims at) are the sim's bodies: in file on the road, in the car while it
+      moves, ringed round it once it stops, in a firing line in a fight. A dict with no `at` (Agent
+      off, an old snapshot) still draws the old grid, so remote seats and the render tests are
+      unchanged. Still to draw: the payroll's own people (a dealer on his corner, a lookout at his
+      stash, a driver in a truck on the road) - they have no body of their own yet beyond the truck's
+      driver, so that waits on the next payroll-task pass. Looked at on screen (GPU render, a squad
+      after a short firefight): the men stand where their agents do - ragged and spread, not the old
+      4-column block - with no render errors. A tidier look at a column on a real road is still worth
+      a pass once the walker can follow a squad.
+      Next: step 5, the pathfinding upgrade.
 - **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
   see docs/ROADS.md. Still open there: La Selva has no road, and the balance has to be re-run on it.
 - **Map:**
