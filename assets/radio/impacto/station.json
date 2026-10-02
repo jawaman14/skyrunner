@@ -1,0 +1,15 @@
+{
+	"name": "Radio Impacto, Costa Rica",
+	"band": "SW",
+	"label": "6150",
+	"blurb": "Costa Rica, June 1983.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Impacto 6150, 13 Jun 1983",
+			"len": 61.18,
+			"ia": "1983-06-13-costa-rica-r-impacto-6150-0300-utc"
+		}
+	]
+}

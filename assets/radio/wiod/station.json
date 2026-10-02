@@ -1,0 +1,15 @@
+{
+	"name": "WIOD Miami",
+	"band": "AM",
+	"label": "610",
+	"blurb": "Talk and oldies from Miami's big AM station, 1986.",
+	"gap_s": 0,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Stu Goldstein, WIOD",
+			"len": 360.0,
+			"ia": "stu-goldstein-wiod-1986-unscoped"
+		}
+	]
+}
