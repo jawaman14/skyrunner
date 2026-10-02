@@ -41,6 +41,8 @@ Screen   F9 filter: off / VHS / colour-blindness simulations (protan, deutan, tr
 Beta     F12 feedback bundle: a zip of what happened (build, machine, flight, log, screenshot) to send back
 On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mouse look
          Guns (with a ground war): 1-4 pistol / rifle / machine gun / RPG from the armoury  H holster  R reload  LMB fire
+         CAR  a parked car stands beside the aircraft: E at it to get in, W / S throttle and brake, A / D steer,
+            SPACE handbrake, E to get out (the road is fast, anywhere else a crawl)
          E use (job board, fuel, hangar, the boss's desk)   F torch   T the phone: crew, buyers, lawyer,
             the Family, the General, the desk, dispatch - and a taxi (fare up front) to the aircraft, the desk,
             the job board, the hangar or a stash house
@@ -114,6 +116,13 @@ var bale_nodes := {}
 var beacons: Array = []  ## [key, [nodes]]
 var _frame := 0
 var on_foot := false
+var car: Car = null  ## the starter car (made the first time you step out of the aircraft)
+var driving: Car = null  ## the car you are in, if you are
+var _blown := {}  ## police squad id -> sim time you last ran its checkpoint
+const CHECKPOINT_RUN_M := 45.0  ## closer than this to a police checkpoint ...
+const CHECKPOINT_RUN_MS := 6.0  ## ... faster than this is running it
+const CHECKPOINT_HEAT := 6.0  ## suspicion for running one
+const CHECKPOINT_AGAIN_S := 120.0
 var taxi_left := 0.0  ## sim seconds of a taxi ride still to go: the world runs ahead of the clock while it does
 var _taxi_to: Dictionary = {}
 var taxi_label: Label
@@ -328,6 +337,18 @@ func _unhandled_input(ev: InputEvent) -> void:
 			return
 		if k == KEY_TAB:
 			_toggle_on_foot()
+			get_viewport().set_input_as_handled()
+			return
+		if on_foot and driving != null:
+			match k:
+				KEY_E:
+					_exit_car()
+				KEY_ESCAPE:
+					open_pause()
+				KEY_M:
+					hud.minimap.toggle()
+				KEY_F1:
+					help.visible = not help.visible
 			get_viewport().set_input_as_handled()
 			return
 		if on_foot:
@@ -644,6 +665,9 @@ func _menu_closed() -> void:
 
 # ------------------------------------------------------------ on foot
 func _toggle_on_foot() -> void:
+	if driving != null:
+		s.say("Get out of the car first (E).")
+		return
 	_sync_scene(0.0)  # the aircraft node may not have been placed yet this frame
 	if on_foot:
 		var st: FlightModel.FlightState = s.state
@@ -685,6 +709,7 @@ func _toggle_on_foot() -> void:
 	walker = Walker.new().setup(s.world)
 	add_child(walker)
 	walker.used.connect(_on_use)
+	_ensure_car(st)
 	# out of the left door, a couple of metres clear of the wing root
 	var h := deg_to_rad(st.heading)
 	var lx := -cos(h)
@@ -816,8 +841,75 @@ func _taxi_tick(inp, bc) -> void:
 		s.say("Here you are: %s." % _taxi_to.name)
 
 
+## The starter car: a parked car beside the aircraft's right wing, made the first time you step out.
+func _ensure_car(st: FlightModel.FlightState) -> void:
+	if car != null:
+		return
+	car = Car.new().setup(s.world, "org")
+	add_child(car)
+	var h := deg_to_rad(st.heading)
+	var off: float = s.spec.visual.span_m * 0.5 + 9.0
+	car.place(st.x + cos(h) * off, st.y - sin(h) * off, st.heading + 90.0)
+
+
+## E at the car: get in (it takes the walker's place; the walker is parked, hidden, inside it).
+func _enter_car() -> void:
+	if car == null or walker == null or driving != null:
+		return
+	if walker.global_position.distance_to(car.global_position) > 6.0:
+		s.say("The car is too far away.")
+		return
+	driving = car
+	car.driven = true
+	car.speed = 0.0
+	walker.process_mode = Node.PROCESS_MODE_DISABLED
+	walker.visible = false
+	walker.look_enabled = false
+	car.cam.current = true
+	s.say("Driving: W / S throttle and brake, A / D steer, SPACE handbrake, E to get out.")
+
+
+## Driving through a police checkpoint without slowing is noticed: suspicion on the runner's case, once per checkpoint
+## every CHECKPOINT_AGAIN_S. Slowing down (under CHECKPOINT_RUN_MS) is a wave-through.
+func _car_checkpoints() -> void:
+	if driving == null or s.ground == null:
+		return
+	var here := driving.game_xy()
+	for q: GroundWar.Squad in s.ground.of("police"):
+		if q.tactic != "checkpoint" or q.pos().distance_to(here) > CHECKPOINT_RUN_M:
+			continue
+		if absf(driving.speed) < CHECKPOINT_RUN_MS:
+			continue
+		if s.time - float(_blown.get(q.id, -1e9)) < CHECKPOINT_AGAIN_S:
+			continue
+		_blown[q.id] = s.time
+		var c = s.police.case("runner")
+		c.suspicion = minf(100.0, c.suspicion + CHECKPOINT_HEAT)
+		s.say("You ran the police checkpoint at %s." % s.ground.place_name(q.x, q.y))
+
+
+## E again: get out on the driver's side, if it has all but stopped.
+func _exit_car() -> void:
+	if driving == null:
+		return
+	if absf(driving.speed) > 4.0:
+		s.say("Slow down first.")
+		return
+	var out := driving.global_position - driving.global_transform.basis.x * 2.6
+	walker.process_mode = Node.PROCESS_MODE_INHERIT
+	walker.visible = true
+	walker.look_enabled = true
+	walker.place(out.x, -out.z, driving.heading_deg())
+	walker.cam.current = true
+	driving.driven = false
+	driving.speed = 0.0
+	driving = null
+
+
 func _on_use(action: String, area: Area3D) -> void:
 	match action:
+		"car":
+			_enter_car()
 		"jobs", "load", "hangar":
 			var field: String = area.get_meta("field", s.location)
 			if field != s.location:
@@ -931,6 +1023,7 @@ func _process(delta: float) -> void:
 		_foot_down()
 	if on_foot:
 		_foot_hud()
+		_car_checkpoints()
 	if m == null:
 		hud.refresh()
 	elif not s.parked:
@@ -984,6 +1077,15 @@ func _foot_input() -> ControlMapper.InputFrame:
 
 
 func _foot_hud() -> void:
+	if driving != null:
+		walker.global_position = driving.global_position + Vector3(0, 1.0, 0)  # the walker rides along: the phone, the taxi and the sim see where you are
+		var ml2 := []
+		for msg in s.messages:
+			if s.time - msg[0] < 8:
+				ml2.append(msg[1])
+		foot_prompt.text = "\n".join(["%d km/h  -  %s   [E] get out" % [int(absf(driving.speed) * 3.6), "road" if driving.on_road() else "off-road"]] + ml2.slice(-2))
+		foot_prompt.visible = _active_menu() == null
+		return
 	if s.foot != null:
 		walker.speed_scale = s.foot.speed_factor()
 	var lines := []
