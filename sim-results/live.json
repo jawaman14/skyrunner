@@ -510,71 +510,71 @@
     "war": {
       "agency": {
         "burned_rate": 0.015,
-        "exposure": 55.94375,
-        "flights": 5.375,
-        "hangout_rate": 0.12,
-        "withheld": 1874.08
+        "exposure": 56.19625,
+        "flights": 5.345,
+        "hangout_rate": 0.165,
+        "withheld": 1842.32
       },
       "family": {
-        "cons": 0.21,
+        "cons": 0.185,
         "loans": 0.0,
         "rat_rate": 0.035,
-        "respect": 68.4016823105011,
-        "taxed_rate": 0.575,
+        "respect": 69.2402330886023,
+        "taxed_rate": 0.58,
         "trial_rate": 0.005,
         "tribute_paid": {
-          "mean": 4425.0,
+          "mean": 4655.0,
           "p10": 0.0,
           "p50": 6000.0,
-          "p90": 8000.0
+          "p90": 9000.0
         }
       },
       "island": {
-        "catch_rate": 0.0950029052876235,
+        "catch_rate": 0.0963541666666667,
         "closed_frac": 0.0,
         "intercepts": 0.0,
         "relations": 56.35,
         "shipments": {
-          "mean": 5.645,
+          "mean": 5.715,
           "p10": 4.0,
           "p50": 6.0,
           "p90": 8.0
         },
-        "spent": 11147862,
-        "units_caught": 327,
-        "units_sent": 3442
+        "spent": 11363880,
+        "units_caught": 333,
+        "units_sent": 3456
       },
       "law_funds": {
-        "mean": 7461.35833333322,
-        "p10": 3840.83333333252,
-        "p50": 7019.83333333284,
-        "p90": 10994.4999999994
+        "mean": 7165.1849999999,
+        "p10": 3776.16666666619,
+        "p50": 6455.33333333336,
+        "p90": 10938.833333334
       },
       "market": {
-        "coke_hi": 1.74534195356344,
-        "coke_lo": 0.646884260988111,
-        "coke_lots": 24.645,
+        "coke_hi": 1.77468789933881,
+        "coke_lo": 0.647673526758311,
+        "coke_lots": 24.63,
         "disruption": 1.0,
-        "gun_lots": 27.435,
-        "guns": 1.42832251115051
+        "gun_lots": 27.485,
+        "guns": 1.43341616755837
       },
       "money": {
-        "mean": 50231.72,
-        "p10": 23479.0,
-        "p50": 43902.0,
-        "p90": 81946.0
+        "mean": 51881.28,
+        "p10": 22677.0,
+        "p50": 45385.0,
+        "p90": 87544.0
       },
       "money_min": {
-        "mean": 10300.585,
-        "p10": 7529.0,
-        "p50": 11161.0,
-        "p90": 11551.0
+        "mean": 10310.955,
+        "p10": 7256.0,
+        "p50": 11169.0,
+        "p90": 11559.0
       },
       "net_worth": {
-        "mean": 72300.6701958739,
-        "p10": 44505.3553959036,
-        "p50": 64988.9229182365,
-        "p90": 108187.417456562
+        "mean": 74007.8479511895,
+        "p10": 43797.5064196104,
+        "p50": 68154.0318473355,
+        "p90": 110983.226388064
       },
       "open": {
         "first_squad_min": {
@@ -584,46 +584,46 @@
           "p90": 0.166666666666667
         },
         "squad_rate": 1.0,
-        "squads_max": 2.715
+        "squads_max": 2.915
       },
       "payroll": {
-        "crew": 24.2,
-        "flips": 0.705,
-        "lost": 11.74,
-        "loyalty": 0.796397879639007,
-        "paid": 25592.725,
+        "crew": 24.145,
+        "flips": 0.855,
+        "lost": 12.245,
+        "loyalty": 0.796595524981862,
+        "paid": 25670.865,
         "short_rate": 0.0
       },
       "suspicion": {
-        "mean": 0.5887,
+        "mean": 0.9253,
         "p10": 0.0,
         "p50": 0.0,
-        "p90": 0.0
+        "p90": 0.5
       },
       "trade": {
-        "bulk": 15.335,
-        "connected_min": 73.34,
-        "dealers": 5.405,
-        "earned": 30841.265,
-        "sold_coke": 309.754942498667,
-        "sold_weed": 1386.0562864,
-        "stock_coke": 260.503348570133,
-        "stock_value": 22068.9501958739,
-        "stock_weed": 754.697125220001
+        "bulk": 17.555,
+        "connected_min": 72.535,
+        "dealers": 5.14,
+        "earned": 32079.925,
+        "sold_coke": 322.896957381333,
+        "sold_weed": 1416.7643044,
+        "stock_coke": 257.916555911467,
+        "stock_value": 22126.5679511895,
+        "stock_weed": 752.146710204
       },
       "war": {
-        "arms": 1260.0,
-        "burned": 0.575,
-        "fights": 14.055,
-        "org_arrested": 17.715,
-        "org_lost": 5.2,
-        "police_lost": 17.48,
-        "police_squads": 7.35,
-        "recruit": 4277.5,
-        "rival_lost": 8.195,
-        "rival_squads": 3.025,
-        "squads": 1.925,
-        "upkeep": 2030.36
+        "arms": 1612.8,
+        "burned": 0.5,
+        "fights": 14.4,
+        "org_arrested": 17.755,
+        "org_lost": 5.05,
+        "police_lost": 17.995,
+        "police_squads": 7.23,
+        "recruit": 4462.5,
+        "rival_lost": 7.555,
+        "rival_squads": 3.215,
+        "squads": 2.1,
+        "upkeep": 2218.67
       }
     }
   },
@@ -665,7 +665,7 @@
       "ship_roi": 0.4
     }
   ],
-  "seconds": 1007.535,
+  "seconds": 1220.04,
   "seeds": 200,
   "stand_ins": {
     "law_every_s": 600.0,
