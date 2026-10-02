@@ -185,6 +185,22 @@ Second wave, larger features:
       bodies on and off and compares every worker, the money and the wages. Not done: shooting or arresting
       a worker where he stands, 2D station maps showing them, and making a post count only once its man has
       arrived (that one would move the balance).
+    - **Turf war, the engagement (a PR; decided 2026-10-03):** fights have geometry
+      (`GroundWar.ENGAGEMENT`). Each weapon has the effective range `Arsenal.TIERS` already listed
+      (pistol 50 m, rifle 300, machine gun 600, RPG 300) x `RANGE_SCALE`; its fire is all of it inside
+      half that, 15% at the range, none 30% beyond (`GroundWar.eff`). `GroundWar.fire_at(shooter,
+      target)` is what each man's weapon does at *his own* distance to the nearest enemy man
+      (`Squad.members`, step 3), so a squad strung out or flanked loses the fire of the men who cannot
+      reach. Squads on foot in a fight close at 3 m/s until each is at the distance its best weapon
+      likes (60% of its range, 25-500 m): long guns stand off, pistols have to come in, a vehicle stays
+      where it is (`_close_in`). The AI's odds still use the flat `fire()`. **Calibration:** at the
+      weapons' own ranges (x1) the war came out 7% richer for the organisation and Los Cuervos lost 28%
+      fewer men than the flat model; x4 is within noise of it on every count (200 seeds each, same seeds:
+      org money mean $51.9k vs $50.2k, fights 14.4 vs 14.05, police losses 18.0 vs 17.5, org arrests
+      17.75 vs 17.7), so x4 ships - squad fights start 250 m apart, a first-person range is the wrong unit
+      there. BALANCE entry 37. Not done: men taking the best cover near them (cover is still the squad
+      centre's terrain), retreating to keep a range, vehicles dismounting, and a squad deciding to fight
+      or flee from the geometry rather than from the flat odds.
 - **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
   see docs/ROADS.md. La Selva has no road on purpose (it stays the remote strip). The balance re-run on the ring roads is
   BALANCE entry 36 (a larger re-run with a confidence interval is under way).
