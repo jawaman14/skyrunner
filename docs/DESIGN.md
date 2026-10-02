@@ -768,3 +768,31 @@ The live-play simulator steps the war now (balance entry 29). It stands in for t
 - $50.0k against $62.5k over three hours: the war costs about a fifth.
 - Suspicion cools between the runs.
 - About 0.7 stash houses a run are burned.
+
+## 25. Renown (Mount & Blade's renown)
+
+How big your name is on the street. It is made of what the organisation does and is read off the event bus
+(`scripts/sim/renown.gd`; a session asks for it with `renown: true`, and the live game does):
+
+| Gains | | Losses (half of the same size) | |
+|---|---|---|---|
+| a load delivered | +3 | the pilot busted | -3 |
+| bales delivered | +2 | the pilot sentenced | -4 |
+| an island container through customs | +3 | a crash | -1.5 |
+| a raid foiled | +3 | a stash raided | -2 |
+| a jury lets the pilot walk | +6 | a truck hijacked / seized | -1.5 / -1 |
+| the case dropped from above | +4 | a flight hijacked | -1 |
+| a bulk sale | +1 to +5 by size | a boat seized | -1.5 |
+| the money home | +0.3 | one of our men takes the government's deal | -2 |
+
+It never goes below nothing. Five tiers (0 Nobody, 40 A name on the street, 120 Known, 300 Feared, 650 A legend); a
+tier going up is said ("RENOWN - Known. Better recruits (+6 skill), buyers pay +3.0%, and the task force cools 12%
+slower."). What a tier is worth:
+
+- the hiring hall: every candidate has +3 points of skill and +2 of loyalty a tier (no extra random draws: the
+  payroll's stream is the same, only the values shift);
+- the bulk buyers pay 1.5% more a tier;
+- the task force watches the famous: suspicion cools 6% slower a tier (`PoliceSystem.decay_mult`).
+
+The phone shows the tier and the score on its title line; a save keeps the score (`StrategicSave`). BALANCE entry
+(the list's "Renown"): a +0.5% to +3% effect on money, with the task force a little warmer, by design small.

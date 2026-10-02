@@ -44,6 +44,9 @@ func contacts() -> Array:
 func refresh() -> void:
 	title.text = "PHONE"
 	subtitle.text = "$%s in hand" % Py.money(s.money)
+	if s.renown != null:
+		var nx: float = s.renown.next_at()
+		subtitle.text += "   -   renown: %s (%d%s)" % [s.renown.title(), int(s.renown.score), ("/%d" % int(nx)) if nx > 0.0 else ""]
 	var keep := list.selected_row()
 	list.clear_rows()
 	rows = contacts()

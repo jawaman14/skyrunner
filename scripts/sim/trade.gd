@@ -145,6 +145,8 @@ func quote(buyer: String, good: String, tier := "rifle") -> Dictionary:
 		price = Arsenal.TIERS[tier].price * sess.econ.mult("guns", m) * float(b.get("guns", 1.0))
 	elif why == "" or b.get("drugs", {}).has(good):
 		price = street_price(good, m) * float(b.get("drugs", {}).get(good, 0.0))
+	if sess.renown != null:
+		price *= sess.renown.price_mult()  # a name that carries weight
 	return {"price": price, "room": float(appetite.get(buyer, {}).get(good, 0.0)), "why": why}
 
 

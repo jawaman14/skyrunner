@@ -21,7 +21,7 @@ func _init() -> void:
 			"--port": port = int(a[i + 1])
 			"--seed": seed = int(a[i + 1])
 			"--seconds": seconds = float(a[i + 1])
-	sess = Session.new({"mode": Roles.POLICE, "seed": seed, "map_seed": MapCity.SEED, "ground_war": true, "chronicle": true, "agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "career": true, "fog": true,
+	sess = Session.new({"mode": Roles.POLICE, "seed": seed, "map_seed": MapCity.SEED, "ground_war": true, "chronicle": true, "agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "career": true, "fog": true,
 		"money": Session.OPEN_FLOAT})  # AI runs the desk until a controller joins
 	srv = HostServer.new()
 	srv.attach(sess)

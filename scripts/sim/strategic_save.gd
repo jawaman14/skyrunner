@@ -28,6 +28,8 @@ static func capture(s: Session) -> Dictionary:
 			"aboard": l.aboard, "lost": l.lost.duplicate(true), "lost_by": l.lost_by.duplicate(true)}
 	if s.payroll != null:
 		d["payroll"] = _payroll(s)
+	if s.renown != null:
+		d["renown"] = {"score": s.renown.score, "recent": s.renown.recent.duplicate(true)}
 	var c = s.police.case("runner")
 	d["case"] = {"suspicion": c.suspicion, "bust_meter": c.bust_meter, "rival_meter": c.rival_meter}
 	if s.court != null:
@@ -92,6 +94,10 @@ static func restore(s: Session, d: Dictionary) -> void:
 		l.lost_by = _ints(ld.get("lost_by", l.lost_by))
 	if s.payroll != null and d.get("payroll") is Dictionary:
 		_restore_payroll(s.payroll, d.payroll)
+	if s.renown != null and d.get("renown") is Dictionary:
+		s.renown.score = float(d.renown.get("score", 0.0))
+		s.renown.recent = d.renown.get("recent", [])
+		s.renown.apply()
 	if d.get("case") is Dictionary:
 		var c = s.police.case("runner")
 		c.suspicion = float(d.case.get("suspicion", 0.0))

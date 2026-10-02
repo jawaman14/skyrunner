@@ -117,6 +117,9 @@ func _person(o: String, role: String, street := false) -> Dictionary:
 	_serial += 1
 	var skill := clampf(rng.uniform(0.15, 0.95) - (0.2 if street else 0.0), 0.05, 1.0)
 	var loyal := clampf(rng.uniform(0.2, 0.95) - (0.3 if street else 0.0), 0.05, 1.0)
+	if o == "org" and sess.renown != null:  # a name draws better men (no extra draws: the stream is the same)
+		skill = clampf(skill + sess.renown.skill_bonus(), 0.05, 1.0)
+		loyal = clampf(loyal + sess.renown.loyalty_bonus(), 0.05, 1.0)
 	var wage: int = int(ROLES[role][0] * (0.7 + 0.6 * skill) * (1.5 if street else 1.0))
 	var hint_good := rng.random() < (0.8 if loyal >= 0.5 else 0.2)  # a hint, not a guarantee
 	return {"id": "W%d" % _serial, "name": "%s %s" % [FIRST[rng.randint(0, FIRST.size() - 1)], LAST[rng.randint(0, LAST.size() - 1)]],
