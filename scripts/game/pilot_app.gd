@@ -40,8 +40,8 @@ On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mou
          I your pack: spare guns, rounds, medkits (24 kg; over 12 kg you slow down)   5 medkit
 Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT: upgrade trees)
 Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
-         U autopilot: holds course, U again routes you to an airfield (low and dark with a hot load,
-            direct at cruise otherwise), U again off
+         U autopilot: holds course, U again routes you to an airfield (low with a hot load, direct
+            at cruise otherwise - squawking either way unless there's already heat on you), U again off
          K kick a bale   O call the boat (SHIFT+O: the 1 s codeword - harder to DF)
          V ferry fuel pump   I push aircraft round (stopped)   ENTER continue   ESC close menu / pause menu
 Family   SHIFT+F sit down with Sal Moretti: hear the offer, your man's read on it, press him for

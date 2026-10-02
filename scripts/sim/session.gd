@@ -754,9 +754,13 @@ func _cmd_autopilot(role: String, a: Dictionary):
 
 
 ## The second U: fly toward a destination instead of just holding course - a straight shot at
-## cruise altitude, squawking, for a legal load; a winding, terrain-low RoutePlanner route with the
-## transponder off for a hot one. (Open: it doesn't route round known radar coverage, only under its
-## clutter floor - see docs/ROADMAP.md.)
+## cruise altitude for a legal load, a winding, terrain-low RoutePlanner route for a hot one. The
+## transponder defaults to squawking either way - squawking traffic that isn't already a tip or a
+## known case draws no suspicion at all (PoliceSystem._classify), so it's the safer default even
+## hot. It only goes dark on a hot leg once there's heat to hide from (wanted, tipped, or suspicion
+## already up) - and only below the clutter floor does dark actually make it vanish; above it, a
+## squawk that cuts out is itself the tell (see HELP_TEXT). (Open: routing doesn't avoid known radar
+## coverage, only gets under its clutter floor - see docs/ROADMAP.md.)
 func _autopilot_navigate() -> void:
 	var af := _autopilot_target()
 	if af == null or PyMath.hypot(af.x - state.x, af.y - state.y) < AUTOPILOT_MIN_ROUTE_M:
@@ -767,7 +771,8 @@ func _autopilot_navigate() -> void:
 	var wps: Array
 	if hot:
 		wps = RoutePlanner.plan_route(world, [state.x, state.y], [af.x, af.y])
-		transponder = false
+		var c := police.case("runner")
+		transponder = not (c.wanted > 0 or c.tipped or c.suspicion >= AUTOPILOT_HOT_DARK_SUSPICION)
 	else:
 		wps = [[af.x, af.y]]
 	var peak := world.ground(state.x, state.y)
@@ -781,10 +786,11 @@ func _autopilot_navigate() -> void:
 	var margin := Autopilot.LOW_AGL_M if hot else Autopilot.CRUISE_AGL_M
 	autopilot.engage_route(state, wps, peak + margin, fm.controls.elevator)
 	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name, "low over the ground" if hot else "direct",
-		"transponder off" if hot else "squawking", Py.f((peak + margin) / FT, 0)])
+		"squawking" if transponder else "transponder off", Py.f((peak + margin) / FT, 0)])
 
 
 const AUTOPILOT_MIN_ROUTE_M := 3000.0  ## closer than this isn't worth engaging the navigate leg for
+const AUTOPILOT_HOT_DARK_SUSPICION := 50.0  ## a hot leg goes dark once suspicion's at least this, even without a tip or a wanted level yet
 
 
 ## An active job's own strip (not an airdrop: that's a point in the water, not somewhere to land),

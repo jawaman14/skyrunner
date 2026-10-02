@@ -55,7 +55,7 @@ func test_u_cycles_off_hold_navigate_off() -> void:
 	check(not s.autopilot.engaged, "U again: off")
 
 
-func test_hot_cargo_flies_low_and_dark_legal_flies_high_and_squawking() -> void:
+func test_hot_cargo_flies_low_but_still_squawks_without_heat() -> void:
 	var s := _sess({"trade": true})
 	_airborne(s)
 	s.command(Roles.PILOT, "autopilot", {})
@@ -70,9 +70,48 @@ func test_hot_cargo_flies_low_and_dark_legal_flies_high_and_squawking() -> void:
 	check(s.carrying_hot(), "now carrying something hot")
 	s.command(Roles.PILOT, "autopilot", {})
 	s.command(Roles.PILOT, "autopilot", {})
-	check(not s.transponder, "hot aboard: dark")
+	check(s.transponder, "hot aboard but no heat on you yet: still squawking - a clean squawk draws no suspicion at all, so it's the safer default even hot")
 	check(s.autopilot.waypoints.size() > 1, "a winding valley route, not a straight shot: %d waypoints" % s.autopilot.waypoints.size())
 	check(s.autopilot.alt_target < legal_alt, "and well under the legal cruise altitude (%.0f < %.0f)" % [s.autopilot.alt_target, legal_alt])
+	s.dispose()
+
+
+func test_hot_cargo_goes_dark_once_there_is_heat_on_you() -> void:
+	var s := _sess({"trade": true})
+	_airborne(s)
+	var item := Loadout.Item.new(Jobs.new_id(), "Grass bales", "cargo", 100, 0)
+	item.hot = true
+	s.loadout.add(item)
+	s.police.case("runner").suspicion = 60.0
+	s.command(Roles.PILOT, "autopilot", {})
+	s.command(Roles.PILOT, "autopilot", {})
+	check(not s.transponder, "suspicion already up: goes dark rather than keep squawking a track that's being watched")
+	s.dispose()
+
+
+func test_hot_cargo_goes_dark_once_wanted() -> void:
+	var s := _sess({"trade": true})
+	_airborne(s)
+	var item := Loadout.Item.new(Jobs.new_id(), "Grass bales", "cargo", 100, 0)
+	item.hot = true
+	s.loadout.add(item)
+	s.police.wanted = 1
+	s.command(Roles.PILOT, "autopilot", {})
+	s.command(Roles.PILOT, "autopilot", {})
+	check(not s.transponder, "already wanted: goes dark")
+	s.dispose()
+
+
+func test_hot_cargo_goes_dark_once_tipped() -> void:
+	var s := _sess({"trade": true})
+	_airborne(s)
+	var item := Loadout.Item.new(Jobs.new_id(), "Grass bales", "cargo", 100, 0)
+	item.hot = true
+	s.loadout.add(item)
+	s.police.case("runner").tipped = true
+	s.command(Roles.PILOT, "autopilot", {})
+	s.command(Roles.PILOT, "autopilot", {})
+	check(not s.transponder, "an informant's named this squawk: goes dark even with suspicion still low")
 	s.dispose()
 
 
