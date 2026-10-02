@@ -126,7 +126,7 @@ func test_doing_reads_a_worker_s_assignment() -> void:
 	var q = s.ground.recruit("org", "foot", null)
 	var sid: String = s.payroll.squads.keys()[0]
 	var soldier_id: String = s.payroll.squads[sid][0]
-	check_eq(s.payroll.doing(s.payroll.get_worker(soldier_id)), "with squad %s" % sid, "a soldier is with their squad")
+	check_eq(s.payroll.doing(s.payroll.get_worker(soldier_id)), "with squad %s, holding" % sid, "a soldier is with their squad, and says what it is doing")
 	s.dispose()
 
 
