@@ -599,7 +599,13 @@ func doing(w: Dictionary) -> String:
 		var st = sess.stash_net.get_stash(a.trim_prefix("stash-")) if sess.stash_net != null else null
 		return "watching %s" % st.name if st != null else "on lookout"
 	if a.begins_with("truck-") or a.begins_with("cash-"):
-		return "driving a truck"
+		# his body is on the road now (Agent): how far he has to go
+		var left := 0.0
+		if sess.stash_net != null:
+			for t in sess.stash_net.trucks:
+				if t.driver == str(w.get("id", "")):
+					left = t.left_m()
+		return "driving a truck, %.1f km to go" % (left / 1000.0) if left > 0.0 else "driving a truck"
 	if sess.ground != null and sess.ground.get_squad(a) != null:
 		return "with squad %s" % a
 	match str(w.get("role", "")):

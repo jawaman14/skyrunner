@@ -101,6 +101,26 @@ func test_cash_trucked_home() -> void:
 	s.dispose()
 
 
+func test_a_driver_on_the_payroll_is_somewhere_on_the_road() -> void:
+	var s := _sess()
+	var w: Dictionary = s.payroll._person("org", "driver")
+	w.skill = 0.9
+	s.payroll.candidates["org"].append(w)
+	s.money += 5000
+	check_eq(s.payroll.hire("org", w.id), "")
+	s.logistics.cash["camp"] = 12000.0
+	check_eq(s.command(Roles.BOSS, "move_cash", {"from": "camp", "to": "hq"})[0], true)
+	var t: StashNet.Truck = s.stash_net.trucks[0]
+	check_eq(t.driver, w.id, "our driver took the truck")
+	check(t.agent != null and t.agent.id == w.id, "and his body is the one on the road")
+	for i in 30 * 80:  # past the 45 s of loading, well into the drive
+		s.update(1.0 / 30)
+	check(t.left_m() > 0.0, "still driving: %.0f m to go" % t.left_m())
+	var doing: String = s.payroll.doing(s.payroll.get_worker(w.id))
+	check("km to go" in doing, "the roster says how far he has to go: %s" % doing)
+	s.dispose()
+
+
 func test_a_stopped_truck_forfeits_the_lot() -> void:
 	var s := _sess()
 	s.logistics.cash["camp"] = 30000.0

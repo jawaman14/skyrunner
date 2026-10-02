@@ -43,11 +43,49 @@ class Truck:
 	var driver := ""  ## the driver on the payroll (Payroll)
 	var heat := StashNet.HEAT_DELIVERY  ## what arriving adds to the stash's heat (Logistics' runs are quieter)
 	var no_trail := false  ## nothing worth tailing it to (cash for the club): the police stop it or let it go
+	var agent: Agent = null  ## the driver's body (Agent.ENABLED): its progress is the truck's
+	var arrived := false  ## the agent finished the drive: delivered, whatever the clock says
 
 	func frac(now: float) -> float:
 		return clampf((now - t0) / dur, 0.0, 1.0)
 
+	## Put a driver on the road: TRUCK_LOAD_S loading at the origin, then the drive, along `route`
+	## if there is one and straight there if not, at whatever speed makes it take what `dur` says.
+	## From here the agent is the authority; sync() keeps t0 - and so frac(), the eta and every
+	## reader of them in the ground war and the logistics view - telling the same story.
+	func start_agent() -> void:
+		var a := Vector2(x0, y0)
+		var path := route if route.size() >= 2 else PackedVector2Array([a, Vector2(x1, y1)])
+		agent = Agent.new(driver if driver != "" else "truck-%d" % job_id, "car", x0, y0)
+		agent.speed = RoadGraph.length(path) / maxf(1.0, dur - StashNet.TRUCK_LOAD_S)
+		agent.queue(Agent.Task.new("load", a, StashNet.TRUCK_LOAD_S))
+		agent.queue(Agent.Task.new("drive", Vector2(x1, y1), 0.0, path))
+
+	func sync(now: float) -> void:
+		if agent == null:
+			return
+		var cur := agent.current()
+		var elapsed := dur
+		if cur != null:
+			elapsed = agent.working_s() if cur.kind == "load" else StashNet.TRUCK_LOAD_S + agent.s / agent.speed_ms()
+		t0 = now - elapsed
+
+	## Stuck for `seconds` (pulled over, waiting out a fight): the clock stops for it.
+	func hold(seconds: float) -> void:
+		if agent != null:
+			agent.hold(seconds)
+		else:
+			t0 += seconds
+
+	## Metres of road still to go, for the roster.
+	func left_m() -> float:
+		if agent != null and agent.current() != null and agent.current().kind == "drive":
+			return agent.left_m()
+		return 0.0
+
 	func pos(now: float) -> Array:
+		if agent != null:
+			return [agent.x, agent.y]
 		var f := clampf((now - t0 - StashNet.TRUCK_LOAD_S) / maxf(1.0, dur - StashNet.TRUCK_LOAD_S), 0.0, 1.0)
 		if route.size() >= 2:
 			var p := RoadGraph.along(route, f * RoadGraph.length(route))
@@ -146,6 +184,11 @@ func update(dt: float, now: float, police_units: Array) -> Array:
 		s.heat = maxf(0.0, s.heat - dt * HEAT_DECAY_MIN / 60.0)
 		s.intel = maxf(0.0, s.intel - dt * INTEL_DECAY_MIN / 60.0)
 	var done := []
+	for t in trucks:
+		if t.agent != null:
+			if t.agent.update(dt) == "drive":
+				t.arrived = true
+			t.sync(now)
 	for t in trucks.duplicate():
 		var p: Array = t.pos(now)
 		var why := ""
@@ -159,7 +202,7 @@ func update(dt: float, now: float, police_units: Array) -> Array:
 			trucks.erase(t)
 			get_stash(t.stash).heat += HEAT_SEIZED
 			done.append([t, "seized", why])
-		elif t.frac(now) >= 1.0:
+		elif t.arrived or t.frac(now) >= 1.0:
 			trucks.erase(t)
 			get_stash(t.stash).heat += t.heat
 			done.append([t, "delivered", ""])

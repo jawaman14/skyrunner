@@ -115,6 +115,21 @@ Second wave, larger features:
       waiting out a task's duration, running a queue in order, idle with nothing queued, `clear()`,
       and a car agent actually following the city map's road graph (never a shorter path than the
       crow flies).
+    - **(2) done:** every stash truck has a driver's `Agent` (`StashNet.Truck.start_agent`, from
+      `Session._truck_out` and `Logistics._dispatch`, once the route, driver and duration are settled): a `load` task at the yard for TRUCK_LOAD_S, then a
+      `drive` along the truck's road route (a task can now carry its own planned `route`; an agent
+      has its own `speed`, carries leftover time across tasks, and can be `hold()`-ed). The truck is
+      delivered when its agent arrives. The agent is the authority for progress; `t0` is derived from
+      it each tick (`Truck.sync`), so the ground war's readers of `t0`/`dur` and the logistics view
+      are untouched, and the three places that paused a truck by writing `t0` now call
+      `Truck.hold(seconds)`. The hiring hall's roster says where a driver is ("driving a truck, 3.2 km
+      to go"). `Agent.ENABLED` is true now; the Python-replay parity tests turn it off.
+      **No balance move by design - and measured:** live_balance.gd -- 40 3 with agents on vs off is
+      identical in 8 of 9 configs; logistics (where trucks matter) moves $54,538 -> $54,627 (0.16%,
+      tick-level noise). tests/test_agent.gd (9): an agent-driven truck arrives within 0.1 s of its
+      old timer on a bent road and a straight line, a 30 s pull-over costs exactly 30 s, and the
+      truck's fields stay readable for the war; tests/test_logistics.gd: a payroll driver's body is
+      the one on the road. Next: step 3, squads built of agents.
 - **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
   see docs/ROADS.md. Still open there: La Selva has no road, and the balance has to be re-run on it.
 - **Map:**

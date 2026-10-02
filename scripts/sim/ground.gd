@@ -880,7 +880,7 @@ func truck_contacts() -> Array:
 						escort.tactic = "ambush"  # they open up on the checkpoint
 						escort.hidden = true
 						_open(escort, q)
-					t.t0 += TICK_S  # the truck waits while it's fought out
+					t.hold(TICK_S)  # the truck waits while it's fought out
 				elif _should_tail(q, t):
 					q.tactic = "tail"
 					q.order = {"type": "tail", "job_id": t.job_id}
