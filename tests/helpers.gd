@@ -15,6 +15,15 @@ static func golden() -> Dictionary:
 	return _golden
 
 
+## A pressed key event, physical keycode set (what _unhandled_input reads).
+static func key(code: int, shift := false) -> InputEventKey:
+	var ev := InputEventKey.new()
+	ev.physical_keycode = code
+	ev.pressed = true
+	ev.shift_pressed = shift
+	return ev
+
+
 static func inp(held: Array = [], pressed: Array = []) -> ControlMapper.InputFrame:
 	var f := ControlMapper.InputFrame.new()
 	for h in held:

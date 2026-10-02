@@ -150,7 +150,7 @@ are already set up; Godot offers to download the export templates), or
    | F12 | save a feedback bundle for a bug report |
    | Esc | close a menu, or open the pause menu (resume, save, load, settings, quit) |
 
-   F1 in game is the full, current list.
+   F1 in game is the full, current list (scroll it with the mouse wheel).
 4. **Graphics**: the lobby's *Graphics* setting, or start with `--graphics low|medium|high`.
 
 ---
