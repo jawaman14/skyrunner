@@ -20,7 +20,7 @@ static func capture(s: Session) -> Dictionary:
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
-			st[x.id] = {"heat": x.heat, "intel": x.intel, "burned": x.burned}
+			st[x.id] = {"heat": x.heat, "intel": x.intel, "burned": x.burned, "works": x.get("works", {}).duplicate()}
 		d["stashes"] = st
 	if s.logistics != null:
 		var l: Logistics = s.logistics
@@ -83,6 +83,11 @@ static func restore(s: Session, d: Dictionary) -> void:
 				st.heat = float(d.stashes[id].get("heat", 0.0))
 				st.intel = float(d.stashes[id].get("intel", 0.0))
 				st.burned = bool(d.stashes[id].get("burned", false))
+				var w: Dictionary = d.stashes[id].get("works", {})
+				if not w.is_empty():
+					st["works"] = {}
+					for k in w:
+						st.works[str(k)] = int(w[k])
 	if s.logistics != null and d.get("logistics") is Dictionary:
 		var l: Logistics = s.logistics
 		var ld: Dictionary = d.logistics

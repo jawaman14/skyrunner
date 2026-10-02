@@ -218,7 +218,8 @@ Second wave, larger features:
   force watches. **Veteran squads and field orders** are done too (in a PR; DESIGN section 26): squads rank up from the fights they
   survive (Green, Blooded, Veteran, Elite: more fire, steadier nerve, dearer upkeep), and on foot Z / X / C / V hold, call,
   charge or fall back the nearest of our squads. **The rackets** too (in a PR; DESIGN section 27): the streets we hold pay tribute (fair or squeezed, from the phone's
-  collectors) and the rival squads we rout leave prisoners to ransom, turn or release. Next: stash works and the arena.
+  collectors) and the rival squads we rout leave prisoners to ransom, turn or release. **Stash works** (in a PR; DESIGN section 28): a hidden vault and a guard post, two levels each, bought in the logistics menu.
+  Next: the arena.
 - **Saves keep the organisation.** Done (in a PR; the old line here said "boats don't carry over to a new
   game or map", which turned out to be the whole of a save: it kept only money, aircraft, gear, upgrades,
   location, the arsenal, campaign, story and tutorial, and every stash house, crew member, squad and case

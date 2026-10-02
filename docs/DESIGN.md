@@ -841,3 +841,17 @@ bad risk, at the street rate), **G** let them go (half a point of renown a man).
 every 10 minutes (a group under eight is guarded).
 
 The save keeps the terms, the prisoners and the total collected.
+
+## 28. Stash works (Mount & Blade's village improvements)
+
+`scripts/sim/stash_works.gd`. Two works at each live stash house, two levels each, bought from the safe in the
+logistics menu (the row "Build at the house in from"; the `stash_works` command is the boss's, the pilot's and the
+lieutenant's). The levels are kept on the stash (`works`), so a save keeps them and the stash net, the logistics view
+and the raid all read them where they stand.
+
+| Work | Level 1 | Level 2 | Does |
+|---|---|---|---|
+| Hidden vault | $2,500 | $6,000 | a raid carries off 35% less of what is inside, a level; the rest is spirited away to another house (cash straight to the safe) |
+| Guard post | $2,000 | $5,000 | traffic warms the house 20% less, and its heat cools 25% faster, a level |
+
+A burned house cannot be improved. `StashWorks.ENABLED` switches it off (every level then counts as 0).

@@ -181,7 +181,7 @@ func dispatch(job: Jobs.Job, af: Airfield, now: float, pay: int, risk := 0.0) ->
 ## Advance the trucks. Returns [[truck, "delivered" | "seized", why], ...].
 func update(dt: float, now: float, police_units: Array) -> Array:
 	for s in stashes:
-		s.heat = maxf(0.0, s.heat - dt * HEAT_DECAY_MIN / 60.0)
+		s.heat = maxf(0.0, s.heat - dt * HEAT_DECAY_MIN * StashWorks.heat_out(s) / 60.0)
 		s.intel = maxf(0.0, s.intel - dt * INTEL_DECAY_MIN / 60.0)
 	var done := []
 	for t in trucks:
@@ -204,7 +204,7 @@ func update(dt: float, now: float, police_units: Array) -> Array:
 			done.append([t, "seized", why])
 		elif t.arrived or t.frac(now) >= 1.0:
 			trucks.erase(t)
-			get_stash(t.stash).heat += t.heat
+			get_stash(t.stash).heat += t.heat * StashWorks.heat_in(get_stash(t.stash))
 			done.append([t, "delivered", ""])
 	return done
 

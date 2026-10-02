@@ -571,15 +571,43 @@ func _settle(c: Dictionary) -> void:
 	_dispatch(back, at, pos(back.to))
 
 
+## What the vault saved goes to another house (the cash straight to the safe).
+func _spirit_away(site: String, saved: Dictionary, saved_cash: float) -> void:
+	if saved_cash < 1.0 and saved.is_empty():
+		return
+	var to := ""
+	for st in sess.stash_net.live():
+		if st.id != site:
+			to = st.id
+			break
+	var told := []
+	for g in saved:
+		if saved[g] >= 1.0 and to != "":
+			stock[to][g] += saved[g]
+			told.append("%d lb of %s" % [int(saved[g]), g])
+		else:
+			lost.product += saved[g]
+	if saved_cash >= 1.0:
+		sess.money += int(saved_cash)
+		told.append("$%s" % Py.money(int(saved_cash)))
+	if not told.is_empty():
+		sess.say("The vault held: %s spirited away%s." % [", ".join(told), (" to " + name_of(to)) if to != "" else ""])
+
+
 func _raided(site: String) -> void:
 	if not stock.has(site):
 		return
+	var keep := StashWorks.raid_keep(sess.stash_net.get_stash(site))  # a hidden vault: part of it is not found
+	var saved := {}
 	var took := []
 	for g in Trade.GOODS:
 		if stock[site][g] >= 1.0:
-			took.append("%d lb of %s" % [int(stock[site][g]), g])
-			lost.product += stock[site][g]
+			saved[g] = stock[site][g] * keep
+			took.append("%d lb of %s" % [int(stock[site][g] * (1.0 - keep)), g])
+			lost.product += stock[site][g] * (1.0 - keep)
 			stock[site][g] = 0.0
+	var saved_cash: float = cash[site] * keep
+	cash[site] -= saved_cash
 	lost_by.raided += int(cash[site])
 	for g in Trade.GOODS:
 		lost_by.raided += int(stock[site][g] * sess.trade.street_price(g, "town"))
@@ -595,6 +623,7 @@ func _raided(site: String) -> void:
 			lost.product += c.lb
 			lost.cash += int(c.cash)
 			convoys.erase(id)
+	_spirit_away(site, saved, saved_cash)
 	sync()
 	if not took.is_empty():
 		sess.say("The raid took %s." % ", ".join(took))
@@ -735,7 +764,8 @@ func view() -> Dictionary:
 	var sites := []
 	for st in sess.stash_net.stashes:
 		sites.append({"id": st.id, "name": st.name, "market": st.zone, "burned": st.burned, "strip": st.strip,
-			"cocaine": snappedf(stock[st.id].cocaine, 0.1), "marijuana": snappedf(stock[st.id].marijuana, 0.1), "cash": int(cash[st.id])})
+			"cocaine": snappedf(stock[st.id].cocaine, 0.1), "marijuana": snappedf(stock[st.id].marijuana, 0.1), "cash": int(cash[st.id]),
+			"vault": StashWorks.level(st, "vault"), "guard": StashWorks.level(st, "guard")})
 	var trucks := []
 	for t in sess.stash_net.trucks:
 		if convoys.has(t.job_id):
