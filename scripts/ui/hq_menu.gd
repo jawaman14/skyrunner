@@ -75,6 +75,15 @@ func _process(_dt: float) -> void:
 		_squad_detail()
 
 
+## With no season running the orders board has nothing to show, so a solo player's desk would
+## open on a "no season" note with squad command hidden behind Q: open straight into the squads.
+func open() -> void:
+	if not intel and not squad_mode and _view() == null and s.ground != null:
+		_enter_squad_mode()
+	visible = true
+	refresh()
+
+
 func close() -> void:
 	if squad_mode:
 		_leave_squad_mode()
@@ -101,8 +110,8 @@ func refresh() -> void:
 		title.text = "THE BOSS'S DESK"
 		subtitle.text = "Squads"
 		_squad_detail()
-		hints.set_hints([["Q", "back to the desk" if _view() != null else "close", "q"], ["CLICK", "squad", ""],
-			["RIGHT-CLICK", "send it", ""], ["ESC", "close", "esc"]])
+		hints.set_hints(([["Q", "back to the orders", "q"]] if _view() != null else []) + [["CLICK", "squad", ""],
+			["RIGHT-CLICK", "send it", ""], ["ESC", "leave the desk", "esc"]])
 		return
 	var ss = _view()
 	if ss == null:
