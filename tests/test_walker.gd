@@ -4,6 +4,10 @@ extends TestCase
 ## frames (the runner awaits each test).
 
 
+func after_each() -> void:
+	World.use_map(0)  # the collision test loads the city map; the world tests expect the classic island
+
+
 func _tree() -> SceneTree:
 	return Engine.get_main_loop()
 
