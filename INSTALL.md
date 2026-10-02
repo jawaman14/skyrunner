@@ -177,6 +177,7 @@ To start completely fresh, delete that folder.
 | Problem | Fix |
 |---|---|
 | **Black window, crash at start, or "Vulkan" errors** | Your GPU or driver lacks Vulkan. Start with the OpenGL renderer: `Skyrunner.exe --rendering-driver opengl3` (make a shortcut with that in *Target*), or `./Skyrunner.x86_64 --rendering-driver opengl3`. Update your graphics driver too. |
+| **Windows: crashes a few seconds after start on a good GPU** (exit code `0xC0000374`) | Usually a Vulkan layer that other software injects into every game, not the GPU. The usual culprit is a leftover **Vulkan Configurator** (vkconfig, from the Vulkan SDK) override that forces the validation layer on: open *Vulkan Configurator* and set it to let applications control layers, or close it. To confirm, start the game from a Command Prompt after `set VK_LOADER_LAYERS_DISABLE=~implicit~`: if it runs, a layer was to blame. The OpenGL renderer above also works around it. |
 | **Very low frame rate** | Start with `-- --graphics low`, close other 3D apps, and on laptops make sure the game runs on the dedicated GPU. F6 shows the frame times. |
 | **"Couldn't load project data" / the game quits at once** | `Skyrunner.pck` isn't next to the executable, or the zip wasn't fully extracted. Extract the whole zip again. |
 | **Linux: "Permission denied"** | `chmod +x Skyrunner.x86_64` |
