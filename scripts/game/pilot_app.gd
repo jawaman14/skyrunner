@@ -39,6 +39,7 @@ Radio    F7 Radio Costa 88: synth music out of 1985     In the car: R radio on /
 Learn    F10 skip a tutorial step   SHIFT+F10 tutorial on / off (the lobby's Tutorial box, or --tutorial)
 Screen   F9 filter: off / VHS / colour-blindness simulations (protan, deutan, tritan, mono)
 Beta     F12 feedback bundle: a zip of what happened (build, machine, flight, log, screenshot) to send back
+Squad    on foot, with a ground war: Z hold  X come to me  C charge  V fall back (the nearest of your squads)
 On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mouse look
          Guns (with a ground war): 1-4 pistol / rifle / machine gun / RPG from the armoury  H holster  R reload  LMB fire
          CAR  a parked car stands beside the aircraft: E at it to get in, W / S throttle and brake, A / D steer,
@@ -379,6 +380,14 @@ func _unhandled_input(ev: InputEvent) -> void:
 					walker.toggle_torch()
 				KEY_T:
 					_open("phone")  # the phone: the crew, the buyers, the lawyer, the desk without the walk
+				KEY_Z:
+					_field_order("hold")
+				KEY_X:
+					_field_order("come")
+				KEY_C:
+					_field_order("charge")
+				KEY_V:
+					_field_order("fall_back")
 				KEY_ESCAPE:
 					if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 						Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -897,6 +906,14 @@ func _car_checkpoints() -> void:
 		var c = s.police.case("runner")
 		c.suspicion = minf(100.0, c.suspicion + CHECKPOINT_HEAT)
 		s.say("You ran the police checkpoint at %s." % s.ground.place_name(q.x, q.y))
+
+
+## On foot, with a ground war: Z hold, X come to me, C charge, V fall back: the nearest of our squads is told.
+func _field_order(what: String) -> void:
+	var p := walker.global_position
+	var r: Array = s.command(Roles.PILOT, "field_order", {"what": what, "x": p.x, "y": -p.z})
+	if not r[0]:
+		s.say(r[1])
 
 
 ## R, and the tuning keys, in the car: the radio on / off, the next station up, the next down.

@@ -2351,6 +2351,17 @@ func _cmd_squad_order(role: String, a: Dictionary):
 	return null
 
 
+## On foot, an order to the nearest of our squads: {what: come | hold | charge | fall_back, x, y} (where the man stands).
+func _cmd_field_order(role: String, a: Dictionary):
+	if ground == null:
+		return "No ground war here: nobody to command."
+	var r: Array = ground.field_order(_faction_of(role), Vector2(float(_num(a, "x", 0.0)), float(_num(a, "y", 0.0))), str(a.get("what", "")))
+	if r[0] != "":
+		return r[0]
+	say(str(r[1]))
+	return null
+
+
 func _cmd_recruit_squad(role: String, a: Dictionary):
 	if ground == null:
 		return "No ground war here."
