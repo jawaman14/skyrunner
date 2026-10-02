@@ -21,7 +21,8 @@ const MENU_KEYS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT:
 const HELP_TEXT := """SKYRUNNER - controls
 
 Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewheel
-         R/F or PGUP/PGDN throttle   X cut throttle   Z full throttle
+         Flight assist (ESC menu): with no key held the wings level and the pitch holds; taps are gentle
+         R/F or PGUP/PGDN throttle (hold; a tap is a few %)   Z ramp to full   X ramp to idle   (Z Z / X X: instant)
          G flaps down   T flaps up   [ / ] pitch trim   B or SPACE brakes
          Y toggle mouse yoke (mouse position = stick)   joystick / gamepad work too
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
@@ -132,6 +133,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	add_child(effects)
 	ControlsConfig.ensure()  # the flight keys as actions, with the player's saved bindings
 	var look := ControlsConfig.settings()
+	s.keyboard_assist = bool(look.assist)
 	UIStyle.set_palette(look.palette)
 	Speech.set_enabled(bool(look.speak))
 	screen_filter = ScreenFilter.new()
@@ -541,7 +543,7 @@ func open_pause() -> void:
 		return
 	var hosting := server != null
 	pause_menu = PauseMenu.new().setup({"save": s.save_path != "", "load": s.save_path != "" and not hosting,
-		"graphics": true, "controls": true, "lobby": true},
+		"graphics": true, "controls": true, "lobby": true, "assist": true},
 		"The game runs on: remote seats are live." if hosting else "Paused")
 	ui.add_child(pause_menu)
 	pause_menu.chosen.connect(_on_pause_choice)
@@ -566,6 +568,8 @@ func _on_pause_choice(action: String) -> void:
 	match action:
 		"resume":
 			close_pause()
+		"assist":
+			s.keyboard_assist = bool(ControlsConfig.settings().assist)
 		"save":
 			s.save()
 			pause_menu.say("Saved." if s.parked else "Saved: in the air, so you'll start again at %s." % World.airfield(s.save_location()).name)

@@ -167,13 +167,15 @@ static func load_file(path := PATH) -> bool:
 
 # ------------------------------------------------------------ the look
 ## {palette: "neon"|"safe", filter: ScreenFilter mode, speak: read aloud,
-## graphics: the preset a game loads with, volume: the master volume 0..1}
+## graphics: the preset a game loads with, volume: the master volume 0..1,
+## assist: keyboard flight assist (wings level, pitch hold)}
 static func settings() -> Dictionary:
 	var cf := ConfigFile.new()
 	cf.load(SETTINGS_PATH)
 	return {"palette": cf.get_value("look", "palette", "neon"), "filter": cf.get_value("look", "filter", "off"),
 		"speak": cf.get_value("look", "speak", false), "tutorial_seen": cf.get_value("look", "tutorial_seen", false),
-		"graphics": cf.get_value("look", "graphics", "high"), "volume": cf.get_value("look", "volume", 1.0)}
+		"graphics": cf.get_value("look", "graphics", "high"), "volume": cf.get_value("look", "volume", 1.0),
+		"assist": cf.get_value("look", "assist", true)}
 
 
 static func save_setting(key: String, value) -> void:

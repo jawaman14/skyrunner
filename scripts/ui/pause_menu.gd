@@ -20,6 +20,7 @@ var _pending := ""  ## an action waiting for the confirm box
 var _graphics_btn: Button = null
 var _volume_btn: Button = null
 var _palette_btn: Button = null
+var _assist_btn: Button = null
 var _offer := {}
 
 
@@ -59,6 +60,8 @@ func setup(offer: Dictionary, note := "Paused") -> PauseMenu:
 	v.add_child(UIStyle.caption("Settings"))
 	if offer.get("graphics", false):
 		_graphics_btn = _add(v, "", func(): _step_graphics(1))
+	if offer.get("assist", false):
+		_assist_btn = _add(v, "", _toggle_assist)
 	_volume_btn = _add(v, "", func(): _step_volume(1))
 	_palette_btn = _add(v, "", _toggle_palette)
 	if offer.get("controls", false):
@@ -106,6 +109,8 @@ func _refresh() -> void:
 	var st := ControlsConfig.settings()
 	if _graphics_btn != null:
 		_graphics_btn.text = "Graphics: %s  (next load)" % st.graphics
+	if _assist_btn != null:
+		_assist_btn.text = "Flight assist: %s" % ("on" if bool(st.assist) else "off")
 	_volume_btn.text = "Volume: %d%%" % int(round(float(st.volume) * 100.0))
 	_palette_btn.text = "Colours: %s" % ("colour-safe" if UIStyle.palette == "safe" else "neon")
 
@@ -115,6 +120,14 @@ func _step_graphics(dir: int) -> void:
 	var i := GRAPHICS.find(str(ControlsConfig.settings().graphics))
 	ControlsConfig.save_setting("graphics", GRAPHICS[wrapi(i + dir, 0, GRAPHICS.size())])
 	say("Graphics change when a game loads: Load last save to see it now.")
+	_refresh()
+
+
+func _toggle_assist() -> void:
+	ControlsConfig.save_setting("assist", not bool(ControlsConfig.settings().assist))
+	chosen.emit("assist")  # the owner applies it live; the menu stays open
+	say("Flight assist %s: %s" % ["on" if bool(ControlsConfig.settings().assist) else "off",
+		"wings level and pitch hold when no key is held." if bool(ControlsConfig.settings().assist) else "raw keyboard control."])
 	_refresh()
 
 
