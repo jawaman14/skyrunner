@@ -42,10 +42,26 @@ extends RefCounted
 ## sessions that ask (live play: ground_war: true).
 
 static var ENABLED := true
+static var ENGAGEMENT := true  ## fights have geometry: ranges, closing in, each man's own distance (docs/ROADMAP.md, Turf war)
+static var SMART_ROUTES := true  ## routes steer round known checkpoints and hot spots, and climb less (docs/ROADMAP.md, Pathfinding)
 
 const TICK_S := 1.0
 const ROUND_S := 2.0
 const THINK_S := 30.0
+const RANGE_SCALE := 4.0  ## every weapon's effective range x this: the calibration knob (BALANCE entry 37). Arsenal's ranges are first-person ones; a squad fight starts 250 m apart, and at 1x the war came out 7% richer for the organisation and Los Cuervos lost 28% fewer men, at 4x it is within noise of the flat model on every count
+const CLOSE_MS := 3.0  ## m/s a squad on foot advances in a fight (fire and move)
+const WANT_FRAC := 0.6  ## a squad wants to fight at this fraction of its best weapon's range ...
+const WANT_MIN_M := 25.0  ## ... but not closer than this
+const AVOID_M := 400.0  ## a road passing this close to a police checkpoint is one to avoid
+const AVOID_COST_M := 4000.0  ## ... and costs this many extra metres to use
+const HOT_AVOID_M := 300.0  ## ... likewise a place where shots were fired in the last 15 minutes
+const HOT_COST_M := 2000.0
+const GRADE_FREE := 0.05  ## a climb steeper than this slows a column ...
+const SLOPE_COST := 8.0  ## ... by this many extra metres per metre for each unit of grade over it
+const FILE_GAP := 6.0  ## metres between men walking in file
+const LINE_GAP := 5.0  ## ... and standing in a firing line
+const RING_R := 4.0  ## ... and standing around their squad's spot
+const CAR_RING_R := 4.5  ## ... or around the vehicle they got out of
 const CONTACT_M := 250.0
 const SIGHT_M := 1500.0
 const HIDDEN_M := 150.0
@@ -60,6 +76,12 @@ const ORG_RESERVE := 30000  ## the organisation's AI keeps this much before it s
 const ORG_MIN_SQUADS := 1  ## ... and recruits past one squad only when Los Cuervos outnumber it
 const ORG_RECRUIT_S := 1800.0  ## ... a squad at most every 30 minutes, not a new army every time one dies
 const UPKEEP_MIN := 2.0  ## $ per man per minute
+static var VETERANS := true  ## squads learn from the fights they survive (Mount & Blade's troop tiers)
+const RANKS := ["Green", "Blooded", "Veteran", "Elite"]
+const RANK_XP := [0.0, 4.0, 10.0, 20.0]  ## experience for each rank: a surviving fight is 1, a winning one 2
+const VET_FIRE := 0.07  ## more fire per man for each rank
+const VET_NERVE := 0.04  ## a squad breaks at morale 0.3 less this per rank
+const VET_UPKEEP := 0.25  ## and costs this much more per man per rank
 const HOSTILE := {"org": ["police", "rival"], "rival": ["police", "org"], "police": ["org", "rival"]}
 const DOCTRINE := {"org": "guerrilla", "rival": "guerrilla", "police": "narcotics"}
 const MORALE0 := {"org": 0.75, "rival": 0.75, "police": 0.85}
@@ -86,11 +108,34 @@ class Squad:
 	var rounds := 0  ## rounds fought in this contact
 	var until := 0.0  ## a tactic's timer (sim seconds)
 	var human := false  ## ordered by a human commander (the AI leaves it alone)
+	var members: Array = []  ## one Agent per man (Agent.ENABLED): where each of them stands, see GroundWar._sync_members
 	var tag := ""  ## "family": soldiers lent by the Morettis (drawn in their suits)
 	var home := Vector2.ZERO
+	var xp := 0.0  ## what it has learned: fights survived (GroundWar._learn)
 
 	func pos() -> Vector2:
 		return Vector2(x, y)
+
+	## 0 Green ... 3 Elite, from the experience.
+	func rank() -> int:
+		if not GroundWar.VETERANS:
+			return 0
+		var r := 0
+		for i in GroundWar.RANK_XP.size():
+			if xp >= float(GroundWar.RANK_XP[i]):
+				r = i
+		return r
+
+	func rank_name() -> String:
+		return GroundWar.RANKS[rank()]
+
+	## The multiple a veteran's fire gets.
+	func vet() -> float:
+		return 1.0 + GroundWar.VET_FIRE * rank()
+
+	## Where the men are (empty with Agent off): the Agents' positions, rounded for the wire.
+	func men_at() -> Array:
+		return members.map(func(m): return [snappedf(m.x, 0.1), snappedf(m.y, 0.1)])
 
 	func speed() -> float:
 		var v: float = GroundWar.SPEED[kind]
@@ -99,7 +144,8 @@ class Squad:
 	func dict() -> Dictionary:
 		return {"id": id, "faction": faction, "kind": kind, "men": men, "men0": men0, "x": snappedf(x, 0.1),
 			"y": snappedf(y, 0.1), "state": state, "order": order.get("type", ""), "tactic": tactic,
-			"hidden": hidden, "morale": snappedf(morale, 0.01), "loadout": loadout.duplicate(), "ammo": ammo, "tag": tag,
+			"hidden": hidden, "rank": rank(), "xp": snappedf(xp, 0.1), "morale": snappedf(morale, 0.01), "loadout": loadout.duplicate(), "ammo": ammo, "tag": tag,
+			"at": men_at() if members.size() == men else [],
 			"route": Array(route.slice(0, 12)).map(func(p): return [snappedf(p.x, 1.0), snappedf(p.y, 1.0)])}
 
 
@@ -235,6 +281,59 @@ func cover(q: Squad) -> float:
 	return c
 
 
+## How much of its full fire a weapon of range `r` has at distance `d`: all of it inside half the range,
+## falling to 15% at the range itself and to nothing 30% beyond.
+static func eff(d: float, r: float) -> float:
+	if d <= 0.5 * r:
+		return 1.0
+	if d <= r:
+		return lerpf(1.0, 0.15, (d - 0.5 * r) / (0.5 * r))
+	if d <= 1.3 * r:
+		return lerpf(0.15, 0.0, (d - r) / (0.3 * r))
+	return 0.0
+
+
+## The longest effective range among a squad's weapons (a man with none can only throw things).
+static func best_range(q: Squad) -> float:
+	var best := 0.0
+	for t in q.loadout:
+		if int(q.loadout[t]) > 0:
+			best = maxf(best, float(Arsenal.TIERS[t].range))
+	return maxf(best, 20.0) * RANGE_SCALE
+
+
+## The distance a squad tries to fight at.
+static func want_m(q: Squad) -> float:
+	return clampf(WANT_FRAC * best_range(q), WANT_MIN_M, 500.0)
+
+
+## Firepower per man against `enemy` as things stand: each man's weapon at his own distance to the
+## nearest man he could shoot at (the squad centres' distance when there are no bodies), the ammunition
+## and the nerve as in fire(). With ENGAGEMENT off, just fire().
+func fire_at(q: Squad, enemy: Squad) -> float:
+	if not ENGAGEMENT:
+		return fire(q)
+	var guns := Arsenal.guns(q.loadout, q.men)
+	var centre := q.pos().distance_to(enemy.pos())
+	var bodies: bool = q.members.size() == q.men and enemy.members.size() == enemy.men and enemy.men > 0
+	var total := 0.0
+	for k in q.men:
+		var d := centre
+		if bodies:
+			var mp: Vector2 = (q.members[k] as Agent).pos()
+			d = INF
+			for m: Agent in enemy.members:
+				d = minf(d, mp.distance_to(m.pos()))
+		var tier: String = guns[k]
+		var power: float = Arsenal.UNARMED_FIRE if tier == "" else float(Arsenal.TIERS[tier].fire)
+		var reach: float = 50.0 if tier == "" else float(Arsenal.TIERS[tier].range)
+		total += power * eff(d, reach * RANGE_SCALE)
+	var p := total / maxf(1.0, float(q.men))
+	if q.ammo <= 0:
+		p *= 0.2
+	return p * (0.4 + 0.6 * q.morale) * q.vet()
+
+
 func safe_zone(q: Squad) -> bool:
 	return cover(q) <= 0.6
 
@@ -244,7 +343,7 @@ func fire(q: Squad) -> float:
 	var p := Arsenal.power(q.loadout, q.men)
 	if q.ammo <= 0:
 		p *= 0.2
-	return p * (0.4 + 0.6 * q.morale)
+	return p * (0.4 + 0.6 * q.morale) * q.vet()
 
 
 ## Lanchester strength: men x fire (square law: numbers count twice).
@@ -345,9 +444,37 @@ func disband(q: Squad) -> void:
 	squads.erase(q)
 
 
+## The road from a to b for faction `f`: the shortest one, unless SMART_ROUTES, when it also costs
+## the climbs and, for the organisation and Los Cuervos, the police checkpoints they know of and
+## the places that are hot - a smuggler's route goes round the roadblock if there is a way round.
+func route(f: String, a: Vector2, b: Vector2) -> PackedVector2Array:
+	if not SMART_ROUTES:
+		return graph.route(a, b)
+	return graph.route(a, b, _penalty(f))
+
+
+func _penalty(f: String) -> Callable:
+	var zones := []  ## [centre, radius, cost in metres]
+	if f != "police":
+		for q: Squad in squads:
+			if q.faction == "police" and q.tactic == "checkpoint" and q.state != "gone":
+				zones.append([q.pos(), AVOID_M, AVOID_COST_M])
+		if f == "org":
+			for h in hot_spots:
+				zones.append([Vector2(h[1], h[2]), HOT_AVOID_M, HOT_COST_M])
+	var w := world
+	return func(a: Vector2, b: Vector2, metres: float) -> float:
+		var grade: float = absf(w.ground(b.x, b.y) - w.ground(a.x, a.y)) / maxf(metres, 1.0)
+		var extra: float = metres * SLOPE_COST * maxf(0.0, grade - GRADE_FREE)
+		for z in zones:
+			if RoadGraph.seg_distance(a, b, z[0]) < float(z[1]):
+				extra += float(z[2])
+		return extra
+
+
 ## Send a squad somewhere by road.
 func go(q: Squad, to: Vector2) -> void:
-	q.route = graph.route(q.pos(), to)
+	q.route = route(q.faction, q.pos(), to)
 	q.s = 0.0
 	if q.state not in ["fighting", "routed"]:
 		q.state = "moving"
@@ -367,7 +494,7 @@ func order(q: Squad, o: Dictionary) -> String:
 		"melt":
 			var safe := _nearest_cover(q.pos())
 			go(q, safe)
-		"patrol_zone", "guard", "attack", "raid", "checkpoint", "ambush", "harass", "decoy", "stakeout", "buy_bust", "escort", "tail":
+		"patrol_zone", "guard", "attack", "raid", "checkpoint", "ambush", "harass", "decoy", "stakeout", "buy_bust", "escort", "tail", "move":
 			if target == null:
 				return "Where?"
 			go(q, target)
@@ -382,6 +509,53 @@ func order(q: Squad, o: Dictionary) -> String:
 	q.hidden = t in ["melt", "ambush", "stakeout", "buy_bust"]
 	q.until = sess.time + (600.0 if t in ["melt", "harass"] else 1800.0)
 	return ""
+
+
+const FIELD_RANGE_M := 250.0  ## the squad you can give an order to on foot is the nearest within this
+const CHARGE_RANGE_M := 450.0  ## and what it can be sent at, within this of the squad
+
+## An order from the man on the ground (Mount & Blade's battle commands): the nearest squad of `f` to `at` holds,
+## comes to `at`, charges the nearest enemy it can see, or falls back to cover. Returns [error, what was said].
+func field_order(f: String, at: Vector2, what: String) -> Array:
+	var near: Squad = null
+	for q: Squad in of(f):
+		if q.state == "gone":
+			continue
+		if q.pos().distance_to(at) <= FIELD_RANGE_M and (near == null or q.pos().distance_to(at) < near.pos().distance_to(at)):
+			near = q
+	if near == null:
+		return ["No squad of ours within %d m." % int(FIELD_RANGE_M), ""]
+	var o := {}
+	var text := ""
+	match what:
+		"come":
+			o = {"type": "move", "x": at.x, "y": at.y}
+			text = "%s is coming to you." % near.id
+		"hold":
+			o = {"type": "hold"}
+			text = "%s is holding here." % near.id
+		"fall_back":
+			o = {"type": "melt"}
+			text = "%s is falling back to cover." % near.id
+		"charge":
+			var tgt: Squad = null
+			for e: Squad in squads:
+				if not (e.faction in HOSTILE[f]) or e.state == "gone" or e.hidden:
+					continue
+				var d := e.pos().distance_to(near.pos())
+				if d <= CHARGE_RANGE_M and (tgt == null or d < tgt.pos().distance_to(near.pos())):
+					tgt = e
+			if tgt == null:
+				return ["Nothing in sight to charge.", ""]
+			o = {"type": "attack", "x": tgt.x, "y": tgt.y}
+			text = "%s charges %s!" % [near.id, tgt.id]
+		_:
+			return ["Unknown field order.", ""]
+	var err := order(near, o)
+	if err != "":
+		return [err, ""]
+	near.human = true
+	return ["", text]
 
 
 func _target_xy(o: Dictionary):
@@ -456,10 +630,12 @@ func update(dt: float) -> void:
 	var step := _t
 	_t = 0.0
 	_move(step)
+	_close_in(step)
 	_contacts()
 	_trucks(step)
 	_control(step)
 	_upkeep(step)
+	_sync_members()
 	for f in commanders:
 		var c: Commander = commanders[f]
 		if f == "rival":
@@ -516,6 +692,73 @@ func _move(dt: float) -> void:
 			else:
 				q.state = "holding"
 			_arrived(q)
+
+
+## Every squad is its men: one Agent each, standing where the squad's bookkeeping says they are.
+## The squad stays the authority (its x, y, route and s are written in a dozen places and the
+## firefight odds read them), so this follows it rather than leading: on foot the men string out
+## behind the point man along the road they are walking; in a car or truck they are in the vehicle;
+## stood still they ring the squad's spot, and in a firefight they spread across the line of fire.
+## Casualties and arrests take men off the back of the file. Nothing here changes an outcome - it is
+## what the 3D world draws and what the next step (contact from who is physically there) reads.
+func _sync_members() -> void:
+	if not Agent.ENABLED:
+		return
+	for q: Squad in squads:
+		var n: int = maxi(0, q.men)
+		while q.members.size() > n:
+			q.members.pop_back()
+		while q.members.size() < n:
+			var k: int = q.members.size()
+			q.members.append(Agent.new("%s.%d" % [q.id, k + 1], "foot" if q.kind == "foot" else "car", q.x, q.y))
+		var marching: bool = q.state in ["moving", "routed"] and q.route.size() >= 2
+		var facing := Vector2.ZERO  # the way a firefight is
+		if q.fight != null:
+			var other: Squad = q.fight.b if q.fight.a == q else q.fight.a
+			facing = other.pos() - q.pos()
+		for i in n:
+			var m: Agent = q.members[i]
+			var at := q.pos()
+			var label := "hold"
+			if marching:
+				label = "march"
+				if q.kind == "foot":
+					at = RoadGraph.along(q.route, maxf(0.0, q.s - float(i) * FILE_GAP))
+			elif facing != Vector2.ZERO:
+				label = "fight"
+				var across := facing.normalized().orthogonal()
+				at += across * ((float(i) - float(n - 1) / 2.0) * LINE_GAP)
+			elif n > 1 or q.kind != "foot":
+				# stood round the squad's spot - clear of the car's bodywork if it came in one
+				var ang := TAU * float(i) / float(maxi(n, 1))
+				at += Vector2(cos(ang), sin(ang)) * (RING_R if q.kind == "foot" else CAR_RING_R)
+			m.x = at.x
+			m.y = at.y
+			m.clear()
+			m.tasks.append(Agent.Task.new(label, q.pos()))
+
+
+## Squads in a fight close on each other until each is at the distance its weapons like (a rifle
+## squad stops well out, a pistol squad keeps coming): fire and move, CLOSE_MS metres a second. A
+## vehicle stays where it is.
+func _close_in(dt: float) -> void:
+	if not ENGAGEMENT:
+		return
+	for f in fights:
+		if f.over:
+			continue
+		for pair in [[f.a, f.b], [f.b, f.a]]:
+			var q: Squad = pair[0]
+			var other: Squad = pair[1]
+			if q.kind != "foot" or q.state != "fighting":
+				continue
+			var gap := q.pos().distance_to(other.pos())
+			var step := minf(CLOSE_MS * dt, gap - want_m(q))
+			if step <= 0.0:
+				continue
+			var p := q.pos().move_toward(other.pos(), step)
+			q.x = p.x
+			q.y = p.y
 
 
 func _arrived(q: Squad) -> void:
@@ -617,11 +860,13 @@ func _open(a: Squad, b: Squad) -> void:
 	fights.append(f)
 	fights_total += 1
 	hot_spots.append([sess.time, f.x, f.y])
-	var place := _place_name(f.x, f.y)
+	var place := place_name(f.x, f.y)
 	_say("both", "Shots fired %s: %s vs %s%s" % [place, a.id, b.id, " - an ambush!" if f.surprise != "" else ""])
 
 
-func _place_name(x: float, y: float) -> String:
+## Where (x, y) reads in a message: a stash house, near a strip, or the market it's in.
+## Public (not an underscore method): Payroll's death notices use it too.
+func place_name(x: float, y: float) -> String:
 	if sess.stash_net != null:
 		for st in sess.stash_net.stashes:
 			if PyMath.hypot(st.x - x, st.y - y) < 600:
@@ -670,7 +915,7 @@ func _rounds(step: float) -> void:
 		if f.over:
 			continue
 		for q in [a, b]:
-			if q.men <= 0 or q.men <= int(0.6 * q.men0) and q.morale < 0.5 or q.morale < 0.3:
+			if q.men <= 0 or q.men <= int(0.6 * q.men0) and q.morale < 0.5 or q.morale < 0.3 - VET_NERVE * q.rank():
 				_rout(q, f)
 				break
 
@@ -682,7 +927,7 @@ func _losses(shooter: Squad, target: Squad, f: Fight) -> int:
 	if shooter.faction == "police" and f.rounds <= 1 and f.surprise != "police" and shooter.order.get("type", "") != "raid":
 		return 0
 	var mult := 2.5 if f.surprise == shooter.faction else 1.0
-	var exp := K * shooter.men * fire(shooter) * cover(target) * mult * ROUND_S
+	var exp := K * shooter.men * fire_at(shooter, target) * cover(target) * mult * ROUND_S
 	# vehicles: only RPGs and machine guns stop them quickly
 	if target.kind != "foot" and not Arsenal.anti_vehicle(shooter.loadout) and not shooter.loadout.has("mg"):
 		exp *= 0.7
@@ -717,6 +962,8 @@ func _drop_weapons(q: Squad, lost: int, enemy: Squad) -> void:
 
 
 func _break_off(q: Squad, f: Fight, why: String) -> void:
+	_learn(q, 1.0)
+	_learn(f.b if q == f.a else f.a, 1.0)
 	q.fight = null
 	q.state = "moving"
 	q.hidden = true
@@ -731,6 +978,20 @@ func _break_off(q: Squad, f: Fight, why: String) -> void:
 	_say("both", "%s broke contact (%s)" % [q.id, why])
 
 
+## A fight survived teaches. A squad that has lost half its men has lost its best first: its experience halves.
+func _learn(q: Squad, points: float) -> void:
+	if not VETERANS or q.men <= 0:
+		return
+	var before := q.rank()
+	if q.men * 2 < q.men0:
+		q.xp *= 0.5
+	q.xp += points
+	if q.rank() > before:
+		var side := "runner" if q.faction == "org" else ("law" if q.faction == "police" else "")
+		if side != "":
+			_say(side, "%s is now %s." % [q.id, q.rank_name().to_lower()])
+
+
 func _rout(q: Squad, f: Fight) -> void:
 	var winner: Squad = f.b if q == f.a else f.a
 	f.over = true
@@ -739,6 +1000,9 @@ func _rout(q: Squad, f: Fight) -> void:
 	winner.fight = null
 	winner.state = "holding"
 	winner.morale = minf(1.0, winner.morale + 0.1)
+	_learn(winner, 2.0)
+	if q.men > 0:
+		_learn(q, 1.0)
 	if q.men <= 0:
 		_gone(q)
 	elif winner.faction == "police":
@@ -762,11 +1026,13 @@ func _rout(q: Squad, f: Fight) -> void:
 		if "org" in [q.faction, winner.faction]:
 			var c = sess.police.case("runner")
 			c.suspicion = minf(100.0, c.suspicion + 8.0 * lost_p)
-		_say("law", "Officers down: %d. Every unit to %s" % [lost_p, _place_name(f.x, f.y)])
+		_say("law", "Officers down: %d. Every unit to %s" % [lost_p, place_name(f.x, f.y)])
 	# turf: winning a gang fight takes the street
 	if winner.faction != "police" and q.faction != "police":
 		var m := market_at(f.x, f.y)
 		control[m][winner.faction] += 60.0 * winner.men
+	if winner.faction == "org" and q.faction == "rival" and q.men > 0 and sess.rackets != null:
+		sess.rackets.capture(q)  # some of the beaten are taken
 	_say("both", "%s routed %s%s" % [winner.id, q.id, (" - %d arrested" % f.arrests) if f.arrests else ""])
 
 
@@ -861,7 +1127,7 @@ func truck_contacts() -> Array:
 	for t in sess.stash_net.trucks.duplicate():
 		var p: Array = t.pos(sess.time)
 		var tp := Vector2(p[0], p[1])
-		if sess.time - t.t0 < StashNet.TRUCK_LOAD_S:
+		if sess.time - t.t0 < t.lead_s():
 			continue
 		var escort = Py.first(squads, func(q): return (q.faction == "org" and q.order.get("type", "") == "escort"
 			and int(q.order.get("job_id", -1)) == t.job_id and q.state != "gone"))
@@ -878,7 +1144,7 @@ func truck_contacts() -> Array:
 						escort.tactic = "ambush"  # they open up on the checkpoint
 						escort.hidden = true
 						_open(escort, q)
-					t.t0 += TICK_S  # the truck waits while it's fought out
+					t.hold(TICK_S)  # the truck waits while it's fought out
 				elif _should_tail(q, t):
 					q.tactic = "tail"
 					q.order = {"type": "tail", "job_id": t.job_id}
@@ -958,7 +1224,7 @@ func _trucks(dt: float) -> void:
 				_say("law", "%s followed a truck to %s" % [q.id, st.name])
 			continue
 		# shadow it along its own road, a few hundred metres back
-		var d: float = clampf((sess.time - t.t0 - StashNet.TRUCK_LOAD_S) / maxf(1.0, t.dur - StashNet.TRUCK_LOAD_S), 0.0, 1.0)
+		var d: float = clampf((sess.time - t.t0 - t.lead_s()) / maxf(1.0, t.dur - t.lead_s()), 0.0, 1.0)
 		var lag: PackedVector2Array = t.route if t.route.size() >= 2 else PackedVector2Array([Vector2(t.x0, t.y0), Vector2(t.x1, t.y1)])
 		var spot := RoadGraph.along(lag, maxf(0.0, d * RoadGraph.length(lag) - 350.0))
 		if q.pos().distance_to(spot) < 900.0:
@@ -1042,7 +1308,7 @@ func turf_delta(zone: String) -> float:
 
 func _upkeep(dt: float) -> void:
 	for q in squads:
-		var c: float = q.men * UPKEEP_MIN * dt / 60.0
+		var c: float = q.men * UPKEEP_MIN * (1.0 + VET_UPKEEP * q.rank()) * dt / 60.0
 		if q.faction == "org":
 			_upkeep_acc += c
 		elif q.faction == "police":

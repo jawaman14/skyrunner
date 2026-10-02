@@ -512,7 +512,7 @@
     "load": "half",
     "ok": false,
     "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
-    "seconds": 76.09999999999825,
+    "seconds": 76.13333333333158,
     "test": "takeoff",
     "weight_lb": 2142.0
    },
@@ -532,7 +532,7 @@
     "load": "max",
     "ok": false,
     "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$28,800.",
-    "seconds": 90.06666666666412,
+    "seconds": 90.93333333333074,
     "test": "takeoff",
     "weight_lb": 5500.0
    }

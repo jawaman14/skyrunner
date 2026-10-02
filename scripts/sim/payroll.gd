@@ -70,6 +70,7 @@ var flips := {"org": 0, "rival": 0}
 var lost := {"org": 0, "rival": 0}
 var last := {"org": "", "rival": ""}
 var squads := {}  ## squad id -> [worker ids]
+var people: People  ## the workers' bodies (Agent.ENABLED): where each stands, and the trip to a new post
 var _serial := 0
 var _pay_t := 0.0
 var _think_t := 0.0
@@ -81,6 +82,7 @@ var _t := 0.0
 func _init(sess_, rng_: PyRandom) -> void:
 	sess = sess_
 	rng = rng_
+	people = People.new(sess_)
 	for o in ["org", "rival"]:
 		_refresh(o)
 
@@ -115,6 +117,9 @@ func _person(o: String, role: String, street := false) -> Dictionary:
 	_serial += 1
 	var skill := clampf(rng.uniform(0.15, 0.95) - (0.2 if street else 0.0), 0.05, 1.0)
 	var loyal := clampf(rng.uniform(0.2, 0.95) - (0.3 if street else 0.0), 0.05, 1.0)
+	if o == "org" and sess.renown != null:  # a name draws better men (no extra draws: the stream is the same)
+		skill = clampf(skill + sess.renown.skill_bonus(), 0.05, 1.0)
+		loyal = clampf(loyal + sess.renown.loyalty_bonus(), 0.05, 1.0)
 	var wage: int = int(ROLES[role][0] * (0.7 + 0.6 * skill) * (1.5 if street else 1.0))
 	var hint_good := rng.random() < (0.8 if loyal >= 0.5 else 0.2)  # a hint, not a guarantee
 	return {"id": "W%d" % _serial, "name": "%s %s" % [FIRST[rng.randint(0, FIRST.size() - 1)], LAST[rng.randint(0, LAST.size() - 1)]],
@@ -246,22 +251,25 @@ func mean_skill(ids: Array) -> float:
 	return 0.0 if ws.is_empty() else Py.sum_by(ws, func(w): return float(w.skill)) / ws.size()
 
 
-## A worker is lost on the job: arrested (a case) or killed.
-func lose(id: String, how: String) -> void:
+## A worker is lost on the job: arrested (a case) or killed. `where`: a place_name()-style
+## clause ("near San Telmo") so the loss reads as the same event the player just saw reported
+## (a raid, a firefight), not an unexplained death out of nowhere.
+func lose(id: String, how: String, where := "") -> void:
 	var w = get_worker(id)
 	if w == null:
 		return
 	lost[w.outfit] += 1
+	var suffix := " %s" % where if where != "" else ""
 	if how == "arrested":
 		w.status = "arrested"
 		jail.append({"id": id, "outfit": w.outfit, "trial_at": sess.time + JAIL_S, "lawyer": false, "deal": false})
-		say(w.outfit, "%s (%s) was arrested." % [w.name, ROLES[w.role][2]])
+		say(w.outfit, "%s (%s) was arrested%s." % [w.name, ROLES[w.role][2], suffix])
 		sess.law_say("In custody: %s, a %s for %s" % [w.name, ROLES[w.role][2], "the organisation" if w.outfit == "org" else "Los Cuervos"])
 		sess.bus.emit("worker_arrested", sess.time, w.name, ["law"], {"outfit": w.outfit, "role": w.role})
 	else:
 		w.status = "dead"
 		workers.erase(w)
-		say(w.outfit, "%s (%s) was killed." % [w.name, ROLES[w.role][2]])
+		say(w.outfit, "%s (%s) was killed%s." % [w.name, ROLES[w.role][2], suffix])
 
 
 # ------------------------------------------------------------------ hooks from the other systems
@@ -284,9 +292,10 @@ func _reconcile_squads() -> void:
 		var q = g.get_squad(sid)
 		var men: int = int(q.men) if q != null and q.state != "gone" else -1
 		if men >= 0:
+			var where: String = g.place_name(q.x, q.y) if (q != null and ids.size() > men) else ""
 			while ids.size() > men:
 				var id: String = ids.pop_back()
-				lose(id, "arrested" if rng.random() < 0.4 else "dead")
+				lose(id, "arrested" if rng.random() < 0.4 else "dead", "%s (squad %s)" % [where, sid])
 			continue
 		# disbanded or wiped out: the survivors (as last counted) come home
 		release(ids)
@@ -484,6 +493,10 @@ func _pilot_runs() -> void:
 			if sess.time < float(_run_t.get(p.id, 0.0)):
 				continue
 			_run_t[p.id] = sess.time + 1200.0
+			var delay := []
+			if not Fuel.pilot_ready(sess, o, p, delay):
+				_run_t[p.id] = sess.time + float(delay[0])  # off to the pump first (paid), the run waits
+				continue
 			var heat := float(sess.police.case("runner").suspicion) / 100.0 if o == "org" else 0.2
 			var ok := 0.55 + 0.35 * float(p.skill) - 0.25 * heat
 			if rng.random() < ok:
@@ -534,6 +547,8 @@ func _think(o: String) -> void:
 			func(w): return float(w.skill) + (0.3 if GOOD_HINTS.has(w.hint) else -0.3))
 		if best != null and cash(o) > float(best.wage) * 6 + wage_bill(o):
 			hire(o, best.id)
+			if o == "org" and sess.tutorial != null:
+				sess.tutorial.note("ai_hired_org")  # the first time it's the AI doing the hiring, not you
 	# post lookouts at the hottest stash houses
 	if o == "org" and sess.stash_net != null:
 		for l in of("org", "lookout", "free"):
@@ -564,6 +579,7 @@ func update(dt: float) -> void:
 	var step := _t
 	_t = 0.0
 	_reconcile_squads()
+	people.update(step)
 	_pay_t += step
 	if _pay_t >= PAY_S:
 		_pay_t = 0.0
@@ -583,6 +599,40 @@ func update(dt: float) -> void:
 				_think(o)
 
 
+## A worker's current task, in a few words, for the roster: the hiring hall (Talk) and the law's
+## jail view both read it off the Dictionary view() returns, so it only has to be worked out once.
+func doing(w: Dictionary) -> String:
+	if str(w.get("status", "")) != "assigned" or str(w.get("assigned", "")) == "":
+		return "free"
+	var a := str(w.assigned)
+	if a.begins_with("stash-"):
+		var st = sess.stash_net.get_stash(a.trim_prefix("stash-")) if sess.stash_net != null else null
+		var away: float = people.left_m(str(w.get("id", "")))
+		if st != null and away > 0.0:
+			return "heading out to %s, %.1f km to go" % [st.name, away / 1000.0]
+		return "watching %s" % st.name if st != null else "on lookout"
+	if a.begins_with("truck-") or a.begins_with("cash-"):
+		# his body is on the road now (Agent): how far he has to go
+		var left := 0.0
+		if sess.stash_net != null:
+			for t in sess.stash_net.trucks:
+				if t.driver == str(w.get("id", "")):
+					left = t.left_m()
+		return "driving a truck, %.1f km to go" % (left / 1000.0) if left > 0.0 else "driving a truck"
+	if sess.ground != null and sess.ground.get_squad(a) != null:
+		var sq: GroundWar.Squad = sess.ground.get_squad(a)
+		var verb: String = {"moving": "marching", "holding": "holding", "fighting": "in a firefight", "routed": "running"}.get(sq.state, sq.state)
+		return "with squad %s, %s" % [a, verb]
+	match str(w.get("role", "")):
+		"mule":
+			return "on the island run"
+		"pilot":
+			return "flying a run"
+		"dealer":
+			return "working the corner"
+	return "on a job"
+
+
 func view(side: String) -> Dictionary:
 	if side == "law":
 		return {"jail": jail.map(func(j):
@@ -598,7 +648,7 @@ func view(side: String) -> Dictionary:
 		"candidates": candidates.org.map(func(w): return {"id": w.id, "name": w.name, "role": w.role, "skill": w.skill,
 			"wage": w.wage, "hint": w.hint}),
 		"crew": of("org").filter(func(w): return w.status in ["free", "assigned"]).map(func(w): return {"id": w.id, "name": w.name,
-			"role": w.role, "skill": w.skill, "wage": w.wage, "status": w.status, "assigned": w.assigned}),
+			"role": w.role, "skill": w.skill, "wage": w.wage, "status": w.status, "assigned": w.assigned, "doing": doing(w)}),
 		"jail": jail.filter(func(j): return j.outfit == "org").map(func(j):
 			var w = get_worker(j.id)
 			return {"id": j.id, "name": w.name if w != null else "?", "role": w.role if w != null else "?",

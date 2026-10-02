@@ -1,0 +1,15 @@
+{
+	"name": "Radio Sandino, Nicaragua",
+	"band": "SW",
+	"label": "6200",
+	"blurb": "The Sandinista station from Managua, March 1984.",
+	"gap_s": 0,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Sandino, 25 Mar 1984",
+			"len": 360.0,
+			"ia": "radio-sandino-nicaragua-25-march-1984"
+		}
+	]
+}

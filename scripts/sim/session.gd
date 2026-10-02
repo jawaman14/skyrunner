@@ -15,6 +15,11 @@ const START_MONEY := 3000
 const OPEN_FLOAT := 10000  ## open mode's start: every system live from the first minute (BALANCE entry 34)
 const START_FIELD := "HAR"
 const OFF_FIELD_MAX_GS_KTS := 15.0
+const GEAR_MARGIN := 1.25  ## the gear holds to this multiple of its rated sink rate; between 1x and 1.25x is a hard landing
+const WINGTIP_STRIKE_ROLL_DEG := 18.0  ## on the ground: a Cessna's wingtip is about 1.8 m up, half a span out
+## The graded ground beside a strip (Terrain._shape_fields levels it out to 50 m) is part of the field for the
+## "ran off" check, so a rollout that drifts onto the shoulder is a scare, not a crash. Pits and cliffs get none.
+const SHOULDER_M := {"flat": 25.0, "beach": 25.0, "plateau": 20.0, "pit": 5.0}
 const KICK_MAX_KTS := 130.0
 const KICK_TIME := {"copilot": 2.0, "pilot": 4.0}
 const PUMP_RATE_LB_MIN := {"copilot": 60.0, "pilot": 25.0}
@@ -72,6 +77,7 @@ static func set_of(items) -> Dictionary:
 var world: World
 var seed := 1
 var money := START_MONEY
+var fuel_spent := {"org": 0.0, "rival": 0.0}  ## what the hired fleet has burned in fuel (Fuel)
 var owned := {"c172p": true}
 var aircraft_key := "c172p"
 const ARRIVE_MARGIN_M := 30.0  ## how far off a strip a stopped aircraft still counts as arrived
@@ -96,6 +102,10 @@ var maritime: Maritime
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
+var keyboard_assist := false:  ## wings level / pitch hold on the keyboard (the player's setting; never the bots')
+	set(v):
+		keyboard_assist = v
+		mapper.assist = v
 var autopilot: Autopilot
 var log: FlightLog
 var time := 0.0
@@ -124,6 +134,9 @@ var court: Court = null  ## the pilot's case after an arrest: bail, lawyers, ple
 var island: Island = null  ## Isla Soberana, over the horizon: cheap product, sovereign airspace (live play asks for it)
 var foot: FootCombat = null  ## the pilot on foot with a gun (sessions with a ground war)
 var chronicle: Chronicle = null  ## the news and the breaks between runs (Chronicle; live play asks for it)
+var renown: Renown = null  ## how big the name is (Renown; `renown: true` asks for it)
+var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets: true` with a ground war)
+var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
 var ai_law_upgrades := false  ## the AI chief buys law upgrades as money comes in (live play; off in sims and tests)
@@ -225,6 +238,12 @@ func _init(opts := {}) -> void:
 	police = PoliceSystem.new(world, _rng(seed + 99), radio, "human" if humans.has(Roles.CONTROLLER) else "ai", law)
 	if island != null:
 		police.territory_y = Island.TERRITORY_Y
+	if opts.get("renown", false) and Renown.ENABLED:
+		renown = Renown.new(self)
+	if opts.get("rackets", false) and Rackets.ENABLED and ground != null:
+		rackets = Rackets.new(self)
+	if opts.get("races", false) and Races.ENABLED:
+		races = Races.new(self)
 	radio.df_stations = []
 	for a in world.airfields:
 		if a.police:
@@ -276,6 +295,9 @@ func dispose() -> void:
 	family = null
 	foot = null
 	chronicle = null
+	renown = null
+	rackets = null
+	races = null
 	ground = null
 	if nights != null:
 		nights.sess = null
@@ -711,19 +733,104 @@ func _cmd_turn_around(role: String, a: Dictionary):
 	return turn_around()
 
 
+## U cycles off -> holding course -> routing to an airfield -> off (no new key: SHIFT+U already
+## means something else when the island's in the game). `{"on": true/false}` (tests, other callers)
+## is the plain hold, not the cycle - always just on or off. `{"on": true, "navigate": true}` asks
+## for the routed leg directly.
 func _cmd_autopilot(role: String, a: Dictionary):
-	var on = a.get("on")
-	on = (not autopilot.engaged) if on == null else Py.truthy(on)
-	if on:
+	if a.has("on"):
+		if not Py.truthy(a.on):
+			autopilot.disengage()
+			say("Autopilot OFF")
+			return null
+		if state == null or state.on_ground:
+			return "Autopilot needs to be airborne."
+		autopilot.min_ias_kts = spec.approach_kts * 1.05
+		if Py.truthy(a.get("navigate", false)):
+			_autopilot_navigate()
+		else:
+			autopilot.engage(state, fm.controls.elevator)
+			say("Autopilot ON: holding %s ft, heading %s" % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
+		return null
+	if not autopilot.engaged:
 		if state == null or state.on_ground:
 			return "Autopilot needs to be airborne."
 		autopilot.engage(state, fm.controls.elevator)
 		autopilot.min_ias_kts = spec.approach_kts * 1.05
-		say("Autopilot ON: holding %s ft, heading %s" % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
+		say("Autopilot ON: holding %s ft, heading %s. U again to route to an airfield." % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
+	elif autopilot.waypoints.is_empty():
+		_autopilot_navigate()
 	else:
 		autopilot.disengage()
 		say("Autopilot OFF")
 	return null
+
+
+## The second U: fly toward a destination instead of just holding course - a straight shot at
+## cruise altitude for a legal load, a winding, terrain-low RoutePlanner route for a hot one. The
+## transponder defaults to squawking either way - squawking traffic that isn't already a tip or a
+## known case draws no suspicion at all (PoliceSystem._classify), so it's the safer default even
+## hot. It only goes dark on a hot leg once there's heat to hide from (wanted, tipped, or suspicion
+## already up) - and only below the clutter floor does dark actually make it vanish; above it, a
+## squawk that cuts out is itself the tell (see HELP_TEXT). (Open: routing doesn't avoid known radar
+## coverage, only gets under its clutter floor - see docs/ROADMAP.md.)
+func _autopilot_navigate() -> void:
+	var af := _autopilot_target()
+	if af == null or PyMath.hypot(af.x - state.x, af.y - state.y) < AUTOPILOT_MIN_ROUTE_M:
+		autopilot.engage(state, fm.controls.elevator)
+		say("Autopilot ON: nowhere worth routing to from here - holding %s ft, heading %s" % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
+		return
+	var hot := carrying_hot()
+	var wps: Array
+	if hot:
+		wps = RoutePlanner.plan_route(world, [state.x, state.y], [af.x, af.y])
+		var c := police.case("runner")
+		transponder = not (c.wanted > 0 or c.tipped or c.suspicion >= AUTOPILOT_HOT_DARK_SUSPICION)
+	else:
+		wps = [[af.x, af.y]]
+	var peak := world.ground(state.x, state.y)
+	var prev: Array = [state.x, state.y]
+	for wp in wps:
+		var steps := maxi(1, int(PyMath.hypot(wp[0] - prev[0], wp[1] - prev[1]) / 500.0))
+		for k in steps + 1:
+			var p := [lerpf(prev[0], wp[0], float(k) / steps), lerpf(prev[1], wp[1], float(k) / steps)]
+			peak = maxf(peak, world.ground(p[0], p[1]))
+		prev = wp
+	var margin := Autopilot.LOW_AGL_M if hot else Autopilot.CRUISE_AGL_M
+	autopilot.engage_route(state, wps, peak + margin, fm.controls.elevator)
+	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name, "low over the ground" if hot else "direct",
+		"squawking" if transponder else "transponder off", Py.f((peak + margin) / FT, 0)])
+
+
+const AUTOPILOT_MIN_ROUTE_M := 3000.0  ## closer than this isn't worth engaging the navigate leg for
+const AUTOPILOT_HOT_DARK_SUSPICION := 50.0  ## a hot leg goes dark once suspicion's at least this, even without a tip or a wanted level yet
+
+
+## An active job's own strip (not an airdrop: that's a point in the water, not somewhere to land),
+## nearest first; failing that, the nearest airfield worth the trip - never the one just departed
+## (fresh off the ramp, "the nearest airfield" is almost always the one behind you) or one that's
+## implausibly close for some other reason.
+func _autopilot_target() -> Airfield:
+	var best: Airfield = null
+	var bd := INF
+	for j in active_jobs:
+		if j.is_airdrop():
+			continue
+		var af := World.airfield(j.dest)
+		var d: float = PyMath.hypot(af.x - state.x, af.y - state.y)
+		if d < bd:
+			bd = d
+			best = af
+	if best != null:
+		return best
+	for af in World.AIRFIELDS:
+		if af.code == log.departed_from:
+			continue
+		var d: float = PyMath.hypot(af.x - state.x, af.y - state.y)
+		if d < bd and d > AUTOPILOT_MIN_ROUTE_M:
+			bd = d
+			best = af
+	return best if best != null else world.nearest_airfield(state.x, state.y)[0]
 
 
 func _cmd_kick(role: String, a: Dictionary):
@@ -770,6 +877,8 @@ func seat_driver(role: String, human: bool) -> void:
 				family.ai = not (human or humans.has(Roles.LIEUTENANT))
 			if payroll != null:
 				payroll.ai["org"] = not (human or humans.has(Roles.LIEUTENANT))
+			if ground != null:
+				ground.commanders["org"].ai = not (human or humans.has(Roles.LIEUTENANT))
 			if nights != null:
 				if human:
 					_ai_defaults[role] = nights.runner_ai
@@ -786,7 +895,7 @@ func seat_driver(role: String, human: bool) -> void:
 				command(role, "release_unit", {})
 		Roles.LIEUTENANT:
 			if ground != null:
-				ground.commanders["org"].ai = not human
+				ground.commanders["org"].ai = not (human or humans.has(Roles.BOSS))
 			if family != null:
 				family.ai = not (human or humans.has(Roles.BOSS))
 			if payroll != null:
@@ -1003,7 +1112,9 @@ func accept_job(job: Jobs.Job):
 	if job.is_airdrop():
 		var boat := maritime.new_gofast(job.drop_point, job.id)
 		job.boat_id = boat.id
-		say("%s is heading out to the rendezvous." % boat.id)
+		var run_km := 2.0 * PyMath.hypot(float(boat.x) - float(job.drop_point[0]), float(boat.y) - float(job.drop_point[1])) / 1000.0
+		var fuel_cost := Fuel.boat(self, run_km)
+		say("%s is heading out to the rendezvous%s." % [boat.id, (" (fuel $%d)" % int(round(fuel_cost))) if fuel_cost > 0.0 else ""])
 	if job.hot():
 		_informant_roll(job)
 	bus.emit("job_accepted", time, "", ["runner"], {"job_id": job.id, "hot": job.hot()})
@@ -1564,11 +1675,14 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 	elif autopilot.engaged and (_any_held(inp, ["pitch_up", "pitch_down", "roll_left", "roll_right"]) or inp.stick != null):
 		autopilot.disengage()
 		say("Autopilot disconnected")
-	var controls := mapper.update(dt, inp)
+	var controls := mapper.update(dt, inp, state)
 	if bot_controls != null and not pilot_aft:
 		controls = bot_controls
 	elif state != null and autopilot.engaged:
 		controls = autopilot.update(dt, state, controls)
+		if autopilot.arrived:
+			autopilot.arrived = false
+			say("Autopilot: over the field - your controls for the approach.")
 	elif hand_tremor != Vector2.ZERO:
 		# a frightened pilot's hands (Nerves): only on human hands, never the bot or the autopilot
 		controls = controls.copy()
@@ -1674,6 +1788,8 @@ func _update_world(dt: float) -> void:
 	if foot != null and foot.active:
 		foot.update(dt)
 	_update_economy(dt)
+	if races != null:
+		races.update(dt)
 	if chronicle != null:
 		chronicle.update(dt)
 	if agency != null:
@@ -1919,24 +2035,24 @@ func _rules(dt: float, s: FlightModel.FlightState) -> void:
 		lg.max_touchdown_fpm = maxf(lg.max_touchdown_fpm, fpm)
 		var limit := spec.gear_limit_fpm * (0.75 if loadout.compute(null, false).overweight_lb > 0 else 1.0) \
 			* (1.5 if upgrades["runner"].has("heavy_gear") else 1.0)
-		if fpm > limit:
+		if fpm > limit * GEAR_MARGIN:
 			_crash("Gear collapsed on a %s fpm touchdown" % Py.f(fpm, 0))
 			return
 		if lg.airborne:
-			say("Touchdown %s fpm" % Py.f(fpm, 0) + (" - butter!" if fpm < 150 else ""))
+			say("Touchdown %s fpm" % Py.f(fpm, 0) + (" - butter!" if fpm < 150 else (" - hard landing!" if fpm > limit else "")))
 
 	if s.on_ground:
 		autopilot.disengage()
 		if world.is_water(s.x, s.y) and af_here == null:
 			_crash("Ditched in the sea")
 			return
-		if absf(s.roll) > 12:
+		if absf(s.roll) > WINGTIP_STRIKE_ROLL_DEG:
 			_crash("Wingtip strike")
 			return
 		if s.pitch < -7:
 			_crash("Prop strike - nosed over")
 			return
-		if af_here == null and s.gs_kts > OFF_FIELD_MAX_GS_KTS:
+		if af_here == null and s.gs_kts > OFF_FIELD_MAX_GS_KTS and not _on_shoulder(s.x, s.y):
 			_crash("Ran off the strip into rough ground")
 			return
 		if s.gs_kts < 1.0 and lg.airborne:
@@ -1944,6 +2060,14 @@ func _rules(dt: float, s: FlightModel.FlightState) -> void:
 			var af_stop: Airfield = af_here if af_here != null else world.airfield_at(s.x, s.y, ARRIVE_MARGIN_M)
 			if af_stop != null:
 				_arrive(af_stop, s)
+
+
+## On the graded shoulder of a strip: flat, cleared ground beside it.
+func _on_shoulder(x: float, y: float) -> bool:
+	for af in world.airfields:
+		if af.contains(x, y, float(SHOULDER_M.get(af.setting, 25.0))):
+			return true
+	return false
 
 
 func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
@@ -1994,9 +2118,11 @@ func _truck_out(job: Jobs.Job, af: Airfield) -> void:
 	if ground != null:
 		# by road; the roadblock roll gives way to the checkpoints on the ground
 		var st: Dictionary = stash_net.get_stash(job.stash)
-		t.route = ground.graph.route(Vector2(af.x, af.y), Vector2(st.x, st.y))
+		t.route = ground.route("org", Vector2(af.x, af.y), Vector2(st.x, st.y))
 		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / StashNet.TRUCK_MS
 		t.stop_at = -1.0
+	if Agent.ENABLED:
+		t.start_agent()  # last: the driver, the road and the time it takes are all settled by now
 	active_jobs.erase(job)
 	loadout.remove_job(job.id)
 	say("Load's on the truck to %s: about %d min by road." % [stash_net.get_stash(job.stash).name, int(ceil(t.dur / 60.0))])
@@ -2009,6 +2135,8 @@ func _update_stashes(dt: float) -> void:
 	var results := stash_net.update(dt, time, police.units.filter(func(u): return u.faction() == "police"))
 	if ground != null:
 		ground.update(dt)
+		if rackets != null:
+			rackets.update(dt)
 		for r in ground.truck_contacts():
 			stash_net.trucks.erase(r[0])
 			results.append(r)
@@ -2235,6 +2363,50 @@ func _cmd_squad_order(role: String, a: Dictionary):
 	return null
 
 
+## On foot, an order to the nearest of our squads: {what: come | hold | charge | fall_back, x, y} (where the man stands).
+func _cmd_field_order(role: String, a: Dictionary):
+	if ground == null:
+		return "No ground war here: nobody to command."
+	var r: Array = ground.field_order(_faction_of(role), Vector2(float(_num(a, "x", 0.0)), float(_num(a, "y", 0.0))), str(a.get("what", "")))
+	if r[0] != "":
+		return r[0]
+	say(str(r[1]))
+	return null
+
+
+## The collectors and the prisoners: {what: policy (market, mode) | ransom | turn | release}.
+func _cmd_rackets(role: String, a: Dictionary):
+	if rackets == null:
+		return "Nobody collects for us here."
+	var err := ""
+	match str(a.get("what", "")):
+		"policy":
+			err = rackets.set_policy(str(a.get("market", "")), str(a.get("mode", "")))
+		"ransom":
+			err = rackets.ransom()
+		"turn":
+			err = rackets.turn()
+		"release":
+			err = rackets.release()
+		_:
+			err = "Policy, ransom, turn or release."
+	return err if err != "" else null
+
+
+## Build at a stash house: {stash, what: vault | guard}.
+func _cmd_stash_works(role: String, a: Dictionary):
+	var err := StashWorks.build(self, str(a.get("stash", "")), str(a.get("what", "")))
+	return err if err != "" else null
+
+
+## Enter a race at this airfield: {id}.
+func _cmd_race_enter(role: String, a: Dictionary):
+	if races == null:
+		return "There is no arena here."
+	var err: String = races.enter(str(a.get("id", "")))
+	return err if err != "" else null
+
+
 func _cmd_recruit_squad(role: String, a: Dictionary):
 	if ground == null:
 		return "No ground war here."
@@ -2410,6 +2582,32 @@ func _cmd_move_cash(role: String, a: Dictionary):
 	if logistics == null:
 		return "No logistics in this game: money is money."
 	var err: String = logistics.send(str(a.get("from", "")), str(a.get("to", Logistics.HQ)), "cash", float(_num(a, "amount", 1e12)))
+	return err if err != "" else null
+
+
+## Logistics: ONE truck through several stashes, taking the cash at each, to the club (or another stash).
+## {stops: [ids], to, plan: true to let the planner order them}.
+func _cmd_cash_round(role: String, a: Dictionary):
+	if logistics == null:
+		return "No logistics in this game: money is money."
+	var stops: Array = []
+	for x in a.get("stops", []):
+		stops.append(str(x))
+	var to := str(a.get("to", Logistics.HQ))
+	if bool(a.get("plan", false)) and stops.size() >= 2:
+		stops = logistics.plan_order(stops, logistics.pos(to) if to != "" else logistics.hq_pos())
+	var err: String = logistics.cash_round(stops, to)
+	return err if err != "" else null
+
+
+## Logistics: ONE truck loaded at `from` that drops `lb` of `good` at each stop in turn.
+func _cmd_goods_round(role: String, a: Dictionary):
+	if logistics == null:
+		return "No logistics in this game: money is money."
+	var stops: Array = []
+	for x in a.get("stops", []):
+		stops.append(str(x))
+	var err: String = logistics.goods_round(str(a.get("from", "")), stops, str(a.get("good", "")), float(_num(a, "lb", 1e9)))
 	return err if err != "" else null
 
 
@@ -2680,7 +2878,7 @@ func save() -> void:
 		"money": money,
 		"owned": o,
 		"aircraft": aircraft_key,
-		"location": location if parked else (log.departed_from if log.departed_from else START_FIELD),
+		"location": save_location(),
 		"gear": g,
 		"upgrades": Py.sorted_by(upgrades["runner"].keys(), func(k): return k),
 		"map_seed": map_seed,
@@ -2693,9 +2891,15 @@ func save() -> void:
 		data["story"] = story.to_dict()
 	if tutorial != null:
 		data["tutorial"] = tutorial.to_dict()
+	data["sim"] = StrategicSave.capture(self)  # stashes, stock, crew, case, court, squads (docs/ROADMAP.md, Saves)
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "  "))
+
+
+## Where a load puts you: here if parked, else the field you took off from.
+func save_location() -> String:
+	return location if parked else (log.departed_from if log.departed_from else START_FIELD)
 
 
 static func read_save(path: String) -> Dictionary:
@@ -2723,4 +2927,6 @@ static func load_or_new(path: String, opts := {}) -> Session:
 	if data.get("arsenal") is Dictionary:
 		o["arsenal"] = data["arsenal"]
 	o["save_path"] = path
-	return Session.new(o)
+	var s := Session.new(o)
+	StrategicSave.restore(s, data["sim"] if data.get("sim") is Dictionary else {})
+	return s

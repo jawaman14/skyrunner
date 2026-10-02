@@ -115,6 +115,19 @@ static func power(loadout: Dictionary, men: int) -> float:
 	return f / men
 
 
+## Who carries what: the loadout's weapons best first, one entry per man, "" for a man with none (the
+## same order the 3D side arms them in).
+static func guns(loadout: Dictionary, men: int) -> Array:
+	var out := []
+	for t in ORDER:
+		for i in int(loadout.get(t, 0)):
+			if out.size() < men:
+				out.append(t)
+	while out.size() < men:
+		out.append("")
+	return out
+
+
 ## Can this loadout take on vehicles?
 static func anti_vehicle(loadout: Dictionary) -> bool:
 	return int(loadout.get("rpg", 0)) > 0

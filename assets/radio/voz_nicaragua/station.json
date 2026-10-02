@@ -1,0 +1,15 @@
+{
+	"name": "La Voz de Nicaragua",
+	"band": "SW",
+	"label": "5950",
+	"blurb": "Nicaragua on shortwave, July 1983.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "La Voz de Nicaragua 5950, 5 Jul 1983",
+			"len": 138.58,
+			"ia": "1983-07-05-nicaragua-la-voz-de-nicaragua-5950-1053-utc"
+		}
+	]
+}

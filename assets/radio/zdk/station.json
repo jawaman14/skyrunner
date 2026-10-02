@@ -1,0 +1,15 @@
+{
+	"name": "Radio ZDK, Antigua",
+	"band": "AM",
+	"label": "1100",
+	"blurb": "Antigua's ZDK, evening of 3 November 1983.",
+	"gap_s": 25,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "ZDK 1100, 3 Nov 1983",
+			"len": 108.67,
+			"ia": "1983-11-03-antigua-radio-zdk-1100-2253-utc"
+		}
+	]
+}

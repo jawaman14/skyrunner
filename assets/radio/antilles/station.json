@@ -1,0 +1,15 @@
+{
+	"name": "Radio Antilles",
+	"band": "SW",
+	"label": "5955",
+	"blurb": "The Dominican Republic, April 1986.",
+	"gap_s": 40,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Antilles 5955, 2 Apr 1986",
+			"len": 17.03,
+			"ia": "1986-04-02-dominican-republic-r-antilles-5955-5-1012-utc"
+		}
+	]
+}

@@ -1,0 +1,15 @@
+{
+	"name": "La Voz de Cuba Independiente y Democratica",
+	"band": "SW",
+	"label": "7355",
+	"blurb": "A clandestine broadcast aimed at Cuba, October 1981.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "La Voz de Cuba Independiente y Democratica 7355, 21 Oct 1981",
+			"len": 167.21,
+			"ia": "1981-10-21-clandestine-la-voz-de-cuba-independente-y-democratica-7355-0116-utc"
+		}
+	]
+}
