@@ -156,6 +156,36 @@ static func boat(kind: String) -> Node3D:
 	return n
 
 
+## Every mesh of an instanced model as one ArrayMesh (what a MultiMesh needs): each MeshInstance3D's surfaces, in the
+## model's own space (its node transforms baked in), one surface per material. A model split over several meshes -
+## a palm's trunk and fronds, a rock and its moss - comes out whole; null if it has no mesh.
+static func merged_mesh(root: Node3D) -> ArrayMesh:
+	var by_mat := {}  # material -> SurfaceTool
+	var order := []
+	for mi: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
+		var xf := Transform3D.IDENTITY
+		var n: Node = mi
+		while n != null:
+			if n is Node3D:
+				xf = (n as Node3D).transform * xf
+			n = n.get_parent()
+		for s in mi.mesh.get_surface_count():
+			var mat: Material = mi.get_active_material(s)
+			if not by_mat.has(mat):
+				var st := SurfaceTool.new()
+				st.begin(Mesh.PRIMITIVE_TRIANGLES)
+				st.set_material(mat)
+				by_mat[mat] = st
+				order.append(mat)
+			(by_mat[mat] as SurfaceTool).append_from(mi.mesh, s, xf)
+	if order.is_empty():
+		return null
+	var out := ArrayMesh.new()
+	for mat in order:
+		(by_mat[mat] as SurfaceTool).commit(out)
+	return out
+
+
 ## A palm's mesh (for MultiMesh use), `height` metres tall: [mesh, scale].
 static func palm_mesh(variant: int, height: float) -> Array:
 	var path: String = "nature/" + PALMS[posmod(variant, PALMS.size())]

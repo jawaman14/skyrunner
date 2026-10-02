@@ -38,6 +38,7 @@ func setup(world_: World, q: Quality) -> WorldScene:
 	water = Ocean.new().setup(world, q)
 	add_child(water)
 	add_child(Vegetation.build(world, q))
+	add_child(Scenery.build(world, q))  # rocks, bushes and beach palms (Kenney Nature Kit)
 	add_child(CityRender.build(world, q))
 	for af in world.airfields:
 		var n := Models.build_airfield(world, af, q)

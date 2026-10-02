@@ -31,6 +31,7 @@ static func set_wet(w: float) -> void:
 
 
 static func set_night(n: float) -> void:
+	CityDress.set_night(n)
 	if _mat != null:
 		_mat.set_shader_parameter("night", clampf((n - 0.25) / 0.5, 0.0, 1.0))
 	if _lamp_mat != null:
@@ -43,11 +44,12 @@ static func build(world: World, q: Quality) -> Node3D:
 	var l := world.map
 	if l.buildings.is_empty() and l.roads.is_empty():
 		return root
-	root.add_child(_buildings(l.buildings, q))
+	root.add_child(CityDress.build(l.buildings.filter(func(b): return b.style != "crane"), q))  # the boxes, and the models near the camera
 	for b in l.buildings:
 		if b.style == "crane":
 			root.add_child(_crane(b))
 	root.add_child(_roads(world, l.roads))
+	root.add_child(_road_details(world, l.roads))
 	root.add_child(_bridges(world, l.roads, l.bridges))
 	root.add_child(_lamps(world, l.roads))
 	root.add_child(_props(world, l.roads))
@@ -58,7 +60,12 @@ static func build(world: World, q: Quality) -> Node3D:
 
 
 static func _buildings(list: Array, q: Quality) -> MultiMeshInstance3D:
-	var boxes := list.filter(func(b): return b.style != "crane")
+	return box_layer(list.filter(func(b): return b.style != "crane"), q)
+
+
+## The shader boxes for `boxes` (the city's buildings, or one chunk of them). `idx` is each box's number in the whole
+## list, which seeds its colour, so a box is the same colour whichever chunk it is drawn in.
+static func box_layer(boxes: Array, q: Quality, idx := []) -> MultiMeshInstance3D:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
@@ -67,8 +74,8 @@ static func _buildings(list: Array, q: Quality) -> MultiMeshInstance3D:
 	mm.mesh = bm
 	mm.instance_count = boxes.size()
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 77
 	for i in boxes.size():
+		rng.seed = 77 + (idx[i] if not idx.is_empty() else i) * 104729
 		var b: Dictionary = boxes[i]
 		var h: float = b.h + 1.5  # sunk 1.5 m: sloping lots never show a gap under the wall
 		var basis := Basis.IDENTITY.scaled(Vector3(b.w, h, b.d))
@@ -150,6 +157,122 @@ static func _roads(world: World, roads: Array) -> MeshInstance3D:
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi
+
+
+## The samples of one road, every ~12 m (the same ones _roads() drapes its ribbon on): [position, along-road
+## direction, the ribbon's height there].
+static func _samples(world: World, r: Array) -> Array:
+	var pts := PackedVector2Array()
+	for k in r.size() - 1:
+		var a := Vector2(r[k][0], r[k][1])
+		var b := Vector2(r[k + 1][0], r[k + 1][1])
+		var n := int(a.distance_to(b) / 12.0) + 1
+		for q in n:
+			pts.append(a.lerp(b, float(q) / n))
+	pts.append(Vector2(r[r.size() - 1][0], r[r.size() - 1][1]))
+	var out := []
+	for k in pts.size():
+		var dir := (pts[mini(k + 1, pts.size() - 1)] - pts[maxi(k - 1, 0)]).normalized()
+		var side := Vector2(-dir.y, dir.x) * 4.5
+		var zs := []
+		for p in [pts[k] + side, pts[k] - side, pts[k]]:
+			zs.append(world.ground(p.x, p.y))
+		out.append([pts[k], dir, maxf(maxf(zs[0], zs[1]), maxf(zs[2], 2.2)) + 0.45])
+	return out
+
+
+## A flat strip from lateral offset `lo` to `hi` (metres from the centre line) between samples k-1 and k, `up` above the ribbon.
+static func _strip(st: SurfaceTool, s0: Array, s1: Array, lo: float, hi: float, up: float, col: Color) -> void:
+	var corners := []
+	for s in [s0, s1]:
+		var dir: Vector2 = s[1]
+		var side := Vector2(-dir.y, dir.x)
+		var p: Vector2 = s[0]
+		var z: float = s[2] + up
+		corners.append([Vector3(p.x + side.x * lo, z, -(p.y + side.y * lo)), Vector3(p.x + side.x * hi, z, -(p.y + side.y * hi))])
+	for v in [corners[0][0], corners[1][0], corners[1][1], corners[0][0], corners[1][1], corners[0][1]]:
+		st.set_normal(Vector3.UP)
+		st.set_color(col)
+		st.add_vertex(v)
+
+
+## Lane markings and sidewalks. The markings are painted on the ribbon: a dashed yellow centre line and
+## continuous white edge lines, a hair above the asphalt. In town (and the port) a pale concrete pavement runs
+## along both sides, a kerb's height up, from the road's edge to 6.9 m - where the lamps, hydrants, benches
+## and palms already stand.
+static func _road_details(world: World, roads: Array) -> Node3D:
+	var root := Node3D.new()
+	root.name = "road-details"
+	var paint := SurfaceTool.new()
+	paint.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var pave := SurfaceTool.new()
+	pave.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var yellow := Color(0.95, 0.78, 0.18)
+	var white := Color(0.9, 0.9, 0.88)
+	var concrete := Color(0.66, 0.65, 0.62)
+	var kerb := Color(0.5, 0.5, 0.48)
+	for r in roads:
+		var smp := _samples(world, r)
+		for k in range(1, smp.size()):
+			var s0: Array = smp[k - 1]
+			var s1: Array = smp[k]
+			var p0: Vector2 = s0[0]
+			var p1: Vector2 = s1[0]
+			var seg_len := p0.distance_to(p1)
+			if seg_len < 0.5:
+				continue
+			# edge lines, continuous
+			_strip(paint, s0, s1, 3.7, 3.98, 0.03, white)
+			_strip(paint, s0, s1, -3.98, -3.7, 0.03, white)
+			# the centre line: a 3.6 m dash in each 12 m
+			var dash0 := _lerp_sample(s0, s1, 0.15)
+			var dash1 := _lerp_sample(s0, s1, minf(1.0, 0.15 + 4.2 / seg_len))
+			_strip(paint, dash0, dash1, -0.17, 0.17, 0.03, yellow)
+			# the pavement, where the street is a street
+			var mid := (p0 + p1) * 0.5
+			var cls := MapCity.at(world.map.land_use, mid.x, mid.y)
+			if cls in [MapCity.URBAN, MapCity.PORT]:
+				for sgn in [-1.0, 1.0]:
+					var lo: float = 4.5 if sgn > 0.0 else -6.9
+					var hi: float = 6.9 if sgn > 0.0 else -4.5
+					_strip(pave, s0, s1, lo, hi, 0.14, concrete)
+					# the kerb face, a thin strip standing on the road's edge
+					var edge: float = 4.5 * sgn
+					var a0 := _edge_pt(s0, edge, 0.0)
+					var a1 := _edge_pt(s1, edge, 0.0)
+					var b0 := _edge_pt(s0, edge, 0.14)
+					var b1 := _edge_pt(s1, edge, 0.14)
+					var face := [a0, a1, b1, a0, b1, b0] if sgn > 0.0 else [a0, b1, a1, a0, b0, b1]
+					var d0: Vector2 = s0[1]
+					var nrm := Vector3(-d0.y, 0.0, -d0.x) * (1.0 if sgn > 0.0 else -1.0)
+					for v in face:
+						pave.set_normal(nrm.normalized())
+						pave.set_color(kerb)
+						pave.add_vertex(v)
+	for pair in [[paint, "markings", 0.7], [pave, "pavements", 0.9]]:
+		var mi := MeshInstance3D.new()
+		mi.name = pair[1]
+		mi.mesh = (pair[0] as SurfaceTool).commit()
+		var m := StandardMaterial3D.new()
+		m.vertex_color_use_as_albedo = true
+		m.roughness = pair[2]
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		mi.material_override = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visibility_range_end = 2500.0
+		root.add_child(mi)
+	return root
+
+
+static func _lerp_sample(a: Array, b: Array, t: float) -> Array:
+	return [(a[0] as Vector2).lerp(b[0], t), a[1], lerpf(a[2], b[2], t)]
+
+
+static func _edge_pt(s: Array, lateral: float, up: float) -> Vector3:
+	var dir: Vector2 = s[1]
+	var side := Vector2(-dir.y, dir.x)
+	var p: Vector2 = s[0]
+	return Vector3(p.x + side.x * lateral, s[2] + up, -(p.y + side.y * lateral))
 
 
 ## The deck height at a road point: over the highest of the ground under the ribbon, and 2.2 m over the sea.

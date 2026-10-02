@@ -147,8 +147,7 @@ The project moved from 4.4.1 to **4.7.2** (the latest stable). The worries that 
 
 The game's art was thin: 8 cars, 2 boats, 10 characters, 6 palms and 6 street props from three CC0 kits. A pass over the
 free CC0 libraries for what fills a 1980s tropical coast, all vendored with their licences (assets/models/*/LICENSE.txt,
-README.txt or UPSTREAM.txt) and covered by tests/test_assets.gd. Nothing is wired into a scene yet: this is the stock the
-render modules draw from, and `ModelLib` loads by path.
+README.txt or UPSTREAM.txt) and covered by tests/test_assets.gd. This is the stock the render modules draw from (`ModelLib` loads by path); what is wired in so far is listed below.
 
 | Pack | Licence | Models | Where it goes |
 |---|---|---|---|
@@ -175,3 +174,19 @@ base colour, 512 px normal and ORM maps). Godot 4.7 imports the three FBX-only Q
 | Kenney UI Pack's flat look | Vendored, but the game's neon HUD palette is its own; use for shapes, not colours. |
 | Poly Pizza's aircraft | The licences are per model, and Google-Poly-era ones are usually CC BY; each would need checking. The game's aircraft are built from the flight model's data anyway. |
 | Aircraft and airfield props | No good CC0 pack found (a [low-poly helicopter on itch](https://kumasousa.itch.io/low-poly-helicopter-with-animations) and a [toy airplane on OpenGameArt](https://opengameart.org/content/toy-airplane-lowpoly) are the only CC0 leads). |
+
+### What is in the world now
+
+| Pack | Where | What it does |
+|---|---|---|
+| Kenney City Kits (Commercial, Suburban, Industrial) | `scripts/render/city_dress.gd`, `shaders/city_lot.gdshader` | Each of the city's 6,600 boxes is cut into 1-9 lots and every lot gets a real building (skyscrapers for towers, commercial blocks, houses where it is low, sheds for warehouses), scaled to the lot and the box's height, turned to face the nearest street, tinted the box's pastel, with lit windows, a roofline trim band and the neon strip at night. Drawn in 300 m chunks within 700 m (high) or 450 m (medium); the shader boxes take over beyond with a fade. Off on low quality. |
+| (road data, no pack) | `CityRender._road_details` | Lane markings (dashed yellow centre, white edge lines) and raised concrete pavements with a kerb face along the town's roads. |
+| Kenney Nature Kit | `scripts/render/scenery.gd`, `ModelLib.merged_mesh` | Boulders and crags on steep and rocky ground, small rocks, bushes in the scrub and jungle, detailed palms along the beaches: a hash-seeded 120 m grid, in 1 km chunks with a range, off on low quality. The rocks get a grey-brown stone material (the kit paints them in its palms' palette). |
+
+The export presets (`export_presets.cfg`) leave out every pack nothing uses yet - the other Kenney kits, all of Quaternius and the 2D
+sprites - and `tests/test_export_filter.gd` fails if a used pack is excluded or an unused one ships. When a pack is wired in, take its
+line out of `exclude_filter` in all three presets.
+
+Not done: collision on the city's buildings (the on-foot walker passes through them, as before), roof details and ground-floor awnings
+from the Commercial kit's `detail-*` pieces, crosswalks, the furniture in the villa and the hangars, docks and cargo from the Pirate kit
+at the port, Quaternius's downtown pieces, and the 2D packs (glyphs for the controls screens, the crosshair, map symbols).
