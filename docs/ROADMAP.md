@@ -180,7 +180,17 @@ Second wave, larger features:
   - a starter car at the airport.
 - **Physical logistics by truck, boat or plane.** Player-set pick-up and drop-off jobs for hired
   bots, multi-stop routes, and automatic refuelling at fuel stations. Fuel prices join the economy.
-- **Boats** don't carry over to a new game or map.
+- **Saves keep the organisation.** Done (in a PR; the old line here said "boats don't carry over to a new
+  game or map", which turned out to be the whole of a save: it kept only money, aircraft, gear, upgrades,
+  location, the arsenal, campaign, story and tutorial, and every stash house, crew member, squad and case
+  started fresh on a load). `StrategicSave` (scripts/sim/strategic_save.gd, the save's `sim` key) now also
+  keeps the stash houses (heat, intel, burned) and the product and cash in them, the whole payroll (crew,
+  their posts, candidates, jail, wages owed), the runner's case file, the court case and its history, the
+  organisation's squads, and the session clock so a trial date still means what it did. A save is written
+  parked at an airfield, so nothing is in flight: trucks, boats (they only exist as a go-fast per drop job),
+  jobs and the workers on them are not saved - those workers load free. **Not kept yet:** the Family, the
+  island, trade (corner stock, market state), the economy's prices, the season and HQ, Los Cuervos' and the
+  task force's own squads (the other two sides deploy fresh).
 
 ## 3. Later
 - A real-app playtest pass on every seat.
