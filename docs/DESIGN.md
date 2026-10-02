@@ -863,7 +863,7 @@ are at (`race_enter` is the pilot's, the boss's and the lieutenant's command).
 
 | Course | Where | Gates | Par | Entry | Prize |
 |---|---|---|---|---|---|
-| Street race (the car) | the roads from the strip to the club, the farthest stash house within 6 km, and back; needs a ground war | every 500 m, 24 m radius | length / 19 m/s | $70 | $700 |
+| Street race (the car) | a loop on the roads from the strip through the two nearest of the club and the stash houses and back (the nearer one alone if that would pass 10 km; 3 to 12 km in practice); needs a ground war | every 500 m, 24 m radius | length / 19 m/s | $70 | $700 |
 | Air circuit (the aircraft) | six gates 2.5 km from the strip, round and back to the first | 130 m radius, 180 m above the ground, 110 m tolerance up or down | length / 42 m/s | $140 | $1,400 |
 
 The first gate is the start: the clock begins when you cross it and the gates have to be taken in order (the next one
