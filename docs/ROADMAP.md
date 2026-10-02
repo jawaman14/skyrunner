@@ -106,6 +106,15 @@ Second wave, larger features:
     and hauled cargo in Logistics; (3) squads built of agents; (4) the 3D side shows every agent;
     (5) the pathfinding upgrade; each step keeps the parity tests green and gets its own PR and BALANCE
     entry (agents change travel times, so the balance moves).
+    - **(1) done:** `scripts/sim/agent.gd` - a position, a route (the road graph for `car`, straight
+      there for `foot` - better pathing is step 5) and a FIFO queue of `Agent.Task` (`kind`, `at`,
+      `dur`); `update(dt, graph)` walks the route then waits out `dur` before returning the task's
+      `kind` once, so a caller polling every frame never double-counts an arrival. `Agent.ENABLED`
+      (false) gates nothing yet - nothing in the sim creates one until step 2 (drivers in Logistics)
+      reads a real position instead of a status string. tests/test_agent.gd (6): walking straight,
+      waiting out a task's duration, running a queue in order, idle with nothing queued, `clear()`,
+      and a car agent actually following the city map's road graph (never a shorter path than the
+      crow flies).
 - **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
   see docs/ROADS.md. Still open there: La Selva has no road, and the balance has to be re-run on it.
 - **Map:**
