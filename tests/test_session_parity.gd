@@ -18,6 +18,7 @@ func before_each() -> void:
 	Chronicle.ENABLED = false
 	Agency.ENABLED = false
 	Agent.ENABLED = false
+	Fuel.ENABLED = false
 
 
 func after_each() -> void:
@@ -28,6 +29,7 @@ func after_each() -> void:
 	Chronicle.ENABLED = true
 	Agency.ENABLED = true
 	Agent.ENABLED = true
+	Fuel.ENABLED = true
 
 
 func _same(got, want, what: String) -> void:

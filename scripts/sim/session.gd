@@ -77,6 +77,7 @@ static func set_of(items) -> Dictionary:
 var world: World
 var seed := 1
 var money := START_MONEY
+var fuel_spent := {"org": 0.0, "rival": 0.0}  ## what the hired fleet has burned in fuel (Fuel)
 var owned := {"c172p": true}
 var aircraft_key := "c172p"
 const ARRIVE_MARGIN_M := 30.0  ## how far off a strip a stopped aircraft still counts as arrived
@@ -1111,7 +1112,9 @@ func accept_job(job: Jobs.Job):
 	if job.is_airdrop():
 		var boat := maritime.new_gofast(job.drop_point, job.id)
 		job.boat_id = boat.id
-		say("%s is heading out to the rendezvous." % boat.id)
+		var run_km := 2.0 * PyMath.hypot(float(boat.x) - float(job.drop_point[0]), float(boat.y) - float(job.drop_point[1])) / 1000.0
+		var fuel_cost := Fuel.boat(self, run_km)
+		say("%s is heading out to the rendezvous%s." % [boat.id, (" (fuel $%d)" % int(round(fuel_cost))) if fuel_cost > 0.0 else ""])
 	if job.hot():
 		_informant_roll(job)
 	bus.emit("job_accepted", time, "", ["runner"], {"job_id": job.id, "hot": job.hot()})
@@ -2579,6 +2582,32 @@ func _cmd_move_cash(role: String, a: Dictionary):
 	if logistics == null:
 		return "No logistics in this game: money is money."
 	var err: String = logistics.send(str(a.get("from", "")), str(a.get("to", Logistics.HQ)), "cash", float(_num(a, "amount", 1e12)))
+	return err if err != "" else null
+
+
+## Logistics: ONE truck through several stashes, taking the cash at each, to the club (or another stash).
+## {stops: [ids], to, plan: true to let the planner order them}.
+func _cmd_cash_round(role: String, a: Dictionary):
+	if logistics == null:
+		return "No logistics in this game: money is money."
+	var stops: Array = []
+	for x in a.get("stops", []):
+		stops.append(str(x))
+	var to := str(a.get("to", Logistics.HQ))
+	if bool(a.get("plan", false)) and stops.size() >= 2:
+		stops = logistics.plan_order(stops, logistics.pos(to) if to != "" else logistics.hq_pos())
+	var err: String = logistics.cash_round(stops, to)
+	return err if err != "" else null
+
+
+## Logistics: ONE truck loaded at `from` that drops `lb` of `good` at each stop in turn.
+func _cmd_goods_round(role: String, a: Dictionary):
+	if logistics == null:
+		return "No logistics in this game: money is money."
+	var stops: Array = []
+	for x in a.get("stops", []):
+		stops.append(str(x))
+	var err: String = logistics.goods_round(str(a.get("from", "")), stops, str(a.get("good", "")), float(_num(a, "lb", 1e9)))
 	return err if err != "" else null
 
 

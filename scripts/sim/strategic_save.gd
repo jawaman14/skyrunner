@@ -16,7 +16,7 @@ const VERSION := 1
 
 
 static func capture(s: Session) -> Dictionary:
-	var d := {"v": VERSION, "time": s.time}
+	var d := {"v": VERSION, "time": s.time, "fuel_spent": s.fuel_spent.duplicate()}
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
@@ -78,6 +78,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 	if d.is_empty() or int(d.get("v", 0)) != VERSION:
 		return
 	s.time = float(d.get("time", 0.0))
+	if d.get("fuel_spent") is Dictionary:
+		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.stash_net != null and d.get("stashes") is Dictionary:
 		for id in d.stashes:
 			var st = s.stash_net.get_stash(str(id))
