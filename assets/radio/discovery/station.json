@@ -1,0 +1,15 @@
+{
+	"name": "Radio Discovery, Dominican Republic",
+	"band": "SW",
+	"label": "6220",
+	"blurb": "The Dominican Republic after midnight, April 1986.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Discovery 6220, 9 Apr 1986",
+			"len": 53.84,
+			"ia": "1986-04-09-dominican-republic-r-discovery-6220-0112-utc"
+		}
+	]
+}

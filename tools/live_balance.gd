@@ -54,16 +54,16 @@ func _initialize() -> void:
 		"island": {"island": true},
 		"agency": {"agency": true},
 		"payroll": {"payroll": true},
-		"trade": {"trade": true, "career": true, "payroll": true, "family": true, "agency": true},
-		"all": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true},
-		"logistics": {"trade": true, "career": true, "payroll": true, "family": true, "agency": true, "logistics": true},
-		"war": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "ground_war": true},
-		"air": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true,
-			"ground_war": true, "logistics": true, "court": true, "air": true},
-		"noair": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true,
-			"ground_war": true, "logistics": true, "court": true},
-		"open": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true,
-			"ground_war": true, "logistics": true, "court": true, "air": true, "start": Session.START_MONEY},
+		"trade": {"trade": true, "career": true, "renown": true, "payroll": true, "family": true, "agency": true},
+		"all": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true},
+		"logistics": {"trade": true, "career": true, "renown": true, "payroll": true, "family": true, "agency": true, "logistics": true},
+		"war": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true, "ground_war": true, "rackets": true},
+		"air": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true,
+			"ground_war": true, "rackets": true, "logistics": true, "court": true, "air": true},
+		"noair": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true,
+			"ground_war": true, "rackets": true, "logistics": true, "court": true},
+		"open": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true,
+			"ground_war": true, "rackets": true, "logistics": true, "court": true, "air": true, "start": Session.START_MONEY},
 		"story": {"story": true, "career": true, "air": true},
 	}
 	if a.size() > 2 and a[2] == "open_sweep":  # open mode's start: what a float buys (entry 34)
@@ -164,7 +164,7 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 			if held or (air != null and not _fly(s, air)):
 				pay = 0
 			s.money += pay
-			if s.story != null and pay > 0:  # the story counts the pilot's flown jobs; every other one hot
+			if (s.story != null or s.renown != null) and pay > 0:  # the story counts the pilot's flown jobs (every other one hot), and renown their loads
 				s.bus.emit("job_delivered", t, "", ["runner"], {"job_id": -1, "pay": pay, "dest": "", "hot": int(t / (RUN_EVERY_S if air == null else AIR_EVERY_S)) % 2 == 0,
 					"good": "", "lb": 0.0, "agency": false, "origin": ""})
 		if t >= next_law:

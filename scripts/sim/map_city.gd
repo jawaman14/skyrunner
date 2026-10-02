@@ -61,6 +61,28 @@ const ROADS := [
 	[[-900.0, -3400.0], [-4200.0, 2200.0], [-5600.0, 5600.0]],
 ]
 
+## The planned network (tools/plan_roads.gd, RoadPlanner): {roads: [[[x, y], ...]], bridges: [{road, from, to}]}.
+## Missing file: the old hand-drawn ROADS stand in.
+const ROADS_FILE := "res://data/maps/city_roads.json"
+
+
+static func load_roads() -> Dictionary:
+	if not FileAccess.file_exists(ROADS_FILE):
+		return {}
+	var d = JSON.parse_string(FileAccess.get_file_as_string(ROADS_FILE))
+	return d if d is Dictionary else {}
+
+
+## The generated terrain with no strips levelled (what the strips and roads are sited on).
+static func base_terrain() -> Terrain:
+	var base := Terrain.new()
+	base.generate_custom(TERRAIN_SEED, _params(), [])
+	var h := base.get_heights()
+	_shape(h, [])
+	base.set_data(h, PackedFloat32Array(), [])
+	return base
+
+
 ## The organisation's stash houses: where a load goes after it lands. Each
 ## has the strip it's trucked from and an HQ zone for the season's rules.
 const STASHES := [
@@ -101,11 +123,11 @@ static func _strip_specs() -> Array:
 		["FRM", "Finca Morales", -1500.0, -2600.0, 0.0, 480.0, 20.0, null, "grass", "bush", {}, "flat", 700.0, [15.0, 260.0]],
 		["MGR", "Barra del Rio", -12600.0, -9400.0, 60.0, 340.0, 18.0, 3.0, "sand", "shady", {"setting": "beach"}, "beach", 700.0,
 			[0.5, 20.0]],
-		["QRY", "Old Quarry", 10500.0, 1700.0, 0.0, 240.0, 12.0, null, "dirt", "shady",
+		["QRY", "Old Quarry", 10500.0, 1700.0, 0.0, 240.0, 18.0, null, "dirt", "shady",
 			{"setting": "pit", "haul_road": 0}, "pit", 1400.0, [120.0, 600.0]],
-		["EGL", "Mesa del Aguila", -7500.0, 8800.0, 90.0, 280.0, 14.0, null, "dirt", "bush", {"setting": "plateau"}, "plateau", 3500.0,
+		["EGL", "Mesa del Aguila", -7500.0, 8800.0, 90.0, 280.0, 18.0, null, "dirt", "bush", {"setting": "plateau"}, "plateau", 3500.0,
 			[950.0, 1600.0]],
-		["PNR", "La Selva", 4700.0, 8200.0, 90.0, 380.0, 15.0, null, "gravel", "bush", {"tree_lines": true}, "flat", 1800.0,
+		["PNR", "La Selva", 4700.0, 8200.0, 90.0, 380.0, 18.0, null, "gravel", "bush", {"tree_lines": true}, "flat", 1800.0,
 			[150.0, 650.0]],
 		["COV", "Smuggler's Cove", 11600.0, -9300.0, 40.0, 320.0, 18.0, 3.0, "sand", "shady", {"setting": "beach"}, "beach", 1600.0,
 			[0.5, 20.0]],
@@ -122,11 +144,7 @@ static func generate() -> MapLayout:
 	l.terrain_seed = TERRAIN_SEED
 	l.params = _params()
 	l.post = true
-	var base := Terrain.new()
-	base.generate_custom(TERRAIN_SEED, l.params, [])
-	var h := base.get_heights()
-	_shape(h, [])
-	base.set_data(h, PackedFloat32Array(), [])
+	var base := base_terrain()
 	var rng := PyRandom.new()
 	rng.seed(SEED)
 	var placed := []
@@ -166,7 +184,9 @@ static func generate() -> MapLayout:
 	l.zone_fields = {"west": ["FRM", "QRY", "MGR"], "north": ["EGL", "PNR"], "sea": ["COV", "ISL"]}
 	l.zone_centre = {"west": [-3500.0, -3000.0], "north": [1000.0, 8500.0], "sea": [13500.0, -11500.0]}
 	l.aerostat_pos = [5500.0, -13800.0]
-	l.roads = ROADS.duplicate(true)
+	var planned := load_roads()
+	l.roads = planned.get("roads", ROADS.duplicate(true))
+	l.bridges = planned.get("bridges", [])
 	l.stashes = STASHES.duplicate(true)
 	l.foreign = [Island.airfield()]  # Isla Soberana, over the southern horizon
 	return l
@@ -442,6 +462,41 @@ static func road_dist(roads: Array, x: float, y: float) -> float:
 	return best
 
 
+## Roads in a hash grid, so "how close is the nearest road" doesn't walk every segment of a 100 km network.
+## Exact within `reach` metres, 1e18 beyond it.
+class RoadIndex:
+	const CELL := 250.0
+	var cells := {}
+	var segs := PackedVector2Array()
+
+	func _init(roads: Array, reach: float) -> void:
+		for r in roads:
+			for k in r.size() - 1:
+				var a := Vector2(r[k][0], r[k][1])
+				var b := Vector2(r[k + 1][0], r[k + 1][1])
+				var idx := segs.size() / 2
+				segs.append(a)
+				segs.append(b)
+				for cj in range(floori((minf(a.y, b.y) - reach) / CELL), floori((maxf(a.y, b.y) + reach) / CELL) + 1):
+					for ci in range(floori((minf(a.x, b.x) - reach) / CELL), floori((maxf(a.x, b.x) + reach) / CELL) + 1):
+						var key := Vector2i(ci, cj)
+						if not cells.has(key):
+							cells[key] = PackedInt32Array()
+						cells[key].append(idx)
+
+	func dist(p: Vector2) -> float:
+		var key := Vector2i(floori(p.x / CELL), floori(p.y / CELL))
+		var best := 1e18
+		if not cells.has(key):
+			return best
+		for idx in cells[key]:
+			var a := segs[idx * 2]
+			var b := segs[idx * 2 + 1]
+			var t := clampf((p - a).dot(b - a) / maxf(1.0, (b - a).length_squared()), 0.0, 1.0)
+			best = minf(best, p.distance_to(a + (b - a) * t))
+		return best
+
+
 const MASK_N := 1024  ## road mask resolution (31 m cells)
 
 
@@ -550,6 +605,7 @@ static func _plant(t: Terrain, native: PackedFloat32Array, l: MapLayout) -> Pack
 ## Each: {x, y, z, w, d, h, style} (style: res | shop | tower | warehouse | crane)
 static func _city(t: Terrain, l: MapLayout) -> Array:
 	var out := []
+	var road_idx := RoadIndex.new(l.roads, 70.0)  # the town keeps a lot's width and a bit off every road
 	var lu := l.land_use
 	var rng := RandomNumberGenerator.new()
 	rng.seed = TERRAIN_SEED + 1
@@ -578,7 +634,7 @@ static func _city(t: Terrain, l: MapLayout) -> Array:
 							continue
 						if Vector2(x, y).distance_to(ORG_AT) < 70.0 or Vector2(x, y).distance_to(LAW_AT) < 70.0:
 							continue  # the nightclub's and the customs house's plots
-						if road_dist(l.roads, x, y) < lot / 2 + 12.0:
+						if road_idx.dist(Vector2(x, y)) < lot / 2 + 12.0:
 							continue  # the highway runs through town
 						var tall := 6.0 + rng.randf() * (6.0 + 50.0 * down * down)
 						var style := "tower" if tall > 26 else ("shop" if rng.randf() < 0.3 else "res")
@@ -592,13 +648,14 @@ static func _city(t: Terrain, l: MapLayout) -> Array:
 		for row in 2:
 			var x := qx + 30
 			var y := COAST_Y + 90.0 + row * 70.0
-			if t.height64(x, y) > 1.0 and rng.randf() < 0.8 and Vector2(x, y).distance_to(LAW_AT) > 80.0:
+			var keep_road: bool = road_idx.dist(Vector2(x, y)) > 26.0 + 8.0  # a warehouse is 52 x 26: not on the quay road
+			if t.height64(x, y) > 1.0 and rng.randf() < 0.8 and Vector2(x, y).distance_to(LAW_AT) > 80.0 and keep_road:
 				out.append({"x": x, "y": y, "z": t.height64(x, y), "w": 52.0, "d": 26.0, "h": rng.randf_range(8, 12), "style": "warehouse"})
 		qx += 70.0
 	for c in 5:
 		var x := lerpf(HARBOUR_X.x + 200, HARBOUR_X.y - 200, c / 4.0)
 		var y := COAST_Y + 22.0
-		if t.height64(x, y) > 0.5:
+		if t.height64(x, y) > 0.5 and road_idx.dist(Vector2(x, y)) > 14.0:
 			out.append({"x": x, "y": y, "z": t.height64(x, y), "w": 12.0, "d": 12.0, "h": 38.0, "style": "crane"})
 	# nothing in a glide path: a 3-degree slope from each runway end, 1.8 km out
 	var keep := []

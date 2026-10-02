@@ -148,6 +148,7 @@ class State:
 	var unpaid := 0
 	var cand: Array = []  ## up to four candidates: {id, name, role, skill, wage, hint}
 	var jailed: Array = []  ## crew in custody without a lawyer: {id, name, role}
+	var crew_list: Array = []  ## everyone on the payroll: {id, name, role, status, assigned, doing}
 
 	func _init(snap_fn_: Callable, cmd_fn_: Callable) -> void:
 		snap_fn = snap_fn_
@@ -223,6 +224,7 @@ class State:
 		crew_loyalty = int(round(100.0 * float(p.get("loyalty", 0.0))))
 		unpaid = int(p.get("unpaid", 0))
 		cand = p.get("candidates", []).slice(0, 4)
+		crew_list = p.get("crew", [])
 		var t: Dictionary = snap.get("trade", {})
 		trade = not t.is_empty()
 		coke = int(t.get("stock", {}).get("cocaine", 0))
@@ -295,6 +297,17 @@ class State:
 
 	func lawyer_for_jailed() -> bool:
 		return not jailed.is_empty() and _do("pay_worker_lawyer", {"id": jailed[0].id})
+
+	## The whole payroll, one line each, for "Who's working for me?" - where they are and what
+	## they're doing, not just a headcount (crew.dialogue).
+	func roster_text() -> String:
+		if crew_list.is_empty():
+			return "Nobody on the payroll yet."
+		var lines := []
+		for w in crew_list:
+			lines.append("- %s, %s: %s." % [w.name, Payroll.ROLES[w.role][2], w.doing])
+		return "
+".join(lines)
 
 	# the buyers
 	const LOT := {"cocaine": 20, "marijuana": 200, "guns": 5}

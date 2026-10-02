@@ -30,6 +30,8 @@ const LESSONS := [
 		"N switches the transponder. Squawking looks legitimate; flying dark hides you only\nbelow the radar floor - a squawk that vanishes is suspicious. The detector shows who paints you."],
 	["grass", "trade", "Your own product",
 		"Bush strips sell grass: the board lists our own loads (paid up front, into our stash).\nTake one and fly it to the stash's strip."],
+	["org_crew", "payroll", "The organisation runs itself",
+		"While you fly, the organisation hires and pays its own crew and raises its own squads -\nyou don't have to run HQ. SHIFT+W any time to see who's on the payroll and what they're doing."],
 	["dealer", "payroll", "Hire the street",
 		"SHIFT+W: Manny Ortega's hiring hall. Hire a street dealer - he sells what's in the stash,\ncorner by corner. Everyone on the payroll gets paid every 10 minutes."],
 	["cash_home", "logistics", "Money has weight",
@@ -55,6 +57,8 @@ const DESK_LESSONS := {
 	"boss": [
 		["b_orders", "", "Run the organisation",
 			"UP/DOWN picks an order, LEFT/RIGHT changes it, ENTER issues it: fronts to launder, opsec, lying low, upgrades. The money is the club's safe.", ["hq"]],
+		["b_squads", "ground_war", "Run the squads yourself",
+			"Q swaps this desk for squad command: CLICK a squad, RIGHT-CLICK the map to send it, buttons to melt away, hold, disband or raise one. Q again hands them straight back to the AI.", ["squad_order", "recruit_squad"]],
 		["b_logistics", "logistics", "Stock and cash have places",
 			"K: logistics. Street money piles up in the stashes - truck it to the club (All cash home). Product sells only where it sits: move it to the corners, or to a buyer.", ["move_cash", "move_goods", "move_armoury", "escort_truck"]],
 		["b_buyers", "trade", "Sell in bulk",
@@ -113,6 +117,7 @@ const TIPS := {
 	"raided": "A stash was raided: what was in it is gone, cash too. Heat builds with every truck and delivery - spread the traffic.",
 	"truck": "A truck was stopped. Roads near police strips and checkpoints are the risk; a soldier escort or a good driver helps.",
 	"connection": "The Colombians called: cocaine jobs are on the shady strips' boards now. Much more money per pound - and per year inside.",
+	"papi": "Those four squares are the PAPI: red over red is too low, white over white too high, two and two is right on the glide path.",
 }
 
 var sess
@@ -284,6 +289,10 @@ func tick(s) -> void:
 		complete("family")
 	if _notes.has("talk_general"):
 		complete("island")
+	if _notes.has("ai_hired_org"):
+		complete("org_crew")
+	if _notes.has("papi_seen"):
+		_show("papi")
 	if not enabled:
 		return
 	# the tips

@@ -20,6 +20,10 @@ var to_ob: OptionButton
 var what_ob: OptionButton
 var amount: SpinBox
 var status: Label
+var fuel_label: Label
+var round_label: Label
+var round_stops: Array = []  ## the stops of the round being planned, in order
+var _names := {}  ## site id -> name, from the last view
 var _sites: Array = []
 var _dests: Array = []
 const WHAT := ["cash", "cocaine", "marijuana", "the armoury", "rifles", "pistols", "machine guns", "RPGs"]
@@ -45,6 +49,8 @@ func _ready() -> void:
 	panel.add_child(v)
 	v.add_child(UIStyle.title("Logistics", 28, UIStyle.ACCENT))
 	v.add_child(UIStyle.caption("Product sells only where it sits; wages and loads are paid from the club's safe; the growers want cash on the strip."))
+	fuel_label = UIStyle.caption("")
+	v.add_child(fuel_label)
 	rows = VBoxContainer.new()
 	v.add_child(rows)
 	var order := HBoxContainer.new()
@@ -72,6 +78,19 @@ func _ready() -> void:
 	home.focus_mode = Control.FOCUS_NONE
 	home.pressed.connect(_all_home)
 	order.add_child(home)
+	var rnd := HBoxContainer.new()
+	rnd.add_theme_constant_override("separation", 8)
+	v.add_child(rnd)
+	rnd.add_child(UIStyle.label("Round", 15))
+	round_label = UIStyle.label("(add stops: pick a place in 'from', then Add stop)", 14, UIStyle.DIM)
+	round_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rnd.add_child(round_label)
+	for spec in [["Add stop", _round_add], ["Clear", _round_clear], ["Collect cash round", _round_cash], ["Deliver round", _round_goods]]:
+		var rb := Button.new()
+		rb.text = spec[0]
+		rb.focus_mode = Control.FOCUS_NONE
+		rb.pressed.connect(spec[1])
+		rnd.add_child(rb)
 	if pilot:
 		var bags := HBoxContainer.new()
 		bags.add_theme_constant_override("separation", 8)
@@ -86,6 +105,17 @@ func _ready() -> void:
 		unload_b.focus_mode = Control.FOCUS_NONE
 		unload_b.pressed.connect(func(): _act(cmd_fn.call("unload_cash", {})))
 		bags.add_child(unload_b)
+	var works := HBoxContainer.new()
+	works.add_theme_constant_override("separation", 8)
+	v.add_child(works)
+	works.add_child(UIStyle.label("Build at the house in from", 15))
+	for w in StashWorks.WORKS:
+		var wb := Button.new()
+		wb.text = StashWorks.WORKS[w].name
+		wb.tooltip_text = StashWorks.WORKS[w].blurb
+		wb.focus_mode = Control.FOCUS_NONE
+		wb.pressed.connect(_build_works.bind(w))
+		works.add_child(wb)
 	v.add_child(UIStyle.caption("ON THE ROAD"))
 	trucks = VBoxContainer.new()
 	trucks.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -94,6 +124,12 @@ func _ready() -> void:
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(status)
 	refresh()
+
+
+func _build_works(what: String) -> void:
+	if _sites.is_empty():
+		return
+	_act(cmd_fn.call("stash_works", {"stash": _sites[from_ob.selected], "what": what}))
 
 
 func refresh() -> void:
@@ -105,6 +141,14 @@ func refresh() -> void:
 	if lv.is_empty():
 		rows.add_child(UIStyle.label("No logistics in this game.", 15))
 		return
+	_names = {}
+	for s in lv.get("sites", []):
+		_names[s.id] = str(s.name)
+	_names[Logistics.HQ] = str(lv.get("hq", "the club"))
+	if lv.has("fuel"):
+		var fu: Dictionary = lv.fuel
+		fuel_label.text = "Fuel: $%.2f a gallon for the trucks and boats, $%.2f avgas (%+d%% on the usual); the fleet has burned $%s so far. A truck or a pilot whose tank will not cover the run fills up first." % [
+			float(fu.ground), float(fu.avgas), int(round(float(fu.trend) * 100.0)), Py.money(int(fu.spent))]
 	rows.add_child(UIStyle.label("%-26s %-6s %9s %9s %10s" % ["", "market", "coke lb", "grass lb", "cash"], 14, UIStyle.DIM, UIStyle.mono()))
 	var ids: Array = lv.sites.filter(func(s): return not s.burned).map(func(s): return s.id)
 	var rebuild: bool = ids != _sites
@@ -115,7 +159,7 @@ func refresh() -> void:
 		to_ob.clear()
 	for s in lv.sites:
 		var l := UIStyle.label("%-26s %-6s %9d %9d %10s%s" % [str(s.name).left(26), s.market, int(s.cocaine), int(s.marijuana),
-			"$" + Py.money(int(s.cash)), "  BURNED" if s.burned else ""], 14, UIStyle.RED if s.burned else UIStyle.WHITE, UIStyle.mono())
+			"$" + Py.money(int(s.cash)), "  BURNED" if s.burned else (("  vault %d guard %d" % [int(s.get("vault", 0)), int(s.get("guard", 0))]) if int(s.get("vault", 0)) + int(s.get("guard", 0)) > 0 else "")], 14, UIStyle.RED if s.burned else UIStyle.WHITE, UIStyle.mono())
 		rows.add_child(l)
 		if not s.burned and rebuild:
 			_sites.append(s.id)
@@ -182,13 +226,69 @@ func _send() -> void:
 
 func _all_home() -> void:
 	var lv: Dictionary = view_fn.call()
-	var n := 0
+	var with_cash := []
 	for s in lv.get("sites", []):
 		if int(s.cash) > 0 and not s.burned:
-			var r: Array = cmd_fn.call("move_cash", {"from": s.id, "to": Logistics.HQ})
-			if r[0]:
-				n += 1
+			with_cash.append(s.id)
+	if with_cash.size() >= 2:
+		# one truck works its way round them and home
+		var r: Array = cmd_fn.call("cash_round", {"stops": with_cash, "to": Logistics.HQ, "plan": true})
+		_act(r if not r[0] else [true, "One truck is working its way round %d stashes and home." % with_cash.size()])
+		return
+	var n := 0
+	for id in with_cash:
+		var r: Array = cmd_fn.call("move_cash", {"from": id, "to": Logistics.HQ})
+		if r[0]:
+			n += 1
 	_act([true, "%d cash truck(s) heading home." % n if n > 0 else "No cash out in the stashes."])
+
+
+func _round_text() -> String:
+	if round_stops.is_empty():
+		return "(add stops: pick a place in 'from', then Add stop)"
+	return " > ".join(round_stops.map(func(s): return str(_names.get(s, s))))
+
+
+func _round_add() -> void:
+	if _sites.is_empty():
+		return
+	var id: String = _sites[from_ob.selected]
+	if id in round_stops:
+		_act([false, "%s is already on the round." % str(_names.get(id, id))])
+		return
+	round_stops.append(id)
+	round_label.text = _round_text()
+
+
+func _round_clear() -> void:
+	round_stops = []
+	round_label.text = _round_text()
+
+
+## Collect: one truck through the stops (the first is where it starts) with the cash, to the 'to' place.
+func _round_cash() -> void:
+	if round_stops.size() < 2 or _dests.is_empty():
+		_act([false, "A round needs at least two stops."])
+		return
+	var r: Array = cmd_fn.call("cash_round", {"stops": round_stops, "to": _dests[to_ob.selected]})
+	if r[0]:
+		_round_clear()
+	_act(r)
+
+
+## Deliver: one truck loaded at 'from' (the good in 'Send', the amount a stop), dropping it at each stop.
+func _round_goods() -> void:
+	if round_stops.is_empty() or _sites.is_empty():
+		_act([false, "Add the stops to deliver to."])
+		return
+	var what: String = WHAT[what_ob.selected]
+	if what not in ["cocaine", "marijuana"]:
+		_act([false, "A delivery round carries cocaine or marijuana."])
+		return
+	var r: Array = cmd_fn.call("goods_round", {"from": _sites[from_ob.selected], "stops": round_stops, "good": what, "lb": amount.value if amount.value > 0 else 1e9})
+	if r[0]:
+		_round_clear()
+	_act(r)
 
 
 func _act(r: Array) -> void:

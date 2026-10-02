@@ -1,0 +1,15 @@
+{
+	"name": "Atlantic Beacon, Turks & Caicos",
+	"band": "AM",
+	"label": "1570",
+	"blurb": "The Atlantic Beacon signing off, November 1986.",
+	"gap_s": 25,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Atlantic Beacon 1570, sign-off, 28 Nov 1986",
+			"len": 110.16,
+			"ia": "1986-11-28-turks-and-caicos-islands-atlantic-beacon-1570-0531-utc-s-off"
+		}
+	]
+}

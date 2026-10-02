@@ -163,3 +163,55 @@ func test_hud_regions_never_overlap_at_any_size() -> void:
 				check(not a.intersects(b), "%s and %s overlap at %s" % [names[i], names[j], sz])
 	hud.free()
 	s.dispose()
+
+
+func test_f1_help_scrolls_instead_of_being_cropped() -> void:
+	var s := Session.new({"seed": 1, "location": "FRM"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	for i in 3:
+		app._process(1.0 / 30)
+	check(app.help is PanelContainer, "the F1 panel is a bordered box, not a bare label")
+	var scroll := app.help.get_child(0)
+	check(scroll is ScrollContainer, "its content sits in a ScrollContainer")
+	check(scroll.get_v_scroll_bar().max_value > scroll.size.y, "the help text is taller than the box: it needs to scroll")
+	check(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED, "no sideways scroll")
+	app._unhandled_input(T.key(KEY_F1))
+	check(app.help.visible, "F1 opens it")
+	app._unhandled_input(T.key(KEY_F1))
+	check(not app.help.visible, "F1 again closes it")
+	app.queue_free()
+	app.free()
+	s.dispose()
+
+
+func test_compass_relative_wind_and_tape_mapping() -> void:
+	check_near(Compass.relative_wind(90.0, 90.0), 0.0, 0.001, "wind from dead ahead is a headwind: 0")
+	check_near(absf(Compass.relative_wind(90.0, 270.0)), 180.0, 0.001, "wind from behind is a tailwind: +-180")
+	check_near(Compass.relative_wind(90.0, 180.0), 90.0, 0.001, "wind from the right wing: +90")
+	check_near(Compass.relative_wind(350.0, 10.0), 20.0, 0.001, "wraps past north: +20, not -340")
+
+	var c := Compass.new()
+	c.size = Vector2(200, 58)
+	c.heading = 350.0
+	check_near(c._tape_x(10.0), 100.0 + 20.0 / Compass.SPAN_DEG * 100.0, 0.5, "10 deg sits right of centre when heading is 350")
+	check_near(c._tape_x(350.0), 100.0, 0.5, "the nose itself is dead centre")
+	check(c._tape_x(fposmod(350.0 - Compass.SPAN_DEG - 20.0, 360.0)) == null, "well off the tape is not drawn")
+	c.free()
+
+
+func test_compass_in_the_hud_handles_no_weather_and_some() -> void:
+	var s := Session.new({"seed": 7})
+	s.update(1.0 / 30)
+	var hud := Hud.new()
+	_tree().root.add_child(hud)
+	hud.setup(s)
+	hud.refresh()
+	check(hud.compass != null and hud.zones.has("compass"), "the compass is a HUD zone")
+	check(not hud.compass.has_wind, "no weather system: no wind arrow")
+	s.set_weather({"sky": "clear", "wind_dir": 45.0, "wind_kt": 12.0, "moon": 0.5})
+	hud.refresh()
+	check(hud.compass.has_wind and hud.compass.wind_kt == 12.0, "weather on: the arrow has something to show")
+	hud.free()
+	s.dispose()

@@ -108,8 +108,11 @@ func nearest(p: Vector2, roads_only := true) -> int:
 	return best
 
 
-## A* from node a to node b: the node indices, or [] if unreachable.
-func path(a: int, b: int) -> Array:
+## A* from node a to node b: the node indices, or [] if unreachable. `penalty`, if given, is
+## called as penalty(from: Vector2, to: Vector2, length: float) -> float for every edge the search
+## considers and returns extra metres of cost for it (never negative, so the straight-line
+## heuristic stays admissible): a hill, a checkpoint, a place that is hot.
+func path(a: int, b: int, penalty := Callable()) -> Array:
 	if a < 0 or b < 0:
 		return []
 	if a == b:
@@ -133,6 +136,8 @@ func path(a: int, b: int) -> Array:
 		open.erase(cur)
 		for e in adj[cur]:
 			var ng: float = g[cur] + e[1]
+			if penalty.is_valid():
+				ng += maxf(0.0, float(penalty.call(nodes[cur], nodes[e[0]], e[1])))
 			if not g.has(e[0]) or ng < g[e[0]]:
 				g[e[0]] = ng
 				came[e[0]] = cur
@@ -143,11 +148,11 @@ func path(a: int, b: int) -> Array:
 
 ## The points to drive from `from` to `to`: off-road to the nearest node, the
 ## roads, off-road to the target. Straight line if the network can't connect them.
-func route(from: Vector2, to: Vector2) -> PackedVector2Array:
+func route(from: Vector2, to: Vector2, penalty := Callable()) -> PackedVector2Array:
 	var out := PackedVector2Array([from])
 	var a := nearest(from, false)
 	var b := nearest(to, false)
-	var p := path(a, b)
+	var p := path(a, b, penalty)
 	if p.is_empty() or from.distance_to(to) < 400.0:
 		out.append(to)
 		return out
@@ -157,6 +162,14 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 	if out[out.size() - 1].distance_to(to) > 1.0:
 		out.append(to)
 	return out
+
+
+## How close the segment a-b comes to p.
+static func seg_distance(a: Vector2, b: Vector2, p: Vector2) -> float:
+	var ab := b - a
+	var l2 := ab.length_squared()
+	var t := 0.0 if l2 < 1e-9 else clampf((p - a).dot(ab) / l2, 0.0, 1.0)
+	return p.distance_to(a + ab * t)
 
 
 static func length(pts: PackedVector2Array) -> float:

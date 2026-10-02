@@ -50,6 +50,7 @@ static func build(world: World, q: Quality) -> Node3D:
 			root.add_child(_crane(b))
 	root.add_child(_roads(world, l.roads))
 	root.add_child(_road_details(world, l.roads))
+	root.add_child(_bridges(world, l.roads, l.bridges))
 	root.add_child(_lamps(world, l.roads))
 	root.add_child(_props(world, l.roads))
 	root.add_child(_palms(world, l.roads, q))
@@ -273,6 +274,56 @@ static func _edge_pt(s: Array, lateral: float, up: float) -> Vector3:
 	var p: Vector2 = s[0]
 	return Vector3(p.x + side.x * lateral, s[2] + up, -(p.y + side.y * lateral))
 
+
+## The deck height at a road point: over the highest of the ground under the ribbon, and 2.2 m over the sea.
+static func deck_z(world: World, p: Vector2, side: Vector2) -> float:
+	return maxf(maxf(world.ground(p.x + side.x, p.y + side.y), world.ground(p.x - side.x, p.y - side.y)),
+		maxf(world.ground(p.x, p.y), 2.2)) + 0.45
+
+
+## Bridges where a road crosses water (RoadPlanner found them): piers down to the bed every 30 m, and
+## railings along both edges of the deck. `bridges`: [{road, from, to}] in metres along the road.
+static func _bridges(world: World, roads: Array, bridges: Array) -> MeshInstance3D:
+	var mb := MeshBuilder.new()
+	var concrete := [0.56, 0.56, 0.54]
+	var steel := [0.78, 0.78, 0.76]
+	for b in bridges:
+		var r: Array = roads[int(b.road)]
+		var route := PackedVector2Array()
+		for p in r:
+			route.append(Vector2(p[0], p[1]))
+		var total := RoadGraph.length(route)
+		var s0 := clampf(float(b["from"]), 0.0, total)
+		var s1 := clampf(float(b["to"]), 0.0, total)
+		var prev_l := []
+		var prev_r := []
+		var have_prev := false
+		var s := s0
+		var next_pier := s0
+		while s <= s1 + 0.01:
+			var p := RoadGraph.along(route, s)
+			var ahead := RoadGraph.along(route, minf(s + 3.0, total))
+			var behind := RoadGraph.along(route, maxf(s - 3.0, 0.0))
+			var dir := (ahead - behind).normalized()
+			var side := Vector2(-dir.y, dir.x) * 4.6
+			var z := deck_z(world, p, side * (4.5 / 4.6))
+			var lp := [p.x + side.x, p.y + side.y]
+			var rp := [p.x - side.x, p.y - side.y]
+			if have_prev:
+				for e in [[prev_l, lp], [prev_r, rp]]:
+					mb.quad([e[0][0], e[0][1], e[0][2] + 0.45], [e[1][0], e[1][1], z + 0.45], [e[1][0], e[1][1], z + 1.5], [e[0][0], e[0][1], e[0][2] + 1.5], steel)
+			if s >= next_pier:
+				var bed := world.terrain.height(p.x, p.y)
+				if bed < z - 2.0:
+					mb.box(p.x, p.y, (bed + z - 0.3) / 2.0, 2.4, 2.4, z - 0.3 - bed, concrete)
+				next_pier += 30.0
+			prev_l = [lp[0], lp[1], z]
+			prev_r = [rp[0], rp[1], z]
+			have_prev = true
+			s += 6.0
+	var node := mb.node("bridges")
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return node
 
 
 ## KayKit's City Builder Bits (CC0, assets/models/kaykit/city): each part's

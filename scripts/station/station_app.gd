@@ -317,7 +317,8 @@ func _unhandled_key_input(ev: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		KEY_ESCAPE:
-			get_tree().quit()
+			confirm.ask()  # "Leave the seat?" - the same box the ESC hint button opens
+			get_viewport().set_input_as_handled()
 			return
 		_:
 			if k >= KEY_A and k <= KEY_Z:
@@ -1105,7 +1106,7 @@ func _draw_squads(snap: Dictionary) -> void:
 	var colors := {}
 	for i in mine.size():
 		var d: Dictionary = mine[i]
-		cells.append([d.id, d.kind, "%d/%d" % [int(d.men), int(d.men0)], Arsenal.describe(d.loadout), d.tactic if d.tactic != "" else d.order, d.state])
+		cells.append([d.id, d.kind, "%d/%d" % [int(d.men), int(d.men0)] + ((" " + GroundWar.RANKS[int(d.rank)].to_lower()) if int(d.get("rank", 0)) > 0 else ""), Arsenal.describe(d.loadout), d.tactic if d.tactic != "" else d.order, d.state])
 		if d.state == "fighting":
 			colors[i] = UIStyle.RED
 		elif d.state == "routed":
