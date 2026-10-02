@@ -1,0 +1,15 @@
+{
+	"name": "Radio Landia, Honduras",
+	"band": "SW",
+	"label": "4965",
+	"blurb": "Honduras on shortwave, December 1983.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Landia 4965, 16 Dec 1983",
+			"len": 46.24,
+			"ia": "1983-12-16-honduras-r-landia-4965-0358-0336-utc"
+		}
+	]
+}

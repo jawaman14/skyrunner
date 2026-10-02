@@ -16,6 +16,7 @@ extends RefCounted
 
 const TRUCK_MS := 11.0  ## ~40 km/h on island roads
 const TRUCK_LOAD_S := 45.0
+const TRUCK_STOP_S := 75.0  ## a stop on a round: the cash counted, the truck loaded or unloaded
 const STOP_RANGE_M := 1600.0
 const HEAT_DELIVERY := 15.0
 const HEAT_SEIZED := 25.0
@@ -45,6 +46,14 @@ class Truck:
 	var no_trail := false  ## nothing worth tailing it to (cash for the club): the police stop it or let it go
 	var agent: Agent = null  ## the driver's body (Agent.ENABLED): its progress is the truck's
 	var arrived := false  ## the agent finished the drive: delivered, whatever the clock says
+	var refuel_s := 0.0  ## time at the pump before it leaves (Fuel.truck): part of dur, after the loading
+	var legs: Array = []  ## a round: the road of each leg, stop to stop (route is all of them end to end)
+	var stops: Array = []  ## ... and the stops between the legs, [{site, at}]
+	var on_stop: Callable = Callable()  ## called (truck, site) when it has been through a stop
+
+	## Loading, then any stop at the pump: the seconds before the drive starts.
+	func lead_s() -> float:
+		return StashNet.TRUCK_LOAD_S + refuel_s
 
 	func frac(now: float) -> float:
 		return clampf((now - t0) / dur, 0.0, 1.0)
@@ -57,17 +66,34 @@ class Truck:
 		var a := Vector2(x0, y0)
 		var path := route if route.size() >= 2 else PackedVector2Array([a, Vector2(x1, y1)])
 		agent = Agent.new(driver if driver != "" else "truck-%d" % job_id, "car", x0, y0)
-		agent.speed = RoadGraph.length(path) / maxf(1.0, dur - StashNet.TRUCK_LOAD_S)
+		agent.speed = RoadGraph.length(path) / maxf(1.0, dur - lead_s() - stops.size() * StashNet.TRUCK_STOP_S)
 		agent.queue(Agent.Task.new("load", a, StashNet.TRUCK_LOAD_S))
-		agent.queue(Agent.Task.new("drive", Vector2(x1, y1), 0.0, path))
+		if refuel_s > 0.0:
+			agent.queue(Agent.Task.new("refuel", a, refuel_s))
+		if legs.is_empty():
+			agent.queue(Agent.Task.new("drive", Vector2(x1, y1), 0.0, path))
+		else:
+			for i in legs.size():
+				var leg: PackedVector2Array = legs[i]
+				if i < stops.size():
+					agent.queue(Agent.Task.new("stop:" + str(stops[i].site), leg[leg.size() - 1], StashNet.TRUCK_STOP_S, leg))
+				else:
+					agent.queue(Agent.Task.new("drive", Vector2(x1, y1), 0.0, leg))
 
 	func sync(now: float) -> void:
 		if agent == null:
 			return
 		var cur := agent.current()
 		var elapsed := dur
-		if cur != null:
-			elapsed = agent.working_s() if cur.kind == "load" else StashNet.TRUCK_LOAD_S + agent.s / agent.speed_ms()
+		if cur != null and not legs.is_empty():
+			elapsed = agent.busy_s  # a round: the time it has been busy is the time it has been going
+		elif cur != null:
+			if cur.kind == "load":
+				elapsed = agent.working_s()
+			elif cur.kind == "refuel":
+				elapsed = StashNet.TRUCK_LOAD_S + agent.working_s()
+			else:
+				elapsed = lead_s() + agent.s / agent.speed_ms()
 		t0 = now - elapsed
 
 	## Stuck for `seconds` (pulled over, waiting out a fight): the clock stops for it.
@@ -79,14 +105,17 @@ class Truck:
 
 	## Metres of road still to go, for the roster.
 	func left_m() -> float:
-		if agent != null and agent.current() != null and agent.current().kind == "drive":
-			return agent.left_m()
+		if agent != null and agent.current() != null and (agent.current().kind == "drive" or agent.current().kind.begins_with("stop:")):
+			var m := agent.left_m()
+			for k in range(1, agent.tasks.size()):  # the legs after this one
+				m += RoadGraph.length((agent.tasks[k] as Agent.Task).route)
+			return m
 		return 0.0
 
 	func pos(now: float) -> Array:
 		if agent != null:
 			return [agent.x, agent.y]
-		var f := clampf((now - t0 - StashNet.TRUCK_LOAD_S) / maxf(1.0, dur - StashNet.TRUCK_LOAD_S), 0.0, 1.0)
+		var f := clampf((now - t0 - lead_s()) / maxf(1.0, dur - lead_s()), 0.0, 1.0)
 		if route.size() >= 2:
 			var p := RoadGraph.along(route, f * RoadGraph.length(route))
 			return [p.x, p.y]
@@ -186,8 +215,11 @@ func update(dt: float, now: float, police_units: Array) -> Array:
 	var done := []
 	for t in trucks:
 		if t.agent != null:
-			if t.agent.update(dt) == "drive":
+			var finished: String = t.agent.update(dt)
+			if finished == "drive":
 				t.arrived = true
+			elif finished.begins_with("stop:") and t.on_stop.is_valid():
+				t.on_stop.call(t, finished.trim_prefix("stop:"))
 			t.sync(now)
 	for t in trucks.duplicate():
 		var p: Array = t.pos(now)

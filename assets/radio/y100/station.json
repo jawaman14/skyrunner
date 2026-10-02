@@ -1,0 +1,21 @@
+{
+	"name": "Y100 (WHYI) Miami",
+	"band": "FM",
+	"label": "100.7",
+	"blurb": "Florida's Mega Station, 1985: the legal ID and the weather.",
+	"gap_s": 40,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Legal ID, April 1985",
+			"len": 13.48,
+			"ia": "100.7-y-100-whyi-fm-miami-florida-legal-id-1985"
+		},
+		{
+			"file": "02.ogg",
+			"title": "Weather and the Mega-Station bumper, April 1985",
+			"len": 16.34,
+			"ia": "100.7-whyi-y-100-miami-fl-weather-floridas-mega-station-bumper-april-1985"
+		}
+	]
+}

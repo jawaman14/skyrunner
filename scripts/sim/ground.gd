@@ -1127,7 +1127,7 @@ func truck_contacts() -> Array:
 	for t in sess.stash_net.trucks.duplicate():
 		var p: Array = t.pos(sess.time)
 		var tp := Vector2(p[0], p[1])
-		if sess.time - t.t0 < StashNet.TRUCK_LOAD_S:
+		if sess.time - t.t0 < t.lead_s():
 			continue
 		var escort = Py.first(squads, func(q): return (q.faction == "org" and q.order.get("type", "") == "escort"
 			and int(q.order.get("job_id", -1)) == t.job_id and q.state != "gone"))
@@ -1224,7 +1224,7 @@ func _trucks(dt: float) -> void:
 				_say("law", "%s followed a truck to %s" % [q.id, st.name])
 			continue
 		# shadow it along its own road, a few hundred metres back
-		var d: float = clampf((sess.time - t.t0 - StashNet.TRUCK_LOAD_S) / maxf(1.0, t.dur - StashNet.TRUCK_LOAD_S), 0.0, 1.0)
+		var d: float = clampf((sess.time - t.t0 - t.lead_s()) / maxf(1.0, t.dur - t.lead_s()), 0.0, 1.0)
 		var lag: PackedVector2Array = t.route if t.route.size() >= 2 else PackedVector2Array([Vector2(t.x0, t.y0), Vector2(t.x1, t.y1)])
 		var spot := RoadGraph.along(lag, maxf(0.0, d * RoadGraph.length(lag) - 350.0))
 		if q.pos().distance_to(spot) < 900.0:
