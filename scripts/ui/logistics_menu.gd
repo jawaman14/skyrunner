@@ -105,6 +105,17 @@ func _ready() -> void:
 		unload_b.focus_mode = Control.FOCUS_NONE
 		unload_b.pressed.connect(func(): _act(cmd_fn.call("unload_cash", {})))
 		bags.add_child(unload_b)
+	var works := HBoxContainer.new()
+	works.add_theme_constant_override("separation", 8)
+	v.add_child(works)
+	works.add_child(UIStyle.label("Build at the house in from", 15))
+	for w in StashWorks.WORKS:
+		var wb := Button.new()
+		wb.text = StashWorks.WORKS[w].name
+		wb.tooltip_text = StashWorks.WORKS[w].blurb
+		wb.focus_mode = Control.FOCUS_NONE
+		wb.pressed.connect(_build_works.bind(w))
+		works.add_child(wb)
 	v.add_child(UIStyle.caption("ON THE ROAD"))
 	trucks = VBoxContainer.new()
 	trucks.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -113,6 +124,12 @@ func _ready() -> void:
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(status)
 	refresh()
+
+
+func _build_works(what: String) -> void:
+	if _sites.is_empty():
+		return
+	_act(cmd_fn.call("stash_works", {"stash": _sites[from_ob.selected], "what": what}))
 
 
 func refresh() -> void:
@@ -142,7 +159,7 @@ func refresh() -> void:
 		to_ob.clear()
 	for s in lv.sites:
 		var l := UIStyle.label("%-26s %-6s %9d %9d %10s%s" % [str(s.name).left(26), s.market, int(s.cocaine), int(s.marijuana),
-			"$" + Py.money(int(s.cash)), "  BURNED" if s.burned else ""], 14, UIStyle.RED if s.burned else UIStyle.WHITE, UIStyle.mono())
+			"$" + Py.money(int(s.cash)), "  BURNED" if s.burned else (("  vault %d guard %d" % [int(s.get("vault", 0)), int(s.get("guard", 0))]) if int(s.get("vault", 0)) + int(s.get("guard", 0)) > 0 else "")], 14, UIStyle.RED if s.burned else UIStyle.WHITE, UIStyle.mono())
 		rows.add_child(l)
 		if not s.burned and rebuild:
 			_sites.append(s.id)

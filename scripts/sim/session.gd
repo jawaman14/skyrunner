@@ -2387,6 +2387,12 @@ func _cmd_rackets(role: String, a: Dictionary):
 	return err if err != "" else null
 
 
+## Build at a stash house: {stash, what: vault | guard}.
+func _cmd_stash_works(role: String, a: Dictionary):
+	var err := StashWorks.build(self, str(a.get("stash", "")), str(a.get("what", "")))
+	return err if err != "" else null
+
+
 func _cmd_recruit_squad(role: String, a: Dictionary):
 	if ground == null:
 		return "No ground war here."
