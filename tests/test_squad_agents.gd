@@ -113,6 +113,30 @@ func test_a_firefight_spreads_the_men_across_the_line_of_fire() -> void:
 	b.fight = null
 	s.dispose()
 
+func test_the_3d_world_draws_the_men_where_the_agents_are() -> void:
+	var s := _war()
+	var g := s.ground
+	var q := _squad(g, "org", Vector2(-1640, -10690), 4)
+	_ticks(g, 2)
+	var r := SquadRender.new()
+	r.setup(s.world, "medium")
+	Engine.get_main_loop().root.add_child(r)
+	var d := q.dict()
+	check_eq((d.at as Array).size(), 4, "the squad's dict carries where its men are")
+	r.sync([d], [], Vector3(-1660, 20, 10720), s.time, 0.1)
+	check_eq(r.men_pts.size(), 4, "four men drawn")
+	for i in 4:
+		var m: Agent = q.members[i]
+		var drawn: Vector3 = r.men_pts[i][1]
+		check(absf(drawn.x - m.x) < 0.2 and absf(-drawn.z - m.y) < 0.2, "man %d is drawn at his agent (%.1f,%.1f vs %.1f,%.1f)" % [i, drawn.x, -drawn.z, m.x, m.y])
+	# without the bodies the old layout still draws everybody
+	Agent.ENABLED = false
+	q.members.clear()
+	r.sync([q.dict()], [], Vector3(-1660, 20, 10720), s.time, 0.1)
+	check_eq(r.men_pts.size(), 4, "four men drawn with no agents")
+	r.free()
+	s.dispose()
+
 
 func test_the_bodies_change_no_outcome() -> void:
 	var ran := []

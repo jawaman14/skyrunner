@@ -275,10 +275,17 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float) -> 
 			anim = "holding-both-shoot"
 		elif moving:
 			anim = "sprint" if d.state == "routed" else "walk"
+		var placed: Array = d.get("at", [])  # where the sim's agents say each man stands (none: lay them out here)
+		var by_agent: bool = placed.size() == men
 		for k in men:
-			var row := k / 4
-			var col := k % 4
-			var off: Vector3 = right * ((col - 1.5) * 1.6) - fwd * (row * 2.0) + (right * 3.2 if d.kind != "foot" else Vector3.ZERO)
+			var off: Vector3
+			if by_agent:
+				var at: Array = placed[k]
+				off = Vector3(float(at[0]) - float(d.x), 0.0, -(float(at[1]) - float(d.y)))
+			else:
+				var row := k / 4
+				var col := k % 4
+				off = right * ((col - 1.5) * 1.6) - fwd * (row * 2.0) + (right * 3.2 if d.kind != "foot" else Vector3.ZERO)
 			var wp: Vector3 = g3 + off
 			wp.y = world.ground(wp.x, -wp.z) + 0.3
 			men_pts.append([id, wp])

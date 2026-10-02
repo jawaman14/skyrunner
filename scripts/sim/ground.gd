@@ -49,6 +49,7 @@ const THINK_S := 30.0
 const FILE_GAP := 6.0  ## metres between men walking in file
 const LINE_GAP := 5.0  ## ... and standing in a firing line
 const RING_R := 4.0  ## ... and standing around their squad's spot
+const CAR_RING_R := 4.5  ## ... or around the vehicle they got out of
 const CONTACT_M := 250.0
 const SIGHT_M := 1500.0
 const HIDDEN_M := 150.0
@@ -108,6 +109,7 @@ class Squad:
 		return {"id": id, "faction": faction, "kind": kind, "men": men, "men0": men0, "x": snappedf(x, 0.1),
 			"y": snappedf(y, 0.1), "state": state, "order": order.get("type", ""), "tactic": tactic,
 			"hidden": hidden, "morale": snappedf(morale, 0.01), "loadout": loadout.duplicate(), "ammo": ammo, "tag": tag,
+			"at": men_at() if members.size() == men else [],
 			"route": Array(route.slice(0, 12)).map(func(p): return [snappedf(p.x, 1.0), snappedf(p.y, 1.0)])}
 
 
@@ -561,9 +563,10 @@ func _sync_members() -> void:
 				label = "fight"
 				var across := facing.normalized().orthogonal()
 				at += across * ((float(i) - float(n - 1) / 2.0) * LINE_GAP)
-			elif q.kind == "foot" and n > 1:
-				var ang := TAU * float(i) / float(n)
-				at += Vector2(cos(ang), sin(ang)) * RING_R
+			elif n > 1 or q.kind != "foot":
+				# stood round the squad's spot - clear of the car's bodywork if it came in one
+				var ang := TAU * float(i) / float(maxi(n, 1))
+				at += Vector2(cos(ang), sin(ang)) * (RING_R if q.kind == "foot" else CAR_RING_R)
 			m.x = at.x
 			m.y = at.y
 			m.clear()
