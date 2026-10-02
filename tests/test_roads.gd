@@ -112,6 +112,48 @@ func test_the_city_network_connects_the_places_that_matter() -> void:
 		check(near < 400.0, "%s is %.0f m from a road" % [st.id, near])
 	check(downtown >= 0, "downtown is on the graph")
 
+## A ring link is a second way, not a copy of the first: on flat ground the planner joins two places,
+## then a ring link between them finds a corridor clear of that road, so a roadblock on one leaves the other.
+func test_a_ring_link_is_a_second_road_not_the_first_again() -> void:
+	var a := Vector2(-4000, -3000)
+	var b := Vector2(4000, -3000)
+	var tree := RoadPlanner.new(_height, _passable, LIMIT).plan([a, b])
+	var ring := RoadPlanner.new(_height, _passable, LIMIT).plan([a, b], [], [[0, 1]])
+	var g1 := RoadGraph.new(tree.roads)
+	var g2 := RoadGraph.new(ring.roads)
+	var mid := Vector2(0, -3000)
+	var block := func(p: Vector2, q: Vector2, _l: float) -> float:
+		return 4000.0 if RoadGraph.seg_distance(p, q, mid) < 300.0 else 0.0
+	var first := g1.route(a, b, block)
+	var through := false
+	for i in first.size() - 1:
+		through = through or RoadGraph.seg_distance(first[i], first[i + 1], mid) < 300.0
+	check(through, "with one road there is no way round the roadblock")
+	var second := g2.route(a, b, block)
+	var clear := true
+	for i in second.size() - 1:
+		clear = clear and RoadGraph.seg_distance(second[i], second[i + 1], mid) >= 300.0
+	check(clear, "with the ring link the roadblock is bypassed (%.0f m vs %.0f m)" % [RoadGraph.length(second), RoadGraph.length(g2.route(a, b))])
+	check(RoadGraph.length(second) < 2.0 * RoadGraph.length(g1.route(a, b)), "and the second way is not absurd")
+
+
+func test_the_city_has_a_road_round_a_checkpoint() -> void:
+	World.use_map(MapCity.SEED)
+	var w := World.new()
+	var g := RoadGraph.new(w.map.roads)
+	var har := World.airfield("HAR")
+	var a := Vector2(har.x, har.y)
+	var base := g.route(a, MapCity.ORG_AT)
+	check(base.size() >= 3, "a road from the airport to downtown")
+	var cp := RoadGraph.along(base, RoadGraph.length(base) * 0.5)
+	var block := func(p: Vector2, q: Vector2, _l: float) -> float:
+		return 4000.0 if RoadGraph.seg_distance(p, q, cp) < GroundWar.AVOID_M else 0.0
+	var alt := g.route(a, MapCity.ORG_AT, block)
+	var clear := true
+	for i in alt.size() - 1:
+		clear = clear and RoadGraph.seg_distance(alt[i], alt[i + 1], cp) >= GroundWar.AVOID_M
+	check(clear, "a checkpoint halfway along the airport-downtown road can be driven round (%.0f m vs %.0f m)" % [RoadGraph.length(alt), RoadGraph.length(base)])
+
 
 func test_the_city_roads_are_gentle_and_dry() -> void:
 	World.use_map(MapCity.SEED)

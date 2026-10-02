@@ -81,6 +81,8 @@ Drivers pull over when they see police on the road ahead; a passing patrol pulls
 
 35. **The flight model's castering-gear fix, re-flown.** *Found:* The numbers above were calibrated under an early Godot flight model where castering (freely pivoting) gear acted like fixed, steerable gear - fixed in 336a0dc, which changed takeoffs. Re-flying tactical (630 flights) found the fix mostly changed the crash rate: 19% of flights crashed before, 2% now (the 'low' tactic alone: 25% -> 0%) - ground handling no longer throws runs away that the police never touched. Feasibility (240 trials) gained a net 12 passes (134 -> 146 of 240), concentrated at Old Quarry for the Cessna 182 (5 of its 6 combinations there flip to a pass - the mountain-strip question docs/STRIPS.md left open) but cost some margin elsewhere: the twins lost 11 combinations, mostly landings (the DHC-6 at Port Harbor, the plateau, Fox River and the quarry; the Cessna 310 at the plateau and the quarry). Re-flying strategic (--n 100, 4,000 seasons across the matrix) found the equilibrium moved from 50.2% (in target) to 58.4% (outside it) - the crash rate falling from 19% to 2% removed a tax that was keeping the sides even. Ablating 'crews' alone drops the equilibrium to 36%, by far the largest swing and the only one that undershoots 50%: a crewed aircraft (a copilot, a spotter) is worth noticeably more without that tax. The same drop shows up in AirRisk (the live-play simulator's flight odds, tests/test_air_risk.gd): tipped off (suspicion 60+), the least-bad way in used to be busted clearly more than a quarter of the time and the pilot stayed home; now it's busted exactly a quarter of the time, right at the line that decides whether it's worth flying at all. *Changed:* Not tuned yet, only re-measured, and the strategic number carries a caveat: the equilibrium above is 10x fewer seasons per matrix cell than the 40,000-season run it's compared against (docs/ROADMAP.md's own re-fly checklist asks for --n 100, which is what ran), so some of the 8.2-point move could be noise on top of a real one - worth a bigger re-run before anyone retunes on it alone. Two things need a decision either way: whether the twins' new landing failures are a ground-handling regression worth a strip-specific fix (docs/STRIPS.md), and whether to pull the 'crews' lever back toward 50% knowing that's the lever that makes hiring a contract crew worth its wage.
 
+36. **Roads with a way round.** *Found:* The pathfinding upgrade (routes that pay for climbs and steer round known police checkpoints and places that are hot) changed nothing: the planned city network was a tree (1,187 nodes, 16 independent loops), so a checkpoint on the road had no road round it - 0 of 135 sampled routes could avoid one, and live_balance was identical with the routing on and off. *Changed:* tools/plan_roads.gd plans three ring links (downtown-HAR, downtown-QRY, customs-farms) with RoadPlanner.detour_route, which prices running beside an existing road at 4x so a link finds its own corridor: 107.7 -> 143.6 km, the same single bridge and steepest grade, and 59% of 360 sampled routes with a checkpoint midway can now go round it (mean 34% longer). Only the war configuration moves, because it is the only one whose trucks and squads use the ground graph: the organisation's median money 43.3k -> 51.4k, the task force's 6.5k -> 6.0k (the other eight configurations are identical). Split: the new roads alone, routing off, give 49.4k and 8.1k (shorter trucks); steering round checkpoints adds 2.0k to the organisation and costs the task force 2.1k. Not retuned: 40 seeds x 3 simulated hours, one run, no confidence interval; a 19% easier war for the smuggler needs the larger strategic re-run before anyone touches a number (GroundWar.SMART_ROUTES switches the steering off).
+
 ## 1. Can you get in and out? (feasibility)
 
 The pilot bot flew 240 takeoffs and landings: every aircraft × airfield × load (light = 30% fuel; half = 60% fuel + half payload; max = full fuel + payload to MTOW). 146 succeeded. L = landing, T = takeoff.
@@ -282,37 +284,37 @@ Ablations: equilibrium win rate with one mechanic switched off (baseline 58.4%).
 
 ## 7. The live-play systems: the Family, the island, the Company
 
-`tools/live_balance.gd`: 80 seeds x 3 simulated hours per configuration, stepping those systems directly. Flown runs stand in as $1,500 every 5 min; the organisation's AI takes the Family's offers by their read and trades with the island when the odds are good; the task force's AI buys the customs tree, cracks down after a catch and files RICO when it can.
+`tools/live_balance.gd`: 40 seeds x 3 simulated hours per configuration, stepping those systems directly. Flown runs stand in as $1,500 every 5 min; the organisation's AI takes the Family's offers by their read and trades with the island when the odds are good; the task force's AI buys the customs tree, cracks down after a catch and files RICO when it can.
 
 | configuration | money p10 / p50 / p90 | net worth p50 | task-force funds p50 | suspicion p50 |
 |---|---|---|---|---|
-| agency | $64,453 / $93,389 / $112,028 | $93,389 | $25,200 | 0 |
-| all | $30,209 / $62,662 / $108,452 | $84,420 | $10,200 | 14 |
+| agency | $75,631 / $91,070 / $112,028 | $91,070 | $25,200 | 0 |
+| all | $38,954 / $66,901 / $109,401 | $91,020 | $10,200 | 5 |
 | control | $70,000 / $70,000 / $70,000 | $70,000 | $25,200 | 0 |
-| family | $54,150 / $55,320 / $59,320 | $55,320 | $9,200 | 0 |
-| island | $36,932 / $67,757 / $108,567 | $67,757 | $11,800 | 0 |
-| logistics | $32,021 / $56,260 / $72,432 | $90,916 | $10,200 | 0 |
-| payroll | $62,531 / $70,620 / $77,462 | $70,620 | $27,700 | 0 |
-| trade | $55,624 / $74,338 / $89,078 | $95,584 | $10,200 | 0 |
-| war | $21,920 / $43,279 / $107,576 | $71,792 | $6,644 | 0 |
+| family | $54,150 / $55,470 / $59,320 | $55,470 | $9,200 | 0 |
+| island | $30,012 / $71,228 / $111,983 | $71,228 | $11,800 | 0 |
+| logistics | $33,110 / $54,538 / $73,058 | $89,446 | $10,200 | 0 |
+| payroll | $61,218 / $70,620 / $77,681 | $70,620 | $27,700 | 0 |
+| trade | $59,721 / $74,725 / $92,995 | $97,486 | $10,200 | 0 |
+| war | $24,035 / $51,398 / $108,064 | $73,173 | $6,021 | 0 |
 | air | $5,965 / $18,070 / $26,711 | $49,191 | $9,681 | 0 |
 | noair | $10,045 / $21,348 / $31,919 | $54,930 | $8,926 | 0 |
 
 Net worth is the safe plus product at the town's street price plus street money still in the stashes and on the road. Without logistics the island pays its loads in cash on landing, so the configurations with the island and no logistics (island, all, war) carry its payouts; noair and air are the full game, where it lands as stock (entry 30).
 
-The Family (all systems on): tribute paid p50 $7,000; asked in 81% of runs; a rat in 25%; the Commission trial in 9%; 0.15 cons a run; respect ends at 63.
+The Family (all systems on): tribute paid p50 $6,000; asked in 82% of runs; a rat in 28%; the Commission trial in 8%; 0.17 cons a run; respect ends at 63.
 
-The island: 6 shipments a run (p50); 6% of mules and containers caught; closed by a purge 0% of the time.
+The island: 6 shipments a run (p50); 5% of mules and containers caught; closed by a purge 0% of the time.
 
-The payroll (the organisation's AI hiring to its needs): 17.2 workers on it at the end, $18,886 in wages over the run, 5.9 lost (arrested or dead), 0.42 flipped by the prosecutor, loyalty 81%, a short payday in 0% of runs.
+The payroll (the organisation's AI hiring to its needs): 17.3 workers on it at the end, $18,970 in wages over the run, 5.4 lost (arrested or dead), 0.47 flipped by the prosecutor, loyalty 82%, a short payday in 0% of runs.
 
-The Company: 5.3 flights a run; $2,020 'in the mail'; hung out to dry in 5% of runs; exposed in 0%.
+The Company: 5.4 flights a run; $1,813 'in the mail'; hung out to dry in 5% of runs; exposed in 0%.
 
-The trade (career: grass first; the organisation's AI buying a load when the stash runs low, dealers on its corners, surplus to the best buyer): 1360 lb of grass and 332 lb of cocaine sold, $25,890 made; the Colombians called after 73 minutes; 6.1 dealers on the corners at the end, 7.2 bulk sales; 258 lb of cocaine and 936 lb of grass left in the stash (worth $20,498 at the street).
+The trade (career: grass first; the organisation's AI buying a load when the stash runs low, dealers on its corners, surplus to the best buyer): 1346 lb of grass and 339 lb of cocaine sold, $26,887 made; the Colombians called after 72 minutes; 6.1 dealers on the corners at the end, 7.0 bulk sales; 267 lb of cocaine and 929 lb of grass left in the stash (worth $21,657 at the street).
 
-Logistics (the trade configuration with stock and cash in the stash houses, trucked by the organisation's AI): money p50 $56,260 against $74,338 without; $13,258 still out in the stashes, on the road and in the bags at the end; $720 of cash and 76 lb of product lost to roadblocks, hijacks and raids a run.
+Logistics (the trade configuration with stock and cash in the stash houses, trucked by the organisation's AI): money p50 $54,538 against $74,725 without; $13,794 still out in the stashes, on the road and in the bags at the end; $280 of cash and 77 lb of product lost to roadblocks, hijacks and raids a run.
 
-The street war (all systems plus the war, the organisation's AI commanding): money p50 $43,279 against $62,662 without; $4,643 recruiting, $1,575 on rifles, $1,867 upkeep a run; 14.1 firefights a run, men lost 4.8 of ours, 8.6 of Los Cuervos', 18.1 police, 18.9 arrested (both outfits); 1.6 squads of ours at the end against 3.1 of Los Cuervos' and 7.2 police; 0.4 stash houses burned; suspicion p50 0, p90 0.
+The street war (all systems plus the war, the organisation's AI commanding): money p50 $51,398 against $66,901 without; $4,162 recruiting, $1,260 on rifles, $2,005 upkeep a run; 14.7 firefights a run, men lost 5.6 of ours, 8.9 of Los Cuervos', 17.1 police, 16.6 arrested (both outfits); 1.9 squads of ours at the end against 3.1 of Los Cuervos' and 7.3 police; 0.6 stash houses burned; suspicion p50 0, p90 0.
 
 Air risk (all systems with logistics, the street war and the court; 80 seeds x 3 hours): money p50 $18,070 with each flight rolling the tactical sweep's odds, against $21,348 for the same systems at a fixed income. A run flew 17.7 flights (paid $6,000 each when they counted), with 0.60 busts, 0.68 crashes, $0 in fines, $1,687 in repairs and 4 minutes held by the court; the pilot stayed on the ground 0.0 times with the police tipped off.
 
@@ -328,8 +330,8 @@ Open mode's start (the full game with air risk, 20 seeds x 3 hours at each start
 
 The story (40 seeds x 12 hours, the same stand-ins, chapters opening the systems): reached ch2 1980 (100% at 66 min), ch3 1981 (100% at 172 min), ch4 1982 (100% at 240 min), ch5 1983 (88% at 336 min), ch6 1984 (88% at 420 min), ch7 1985 (85% at 435 min), ch8 1986 (72% at 531 min), the end (60% at 551 min). Money p50 $18,325 at the end, net worth (cash, product and street money) p50 $53,591; with air risk: 1.8 busts, 1.9 crashes, $7,588 in fines and $4,625 in repairs a run; $17,847 a run spent on the island's product.
 
-The street (all systems on): cocaine in town swung between x0.63 and x1.68 of its usual price in a run (means); guns averaged x1.38; the worst broken network reached 30%; the Company flew 24.1 lots of cocaine north and bought 25.3 lots of guns.
-Without the Company and the rest (control): cocaine x0.60-x1.39, guns x1.12.
+The street (all systems on): cocaine in town swung between x0.62 and x1.67 of its usual price in a run (means); guns averaged x1.43; the worst broken network reached 30%; the Company flew 24.4 lots of cocaine north and bought 25.2 lots of guns.
+Without the Company and the rest (control): cocaine x0.59-x1.36, guns x1.15.
 
 Customs odds and expected return per dollar for one load:
 

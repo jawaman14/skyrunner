@@ -19,6 +19,9 @@ const MAX_GRADE := 0.10  ## no step steeper than this on a road
 const TRACK_GRADE := 0.18  ## ... or this on a mountain track, tried only when a place can't be reached otherwise
 const GRADE_SCALE := 0.04  ## cost is run * (1 + (grade / this)^2)
 const REUSE := 0.35  ## an existing road costs this fraction to ride again
+const DETOUR_COST := 4.0  ## a ring link pays this much to run beside the roads that already exist ...
+const DETOUR_CELLS := 6  ## ... within this many cells of them (375 m), so it finds its own corridor
+const DETOUR_JOIN := 10  ## ... except this close to its own two ends, where it has to meet them
 const SMOOTH_PASSES := 3
 const RESAMPLE_M := 40.0
 
@@ -28,6 +31,7 @@ var max_grade := MAX_GRADE
 var heights := PackedFloat32Array()
 var pass_cost := PackedFloat32Array()  ## per cell: 0 forbidden, else the ground's cost multiplier
 var net := PackedByteArray()  ## 1 where a road runs
+var detour := PackedByteArray()  ## while a ring link is routed: 1 where it is dear to run (beside a road)
 var edges := {}  ## "a-b" (a < b) -> true
 var _height: Callable
 var _passable: Callable
@@ -90,8 +94,11 @@ func _step_cost(a: int, b: int, run: float) -> float:
 		return -1.0
 	var g := grade / GRADE_SCALE
 	var c := run * (1.0 + g * g) * maxf(m, pass_cost[a] if pass_cost[a] > 0.0 else 1.0)
-	if net[b] == 1 and net[a] == 1:
-		c *= REUSE
+	if detour.is_empty():
+		if net[b] == 1 and net[a] == 1:
+			c *= REUSE
+	elif detour[b] == 1:
+		c *= DETOUR_COST
 	return c
 
 
@@ -191,6 +198,54 @@ func _pop(hk: PackedFloat32Array, hv: PackedInt32Array) -> Array:
 	return top
 
 
+## A route from cell `a` to cell `b` that keeps off the roads already built (a ring link: a second way
+## between two places, not a copy of the first). It is dear, not forbidden, to run within DETOUR_CELLS of
+## the network, except near either end, so where there is no room it still joins up.
+func detour_route(a: int, b: int) -> PackedInt32Array:
+	detour = PackedByteArray()
+	detour.resize(n * n)
+	var depth := PackedByteArray()
+	depth.resize(n * n)
+	depth.fill(255)
+	var queue := PackedInt32Array()
+	for c in n * n:
+		if net[c] == 1:
+			depth[c] = 0
+			queue.append(c)
+	var head := 0
+	while head < queue.size():
+		var c: int = queue[head]
+		head += 1
+		if depth[c] >= DETOUR_CELLS:
+			continue
+		var ci := c % n
+		var cj := c / n
+		for dir in DIRS:
+			var i: int = ci + dir.x
+			var j: int = cj + dir.y
+			if i < 0 or i >= n or j < 0 or j >= n:
+				continue
+			var nb := j * n + i
+			if depth[nb] == 255:
+				depth[nb] = depth[c] + 1
+				queue.append(nb)
+	for c in n * n:
+		if depth[c] != 255:
+			detour[c] = 1
+	for end in [a, b]:
+		var ei: int = end % n
+		var ej: int = end / n
+		for dj in range(-DETOUR_JOIN, DETOUR_JOIN + 1):
+			for di in range(-DETOUR_JOIN, DETOUR_JOIN + 1):
+				var i: int = ei + di
+				var j: int = ej + dj
+				if i >= 0 and i < n and j >= 0 and j < n:
+					detour[j * n + i] = 0
+	var path := route(a, b)
+	detour = PackedByteArray()
+	return path
+
+
 func _add_path(path: PackedInt32Array) -> void:
 	for k in path.size():
 		net[path[k]] = 1
@@ -202,8 +257,10 @@ func _add_path(path: PackedInt32Array) -> void:
 
 # ------------------------------------------------------------------ the network
 ## `places`: Vector2 positions, the first is the seed of the network. `extra`: [a, b] index pairs that
-## get a direct link too (the loops that make a network more than a tree).
-func plan(places: Array, extra := []) -> Dictionary:
+## get a direct link too (the loops that make a network more than a tree). `rings`: [a, b] pairs that
+## get a link too, routed by detour_route(): a genuinely separate second way between two places
+## that are already joined (so a roadblock on the first leaves a road round it).
+func plan(places: Array, extra := [], rings := []) -> Dictionary:
 	var cells := []
 	for p in places:
 		cells.append(snap(p))
@@ -259,6 +316,15 @@ func plan(places: Array, extra := []) -> Dictionary:
 		var path2 := route(cells[a], cells[b])
 		if not path2.is_empty():
 			_add_path(path2)
+			links.append([a, b])
+	for pair in rings:
+		var a: int = pair[0]
+		var b: int = pair[1]
+		if cells[a] < 0 or cells[b] < 0:
+			continue
+		var path3 := detour_route(cells[a], cells[b])
+		if not path3.is_empty():
+			_add_path(path3)
 			links.append([a, b])
 	return {"roads": _chains(), "bridges": [], "links": links, "unreached": unreached, "tracks": tracks}
 

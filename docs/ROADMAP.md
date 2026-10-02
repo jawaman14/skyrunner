@@ -174,10 +174,12 @@ Second wave, larger features:
       round; 144 random routes with no checkpoint, 0 differed (the slope term never beat a
       shortest road either); live_balance 40 3 is identical in all nine configs with it on and off.
       tests/test_pathfinding.gd (5) proves the hook on a two-road diamond (the long way round, and a
-      lone road is still a road). **So the lever is the map, not the search:** cross-links in
-      `tools/plan_roads.gd` (ring roads, a second bridge, parallel streets) are what give a
-      smuggler a choice, and that changes the baked city, the road fixtures, travel times and the
-      balance - a decision for its own PR. Not done: re-routing a squad or truck already under way
+      lone road is still a road). **So the lever was the map, not the search - and the next PR
+      pulled it:** three ring links (`RINGS` in `tools/plan_roads.gd`, `RoadPlanner.detour_route`)
+      take the network from 107.7 to 143.6 km and from 0% to 59% of checkpointed routes having a way
+      round (mean 34% longer); docs/ROADS.md. Only the war configuration of live_balance moves
+      (organisation money p50 $43.3k -> $51.4k, task force $6.5k -> $6.0k; $49.4k / $8.1k from the
+      new roads alone) - BALANCE entry 36, deliberately not retuned until the larger strategic re-run. Not done: re-routing a squad or truck already under way
       when a checkpoint appears on its road (pointless until there is a road to switch to), road
       class costs (the road data carries no class), off-road legs for foot, junction pile-ups.
 - **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,

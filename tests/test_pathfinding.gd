@@ -63,11 +63,12 @@ func test_the_organisation_routes_round_a_checkpoint_the_police_do_not() -> void
 	var b := g.hq("rival")
 	var base := g.graph.route(a, b)
 	check(base.size() >= 3, "a road between the two bases")
+	var cops_before := g.route("police", a, b)
 	var cp: GroundWar.Squad = g.recruit("police", "car", RoadGraph.along(base, RoadGraph.length(base) * 0.5), false)
 	cp.tactic = "checkpoint"
 	var org := g.route("org", a, b)
 	var cops := g.route("police", a, b)
-	check_eq(cops, base, "the police know where their own checkpoints are: nothing changes for them")
+	check_eq(cops, cops_before, "the police know where their own checkpoints are: it changes nothing for them")
 	check(RoadGraph.length(org) >= RoadGraph.length(base) - 0.01, "never a shorter way than the shortest (%.0f vs %.0f)" % [RoadGraph.length(org), RoadGraph.length(base)])
 	var through := false
 	for i in org.size() - 1:
@@ -89,7 +90,8 @@ func test_hot_places_cost_the_organisation_only() -> void:
 	var b := g.hq("rival")
 	var base := g.graph.route(a, b)
 	var mid := RoadGraph.along(base, RoadGraph.length(base) * 0.5)
+	var rival_before := g.route("rival", a, b)
 	g.hot_spots.append([s.time, mid.x, mid.y])
-	check_eq(g.route("rival", a, b), base, "Los Cuervos don't mind the noise")
+	check_eq(g.route("rival", a, b), rival_before, "Los Cuervos don't mind the noise")
 	check(RoadGraph.length(g.route("org", a, b)) >= RoadGraph.length(base) - 0.01, "the organisation never gets a shorter way")
 	s.dispose()
