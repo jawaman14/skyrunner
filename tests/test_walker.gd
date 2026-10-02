@@ -162,6 +162,36 @@ func test_the_boss_desk_commands_squads() -> void:
 	check(s.ground.commanders.org.ai, "to the AI")
 	app.free()
 
+## T on foot is the phone: the people who otherwise need a walk to the desk or a landing at the
+## right strip, and the desk's orders and dispatch, from wherever you are standing.
+func test_the_phone_reaches_the_desk_and_the_crew_from_anywhere() -> void:
+	var app := _app({"seed": 9, "location": "COV", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var s := app.s
+	app._toggle_on_foot()
+	await _frames(4)
+	var m: PhoneMenu = app.menus["phone"]
+	check(not m.visible, "phone is in the pocket")
+	_key(KEY_T, true)
+	await _frames(3)
+	_key(KEY_T, false)
+	check(m.visible, "T takes the phone out")
+	var acts: Array = m.rows.map(func(r): return r[0])
+	check("desk" in acts, "the desk is in the phone book: %s" % [acts])
+	if s.payroll != null:
+		check("crew" in acts, "Manny's hiring hall too")
+	m.list.select(acts.find("desk"))
+	m.key("enter")
+	check(not m.visible, "hung up")
+	check(app.menus["hq"].visible, "the desk's orders opened without the walk")
+	app.menus["hq"].close()
+	# a system that is off is not in the book
+	s.payroll = null
+	m.open()
+	check(not (m.rows.map(func(r): return r[0])).has("crew"), "nobody to call about crew with no payroll")
+	m.close()
+	app.free()
+	s.dispose()
+
 
 func test_walks_up_a_step() -> void:
 	var app := _app({"seed": 1, "location": "HAR"})

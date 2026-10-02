@@ -36,7 +36,8 @@ Screen   F9 filter: off / VHS / colour-blindness simulations (protan, deutan, tr
 Beta     F12 feedback bundle: a zip of what happened (build, machine, flight, log, screenshot) to send back
 On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mouse look
          Guns (with a ground war): 1-4 pistol / rifle / machine gun / RPG from the armoury  H holster  R reload  LMB fire
-         E use (job board, fuel, hangar, the boss's desk)   F torch
+         E use (job board, fuel, hangar, the boss's desk)   F torch   T the phone: crew, buyers, lawyer,
+            the Family, the General, the desk and dispatch, without the walk
          At the boss's desk (with a ground war): Q swaps the orders for squad command - CLICK a squad,
             RIGHT-CLICK the map to send it, buttons for melt away / hold / disband / raise one. Q again
             or ESC hands the squads straight back to the AI, the same as leaving the lieutenant's seat.
@@ -157,11 +158,13 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
 			m.intel = true
+		if k[0] == "phone":
+			m.called.connect(_phone_call)
 		m.setup(sess)
 		m.closed.connect(_menu_closed)
 		menus[k[0]] = m
@@ -335,6 +338,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 					walker.use()
 				KEY_F:
 					walker.toggle_torch()
+				KEY_T:
+					_open("phone")  # the phone: the crew, the buyers, the lawyer, the desk without the walk
 				KEY_ESCAPE:
 					if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 						Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -685,6 +690,23 @@ func _toggle_on_foot() -> void:
 		m.visible = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	s.say("On foot. TAB to climb back in, E to use things, F for the torch%s." % (", 1-4 for a gun" if s.foot != null else ""))
+
+
+## A number picked from the phone: the same call the Shift keys make from the cockpit, and the
+## desk and dispatch without walking to them.
+func _phone_call(action: String) -> void:
+	match action:
+		"desk":
+			_open("hq")
+		"logistics":
+			toggle_logistics()
+		_:
+			var tk := open_talk(action)
+			if tk != null and on_foot and walker != null:
+				walker.look_enabled = false  # stand and talk
+				tk.finished.connect(func():
+					if on_foot and walker != null:
+						walker.look_enabled = true)
 
 
 func _on_use(action: String, area: Area3D) -> void:

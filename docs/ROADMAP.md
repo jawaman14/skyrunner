@@ -78,7 +78,12 @@ scrolling; the compass; the tutorial's red squares; crew; autopilot. Second wave
   tests/test_seats.gd and tests/test_walker.gd (test_the_boss_desk_commands_squads) cover it.
 
 Second wave, larger features:
-- **A phone on foot** to reach the crew and desk menus.
+- **A phone on foot.** Done (in a PR): T on foot opens `PhoneMenu` (scripts/ui/phone_menu.gd), a phone
+  book of whoever is switched on this game - Manny's hiring hall, the buyers, the lawyer, the Family, the
+  General's aide - plus the boss's desk (orders, or the squads in a war) and dispatch. Each one is the same
+  call the cockpit's Shift keys make, so a conversation runs as it does there (the walker stands still
+  while it does). Not done: ringing someone *in* (the phone only calls out; an offer still arrives as a
+  line on the ticker), and the cockpit keeps its Shift keys rather than the phone.
 - **Physical NPCs (the design rule, from playtest).** Every worker, driver, soldier and dealer has to
   be *somewhere*: a body on the map that walks or drives there, not a row in a table. The sim stays
   the authority (deterministic, seeded, headless), but position and travel time become real inputs:
