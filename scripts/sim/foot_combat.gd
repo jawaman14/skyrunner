@@ -264,7 +264,7 @@ func hit(squad_id: String, dist: float) -> String:
 		armoury().add_all(dropped)  # you pick his gun up
 	if q.faction == "police":
 		g.officers_down += 1
-		sess.law_say("Officer down - shots fired by a man on foot near %s" % g._place_name(q.x, q.y))
+		sess.law_say("Officer down - shots fired by a man on foot near %s" % g.place_name(q.x, q.y))
 	g.hot_spots.append([sess.time, q.x, q.y])
 	if q.men <= 0:
 		g._gone(q)

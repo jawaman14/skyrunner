@@ -1,0 +1,15 @@
+{
+	"name": "4VEH, Haiti",
+	"band": "SW",
+	"label": "4930",
+	"blurb": "Haiti on shortwave, December 1983.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "4VEH 4930, 1 Dec 1983",
+			"len": 46.76,
+			"ia": "1983-12-01-haiti-4-veh-4930-2300-utc"
+		}
+	]
+}

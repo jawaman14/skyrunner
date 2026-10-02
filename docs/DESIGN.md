@@ -768,3 +768,108 @@ The live-play simulator steps the war now (balance entry 29). It stands in for t
 - $50.0k against $62.5k over three hours: the war costs about a fifth.
 - Suspicion cools between the runs.
 - About 0.7 stash houses a run are burned.
+
+## 25. Renown (Mount & Blade's renown)
+
+How big your name is on the street. It is made of what the organisation does and is read off the event bus
+(`scripts/sim/renown.gd`; a session asks for it with `renown: true`, and the live game does):
+
+| Gains | | Losses (half of the same size) | |
+|---|---|---|---|
+| a load delivered | +3 | the pilot busted | -3 |
+| bales delivered | +2 | the pilot sentenced | -4 |
+| an island container through customs | +3 | a crash | -1.5 |
+| a raid foiled | +3 | a stash raided | -2 |
+| a jury lets the pilot walk | +6 | a truck hijacked / seized | -1.5 / -1 |
+| the case dropped from above | +4 | a flight hijacked | -1 |
+| a bulk sale | +1 to +5 by size | a boat seized | -1.5 |
+| the money home | +0.3 | one of our men takes the government's deal | -2 |
+
+It never goes below nothing. Five tiers (0 Nobody, 40 A name on the street, 120 Known, 300 Feared, 650 A legend); a
+tier going up is said ("RENOWN - Known. Better recruits (+6 skill), buyers pay +3.0%, and the task force cools 12%
+slower."). What a tier is worth:
+
+- the hiring hall: every candidate has +3 points of skill and +2 of loyalty a tier (no extra random draws: the
+  payroll's stream is the same, only the values shift);
+- the bulk buyers pay 1.5% more a tier;
+- the task force watches the famous: suspicion cools 6% slower a tier (`PoliceSystem.decay_mult`).
+
+The phone shows the tier and the score on its title line; a save keeps the score (`StrategicSave`). BALANCE entry
+(the list's "Renown"): a +0.5% to +3% effect on money, with the task force a little warmer, by design small.
+
+## 26. Veteran squads and the orders on the ground (Mount & Blade's troops and battle commands)
+
+**Experience** (`GroundWar.VETERANS`, `Squad.xp`). A fight a squad survives is worth 1, a fight it wins 2 (and
+breaking off from one is 1 for both). A squad that has lost half its men loses half its experience first: the
+good men are the ones who died. Four ranks:
+
+| Rank | Experience | Fire per man | Breaks at morale | Upkeep |
+|---|---|---|---|---|
+| Green | 0 | x1.00 | 0.30 | x1.00 |
+| Blooded | 4 | x1.07 | 0.26 | x1.25 |
+| Veteran | 10 | x1.14 | 0.22 | x1.50 |
+| Elite | 20 | x1.21 | 0.18 | x1.75 |
+
+A rank-up is said on the desk's message line ("S-2 is now veteran."), the desk's squad table shows the rank beside
+the men, and the save keeps the experience. Both sides learn: the rival's and the task force's squads rank up too.
+
+**Field orders.** On foot, with a ground war: **Z** hold, **X** come to me, **C** charge, **V** fall back. The order
+goes to the nearest squad of ours within 250 m (`GroundWar.field_order`; the command `field_order` is the pilot's,
+the boss's and the lieutenant's): *come* walks it to where you stand, *charge* sends it at the nearest rival or
+police squad it can see within 450 m of it (a hidden squad cannot be charged), *fall back* is the melt order (to
+cover, out of sight), *hold* stops it. A squad given an order is under a human's hand and the AI leaves it alone.
+
+## 27. The rackets: tribute, and the men we take (Mount & Blade's villages and prisoners)
+
+`scripts/sim/rackets.gd`, with a ground war and `rackets: true` (the live game); the phone's **The collectors**
+opens the menu, `rackets` is the boss's, the lieutenant's and the pilot's command.
+
+**Tribute.** Every 10 minutes the collectors go round the four markets (town, west, north, sea). A market in which
+the organisation holds more than half the street (`GroundWar.org_share`) pays `$160 x (share - 0.5) x 2`, so $160
+at full control, times the name you have (Renown's price multiple). Each market has terms, cycled with ENTER:
+
+| Terms | Pays | Costs |
+|---|---|---|
+| fair | the amount above | nothing |
+| squeeze | 2.2x | our hold there drops by 15% a round, and the case against us warms by 2 |
+| off | nothing | nothing |
+
+**Prisoners.** When one of our squads routs one of Los Cuervos', a third of what is left of it is taken (a squad of
+three or fewer gives nobody up). The menu's keys: **A** ransom them (Los Cuervos pay $350 a head, up to what cash
+they have; the men go back), **F** put them on the payroll (they come as soldiers: skill 0.3, loyalty 0.25, so a
+bad risk, at the street rate), **G** let them go (half a point of renown a man). Held men get away at one in eight
+every 10 minutes (a group under eight is guarded).
+
+The save keeps the terms, the prisoners and the total collected.
+
+## 28. Stash works (Mount & Blade's village improvements)
+
+`scripts/sim/stash_works.gd`. Two works at each live stash house, two levels each, bought from the safe in the
+logistics menu (the row "Build at the house in from"; the `stash_works` command is the boss's, the pilot's and the
+lieutenant's). The levels are kept on the stash (`works`), so a save keeps them and the stash net, the logistics view
+and the raid all read them where they stand.
+
+| Work | Level 1 | Level 2 | Does |
+|---|---|---|---|
+| Hidden vault | $2,500 | $6,000 | a raid carries off 35% less of what is inside, a level; the rest is spirited away to another house (cash straight to the safe) |
+| Guard post | $2,000 | $5,000 | traffic warms the house 20% less, and its heat cools 25% faster, a level |
+
+A burned house cannot be improved. `StashWorks.ENABLED` switches it off (every level then counts as 0).
+
+## 29. The arena (Mount & Blade's tournaments)
+
+`scripts/sim/races.gd`, `scripts/game/race_markers.gd`; the phone's **The track** lists the courses at the strip you
+are at (`race_enter` is the pilot's, the boss's and the lieutenant's command).
+
+| Course | Where | Gates | Par | Entry | Prize |
+|---|---|---|---|---|---|
+| Street race (the car) | the roads from the strip to the club, the farthest stash house within 6 km, and back; needs a ground war | every 500 m, 24 m radius | length / 19 m/s | $70 | $700 |
+| Air circuit (the aircraft) | six gates 2.5 km from the strip, round and back to the first | 130 m radius, 180 m above the ground, 110 m tolerance up or down | length / 42 m/s | $140 | $1,400 |
+
+The first gate is the start: the clock begins when you cross it and the gates have to be taken in order (the next one
+is a glowing ring with a beam, the one after it a dim ring). A field of four rivals runs at par x 0.85 to 1.35 (their
+times come from a stream seeded by the session and the course, so the field is the same every time). Your place in
+the field is the prize: first the whole prize, second half, third a quarter, and renown +6 / +3 / +1. A course pays
+once an hour (after that it is for the glory). You are out, and the fee is gone, if you get out of the car mid-race,
+land from the circuit or take three times par. The save keeps what each course last paid and the winnings.
+`Races.ENABLED` switches it off.

@@ -28,6 +28,9 @@ if unpaid > 0
 - Hire {{cand_line(3)}} [if has_cand(3)]
 	do take_on(3)
 	=> hired
+- Who's working for me? [if crew > 0]
+	Manny Ortega: {{roster_text()}}
+	=> hall
 - A bonus for everybody. ({{money_s(wage_bill)}}) [if crew > 0]
 	do crew_bonus()
 	Manny Ortega: [[That's how you keep people.|They'll remember that.]]

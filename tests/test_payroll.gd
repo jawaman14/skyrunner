@@ -98,6 +98,62 @@ func test_squads_need_soldiers_on_the_payroll() -> void:
 	s.dispose()
 
 
+func test_a_lost_soldier_s_message_names_the_place_and_squad() -> void:
+	var s := _sess({"ground_war": true})
+	s.money = 100000
+	_hire(s, "soldier", 4)
+	var q = s.ground.recruit("org", "foot", null)
+	q.x = -1500.0  # downtown (MapCity.ORG_AT), so place_name() reads "in the town"
+	q.y = -9700.0
+	q.men = 2
+	var n0 := s.messages.size()
+	s.payroll._reconcile_squads()
+	var said := s.messages.slice(n0).map(func(m): return str(m[1]))
+	check(said.any(func(t): return "was killed" in t or "was arrested" in t), "a loss is announced: %s" % [said])
+	check(said.any(func(t): return "squad %s" % q.id in t), "...naming the squad, so it reads as the fight just reported: %s" % [said])
+	s.dispose()
+
+
+func test_doing_reads_a_worker_s_assignment() -> void:
+	var s := _sess({"ground_war": true, "logistics": true})
+	s.money = 100000
+	check_eq(s.payroll.doing({"status": "free"}), "free", "nobody to work yet")
+	var lk: String = _hire(s, "lookout", 1)[0]
+	var stash_id: String = s.stash_net.stashes[0].id
+	check_eq(s.payroll.post_lookout(lk, stash_id), "", "posted")
+	check(s.payroll.doing(s.payroll.get_worker(lk)).begins_with("watching "), "a lookout watches a named stash: %s" % s.payroll.doing(s.payroll.get_worker(lk)))
+	_hire(s, "soldier", 4)
+	var q = s.ground.recruit("org", "foot", null)
+	var sid: String = s.payroll.squads.keys()[0]
+	var soldier_id: String = s.payroll.squads[sid][0]
+	check_eq(s.payroll.doing(s.payroll.get_worker(soldier_id)), "with squad %s, holding" % sid, "a soldier is with their squad, and says what it is doing")
+	s.dispose()
+
+
+func test_the_hiring_hall_lists_who_is_already_on_the_payroll() -> void:
+	var s := _sess()
+	s.money = 50000
+	_hire(s, "soldier", 1)
+	var b := TalkBalloon.new()
+	Engine.get_main_loop().root.add_child(b)
+	await b.start(Talk.resource("crew"), "start", Talk.State.new(func(): return LocalLink.new(s, Roles.PILOT, false).snapshot(),
+		func(n: String, a: Dictionary) -> Array: return s.command(Roles.PILOT, n, a)))
+	for i in 8:
+		if not b._answers.is_empty():
+			break
+		await b.advance()
+	var answers: Array = b._answers.map(func(r): return str(r.text))
+	check(answers.has("Who's working for me?"), "the roster is offered once someone is hired: %s" % [answers])
+	await b.choose(answers.find("Who's working for me?"))
+	for i in 4:
+		if not b._answers.is_empty():
+			break
+		await b.advance()
+	check(str(b.line.text).contains("free"), "the roster says what the hired soldier is doing: %s" % b.line.text)
+	b.queue_free()
+	s.dispose()
+
+
 func test_drivers_trucks_and_the_street_driver() -> void:
 	var s := _sess()
 	s.money = 100000

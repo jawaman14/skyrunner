@@ -33,6 +33,7 @@ const PRIMARY_RATE_NEAR := 3.0
 const INBOUND_LOW_MULT := 2.5
 const DROP_PATTERN_RATE := 3.0
 const SUSPICION_DECAY := 3.0
+var decay_mult := 1.0  ## < 1 when the runner has a name (Renown.heat_mult): the famous are watched
 const ODD_DESTINATION_SUSPICION := 100.0  ## shady strips: nobody legit goes there
 const BUSH_DESTINATION_SUSPICION := 30.0  ## farm and bush strips get honest traffic too
 
@@ -892,7 +893,7 @@ func _classify(t: Target, dt: float) -> void:
 			else:
 				c.wanted = 1
 	else:
-		c.suspicion = maxf(0.0, c.suspicion - SUSPICION_DECAY * dt)
+		c.suspicion = maxf(0.0, c.suspicion - SUSPICION_DECAY * decay_mult * dt)
 
 
 ## Center watches the Mode A code. The emergency codes get a response - 7700

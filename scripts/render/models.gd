@@ -217,6 +217,25 @@ const SURFACE_COLORS := {
 }
 
 
+## The cleared, graded ground each side of a strip: a lighter or darker band than the country round it,
+## so even an 18 m grass strip reads from a mile out. [colour]
+const SHOULDER_COLORS := {
+	"asphalt": [0.34, 0.34, 0.33],
+	"gravel": [0.66, 0.60, 0.48],
+	"grass": [0.58, 0.72, 0.36],
+	"dirt": [0.70, 0.56, 0.38],
+	"sand": [0.94, 0.90, 0.72],
+}
+const SHOULDER_M := 6.0  ## each side, beyond the surface
+const EDGE_LINE_W := 0.45
+
+
+## The runway designator (heading / 10, 36 for north) for landing along `heading_deg`.
+static func designator(heading_deg: float) -> String:
+	var n := int(roundf(fposmod(heading_deg, 360.0) / 10.0)) % 36
+	return "%02d" % (36 if n == 0 else n)
+
+
 ## Runway, markings, edge cones, buildings, windsock, plus edge lights (lit at
 ## night by WorldScene) as a separate node so they can glow.
 static func build_airfield(world: World, af: Airfield, q: Quality) -> Node3D:
@@ -231,29 +250,41 @@ static func build_airfield(world: World, af: Airfield, q: Quality) -> Node3D:
 		return [af.x + ux * a + px * c, af.y + uy * a + py * c, z + dz]
 	var L := af.length / 2
 	var W := af.width / 2
+	# the cleared shoulder first (a hair lower, so the surface sits on it), then the surface
+	var sh: Array = SHOULDER_COLORS[af.surface]
+	var Ws := W + SHOULDER_M
+	var Ls := L + SHOULDER_M
+	mb.quad(p.call(-Ls, -Ws, -0.04), p.call(-Ls, Ws, -0.04), p.call(Ls, Ws, -0.04), p.call(Ls, -Ws, -0.04), sh)
 	mb.quad(p.call(-L, -W), p.call(-L, W), p.call(L, W), p.call(L, -W), SURFACE_COLORS[af.surface])
 	var white := [0.95, 0.95, 0.95]
-	if af.surface == "asphalt":
-		var a := -L + 60
-		while a < L - 60:
-			mb.quad(p.call(a, -0.45, 0.02), p.call(a, 0.45, 0.02), p.call(a + 30, 0.45, 0.02), p.call(a + 30, -0.45, 0.02), white)
-			a += 50
-		for end in [-1, 1]:
-			for k in range(-4, 5):
-				if k == 0:
-					continue
-				var c0 := k * W / 5.2
-				var a0: float = end * (L - 6)
-				var a1: float = end * (L - 36)
-				mb.quad(p.call(minf(a0, a1), c0 - 0.9, 0.02), p.call(minf(a0, a1), c0 + 0.9, 0.02),
-					p.call(maxf(a0, a1), c0 + 0.9, 0.02), p.call(maxf(a0, a1), c0 - 0.9, 0.02), white)
+	# on every surface: edge lines, centreline dashes, and threshold bars
+	for side in [-1, 1]:
+		var e0: float = side * (W - EDGE_LINE_W - 0.2)
+		var e1: float = side * (W - 0.2)
+		mb.quad(p.call(-L + 3, minf(e0, e1), 0.02), p.call(-L + 3, maxf(e0, e1), 0.02), p.call(L - 3, maxf(e0, e1), 0.02), p.call(L - 3, minf(e0, e1), 0.02), white)
+	var dash_w := clampf(W * 0.06, 0.35, 0.9)
+	var a := -L + 60
+	while a < L - 60:
+		mb.quad(p.call(a, -dash_w, 0.02), p.call(a, dash_w, 0.02), p.call(a + 30, dash_w, 0.02), p.call(a + 30, -dash_w, 0.02), white)
+		a += 50
+	var bars := clampi(int(W / 2.6), 2, 4)  # bars each side of the centre: more on a wide runway
+	for end in [-1, 1]:
+		for k in range(-bars, bars + 1):
+			if k == 0:
+				continue
+			var c0 := k * (W - 1.5) / (bars + 0.4)
+			var bar_w := clampf(W / 14.0, 0.5, 0.9)
+			var a0: float = end * (L - 6)
+			var a1: float = end * (L - 36)
+			mb.quad(p.call(minf(a0, a1), c0 - bar_w, 0.02), p.call(minf(a0, a1), c0 + bar_w, 0.02),
+				p.call(maxf(a0, a1), c0 + bar_w, 0.02), p.call(maxf(a0, a1), c0 - bar_w, 0.02), white)
 	var orange := [1.0, 0.45, 0.05]
 	var a2 := -L
 	while a2 <= L + 0.1:
 		for side in [-1, 1]:
-			var e: Array = p.call(a2, side * (W + 1.5))
-			mb.cone(e[0], e[1], z, 0.6, 1.0, white if int(a2) % 80 else orange, 4)
-			lights.box(e[0], e[1], z + 1.15, 0.35, 0.35, 0.3, [1.0, 0.85, 0.5])
+			var e: Array = p.call(a2, side * (W + 2.5))
+			mb.cone(e[0], e[1], z, 0.9, 2.2, white if int(a2) % 80 else orange, 4)
+			lights.box(e[0], e[1], z + 2.4, 0.5, 0.5, 0.4, [1.0, 0.85, 0.5])
 		a2 += 40
 	for end in [-1, 1]:
 		for side in range(-3, 4):
@@ -267,6 +298,23 @@ static func build_airfield(world: World, af: Airfield, q: Quality) -> Node3D:
 	mb.box(ws[0] + 1.2, ws[1], z + 5.8, 2.4, 0.5, 0.5, orange)
 	var root := Node3D.new()
 	root.name = "af-" + af.code
+	# the runway numbers, painted flat, readable from the approach
+	for end in [0, 1]:
+		var s := -1.0 if end == 0 else 1.0
+		var dir_i := Vector3(ux, 0, -uy) * -s  # godot frame: landing direction (x east, z south) -> toward the far end
+		var lab := Label3D.new()
+		lab.text = designator(af.heading + 180.0 * end)
+		lab.font_size = 96
+		lab.pixel_size = clampf(W * 0.35, 2.5, 6.0) / 96.0
+		lab.shaded = false
+		lab.double_sided = false
+		lab.modulate = Color(0.96, 0.96, 0.96)
+		lab.outline_size = 0
+		lab.no_depth_test = false
+		var at: Array = p.call(s * (L - 48.0 - lab.pixel_size * 96.0 * 0.5), 0.0, 0.05)
+		lab.position = MeshBuilder.to_godot(at)
+		lab.basis = Basis(dir_i.cross(Vector3.UP), dir_i, Vector3.UP)
+		root.add_child(lab)
 	var body := mb.node("field")
 	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if q.shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(body)

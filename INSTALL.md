@@ -141,16 +141,16 @@ are already set up; Godot offers to download the export templates), or
    | W / S or Up / Down | pitch |
    | A / D or Left / Right | roll |
    | Q / E | rudder and nosewheel |
-   | R / F, or PgUp / PgDn | throttle (Z full, X cut) |
+   | R / F, or PgUp / PgDn | throttle: hold to move it, a tap is a few percent (Z ramps to full, X to idle; press again for instant) |
    | G / T | flaps down / up |
    | B or Space | brakes |
    | C | camera (chase, cockpit, tower) |
    | L | load planner and fuel |
    | F8 | controls: rebind keys, bind a joystick, yoke or pedals |
    | F12 | save a feedback bundle for a bug report |
-   | Esc | close a menu, or quit |
+   | Esc | close a menu, or open the pause menu (resume, save, load, settings, quit) |
 
-   F1 in game is the full, current list.
+   F1 in game is the full, current list (scroll it with the mouse wheel).
 4. **Graphics**: the lobby's *Graphics* setting, or start with `--graphics low|medium|high`.
 
 ---
@@ -177,6 +177,7 @@ To start completely fresh, delete that folder.
 | Problem | Fix |
 |---|---|
 | **Black window, crash at start, or "Vulkan" errors** | Your GPU or driver lacks Vulkan. Start with the OpenGL renderer: `Skyrunner.exe --rendering-driver opengl3` (make a shortcut with that in *Target*), or `./Skyrunner.x86_64 --rendering-driver opengl3`. Update your graphics driver too. |
+| **Windows: crashes a few seconds after start on a good GPU** (exit code `0xC0000374`) | Usually a Vulkan layer that other software injects into every game, not the GPU. The usual culprit is a leftover **Vulkan Configurator** (vkconfig, from the Vulkan SDK) override that forces the validation layer on: open *Vulkan Configurator* and set it to let applications control layers, or close it. To confirm, start the game from a Command Prompt after `set VK_LOADER_LAYERS_DISABLE=~implicit~`: if it runs, a layer was to blame. The OpenGL renderer above also works around it. |
 | **Very low frame rate** | Start with `-- --graphics low`, close other 3D apps, and on laptops make sure the game runs on the dedicated GPU. F6 shows the frame times. |
 | **"Couldn't load project data" / the game quits at once** | `Skyrunner.pck` isn't next to the executable, or the zip wasn't fully extracted. Extract the whole zip again. |
 | **Linux: "Permission denied"** | `chmod +x Skyrunner.x86_64` |

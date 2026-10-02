@@ -8,16 +8,26 @@ extends Node3D
 
 const CAM_MODES := ["chase", "cockpit", "tower"]
 
+## The pause menu's way out: "load" (the last save), "lobby" or "desktop". Main
+## acts on it; with nobody listening, "desktop" quits here and the rest do too.
+signal leave(to: String)
+
 ## The flight keys are rebindable actions (ControlsConfig: F8), the analogue axes FlightAxes.
 const CREW_KEYS := {KEY_N: "transponder", KEY_U: "autopilot", KEY_K: "kick", KEY_O: "call_boat", KEY_V: "pump", KEY_I: "turn_around"}
 const PRESS_KEYS := {KEY_ENTER: "confirm", KEY_KP_ENTER: "confirm"}
+const TAXI_MS := 13.0  ## m/s the cab averages
+const TAXI_ROAD := 1.3  ## roads wind: this much longer than the crow flies
+const TAXI_BASE := 15  ## $ flag-fall
+const TAXI_PER_M := 250.0  ## ... and a dollar a quarter-kilometre
+const TAXI_STEPS_PER_FRAME := 30  ## sim seconds run per frame during a ride
 const MENU_KEYS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_ENTER: "enter",
-	KEY_KP_ENTER: "enter", KEY_A: "a", KEY_PLUS: "+", KEY_EQUAL: "+", KEY_KP_ADD: "+", KEY_MINUS: "-", KEY_KP_SUBTRACT: "-", KEY_F: "f", KEY_G: "g"}
+	KEY_KP_ENTER: "enter", KEY_A: "a", KEY_PLUS: "+", KEY_EQUAL: "+", KEY_KP_ADD: "+", KEY_MINUS: "-", KEY_KP_SUBTRACT: "-", KEY_F: "f", KEY_G: "g", KEY_Q: "q"}
 
 const HELP_TEXT := """SKYRUNNER - controls
 
 Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewheel
-         R/F or PGUP/PGDN throttle   X cut throttle   Z full throttle
+         Flight assist (ESC menu): with no key held the wings level and the pitch holds; taps are gentle
+         R/F or PGUP/PGDN throttle (hold; a tap is a few %)   Z ramp to full   X ramp to idle   (Z Z / X X: instant)
          G flaps down   T flaps up   [ / ] pitch trim   B or SPACE brakes
          Y toggle mouse yoke (mouse position = stick)   joystick / gamepad work too
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
@@ -25,18 +35,28 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
 View     C cycle camera (chase / cockpit / tower)    M big map    P pause   F2 time of day
 Seats    F3 hand the aircraft to the AI (take another seat from a station) / take it back
 Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)
-Radio    F7 Radio Costa 88: synth music out of 1985
+Radio    F7 Radio Costa 88: synth music out of 1985     In the car: R radio on / off, , and . (or [ and ]) tune: real 1979-86 broadcasts
 Learn    F10 skip a tutorial step   SHIFT+F10 tutorial on / off (the lobby's Tutorial box, or --tutorial)
 Screen   F9 filter: off / VHS / colour-blindness simulations (protan, deutan, tritan, mono)
 Beta     F12 feedback bundle: a zip of what happened (build, machine, flight, log, screenshot) to send back
+Squad    on foot, with a ground war: Z hold  X come to me  C charge  V fall back (the nearest of your squads)
 On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mouse look
          Guns (with a ground war): 1-4 pistol / rifle / machine gun / RPG from the armoury  H holster  R reload  LMB fire
-         E use (job board, fuel, hangar, the boss's desk)   F torch
+         CAR  a parked car stands beside the aircraft: E at it to get in, W / S throttle and brake, A / D steer,
+            SPACE handbrake, E to get out (the road is fast, anywhere else a crawl)
+         E use (job board, fuel, hangar, the boss's desk)   F torch   T the phone: crew, buyers, lawyer,
+            the Family, the General, the desk, dispatch - and a taxi (fare up front) to the aircraft, the desk,
+            the job board, the hangar or a stash house
+         At the boss's desk (with a ground war): Q swaps the orders for squad command - CLICK a squad,
+            RIGHT-CLICK the map to send it, buttons for melt away / hold / disband / raise one. Q again
+            or ESC hands the squads straight back to the AI, the same as leaving the lieutenant's seat.
          I your pack: spare guns, rounds, medkits (24 kg; over 12 kg you slow down)   5 medkit
 Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT: upgrade trees)
-Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)   U autopilot
+Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
+         U autopilot: holds course, U again routes you to an airfield (low with a hot load, direct
+            at cruise otherwise - squawking either way unless there's already heat on you), U again off
          K kick a bale   O call the boat (SHIFT+O: the 1 s codeword - harder to DF)
-         V ferry fuel pump   I push aircraft round (stopped)   ENTER continue   ESC close menu / quit
+         V ferry fuel pump   I push aircraft round (stopped)   ENTER continue   ESC close menu / pause menu
 Family   SHIFT+F sit down with Sal Moretti: hear the offer, your man's read on it, press him for
          another, take it or leave it; pay or stall the tribute (1-4 answer, ENTER go on, ESC leave)
          SHIFT+Y / SHIFT+N take or turn down the newest offer without the talk, SHIFT+P pay the tribute
@@ -78,7 +98,7 @@ var dust: GPUParticles3D
 var _player_key := ""
 var hud: Hud
 var menus := {}
-var help: Label
+var help: Control
 var briefing: Label
 var glareshield: Control
 var ui: CanvasLayer
@@ -97,6 +117,16 @@ var bale_nodes := {}
 var beacons: Array = []  ## [key, [nodes]]
 var _frame := 0
 var on_foot := false
+var car: Car = null  ## the starter car (made the first time you step out of the aircraft)
+var driving: Car = null  ## the car you are in, if you are
+var _blown := {}  ## police squad id -> sim time you last ran its checkpoint
+const CHECKPOINT_RUN_M := 45.0  ## closer than this to a police checkpoint ...
+const CHECKPOINT_RUN_MS := 6.0  ## ... faster than this is running it
+const CHECKPOINT_HEAT := 6.0  ## suspicion for running one
+const CHECKPOINT_AGAIN_S := 120.0
+var taxi_left := 0.0  ## sim seconds of a taxi ride still to go: the world runs ahead of the clock while it does
+var _taxi_to: Dictionary = {}
+var taxi_label: Label
 var walker: Walker = null
 var gun: Gunplay = null
 var _auto_bot := false  ## the AI took the stick because nobody's in the pilot seat  ## the walker's gun (sessions with a ground war)
@@ -128,6 +158,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	add_child(effects)
 	ControlsConfig.ensure()  # the flight keys as actions, with the player's saved bindings
 	var look := ControlsConfig.settings()
+	s.keyboard_assist = bool(look.assist)
 	UIStyle.set_palette(look.palette)
 	Speech.set_enabled(bool(look.speak))
 	screen_filter = ScreenFilter.new()
@@ -146,14 +177,21 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
 			m.intel = true
+		if k[0] == "phone":
+			m.called.connect(_phone_call)
+		if k[0] == "taxi":
+			m.stops_fn = taxi_stops
+			m.chosen.connect(_taxi_go)
 		m.setup(sess)
 		m.closed.connect(_menu_closed)
 		menus[k[0]] = m
+	if sess.races != null:
+		add_child(RaceMarkers.new().setup(sess))
 	foot_prompt = UIStyle.label("", 20, UIStyle.WHITE)
 	foot_prompt.add_theme_stylebox_override("normal", UIStyle.panel_box(Color(0, 0, 0, 0.55)))
 	foot_prompt.set_anchors_preset(Control.PRESET_CENTER)
@@ -161,7 +199,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	foot_prompt.position += Vector2(0, 70)
 	foot_prompt.visible = false
 	ui.add_child(foot_prompt)
-	help = _overlay(HELP_TEXT, UIStyle.WHITE)
+	help = _help_overlay(HELP_TEXT, UIStyle.WHITE)
 	var ver := UIStyle.label(Beta.label() + "   F12 feedback", 12, UIStyle.DIM)
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	ver.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -183,6 +221,24 @@ func _overlay(text: String, col: Color) -> Label:
 	l.visible = false
 	ui.add_child(l)
 	return l
+
+
+## F1's controls screen: long enough to run off a 720p window, so it scrolls (mouse wheel, or drag the
+## bar) instead of being cropped. Same panel proportions as ControlsMenu (F8), so the two screens match.
+func _help_overlay(text: String, col: Color) -> Control:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UIStyle.panel_box(Color(0, 0, 0, 0.88)))
+	panel.anchor_left = 0.08
+	panel.anchor_right = 0.92
+	panel.anchor_top = 0.05
+	panel.anchor_bottom = 0.95
+	panel.visible = false
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel.add_child(scroll)
+	scroll.add_child(UIStyle.label(text, 16, col, UIStyle.mono()))
+	ui.add_child(panel)
+	return panel
 
 
 ## Cockpit view: a dark glareshield along the bottom and a waterline marker
@@ -286,6 +342,24 @@ func _unhandled_input(ev: InputEvent) -> void:
 			_toggle_on_foot()
 			get_viewport().set_input_as_handled()
 			return
+		if on_foot and driving != null:
+			match k:
+				KEY_E:
+					_exit_car()
+				KEY_R:
+					_radio_key("power")
+				KEY_PERIOD, KEY_BRACKETRIGHT:
+					_radio_key("up")
+				KEY_COMMA, KEY_BRACKETLEFT:
+					_radio_key("down")
+				KEY_ESCAPE:
+					open_pause()
+				KEY_M:
+					hud.minimap.toggle()
+				KEY_F1:
+					help.visible = not help.visible
+			get_viewport().set_input_as_handled()
+			return
 		if on_foot:
 			if gun != null:
 				var gk := OS.get_keycode_string(k).to_lower()
@@ -306,12 +380,21 @@ func _unhandled_input(ev: InputEvent) -> void:
 					walker.use()
 				KEY_F:
 					walker.toggle_torch()
+				KEY_T:
+					_open("phone")  # the phone: the crew, the buyers, the lawyer, the desk without the walk
+				KEY_Z:
+					_field_order("hold")
+				KEY_X:
+					_field_order("come")
+				KEY_C:
+					_field_order("charge")
+				KEY_V:
+					_field_order("fall_back")
 				KEY_ESCAPE:
 					if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 						Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 					else:
-						s.save()
-						get_tree().quit()
+						open_pause()
 				KEY_M:
 					hud.minimap.toggle()
 				KEY_F1:
@@ -378,8 +461,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			if help.visible:
 				help.visible = false
 			else:
-				s.save()
-				get_tree().quit()
+				open_pause()
 		elif k == KEY_C:
 			cam_mode = CAM_MODES[(CAM_MODES.find(cam_mode) + 1) % CAM_MODES.size()]
 			_cam_pos = null
@@ -421,6 +503,7 @@ var screen_filter: ScreenFilter = null
 var controls_menu: ControlsMenu = null
 var pack_menu: PackMenu = null
 var sound: Soundscape = null
+var radio: CarRadio = null  ## the car's radio (made with the car)
 var talk: TalkBalloon = null  ## a conversation on screen (the Family, the General's aide)
 var _offers_seen := {}
 var _was_on_island := false
@@ -529,24 +612,80 @@ func toggle_controls() -> void:
 		_menu_closed())
 
 
+var pause_menu: PauseMenu = null
+var _paused_before := false  ## P had paused the game before the menu opened
+
+
+## ESC: the pause menu. The game stops under it, unless friends are flying in it.
+func open_pause() -> void:
+	if pause_menu != null and is_instance_valid(pause_menu):
+		return
+	var hosting := server != null
+	pause_menu = PauseMenu.new().setup({"save": s.save_path != "", "load": s.save_path != "" and not hosting,
+		"graphics": true, "controls": true, "lobby": true, "assist": true},
+		"The game runs on: remote seats are live." if hosting else "Paused")
+	ui.add_child(pause_menu)
+	pause_menu.chosen.connect(_on_pause_choice)
+	_paused_before = paused
+	if not hosting:
+		paused = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if walker != null:
+		walker.look_enabled = false
+
+
+func close_pause() -> void:
+	if pause_menu == null or not is_instance_valid(pause_menu):
+		return
+	pause_menu.close()
+	pause_menu = null
+	paused = _paused_before
+	_menu_closed()
+
+
+func _on_pause_choice(action: String) -> void:
+	match action:
+		"resume":
+			close_pause()
+		"assist":
+			s.keyboard_assist = bool(ControlsConfig.settings().assist)
+		"save":
+			s.save()
+			pause_menu.say("Saved." if s.parked else "Saved: in the air, so you'll start again at %s." % World.airfield(s.save_location()).name)
+		"controls":
+			close_pause()
+			toggle_controls()
+		"load", "lobby", "desktop":
+			if action != "load":
+				s.save()
+			close_pause()
+			if leave.get_connections().is_empty():
+				get_tree().quit()
+			else:
+				leave.emit(action)
+
+
 func _unhandled_key_input(_ev: InputEvent) -> void:
 	pass
 
 
 func _input(ev: InputEvent) -> void:
 	# click to grab the mouse again while walking
-	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null:
+	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _menu_closed() -> void:
-	if on_foot:
+	if on_foot and pause_menu == null:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		walker.look_enabled = true
 
 
 # ------------------------------------------------------------ on foot
 func _toggle_on_foot() -> void:
+	if driving != null:
+		s.say("Get out of the car first (E).")
+		return
 	_sync_scene(0.0)  # the aircraft node may not have been placed yet this frame
 	if on_foot:
 		var st: FlightModel.FlightState = s.state
@@ -588,6 +727,7 @@ func _toggle_on_foot() -> void:
 	walker = Walker.new().setup(s.world)
 	add_child(walker)
 	walker.used.connect(_on_use)
+	_ensure_car(st)
 	# out of the left door, a couple of metres clear of the wing root
 	var h := deg_to_rad(st.heading)
 	var lx := -cos(h)
@@ -607,8 +747,232 @@ func _toggle_on_foot() -> void:
 	s.say("On foot. TAB to climb back in, E to use things, F for the torch%s." % (", 1-4 for a gun" if s.foot != null else ""))
 
 
+## A number picked from the phone: the same call the Shift keys make from the cockpit, and the
+## desk and dispatch without walking to them.
+func _phone_call(action: String) -> void:
+	match action:
+		"desk":
+			_open("hq")
+		"logistics":
+			toggle_logistics()
+		"taxi":
+			_open("taxi")
+		"rackets":
+			_open("rackets")
+		"track":
+			_open("track")
+		_:
+			var tk := open_talk(action)
+			if tk != null and on_foot and walker != null:
+				walker.look_enabled = false  # stand and talk
+				tk.finished.connect(func():
+					if on_foot and walker != null:
+						walker.look_enabled = true)
+
+
+## Where a taxi will take you: the aircraft, whatever this airfield has (the boss's desk, the job board,
+## the load planner, the hangar) and each stash house still standing - with the distance, the ride and
+## the fare.
+func taxi_stops() -> Array:
+	var out := []
+	if walker == null:
+		return out
+	var here := Vector2(walker.global_position.x, -walker.global_position.z)
+	var st: FlightModel.FlightState = s.state
+	var h := deg_to_rad(st.heading)
+	var half: float = s.spec.visual.span_m * 0.5 + 1.2
+	out.append({"name": "The %s" % s.spec.name, "at": Vector2(st.x - cos(h) * half, st.y + sin(h) * half), "heading": st.heading})
+	for pair in [["hq_org", "The boss's desk"], ["jobs", "The job board"], ["load", "The load planner"], ["hangar", "The hangar"]]:
+		for a in _find_areas(scene, pair[0], []):
+			if pair[0] != "hq_org" and a.get_meta("field", s.location) != s.location:
+				continue
+			var p: Vector3 = a.global_position
+			var back: Vector3 = a.get_parent().global_transform.basis.z.normalized()  # buildings face local -z
+			var spot: Vector3 = p - back * 1.2
+			out.append({"name": pair[1], "at": Vector2(spot.x, -spot.z), "heading": rad_to_deg(atan2(p.x - spot.x, -(p.z - spot.z)))})
+			break
+	if s.stash_net != null:
+		for stash in s.stash_net.live():
+			var at := Vector2(stash.x, stash.y)
+			if s.ground != null and s.ground.graph.road_nodes > 0:
+				at = s.ground.graph.nodes[s.ground.graph.nearest(at)]  # the street outside
+			out.append({"name": "%s (stash house)" % stash.name, "at": at, "heading": 0.0})
+	for r in out:
+		var d: float = here.distance_to(r.at)
+		r["dist"] = d
+		r["secs"] = maxf(20.0, d * TAXI_ROAD / TAXI_MS)
+		r["fare"] = TAXI_BASE + int(d / TAXI_PER_M)
+	return out
+
+
+func _find_areas(node: Node, action: String, out: Array) -> Array:
+	if node is Area3D and node.get_meta("action", "") == action:
+		out.append(node)
+	for c in node.get_children():
+		_find_areas(c, action, out)
+	return out
+
+
+## The taxi leaves: the fare is paid, the clock runs ahead (TAXI_STEPS_PER_FRAME sim seconds a frame)
+## until the ride is over, and then the walker is put down at the other end.
+func _taxi_go(i: int) -> void:
+	var stops := taxi_stops()
+	if i < 0 or i >= stops.size() or walker == null:
+		return
+	var stop: Dictionary = stops[i]
+	if s.money < int(stop.fare):
+		s.say("The driver wants $%d up front." % int(stop.fare))
+		return
+	s.money -= int(stop.fare)
+	_taxi_to = stop
+	taxi_left = float(stop.secs)
+	walker.process_mode = Node.PROCESS_MODE_DISABLED
+	walker.look_enabled = false
+	if taxi_label == null:
+		taxi_label = UIStyle.label("", 22, UIStyle.WHITE)
+		taxi_label.add_theme_stylebox_override("normal", UIStyle.panel_box(Color(0, 0, 0, 0.6)))
+		taxi_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		taxi_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		taxi_label.position += Vector2(0, 60)
+		ui.add_child(taxi_label)
+	taxi_label.visible = true
+	s.say("To %s: about %d min, $%d." % [stop.name, int(ceil(float(stop.secs) / 60.0)), int(stop.fare)])
+
+
+## While a ride is on, run the world ahead (parked and on foot, so whole-second steps are fine).
+func _taxi_tick(inp, bc) -> void:
+	if taxi_left <= 0.0:
+		return
+	var n := 0
+	while taxi_left > 0.0 and n < TAXI_STEPS_PER_FRAME:
+		var step := minf(taxi_left, 1.0)
+		s.update(step, inp, bc)
+		taxi_left -= step
+		n += 1
+	if taxi_label != null:
+		taxi_label.text = "  In the taxi to %s ...  %d min to go  " % [_taxi_to.name, int(ceil(maxf(0.0, taxi_left) / 60.0))]
+	if taxi_left <= 0.0:
+		taxi_left = 0.0
+		if walker != null:
+			walker.process_mode = Node.PROCESS_MODE_INHERIT
+			walker.look_enabled = true
+			var at: Vector2 = _taxi_to.at
+			walker.place(at.x, at.y, float(_taxi_to.heading))
+		if taxi_label != null:
+			taxi_label.visible = false
+		s.say("Here you are: %s." % _taxi_to.name)
+
+
+## The starter car: a parked car beside the aircraft's right wing, made the first time you step out.
+func _ensure_car(st: FlightModel.FlightState) -> void:
+	if car != null:
+		return
+	car = Car.new().setup(s.world, "org")
+	add_child(car)
+	radio = CarRadio.new().setup(self)
+	add_child(radio)
+	var h := deg_to_rad(st.heading)
+	var off: float = s.spec.visual.span_m * 0.5 + 9.0
+	car.place(st.x + cos(h) * off, st.y - sin(h) * off, st.heading + 90.0)
+
+
+## E at the car: get in (it takes the walker's place; the walker is parked, hidden, inside it).
+func _enter_car() -> void:
+	if car == null or walker == null or driving != null:
+		return
+	if walker.global_position.distance_to(car.global_position) > 6.0:
+		s.say("The car is too far away.")
+		return
+	driving = car
+	car.driven = true
+	car.speed = 0.0
+	walker.process_mode = Node.PROCESS_MODE_DISABLED
+	walker.visible = false
+	walker.look_enabled = false
+	car.cam.current = true
+	if radio != null:
+		radio.active = true
+	s.say("Driving: W / S throttle and brake, A / D steer, SPACE handbrake, R radio, , and . tune, E to get out." + (("  " + radio.line()) if radio != null and radio.on else ""))
+
+
+## Driving through a police checkpoint without slowing is noticed: suspicion on the runner's case, once per checkpoint
+## every CHECKPOINT_AGAIN_S. Slowing down (under CHECKPOINT_RUN_MS) is a wave-through.
+func _car_checkpoints() -> void:
+	if driving == null or s.ground == null:
+		return
+	var here := driving.game_xy()
+	for q: GroundWar.Squad in s.ground.of("police"):
+		if q.tactic != "checkpoint" or q.pos().distance_to(here) > CHECKPOINT_RUN_M:
+			continue
+		if absf(driving.speed) < CHECKPOINT_RUN_MS:
+			continue
+		if s.time - float(_blown.get(q.id, -1e9)) < CHECKPOINT_AGAIN_S:
+			continue
+		_blown[q.id] = s.time
+		var c = s.police.case("runner")
+		c.suspicion = minf(100.0, c.suspicion + CHECKPOINT_HEAT)
+		s.say("You ran the police checkpoint at %s." % s.ground.place_name(q.x, q.y))
+
+
+## On foot, with a ground war: Z hold, X come to me, C charge, V fall back: the nearest of our squads is told.
+func _field_order(what: String) -> void:
+	var p := walker.global_position
+	var r: Array = s.command(Roles.PILOT, "field_order", {"what": what, "x": p.x, "y": -p.z})
+	if not r[0]:
+		s.say(r[1])
+
+
+## The street race counts the car's gates.
+func _car_race() -> void:
+	if driving != null and s.races != null and s.races.active():
+		s.races.feed("car", driving.game_xy(), 0.0)
+
+
+## R, and the tuning keys, in the car: the radio on / off, the next station up, the next down.
+func _radio_key(what: String) -> void:
+	if radio == null:
+		return
+	if radio.stations.is_empty():
+		s.say(radio.line())
+		return
+	match what:
+		"power":
+			radio.power(not radio.on)
+		"up", "down":
+			if not radio.on:
+				radio.power(true)
+			radio.tune(1 if what == "up" else -1)
+	s.say(radio.line())
+
+
+## E again: get out on the driver's side, if it has all but stopped.
+func _exit_car() -> void:
+	if driving == null:
+		return
+	if absf(driving.speed) > 4.0:
+		s.say("Slow down first.")
+		return
+	var out := driving.global_position - driving.global_transform.basis.x * 2.6
+	walker.process_mode = Node.PROCESS_MODE_INHERIT
+	walker.visible = true
+	walker.look_enabled = true
+	walker.place(out.x, -out.z, driving.heading_deg())
+	walker.cam.current = true
+	if s.races != null and s.races.active() and float(s.races.run.t0) >= 0.0:
+		var rc = s.races.course(str(s.races.run.id))
+		if rc != null and rc.kind == "car":
+			s.races.abort("you left the car")
+	if radio != null:
+		radio.active = false
+	driving.driven = false
+	driving.speed = 0.0
+	driving = null
+
+
 func _on_use(action: String, area: Area3D) -> void:
 	match action:
+		"car":
+			_enter_car()
 		"jobs", "load", "hangar":
 			var field: String = area.get_meta("field", s.location)
 			if field != s.location:
@@ -651,7 +1015,7 @@ func _gather_input() -> ControlMapper.InputFrame:
 	var inp := ControlMapper.InputFrame.new()
 	inp.pressed = _pressed
 	_pressed = {}
-	var menu_open := _active_menu() != null or controls_menu != null
+	var menu_open := _active_menu() != null or controls_menu != null or pause_menu != null
 	if not menu_open:
 		for action in ControlsConfig.HELD:
 			if Input.is_action_pressed(ControlsConfig.action(action)):
@@ -703,6 +1067,7 @@ func _process(delta: float) -> void:
 		var remote: bool = s.seats.human(Roles.PILOT) and s.seats.seats[Roles.PILOT].token != ""
 		var bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 		s.update(dt, inp, bc)
+		_taxi_tick(inp, bc)
 		nerves.update(s, dt)
 		if _frame % 15 == 0:
 			_talk_cues()
@@ -721,6 +1086,8 @@ func _process(delta: float) -> void:
 		_foot_down()
 	if on_foot:
 		_foot_hud()
+		_car_checkpoints()
+		_car_race()
 	if m == null:
 		hud.refresh()
 	elif not s.parked:
@@ -774,6 +1141,15 @@ func _foot_input() -> ControlMapper.InputFrame:
 
 
 func _foot_hud() -> void:
+	if driving != null:
+		walker.global_position = driving.global_position + Vector3(0, 1.0, 0)  # the walker rides along: the phone, the taxi and the sim see where you are
+		var ml2 := []
+		for msg in s.messages:
+			if s.time - msg[0] < 8:
+				ml2.append(msg[1])
+		foot_prompt.text = "\n".join(["%d km/h  -  %s   [E] get out" % [int(absf(driving.speed) * 3.6), "road" if driving.on_road() else "off-road"]] + ml2.slice(-2))
+		foot_prompt.visible = _active_menu() == null
+		return
 	if s.foot != null:
 		walker.speed_scale = s.foot.speed_factor()
 	var lines := []
@@ -978,7 +1354,8 @@ func _sync_squads(dt: float) -> void:
 		return
 	var g := s.ground
 	squads.sync(g.squads.map(func(q): return q.dict()),
-		g.fights.map(func(f): return {"x": f.x, "y": f.y, "a": f.a.id, "b": f.b.id}), cam.global_position, s.time, dt)
+		g.fights.map(func(f): return {"x": f.x, "y": f.y, "a": f.a.id, "b": f.b.id}), cam.global_position, s.time, dt,
+		s.payroll.people.draw_list() if s.payroll != null and Agent.ENABLED else [])
 
 
 func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
