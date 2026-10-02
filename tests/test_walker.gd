@@ -309,6 +309,36 @@ func test_running_a_police_checkpoint_costs_suspicion() -> void:
 	sess.dispose()
 
 
+## On foot with a ground war, Z / X / C / V order the nearest squad of ours: hold, come to me, charge, fall back.
+func test_the_field_order_keys_command_the_nearest_squad() -> void:
+	var app := _app({"seed": 9, "location": "COV", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var sess := app.s
+	app._toggle_on_foot()
+	await _frames(10)
+	var p := app.walker.global_position
+	var me := Vector2(p.x, -p.z)
+	var q: GroundWar.Squad = sess.ground.recruit("org", "foot", me + Vector2(40, 0), false)
+	q.state = "holding"
+	_key(KEY_X, true)
+	await _frames(3)
+	_key(KEY_X, false)
+	check_eq(q.order.get("type", ""), "move", "X: it comes to me")
+	_key(KEY_Z, true)
+	await _frames(3)
+	_key(KEY_Z, false)
+	check_eq(q.order.get("type", ""), "hold", "Z: it holds")
+	_key(KEY_V, true)
+	await _frames(3)
+	_key(KEY_V, false)
+	check_eq(q.order.get("type", ""), "melt", "V: it falls back")
+	_key(KEY_C, true)
+	await _frames(3)
+	_key(KEY_C, false)
+	check(sess.messages.any(func(m): return str(m[1]).contains("Nothing in sight")), "C with nobody to charge says so")
+	app.free()
+	sess.dispose()
+
+
 func test_walks_up_a_step() -> void:
 	var app := _app({"seed": 1, "location": "HAR"})
 	app._toggle_on_foot()

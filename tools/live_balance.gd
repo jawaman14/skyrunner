@@ -57,13 +57,13 @@ func _initialize() -> void:
 		"trade": {"trade": true, "career": true, "renown": true, "payroll": true, "family": true, "agency": true},
 		"all": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true},
 		"logistics": {"trade": true, "career": true, "renown": true, "payroll": true, "family": true, "agency": true, "logistics": true},
-		"war": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true, "ground_war": true},
+		"war": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true, "ground_war": true, "rackets": true},
 		"air": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true,
-			"ground_war": true, "logistics": true, "court": true, "air": true},
+			"ground_war": true, "rackets": true, "logistics": true, "court": true, "air": true},
 		"noair": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true,
-			"ground_war": true, "logistics": true, "court": true},
+			"ground_war": true, "rackets": true, "logistics": true, "court": true},
 		"open": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true,
-			"ground_war": true, "logistics": true, "court": true, "air": true, "start": Session.START_MONEY},
+			"ground_war": true, "rackets": true, "logistics": true, "court": true, "air": true, "start": Session.START_MONEY},
 		"story": {"story": true, "career": true, "air": true},
 	}
 	if a.size() > 2 and a[2] == "open_sweep":  # open mode's start: what a float buys (entry 34)

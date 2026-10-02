@@ -1031,6 +1031,8 @@ func _rout(q: Squad, f: Fight) -> void:
 	if winner.faction != "police" and q.faction != "police":
 		var m := market_at(f.x, f.y)
 		control[m][winner.faction] += 60.0 * winner.men
+	if winner.faction == "org" and q.faction == "rival" and q.men > 0 and sess.rackets != null:
+		sess.rackets.capture(q)  # some of the beaten are taken
 	_say("both", "%s routed %s%s" % [winner.id, q.id, (" - %d arrested" % f.arrests) if f.arrests else ""])
 
 

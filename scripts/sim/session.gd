@@ -134,6 +134,7 @@ var island: Island = null  ## Isla Soberana, over the horizon: cheap product, so
 var foot: FootCombat = null  ## the pilot on foot with a gun (sessions with a ground war)
 var chronicle: Chronicle = null  ## the news and the breaks between runs (Chronicle; live play asks for it)
 var renown: Renown = null  ## how big the name is (Renown; `renown: true` asks for it)
+var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets: true` with a ground war)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
 var ai_law_upgrades := false  ## the AI chief buys law upgrades as money comes in (live play; off in sims and tests)
@@ -237,6 +238,8 @@ func _init(opts := {}) -> void:
 		police.territory_y = Island.TERRITORY_Y
 	if opts.get("renown", false) and Renown.ENABLED:
 		renown = Renown.new(self)
+	if opts.get("rackets", false) and Rackets.ENABLED and ground != null:
+		rackets = Rackets.new(self)
 	radio.df_stations = []
 	for a in world.airfields:
 		if a.police:
@@ -289,6 +292,7 @@ func dispose() -> void:
 	foot = null
 	chronicle = null
 	renown = null
+	rackets = null
 	ground = null
 	if nights != null:
 		nights.sess = null
@@ -2122,6 +2126,8 @@ func _update_stashes(dt: float) -> void:
 	var results := stash_net.update(dt, time, police.units.filter(func(u): return u.faction() == "police"))
 	if ground != null:
 		ground.update(dt)
+		if rackets != null:
+			rackets.update(dt)
 		for r in ground.truck_contacts():
 			stash_net.trucks.erase(r[0])
 			results.append(r)
@@ -2357,6 +2363,25 @@ func _cmd_field_order(role: String, a: Dictionary):
 		return r[0]
 	say(str(r[1]))
 	return null
+
+
+## The collectors and the prisoners: {what: policy (market, mode) | ransom | turn | release}.
+func _cmd_rackets(role: String, a: Dictionary):
+	if rackets == null:
+		return "Nobody collects for us here."
+	var err := ""
+	match str(a.get("what", "")):
+		"policy":
+			err = rackets.set_policy(str(a.get("market", "")), str(a.get("mode", "")))
+		"ransom":
+			err = rackets.ransom()
+		"turn":
+			err = rackets.turn()
+		"release":
+			err = rackets.release()
+		_:
+			err = "Policy, ransom, turn or release."
+	return err if err != "" else null
 
 
 func _cmd_recruit_squad(role: String, a: Dictionary):
