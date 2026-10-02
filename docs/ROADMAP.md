@@ -226,7 +226,8 @@ Second wave, larger features:
   to busts and raids, in five tiers that improve the hiring hall's candidates, the bulk buyers' prices and how closely the task
   force watches. **Veteran squads and field orders** are done too (in a PR; DESIGN section 26): squads rank up from the fights they
   survive (Green, Blooded, Veteran, Elite: more fire, steadier nerve, dearer upkeep), and on foot Z / X / C / V hold, call,
-  charge or fall back the nearest of our squads. Next: tribute, prisoners and ransom; stash works and the arena.
+  charge or fall back the nearest of our squads. **The rackets** too (in a PR; DESIGN section 27): the streets we hold pay tribute (fair or squeezed, from the phone's
+  collectors) and the rival squads we rout leave prisoners to ransom, turn or release. Next: stash works and the arena.
 - **Saves keep the organisation.** Done (in a PR; the old line here said "boats don't carry over to a new
   game or map", which turned out to be the whole of a save: it kept only money, aircraft, gear, upgrades,
   location, the arsenal, campaign, story and tutorial, and every stash house, crew member, squad and case

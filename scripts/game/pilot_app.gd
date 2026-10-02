@@ -177,7 +177,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
@@ -755,6 +755,8 @@ func _phone_call(action: String) -> void:
 			toggle_logistics()
 		"taxi":
 			_open("taxi")
+		"rackets":
+			_open("rackets")
 		_:
 			var tk := open_talk(action)
 			if tk != null and on_foot and walker != null:

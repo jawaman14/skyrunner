@@ -818,3 +818,26 @@ goes to the nearest squad of ours within 250 m (`GroundWar.field_order`; the com
 the boss's and the lieutenant's): *come* walks it to where you stand, *charge* sends it at the nearest rival or
 police squad it can see within 450 m of it (a hidden squad cannot be charged), *fall back* is the melt order (to
 cover, out of sight), *hold* stops it. A squad given an order is under a human's hand and the AI leaves it alone.
+
+## 27. The rackets: tribute, and the men we take (Mount & Blade's villages and prisoners)
+
+`scripts/sim/rackets.gd`, with a ground war and `rackets: true` (the live game); the phone's **The collectors**
+opens the menu, `rackets` is the boss's, the lieutenant's and the pilot's command.
+
+**Tribute.** Every 10 minutes the collectors go round the four markets (town, west, north, sea). A market in which
+the organisation holds more than half the street (`GroundWar.org_share`) pays `$160 x (share - 0.5) x 2`, so $160
+at full control, times the name you have (Renown's price multiple). Each market has terms, cycled with ENTER:
+
+| Terms | Pays | Costs |
+|---|---|---|
+| fair | the amount above | nothing |
+| squeeze | 2.2x | our hold there drops by 15% a round, and the case against us warms by 2 |
+| off | nothing | nothing |
+
+**Prisoners.** When one of our squads routs one of Los Cuervos', a third of what is left of it is taken (a squad of
+three or fewer gives nobody up). The menu's keys: **A** ransom them (Los Cuervos pay $350 a head, up to what cash
+they have; the men go back), **F** put them on the payroll (they come as soldiers: skill 0.3, loyalty 0.25, so a
+bad risk, at the street rate), **G** let them go (half a point of renown a man). Held men get away at one in eight
+every 10 minutes (a group under eight is guarded).
+
+The save keeps the terms, the prisoners and the total collected.
