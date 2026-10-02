@@ -57,6 +57,8 @@ const DESK_LESSONS := {
 	"boss": [
 		["b_orders", "", "Run the organisation",
 			"UP/DOWN picks an order, LEFT/RIGHT changes it, ENTER issues it: fronts to launder, opsec, lying low, upgrades. The money is the club's safe.", ["hq"]],
+		["b_squads", "ground_war", "Run the squads yourself",
+			"Q swaps this desk for squad command: CLICK a squad, RIGHT-CLICK the map to send it, buttons to melt away, hold, disband or raise one. Q again hands them straight back to the AI.", ["squad_order", "recruit_squad"]],
 		["b_logistics", "logistics", "Stock and cash have places",
 			"K: logistics. Street money piles up in the stashes - truck it to the club (All cash home). Product sells only where it sits: move it to the corners, or to a buyer.", ["move_cash", "move_goods", "move_armoury", "escort_truck"]],
 		["b_buyers", "trade", "Sell in bulk",

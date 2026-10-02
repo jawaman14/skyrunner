@@ -64,6 +64,16 @@ scrolling; the compass; the tutorial's red squares; crew; autopilot. Second wave
     while still squawking with no heat on you, going dark once wanted/tipped/suspicious, no circling
     from a bad angle, hands back control on arrival, target selection (job over nearest, never the
     field just left), and the too-close-to-bother fallback.
+- **"At the boss's table the game controls like an RTS - you move people and routes - but leaving
+  the desk should go back to AI."** It already did, for StationApp's seated boss in co-op
+  (squad_mode: CLICK a squad, RIGHT-CLICK to send it, Session.seat_driver stands the ground war's AI
+  commander aside exactly like it does for a human lieutenant) - the gap was that solo play's own
+  physical desk (walk up, E) only ever opened the abstract season-orders board, which needs the
+  fifth rule layer nobody runs solo. HQMenu (scripts/ui/hq_menu.gd) now has the same squad_mode:
+  Q swaps the board for a live StationMap, claims the boss's seat for as long as that lasts
+  (Session.seat_driver, fixed to also stand the AI aside for a human boss - it only did for a human
+  lieutenant before), and hands it straight back on Q again or on leaving. tests/test_seats.gd and
+  tests/test_walker.gd (test_the_boss_desk_commands_squads) cover it.
 
 Second wave, larger features:
 - **A phone on foot** to reach the crew and desk menus.

@@ -16,7 +16,7 @@ signal leave(to: String)
 const CREW_KEYS := {KEY_N: "transponder", KEY_U: "autopilot", KEY_K: "kick", KEY_O: "call_boat", KEY_V: "pump", KEY_I: "turn_around"}
 const PRESS_KEYS := {KEY_ENTER: "confirm", KEY_KP_ENTER: "confirm"}
 const MENU_KEYS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_ENTER: "enter",
-	KEY_KP_ENTER: "enter", KEY_A: "a", KEY_PLUS: "+", KEY_EQUAL: "+", KEY_KP_ADD: "+", KEY_MINUS: "-", KEY_KP_SUBTRACT: "-", KEY_F: "f", KEY_G: "g"}
+	KEY_KP_ENTER: "enter", KEY_A: "a", KEY_PLUS: "+", KEY_EQUAL: "+", KEY_KP_ADD: "+", KEY_MINUS: "-", KEY_KP_SUBTRACT: "-", KEY_F: "f", KEY_G: "g", KEY_Q: "q"}
 
 const HELP_TEXT := """SKYRUNNER - controls
 
@@ -37,6 +37,9 @@ Beta     F12 feedback bundle: a zip of what happened (build, machine, flight, lo
 On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mouse look
          Guns (with a ground war): 1-4 pistol / rifle / machine gun / RPG from the armoury  H holster  R reload  LMB fire
          E use (job board, fuel, hangar, the boss's desk)   F torch
+         At the boss's desk (with a ground war): Q swaps the orders for squad command - CLICK a squad,
+            RIGHT-CLICK the map to send it, buttons for melt away / hold / disband / raise one. Q again
+            or ESC hands the squads straight back to the AI, the same as leaving the lieutenant's seat.
          I your pack: spare guns, rounds, medkits (24 kg; over 12 kg you slow down)   5 medkit
 Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT: upgrade trees)
 Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
