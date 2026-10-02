@@ -875,3 +875,22 @@ the field is the prize: first the whole prize, second half, third a quarter, and
 once an hour (after that it is for the glory). You are out, and the fee is gone, if you get out of the car mid-race,
 land from the circuit or take three times par. The save keeps what each course last paid and the winnings.
 `Races.ENABLED` switches it off.
+
+## 30. Effects and lighting (the 2026-10-03 upgrade)
+
+**Fire** (`FX.burn`): three layers - an outer flame (Kenney `fire_01`), a white-hot core (`flame_04`) and embers that drift up
+(`spark_01`) - drawn additively at HDR brightness (the material's albedo is above 1, so the glow bloom catches it), a
+light that flickers (three beating sines, a phase of its own per fire) and a charred patch on the ground. The smoke is
+lit orange by the fire at its foot, then soot, then a thin grey veil: soft, so the flames show through it.
+
+**Blasts** (`FX.blast`): a one-frame white flash, a fast fireball and a slower rolling one, sparks, a dust ring flung along the
+ground, a shock ring racing out over it, a mushroom of smoke with a broader grey cap, debris, a scorch mark that stays
+45 s, and a light that spikes to 12 and fades over two seconds. Bullets that hit a wall or the ground throw sparks and dust
+(`FX.impact`). A blast nearby shakes the camera (`FX.shake_at`: up to 0.18 m of Camera3D offset, by size, distance and
+the 1.6 s after it).
+
+**Street lamps** (`StreetLights`): the town's lamp heads are glowing meshes, far too many to be lights, so a pool of
+OmniLights (5 on medium, 10 on high, none on low) follows the lamps within 90 m of the camera: warm sodium pools on the
+road and pavement at night.
+
+**The car's headlights**: two spot lights come on at night (the scene's night above 0.35) while you drive.

@@ -176,18 +176,24 @@ func trigger() -> String:
 	var end: Vector3 = origin + dir * (hit[1] if hit[0] != "" else range)
 	# the world's colliders (walls, terrain) stop the round first
 	var space := get_world_3d().direct_space_state if is_inside_tree() else null
+	var struck := false
+	var surface := Vector3.UP
 	if space != null:
 		var q := PhysicsRayQueryParameters3D.create(origin, end)
 		q.exclude = [walker.get_rid()]
 		var r := space.intersect_ray(q)
 		if not r.is_empty():
 			end = r.position
+			struck = true
+			surface = r.normal
 			if hit[0] != "" and origin.distance_to(r.position) < hit[1] - 0.3:
 				hit = ["", 0.0]
 	last_result = f.hit(hit[0], hit[1]) if hit[0] != "" else "miss"
 	_tracer(origin + dir * 0.6, end)
 	if f.tier == "rpg" and fx != null:
 		fx.blast(end, 3.0)  # the rocket goes off where it lands
+	elif struck and fx != null:
+		fx.impact(end, surface)  # sparks and dust where the round hit the wall or the ground
 	# recoil: the view climbs, the gun kicks back
 	cam.rotation.x = clampf(cam.rotation.x + KICK[f.tier], -1.4, 1.4)
 	viewmodel.position = Vector3(0, 0.01, 0.06)

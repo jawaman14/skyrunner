@@ -20,6 +20,7 @@ const ROAD_M := 7.0  ## within this of a road centre line is the road
 
 var world: World
 var driven := false
+var headlights: Array = []  ## the two lamps (on at night, while it is driven)
 var speed := 0.0  ## m/s along the heading (negative: reversing)
 var cam: Camera3D
 var board: Area3D  ## the point you press E at to get in
@@ -37,6 +38,19 @@ func setup(w: World, faction := "org") -> Car:
 	cs.position = Vector3(0, 0.75, 0)
 	add_child(cs)
 	add_child(SquadRender.vehicle(faction, "car"))
+	for sx in [-0.7, 0.7]:
+		var hl := SpotLight3D.new()
+		hl.name = "headlight"
+		hl.position = Vector3(sx, 0.85, -2.1)
+		hl.spot_range = 55.0
+		hl.spot_angle = 32.0
+		hl.spot_angle_attenuation = 0.8
+		hl.light_energy = 4.0
+		hl.light_color = Color(1.0, 0.95, 0.8)
+		hl.rotation_degrees.x = -3.0
+		hl.visible = false
+		add_child(hl)
+		headlights.append(hl)
 	cam = Camera3D.new()
 	cam.position = Vector3(0, 3.4, 7.8)
 	cam.rotation = Vector3(deg_to_rad(-14.0), 0, 0)
