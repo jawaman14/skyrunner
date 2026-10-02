@@ -2,13 +2,23 @@
 
 The work queue after beta 0.9.0-beta.1, in priority order. Each item is a feature branch and a PR.
 
-## 1. Balance re-fly on the Godot flight model (in progress)
+## 1. Balance re-fly on the Godot flight model (done - see entry 35, one number needs a decision)
 The balance numbers were measured with JSBSim; the game now flies its own model.
-1. `cli.gd -- tactical --seeds 10 --workers 4`, then commit `sim-results/calibration.json` and
-   `tactical.json` (the air-risk table reads them).
-2. `cli.gd -- feasibility` again: the castering-gear fix changed takeoffs.
-3. `cli.gd -- strategic --n 100`: the equilibrium must stay at 50 ± 5%.
-4. `tools/live_balance.gd -- 80 3` and `-- 40 12 story`; BALANCE entry 35; BETA.md's balance note.
+1. Done: `cli.gd -- tactical --seeds 10 --workers 8`, `sim-results/calibration.json` and `tactical.json`
+   committed (the air-risk table reads them). 630 flights; the crash rate fell from 19% to 2% (the
+   castering-gear fix, 336a0dc, was the cause - see entry 35).
+2. Done: `cli.gd -- feasibility` again (the castering-gear fix changed takeoffs): 240 trials, a net
+   +12 passes (concentrated at Old Quarry for the Cessna 182 - the mountain-strip question
+   docs/STRIPS.md left open), but the twins lost some landings. See entry 35.
+3. Done: `cli.gd -- strategic --n 100`: the equilibrium moved to 58.4%, outside the 50 ± 5% target -
+   almost certainly the crash-rate drop removing a tax that kept the sides even (ablating "crews"
+   alone drops it to 36%, by far the largest lever). **Not tuned yet** - this is 10x fewer seasons
+   per matrix cell than the run it's compared against, so a bigger re-run would help confirm the
+   drift is real before anyone retunes a rule. See entry 35 (docs/BALANCE.md) for the numbers.
+4. Done: `tools/live_balance.gd -- 80 3` and `-- 40 12 story`; BALANCE entry 35 written and
+   `docs/BALANCE.md` regenerated. **Open:** "BETA.md's balance note" - no `docs/BETA.md` exists in
+   this repo (nor anywhere else under that name), so nothing was added under that name; flagging
+   rather than guessing what it should be.
 
 ## 2. Playtest feedback (first real play session)
 First wave, small and high value - **all done, in PRs:** the Esc pause menu; runways and landing
@@ -209,7 +219,7 @@ Second wave, larger features:
   - a starter car at the airport: the **taxi half is done** (in a PR): the phone's "A taxi" lists the aircraft, the boss's
     desk, the job board, the load planner, the hangar and each live stash house with the distance, the ride (13 m/s over
     roads 1.3x the crow's line) and the fare ($15 + $1 per 250 m, paid up front); a ride runs the world ahead at 30 sim
-    seconds a frame and puts you down at the other end. The **drivable car** (decided 2026-10-03: both) is done too (in a PR): `Car` (scripts/game/car.gd), a parked car beside the aircraft's right wing made the first time you step out; E at it to get in, W/S throttle and brake (S reverses once stopped), A/D steer (the wheel bites with speed, less the faster you go), SPACE the handbrake, E to get out (not above 4 m/s), a chase camera. Arcade: a real body on the island's collision that stops against buildings and the parked aircraft and will not drive into deep water; a road is fast (26 m/s, about 95 km/h), anywhere else a crawl (11 m/s). The walker rides along hidden, so the phone, the sim and the HUD know where you are; TAB and the phone are refused until you are out. Driving through a police checkpoint (within 45 m, over 6 m/s) adds 6 suspicion to the runner's case, once per checkpoint per two minutes; slowing down is a wave-through. Not done: cargo in the car, police chasing it, damage, other cars on the road to hit, a handbrake turn that slides.
+    seconds a frame and puts you down at the other end. The **drivable car** (decided 2026-10-03: both) is done too (in a PR): `Car` (scripts/game/car.gd), a parked car beside the aircraft's right wing made the first time you step out; E at it to get in, W/S throttle and brake (S reverses once stopped), A/D steer (the wheel bites with speed, less the faster you go), SPACE the handbrake, E to get out (not above 4 m/s), a chase camera. Arcade: a real body on the island's collision that stops against buildings and the parked aircraft and will not drive into deep water; a road is fast (26 m/s, about 95 km/h), anywhere else a crawl (11 m/s). The walker rides along hidden, so the phone, the sim and the HUD know where you are; TAB and the phone are refused until you are out. Driving through a police checkpoint (within 45 m, over 6 m/s) adds 6 suspicion to the runner's case, once per checkpoint per two minutes; slowing down is a wave-through. Not done: cargo in the car, police chasing it, damage, other cars on the road to hit, a handbrake turn that slides. **The car's radio** (in a PR): R turns it on, `,` and `.` tune, in the car only. The dial is 19 stations of real recordings from 1979-86: Miami's Y100, WIOD and Disco 96, Jamaica's RJR, Colombia, Antigua, the Turks & Caicos, Haiti, the Dominican Republic, Honduras, Belize, Costa Rica, Nicaragua, Cuba (exile and clandestine stations) and Radio Marti on shortwave, all from listeners' recordings on the Internet Archive (assets/radio/README.md lists each, and says plainly that they are not CC0: they ship at the owner's decision and come out on request). A station is always on air (its place in the programme follows the sim clock); short recordings fall to static between plays. Folders in `user://radio/` are the player's own stations. Not done: the radio outside the car, the aircraft's cockpit radio, news items tied to the sim's events.
 - **Physical logistics by truck, boat or plane.** Done (in a PR): **fuel** (scripts/sim/fuel.gd): the hired fleet burns it at the economy's price - a truck 0.35 gal a km from a 25-gal tank with a 4-minute refuel stop when it will not make the trip, a go-fast boat 1.6 gal a km charged when the job is accepted, a hired pilot's 40-gal tank at the pump (15 min) - the bill is `Session.fuel_spent` and shows in the logistics view; and **multi-stop rounds** (`Logistics.cash_round` / `goods_round`, `cash_round` / `goods_round` commands, the logistics menu's Round row): ONE truck through several stashes, taking the cash at each as it reaches it or dropping product at each in turn, 75 s at each stop, the planner working from the farthest in toward home; the AI sends a round when two or more stashes are worth a trip. BALANCE entries 36 and 37: fuel costs the hired-fleet configurations 3-5%; rounds lose fewer trucks for later money (-1.4% p50 in the logistics configuration). **Not done:** fuel stations as places on the map (the price is the economy's, the stop is a delay), a fuel gauge on the truck, rounds for boats and aircraft.
 - **Saves keep the organisation.** Done (in a PR; the old line here said "boats don't carry over to a new
   game or map", which turned out to be the whole of a save: it kept only money, aircraft, gear, upgrades,

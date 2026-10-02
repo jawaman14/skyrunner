@@ -1,0 +1,15 @@
+{
+	"name": "Radio Belize",
+	"band": "SW",
+	"label": "3285",
+	"blurb": "Belize on the tropical band, February 1980.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Belize 3285, 16 Feb 1980",
+			"len": 34.69,
+			"ia": "1980-02-16-belize-r-belize-3285-1200-utc"
+		}
+	]
+}
