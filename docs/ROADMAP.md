@@ -119,7 +119,21 @@ Second wave, larger features:
       tick-level noise). tests/test_agent.gd (9): an agent-driven truck arrives within 0.1 s of its
       old timer on a bent road and a straight line, a 30 s pull-over costs exactly 30 s, and the
       truck's fields stay readable for the war; tests/test_logistics.gd: a payroll driver's body is
-      the one on the road. Next: step 3, squads built of agents.
+      the one on the road.
+    - **(3) done, the bodies (a PR):** a `GroundWar.Squad` is its men: `members`, one `Agent` per man,
+      named `S-3.2`, resynced every ground tick (`GroundWar._sync_members`). The squad stays the
+      authority - its x, y, route and s are written in a dozen places and the firefight odds read
+      them - so the men *follow* it: on foot they string out in file behind the point man along the
+      road (6 m apart), in a car or truck they are in the vehicle, stood still they ring the spot, in
+      a firefight they spread into a firing line across the enemy's bearing. Casualties and arrests
+      take men off the back of the file. The hiring hall says what a soldier's squad is doing ("with
+      squad S-3, marching"). **No balance move, and tested rather than assumed:**
+      tests/test_squad_agents.gd (6) runs the same 600 s war with the bodies on and off and compares
+      every squad's men, position, state and morale, the dead and the money - identical.
+      **Not done yet, deliberately:** contact, cover and losses still come from the squad's point and
+      its men count (the "turf war" bullet above); that is the step that moves the balance, so it
+      gets its own PR and BALANCE entry once the 3D side (step 4) can show whether the men look
+      right. Next: step 4, the 3D side draws every agent.
 - **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
   see docs/ROADS.md. Still open there: La Selva has no road, and the balance has to be re-run on it.
 - **Map:**

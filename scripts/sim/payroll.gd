@@ -607,7 +607,9 @@ func doing(w: Dictionary) -> String:
 					left = t.left_m()
 		return "driving a truck, %.1f km to go" % (left / 1000.0) if left > 0.0 else "driving a truck"
 	if sess.ground != null and sess.ground.get_squad(a) != null:
-		return "with squad %s" % a
+		var sq: GroundWar.Squad = sess.ground.get_squad(a)
+		var verb: String = {"moving": "marching", "holding": "holding", "fighting": "in a firefight", "routed": "running"}.get(sq.state, sq.state)
+		return "with squad %s, %s" % [a, verb]
 	match str(w.get("role", "")):
 		"mule":
 			return "on the island run"

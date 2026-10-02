@@ -46,6 +46,9 @@ static var ENABLED := true
 const TICK_S := 1.0
 const ROUND_S := 2.0
 const THINK_S := 30.0
+const FILE_GAP := 6.0  ## metres between men walking in file
+const LINE_GAP := 5.0  ## ... and standing in a firing line
+const RING_R := 4.0  ## ... and standing around their squad's spot
 const CONTACT_M := 250.0
 const SIGHT_M := 1500.0
 const HIDDEN_M := 150.0
@@ -86,11 +89,16 @@ class Squad:
 	var rounds := 0  ## rounds fought in this contact
 	var until := 0.0  ## a tactic's timer (sim seconds)
 	var human := false  ## ordered by a human commander (the AI leaves it alone)
+	var members: Array = []  ## one Agent per man (Agent.ENABLED): where each of them stands, see GroundWar._sync_members
 	var tag := ""  ## "family": soldiers lent by the Morettis (drawn in their suits)
 	var home := Vector2.ZERO
 
 	func pos() -> Vector2:
 		return Vector2(x, y)
+
+	## Where the men are (empty with Agent off): the Agents' positions, rounded for the wire.
+	func men_at() -> Array:
+		return members.map(func(m): return [snappedf(m.x, 0.1), snappedf(m.y, 0.1)])
 
 	func speed() -> float:
 		var v: float = GroundWar.SPEED[kind]
@@ -460,6 +468,7 @@ func update(dt: float) -> void:
 	_trucks(step)
 	_control(step)
 	_upkeep(step)
+	_sync_members()
 	for f in commanders:
 		var c: Commander = commanders[f]
 		if f == "rival":
@@ -516,6 +525,49 @@ func _move(dt: float) -> void:
 			else:
 				q.state = "holding"
 			_arrived(q)
+
+
+## Every squad is its men: one Agent each, standing where the squad's bookkeeping says they are.
+## The squad stays the authority (its x, y, route and s are written in a dozen places and the
+## firefight odds read them), so this follows it rather than leading: on foot the men string out
+## behind the point man along the road they are walking; in a car or truck they are in the vehicle;
+## stood still they ring the squad's spot, and in a firefight they spread across the line of fire.
+## Casualties and arrests take men off the back of the file. Nothing here changes an outcome - it is
+## what the 3D world draws and what the next step (contact from who is physically there) reads.
+func _sync_members() -> void:
+	if not Agent.ENABLED:
+		return
+	for q: Squad in squads:
+		var n: int = maxi(0, q.men)
+		while q.members.size() > n:
+			q.members.pop_back()
+		while q.members.size() < n:
+			var k: int = q.members.size()
+			q.members.append(Agent.new("%s.%d" % [q.id, k + 1], "foot" if q.kind == "foot" else "car", q.x, q.y))
+		var marching: bool = q.state in ["moving", "routed"] and q.route.size() >= 2
+		var facing := Vector2.ZERO  # the way a firefight is
+		if q.fight != null:
+			var other: Squad = q.fight.b if q.fight.a == q else q.fight.a
+			facing = other.pos() - q.pos()
+		for i in n:
+			var m: Agent = q.members[i]
+			var at := q.pos()
+			var label := "hold"
+			if marching:
+				label = "march"
+				if q.kind == "foot":
+					at = RoadGraph.along(q.route, maxf(0.0, q.s - float(i) * FILE_GAP))
+			elif facing != Vector2.ZERO:
+				label = "fight"
+				var across := facing.normalized().orthogonal()
+				at += across * ((float(i) - float(n - 1) / 2.0) * LINE_GAP)
+			elif q.kind == "foot" and n > 1:
+				var ang := TAU * float(i) / float(n)
+				at += Vector2(cos(ang), sin(ang)) * RING_R
+			m.x = at.x
+			m.y = at.y
+			m.clear()
+			m.tasks.append(Agent.Task.new(label, q.pos()))
 
 
 func _arrived(q: Squad) -> void:
