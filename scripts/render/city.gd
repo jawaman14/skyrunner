@@ -31,6 +31,7 @@ static func set_wet(w: float) -> void:
 
 
 static func set_night(n: float) -> void:
+	CityDress.set_night(n)
 	if _mat != null:
 		_mat.set_shader_parameter("night", clampf((n - 0.25) / 0.5, 0.0, 1.0))
 	if _lamp_mat != null:
@@ -43,7 +44,7 @@ static func build(world: World, q: Quality) -> Node3D:
 	var l := world.map
 	if l.buildings.is_empty() and l.roads.is_empty():
 		return root
-	root.add_child(_buildings(l.buildings, q))
+	root.add_child(CityDress.build(l.buildings.filter(func(b): return b.style != "crane"), q))  # the boxes, and the models near the camera
 	for b in l.buildings:
 		if b.style == "crane":
 			root.add_child(_crane(b))
@@ -57,7 +58,12 @@ static func build(world: World, q: Quality) -> Node3D:
 
 
 static func _buildings(list: Array, q: Quality) -> MultiMeshInstance3D:
-	var boxes := list.filter(func(b): return b.style != "crane")
+	return box_layer(list.filter(func(b): return b.style != "crane"), q)
+
+
+## The shader boxes for `boxes` (the city's buildings, or one chunk of them). `idx` is each box's number in the whole
+## list, which seeds its colour, so a box is the same colour whichever chunk it is drawn in.
+static func box_layer(boxes: Array, q: Quality, idx := []) -> MultiMeshInstance3D:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
@@ -66,8 +72,8 @@ static func _buildings(list: Array, q: Quality) -> MultiMeshInstance3D:
 	mm.mesh = bm
 	mm.instance_count = boxes.size()
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 77
 	for i in boxes.size():
+		rng.seed = 77 + (idx[i] if not idx.is_empty() else i) * 104729
 		var b: Dictionary = boxes[i]
 		var h: float = b.h + 1.5  # sunk 1.5 m: sloping lots never show a gap under the wall
 		var basis := Basis.IDENTITY.scaled(Vector3(b.w, h, b.d))
