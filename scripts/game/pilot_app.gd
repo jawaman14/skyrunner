@@ -1080,7 +1080,8 @@ func _sync_squads(dt: float) -> void:
 		return
 	var g := s.ground
 	squads.sync(g.squads.map(func(q): return q.dict()),
-		g.fights.map(func(f): return {"x": f.x, "y": f.y, "a": f.a.id, "b": f.b.id}), cam.global_position, s.time, dt)
+		g.fights.map(func(f): return {"x": f.x, "y": f.y, "a": f.a.id, "b": f.b.id}), cam.global_position, s.time, dt,
+		s.payroll.people.draw_list() if s.payroll != null and Agent.ENABLED else [])
 
 
 func _update_camera(st: FlightModel.FlightState, dt: float) -> void:

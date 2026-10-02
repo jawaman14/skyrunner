@@ -209,7 +209,7 @@ static func box_vehicle(faction: String, kind: String) -> Node3D:
 
 
 ## Draw the squads: `squads` are dicts, `fights` [{x, y, a, b}], `cam` the camera.
-func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float) -> void:
+func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, people := []) -> void:
 	_t = now
 	var seen := {}
 	var men_by := {}
@@ -296,6 +296,38 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float) -> 
 			entries.append(["%s#%d" % [id, k], d.faction, look, Transform3D(basis, wp), a, tier, wp.distance_to(cam), k + id.hash()])
 			if fighting.has(id) and _rng.randf() < 0.35:
 				flash_xf.append(Transform3D(Basis.IDENTITY, wp + Vector3(0, 1.25, 0) + fwd * 0.9 + right * 0.12))
+	# the payroll's people (People.draw_list): a man at his post or walking to it, or in the car taking him there
+	for pd in people:
+		var pid: String = "p:" + str(pd.id)
+		seen[pid] = true
+		var ptarget := Vector2(pd.x, pd.y)
+		if not smooth.has(pid):
+			smooth[pid] = [ptarget, 0.0]
+		var psp: Array = smooth[pid]
+		var pcur: Vector2 = psp[0]
+		var pstep := ptarget - pcur
+		if pstep.length() > 0.5:
+			psp[1] = atan2(pstep.x, pstep.y)
+		psp[0] = ptarget if pstep.length() > 400.0 else pcur + pstep * clampf(dt * 1.5, 0.0, 1.0)
+		var pp: Vector2 = psp[0]
+		var pg := Vector3(pp.x, world.ground(pp.x, pp.y), -pp.y)
+		if pg.distance_to(cam) > range_m:
+			_hide_vehicle(pid)
+			continue
+		if bool(pd.car):
+			if not vehicles.has(pid):
+				var pv := vehicle(str(pd.faction), "car")
+				add_child(pv)
+				vehicles[pid] = pv
+			var pv2: Node3D = vehicles[pid]
+			pv2.visible = true
+			pv2.position = pg + Vector3(0, 0.45, 0)
+			pv2.rotation = Vector3(0, -float(psp[1]), 0)
+			continue
+		_hide_vehicle(pid)
+		var pwp := pg + Vector3(0, 0.3, 0)
+		entries.append([pid, pd.faction, pd.faction, Transform3D(Basis(Vector3.UP, -float(psp[1])), pwp), "walk" if pd.moving else "idle", "",
+			pwp.distance_to(cam), pid.hash()])
 	# the nearest men as characters, the rest as figures
 	entries.sort_custom(func(a, b): return a[6] < b[6])
 	var used := {}

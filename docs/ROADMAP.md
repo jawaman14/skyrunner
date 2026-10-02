@@ -182,6 +182,19 @@ Second wave, larger features:
       new roads alone) - BALANCE entry 36, deliberately not retuned until the larger strategic re-run. Not done: re-routing a squad or truck already under way
       when a checkpoint appears on its road (pointless until there is a road to switch to), road
       class costs (the road data carries no class), off-road legs for foot, junction pile-ups.
+    - **(6) the payroll's people (a PR):** `People` (scripts/sim/people.gd, `Payroll.people`) gives every
+      worker who is not already a body somewhere else - a soldier is his squad's man, a driver is in the
+      truck, a pilot or mule on a run is away - an `Agent` at his post: a lookout on the street by his
+      stash, a dealer on his corner, everyone else round the base. A new hire starts at the base and goes
+      to his post, driving along the road if it is further than 600 m (so a lookout posted to a stash across
+      town arrives some minutes later), on foot if not; someone hired long ago (a loaded save) is already
+      there. The hiring hall says so ("heading out to the boathouse, 3.2 km to go"). `SquadRender.sync`
+      takes `People.draw_list()` and draws them (idle or walking, a car while being driven).
+      **The payroll stays the authority and nothing is gated on arrival** - a lookout counts from the
+      moment he is posted - so no balance moves; tests/test_people.gd (6) runs the same 900 s with the
+      bodies on and off and compares every worker, the money and the wages. Not done: shooting or arresting
+      a worker where he stands, 2D station maps showing them, and making a post count only once its man has
+      arrived (that one would move the balance).
 - **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
   see docs/ROADS.md. La Selva has no road on purpose (it stays the remote strip). The balance re-run on the ring roads is
   BALANCE entry 36 (a larger re-run with a confidence interval is under way).
