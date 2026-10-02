@@ -46,7 +46,7 @@ func test_a_systems_lesson_waits_for_its_system() -> void:
 		s.tutorial.done[id] = true
 	check_eq(_ids(s), "buyers", "no payroll or logistics yet: their lessons wait")
 	s.enable_system("payroll")
-	check_eq(_ids(s), "dealer", "the hiring hall opens: its lesson is next")
+	check_eq(_ids(s), "org_crew", "the hiring hall opens: its lesson is next")
 	var p: Array = s.tutorial.progress()
 	check(p[1] >= 8, "the count grows with the game (%d)" % p[1])
 	s.dispose()
@@ -140,4 +140,19 @@ func test_the_papi_tip_fires_when_the_hud_sees_it() -> void:
 	s.tutorial.note("papi_seen")  # what Hud._papi() calls the moment the four squares light up
 	s.tutorial.tick(s)
 	check(s.tutorial.view().tip.begins_with("Those four squares are the PAPI"), "the tip explains them")
+	s.dispose()
+
+
+func test_the_ai_hiring_lesson_fires_when_the_ai_actually_hires() -> void:
+	var s := _sess({"payroll": true, "ground_war": true})
+	for id in ["welcome", "jobs", "load", "takeoff", "deliver", "transponder"]:
+		s.tutorial.done[id] = true
+	check_eq(_ids(s), "org_crew", "the lesson is up: the organisation runs itself")
+	s.money = 80000
+	s.payroll.ai["org"] = true
+	for i in 12:
+		s.payroll._refresh("org")
+		s.payroll._think("org")
+		s.tutorial.tick(s)
+	check(s.tutorial.done.has("org_crew"), "the AI hired somebody, so the lesson finished itself")
 	s.dispose()

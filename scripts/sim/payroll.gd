@@ -246,22 +246,25 @@ func mean_skill(ids: Array) -> float:
 	return 0.0 if ws.is_empty() else Py.sum_by(ws, func(w): return float(w.skill)) / ws.size()
 
 
-## A worker is lost on the job: arrested (a case) or killed.
-func lose(id: String, how: String) -> void:
+## A worker is lost on the job: arrested (a case) or killed. `where`: a place_name()-style
+## clause ("near San Telmo") so the loss reads as the same event the player just saw reported
+## (a raid, a firefight), not an unexplained death out of nowhere.
+func lose(id: String, how: String, where := "") -> void:
 	var w = get_worker(id)
 	if w == null:
 		return
 	lost[w.outfit] += 1
+	var suffix := " %s" % where if where != "" else ""
 	if how == "arrested":
 		w.status = "arrested"
 		jail.append({"id": id, "outfit": w.outfit, "trial_at": sess.time + JAIL_S, "lawyer": false, "deal": false})
-		say(w.outfit, "%s (%s) was arrested." % [w.name, ROLES[w.role][2]])
+		say(w.outfit, "%s (%s) was arrested%s." % [w.name, ROLES[w.role][2], suffix])
 		sess.law_say("In custody: %s, a %s for %s" % [w.name, ROLES[w.role][2], "the organisation" if w.outfit == "org" else "Los Cuervos"])
 		sess.bus.emit("worker_arrested", sess.time, w.name, ["law"], {"outfit": w.outfit, "role": w.role})
 	else:
 		w.status = "dead"
 		workers.erase(w)
-		say(w.outfit, "%s (%s) was killed." % [w.name, ROLES[w.role][2]])
+		say(w.outfit, "%s (%s) was killed%s." % [w.name, ROLES[w.role][2], suffix])
 
 
 # ------------------------------------------------------------------ hooks from the other systems
@@ -284,9 +287,10 @@ func _reconcile_squads() -> void:
 		var q = g.get_squad(sid)
 		var men: int = int(q.men) if q != null and q.state != "gone" else -1
 		if men >= 0:
+			var where: String = g.place_name(q.x, q.y) if (q != null and ids.size() > men) else ""
 			while ids.size() > men:
 				var id: String = ids.pop_back()
-				lose(id, "arrested" if rng.random() < 0.4 else "dead")
+				lose(id, "arrested" if rng.random() < 0.4 else "dead", "%s (squad %s)" % [where, sid])
 			continue
 		# disbanded or wiped out: the survivors (as last counted) come home
 		release(ids)
@@ -534,6 +538,8 @@ func _think(o: String) -> void:
 			func(w): return float(w.skill) + (0.3 if GOOD_HINTS.has(w.hint) else -0.3))
 		if best != null and cash(o) > float(best.wage) * 6 + wage_bill(o):
 			hire(o, best.id)
+			if o == "org" and sess.tutorial != null:
+				sess.tutorial.note("ai_hired_org")  # the first time it's the AI doing the hiring, not you
 	# post lookouts at the hottest stash houses
 	if o == "org" and sess.stash_net != null:
 		for l in of("org", "lookout", "free"):
@@ -583,6 +589,29 @@ func update(dt: float) -> void:
 				_think(o)
 
 
+## A worker's current task, in a few words, for the roster: the hiring hall (Talk) and the law's
+## jail view both read it off the Dictionary view() returns, so it only has to be worked out once.
+func doing(w: Dictionary) -> String:
+	if str(w.get("status", "")) != "assigned" or str(w.get("assigned", "")) == "":
+		return "free"
+	var a := str(w.assigned)
+	if a.begins_with("stash-"):
+		var st = sess.stash_net.get_stash(a.trim_prefix("stash-")) if sess.stash_net != null else null
+		return "watching %s" % st.name if st != null else "on lookout"
+	if a.begins_with("truck-") or a.begins_with("cash-"):
+		return "driving a truck"
+	if sess.ground != null and sess.ground.get_squad(a) != null:
+		return "with squad %s" % a
+	match str(w.get("role", "")):
+		"mule":
+			return "on the island run"
+		"pilot":
+			return "flying a run"
+		"dealer":
+			return "working the corner"
+	return "on a job"
+
+
 func view(side: String) -> Dictionary:
 	if side == "law":
 		return {"jail": jail.map(func(j):
@@ -598,7 +627,7 @@ func view(side: String) -> Dictionary:
 		"candidates": candidates.org.map(func(w): return {"id": w.id, "name": w.name, "role": w.role, "skill": w.skill,
 			"wage": w.wage, "hint": w.hint}),
 		"crew": of("org").filter(func(w): return w.status in ["free", "assigned"]).map(func(w): return {"id": w.id, "name": w.name,
-			"role": w.role, "skill": w.skill, "wage": w.wage, "status": w.status, "assigned": w.assigned}),
+			"role": w.role, "skill": w.skill, "wage": w.wage, "status": w.status, "assigned": w.assigned, "doing": doing(w)}),
 		"jail": jail.filter(func(j): return j.outfit == "org").map(func(j):
 			var w = get_worker(j.id)
 			return {"id": j.id, "name": w.name if w != null else "?", "role": w.role if w != null else "?",
