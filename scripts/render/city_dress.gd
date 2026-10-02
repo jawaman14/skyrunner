@@ -210,6 +210,22 @@ static func chunk_of(b: Dictionary) -> Vector2i:
 	return Vector2i(floori(float(b.x) / CHUNK_M), floori(float(b.y) / CHUNK_M))
 
 
+## The solid buildings: one body, one box shape per building footprint (the walker and the car stop against them; the
+## dressed models are only drawn). A building is a box from the ground up to its roof, sunk like the drawn one.
+static func colliders(boxes: Array) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	body.name = "collision"
+	for b in boxes:
+		var h: float = float(b.h) + 1.5
+		var cs := CollisionShape3D.new()
+		var bs := BoxShape3D.new()
+		bs.size = Vector3(b.w, h, b.d)
+		cs.shape = bs
+		cs.position = Vector3(b.x, float(b.z) - 1.5 + h / 2.0, -float(b.y))
+		body.add_child(cs)
+	return body
+
+
 ## The buildings as a node: per chunk, the shader boxes (drawn beyond the models' range) and the dressed lots (within it).
 static func build(boxes: Array, q: Quality) -> Node3D:
 	var root := Node3D.new()
@@ -234,6 +250,7 @@ static func build(boxes: Array, q: Quality) -> Node3D:
 			far.visibility_range_begin_margin = FADE_M
 			far.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 		node.add_child(far)
+		node.add_child(colliders(idx.map(func(i): return boxes[i])))
 		if reach <= 0.0:
 			continue
 		var groups := {}  # "kit/name" -> [xfs, colours, roofs]

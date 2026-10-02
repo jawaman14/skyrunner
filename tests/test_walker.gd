@@ -401,6 +401,44 @@ func test_the_car_has_a_radio_that_plays_only_while_driving() -> void:
 	sess.dispose()
 
 
+## The city's buildings are solid: walking straight at one stops against its wall.
+func test_the_walker_stops_against_a_city_building() -> void:
+	var app := _app({"seed": 9, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES})
+	var sess := app.s
+	# a good-sized block, its south face clear of other buildings for 12 m
+	var pick = null
+	for b in sess.world.map.buildings:
+		if b.style == "crane" or float(b.w) < 12.0 or float(b.d) < 12.0:
+			continue
+		var clear := true
+		for o in sess.world.map.buildings:
+			if o != b and absf(float(o.x) - float(b.x)) < float(o.w) / 2.0 + float(b.w) / 2.0 + 4.0 and absf(float(o.y) - (float(b.y) - float(b.d) / 2.0 - 7.0)) < float(o.d) / 2.0 + 8.0:
+				clear = false
+				break
+		if clear:
+			pick = b
+			break
+	check(pick != null, "there is a free-standing building to try")
+	if pick == null:
+		app.free()
+		return
+	app._toggle_on_foot()
+	await _frames(5)
+	var w: Walker = app.walker
+	var south := float(pick.y) - float(pick.d) / 2.0
+	w.place(float(pick.x), south - 6.0, 0.0)  # facing north, 6 m from the wall
+	_key(KEY_W, true)
+	_key(KEY_SHIFT, true)
+	await _frames(240)
+	_key(KEY_W, false)
+	_key(KEY_SHIFT, false)
+	var y: float = w.game_xy()[1]
+	check(y < south + 0.1, "he did not get through the wall (y %.1f, the south face at %.1f)" % [y, south])
+	check(y > south - 3.0, "but he did walk up to it (%.1f m short)" % (south - y))
+	app.free()
+	sess.dispose()
+
+
 func test_walks_up_a_step() -> void:
 	var app := _app({"seed": 1, "location": "HAR"})
 	app._toggle_on_foot()
