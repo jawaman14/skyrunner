@@ -41,8 +41,9 @@ godot --headless --path . --script res://tools/plan_roads.gd [-- --dry]
 
 ## What is still open
 
-- **La Selva (PNR)** has no road: it is a strip on a ridge, out of reach even by track. Trucks reach it
-  by the off-road leg the ground graph adds at each end.
+- **La Selva (PNR)** has no road, **on purpose** (decided 2026-10-03): it is a strip on a ridge, out of
+  reach even by mountain track, and it stays the remote one. Trucks reach it by the off-road leg the
+  ground graph adds at each end; nothing is planned for it.
 - **Mesa del Aguila (EGL) and the jungle camp** are reached by mountain tracks.
 - **Balance:** trucks, squads and the ground war all travel on these roads, so their times changed. The
   balance numbers (`sim-results/`, docs/BALANCE.md) still describe the old roads; the K3 re-fly in

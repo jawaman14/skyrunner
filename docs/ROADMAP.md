@@ -183,7 +183,8 @@ Second wave, larger features:
       when a checkpoint appears on its road (pointless until there is a road to switch to), road
       class costs (the road data carries no class), off-road legs for foot, junction pile-ups.
 - **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
-  see docs/ROADS.md. Still open there: La Selva has no road, and the balance has to be re-run on it.
+  see docs/ROADS.md. La Selva has no road on purpose (it stays the remote strip). The balance re-run on the ring roads is
+  BALANCE entry 36 (a larger re-run with a confidence interval is under way).
 - **Map:**
   - more bridges if more rivers are ever crossed (the planner makes them, the renderer draws them);
   - a starter car at the airport.
