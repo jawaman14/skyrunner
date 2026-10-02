@@ -142,3 +142,36 @@ The project moved from 4.4.1 to **4.7.2** (the latest stable). The worries that 
 - **One break.** 4.7 enforces an overridden virtual's return type: the screenshot tools' `_process` (a `MainLoop` override, which returns a bool that quits when true) now declares `-> bool` and returns false.
 - **Rendering.** The same frames render identically under the compatibility renderer (llvmpipe).
 - **The shader baker** (since 4.5) is switched on in the export presets, so a release build compiles its shaders ahead of time instead of stuttering on first sight. First-sight frame times still want measuring on real hardware (F6).
+
+## The fifth pass: filling the world in (October 2026)
+
+The game's art was thin: 8 cars, 2 boats, 10 characters, 6 palms and 6 street props from three CC0 kits. A pass over the
+free CC0 libraries for what fills a 1980s tropical coast, all vendored with their licences (assets/models/*/LICENSE.txt,
+README.txt or UPSTREAM.txt) and covered by tests/test_assets.gd. Nothing is wired into a scene yet: this is the stock the
+render modules draw from, and `ModelLib` loads by path.
+
+| Pack | Licence | Models | Where it goes |
+|---|---|---|---|
+| Kenney [Car Kit](https://kenney.nl/assets/car-kit), [Blocky Characters](https://kenney.nl/assets/blocky-characters), [Watercraft](https://kenney.nl/assets/watercraft-kit), [Weapon Pack](https://kenney.nl/assets/weapon-pack): the rest of each | CC0 | 50 / 18 / 46 / 37 | Traffic and squads' vehicles (ambulance, vans, kart racers), the other 8 faces for crews and the Family, more boats, more guns. |
+| Kenney [Nature Kit](https://kenney.nl/assets/nature-kit) | CC0 | 329 | Rocks, bushes, logs, cliffs, grass and trees for jungle, mangrove and the quarry (only the palms were in). |
+| Kenney City Kits: [Commercial](https://kenney.nl/assets/city-kit-commercial), [Suburban](https://kenney.nl/assets/city-kit-suburban), Industrial, Roads; [Modular Buildings](https://kenney.nl/assets/modular-buildings); [Retro Urban](https://kenney.nl/assets/retro-urban-kit) | CC0 | 41 / 40 / 25 / 72 / 108 / 124 | Building variety for downtown, the barrio and the port; Retro Urban is the closest to the 80s street. |
+| Kenney [Furniture Kit](https://kenney.nl/assets/furniture-kit) | CC0 | 140 | The villa, the hangars and offices, the lawyer's and the General's rooms. |
+| Kenney [Pirate Kit](https://kenney.nl/assets/pirate-kit), [Survival Kit](https://kenney.nl/assets/survival-kit), [Factory Kit](https://kenney.nl/assets/factory-kit) | CC0 | 72 / 80 / 143 | Docks, barrels and crates for the port and the cay; tents, crates and fires for the jungle camp; warehouses. |
+| [KayKit City Builder Bits](https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0): all of the free pack | CC0 | 41 (6 were in) | Buildings, roads, park tiles, vehicles, trees. |
+| Quaternius [Downtown City MegaKit](https://quaternius.itch.io/downtown-city-megakit) (free Standard) | CC0 | 153 | Modular downtown facades, shopfronts and street pieces. |
+| Quaternius [Stylized Nature MegaKit](https://quaternius.itch.io/stylized-nature-megakit) (free Standard), [Ultimate Nature Pack](https://quaternius.itch.io/150-lowpoly-nature-models) | CC0 | 68 / 150 | A second, painterly look for the jungle and the island's flora. |
+| Quaternius [Realistic Car Pack](https://quaternius.itch.io/lowpoly-cars), [Modular Street Pack](https://quaternius.itch.io/lowpoly-modular-street) | CC0 | 7 / 25 | A different set of cars; street furniture and signs. |
+| Kenney 2D: Input Prompts, Game Icons, UI Pack, Cursor Pack (crosshairs), Minimap, Flags, Map Pack, Explosions, Emotes, Road Textures | CC0 | ~3,200 sprites | Button glyphs for the controls screens; HUD icons; the on-foot gun sight; the 2D desks' map symbols; the flags of the island's neighbours. See assets/ui/README.txt. |
+
+How they were fetched: Kenney's from the CC0 mirror [shorepine/kenney](https://github.com/shorepine/kenney) (glTF, 110 MB sparse-cloned,
+only the kits above), KayKit's from its repository, Quaternius's from the packs' own itch.io pages (their free "Standard" downloads;
+his GitHub mirrors hold USD, which Godot cannot import). The two MegaKits' textures were shrunk from 123 MB to 20 MB (1024 px
+base colour, 512 px normal and ORM maps). Godot 4.7 imports the three FBX-only Quaternius packs natively; `--import` ran clean.
+
+| Looked at and left | Why |
+|---|---|
+| Quaternius Ships and Public Transport packs | On quaternius.com only; no itch.io page found under any name tried. |
+| [game-icons.net](https://game-icons.net/about.html) (about 4,000 icons) | CC BY 3.0: needs a credits screen first (License Manager, above). |
+| Kenney UI Pack's flat look | Vendored, but the game's neon HUD palette is its own; use for shapes, not colours. |
+| Poly Pizza's aircraft | The licences are per model, and Google-Poly-era ones are usually CC BY; each would need checking. The game's aircraft are built from the flight model's data anyway. |
+| Aircraft and airfield props | No good CC0 pack found (a [low-poly helicopter on itch](https://kumasousa.itch.io/low-poly-helicopter-with-animations) and a [toy airplane on OpenGameArt](https://opengameart.org/content/toy-airplane-lowpoly) are the only CC0 leads). |
