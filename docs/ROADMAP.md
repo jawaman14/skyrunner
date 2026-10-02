@@ -212,6 +212,10 @@ Second wave, larger features:
     seconds a frame and puts you down at the other end. The **drivable car** (decided 2026-10-03: both) is done too (in a PR): `Car` (scripts/game/car.gd), a parked car beside the aircraft's right wing made the first time you step out; E at it to get in, W/S throttle and brake (S reverses once stopped), A/D steer (the wheel bites with speed, less the faster you go), SPACE the handbrake, E to get out (not above 4 m/s), a chase camera. Arcade: a real body on the island's collision that stops against buildings and the parked aircraft and will not drive into deep water; a road is fast (26 m/s, about 95 km/h), anywhere else a crawl (11 m/s). The walker rides along hidden, so the phone, the sim and the HUD know where you are; TAB and the phone are refused until you are out. Driving through a police checkpoint (within 45 m, over 6 m/s) adds 6 suspicion to the runner's case, once per checkpoint per two minutes; slowing down is a wave-through. Not done: cargo in the car, police chasing it, damage, other cars on the road to hit, a handbrake turn that slides.
 - **Physical logistics by truck, boat or plane.** Player-set pick-up and drop-off jobs for hired
   bots, multi-stop routes, and automatic refuelling at fuel stations. Fuel prices join the economy.
+- **Mount & Blade's ideas, where they fit** (the owner's inspiration, 2026-10-03; each is its own PR behind a switch):
+  **renown** is done (in a PR; DESIGN section 25): a score from deliveries, sales, raids foiled and verdicts won, lost at half weight
+  to busts and raids, in five tiers that improve the hiring hall's candidates, the bulk buyers' prices and how closely the task
+  force watches. Next: veteran squads and field orders; tribute, prisoners and ransom; stash works and the arena.
 - **Saves keep the organisation.** Done (in a PR; the old line here said "boats don't carry over to a new
   game or map", which turned out to be the whole of a save: it kept only money, aircraft, gear, upgrades,
   location, the arsenal, campaign, story and tutorial, and every stash house, crew member, squad and case

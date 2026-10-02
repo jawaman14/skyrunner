@@ -133,6 +133,7 @@ var court: Court = null  ## the pilot's case after an arrest: bail, lawyers, ple
 var island: Island = null  ## Isla Soberana, over the horizon: cheap product, sovereign airspace (live play asks for it)
 var foot: FootCombat = null  ## the pilot on foot with a gun (sessions with a ground war)
 var chronicle: Chronicle = null  ## the news and the breaks between runs (Chronicle; live play asks for it)
+var renown: Renown = null  ## how big the name is (Renown; `renown: true` asks for it)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
 var ai_law_upgrades := false  ## the AI chief buys law upgrades as money comes in (live play; off in sims and tests)
@@ -234,6 +235,8 @@ func _init(opts := {}) -> void:
 	police = PoliceSystem.new(world, _rng(seed + 99), radio, "human" if humans.has(Roles.CONTROLLER) else "ai", law)
 	if island != null:
 		police.territory_y = Island.TERRITORY_Y
+	if opts.get("renown", false) and Renown.ENABLED:
+		renown = Renown.new(self)
 	radio.df_stations = []
 	for a in world.airfields:
 		if a.police:
@@ -285,6 +288,7 @@ func dispose() -> void:
 	family = null
 	foot = null
 	chronicle = null
+	renown = null
 	ground = null
 	if nights != null:
 		nights.sess = null

@@ -107,7 +107,7 @@ func start() -> void:
 	var save := save_dir + ("campaign.json" if mode == Roles.CAMPAIGN else ("story.json" if story else "save.json"))
 	if args["new"] and FileAccess.file_exists(save):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(save))
-	var opts := {"seed": args["seed"], "mode": mode, "ai_law_upgrades": true, "ground_war": true, "chronicle": true, "agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "fog": true}  # the AI chief shops as forfeiture comes in
+	var opts := {"seed": args["seed"], "mode": mode, "ai_law_upgrades": true, "ground_war": true, "chronicle": true, "agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "fog": true}  # the AI chief shops as forfeiture comes in
 	if story:  # the chapters build the rest as they open (Story.CHAPTERS)
 		for k in Session.SYSTEMS:
 			opts.erase(k)

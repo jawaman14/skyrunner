@@ -81,6 +81,8 @@ Drivers pull over when they see police on the road ahead; a passing patrol pulls
 
 35. **Roads with a way round.** *Found:* The pathfinding upgrade (routes that pay for climbs and steer round known police checkpoints and places that are hot) changed nothing: the planned city network was a tree (1,187 nodes, 16 independent loops), so a checkpoint on the road had no road round it - 0 of 135 sampled routes could avoid one, and live_balance was identical with the routing on and off. *Changed:* tools/plan_roads.gd plans three ring links (downtown-HAR, downtown-QRY, customs-farms) with RoadPlanner.detour_route, which prices running beside an existing road at 4x so a link finds its own corridor: 107.7 -> 143.6 km, the same single bridge and steepest grade, and 59% of 360 sampled routes with a checkpoint midway can now go round it (mean 34% longer). Only the war configuration can move, because it is the only one whose trucks and squads use the ground graph (the other eight were identical at 40 seeds). Measured at 200 seeds x 3 simulated hours, the same seeds in every variant: organisation money mean 55.0k -> 50.2k (median 47.5k -> 43.9k), the task force's median 6.6k -> 7.0k, stashes burned 0.48 -> 0.58 a run; with the steering round checkpoints switched off (GroundWar.SMART_ROUTES) the median is 44.0k, so the steering itself makes no detectable difference. The first look, at 40 seeds, read +19% (43.3k -> 51.4k): that was noise - the spread is wide (p10 24k, p90 82-101k), which puts a 40-seed median at about +-5k. The 200-seed shift is suggestive, not conclusive (a mean difference of 4.7k against a standard error of about 3k): the ring roads, if anything, cost the smuggler a little. Not retuned.
 
+36. **Renown: a name that is worth something.** *Found:* Nothing in the economy paid for having done well: the thousandth delivery bought the same crew, the same prices and the same attention as the first. Renown (scripts/sim/renown.gd, read off the event bus) is a score earned by loads delivered (3), island customs cleared (3), raids foiled (3), a jury that lets the pilot walk (6), sales (1 to 5 by size) and lost at half weight by busts, crashes, raided stashes, seized trucks and men who talk. Five tiers (0 / 40 / 120 / 300 / 650): each tier adds 3 points of skill and 2 of loyalty to every candidate, 1.5% to what bulk buyers pay, and slows the task force's cooling of suspicion by 6%. *Changed:* 200 seeds x 3 hours, renown on against off: trade +0.5% mean (p50 -0.1%), the whole game +0.5% (p50 +0.8%), logistics +0.8% (p50 +0.5%), the street war +3.0% (p50 +5.6%); the control, Family, island, Agency and payroll-only configurations are the same (nothing flies, nothing sells). Suspicion in the whole game rose from 15.8 to 16.6 and the task force's funds from $10.2k to $10.5k: the famous are watched. The effect is small by design: a name should be a reward for being good at the game, not a reason to be. The street war's +5.6% p50 is the one to watch: its median sits on a cliff between turf won and lost, and a few points of price move it. Renown.ENABLED turns it off for the parity tests.
+
 ## 1. Can you get in and out? (feasibility)
 
 The pilot bot flew 240 takeoffs and landings: every aircraft × airfield × load (light = 30% fuel; half = 60% fuel + half payload; max = full fuel + payload to MTOW). 134 succeeded. L = landing, T = takeoff.
@@ -287,32 +289,32 @@ Ablations: equilibrium win rate with one mechanic switched off (baseline 50.2%).
 | configuration | money p10 / p50 / p90 | net worth p50 | task-force funds p50 | suspicion p50 |
 |---|---|---|---|---|
 | agency | $70,962 / $99,243 / $112,742 | $99,243 | $25,200 | 0 |
-| all | $31,462 / $66,901 / $107,104 | $84,684 | $10,200 | 14 |
+| all | $30,685 / $67,409 / $106,366 | $87,836 | $10,500 | 12 |
 | control | $70,000 / $70,000 / $70,000 | $70,000 | $25,200 | 0 |
 | family | $54,150 / $56,640 / $59,320 | $56,640 | $9,200 | 0 |
 | island | $36,932 / $64,853 / $107,244 | $64,853 | $13,000 | 0 |
-| logistics | $34,586 / $57,914 / $74,682 | $90,800 | $10,200 | 0 |
+| logistics | $35,629 / $58,197 / $76,189 | $90,428 | $10,200 | 0 |
 | payroll | $62,863 / $70,477 / $76,839 | $70,477 | $27,700 | 0 |
-| trade | $54,146 / $77,093 / $94,079 | $96,827 | $10,200 | 0 |
-| war | $23,479 / $43,902 / $81,946 | $64,988 | $7,019 | 0 |
+| trade | $54,214 / $77,031 / $94,392 | $96,950 | $10,200 | 0 |
+| war | $25,461 / $47,942 / $89,173 | $69,134 | $7,072 | 0 |
 | air | $5,965 / $18,070 / $26,711 | $49,191 | $9,681 | 0 |
 | noair | $10,045 / $21,348 / $31,919 | $54,930 | $8,926 | 0 |
 
 Net worth is the safe plus product at the town's street price plus street money still in the stashes and on the road. Without logistics the island pays its loads in cash on landing, so the configurations with the island and no logistics (island, all, war) carry its payouts; noair and air are the full game, where it lands as stock (entry 30).
 
-The Family (all systems on): tribute paid p50 $7,000; asked in 78% of runs; a rat in 26%; the Commission trial in 8%; 0.12 cons a run; respect ends at 63.
+The Family (all systems on): tribute paid p50 $7,000; asked in 76% of runs; a rat in 39%; the Commission trial in 14%; 0.09 cons a run; respect ends at 62.
 
 The island: 6 shipments a run (p50); 5% of mules and containers caught; closed by a purge 0% of the time.
 
-The payroll (the organisation's AI hiring to its needs): 17.2 workers on it at the end, $19,038 in wages over the run, 5.5 lost (arrested or dead), 0.39 flipped by the prosecutor, loyalty 82%, a short payday in 0% of runs.
+The payroll (the organisation's AI hiring to its needs): 17.3 workers on it at the end, $19,158 in wages over the run, 5.3 lost (arrested or dead), 0.43 flipped by the prosecutor, loyalty 83%, a short payday in 0% of runs.
 
-The Company: 5.4 flights a run; $1,920 'in the mail'; hung out to dry in 4% of runs; exposed in 0%.
+The Company: 5.4 flights a run; $1,931 'in the mail'; hung out to dry in 5% of runs; exposed in 0%.
 
-The trade (career: grass first; the organisation's AI buying a load when the stash runs low, dealers on its corners, surplus to the best buyer): 1370 lb of grass and 329 lb of cocaine sold, $25,705 made; the Colombians called after 75 minutes; 6.1 dealers on the corners at the end, 6.3 bulk sales; 255 lb of cocaine and 898 lb of grass left in the stash (worth $19,159 at the street).
+The trade (career: grass first; the organisation's AI buying a load when the stash runs low, dealers on its corners, surplus to the best buyer): 1371 lb of grass and 335 lb of cocaine sold, $25,980 made; the Colombians called after 75 minutes; 6.1 dealers on the corners at the end, 6.2 bulk sales; 260 lb of cocaine and 897 lb of grass left in the stash (worth $19,469 at the street).
 
-Logistics (the trade configuration with stock and cash in the stash houses, trucked by the organisation's AI): money p50 $57,914 against $77,093 without; $12,796 still out in the stashes, on the road and in the bags at the end; $474 of cash and 81 lb of product lost to roadblocks, hijacks and raids a run.
+Logistics (the trade configuration with stock and cash in the stash houses, trucked by the organisation's AI): money p50 $58,197 against $77,031 without; $12,763 still out in the stashes, on the road and in the bags at the end; $428 of cash and 83 lb of product lost to roadblocks, hijacks and raids a run.
 
-The street war (all systems plus the war, the organisation's AI commanding): money p50 $43,902 against $66,901 without; $4,277 recruiting, $1,260 on rifles, $2,030 upkeep a run; 14.1 firefights a run, men lost 5.2 of ours, 8.2 of Los Cuervos', 17.5 police, 17.7 arrested (both outfits); 1.9 squads of ours at the end against 3.0 of Los Cuervos' and 7.3 police; 0.6 stash houses burned; suspicion p50 0, p90 0.
+The street war (all systems plus the war, the organisation's AI commanding): money p50 $47,942 against $67,409 without; $4,355 recruiting, $1,688 on rifles, $2,166 upkeep a run; 14.6 firefights a run, men lost 5.3 of ours, 7.8 of Los Cuervos', 19.0 police, 18.3 arrested (both outfits); 2.0 squads of ours at the end against 3.2 of Los Cuervos' and 7.4 police; 0.5 stash houses burned; suspicion p50 0, p90 0.
 
 Air risk (all systems with logistics, the street war and the court; 80 seeds x 3 hours): money p50 $18,070 with each flight rolling the tactical sweep's odds, against $21,348 for the same systems at a fixed income. A run flew 17.7 flights (paid $6,000 each when they counted), with 0.60 busts, 0.68 crashes, $0 in fines, $1,687 in repairs and 4 minutes held by the court; the pilot stayed on the ground 0.0 times with the police tipped off.
 
@@ -328,7 +330,7 @@ Open mode's start (the full game with air risk, 20 seeds x 3 hours at each start
 
 The story (40 seeds x 12 hours, the same stand-ins, chapters opening the systems): reached ch2 1980 (100% at 66 min), ch3 1981 (100% at 172 min), ch4 1982 (100% at 240 min), ch5 1983 (92% at 315 min), ch6 1984 (90% at 390 min), ch7 1985 (88% at 435 min), ch8 1986 (80% at 510 min), the end (62% at 495 min). Money p50 $17,290 at the end, net worth (cash, product and street money) p50 $52,364; with air risk: 1.9 busts, 1.8 crashes, $7,085 in fines and $4,562 in repairs a run; $19,687 a run spent on the island's product.
 
-The street (all systems on): cocaine in town swung between x0.63 and x1.61 of its usual price in a run (means); guns averaged x1.37; the worst broken network reached 29%; the Company flew 24.1 lots of cocaine north and bought 25.2 lots of guns.
+The street (all systems on): cocaine in town swung between x0.63 and x1.62 of its usual price in a run (means); guns averaged x1.37; the worst broken network reached 30%; the Company flew 23.9 lots of cocaine north and bought 25.1 lots of guns.
 Without the Company and the rest (control): cocaine x0.60-x1.37, guns x1.11.
 
 Customs odds and expected return per dollar for one load:
