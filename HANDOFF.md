@@ -1,3 +1,35 @@
+# Update 2026-10-03: everything below the line was written on 2026-09-28; this is what changed since
+
+**Where things are.** `main` has all of the work stacked since the cloud handoff (PRs #1-#38, merged bottom-up
+as merge commits). Tests: **646 pass** (`./tools/test.sh`, about 7 min on a fast machine); CI is green on `main`
+(tests, exports, smoke). The balance re-fly (K3) that item 1 below describes was finished (BALANCE entry 35) and
+the playtest list's first wave was done (pause menu, runway/landing fixes, roads, autopilot routing, crew).
+
+**What was added** (each has a DESIGN section and a ROADMAP line; most have a BALANCE entry, newest last in `docs/BALANCE.md`):
+- Physical NPCs: `Agent` and its task queue, drivers in every stash truck, a squad is its men, the 3D world draws them,
+  road pathfinding, the payroll's people are bodies; a phone on foot; a taxi; a drivable starter car.
+- Ring roads, La Selva kept isolated on purpose, the turf war's engagement geometry, strategic saves (stashes, crew, case, court, squads).
+- Logistics: fuel for the hired fleet and multi-stop rounds. Mount and Blade-inspired systems, each behind an `ENABLED`
+  switch: renown, veteran squads + field orders (Z/X/C/V on foot), the rackets (tribute, prisoners), stash works, the arena (races).
+- A car radio with real 1979-86 recordings (`assets/radio/`; **not CC0**, see its README), and a `user://radio/` folder for your own.
+- Art: ~3,000 Kenney/KayKit/Quaternius CC0 models and 2D sprites vendored; the city is dressed with them (`CityDress`), scenery,
+  road markings, the villa and the club furnished, the city's buildings are solid (`CityDress.colliders`).
+  Still unused: the Pirate kit (docks), Quaternius downtown, the 2D packs.
+
+**Working notes that will save you time:**
+- `skyrunner-godot/` (an untracked stray folder in the repo root) must never be `git add`ed: stage files by name.
+- Balance runs: `tools/live_balance.gd -- 200 3 [config]`; 40 seeds is noise (+-$5k), use 200+. Run variants in separate
+  `git worktree`s (never switch branches under a running job), copy `sim-results/strategic.json` (gitignored) into a worktree
+  before `cli.gd -- report` or BALANCE.md loses section 3. `live.json` keeps only mean/p10/p50/p90.
+- Screenshots work on Windows: `--headless --import` first (after switching branches too), then the console exe with
+  `--audio-driver Dummy --resolution 1280x720 --script tools/shots/pilot_shot.gd -- ...`, but call
+  `RenderingServer.force_draw(true)` before `get_image().save_png` or the PNG is flat grey.
+- Tests that load the city map must call `World.use_map(0)` afterwards (`after_each`), or `test_world`'s Python-parity checks fail.
+- CI once failed ~40 model-load checks from a cold-import timeout; a re-run passed (`tools/test.sh` now allows 900 s for the import).
+- Not checked by eye: the club's furniture layout (the club only exists on the city map), the air circuit's gates.
+
+---
+
 # Handoff: cloud session → local development (2026-09-28)
 
 **The project lives at https://github.com/jawaman14/skyrunner (`main`).** It moved out of the AutoGPT
