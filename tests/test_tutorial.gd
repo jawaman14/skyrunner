@@ -156,3 +156,93 @@ func test_the_ai_hiring_lesson_fires_when_the_ai_actually_hires() -> void:
 		s.tutorial.tick(s)
 	check(s.tutorial.done.has("org_crew"), "the AI hired somebody, so the lesson finished itself")
 	s.dispose()
+
+
+func _all_systems() -> Session:
+	var s := _sess({"ground_war": true, "trade": true, "payroll": true, "logistics": true, "renown": true, "rackets": true, "races": true})
+	s.tutorial.done = {}
+	return s
+
+
+func _finish_until(s: Session, id: String) -> void:
+	# everything before `id` is done, so `id` is the lesson on screen
+	for l in Tutorial.LESSONS:
+		if l[0] == id:
+			break
+		s.tutorial.done[l[0]] = true
+
+
+func test_the_new_systems_have_lessons_that_wait_for_them() -> void:
+	var bare := _sess()
+	var ids: Array = Tutorial.LESSONS.map(func(l): return l[0])
+	for want in ["phone", "car", "car_radio", "squad_orders", "renown", "rackets", "works", "round", "arena"]:
+		check(want in ids, "there is a '%s' lesson" % want)
+	var avail: Array = Tutorial.LESSONS.filter(func(l): return bare.tutorial._needs_ok(l[1])).map(func(l): return l[0])
+	for gone in ["phone", "car", "renown", "rackets", "works", "round", "arena"]:
+		check(not (gone in avail), "'%s' is not taught without its system" % gone)
+	bare.dispose()
+	var s := _all_systems()
+	var av: Array = Tutorial.LESSONS.filter(func(l): return s.tutorial._needs_ok(l[1])).map(func(l): return l[0])
+	for here in ["phone", "car", "car_radio", "squad_orders", "renown", "rackets", "works", "round", "arena"]:
+		check(here in av, "'%s' is taught when its system is in" % here)
+	s.dispose()
+
+
+func test_each_new_lesson_finishes_on_the_thing_itself() -> void:
+	var s := _all_systems()
+	var t: Tutorial = s.tutorial
+	for pair in [["phone", "menu_phone"], ["car", "driving"], ["car_radio", "radio_on"], ["rackets", "menu_rackets"]]:
+		_finish_until(s, pair[0])
+		check_eq(_ids(s), pair[0], "%s is on screen" % pair[0])
+		t.note(pair[1])
+		t.tick(s)
+		check(t.done.has(pair[0]), "%s finishes on %s" % [pair[0], pair[1]])
+	for pair in [["squad_orders", "field_order"], ["works", "stash_works"], ["round", "cash_round"], ["arena", "race_enter"]]:
+		t.done.erase(pair[0])
+		t.command_done("pilot", pair[1])
+		check(t.done.has(pair[0]), "%s finishes on the %s command" % [pair[0], pair[1]])
+	t.done.erase("round")
+	t.command_done("boss", "goods_round")
+	check(t.done.has("round"), "a delivery round counts too")
+	t.done.erase("arena")
+	s.bus.emit("race_run", s.time, "", ["runner"], {"id": "car-HAR", "place": 2})
+	check(t.done.has("arena"), "and finishing a race")
+	t.done.erase("renown")
+	s.renown.add(45.0, "test")
+	t.tick(s)
+	check(t.done.has("renown"), "a name of 40 points finishes the renown lesson")
+	s.dispose()
+
+
+func test_prisoners_get_a_tip_once() -> void:
+	var s := _all_systems()
+	s.rackets.held = 3
+	s.tutorial.tick(s)
+	check(s.tutorial.tips_shown.has("prisoners"), "holding prisoners shows the tip")
+	check(s.tutorial.tip.contains("ransom"), "and says what to do: %s" % s.tutorial.tip)
+	s.tutorial.tip = ""
+	s.tutorial.tick(s)
+	check_eq(s.tutorial.tip, "", "once only")
+	s.dispose()
+
+
+func test_finishing_the_last_lesson_shows_the_closing_card_for_a_while() -> void:
+	var s := _sess()
+	for l in Tutorial.LESSONS:
+		if s.tutorial._needs_ok(l[1]):
+			s.tutorial.done[l[0]] = true
+	check_eq(_ids(s), "", "nothing left to teach")
+	check_eq(s.tutorial.view().id, "", "and no card before it was finished just now")
+	s.tutorial.done.erase("jobs")
+	s.tutorial.complete("jobs")
+	var v: Dictionary = s.tutorial.view()
+	check_eq(v.id, "complete", "the closing card: %s" % [v])
+	check_eq(v.step, v.of, "all of them")
+	check(s.messages.any(func(m): return str(m[1]).contains("everything for now")), "and it is said")
+	s.time += Tutorial.GRADUATION_S + 1.0
+	check_eq(s.tutorial.view().id, "", "it goes away after a while")
+	s.tutorial.set_enabled(false)
+	s.time = s.tutorial.graduated_at + 1.0
+	check_eq(s.tutorial.view().on, false, "and is not shown when the tutorial is off")
+	s.dispose()
+

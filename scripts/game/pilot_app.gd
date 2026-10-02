@@ -890,6 +890,8 @@ func _enter_car() -> void:
 	walker.visible = false
 	walker.look_enabled = false
 	car.cam.current = true
+	if s.tutorial != null:
+		s.tutorial.note("driving")
 	if radio != null:
 		radio.active = true
 	s.say("Driving: W / S throttle and brake, A / D steer, SPACE handbrake, R radio, , and . tune, E to get out." + (("  " + radio.line()) if radio != null and radio.on else ""))
@@ -942,6 +944,8 @@ func _radio_key(what: String) -> void:
 			if not radio.on:
 				radio.power(true)
 			radio.tune(1 if what == "up" else -1)
+	if radio.on and s.tutorial != null:
+		s.tutorial.note("radio_on")
 	s.say(radio.line())
 
 

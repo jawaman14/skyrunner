@@ -54,7 +54,7 @@ func show_view(tv: Dictionary) -> void:
 	visible = true
 	title.visible = str(tv.id) != ""
 	body.visible = title.visible
-	title.text = "TUTORIAL %d/%d  -  %s" % [int(tv.step), int(tv.of), tv.title]
+	title.text = ("TUTORIAL %d/%d  -  %s" % [int(tv.step), int(tv.of), tv.title]) if str(tv.id) != "complete" else ("TUTORIAL COMPLETE  -  %s" % tv.title)
 	body.text = str(tv.text)
 	tip.visible = str(tv.tip) != ""
 	tip.text = "TIP: " + str(tv.tip)
