@@ -30,6 +30,8 @@ const LESSONS := [
 		"N switches the transponder. Squawking looks legitimate; flying dark hides you only\nbelow the radar floor - a squawk that vanishes is suspicious. The detector shows who paints you."],
 	["grass", "trade", "Your own product",
 		"Bush strips sell grass: the board lists our own loads (paid up front, into our stash).\nTake one and fly it to the stash's strip."],
+	["org_crew", "payroll", "The organisation runs itself",
+		"While you fly, the organisation hires and pays its own crew and raises its own squads -\nyou don't have to run HQ. SHIFT+W any time to see who's on the payroll and what they're doing."],
 	["dealer", "payroll", "Hire the street",
 		"SHIFT+W: Manny Ortega's hiring hall. Hire a street dealer - he sells what's in the stash,\ncorner by corner. Everyone on the payroll gets paid every 10 minutes."],
 	["cash_home", "logistics", "Money has weight",
@@ -285,6 +287,8 @@ func tick(s) -> void:
 		complete("family")
 	if _notes.has("talk_general"):
 		complete("island")
+	if _notes.has("ai_hired_org"):
+		complete("org_crew")
 	if _notes.has("papi_seen"):
 		_show("papi")
 	if not enabled:

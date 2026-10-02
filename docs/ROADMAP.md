@@ -24,7 +24,7 @@ The balance numbers were measured with JSBSim; the game now flies its own model.
 First wave, small and high value. **Done (in PRs):** the Esc pause menu; runways and landing (keyboard
 flight assist, ramped throttle and brake, gentler ground steering, fairer touchdown rules, visible
 runways, the strip audit in docs/STRIPS.md); roads (docs/ROADS.md); throttle steps; F1 scrolling; the
-compass; the tutorial's red squares. **Still to do:** crew, autopilot.
+compass; the tutorial's red squares; crew. **Still to do:** autopilot.
 - **Esc menu.** Done: resume, save, load, settings (graphics, volume, colours, flight assist, controls),
   quit to lobby or desktop.
 - **Runways.** Done, see docs/STRIPS.md. Open there: mountain strips versus the Cessna 182 and half loads.
@@ -34,10 +34,20 @@ compass; the tutorial's red squares. **Still to do:** crew, autopilot.
   arrow (points toward where the wind is blowing FROM, a weather-vane needle) when a season has weather.
 - **Tutorial.** Done: the HUD tells Tutorial the moment the PAPI lights are actually on screen
   (Hud._papi -> note("papi_seen")), and a one-off tip explains them.
-- **Crew:**
-  - hired crew die at once;
-  - the AI hires on the player's behalf without asking;
-  - it isn't clear where the crew are or what they do.
+- **Crew.** Done, three playtest complaints that turned out to be one: the organisation's AI already
+  runs the payroll and the ground war in solo play (by design: Payroll.ai/GroundWar.commanders[f].ai
+  turn off only when a human claims the boss or lieutenant seat, which solo never does) - nothing was
+  broken, nothing was explained.
+  - "hired crew die at once": deaths were real but unexplained. `GroundWar.place_name()` (was
+    `_place_name`, now public) gives `Payroll.lose()` a `where` clause, so "Pepe (soldier) was killed
+    in the town (squad S-1)" now follows the "Shots fired in the town: S-1 vs P-6" the player already
+    saw, instead of landing with no context.
+  - "the AI hires without asking": a new tutorial lesson ("org_crew", scripts/sim/tutorial.gd) fires
+    the first time the AI actually hires for the organisation (Payroll._think -> note("ai_hired_org")),
+    explaining that it runs itself and that SHIFT+W shows the roster.
+  - "isn't clear where they are / what they do": the hiring hall (SHIFT+W) has a new "Who's working for
+    me?" choice listing everyone - role, and what they're doing (Payroll.doing(): watching a named
+    stash, with a squad, driving a truck, ...) - not just the headcount it showed before.
 - **Autopilot:**
   - it circles;
   - it should route itself to airfields (RoutePlanner);

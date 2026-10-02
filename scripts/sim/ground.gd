@@ -617,11 +617,13 @@ func _open(a: Squad, b: Squad) -> void:
 	fights.append(f)
 	fights_total += 1
 	hot_spots.append([sess.time, f.x, f.y])
-	var place := _place_name(f.x, f.y)
+	var place := place_name(f.x, f.y)
 	_say("both", "Shots fired %s: %s vs %s%s" % [place, a.id, b.id, " - an ambush!" if f.surprise != "" else ""])
 
 
-func _place_name(x: float, y: float) -> String:
+## Where (x, y) reads in a message: a stash house, near a strip, or the market it's in.
+## Public (not an underscore method): Payroll's death notices use it too.
+func place_name(x: float, y: float) -> String:
 	if sess.stash_net != null:
 		for st in sess.stash_net.stashes:
 			if PyMath.hypot(st.x - x, st.y - y) < 600:
@@ -762,7 +764,7 @@ func _rout(q: Squad, f: Fight) -> void:
 		if "org" in [q.faction, winner.faction]:
 			var c = sess.police.case("runner")
 			c.suspicion = minf(100.0, c.suspicion + 8.0 * lost_p)
-		_say("law", "Officers down: %d. Every unit to %s" % [lost_p, _place_name(f.x, f.y)])
+		_say("law", "Officers down: %d. Every unit to %s" % [lost_p, place_name(f.x, f.y)])
 	# turf: winning a gang fight takes the street
 	if winner.faction != "police" and q.faction != "police":
 		var m := market_at(f.x, f.y)
