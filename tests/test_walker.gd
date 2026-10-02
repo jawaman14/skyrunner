@@ -137,10 +137,8 @@ func test_the_boss_desk_commands_squads() -> void:
 	await _frames(6)
 	app.walker.use()
 	var m: HQMenu = app.menus["hq"]
-	check(m.visible, "the orders are open")
-	check_eq(s.seats.who(Roles.BOSS), "ai", "nobody's claimed it yet")
-	m.key("q")
-	check(m.squad_mode, "Q: squad mode")
+	check(m.visible, "the desk is open")
+	check(m.squad_mode, "no season to run, so it opens straight on the squads")
 	check_eq(s.seats.who(Roles.BOSS), "human", "claimed for as long as this lasts")
 	check(not s.ground.commanders.org.ai, "the AI stands aside while the boss runs the squads")
 	m.key("raise_car")
@@ -157,6 +155,11 @@ func test_the_boss_desk_commands_squads() -> void:
 	check(not m.squad_mode, "Q again: back to the desk")
 	check_eq(s.seats.who(Roles.BOSS), "ai", "and handed back")
 	check(s.ground.commanders.org.ai, "the AI runs them again")
+	m.key("q")
+	check_eq(s.seats.who(Roles.BOSS), "human", "back on the squads")
+	m.close()
+	check_eq(s.seats.who(Roles.BOSS), "ai", "walking away from the desk hands them back too")
+	check(s.ground.commanders.org.ai, "to the AI")
 	app.free()
 
 

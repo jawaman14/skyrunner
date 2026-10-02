@@ -72,8 +72,10 @@ scrolling; the compass; the tutorial's red squares; crew; autopilot. Second wave
   fifth rule layer nobody runs solo. HQMenu (scripts/ui/hq_menu.gd) now has the same squad_mode:
   Q swaps the board for a live StationMap, claims the boss's seat for as long as that lasts
   (Session.seat_driver, fixed to also stand the AI aside for a human boss - it only did for a human
-  lieutenant before), and hands it straight back on Q again or on leaving. tests/test_seats.gd and
-  tests/test_walker.gd (test_the_boss_desk_commands_squads) cover it.
+  lieutenant before), and hands it straight back on Q again or on leaving. With no season running
+  (every solo game) the desk opens straight on the squads - a GPU-rendered walkthrough showed the
+  first thing a solo player saw was a "no season" note with squad command hidden behind a small Q.
+  tests/test_seats.gd and tests/test_walker.gd (test_the_boss_desk_commands_squads) cover it.
 
 Second wave, larger features:
 - **A phone on foot** to reach the crew and desk menus.
