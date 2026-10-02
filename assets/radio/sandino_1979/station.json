@@ -1,0 +1,15 @@
+{
+	"name": "Radio Sandino, 1979 (clandestine)",
+	"band": "SW",
+	"label": "7315",
+	"blurb": "The clandestine station during the revolution, July 1979.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Sandino 7315, 16 Jul 1979",
+			"len": 140.46,
+			"ia": "1979-07-16-clandestine-r-sandino-7315-0401-utc-s-on"
+		}
+	]
+}

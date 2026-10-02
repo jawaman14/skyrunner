@@ -27,6 +27,7 @@ const CHECKPOINT_M := 250.0  ## a checkpoint this close to the road stops what c
 const AI_CASH_HOME := 8000.0  ## the organisation's AI batches a stash's cash home past this (fewer, fatter trucks)
 const AI_CASH_SHORT := 3000.0  ## ... or past this when the safe can't meet the payroll
 const AI_MOVE_EVERY_S := 600.0  ## and moves product at most this often
+static var ROUNDS := true  ## the AI sends one truck round several stashes (the balance tool turns it off to compare)
 const AI_PICKUP_S := 1200.0  ## the regular pickup: a stash's cash ($1,000+) that has sat this long goes home
 const MEETS := {
 	"family": {"name": "the Morettis' social club", "market": "town"},
@@ -284,6 +285,8 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 		return "A police checkpoint (%s) is on the road to %s: waiting." % [cp, name_of(to)]
 	_dispatch(c, pos(from), dest)
 	last = "Truck out: %s from %s to %s." % [_describe(c), name_of(from), name_of(to)]
+	if c.has("fuel_note"):
+		last += " (%s)" % c.fuel_note
 	if cp != "":
 		last += " Careful: a police checkpoint (%s) sits on that road - an escort, or wait." % cp
 	sess.say(last)
@@ -324,6 +327,213 @@ func _value(c: Dictionary) -> int:
 	if not w.is_empty():
 		v += Arsenal.worth(w, sess.econ.mult("guns", "town"))
 	return int(v)
+
+
+# ------------------------------------------------------------------ rounds: one truck, several stops
+## The order to visit `stops` (site ids) for a run that ends at `end`: the one farthest from it first, then always
+## the nearest not yet visited - so the truck works its way home.
+func plan_order(stops: Array, end: Vector2) -> Array:
+	var left := stops.duplicate()
+	var out := []
+	if left.is_empty():
+		return out
+	var cur: String = left[0]
+	for s in left:
+		if pos(s).distance_to(end) > pos(cur).distance_to(end):
+			cur = s
+	while true:
+		out.append(cur)
+		left.erase(cur)
+		if left.is_empty():
+			break
+		var nxt: String = left[0]
+		for s in left:
+			if pos(s).distance_to(pos(cur)) < pos(nxt).distance_to(pos(cur)):
+				nxt = s
+		cur = nxt
+	return out
+
+
+func _check_stops(stops: Array) -> String:
+	if stops.size() < 2:
+		return "A round needs at least two stops."
+	var seen := {}
+	for s in stops:
+		if not stock.has(s):
+			return "No such stash."
+		if seen.has(s):
+			return "%s is on the round twice." % name_of(s)
+		seen[s] = true
+		if sess.stash_net.get_stash(s).burned:
+			return "%s is burned." % name_of(s)
+	return ""
+
+
+## A cash round: ONE truck through `stops` in order (it starts at the first and takes what is there, takes what is
+## at each of the others as it reaches them), and brings all of it to `to` (the club, or a stash). The driver
+## stops at each for TRUCK_STOP_S; a checkpoint anywhere on the way, a roadblock or an ambush takes whatever is
+## aboard by then. Without Agent bodies a round is just a truck from each stop.
+func cash_round(stops: Array, to: String, careful := false) -> String:
+	var err := _check_stops(stops)
+	if err != "":
+		return err
+	if not (to == HQ or stock.has(to)) or stops.has(to):
+		return "It has to end somewhere else."
+	if sess.stash_net.get_stash(to) != null and sess.stash_net.get_stash(to).burned:
+		return "%s is burned." % name_of(to)
+	if not Agent.ENABLED:
+		var n := 0
+		for s in stops:
+			if cash[s] >= 1.0 and send(s, to, "cash", cash[s], careful) == "":
+				n += 1
+		return "" if n > 0 else "No cash out on the round."
+	var points := [pos(stops[0])]
+	for s in stops.slice(1):
+		points.append(pos(s))
+	points.append(pos(to))
+	var cp := ""
+	for i in points.size() - 1:
+		cp = checkpoint_on(points[i], points[i + 1])
+		if cp != "":
+			break
+	if cp != "" and careful:
+		return "A police checkpoint (%s) is on the round: waiting." % cp
+	var c := {"kind": "multi", "mode": "collect", "from": stops[0], "to": to, "stops": stops.slice(1), "good": "", "lb": 0.0, "cash": 0.0, "buyer": "", "per": 0.0}
+	c.cash = cash[stops[0]]
+	cash[stops[0]] = 0.0
+	_dispatch_multi(c, points)
+	last = "Round out: %s, collecting from %s, bound for %s." % [_describe(c), ", ".join(stops.map(func(s): return name_of(s))), name_of(to)]
+	if cp != "":
+		last += " Careful: a police checkpoint (%s) sits on that road." % cp
+	sess.say(last)
+	return ""
+
+
+## A delivery round: ONE truck loads `lb_each` x the stops at `from` (what is there), and drops `lb_each` of `good` at
+## each stop in order; what is left goes to the last.
+func goods_round(from: String, stops: Array, good: String, lb_each: float, careful := false) -> String:
+	if not stock.has(from) or sess.stash_net.get_stash(from).burned:
+		return "Load from where?"
+	if good not in Trade.GOODS:
+		return "Deliver what?"
+	if stops.is_empty():
+		return "A delivery round needs stops."
+	for s in stops:
+		if s == from or not stock.has(s) or sess.stash_net.get_stash(s).burned:
+			return "%s is not a stop it can make." % name_of(s)
+	if stops.size() != _unique(stops).size():
+		return "A stop is on the round twice."
+	if not Agent.ENABLED:
+		var n := 0
+		for s in stops:
+			if send(from, s, good, lb_each, careful) == "":
+				n += 1
+		return "" if n > 0 else "Nothing to deliver."
+	var amount := minf(lb_each * stops.size(), float(stock[from][good]))
+	if amount < 0.5:
+		return "No %s at %s." % [good, name_of(from)]
+	var points := [pos(from)]
+	for s in stops:
+		points.append(pos(s))
+	var cp := ""
+	for i in points.size() - 1:
+		cp = checkpoint_on(points[i], points[i + 1])
+		if cp != "":
+			break
+	if cp != "" and careful:
+		return "A police checkpoint (%s) is on the round: waiting." % cp
+	stock[from][good] -= amount
+	sync()
+	var c := {"kind": "multi", "mode": "deliver", "from": from, "to": stops[stops.size() - 1], "stops": stops.slice(0, stops.size() - 1), "good": good,
+		"lb": amount, "cash": 0.0, "buyer": "", "per": lb_each}
+	_dispatch_multi(c, points)
+	last = "Round out: %s from %s to %s." % [_describe(c), name_of(from), ", ".join(stops.map(func(s): return name_of(s)))]
+	if cp != "":
+		last += " Careful: a police checkpoint (%s) sits on that road." % cp
+	sess.say(last)
+	return ""
+
+
+func _unique(a: Array) -> Array:
+	var out := []
+	for x in a:
+		if not out.has(x):
+			out.append(x)
+	return out
+
+
+## Put the round's truck on the road: a leg to each stop (by road when the war has one), the stops where it
+## stands TRUCK_STOP_S, and the driver, the fuel and the risk as for any other truck.
+func _dispatch_multi(c: Dictionary, points: Array) -> void:
+	var sn: StashNet = sess.stash_net
+	var t := StashNet.Truck.new()
+	t.job_id = Jobs.new_id()
+	t.title = "Round: " + _describe(c)
+	t.stash = c.to if sn.get_stash(c.to) != null else c.from
+	var a: Vector2 = points[0]
+	var b: Vector2 = points[points.size() - 1]
+	t.x0 = a.x
+	t.y0 = a.y
+	t.x1 = b.x
+	t.y1 = b.y
+	t.t0 = sess.time
+	var total := 0.0
+	var all := PackedVector2Array([a])
+	for i in points.size() - 1:
+		var leg: PackedVector2Array
+		if sess.ground != null:
+			leg = sess.ground.route("org", points[i], points[i + 1])
+		else:
+			leg = PackedVector2Array([points[i], points[i + 1]])
+		t.legs.append(leg)
+		total += RoadGraph.length(leg) if sess.ground != null else (points[i] as Vector2).distance_to(points[i + 1]) * 1.3
+		for k in range(1, leg.size()):
+			all.append(leg[k])
+	for i in c.stops.size():
+		t.stops.append({"site": c.stops[i], "at": points[i + 1]})
+	t.route = all
+	t.dur = StashNet.TRUCK_LOAD_S + total / StashNet.TRUCK_MS + c.stops.size() * StashNet.TRUCK_STOP_S
+	t.pay = _value(c)
+	t.heat = 5.0
+	t.no_trail = c.to == HQ
+	t.items = maxi(1, int(c.lb / 25.0))
+	if sess.payroll != null:
+		var d: Array = sess.payroll.driver_for(str(t.job_id))
+		t.driver = d[0]
+		t.waved = d[1]
+	t.stop_at = -1.0  # the war's own checkpoints and ambushes decide it (a round needs the road graph's bodies)
+	var fuel_note := Fuel.truck(sess, t, total / 1000.0)
+	if fuel_note != "":
+		c["fuel_note"] = fuel_note
+	t.on_stop = _stop_reached
+	t.start_agent()
+	sn.trucks.append(t)
+	convoys[t.job_id] = c
+
+
+## The round's truck has been through a stop: it takes what cash is there, or leaves what it was to leave.
+func _stop_reached(t, site: String) -> void:
+	if not convoys.has(t.job_id):
+		return
+	var c: Dictionary = convoys[t.job_id]
+	var st = sess.stash_net.get_stash(site)
+	if st == null or st.burned:
+		return
+	if c.mode == "collect":
+		var amt: float = cash.get(site, 0.0)
+		if amt >= 1.0:
+			cash[site] = 0.0
+			c.cash += amt
+			t.pay = _value(c)
+			sess.say("The round picked up $%s at %s (now $%s aboard)." % [Py.money(int(amt)), name_of(site), Py.money(int(c.cash))])
+	else:
+		var lb: float = minf(float(c.lb), float(c.per))
+		if lb > 0.0:
+			add(site, c.good, lb)
+			c.lb -= lb
+			t.pay = _value(c)
+			sess.say("The round left %d lb of %s at %s." % [int(lb), c.good, name_of(site)])
+
 
 
 # ------------------------------------------------------------------ guns
@@ -378,6 +588,8 @@ func send_guns(to: String, weapons: Dictionary, careful := false) -> String:
 		return "A police checkpoint (%s) is on the road to %s: waiting." % [cp, name_of(to)]
 	_dispatch(c, pos(from), dest)
 	last = "Truck out: %s from %s to %s." % [_describe(c), name_of(from), name_of(to)]
+	if c.has("fuel_note"):
+		last += " (%s)" % c.fuel_note
 	if cp != "":
 		last += " Careful: a police checkpoint (%s) sits on that road - an escort, or wait." % cp
 	sess.say(last)
@@ -412,6 +624,10 @@ func _dispatch(c: Dictionary, a: Vector2, b: Vector2) -> void:
 		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / StashNet.TRUCK_MS
 	elif sn.rng.random() < clampf(risk, 0.0, 0.8) and not t.waved:
 		t.stop_at = sn.rng.uniform(0.2, 0.9)
+	var km := (RoadGraph.length(t.route) if t.route.size() >= 2 else a.distance_to(b) * 1.3) / 1000.0
+	var fuel_note := Fuel.truck(sess, t, km)
+	if fuel_note != "":
+		c["fuel_note"] = fuel_note
 	if Agent.ENABLED:
 		t.start_agent()
 	sn.trucks.append(t)
@@ -429,7 +645,7 @@ func _pull_over(dt: float) -> void:
 	if cps.is_empty():
 		return
 	for t in sess.stash_net.trucks:
-		if not convoys.has(t.job_id) or sess.time - t.t0 < StashNet.TRUCK_LOAD_S or t.route.size() < 2:
+		if not convoys.has(t.job_id) or sess.time - t.t0 < t.lead_s() or t.route.size() < 2:
 			continue
 		var here := Vector2(t.pos(sess.time)[0], t.pos(sess.time)[1])
 		var escorted: bool = sess.ground.squads.any(func(q): return q.faction == "org" and int(q.order.get("job_id", -1)) == t.job_id and q.state != "gone")
@@ -506,6 +722,11 @@ func arrived(t, outcome: String, why: String) -> void:
 				if not c.get("weapons", {}).is_empty():
 					sess.arsenals["org"].add_all(c.weapons)  # what the buyer didn't want: back in the rack
 				last = "The money's home at %s: %s." % [name_of(c.to), _describe(c)]
+			"multi":
+				if c.lb > 0.0:
+					add(c.to, c.good, c.lb)
+				add_cash(c.to, c.cash)
+				last = "The round is in at %s: %s." % [name_of(c.to), _describe(c)]
 		sess.say(last)
 		return
 	var what := _describe(c)
@@ -697,14 +918,25 @@ func update(dt: float) -> void:
 	# one cash truck at a time, the fattest stash first; sooner if the payroll is short
 	var short: bool = sess.money < sess.payroll.wage_bill("org") * 2.0
 	var fattest = null
+	var ready := []
 	for s in cash:
 		var due: bool = cash[s] >= 1000.0 and sess.time - float(cash_since.get(s, sess.time)) >= AI_PICKUP_S
 		if not busy.has(s) and not sess.stash_net.get_stash(s).burned and (due or cash[s] >= (AI_CASH_SHORT if short else AI_CASH_HOME)):
+			ready.append(s)
 			if fattest == null or cash[s] > cash[fattest]:
 				fattest = s
 	if fattest != null and not cash_moving:
-		send(fattest, HQ, "cash", cash[fattest], true)
-		busy[fattest] = true
+		# two or more stashes worth a trip: one truck works its way round them (fewer trucks on the road)
+		var sent := false
+		if ROUNDS and ready.size() >= 2 and Agent.ENABLED:
+			var order := plan_order(ready, hq_pos())
+			sent = cash_round(order, HQ, true) == ""
+			if sent:
+				for s in order:
+					busy[s] = true
+		if not sent:
+			send(fattest, HQ, "cash", cash[fattest], true)
+			busy[fattest] = true
 	if sess.time - _move_t < AI_MOVE_EVERY_S:
 		return
 	# product where the dealers work
@@ -741,7 +973,8 @@ func view() -> Dictionary:
 		if convoys.has(t.job_id):
 			var c: Dictionary = convoys[t.job_id]
 			var p: Array = t.pos(sess.time)
-			trucks.append({"id": t.job_id, "what": _describe(c), "from": name_of(c.from), "to": name_of(c.to), "x": p[0], "y": p[1],
+			var via: String = (" via " + ", ".join(c.stops.map(func(s): return name_of(s)))) if c.kind == "multi" and not c.stops.is_empty() else ""
+			trucks.append({"id": t.job_id, "what": _describe(c), "from": name_of(c.from), "to": name_of(c.to) + via, "x": p[0], "y": p[1],
 				"eta": int(maxf(0.0, t.t0 + t.dur - sess.time)), "waiting": c.get("waiting", false),
 				"escort": sess.ground != null and sess.ground.squads.any(func(q): return q.faction == "org" and int(q.order.get("job_id", -1)) == t.job_id and q.state != "gone")})
 	var arm := {}
@@ -749,4 +982,6 @@ func view() -> Dictionary:
 		arm = {"site": armoury_site(), "at": name_of(armoury_site()), "weapons": sess.arsenals["org"].stock.duplicate(),
 			"count": sess.arsenals["org"].count()}
 	return {"sites": sites, "trucks": trucks, "aboard": aboard, "armoury": arm, "war": sess.ground != null, "hq": name_of(HQ), "hq_strip": hq_strip(),
-		"lost": lost.duplicate(), "last": last}
+		"lost": lost.duplicate(), "last": last,
+		"fuel": {"ground": snappedf(Fuel.price(sess, "ground"), 0.01), "avgas": snappedf(Fuel.price(sess, "avgas"), 0.01),
+			"trend": snappedf(Fuel.trend(sess), 0.01), "spent": int(sess.fuel_spent.org)}}
