@@ -192,6 +192,44 @@ func test_the_phone_reaches_the_desk_and_the_crew_from_anywhere() -> void:
 	app.free()
 	s.dispose()
 
+## The phone's taxi: pick somewhere, pay the fare, and the world runs ahead while you ride; you are
+## put down at the other end.
+func test_a_taxi_takes_you_to_the_desk() -> void:
+	var app := _app({"seed": 9, "location": "COV", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var s := app.s
+	s.money = 5000
+	app._toggle_on_foot()
+	await _frames(4)
+	var stops: Array = app.taxi_stops()
+	var names: Array = stops.map(func(r): return r.name)
+	check(names.size() >= 2, "somewhere to go: %s" % [names])
+	var i := names.find("The boss's desk")
+	check(i >= 0, "the desk is on the list")
+	if i < 0:
+		app.free()
+		return
+	var stop: Dictionary = stops[i]
+	var t0 := s.time
+	var m0 := s.money
+	app._phone_call("taxi")
+	check(app.menus["taxi"].visible, "the phone opened the taxi list")
+	app.menus["taxi"].close()
+	app._taxi_go(i)
+	check(app.taxi_left > 0.0, "the ride is on (%d s)" % int(app.taxi_left))
+	check_eq(s.money, m0 - int(stop.fare), "the fare is paid up front")
+	await _frames(200)
+	check_eq(app.taxi_left, 0.0, "the ride is over")
+	check(s.time - t0 >= float(stop.secs) - 2.0, "the world ran ahead by the ride: %.0f s of %.0f s" % [s.time - t0, float(stop.secs)])
+	var at: Vector2 = stop.at
+	var here := Vector2(app.walker.global_position.x, -app.walker.global_position.z)
+	check(here.distance_to(at) < 3.0, "put down at the desk (%.1f m)" % here.distance_to(at))
+	# broke: no ride
+	s.money = 0
+	app._taxi_go(i)
+	check_eq(app.taxi_left, 0.0, "no fare, no ride")
+	app.free()
+	s.dispose()
+
 
 func test_walks_up_a_step() -> void:
 	var app := _app({"seed": 1, "location": "HAR"})

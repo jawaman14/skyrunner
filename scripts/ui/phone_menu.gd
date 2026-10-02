@@ -37,6 +37,7 @@ func contacts() -> Array:
 		out.append(["desk", "The desk", "the boss's orders (and the squads, if there's a war on)"])
 	if s.logistics != null:
 		out.append(["logistics", "Dispatch", "where the product and the cash are; trucks; cash bags"])
+	out.append(["taxi", "A taxi", "a ride to the aircraft, the desk, the job board, a stash house"])
 	return out
 
 
