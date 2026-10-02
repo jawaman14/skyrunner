@@ -1,0 +1,15 @@
+{
+	"name": "RJR Jamaica",
+	"band": "AM",
+	"label": "720",
+	"blurb": "Radio Jamaica, December 1985.",
+	"gap_s": 25,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "RJR 720, 22 Dec 1985",
+			"len": 150.99,
+			"ia": "1985-12-22-jamaica-rjr-720-0014-utc"
+		}
+	]
+}

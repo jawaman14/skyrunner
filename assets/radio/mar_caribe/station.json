@@ -1,0 +1,15 @@
+{
+	"name": "Mar Caribe, Colombia",
+	"band": "AM",
+	"label": "870",
+	"blurb": "A Colombian Caribbean-coast AM station, December 1984.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Mar Caribe 870, 30 Dec 1984",
+			"len": 16.4,
+			"ia": "1984-12-30-colombia-mar-caribe-am-870-0247-utc"
+		}
+	]
+}

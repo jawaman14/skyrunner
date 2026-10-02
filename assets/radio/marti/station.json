@@ -1,0 +1,21 @@
+{
+	"name": "Radio Marti",
+	"band": "SW",
+	"label": "11815",
+	"blurb": "The Voice of America's new Cuba service, June 1985, and a radio report on its start.",
+	"gap_s": 20,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Marti 11815, 3 Jun 1985",
+			"len": 77.48,
+			"ia": "1985-06-03-usa-r-marti-11815-1600-utc"
+		},
+		{
+			"file": "02.ogg",
+			"title": "WCCO report on the start of Radio Marti, May 1985",
+			"len": 150.0,
+			"ia": "wcco-am-radio-marti-10-and-11-may-1985-.-830-mhz"
+		}
+	]
+}
