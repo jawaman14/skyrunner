@@ -79,27 +79,29 @@ Drivers pull over when they see police on the road ahead; a passing patrol pulls
 
 34. **Open mode's start.** *Found:* Open mode starts with every system live from the first minute - the street war, payroll, the court, the island - on Session.START_MONEY ($3,000), and the simulator had never run it that way: every configuration started on $16k. The open configuration now runs the full game with air risk at the real start, and a sweep tries $3k-$40k (section 7). The first guess was wrong twice: the organisation fields a squad from the first minute in every run (up to two at once; entry 32's 0.2 was the count left at the end), so the AI's escorts (GroundWar already escorts every truck it has a squad for) had squads to use, and the payroll never came up short at any start. *Changed:* The start matters less than expected: $3k ends three hours at $43.2k net worth, $40k at $54.5k - more money up front mostly buys a bigger war. At $3k the safe dips just below zero in the worst tenth of runs (money_min p10 -$161); from $10k it doesn't. So open mode gets a $10k float (Session.OPEN_FLOAT: Benny Ruiz fronts it, a new game only; a save keeps its money; the story still starts on $3k and opens the systems one at a time). No escort change.
 
+35. **The flight model's castering-gear fix, re-flown.** *Found:* The numbers above were calibrated under an early Godot flight model where castering (freely pivoting) gear acted like fixed, steerable gear - fixed in 336a0dc, which changed takeoffs. Re-flying tactical (630 flights) found the fix mostly changed the crash rate: 19% of flights crashed before, 2% now (the 'low' tactic alone: 25% -> 0%) - ground handling no longer throws runs away that the police never touched. Feasibility (240 trials) gained a net 12 passes (134 -> 146 of 240), concentrated at Old Quarry for the Cessna 182 (5 of its 6 combinations there flip to a pass - the mountain-strip question docs/STRIPS.md left open) but cost some margin elsewhere: the twins lost 11 combinations, mostly landings (the DHC-6 at Port Harbor, the plateau, Fox River and the quarry; the Cessna 310 at the plateau and the quarry). Re-flying strategic (--n 100, 4,000 seasons across the matrix) found the equilibrium moved from 50.2% (in target) to 58.4% (outside it) - the crash rate falling from 19% to 2% removed a tax that was keeping the sides even. Ablating 'crews' alone drops the equilibrium to 36%, by far the largest swing and the only one that undershoots 50%: a crewed aircraft (a copilot, a spotter) is worth noticeably more without that tax. The same drop shows up in AirRisk (the live-play simulator's flight odds, tests/test_air_risk.gd): tipped off (suspicion 60+), the least-bad way in used to be busted clearly more than a quarter of the time and the pilot stayed home; now it's busted exactly a quarter of the time, right at the line that decides whether it's worth flying at all. *Changed:* Not tuned yet, only re-measured, and the strategic number carries a caveat: the equilibrium above is 10x fewer seasons per matrix cell than the 40,000-season run it's compared against (docs/ROADMAP.md's own re-fly checklist asks for --n 100, which is what ran), so some of the 8.2-point move could be noise on top of a real one - worth a bigger re-run before anyone retunes on it alone. Two things need a decision either way: whether the twins' new landing failures are a ground-handling regression worth a strip-specific fix (docs/STRIPS.md), and whether to pull the 'crews' lever back toward 50% knowing that's the lever that makes hiring a contract crew worth its wage.
+
 ## 1. Can you get in and out? (feasibility)
 
-The pilot bot flew 240 takeoffs and landings: every aircraft × airfield × load (light = 30% fuel; half = 60% fuel + half payload; max = full fuel + payload to MTOW). 134 succeeded. L = landing, T = takeoff.
+The pilot bot flew 240 takeoffs and landings: every aircraft × airfield × load (light = 30% fuel; half = 60% fuel + half payload; max = full fuel + payload to MTOW). 146 succeeded. L = landing, T = takeoff.
 
 | aircraft | load | HAR | VAL | FRM | PNR | EGL | COV | QRY | ISL |
 |---|---|---|---|---|---|---|---|---|---|
-| Cessna 172P Skyhawk | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ |
-| Cessna 172P Skyhawk | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ |
-| Cessna 172P Skyhawk | max | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ | L✗ T✗ | L✓ T✓ |
+| Cessna 172P Skyhawk | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ |
+| Cessna 172P Skyhawk | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ | L✓ T✗ | L✓ T✓ |
+| Cessna 172P Skyhawk | max | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✗ | L✓ T✗ | L✓ T✓ |
 | Piper PA-28 Warrior | light | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
-| Piper PA-28 Warrior | half | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
-| Piper PA-28 Warrior | max | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
-| Cessna 182 Skylane | light | L✓ T✓ | L✓ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
-| Cessna 182 Skylane | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✗ | L✗ T✗ | L✓ T✗ | L✗ T✗ | L✓ T✓ |
-| Cessna 182 Skylane | max | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
-| Cessna 310 (twin) | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ |
-| Cessna 310 (twin) | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✗ | L✗ T✗ | L✓ T✓ |
+| Piper PA-28 Warrior | half | L✗ T✓ | L✓ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
+| Piper PA-28 Warrior | max | L✓ T✗ | L✓ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
+| Cessna 182 Skylane | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✓ | L✓ T✓ | L✗ T✓ | L✓ T✓ |
+| Cessna 182 Skylane | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✗ | L✓ T✓ |
+| Cessna 182 Skylane | max | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
+| Cessna 310 (twin) | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✗ | L✓ T✓ |
+| Cessna 310 (twin) | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✗ | L✓ T✗ | L✗ T✗ | L✓ T✓ |
 | Cessna 310 (twin) | max | L✓ T✗ | L✓ T✗ | L✓ T✗ | L✓ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✓ T✓ |
-| DHC-6 Twin Otter | light | L✗ T✓ | L✗ T✓ | L✓ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ |
-| DHC-6 Twin Otter | half | L✓ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
-| DHC-6 Twin Otter | max | L✓ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
+| DHC-6 Twin Otter | light | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ |
+| DHC-6 Twin Otter | half | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
+| DHC-6 Twin Otter | max | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
 
 How to read it: the C172 row is the one that matters for fairness, because every career starts in one. It lands everywhere at light and half loads and takes off from everywhere except the quarry at half load. At max weight it can't leave the plateau (EGL) or the quarry. That is the trade-off the game is built on: tight strips mean light loads. The PA28, C182 and Twin Otter rows mostly measure the bot rather than the aircraft. It was tuned on the C172 and C310, and the PA28's JSBSim model needs about -0.6 elevator of trim at approach speed. Treat red cells there as 'the bot can't', not 'a human can't'.
 
@@ -109,140 +111,139 @@ How to read it: the C172 row is the one that matters for fairness, because every
 
 | | n | flagged | intercepted | busted | crashed | delivered | boat seized |
 |---|---|---|---|---|---|---|---|
-| **all** | 630 | 57% | 44% | 37% | 19% | 26% | 5% |
-| tactic: low | 210 | 60% | 50% | 44% | 25% | 12% | 4% |
-| tactic: high | 210 | 52% | 40% | 28% | 0% | 54% | 5% |
-| tactic: evasive | 210 | 58% | 43% | 37% | 31% | 12% | 4% |
-| police: light | 90 | 40% | 27% | 13% | 31% | 54% | 0% |
-| police: standard | 90 | 40% | 27% | 27% | 18% | 34% | 4% |
-| police: heavy | 90 | 40% | 28% | 26% | 20% | 33% | 4% |
-| police: aerostat | 90 | 78% | 58% | 47% | 0% | 34% | 4% |
-| police: patrol | 90 | 43% | 31% | 27% | 29% | 24% | 4% |
-| police: tipped | 90 | 60% | 46% | 36% | 32% | 3% | 9% |
-| police: all_in | 90 | 98% | 96% | 81% | 1% | 0% | 6% |
-| zone: west | 210 | 53% | 46% | 41% | 35% | 24% | 0% |
-| zone: north | 210 | 67% | 58% | 60% | 21% | 19% | 0% |
-| zone: sea | 210 | 51% | 30% | 9% | 0% | 36% | 14% |
+| **all** | 630 | 58% | 47% | 39% | 2% | 23% | 6% |
+| tactic: low | 210 | 60% | 50% | 44% | 0% | 10% | 6% |
+| tactic: high | 210 | 55% | 40% | 29% | 2% | 49% | 5% |
+| tactic: evasive | 210 | 60% | 50% | 45% | 3% | 10% | 6% |
+| police: light | 90 | 43% | 26% | 22% | 2% | 53% | 0% |
+| police: standard | 90 | 43% | 26% | 26% | 2% | 30% | 7% |
+| police: heavy | 90 | 43% | 33% | 29% | 2% | 28% | 7% |
+| police: aerostat | 90 | 77% | 58% | 47% | 1% | 30% | 7% |
+| police: patrol | 90 | 42% | 36% | 33% | 3% | 19% | 7% |
+| police: tipped | 90 | 61% | 51% | 39% | 3% | 2% | 9% |
+| police: all_in | 90 | 98% | 97% | 80% | 0% | 0% | 6% |
+| zone: west | 210 | 44% | 37% | 35% | 1% | 23% | 0% |
+| zone: north | 210 | 76% | 70% | 75% | 5% | 16% | 0% |
+| zone: sea | 210 | 54% | 33% | 8% | 0% | 30% | 18% |
 
 Tactic × posture (delivered):
 
 | tactic | light | standard | heavy | aerostat | patrol | tipped | all_in |
 |---|---|---|---|---|---|---|---|
-| low | 33% | 13% | 13% | 13% | 13% | 0% | 0% |
-| high | 97% | 77% | 73% | 77% | 47% | 10% | 0% |
-| evasive | 33% | 13% | 13% | 13% | 13% | 0% | 0% |
+| low | 33% | 10% | 10% | 10% | 10% | 0% | 0% |
+| high | 93% | 70% | 63% | 70% | 37% | 7% | 0% |
+| evasive | 33% | 10% | 10% | 10% | 10% | 0% | 0% |
 
-Calibration fed to the season simulator: `Calibration(detect={'west': 0.333, 'north': 0.533, 'sea': 0.333}, aerostat_detect={'west': 0.333, 'north': 0.133, 'sea': 0.667}, intercept_per_unit={'heli': 0.7, 'interceptor': 1.0}, intercept_k=1.383, bust_given_intercept=0.786, crash={'west': 0.06, 'north': 0.06, 'sea': 0.01}, cutter_seize=0.35, boat_catch_if_spotted=0.5)`
+Calibration fed to the season simulator: `Calibration(detect={'west': 0.233, 'north': 0.667, 'sea': 0.4}, aerostat_detect={'west': 0.467, 'north': 0.0, 'sea': 0.533}, intercept_per_unit={'heli': 0.7, 'interceptor': 1.0}, intercept_k=1.121, bust_given_intercept=0.809, crash={'west': 0.033, 'north': 0.033, 'sea': 0.01}, cutter_seize=0.35, boat_catch_if_spotted=0.5)`
 
-Returns on extra units: heavy (2 helicopters + 2 interceptors) vs standard (1 + 1) intercept hazard, flown 1.08x, season model 1.49x. The season model prices extra units with ln(1 + units); the closer the two, the better it prices the chief's helicopters (entry 14: spares patrol before the run).
+Returns on extra units: heavy (2 helicopters + 2 interceptors) vs standard (1 + 1) intercept hazard, flown 1.65x, season model 1.49x. The season model prices extra units with ln(1 + units); the closer the two, the better it prices the chief's helicopters (entry 14: spares patrol before the run).
 
 ## 3. Whole seasons, HQ vs HQ (strategic)
 
-40000 simulated seasons, 8 organisation strategies × 5 task-force strategies. Cells are the organisation's win rate.
+4000 simulated seasons, 8 organisation strategies × 5 task-force strategies. Cells are the organisation's win rate.
 
 | boss \ chief | interdiction | investigator | balanced | adaptive | random |
 |---|---|---|---|---|---|
-| greedy | 30% | 96% | 24% | 13% | 74% |
-| cautious | 68% | 8% | 42% | 71% | 57% |
-| corrupt | 31% | 13% | 13% | 10% | 15% |
-| shadow | 54% | 2% | 26% | 56% | 23% |
-| launderer | 53% | 87% | 31% | 24% | 74% |
-| adaptive | 73% | 96% | 56% | 36% | 81% |
-| smart | 58% | 66% | 38% | 32% | 55% |
-| random | 49% | 22% | 27% | 49% | 34% |
+| greedy | 29% | 95% | 26% | 16% | 80% |
+| cautious | 70% | 12% | 53% | 77% | 56% |
+| corrupt | 40% | 13% | 25% | 11% | 17% |
+| shadow | 64% | 1% | 32% | 56% | 30% |
+| launderer | 59% | 93% | 42% | 33% | 81% |
+| adaptive | 84% | 97% | 69% | 43% | 83% |
+| smart | 60% | 69% | 50% | 39% | 65% |
+| random | 61% | 21% | 22% | 49% | 38% |
 
-- **Equilibrium win rate (organisation): 50.2%** (target 50 ± 5)
-- Equilibrium mix, organisation: cautious 41%, adaptive 59%
-- Equilibrium mix, task force: balanced 71%, adaptive 29%
-- Raw win rate over all pairings: 44% for the organisation
-- Average season length: 9.1 nights; decided before the last night: 32%
-- Comebacks (half-time leader loses): 22%; close finishes: 46%
+- **Equilibrium win rate (organisation): 58.4%** (target 50 ± 5)
+- Equilibrium mix, organisation: cautious 45%, adaptive 55%
+- Equilibrium mix, task force: investigator 29%, adaptive 71%
+- Raw win rate over all pairings: 49% for the organisation
+- Average season length: 9.1 nights; decided before the last night: 33%
+- Comebacks (half-time leader loses): 21%; close finishes: 46%
 
 How seasons end:
 
-- law: season over: convicted at trial: 34%
-- runner: season over: walked free: 27%
-- runner: retired rich: 17%
-- law: boss indicted: 12%
-- law: organisation broke: 10%
+- law: season over: convicted at trial: 31%
+- runner: season over: walked free: 29%
+- runner: retired rich: 20%
+- law: boss indicted: 11%
+- law: organisation broke: 9%
 
-Dominance between archetypes (a bot archetype being beaten everywhere is fine; a *mechanic* nobody should use is not, see the next table): runner 'greedy' dominates 'corrupt'; runner 'cautious' dominates 'shadow'; runner 'launderer' dominates 'corrupt'; runner 'adaptive' dominates 'greedy'; runner 'adaptive' dominates 'corrupt'; runner 'adaptive' dominates 'launderer'; runner 'adaptive' dominates 'smart'; runner 'smart' dominates 'corrupt'; runner 'random' dominates 'corrupt'; law 'balanced' dominates 'interdiction'
+Dominance between archetypes (a bot archetype being beaten everywhere is fine; a *mechanic* nobody should use is not, see the next table): runner 'cautious' dominates 'corrupt'; runner 'cautious' dominates 'shadow'; runner 'launderer' dominates 'greedy'; runner 'launderer' dominates 'corrupt'; runner 'adaptive' dominates 'greedy'; runner 'adaptive' dominates 'corrupt'; runner 'adaptive' dominates 'launderer'; runner 'adaptive' dominates 'smart'; runner 'smart' dominates 'corrupt'; law 'balanced' dominates 'interdiction'
 
 What each organisation order is worth (win rate when the random bot used it vs didn't):
 
 | order | effect | uses |
 |---|---|---|
-| buy_front | +21 pts | 1286 |
-| tip_off | +17 pts | 4679 |
-| lie_low | +16 pts | 4711 |
-| loyalty | +15 pts | 3371 |
-| gear | +15 pts | 3277 |
-| opsec | +12 pts | 3433 |
-| counterintel | +11 pts | 3176 |
-| crews | +10 pts | 3074 |
-| decoys | +10 pts | 3169 |
-| lawyer | +8 pts | 4750 |
-| truce | +1 pts | 3342 |
-| hit_rival | +0 pts | 2962 |
-| bribe | -7 pts | 3370 |
-| upgrade | -11 pts | 50 |
+| lie_low | +35 pts | 465 |
+| lawyer | +26 pts | 478 |
+| buy_front | +22 pts | 142 |
+| gear | +22 pts | 320 |
+| crews | +21 pts | 326 |
+| tip_off | +16 pts | 453 |
+| loyalty | +12 pts | 360 |
+| decoys | +9 pts | 321 |
+| opsec | +8 pts | 363 |
+| counterintel | +5 pts | 355 |
+| hit_rival | +1 pts | 323 |
+| truce | -5 pts | 356 |
+| bribe | -11 pts | 343 |
 
 What each task-force order is worth (win rate when the random bot used it vs didn't):
 
 | order | effect | uses |
 |---|---|---|
-| audit | +33 pts | 7856 |
-| wiretap | +24 pts | 6279 |
-| ia_sweep | +15 pts | 7852 |
-| press | +10 pts | 6007 |
-| aerostat | +9 pts | 7843 |
-| canary | +1 pts | 6742 |
-| recruit | +0 pts | 7847 |
-| encryption | -5 pts | 7831 |
-| gang_unit | -8 pts | 7850 |
+| wiretap | +26 pts | 616 |
+| press | +17 pts | 599 |
+| audit | +15 pts | 786 |
+| canary | +5 pts | 676 |
+| encryption | +2 pts | 788 |
+| ia_sweep | +1 pts | 774 |
+| aerostat | -3 pts | 785 |
+| recruit | -11 pts | 789 |
+| gang_unit | -27 pts | 783 |
 
 Win conditions (target: each at least 8% of seasons):
 
 | ending | share |
 |---|---|
-| retired rich | 17% |
-| walked free | 27% |
-| convicted at trial | 34% |
-| boss indicted | 12% |
-| organisation broke | 10% |
+| retired rich | 20% |
+| walked free | 29% |
+| convicted at trial | 31% |
+| boss indicted | 11% |
+| organisation broke | 9% |
 
 ## 4. The rival cartel (Los Cuervos)
 
 A third, AI-run outfit fights the organisation for the island's markets. Each night it flies its own loads in the zone it likes best (weighted by its turf and the pay, dodging a patrol it hears about). Its flights split the task force's attention; its busts are good press for the police. Where it owns the market the organisation's loads pay up to 40% less, and meeting it on the same route without a truce risks a hijack. The boss can hit it, buy a truce or sell its route to the police; the chief can send a gang unit after it.
 
-- Seasons with at least one hijack: 46%; hijacks per season: 0.63
-- Cartel planes busted per season: 2.89; cartel strength at the end: 43/100
+- Seasons with at least one hijack: 49%; hijacks per season: 0.68
+- Cartel planes busted per season: 2.76; cartel strength at the end: 45/100
 
 ## 5. The realism layer
 
 Weather and moon, pattern-of-life analysis, the canary trap and the rivals' tempers (entries 15-18 above), measured over the same seasons:
 
-- Storm nights per season: 1.55; seasons where a canary caught a leak: 3%
-- Truce betrayals per season, by temper: tit_for_tat 0.006, opportunist 0.072, grudger 0.000
+- Storm nights per season: 1.49; seasons where a canary caught a leak: 3%
+- Truce betrayals per season, by temper: tit_for_tat 0.005, opportunist 0.077, grudger 0.000
 
 Betrayals by nights left in the season (backward induction: the end is when truces break):
 
 | nights left | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| betrayals | 187 | 220 | 252 | 69 | 84 | 91 | 72 | 38 | 22 | 20 |
+| betrayals | 12 | 16 | 25 | 4 | 4 | 13 | 17 | 3 | 0 | 0 |
 
 Route mixing against the analysts (entropy in bits; 1.585 = uniform over three routes):
 
 | organisation bot | route entropy | main run detected |
 |---|---|---|
-| greedy | 0.00 | 77% |
-| cautious | 1.50 | 65% |
-| corrupt | 1.32 | 68% |
-| shadow | 1.50 | 66% |
+| greedy | 0.00 | 80% |
+| cautious | 1.50 | 66% |
+| corrupt | 1.32 | 67% |
+| shadow | 1.51 | 66% |
 | launderer | 1.50 | 69% |
-| adaptive | 1.48 | 67% |
-| smart | 1.38 | 67% |
-| random | 1.38 | 62% |
+| adaptive | 1.46 | 68% |
+| smart | 1.39 | 68% |
+| random | 1.38 | 64% |
 
 ## 6. What a co-pilot is worth
 
@@ -256,28 +257,28 @@ The sea mission (airdrop to the go-fast, standard police) flown three ways: solo
 
 Ramp loading at a bush strip (no ground crew): 16.0 s solo, 10.5 s with a co-pilot.
 
-Ablations: equilibrium win rate with one mechanic switched off (baseline 50.2%). Big swings mean the mechanic matters. Near zero means it's optional flavour.
+Ablations: equilibrium win rate with one mechanic switched off (baseline 58.4%). Big swings mean the mechanic matters. Near zero means it's optional flavour.
 
 | without | organisation win | change |
 |---|---|---|
-| recruit | 67.3% | +17.1 |
-| audit | 66.8% | +16.6 |
-| rule:weather | 37.4% | -12.8 |
-| wiretap | 59.9% | +9.7 |
-| crews | 42.2% | -8.0 |
-| lawyer | 42.4% | -7.8 |
-| tip_off | 44.8% | -5.4 |
-| opsec | 46.8% | -3.4 |
-| rule:pattern | 53.6% | +3.4 |
-| cartel | 53.2% | +3.0 |
-| comeback | 48.0% | -2.2 |
-| decoys | 48.2% | -2.0 |
-| truce | 48.3% | -1.9 |
-| hit_rival | 48.6% | -1.6 |
-| gang_unit | 48.6% | -1.6 |
-| rule:canary | 48.7% | -1.5 |
-| bribe | 49.0% | -1.2 |
-| rule:rival_tempers | 49.7% | -0.5 |
+| crews | 36.0% | -22.4 |
+| rule:weather | 46.0% | -12.4 |
+| lawyer | 46.0% | -12.4 |
+| audit | 68.5% | +10.1 |
+| recruit | 67.5% | +9.1 |
+| tip_off | 52.7% | -5.7 |
+| truce | 53.5% | -4.9 |
+| opsec | 53.5% | -4.9 |
+| rule:canary | 54.0% | -4.4 |
+| wiretap | 62.5% | +4.1 |
+| comeback | 54.8% | -3.6 |
+| hit_rival | 55.4% | -3.1 |
+| gang_unit | 55.4% | -3.1 |
+| cartel | 56.0% | -2.4 |
+| bribe | 56.0% | -2.4 |
+| rule:pattern | 57.8% | -0.6 |
+| decoys | 58.0% | -0.4 |
+| rule:rival_tempers | 58.4% | -0.0 |
 
 ## 7. The live-play systems: the Family, the island, the Company
 
@@ -293,7 +294,7 @@ Ablations: equilibrium win rate with one mechanic switched off (baseline 50.2%).
 | logistics | $32,021 / $56,260 / $72,432 | $90,916 | $10,200 | 0 |
 | payroll | $62,531 / $70,620 / $77,462 | $70,620 | $27,700 | 0 |
 | trade | $55,624 / $74,338 / $89,078 | $95,584 | $10,200 | 0 |
-| war | $23,291 / $50,029 / $105,945 | $75,865 | $6,675 | 0 |
+| war | $21,920 / $43,279 / $107,576 | $71,792 | $6,644 | 0 |
 | air | $5,965 / $18,070 / $26,711 | $49,191 | $9,681 | 0 |
 | noair | $10,045 / $21,348 / $31,919 | $54,930 | $8,926 | 0 |
 
@@ -311,7 +312,7 @@ The trade (career: grass first; the organisation's AI buying a load when the sta
 
 Logistics (the trade configuration with stock and cash in the stash houses, trucked by the organisation's AI): money p50 $56,260 against $74,338 without; $13,258 still out in the stashes, on the road and in the bags at the end; $720 of cash and 76 lb of product lost to roadblocks, hijacks and raids a run.
 
-The street war (all systems plus the war, the organisation's AI commanding): money p50 $50,029 against $62,662 without; $5,050 recruiting, $1,071 on rifles, $1,351 upkeep a run; 13.1 firefights a run, men lost 6.4 of ours, 6.1 of Los Cuervos', 15.4 police, 13.1 arrested (both outfits); 1.4 squads of ours at the end against 4.0 of Los Cuervos' and 7.5 police; 0.7 stash houses burned; suspicion p50 0, p90 0.
+The street war (all systems plus the war, the organisation's AI commanding): money p50 $43,279 against $62,662 without; $4,643 recruiting, $1,575 on rifles, $1,867 upkeep a run; 14.1 firefights a run, men lost 4.8 of ours, 8.6 of Los Cuervos', 18.1 police, 18.9 arrested (both outfits); 1.6 squads of ours at the end against 3.1 of Los Cuervos' and 7.2 police; 0.4 stash houses burned; suspicion p50 0, p90 0.
 
 Air risk (all systems with logistics, the street war and the court; 80 seeds x 3 hours): money p50 $18,070 with each flight rolling the tactical sweep's odds, against $21,348 for the same systems at a fixed income. A run flew 17.7 flights (paid $6,000 each when they counted), with 0.60 busts, 0.68 crashes, $0 in fines, $1,687 in repairs and 4 minutes held by the court; the pilot stayed on the ground 0.0 times with the police tipped off.
 
@@ -325,7 +326,7 @@ Open mode's start (the full game with air risk, 20 seeds x 3 hours at each start
 | $25,000 | 0% | $0 | 100% | 2.0 | $11,762 | $49,714 |
 | $40,000 | 0% | $0 | 100% | 2.2 | $16,276 | $54,514 |
 
-The story (40 seeds x 12 hours, the same stand-ins, chapters opening the systems): reached ch2 1980 (100% at 66 min), ch3 1981 (100% at 172 min), ch4 1982 (100% at 240 min), ch5 1983 (92% at 315 min), ch6 1984 (90% at 390 min), ch7 1985 (88% at 435 min), ch8 1986 (80% at 510 min), the end (62% at 495 min). Money p50 $17,290 at the end, net worth (cash, product and street money) p50 $52,364; with air risk: 1.9 busts, 1.8 crashes, $7,085 in fines and $4,562 in repairs a run; $19,687 a run spent on the island's product.
+The story (40 seeds x 12 hours, the same stand-ins, chapters opening the systems): reached ch2 1980 (100% at 66 min), ch3 1981 (100% at 172 min), ch4 1982 (100% at 240 min), ch5 1983 (88% at 336 min), ch6 1984 (88% at 420 min), ch7 1985 (85% at 435 min), ch8 1986 (72% at 531 min), the end (60% at 551 min). Money p50 $18,325 at the end, net worth (cash, product and street money) p50 $53,591; with air risk: 1.8 busts, 1.9 crashes, $7,588 in fines and $4,625 in repairs a run; $17,847 a run spent on the island's product.
 
 The street (all systems on): cocaine in town swung between x0.63 and x1.68 of its usual price in a run (means); guns averaged x1.38; the worst broken network reached 30%; the Company flew 24.1 lots of cocaine north and bought 25.3 lots of guns.
 Without the Company and the rest (control): cocaine x0.60-x1.39, guns x1.12.
