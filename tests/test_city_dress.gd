@@ -89,6 +89,8 @@ func test_build_draws_models_near_and_boxes_far_in_chunks() -> void:
 	var boxes_drawn := 0
 	for c in chunks:
 		for n in c.get_children():
+			if n is StaticBody3D:
+				continue  # the collision
 			var mmi := n as MultiMeshInstance3D
 			if mmi.name == "buildings":
 				boxes_drawn += mmi.multimesh.instance_count
@@ -117,7 +119,7 @@ func test_low_quality_and_a_switched_off_dress_keep_only_the_boxes() -> void:
 		var root := CityDress.build(boxes, q)
 		var total := 0
 		for c in root.get_children():
-			check_eq(c.get_child_count(), 1, "%s: a chunk holds just its boxes" % case)
+			check_eq(c.get_child_count(), 2, "%s: a chunk holds just its boxes and its collision" % case)
 			total += ((c.get_child(0) as MultiMeshInstance3D).multimesh.instance_count)
 			check_eq((c.get_child(0) as MultiMeshInstance3D).visibility_range_begin, 0.0, "%s: always visible" % case)
 		check_eq(total, boxes.size(), "%s: all the boxes" % case)
@@ -168,3 +170,47 @@ func test_the_roads_are_marked_and_the_town_has_pavements() -> void:
 	var p: Vector2 = s[0]
 	check(float(s[2]) > w.ground(p.x, p.y) - 0.01, "the ribbon is on or above the ground")
 	d.free()
+
+
+func test_the_city_is_solid_one_box_a_building() -> void:
+	var boxes := [{"x": 100.0, "y": 50.0, "z": 3.0, "w": 20.0, "d": 12.0, "h": 15.0, "style": "block"},
+		{"x": -80.0, "y": 10.0, "z": 0.0, "w": 30.0, "d": 30.0, "h": 40.0, "style": "tower"}]
+	var body := CityDress.colliders(boxes)
+	check_eq(body.get_child_count(), 2, "a shape each")
+	var cs := body.get_child(0) as CollisionShape3D
+	var bs := cs.shape as BoxShape3D
+	check_eq(bs.size, Vector3(20.0, 16.5, 12.0), "the footprint and the height, sunk 1.5 m like the drawn box")
+	check_near(cs.position.x, 100.0, 0.001, "at its x")
+	check_near(cs.position.z, -50.0, 0.001, "and -y (the island's north is -z)")
+	check_near(cs.position.y, 3.0 - 1.5 + 8.25, 0.001, "its base under the ground")
+	body.free()
+	var q := Quality.get_preset("low")
+	var city := CityDress.build(boxes, q)
+	var chunks := 0
+	for c in city.get_children():
+		if c.get_node_or_null("collision") != null:
+			chunks += 1
+	check_eq(chunks, city.get_child_count(), "every chunk carries its collision, whatever the quality")
+	city.free()
+
+
+## Nothing the player has to reach may be inside a building's footprint, or the new walls would wall it in.
+func test_no_stash_strip_or_headquarters_is_inside_a_building() -> void:
+	World.use_map(MapCity.SEED)
+	var s := Session.new({"seed": 1, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var bs: Array = s.world.map.buildings.filter(func(b): return b.style != "crane")
+	var pts := {}
+	for st in s.world.map.stashes:
+		pts["stash " + str(st.id)] = Vector2(st.x, st.y)
+	for a in s.world.airfields:
+		pts["strip " + a.code] = Vector2(a.x, a.y)
+	pts["the organisation's base"] = s.ground.hq("org")
+	pts["the rival's base"] = s.ground.hq("rival")
+	pts["the task force's base"] = s.ground.hq("police")
+	check(bs.size() > 1000, "the city has buildings (%d)" % bs.size())
+	for k in pts:
+		var p: Vector2 = pts[k]
+		var inside := bs.any(func(b): return absf(p.x - b.x) < float(b.w) / 2.0 + 2.0 and absf(p.y - b.y) < float(b.d) / 2.0 + 2.0)
+		check(not inside, "%s is clear of the buildings" % k)
+	s.dispose()
+	World.use_map(0)
