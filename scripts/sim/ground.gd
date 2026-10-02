@@ -42,11 +42,16 @@ extends RefCounted
 ## sessions that ask (live play: ground_war: true).
 
 static var ENABLED := true
+static var ENGAGEMENT := true  ## fights have geometry: ranges, closing in, each man's own distance (docs/ROADMAP.md, Turf war)
 static var SMART_ROUTES := true  ## routes steer round known checkpoints and hot spots, and climb less (docs/ROADMAP.md, Pathfinding)
 
 const TICK_S := 1.0
 const ROUND_S := 2.0
 const THINK_S := 30.0
+const RANGE_SCALE := 4.0  ## every weapon's effective range x this: the calibration knob (BALANCE entry 37). Arsenal's ranges are first-person ones; a squad fight starts 250 m apart, and at 1x the war came out 7% richer for the organisation and Los Cuervos lost 28% fewer men, at 4x it is within noise of the flat model on every count
+const CLOSE_MS := 3.0  ## m/s a squad on foot advances in a fight (fire and move)
+const WANT_FRAC := 0.6  ## a squad wants to fight at this fraction of its best weapon's range ...
+const WANT_MIN_M := 25.0  ## ... but not closer than this
 const AVOID_M := 400.0  ## a road passing this close to a police checkpoint is one to avoid
 const AVOID_COST_M := 4000.0  ## ... and costs this many extra metres to use
 const HOT_AVOID_M := 300.0  ## ... likewise a place where shots were fired in the last 15 minutes
@@ -250,6 +255,59 @@ func cover(q: Squad) -> float:
 	if q.kind != "foot" and q.state == "moving":
 		c *= 1.25
 	return c
+
+
+## How much of its full fire a weapon of range `r` has at distance `d`: all of it inside half the range,
+## falling to 15% at the range itself and to nothing 30% beyond.
+static func eff(d: float, r: float) -> float:
+	if d <= 0.5 * r:
+		return 1.0
+	if d <= r:
+		return lerpf(1.0, 0.15, (d - 0.5 * r) / (0.5 * r))
+	if d <= 1.3 * r:
+		return lerpf(0.15, 0.0, (d - r) / (0.3 * r))
+	return 0.0
+
+
+## The longest effective range among a squad's weapons (a man with none can only throw things).
+static func best_range(q: Squad) -> float:
+	var best := 0.0
+	for t in q.loadout:
+		if int(q.loadout[t]) > 0:
+			best = maxf(best, float(Arsenal.TIERS[t].range))
+	return maxf(best, 20.0) * RANGE_SCALE
+
+
+## The distance a squad tries to fight at.
+static func want_m(q: Squad) -> float:
+	return clampf(WANT_FRAC * best_range(q), WANT_MIN_M, 500.0)
+
+
+## Firepower per man against `enemy` as things stand: each man's weapon at his own distance to the
+## nearest man he could shoot at (the squad centres' distance when there are no bodies), the ammunition
+## and the nerve as in fire(). With ENGAGEMENT off, just fire().
+func fire_at(q: Squad, enemy: Squad) -> float:
+	if not ENGAGEMENT:
+		return fire(q)
+	var guns := Arsenal.guns(q.loadout, q.men)
+	var centre := q.pos().distance_to(enemy.pos())
+	var bodies: bool = q.members.size() == q.men and enemy.members.size() == enemy.men and enemy.men > 0
+	var total := 0.0
+	for k in q.men:
+		var d := centre
+		if bodies:
+			var mp: Vector2 = (q.members[k] as Agent).pos()
+			d = INF
+			for m: Agent in enemy.members:
+				d = minf(d, mp.distance_to(m.pos()))
+		var tier: String = guns[k]
+		var power: float = Arsenal.UNARMED_FIRE if tier == "" else float(Arsenal.TIERS[tier].fire)
+		var reach: float = 50.0 if tier == "" else float(Arsenal.TIERS[tier].range)
+		total += power * eff(d, reach * RANGE_SCALE)
+	var p := total / maxf(1.0, float(q.men))
+	if q.ammo <= 0:
+		p *= 0.2
+	return p * (0.4 + 0.6 * q.morale)
 
 
 func safe_zone(q: Squad) -> bool:
@@ -501,6 +559,7 @@ func update(dt: float) -> void:
 	var step := _t
 	_t = 0.0
 	_move(step)
+	_close_in(step)
 	_contacts()
 	_trucks(step)
 	_control(step)
@@ -606,6 +665,29 @@ func _sync_members() -> void:
 			m.y = at.y
 			m.clear()
 			m.tasks.append(Agent.Task.new(label, q.pos()))
+
+
+## Squads in a fight close on each other until each is at the distance its weapons like (a rifle
+## squad stops well out, a pistol squad keeps coming): fire and move, CLOSE_MS metres a second. A
+## vehicle stays where it is.
+func _close_in(dt: float) -> void:
+	if not ENGAGEMENT:
+		return
+	for f in fights:
+		if f.over:
+			continue
+		for pair in [[f.a, f.b], [f.b, f.a]]:
+			var q: Squad = pair[0]
+			var other: Squad = pair[1]
+			if q.kind != "foot" or q.state != "fighting":
+				continue
+			var gap := q.pos().distance_to(other.pos())
+			var step := minf(CLOSE_MS * dt, gap - want_m(q))
+			if step <= 0.0:
+				continue
+			var p := q.pos().move_toward(other.pos(), step)
+			q.x = p.x
+			q.y = p.y
 
 
 func _arrived(q: Squad) -> void:
@@ -774,7 +856,7 @@ func _losses(shooter: Squad, target: Squad, f: Fight) -> int:
 	if shooter.faction == "police" and f.rounds <= 1 and f.surprise != "police" and shooter.order.get("type", "") != "raid":
 		return 0
 	var mult := 2.5 if f.surprise == shooter.faction else 1.0
-	var exp := K * shooter.men * fire(shooter) * cover(target) * mult * ROUND_S
+	var exp := K * shooter.men * fire_at(shooter, target) * cover(target) * mult * ROUND_S
 	# vehicles: only RPGs and machine guns stop them quickly
 	if target.kind != "foot" and not Arsenal.anti_vehicle(shooter.loadout) and not shooter.loadout.has("mg"):
 		exp *= 0.7
