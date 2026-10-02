@@ -2101,7 +2101,7 @@ func _truck_out(job: Jobs.Job, af: Airfield) -> void:
 	if ground != null:
 		# by road; the roadblock roll gives way to the checkpoints on the ground
 		var st: Dictionary = stash_net.get_stash(job.stash)
-		t.route = ground.graph.route(Vector2(af.x, af.y), Vector2(st.x, st.y))
+		t.route = ground.route("org", Vector2(af.x, af.y), Vector2(st.x, st.y))
 		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / StashNet.TRUCK_MS
 		t.stop_at = -1.0
 	if Agent.ENABLED:

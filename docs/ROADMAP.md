@@ -156,6 +156,25 @@ Second wave, larger features:
       4-column block - with no render errors. A tidier look at a column on a real road is still worth
       a pass once the walker can follow a squad.
       Next: step 5, the pathfinding upgrade.
+    - **(5) first slice, and what it found (a PR):** `RoadGraph.path/route` take a penalty hook
+      (extra metres per edge, never negative so the heuristic stays admissible), and
+      `GroundWar.route(faction, a, b)` uses it: the organisation's and Los Cuervos' squads, and the
+      organisation's trucks (`Session._truck_out`, `Logistics._dispatch`, `checkpoint_on`), pay for
+      climbs steeper than 5% and for roads within 400 m of a police checkpoint (+4 km), and the
+      organisation also for places shot up in the last 15 minutes (+2 km, 300 m); police squads pay
+      only for climbs - they know where their own checkpoints are. `GroundWar.SMART_ROUTES` switches
+      it off. **It changes nothing on today's map, and that is the finding:** the planned city
+      network has 1,187 nodes, 1,202 edges and 16 independent loops - it is a tree, so a checkpoint
+      on the road has no road round it. Measured: 135 random routes with a checkpoint midway, 0 went
+      round; 144 random routes with no checkpoint, 0 differed (the slope term never beat a
+      shortest road either); live_balance 40 3 is identical in all nine configs with it on and off.
+      tests/test_pathfinding.gd (5) proves the hook on a two-road diamond (the long way round, and a
+      lone road is still a road). **So the lever is the map, not the search:** cross-links in
+      `tools/plan_roads.gd` (ring roads, a second bridge, parallel streets) are what give a
+      smuggler a choice, and that changes the baked city, the road fixtures, travel times and the
+      balance - a decision for its own PR. Not done: re-routing a squad or truck already under way
+      when a checkpoint appears on its road (pointless until there is a road to switch to), road
+      class costs (the road data carries no class), off-road legs for foot, junction pile-ups.
 - **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
   see docs/ROADS.md. Still open there: La Selva has no road, and the balance has to be re-run on it.
 - **Map:**

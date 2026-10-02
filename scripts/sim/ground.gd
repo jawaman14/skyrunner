@@ -42,10 +42,17 @@ extends RefCounted
 ## sessions that ask (live play: ground_war: true).
 
 static var ENABLED := true
+static var SMART_ROUTES := true  ## routes steer round known checkpoints and hot spots, and climb less (docs/ROADMAP.md, Pathfinding)
 
 const TICK_S := 1.0
 const ROUND_S := 2.0
 const THINK_S := 30.0
+const AVOID_M := 400.0  ## a road passing this close to a police checkpoint is one to avoid
+const AVOID_COST_M := 4000.0  ## ... and costs this many extra metres to use
+const HOT_AVOID_M := 300.0  ## ... likewise a place where shots were fired in the last 15 minutes
+const HOT_COST_M := 2000.0
+const GRADE_FREE := 0.05  ## a climb steeper than this slows a column ...
+const SLOPE_COST := 8.0  ## ... by this many extra metres per metre for each unit of grade over it
 const FILE_GAP := 6.0  ## metres between men walking in file
 const LINE_GAP := 5.0  ## ... and standing in a firing line
 const RING_R := 4.0  ## ... and standing around their squad's spot
@@ -355,9 +362,37 @@ func disband(q: Squad) -> void:
 	squads.erase(q)
 
 
+## The road from a to b for faction `f`: the shortest one, unless SMART_ROUTES, when it also costs
+## the climbs and, for the organisation and Los Cuervos, the police checkpoints they know of and
+## the places that are hot - a smuggler's route goes round the roadblock if there is a way round.
+func route(f: String, a: Vector2, b: Vector2) -> PackedVector2Array:
+	if not SMART_ROUTES:
+		return graph.route(a, b)
+	return graph.route(a, b, _penalty(f))
+
+
+func _penalty(f: String) -> Callable:
+	var zones := []  ## [centre, radius, cost in metres]
+	if f != "police":
+		for q: Squad in squads:
+			if q.faction == "police" and q.tactic == "checkpoint" and q.state != "gone":
+				zones.append([q.pos(), AVOID_M, AVOID_COST_M])
+		if f == "org":
+			for h in hot_spots:
+				zones.append([Vector2(h[1], h[2]), HOT_AVOID_M, HOT_COST_M])
+	var w := world
+	return func(a: Vector2, b: Vector2, metres: float) -> float:
+		var grade: float = absf(w.ground(b.x, b.y) - w.ground(a.x, a.y)) / maxf(metres, 1.0)
+		var extra: float = metres * SLOPE_COST * maxf(0.0, grade - GRADE_FREE)
+		for z in zones:
+			if RoadGraph.seg_distance(a, b, z[0]) < float(z[1]):
+				extra += float(z[2])
+		return extra
+
+
 ## Send a squad somewhere by road.
 func go(q: Squad, to: Vector2) -> void:
-	q.route = graph.route(q.pos(), to)
+	q.route = route(q.faction, q.pos(), to)
 	q.s = 0.0
 	if q.state not in ["fighting", "routed"]:
 		q.state = "moving"

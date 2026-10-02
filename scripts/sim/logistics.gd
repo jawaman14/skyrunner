@@ -218,7 +218,7 @@ func add_cash(site: String, amount: float) -> void:
 func checkpoint_on(a: Vector2, b: Vector2) -> String:
 	if sess.ground == null:
 		return ""
-	var r: PackedVector2Array = sess.ground.graph.route(a, b)
+	var r: PackedVector2Array = sess.ground.route("org", a, b)
 	for q in sess.ground.of("police"):
 		if q.tactic != "checkpoint" or q.state == "gone":
 			continue
@@ -408,7 +408,7 @@ func _dispatch(c: Dictionary, a: Vector2, b: Vector2) -> void:
 		t.driver = d[0]
 		t.waved = d[1]
 	if sess.ground != null:
-		t.route = sess.ground.graph.route(a, b)
+		t.route = sess.ground.route("org", a, b)
 		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / StashNet.TRUCK_MS
 	elif sn.rng.random() < clampf(risk, 0.0, 0.8) and not t.waved:
 		t.stop_at = sn.rng.uniform(0.2, 0.9)
