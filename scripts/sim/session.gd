@@ -720,19 +720,98 @@ func _cmd_turn_around(role: String, a: Dictionary):
 	return turn_around()
 
 
+## U cycles off -> holding course -> routing to an airfield -> off (no new key: SHIFT+U already
+## means something else when the island's in the game). `{"on": true/false}` (tests, other callers)
+## is the plain hold, not the cycle - always just on or off. `{"on": true, "navigate": true}` asks
+## for the routed leg directly.
 func _cmd_autopilot(role: String, a: Dictionary):
-	var on = a.get("on")
-	on = (not autopilot.engaged) if on == null else Py.truthy(on)
-	if on:
+	if a.has("on"):
+		if not Py.truthy(a.on):
+			autopilot.disengage()
+			say("Autopilot OFF")
+			return null
+		if state == null or state.on_ground:
+			return "Autopilot needs to be airborne."
+		autopilot.min_ias_kts = spec.approach_kts * 1.05
+		if Py.truthy(a.get("navigate", false)):
+			_autopilot_navigate()
+		else:
+			autopilot.engage(state, fm.controls.elevator)
+			say("Autopilot ON: holding %s ft, heading %s" % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
+		return null
+	if not autopilot.engaged:
 		if state == null or state.on_ground:
 			return "Autopilot needs to be airborne."
 		autopilot.engage(state, fm.controls.elevator)
 		autopilot.min_ias_kts = spec.approach_kts * 1.05
-		say("Autopilot ON: holding %s ft, heading %s" % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
+		say("Autopilot ON: holding %s ft, heading %s. U again to route to an airfield." % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
+	elif autopilot.waypoints.is_empty():
+		_autopilot_navigate()
 	else:
 		autopilot.disengage()
 		say("Autopilot OFF")
 	return null
+
+
+## The second U: fly toward a destination instead of just holding course - a straight shot at
+## cruise altitude, squawking, for a legal load; a winding, terrain-low RoutePlanner route with the
+## transponder off for a hot one. (Open: it doesn't route round known radar coverage, only under its
+## clutter floor - see docs/ROADMAP.md.)
+func _autopilot_navigate() -> void:
+	var af := _autopilot_target()
+	if af == null or PyMath.hypot(af.x - state.x, af.y - state.y) < AUTOPILOT_MIN_ROUTE_M:
+		autopilot.engage(state, fm.controls.elevator)
+		say("Autopilot ON: nowhere worth routing to from here - holding %s ft, heading %s" % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
+		return
+	var hot := carrying_hot()
+	var wps: Array
+	if hot:
+		wps = RoutePlanner.plan_route(world, [state.x, state.y], [af.x, af.y])
+		transponder = false
+	else:
+		wps = [[af.x, af.y]]
+	var peak := world.ground(state.x, state.y)
+	var prev: Array = [state.x, state.y]
+	for wp in wps:
+		var steps := maxi(1, int(PyMath.hypot(wp[0] - prev[0], wp[1] - prev[1]) / 500.0))
+		for k in steps + 1:
+			var p := [lerpf(prev[0], wp[0], float(k) / steps), lerpf(prev[1], wp[1], float(k) / steps)]
+			peak = maxf(peak, world.ground(p[0], p[1]))
+		prev = wp
+	var margin := Autopilot.LOW_AGL_M if hot else Autopilot.CRUISE_AGL_M
+	autopilot.engage_route(state, wps, peak + margin, fm.controls.elevator)
+	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name, "low over the ground" if hot else "direct",
+		"transponder off" if hot else "squawking", Py.f((peak + margin) / FT, 0)])
+
+
+const AUTOPILOT_MIN_ROUTE_M := 3000.0  ## closer than this isn't worth engaging the navigate leg for
+
+
+## An active job's own strip (not an airdrop: that's a point in the water, not somewhere to land),
+## nearest first; failing that, the nearest airfield worth the trip - never the one just departed
+## (fresh off the ramp, "the nearest airfield" is almost always the one behind you) or one that's
+## implausibly close for some other reason.
+func _autopilot_target() -> Airfield:
+	var best: Airfield = null
+	var bd := INF
+	for j in active_jobs:
+		if j.is_airdrop():
+			continue
+		var af := World.airfield(j.dest)
+		var d: float = PyMath.hypot(af.x - state.x, af.y - state.y)
+		if d < bd:
+			bd = d
+			best = af
+	if best != null:
+		return best
+	for af in World.AIRFIELDS:
+		if af.code == log.departed_from:
+			continue
+		var d: float = PyMath.hypot(af.x - state.x, af.y - state.y)
+		if d < bd and d > AUTOPILOT_MIN_ROUTE_M:
+			bd = d
+			best = af
+	return best if best != null else world.nearest_airfield(state.x, state.y)[0]
 
 
 func _cmd_kick(role: String, a: Dictionary):
@@ -1578,6 +1657,9 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 		controls = bot_controls
 	elif state != null and autopilot.engaged:
 		controls = autopilot.update(dt, state, controls)
+		if autopilot.arrived:
+			autopilot.arrived = false
+			say("Autopilot: over the field - your controls for the approach.")
 	elif hand_tremor != Vector2.ZERO:
 		# a frightened pilot's hands (Nerves): only on human hands, never the bot or the autopilot
 		controls = controls.copy()
