@@ -16,6 +16,7 @@ extends RefCounted
 static var ENABLED := true
 
 const GATE_EVERY_M := 500.0
+const STREET_MAX_M := 10000.0  ## the street race is a loop of about this long at most
 const CAR_GATE_R := 24.0
 const AIR_GATE_R := 130.0
 const AIR_GATE_DZ := 110.0  ## vertical tolerance
@@ -91,21 +92,19 @@ func course(id: String) -> Course:
 
 func _street(af: Airfield) -> Course:
 	var here := Vector2(af.x, af.y)
-	var pts: Array = [here, sess.ground.hq("org")]
-	var live: Array = sess.stash_net.live() if sess.stash_net != null else []
-	if not live.is_empty():
-		var best = live[0]
-		for st in live:
-			if Vector2(st.x, st.y).distance_to(here) > Vector2(best.x, best.y).distance_to(here) and Vector2(st.x, st.y).distance_to(here) < 6000.0:
-				best = st
-		pts.append(Vector2(best.x, best.y))
-	pts.append(here)
+	# the places worth racing to: the club and the stash houses, nearest first (but not on top of the strip)
+	var near: Array = [sess.ground.hq("org")]
+	for st in (sess.stash_net.live() if sess.stash_net != null else []):
+		near.append(Vector2(st.x, st.y))
+	near = near.filter(func(p): return p.distance_to(here) > 400.0)
+	near.sort_custom(func(a, b): return a.distance_to(here) < b.distance_to(here))
+	var waypoints: Array = near.slice(0, 2)
 	var path := PackedVector2Array()
-	for i in pts.size() - 1:
-		var leg: PackedVector2Array = sess.ground.route("org", pts[i], pts[i + 1])
-		for k in leg.size():
-			if path.is_empty() or path[path.size() - 1].distance_to(leg[k]) > 0.5:
-				path.append(leg[k])
+	while true:
+		path = _loop(here, waypoints)
+		if path.size() < 2 or RoadGraph.length(path) <= STREET_MAX_M or waypoints.size() <= 1:
+			break
+		waypoints.pop_back()  # too long: drop the farther place
 	if path.size() < 2:
 		return null
 	var c := Course.new()
@@ -119,6 +118,20 @@ func _street(af: Airfield) -> Course:
 	c.prize = CAR_PRIZE
 	c.fee = int(CAR_PRIZE * FEE_SHARE)
 	return c
+
+
+## The roads from `here` through each waypoint and back, as one path.
+func _loop(here: Vector2, waypoints: Array) -> PackedVector2Array:
+	var pts: Array = [here]
+	pts.append_array(waypoints)
+	pts.append(here)
+	var path := PackedVector2Array()
+	for i in pts.size() - 1:
+		var leg: PackedVector2Array = sess.ground.route("org", pts[i], pts[i + 1])
+		for k in leg.size():
+			if path.is_empty() or path[path.size() - 1].distance_to(leg[k]) > 0.5:
+				path.append(leg[k])
+	return path
 
 
 ## Points every `step` metres along a path, the first the start and the last the end.

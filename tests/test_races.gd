@@ -56,6 +56,7 @@ func test_the_courses_are_sensible() -> void:
 		var a: Vector3 = car.gates[i - 1]
 		var b: Vector3 = car.gates[i]
 		check(Vector2(a.x, a.y).distance_to(Vector2(b.x, b.y)) <= Races.GATE_EVERY_M + 1.0, "gate %d is within %d m of the last" % [i, int(Races.GATE_EVERY_M)])
+	check(car.length_m < Races.STREET_MAX_M * 1.6, "a dash, not a day trip (%.1f km)" % (car.length_m / 1000.0))
 	check(car.par_s > 60.0 and car.prize == Races.CAR_PRIZE and car.fee == int(Races.CAR_PRIZE * Races.FEE_SHARE), "par %.0f s, the prize and the fee" % car.par_s)
 	var air = s.races.courses_here()[1]
 	check_eq(air.gates.size(), Races.AIR_GATES + 1, "six gates and the finish")
