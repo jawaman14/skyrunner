@@ -15,6 +15,7 @@ var quality: Quality
 var world: World
 var env: Environment
 var sun: DirectionalLight3D
+var street_lights: StreetLights = null  ## real lights at the lamps nearest the camera (night, medium and high)
 var moon: DirectionalLight3D
 var sky_mat: ProceduralSkyMaterial
 var water: Ocean
@@ -39,7 +40,11 @@ func setup(world_: World, q: Quality) -> WorldScene:
 	add_child(water)
 	add_child(Vegetation.build(world, q))
 	add_child(Scenery.build(world, q))  # rocks, bushes and beach palms (Kenney Nature Kit)
-	add_child(CityRender.build(world, q))
+	var city := CityRender.build(world, q)
+	add_child(city)
+	if q.real_lights or q.name == "medium":
+		street_lights = StreetLights.new().setup(city.get_node_or_null("lamps"), 10 if q.real_lights else 5)
+		add_child(street_lights)
 	for af in world.airfields:
 		var n := Models.build_airfield(world, af, q)
 		add_child(n)
@@ -180,6 +185,8 @@ func set_hour(h: float) -> void:
 		water.set_sky(sky_col)
 	Buildings.set_night(night)
 	CityRender.set_night(night)
+	if street_lights != null:
+		street_lights.night = night
 
 
 ## Tonight's weather (Session.weather).

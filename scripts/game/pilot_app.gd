@@ -497,6 +497,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 
 
 var debug_menu: CanvasLayer = null
+var _shaking := false
 var effects: FX = null  ## fire, smoke, explosions, splashes
 var _bale_state := {}
 var screen_filter: ScreenFilter = null
@@ -1098,6 +1099,32 @@ func _process(delta: float) -> void:
 		m.close()
 	elif _frame % 10 == 0:
 		m.refresh()
+	_shake_camera()
+	_car_lights()
+
+
+## A blast nearby shakes whichever camera is looking (Camera3D's own offsets: nothing else moves).
+## The headlights come on in the dark while you drive.
+func _car_lights() -> void:
+	if car != null and scene != null:
+		var on: bool = driving != null and scene.night > 0.35
+		for h in car.headlights:
+			h.visible = on
+
+
+func _shake_camera() -> void:
+	var cam := get_viewport().get_camera_3d()
+	if cam == null or effects == null:
+		return
+	var k := effects.shake_at(cam.global_position)
+	if k > 0.0:
+		cam.h_offset = randf_range(-1.0, 1.0) * k * 0.18
+		cam.v_offset = randf_range(-1.0, 1.0) * k * 0.18
+		_shaking = true
+	elif _shaking:
+		cam.h_offset = 0.0
+		cam.v_offset = 0.0
+		_shaking = false
 
 
 ## Who flies: the host, a remote pilot, or (nobody in the seat) the AI.

@@ -41,6 +41,60 @@ func test_lasting_fires_and_one_shots() -> void:
 	fx.queue_free()
 
 
+func test_fires_are_layered_flicker_and_char_the_ground() -> void:
+	var fx := FX.new()
+	_tree().root.add_child(fx)
+	fx.burn("a", Vector3(0, 0, 0))
+	fx.burn("b", Vector3(40, 0, 0))
+	var n: Node3D = fx.lasting.a
+	check(n.get_node("flames/core") is CPUParticles3D and n.get_node("flames/embers") is CPUParticles3D, "an outer flame with a white-hot core and embers")
+	check(n.get_node("scorch") is MeshInstance3D, "the ground is charred under it")
+	check_eq(fx.flicker.size(), 2, "each fire's light is kept flickering")
+	var l: OmniLight3D = fx.flicker.a[0]
+	var seen := {}
+	for i in 12:
+		fx._process(0.05)
+		seen[snappedf(l.light_energy, 0.01)] = true
+	check(seen.size() > 6, "its energy moves (%d distinct values)" % seen.size())
+	check(l.light_energy > 0.4 * 2.4 and l.light_energy < 2.0 * 2.4, "within reason (%.2f)" % l.light_energy)
+	check(not is_equal_approx(fx.flicker.a[2], fx.flicker.b[2]), "two fires do not flicker in step")
+	fx.sweep()
+	fx.sweep()
+	check(fx.flicker.is_empty(), "a fire put out stops being tracked")
+	check(FX.mat("fire_01", true, 1.7).albedo_color.r > 1.0, "the flames are HDR (they bloom)")
+	fx.queue_free()
+
+
+func test_a_blast_is_a_flash_a_fireball_a_ring_and_a_scar() -> void:
+	var fx := FX.new()
+	_tree().root.add_child(fx)
+	var b := fx.blast(Vector3(0, 1, 0), 4.0)
+	for part in ["flash", "fireball", "roll", "dust", "cap", "shock", "scorch"]:
+		check(b.has_node(part), "the blast has its %s" % part)
+	check((b.get_node("flash") as CPUParticles3D).one_shot, "the flash is a moment")
+	check_eq(fx.blasts.size(), 1, "and it is remembered for the shake")
+	check(fx.shake_at(Vector3(5, 1, 0)) > 0.5, "close by the ground shakes (%.2f)" % fx.shake_at(Vector3(5, 1, 0)))
+	check(fx.shake_at(Vector3(400, 1, 0)) == 0.0, "far away it does not")
+	check(fx.shake_at(Vector3(5, 1, 0)) <= 1.0, "never past 1")
+	fx._t += 3.0
+	fx._process(0.0)
+	check(fx.blasts.is_empty() and fx.shake_at(Vector3(5, 1, 0)) == 0.0, "and the shaking stops")
+	var big := fx.blast(Vector3(300, 1, 0), 8.0)
+	check(fx.shake_at(Vector3(310, 1, 0)) > 0.9, "a bigger blast shakes harder")
+	check(big != null, "")
+	fx.queue_free()
+
+
+func test_a_bullets_hit_throws_sparks_and_dust() -> void:
+	var fx := FX.new()
+	_tree().root.add_child(fx)
+	var n := fx.impact(Vector3(1, 2, 3), Vector3.RIGHT)
+	check_eq(n.position, Vector3(1, 2, 3), "where it hit")
+	check(n.get_child(0) is CPUParticles3D and (n.get_child(0) as CPUParticles3D).direction == Vector3.RIGHT, "sparks off the surface")
+	check(n.get_child_count() >= 3, "dust and a flicker of light too")
+	fx.queue_free()
+
+
 func test_debris_lands_on_the_ground() -> void:
 	check_eq(ProjectSettings.get_setting("physics/3d/physics_engine"), "Jolt Physics", "the physics engine is Jolt")
 	var fx := FX.new()

@@ -406,6 +406,10 @@ static func _lamps(world: World, roads: Array) -> Node3D:
 	if pole == null:  # no kit: the old floating heads at the top of an invisible pole
 		heads = poles.map(func(x): return Transform3D(Basis.IDENTITY, x.origin + Vector3(0, 7.0, 0)))
 	var mmi := _mm_of(sm, heads, "heads", 6000.0)
+	var at := PackedVector3Array()
+	for h in heads:
+		at.append((h as Transform3D).origin)
+	root.set_meta("heads", at)  # where StreetLights puts its real lights
 	_lamp_mat = StandardMaterial3D.new()
 	_lamp_mat.albedo_color = Color(1.0, 0.8, 0.5)
 	_lamp_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
