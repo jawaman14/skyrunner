@@ -21,9 +21,9 @@ func test_the_table_is_the_sweep() -> void:
 		for tac in AirRisk.TACTICS:
 			var r: Array = t[p][tac]
 			check(r[0] > 0.0 and r[0] < 1.0 and r[1] > 0.0 and r[2] > 0.0, "%s/%s smoothed, never 0 or 1" % [p, tac])
-	# 30 flights high against standard police: none busted, 23 delivered
+	# 30 flights high against standard police: none busted, 21 delivered
 	check_near(t.standard.high[0], 1.0 / 32.0, 1e-6, "0 of 30 busts reads as 1 in 32")
-	check_near(t.standard.high[2], 24.0 / 32.0, 1e-6, "23 of 30 delivered")
+	check_near(t.standard.high[2], 22.0 / 32.0, 1e-6, "21 of 30 delivered")
 
 
 func test_the_police_pick_the_posture() -> void:
@@ -50,6 +50,7 @@ func test_the_pilot_flies_the_best_way_in_or_stays_home() -> void:
 	check(o.fly and o.bust < 0.05, "and it's safe enough to fly")
 	s.police.case("runner").suspicion = 80.0
 	o = AirRisk.odds(s)
-	check(not o.fly, "tipped off: every way in is busted more than a quarter of the time")
-	check(o.bust > AirRisk.LIE_LOW)
+	check_eq(o.tactic, "low", "tipped off: low is now the least-bad way in (BALANCE entry 35: the re-fly's lower crash rate flattened high's old edge)")
+	check(o.bust <= AirRisk.LIE_LOW, "right at the line, not clearly over it")
+	check(o.fly, "so it's judged still just worth the risk")
 	s.dispose()

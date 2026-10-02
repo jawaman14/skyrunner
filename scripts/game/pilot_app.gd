@@ -35,7 +35,7 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
 View     C cycle camera (chase / cockpit / tower)    M big map    P pause   F2 time of day
 Seats    F3 hand the aircraft to the AI (take another seat from a station) / take it back
 Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)
-Radio    F7 Radio Costa 88: synth music out of 1985
+Radio    F7 Radio Costa 88: synth music out of 1985     In the car: R radio on / off, , and . (or [ and ]) tune: real 1979-86 broadcasts
 Learn    F10 skip a tutorial step   SHIFT+F10 tutorial on / off (the lobby's Tutorial box, or --tutorial)
 Screen   F9 filter: off / VHS / colour-blindness simulations (protan, deutan, tritan, mono)
 Beta     F12 feedback bundle: a zip of what happened (build, machine, flight, log, screenshot) to send back
@@ -344,6 +344,12 @@ func _unhandled_input(ev: InputEvent) -> void:
 			match k:
 				KEY_E:
 					_exit_car()
+				KEY_R:
+					_radio_key("power")
+				KEY_PERIOD, KEY_BRACKETRIGHT:
+					_radio_key("up")
+				KEY_COMMA, KEY_BRACKETLEFT:
+					_radio_key("down")
 				KEY_ESCAPE:
 					open_pause()
 				KEY_M:
@@ -495,6 +501,7 @@ var screen_filter: ScreenFilter = null
 var controls_menu: ControlsMenu = null
 var pack_menu: PackMenu = null
 var sound: Soundscape = null
+var radio: CarRadio = null  ## the car's radio (made with the car)
 var talk: TalkBalloon = null  ## a conversation on screen (the Family, the General's aide)
 var _offers_seen := {}
 var _was_on_island := false
@@ -856,6 +863,8 @@ func _ensure_car(st: FlightModel.FlightState) -> void:
 		return
 	car = Car.new().setup(s.world, "org")
 	add_child(car)
+	radio = CarRadio.new().setup(self)
+	add_child(radio)
 	var h := deg_to_rad(st.heading)
 	var off: float = s.spec.visual.span_m * 0.5 + 9.0
 	car.place(st.x + cos(h) * off, st.y - sin(h) * off, st.heading + 90.0)
@@ -875,7 +884,9 @@ func _enter_car() -> void:
 	walker.visible = false
 	walker.look_enabled = false
 	car.cam.current = true
-	s.say("Driving: W / S throttle and brake, A / D steer, SPACE handbrake, E to get out.")
+	if radio != null:
+		radio.active = true
+	s.say("Driving: W / S throttle and brake, A / D steer, SPACE handbrake, R radio, , and . tune, E to get out." + (("  " + radio.line()) if radio != null and radio.on else ""))
 
 
 ## Driving through a police checkpoint without slowing is noticed: suspicion on the runner's case, once per checkpoint
@@ -905,6 +916,23 @@ func _field_order(what: String) -> void:
 		s.say(r[1])
 
 
+## R, and the tuning keys, in the car: the radio on / off, the next station up, the next down.
+func _radio_key(what: String) -> void:
+	if radio == null:
+		return
+	if radio.stations.is_empty():
+		s.say(radio.line())
+		return
+	match what:
+		"power":
+			radio.power(not radio.on)
+		"up", "down":
+			if not radio.on:
+				radio.power(true)
+			radio.tune(1 if what == "up" else -1)
+	s.say(radio.line())
+
+
 ## E again: get out on the driver's side, if it has all but stopped.
 func _exit_car() -> void:
 	if driving == null:
@@ -918,6 +946,8 @@ func _exit_car() -> void:
 	walker.look_enabled = true
 	walker.place(out.x, -out.z, driving.heading_deg())
 	walker.cam.current = true
+	if radio != null:
+		radio.active = false
 	driving.driven = false
 	driving.speed = 0.0
 	driving = null

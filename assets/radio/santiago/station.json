@@ -1,0 +1,15 @@
+{
+	"name": "Radio Santiago, Dominican Republic",
+	"band": "SW",
+	"label": "6045",
+	"blurb": "Santiago de los Caballeros on shortwave, February 1984.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Santiago 6045, 13 Feb 1984",
+			"len": 69.62,
+			"ia": "1984-02-13-dominican-republic-r-santiago-6045-2347-2337-utc"
+		}
+	]
+}
