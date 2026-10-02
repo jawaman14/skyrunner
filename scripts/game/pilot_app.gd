@@ -83,7 +83,7 @@ var dust: GPUParticles3D
 var _player_key := ""
 var hud: Hud
 var menus := {}
-var help: Label
+var help: Control
 var briefing: Label
 var glareshield: Control
 var ui: CanvasLayer
@@ -167,7 +167,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	foot_prompt.position += Vector2(0, 70)
 	foot_prompt.visible = false
 	ui.add_child(foot_prompt)
-	help = _overlay(HELP_TEXT, UIStyle.WHITE)
+	help = _help_overlay(HELP_TEXT, UIStyle.WHITE)
 	var ver := UIStyle.label(Beta.label() + "   F12 feedback", 12, UIStyle.DIM)
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	ver.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -189,6 +189,24 @@ func _overlay(text: String, col: Color) -> Label:
 	l.visible = false
 	ui.add_child(l)
 	return l
+
+
+## F1's controls screen: long enough to run off a 720p window, so it scrolls (mouse wheel, or drag the
+## bar) instead of being cropped. Same panel proportions as ControlsMenu (F8), so the two screens match.
+func _help_overlay(text: String, col: Color) -> Control:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UIStyle.panel_box(Color(0, 0, 0, 0.88)))
+	panel.anchor_left = 0.08
+	panel.anchor_right = 0.92
+	panel.anchor_top = 0.05
+	panel.anchor_bottom = 0.95
+	panel.visible = false
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel.add_child(scroll)
+	scroll.add_child(UIStyle.label(text, 16, col, UIStyle.mono()))
+	ui.add_child(panel)
+	return panel
 
 
 ## Cockpit view: a dark glareshield along the bottom and a waterline marker

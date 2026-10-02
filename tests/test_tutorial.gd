@@ -131,3 +131,13 @@ func test_desk_progress_is_saved() -> void:
 	var t := Tutorial.new(s.tutorial.to_dict())
 	check(t.desk_done.get(Roles.LIEUTENANT, {}).has("l_squads"), "round trip")
 	s.dispose()
+
+
+func test_the_papi_tip_fires_when_the_hud_sees_it() -> void:
+	var s := _sess()
+	s.tutorial.tick(s)
+	check_eq(s.tutorial.view().tip, "", "nothing to see yet: no HUD, no note")
+	s.tutorial.note("papi_seen")  # what Hud._papi() calls the moment the four squares light up
+	s.tutorial.tick(s)
+	check(s.tutorial.view().tip.begins_with("Those four squares are the PAPI"), "the tip explains them")
+	s.dispose()

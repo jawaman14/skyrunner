@@ -13,16 +13,17 @@ The balance numbers were measured with JSBSim; the game now flies its own model.
 ## 2. Playtest feedback (first real play session)
 First wave, small and high value. **Done (in PRs):** the Esc pause menu; runways and landing (keyboard
 flight assist, ramped throttle and brake, gentler ground steering, fairer touchdown rules, visible
-runways, the strip audit in docs/STRIPS.md); throttle steps. **Still to do:** F1 scrolling, the compass,
-the tutorial's red squares, crew, autopilot.
+runways, the strip audit in docs/STRIPS.md); roads (docs/ROADS.md); throttle steps; F1 scrolling; the
+compass; the tutorial's red squares. **Still to do:** crew, autopilot.
 - **Esc menu.** Done: resume, save, load, settings (graphics, volume, colours, flight assist, controls),
   quit to lobby or desktop.
 - **Runways.** Done, see docs/STRIPS.md. Open there: mountain strips versus the Cessna 182 and half loads.
 - **Throttle.** Done: Z/X ramp (twice for instant), R/F a finer step.
-- **F1 help** isn't scrollable: put it in a ScrollContainer.
-- **Compass.** Add a HUD heading tape or rose with a wind arrow overlaid.
-- **Tutorial:** explain the four red squares shown in flight (they are the PAPI lights: white over white
-  is high, red over red is low).
+- **F1 help.** Done: a ScrollContainer, mouse-wheel scroll, the same panel proportions as F8.
+- **Compass.** Done: a heading tape under the wanted stars (scripts/ui/widgets/compass.gd), with a wind
+  arrow (points toward where the wind is blowing FROM, a weather-vane needle) when a season has weather.
+- **Tutorial.** Done: the HUD tells Tutorial the moment the PAPI lights are actually on screen
+  (Hud._papi -> note("papi_seen")), and a one-off tip explains them.
 - **Crew:**
   - hired crew die at once;
   - the AI hires on the player's behalf without asking;

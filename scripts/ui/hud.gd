@@ -36,6 +36,7 @@ var center: Label
 var hints: KeyHints
 var papi_label: Label
 var papi_dots: Array = []
+var compass: Compass
 var minimap: Minimap
 
 
@@ -54,6 +55,7 @@ func setup(sess: Session) -> Hud:
 	_build_wanted()
 	_build_status()
 	_build_flight()
+	_build_compass()
 	toasts = ToastFeed.new()
 	_anchor(toasts, Vector4(0, 0.30, 0.42, 0.62), Vector4(14, 0, 0, -6))
 	zones["toasts"] = toasts
@@ -166,6 +168,14 @@ func _bar(col: Color) -> ProgressBar:
 	return b
 
 
+## Below the wanted stars: the heading tape and wind arrow.
+func _build_compass() -> void:
+	compass = Compass.new()
+	_anchor(compass, Vector4(0.36, 0, 0.64, 0), Vector4(0, 114, 0, 172))
+	zones["compass"] = compass
+	add_child(compass)
+
+
 func _build_status() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6)
@@ -246,6 +256,7 @@ func refresh() -> void:
 	var lo: Loadout = s.loadout
 	_flight(st, c, lo)
 	_chip_row(st, c)
+	compass.set_data(st.heading, s.weather)
 	_wanted()
 	_status(st, lo)
 	_crew(lo)
@@ -442,6 +453,8 @@ func _papi(st: FlightModel.FlightState) -> void:
 			dot.visible = false
 		papi_label.text = ""
 		return
+	if s.tutorial != null:
+		s.tutorial.note("papi_seen")  # the tip's only trigger: seeing the lights (Tutorial.TIPS.papi)
 	var lights := UIStyle.papi(st.alt - s.fm.mass.gear_height_ft * 0.3048, PyMath.hypot(aim[0] - st.x, aim[1] - st.y),
 		s.world.airfield_elev(best))
 	for k in 4:

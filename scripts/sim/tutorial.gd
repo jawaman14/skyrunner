@@ -113,6 +113,7 @@ const TIPS := {
 	"raided": "A stash was raided: what was in it is gone, cash too. Heat builds with every truck and delivery - spread the traffic.",
 	"truck": "A truck was stopped. Roads near police strips and checkpoints are the risk; a soldier escort or a good driver helps.",
 	"connection": "The Colombians called: cocaine jobs are on the shady strips' boards now. Much more money per pound - and per year inside.",
+	"papi": "Those four squares are the PAPI: red over red is too low, white over white too high, two and two is right on the glide path.",
 }
 
 var sess
@@ -284,6 +285,8 @@ func tick(s) -> void:
 		complete("family")
 	if _notes.has("talk_general"):
 		complete("island")
+	if _notes.has("papi_seen"):
+		_show("papi")
 	if not enabled:
 		return
 	# the tips
