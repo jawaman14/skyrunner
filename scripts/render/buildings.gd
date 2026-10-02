@@ -96,6 +96,30 @@ class Kit:
 			t.set_normal(n)
 			t.add_vertex(p)
 
+	## A model from Kenney's Furniture Kit standing at `at`
+	## (its feet on y), turned `yaw` degrees about y, at `scale` times the kit's size (the Furniture Kit is dolls'-house
+	## sized: 2.4 makes a desk 1.8 m wide).
+	## It collides as its bounding box unless `collide` is off. A missing file is skipped, not an error.
+	func prop(file: String, at: Vector3, yaw := 0.0, scale := 2.4, collide := true) -> AABB:
+		var path: String = ModelLib.FURNITURE + file
+		var n := ModelLib.wrapped(path, scale, 0.0)
+		if n == null:
+			return AABB(at, Vector3.ZERO)
+		var b := ModelLib.bounds(n)  # (in the pivot's own frame, before it is placed)
+		n.position = at
+		n.rotation.y = deg_to_rad(yaw)
+		root.add_child(n)
+		if collide:
+			var sb := StaticBody3D.new()
+			var cs := CollisionShape3D.new()
+			var bs := BoxShape3D.new()
+			bs.size = b.size
+			cs.shape = bs
+			cs.position = b.get_center()
+			sb.add_child(cs)
+			n.add_child(sb)
+		return Transform3D(Basis(Vector3.UP, deg_to_rad(yaw)), at) * b  # where it stands, in the building's frame
+
 	## Axis-aligned box (centre, size) in the building's frame.
 	func box(c: Vector3, s: Vector3, key: String, collide := true) -> void:
 		var h := s / 2
@@ -429,14 +453,22 @@ static func _villa(k: Kit) -> void:
 	_windows(k, 1.5, w / 2 - 1.5, -d / 2 - 0.16, 1.7, 2)
 	_windows(k, -w / 2 + 1.5, w / 2 - 1.5, -d / 2 - 0.16, 5.1, 4)
 	# inside: the desk and the map table
-	k.box(Vector3(-4.0, 0.45, 2.8), Vector3(2.6, 0.9, 1.2), "wood")
-	k.box(Vector3(-4.0, 0.6, 3.9), Vector3(0.7, 1.2, 0.7), "black")  # chair
+	var desk := k.prop("desk", Vector3(-4.0, 0.0, 2.8), 180.0)
+	k.prop("chairDesk", Vector3(-4.0, 0.0, 3.9), 0.0)
+	k.prop("computerScreen", Vector3(-4.4, desk.end.y, 2.9), 180.0, 2.4, false)
+	k.prop("lampSquareTable", Vector3(-3.2, desk.end.y, 2.9), 0.0, 2.4, false)
+	k.prop("bookcaseClosedWide", Vector3(-4.0, 0.0, d / 2 - 0.5), 180.0)
+	k.prop("pottedPlant", Vector3(-w / 2 + 1.0, 0.0, d / 2 - 1.0), 0.0)
+	k.prop("loungeSofa", Vector3(6.0, 0.0, d / 2 - 1.2), 180.0)
+	k.prop("rugRectangle", Vector3(3.5, 0.02, 1.0), 0.0, 6.0, false)
 	k.interact(Vector3(-4.0, 1.0, 1.6), "hq_org", "The boss's desk: tonight's orders")
 	k.lamp(Vector3(-4.0, 3.0, 1.5))
 	k.lamp(Vector3(3.5, 3.0, 0.0))
-	k.box(Vector3(3.5, 0.5, 1.0), Vector3(3.0, 1.0, 2.0), "wood")
-	k.box(Vector3(3.5, 1.02, 1.0), Vector3(2.8, 0.04, 1.8), "green", false)  # the map on the table
+	var maptable := k.prop("table", Vector3(3.5, 0.0, 1.0), 0.0, 3.6)
+	k.box(Vector3(3.5, maptable.end.y + 0.02, 1.0), Vector3(maptable.size.x * 0.85, 0.04, maptable.size.z * 0.85), "green", false)  # the map on the table
 	k.interact(Vector3(3.5, 1.0, -0.6), "hq_rival", "Map table: what we know about Los Cuervos")
+	k.prop("televisionVintage", Vector3(-w / 2 + 1.2, 0.0, -1.5), 90.0)
+	k.prop("loungeChair", Vector3(-w / 2 + 3.2, 0.0, -1.5), 270.0)
 	# pool and courtyard
 	k.box(Vector3(0, -0.3, -9.5), Vector3(8, 0.6, 4), "concrete_dark", false)
 	k.box(Vector3(0, 0.02, -9.5), Vector3(7.4, 0.02, 3.4), "water", false)
@@ -520,16 +552,26 @@ static func _nightclub(k: Kit) -> void:
 	_windows(k, -w / 2 + 1.5, w / 2 - 1.5, -d / 2 - 0.16, 6.2, 6)
 	# downstairs: the bar and the dance floor
 	k.box(Vector3(-6, 0.55, 5.5), Vector3(8, 1.1, 1.2), "wood")
+	for sx in [-9.0, -7.5, -6.0, -4.5, -3.0]:
+		k.prop("stoolBar", Vector3(sx, 0.0, 4.2), 0.0)
+	k.prop("speaker", Vector3(-w / 2 + 1.0, 0.0, -d / 2 + 1.2), 45.0)
+	k.prop("speaker", Vector3(w / 2 - 1.0, 0.0, -d / 2 + 1.2), 315.0)
+	k.prop("loungeDesignSofa", Vector3(-6.0, 0.0, -6.0), 0.0)
+	k.prop("loungeDesignSofaCorner", Vector3(-8.6, 0.0, -3.2), 90.0)
+	k.prop("tableCoffeeGlass", Vector3(-6.0, 0.0, -4.0), 0.0)
 	k.box(Vector3(3, 0.03, 0), Vector3(9, 0.06, 9), "neon_cyan", false)
 	k.lamp(Vector3(3, 3.4, 0), 1.6, 12.0)
 	# the stairs at the back up to the office (a ramp the walker can climb)
 	for i in 14:
 		k.box(Vector3(w / 2 - 1.6, 0.15 + i * 0.3, -6 + i * 0.5), Vector3(2.4, 0.3, 0.5), "concrete_dark")
-	k.box(Vector3(-3, 4.2 + 0.45, 3.5), Vector3(2.8, 0.9, 1.2), "wood")  # the boss's desk
-	k.box(Vector3(-3, 4.2 + 0.6, 4.7), Vector3(0.7, 1.2, 0.7), "black")
+	var bossdesk := k.prop("desk", Vector3(-3, 4.2, 3.5), 180.0)  # the boss's desk
+	k.prop("chairDesk", Vector3(-3, 4.2, 4.7), 0.0)
+	k.prop("computerScreen", Vector3(-3.4, bossdesk.end.y, 3.6), 180.0, 2.4, false)
+	k.prop("bookcaseClosedWide", Vector3(-3, 4.2, d / 2 - 0.5), 180.0)
+	k.prop("pottedPlant", Vector3(-w / 2 + 1.0, 4.2, d / 2 - 1.0), 0.0)
 	k.interact(Vector3(-3, 5.2, 2.2), "hq_org", "The boss's desk: tonight's orders")
-	k.box(Vector3(4, 4.2 + 0.5, 2.0), Vector3(3.0, 1.0, 2.0), "wood")
-	k.box(Vector3(4, 4.2 + 1.02, 2.0), Vector3(2.8, 0.04, 1.8), "green", false)
+	var clubmap := k.prop("table", Vector3(4, 4.2, 2.0), 0.0, 3.6)
+	k.box(Vector3(4, clubmap.end.y + 0.02, 2.0), Vector3(clubmap.size.x * 0.85, 0.04, clubmap.size.z * 0.85), "green", false)
 	k.interact(Vector3(4, 5.2, 0.4), "hq_rival", "Map table: what we know about Los Cuervos")
 	k.lamp(Vector3(0, 7.6, 2.0))
 	# a doorman's rope and the boss's car at the kerb

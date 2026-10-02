@@ -35,6 +35,7 @@ const BOATS := {"gofast": ["boat-speed-a", 12.0], "cutter": ["boat-tug-a", 30.0]
 const PALMS := ["tree_palmTall", "tree_palmBend", "tree_palm", "tree_palmShort"]
 
 static var _cache := {}
+const FURNITURE := "furniture/"  ## Kenney's Furniture Kit (Buildings.Kit.prop): the desks, sofas and stools in the villa and the club
 
 
 static func scene(path: String) -> PackedScene:
@@ -76,8 +77,8 @@ static func wrapped(path: String, s: float, yaw := PI, centre := true) -> Node3D
 	m.scale = Vector3.ONE * s
 	m.rotation.y = yaw
 	if centre:
-		var b := bounds(m)
-		var c := m.transform * b.get_center()
+		var b := bounds(m)  # (already through m's own scale and turn: in the pivot's frame)
+		var c := b.get_center()
 		m.position = Vector3(-c.x, 0.0, -c.z)
 	return pivot
 
