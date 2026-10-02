@@ -796,3 +796,25 @@ slower."). What a tier is worth:
 
 The phone shows the tier and the score on its title line; a save keeps the score (`StrategicSave`). BALANCE entry
 (the list's "Renown"): a +0.5% to +3% effect on money, with the task force a little warmer, by design small.
+
+## 26. Veteran squads and the orders on the ground (Mount & Blade's troops and battle commands)
+
+**Experience** (`GroundWar.VETERANS`, `Squad.xp`). A fight a squad survives is worth 1, a fight it wins 2 (and
+breaking off from one is 1 for both). A squad that has lost half its men loses half its experience first: the
+good men are the ones who died. Four ranks:
+
+| Rank | Experience | Fire per man | Breaks at morale | Upkeep |
+|---|---|---|---|---|
+| Green | 0 | x1.00 | 0.30 | x1.00 |
+| Blooded | 4 | x1.07 | 0.26 | x1.25 |
+| Veteran | 10 | x1.14 | 0.22 | x1.50 |
+| Elite | 20 | x1.21 | 0.18 | x1.75 |
+
+A rank-up is said on the desk's message line ("S-2 is now veteran."), the desk's squad table shows the rank beside
+the men, and the save keeps the experience. Both sides learn: the rival's and the task force's squads rank up too.
+
+**Field orders.** On foot, with a ground war: **Z** hold, **X** come to me, **C** charge, **V** fall back. The order
+goes to the nearest squad of ours within 250 m (`GroundWar.field_order`; the command `field_order` is the pilot's,
+the boss's and the lieutenant's): *come* walks it to where you stand, *charge* sends it at the nearest rival or
+police squad it can see within 450 m of it (a hidden squad cannot be charged), *fall back* is the melt order (to
+cover, out of sight), *hold* stops it. A squad given an order is under a human's hand and the AI leaves it alone.

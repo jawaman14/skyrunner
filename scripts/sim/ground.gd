@@ -76,6 +76,12 @@ const ORG_RESERVE := 30000  ## the organisation's AI keeps this much before it s
 const ORG_MIN_SQUADS := 1  ## ... and recruits past one squad only when Los Cuervos outnumber it
 const ORG_RECRUIT_S := 1800.0  ## ... a squad at most every 30 minutes, not a new army every time one dies
 const UPKEEP_MIN := 2.0  ## $ per man per minute
+static var VETERANS := true  ## squads learn from the fights they survive (Mount & Blade's troop tiers)
+const RANKS := ["Green", "Blooded", "Veteran", "Elite"]
+const RANK_XP := [0.0, 4.0, 10.0, 20.0]  ## experience for each rank: a surviving fight is 1, a winning one 2
+const VET_FIRE := 0.07  ## more fire per man for each rank
+const VET_NERVE := 0.04  ## a squad breaks at morale 0.3 less this per rank
+const VET_UPKEEP := 0.25  ## and costs this much more per man per rank
 const HOSTILE := {"org": ["police", "rival"], "rival": ["police", "org"], "police": ["org", "rival"]}
 const DOCTRINE := {"org": "guerrilla", "rival": "guerrilla", "police": "narcotics"}
 const MORALE0 := {"org": 0.75, "rival": 0.75, "police": 0.85}
@@ -105,9 +111,27 @@ class Squad:
 	var members: Array = []  ## one Agent per man (Agent.ENABLED): where each of them stands, see GroundWar._sync_members
 	var tag := ""  ## "family": soldiers lent by the Morettis (drawn in their suits)
 	var home := Vector2.ZERO
+	var xp := 0.0  ## what it has learned: fights survived (GroundWar._learn)
 
 	func pos() -> Vector2:
 		return Vector2(x, y)
+
+	## 0 Green ... 3 Elite, from the experience.
+	func rank() -> int:
+		if not GroundWar.VETERANS:
+			return 0
+		var r := 0
+		for i in GroundWar.RANK_XP.size():
+			if xp >= float(GroundWar.RANK_XP[i]):
+				r = i
+		return r
+
+	func rank_name() -> String:
+		return GroundWar.RANKS[rank()]
+
+	## The multiple a veteran's fire gets.
+	func vet() -> float:
+		return 1.0 + GroundWar.VET_FIRE * rank()
 
 	## Where the men are (empty with Agent off): the Agents' positions, rounded for the wire.
 	func men_at() -> Array:
@@ -120,7 +144,7 @@ class Squad:
 	func dict() -> Dictionary:
 		return {"id": id, "faction": faction, "kind": kind, "men": men, "men0": men0, "x": snappedf(x, 0.1),
 			"y": snappedf(y, 0.1), "state": state, "order": order.get("type", ""), "tactic": tactic,
-			"hidden": hidden, "morale": snappedf(morale, 0.01), "loadout": loadout.duplicate(), "ammo": ammo, "tag": tag,
+			"hidden": hidden, "rank": rank(), "xp": snappedf(xp, 0.1), "morale": snappedf(morale, 0.01), "loadout": loadout.duplicate(), "ammo": ammo, "tag": tag,
 			"at": men_at() if members.size() == men else [],
 			"route": Array(route.slice(0, 12)).map(func(p): return [snappedf(p.x, 1.0), snappedf(p.y, 1.0)])}
 
@@ -307,7 +331,7 @@ func fire_at(q: Squad, enemy: Squad) -> float:
 	var p := total / maxf(1.0, float(q.men))
 	if q.ammo <= 0:
 		p *= 0.2
-	return p * (0.4 + 0.6 * q.morale)
+	return p * (0.4 + 0.6 * q.morale) * q.vet()
 
 
 func safe_zone(q: Squad) -> bool:
@@ -319,7 +343,7 @@ func fire(q: Squad) -> float:
 	var p := Arsenal.power(q.loadout, q.men)
 	if q.ammo <= 0:
 		p *= 0.2
-	return p * (0.4 + 0.6 * q.morale)
+	return p * (0.4 + 0.6 * q.morale) * q.vet()
 
 
 ## Lanchester strength: men x fire (square law: numbers count twice).
@@ -470,7 +494,7 @@ func order(q: Squad, o: Dictionary) -> String:
 		"melt":
 			var safe := _nearest_cover(q.pos())
 			go(q, safe)
-		"patrol_zone", "guard", "attack", "raid", "checkpoint", "ambush", "harass", "decoy", "stakeout", "buy_bust", "escort", "tail":
+		"patrol_zone", "guard", "attack", "raid", "checkpoint", "ambush", "harass", "decoy", "stakeout", "buy_bust", "escort", "tail", "move":
 			if target == null:
 				return "Where?"
 			go(q, target)
@@ -485,6 +509,53 @@ func order(q: Squad, o: Dictionary) -> String:
 	q.hidden = t in ["melt", "ambush", "stakeout", "buy_bust"]
 	q.until = sess.time + (600.0 if t in ["melt", "harass"] else 1800.0)
 	return ""
+
+
+const FIELD_RANGE_M := 250.0  ## the squad you can give an order to on foot is the nearest within this
+const CHARGE_RANGE_M := 450.0  ## and what it can be sent at, within this of the squad
+
+## An order from the man on the ground (Mount & Blade's battle commands): the nearest squad of `f` to `at` holds,
+## comes to `at`, charges the nearest enemy it can see, or falls back to cover. Returns [error, what was said].
+func field_order(f: String, at: Vector2, what: String) -> Array:
+	var near: Squad = null
+	for q: Squad in of(f):
+		if q.state == "gone":
+			continue
+		if q.pos().distance_to(at) <= FIELD_RANGE_M and (near == null or q.pos().distance_to(at) < near.pos().distance_to(at)):
+			near = q
+	if near == null:
+		return ["No squad of ours within %d m." % int(FIELD_RANGE_M), ""]
+	var o := {}
+	var text := ""
+	match what:
+		"come":
+			o = {"type": "move", "x": at.x, "y": at.y}
+			text = "%s is coming to you." % near.id
+		"hold":
+			o = {"type": "hold"}
+			text = "%s is holding here." % near.id
+		"fall_back":
+			o = {"type": "melt"}
+			text = "%s is falling back to cover." % near.id
+		"charge":
+			var tgt: Squad = null
+			for e: Squad in squads:
+				if not (e.faction in HOSTILE[f]) or e.state == "gone" or e.hidden:
+					continue
+				var d := e.pos().distance_to(near.pos())
+				if d <= CHARGE_RANGE_M and (tgt == null or d < tgt.pos().distance_to(near.pos())):
+					tgt = e
+			if tgt == null:
+				return ["Nothing in sight to charge.", ""]
+			o = {"type": "attack", "x": tgt.x, "y": tgt.y}
+			text = "%s charges %s!" % [near.id, tgt.id]
+		_:
+			return ["Unknown field order.", ""]
+	var err := order(near, o)
+	if err != "":
+		return [err, ""]
+	near.human = true
+	return ["", text]
 
 
 func _target_xy(o: Dictionary):
@@ -844,7 +915,7 @@ func _rounds(step: float) -> void:
 		if f.over:
 			continue
 		for q in [a, b]:
-			if q.men <= 0 or q.men <= int(0.6 * q.men0) and q.morale < 0.5 or q.morale < 0.3:
+			if q.men <= 0 or q.men <= int(0.6 * q.men0) and q.morale < 0.5 or q.morale < 0.3 - VET_NERVE * q.rank():
 				_rout(q, f)
 				break
 
@@ -891,6 +962,8 @@ func _drop_weapons(q: Squad, lost: int, enemy: Squad) -> void:
 
 
 func _break_off(q: Squad, f: Fight, why: String) -> void:
+	_learn(q, 1.0)
+	_learn(f.b if q == f.a else f.a, 1.0)
 	q.fight = null
 	q.state = "moving"
 	q.hidden = true
@@ -905,6 +978,20 @@ func _break_off(q: Squad, f: Fight, why: String) -> void:
 	_say("both", "%s broke contact (%s)" % [q.id, why])
 
 
+## A fight survived teaches. A squad that has lost half its men has lost its best first: its experience halves.
+func _learn(q: Squad, points: float) -> void:
+	if not VETERANS or q.men <= 0:
+		return
+	var before := q.rank()
+	if q.men * 2 < q.men0:
+		q.xp *= 0.5
+	q.xp += points
+	if q.rank() > before:
+		var side := "runner" if q.faction == "org" else ("law" if q.faction == "police" else "")
+		if side != "":
+			_say(side, "%s is now %s." % [q.id, q.rank_name().to_lower()])
+
+
 func _rout(q: Squad, f: Fight) -> void:
 	var winner: Squad = f.b if q == f.a else f.a
 	f.over = true
@@ -913,6 +1000,9 @@ func _rout(q: Squad, f: Fight) -> void:
 	winner.fight = null
 	winner.state = "holding"
 	winner.morale = minf(1.0, winner.morale + 0.1)
+	_learn(winner, 2.0)
+	if q.men > 0:
+		_learn(q, 1.0)
 	if q.men <= 0:
 		_gone(q)
 	elif winner.faction == "police":
@@ -1216,7 +1306,7 @@ func turf_delta(zone: String) -> float:
 
 func _upkeep(dt: float) -> void:
 	for q in squads:
-		var c: float = q.men * UPKEEP_MIN * dt / 60.0
+		var c: float = q.men * UPKEEP_MIN * (1.0 + VET_UPKEEP * q.rank()) * dt / 60.0
 		if q.faction == "org":
 			_upkeep_acc += c
 		elif q.faction == "police":

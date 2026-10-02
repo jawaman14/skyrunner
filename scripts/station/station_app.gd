@@ -1106,7 +1106,7 @@ func _draw_squads(snap: Dictionary) -> void:
 	var colors := {}
 	for i in mine.size():
 		var d: Dictionary = mine[i]
-		cells.append([d.id, d.kind, "%d/%d" % [int(d.men), int(d.men0)], Arsenal.describe(d.loadout), d.tactic if d.tactic != "" else d.order, d.state])
+		cells.append([d.id, d.kind, "%d/%d" % [int(d.men), int(d.men0)] + ((" " + GroundWar.RANKS[int(d.rank)].to_lower()) if int(d.get("rank", 0)) > 0 else ""), Arsenal.describe(d.loadout), d.tactic if d.tactic != "" else d.order, d.state])
 		if d.state == "fighting":
 			colors[i] = UIStyle.RED
 		elif d.state == "routed":

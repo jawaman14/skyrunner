@@ -39,7 +39,7 @@ static func capture(s: Session) -> Dictionary:
 		var squads := []
 		for q: GroundWar.Squad in s.ground.of("org"):
 			squads.append({"id": q.id, "kind": q.kind, "men": q.men, "men0": q.men0, "loadout": q.loadout.duplicate(), "ammo": q.ammo,
-				"morale": q.morale, "tag": q.tag})
+				"morale": q.morale, "tag": q.tag, "xp": q.xp})
 		d["squads"] = {"list": squads, "serial": s.ground._serial}
 	return d
 
@@ -150,6 +150,7 @@ static func _restore_squads(s: Session, d: Dictionary) -> void:
 		q.ammo = int(sd.get("ammo", 0))
 		q.morale = float(sd.get("morale", GroundWar.MORALE0.org))
 		q.tag = str(sd.get("tag", ""))
+		q.xp = float(sd.get("xp", 0.0))
 		var base: Vector2 = g.hq("org")
 		q.x = base.x
 		q.y = base.y

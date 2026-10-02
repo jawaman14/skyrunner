@@ -215,7 +215,9 @@ Second wave, larger features:
 - **Mount & Blade's ideas, where they fit** (the owner's inspiration, 2026-10-03; each is its own PR behind a switch):
   **renown** is done (in a PR; DESIGN section 25): a score from deliveries, sales, raids foiled and verdicts won, lost at half weight
   to busts and raids, in five tiers that improve the hiring hall's candidates, the bulk buyers' prices and how closely the task
-  force watches. Next: veteran squads and field orders; tribute, prisoners and ransom; stash works and the arena.
+  force watches. **Veteran squads and field orders** are done too (in a PR; DESIGN section 26): squads rank up from the fights they
+  survive (Green, Blooded, Veteran, Elite: more fire, steadier nerve, dearer upkeep), and on foot Z / X / C / V hold, call,
+  charge or fall back the nearest of our squads. Next: tribute, prisoners and ransom; stash works and the arena.
 - **Saves keep the organisation.** Done (in a PR; the old line here said "boats don't carry over to a new
   game or map", which turned out to be the whole of a save: it kept only money, aircraft, gear, upgrades,
   location, the arsenal, campaign, story and tutorial, and every stash house, crew member, squad and case
