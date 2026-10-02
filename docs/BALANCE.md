@@ -79,9 +79,17 @@ Drivers pull over when they see police on the road ahead; a passing patrol pulls
 
 34. **Open mode's start.** *Found:* Open mode starts with every system live from the first minute - the street war, payroll, the court, the island - on Session.START_MONEY ($3,000), and the simulator had never run it that way: every configuration started on $16k. The open configuration now runs the full game with air risk at the real start, and a sweep tries $3k-$40k (section 7). The first guess was wrong twice: the organisation fields a squad from the first minute in every run (up to two at once; entry 32's 0.2 was the count left at the end), so the AI's escorts (GroundWar already escorts every truck it has a squad for) had squads to use, and the payroll never came up short at any start. *Changed:* The start matters less than expected: $3k ends three hours at $43.2k net worth, $40k at $54.5k - more money up front mostly buys a bigger war. At $3k the safe dips just below zero in the worst tenth of runs (money_min p10 -$161); from $10k it doesn't. So open mode gets a $10k float (Session.OPEN_FLOAT: Benny Ruiz fronts it, a new game only; a save keeps its money; the story still starts on $3k and opens the systems one at a time). No escort change.
 
-35. **Roads with a way round.** *Found:* The pathfinding upgrade (routes that pay for climbs and steer round known police checkpoints and places that are hot) changed nothing: the planned city network was a tree (1,187 nodes, 16 independent loops), so a checkpoint on the road had no road round it - 0 of 135 sampled routes could avoid one, and live_balance was identical with the routing on and off. *Changed:* tools/plan_roads.gd plans three ring links (downtown-HAR, downtown-QRY, customs-farms) with RoadPlanner.detour_route, which prices running beside an existing road at 4x so a link finds its own corridor: 107.7 -> 143.6 km, the same single bridge and steepest grade, and 59% of 360 sampled routes with a checkpoint midway can now go round it (mean 34% longer). Only the war configuration can move, because it is the only one whose trucks and squads use the ground graph (the other eight were identical at 40 seeds). Measured at 200 seeds x 3 simulated hours, the same seeds in every variant: organisation money mean 55.0k -> 50.2k (median 47.5k -> 43.9k), the task force's median 6.6k -> 7.0k, stashes burned 0.48 -> 0.58 a run; with the steering round checkpoints switched off (GroundWar.SMART_ROUTES) the median is 44.0k, so the steering itself makes no detectable difference. The first look, at 40 seeds, read +19% (43.3k -> 51.4k): that was noise - the spread is wide (p10 24k, p90 82-101k), which puts a 40-seed median at about +-5k. The 200-seed shift is suggestive, not conclusive (a mean difference of 4.7k against a standard error of about 3k): the ring roads, if anything, cost the smuggler a little. Not retuned.
+35. **The flight model's castering-gear fix, re-flown.** *Found:* The numbers above were calibrated under an early Godot flight model where castering (freely pivoting) gear acted like fixed, steerable gear - fixed in 336a0dc, which changed takeoffs. Re-flying tactical (630 flights) found the fix mostly changed the crash rate: 19% of flights crashed before, 2% now (the 'low' tactic alone: 25% -> 0%) - ground handling no longer throws runs away that the police never touched. Feasibility (240 trials) gained a net 12 passes (134 -> 146 of 240), concentrated at Old Quarry for the Cessna 182 (5 of its 6 combinations there flip to a pass - the mountain-strip question docs/STRIPS.md left open) but cost some margin elsewhere: the twins lost 11 combinations, mostly landings (the DHC-6 at Port Harbor, the plateau, Fox River and the quarry; the Cessna 310 at the plateau and the quarry). Re-flying strategic (--n 100, 4,000 seasons across the matrix) found the equilibrium moved from 50.2% (in target) to 58.4% (outside it) - the crash rate falling from 19% to 2% removed a tax that was keeping the sides even. Ablating 'crews' alone drops the equilibrium to 36%, by far the largest swing and the only one that undershoots 50%: a crewed aircraft (a copilot, a spotter) is worth noticeably more without that tax. The same drop shows up in AirRisk (the live-play simulator's flight odds, tests/test_air_risk.gd): tipped off (suspicion 60+), the least-bad way in used to be busted clearly more than a quarter of the time and the pilot stayed home; now it's busted exactly a quarter of the time, right at the line that decides whether it's worth flying at all. *Changed:* Not tuned yet, only re-measured, and the strategic number carries a caveat: the equilibrium above is 10x fewer seasons per matrix cell than the 40,000-season run it's compared against (docs/ROADMAP.md's own re-fly checklist asks for --n 100, which is what ran), so some of the 8.2-point move could be noise on top of a real one - worth a bigger re-run before anyone retunes on it alone. Two things need a decision either way: whether the twins' new landing failures are a ground-handling regression worth a strip-specific fix (docs/STRIPS.md), and whether to pull the 'crews' lever back toward 50% knowing that's the lever that makes hiring a contract crew worth its wage.
 
-36. **Renown: a name that is worth something.** *Found:* Nothing in the economy paid for having done well: the thousandth delivery bought the same crew, the same prices and the same attention as the first. Renown (scripts/sim/renown.gd, read off the event bus) is a score earned by loads delivered (3), island customs cleared (3), raids foiled (3), a jury that lets the pilot walk (6), sales (1 to 5 by size) and lost at half weight by busts, crashes, raided stashes, seized trucks and men who talk. Five tiers (0 / 40 / 120 / 300 / 650): each tier adds 3 points of skill and 2 of loyalty to every candidate, 1.5% to what bulk buyers pay, and slows the task force's cooling of suspicion by 6%. *Changed:* 200 seeds x 3 hours, renown on against off: trade +0.5% mean (p50 -0.1%), the whole game +0.5% (p50 +0.8%), logistics +0.8% (p50 +0.5%), the street war +3.0% (p50 +5.6%); the control, Family, island, Agency and payroll-only configurations are the same (nothing flies, nothing sells). Suspicion in the whole game rose from 15.8 to 16.6 and the task force's funds from $10.2k to $10.5k: the famous are watched. The effect is small by design: a name should be a reward for being good at the game, not a reason to be. The street war's +5.6% p50 is the one to watch: its median sits on a cliff between turf won and lost, and a few points of price move it. Renown.ENABLED turns it off for the parity tests.
+36. **Roads with a way round.** *Found:* The pathfinding upgrade (routes that pay for climbs and steer round known police checkpoints and places that are hot) changed nothing: the planned city network was a tree (1,187 nodes, 16 independent loops), so a checkpoint on the road had no road round it - 0 of 135 sampled routes could avoid one, and live_balance was identical with the routing on and off. *Changed:* tools/plan_roads.gd plans three ring links (downtown-HAR, downtown-QRY, customs-farms) with RoadPlanner.detour_route, which prices running beside an existing road at 4x so a link finds its own corridor: 107.7 -> 143.6 km, the same single bridge and steepest grade, and 59% of 360 sampled routes with a checkpoint midway can now go round it (mean 34% longer). Only the war configuration can move, because it is the only one whose trucks and squads use the ground graph (the other eight were identical at 40 seeds). Measured at 200 seeds x 3 simulated hours, the same seeds in every variant: organisation money mean 55.0k -> 50.2k (median 47.5k -> 43.9k), the task force's median 6.6k -> 7.0k, stashes burned 0.48 -> 0.58 a run; with the steering round checkpoints switched off (GroundWar.SMART_ROUTES) the median is 44.0k, so the steering itself makes no detectable difference. The first look, at 40 seeds, read +19% (43.3k -> 51.4k): that was noise - the spread is wide (p10 24k, p90 82-101k), which puts a 40-seed median at about +-5k. The 200-seed shift is suggestive, not conclusive (a mean difference of 4.7k against a standard error of about 3k): the ring roads, if anything, cost the smuggler a little. Not retuned.
+
+37. **Fights with geometry.** *Found:* Requested: let who is where decide who dies. Fights began at 250 m between squad centres, squads are 4-8 men spread over under 20 m, and fire was one flat number per man, so nothing inside a squad changed the odds. *Changed:* GroundWar.ENGAGEMENT: each weapon fires at its Arsenal range (pistol 50 m, rifle 300, machine gun 600, RPG 300) x RANGE_SCALE - all of it inside half the range, 15% at the range, none 30% beyond - per man, at his own distance to the nearest enemy man; squads on foot close at 3 m/s to the distance their best weapon likes (long guns stand off, pistols come in); vehicles stay put. The war configuration is the only one that fights on the ground. At the weapons' own ranges (x1) it moved the war: organisation money mean 50.2k -> 53.9k and Los Cuervos lost 5.9 men a run against 8.2 (x2: 54.9k, 6.6). A first-person range is the wrong unit for a fight that starts 250 m apart, so RANGE_SCALE is the calibration knob and ships at 4: money mean 51.9k (median 45.4k) against 50.2k (43.9k) with the flat model, fights 14.4 against 14.05, organisation losses 5.05 against 5.2, police losses 18.0 against 17.5, Los Cuervos 7.55 against 8.2, organisation arrests 17.75 against 17.7, task force median 6.5k against 7.0k (200 seeds x 3 simulated hours, the same seeds in every variant; the noise on a mean is about 2k). Within noise of the flat model on every count, bar Los Cuervos' losses 8% down: the new physics is in, the war's balance is where it was. The AI still judges fights by the flat odds.
+
+38. **Fuel for the hired fleet.** *Found:* The hired pilots, drivers and boats cost nothing to run: a stash truck went anywhere for the price of its driver's day, the contract pilots flew on air, and a go-fast boat burned nothing. Fuel is now a cost with a price (avgas and ground fuel from the economy's fuel multiple): a truck drinks 0.35 gal a km from a 25-gal tank (a refuel stop of 4 min when it will not make the trip), a boat 1.6 gal a km at the job's accept, a hired pilot burns a 40-gal tank at the pump (15 min). The money goes in Session.fuel_spent and the dispatch's note. *Changed:* 200 seeds x 3 hours, fuel on against fuel off (everything else equal): payroll $65.9k against $70.1k mean (-6.0%, p50 -4.9%), trade -3.4% (p50), the whole game -4.3% (p50; mean -2.6%), logistics -3.4% (p50; mean -3.8%), the street war -4.9% (p50; mean -2.8%); the control, the Family, the island and the Agency configurations are untouched (no hired fleet). Trucks lost less cash in the logistics runs ($402 against $474 lost_cash) and less product (64 lb against 80 lb), which the runs do not explain; the difference is inside the seed noise of those two columns. A 3-5% tax on the hired-fleet configurations is what a fuel bill should be, so the prices are as set; Fuel.ENABLED turns it off for the parity tests.
+
+39. **Rounds: one truck, several stashes.** *Found:* A truck went from one stash to one place; collecting from three stashes meant three trucks, three drivers and three chances for a roadblock. Logistics.cash_round and goods_round put ONE truck through several stops (it takes the cash at each as it reaches it, or drops product at each in turn; 75 s at every stop; the planner takes the farthest first, then the nearest), and the AI sends a round when two or more stashes are worth a trip. *Changed:* 200 seeds x 3 hours, rounds on against rounds off, fuel on (the logistics configuration, the only one with stashes to round): net worth in the safe $52.7k against $54.0k mean (-2.4%, p50 -1.4%). Rounds cut what is lost on the road (cash lost $237 against $402, seized $769 against $966) but the cash is later: $15.4k is still out in the stashes at three hours against $13.2k, probably because a round goes only when two stashes are worth the trip and stops 75 s at each. That is a trade, not a loss: fewer trucks on the road for later money. The AI uses rounds by default (Logistics.ROUNDS); the balance tool can turn them off.
+
+40. **Renown: a name that is worth something.** *Found:* Nothing in the economy paid for having done well: the thousandth delivery bought the same crew, the same prices and the same attention as the first. Renown (scripts/sim/renown.gd, read off the event bus) is a score earned by loads delivered (3), island customs cleared (3), raids foiled (3), a jury that lets the pilot walk (6), sales (1 to 5 by size) and lost at half weight by busts, crashes, raided stashes, seized trucks and men who talk. Five tiers (0 / 40 / 120 / 300 / 650): each tier adds 3 points of skill and 2 of loyalty to every candidate, 1.5% to what bulk buyers pay, and slows the task force's cooling of suspicion by 6%. *Changed:* 200 seeds x 3 hours, renown on against off: trade +0.5% mean (p50 -0.1%), the whole game +0.5% (p50 +0.8%), logistics +0.8% (p50 +0.5%), the street war +3.0% (p50 +5.6%); the control, Family, island, Agency and payroll-only configurations are the same (nothing flies, nothing sells). Suspicion in the whole game rose from 15.8 to 16.6 and the task force's funds from $10.2k to $10.5k: the famous are watched. The effect is small by design: a name should be a reward for being good at the game, not a reason to be. The street war's +5.6% p50 is the one to watch: its median sits on a cliff between turf won and lost, and a few points of price move it. Renown.ENABLED turns it off for the parity tests.
 
 37. **Veteran squads: fights teach.** *Found:* A squad that had fought ten times shot exactly as well as one raised that morning, and an order to a squad was a map click at a desk. Squads now carry experience (GroundWar.VETERANS): a fight survived is 1, a fight won 2, and a squad that has lost half its men loses half its experience. Four ranks (Green / Blooded / Veteran / Elite at 0 / 4 / 10 / 20): each rank adds 7% to fire per man, lets the squad hold until its morale is 0.04 lower, and costs 25% more upkeep. On foot the man on the ground can now hold, call to him, charge or fall back the nearest squad of ours (Z / X / C / V; GroundWar.field_order). *Changed:* 200 seeds x 3 hours of the street war configuration, veterans on against off: money $53.3k against $53.4k mean (-0.2%), p50 $47,943 against $47,942, the same wars (14.7 fights, 5.1 of ours lost against 5.3, 18.2 arrests against 18.3). The whole map sees only 14.7 fights in three hours, so few squads reach even the first rank, and whatever the effect is lies below what 200 seeds can resolve. It is a long-game system and three hours is not the long game. Left on.
 
@@ -89,25 +97,25 @@ Drivers pull over when they see police on the road ahead; a passing patrol pulls
 
 ## 1. Can you get in and out? (feasibility)
 
-The pilot bot flew 240 takeoffs and landings: every aircraft × airfield × load (light = 30% fuel; half = 60% fuel + half payload; max = full fuel + payload to MTOW). 134 succeeded. L = landing, T = takeoff.
+The pilot bot flew 240 takeoffs and landings: every aircraft × airfield × load (light = 30% fuel; half = 60% fuel + half payload; max = full fuel + payload to MTOW). 146 succeeded. L = landing, T = takeoff.
 
 | aircraft | load | HAR | VAL | FRM | PNR | EGL | COV | QRY | ISL |
 |---|---|---|---|---|---|---|---|---|---|
-| Cessna 172P Skyhawk | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ |
-| Cessna 172P Skyhawk | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ |
-| Cessna 172P Skyhawk | max | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ | L✗ T✗ | L✓ T✓ |
+| Cessna 172P Skyhawk | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ |
+| Cessna 172P Skyhawk | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ | L✓ T✗ | L✓ T✓ |
+| Cessna 172P Skyhawk | max | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✗ | L✓ T✗ | L✓ T✓ |
 | Piper PA-28 Warrior | light | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
-| Piper PA-28 Warrior | half | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
-| Piper PA-28 Warrior | max | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
-| Cessna 182 Skylane | light | L✓ T✓ | L✓ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
-| Cessna 182 Skylane | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✗ | L✗ T✗ | L✓ T✗ | L✗ T✗ | L✓ T✓ |
-| Cessna 182 Skylane | max | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
-| Cessna 310 (twin) | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✓ |
-| Cessna 310 (twin) | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✗ | L✓ T✗ | L✗ T✗ | L✓ T✓ |
+| Piper PA-28 Warrior | half | L✗ T✓ | L✓ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
+| Piper PA-28 Warrior | max | L✓ T✗ | L✓ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
+| Cessna 182 Skylane | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✓ | L✓ T✓ | L✗ T✓ | L✓ T✓ |
+| Cessna 182 Skylane | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✗ | L✓ T✓ |
+| Cessna 182 Skylane | max | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
+| Cessna 310 (twin) | light | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✗ | L✓ T✓ |
+| Cessna 310 (twin) | half | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✓ T✓ | L✗ T✗ | L✓ T✗ | L✗ T✗ | L✓ T✓ |
 | Cessna 310 (twin) | max | L✓ T✗ | L✓ T✗ | L✓ T✗ | L✓ T✗ | L✗ T✗ | L✗ T✗ | L✗ T✗ | L✓ T✓ |
-| DHC-6 Twin Otter | light | L✗ T✓ | L✗ T✓ | L✓ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ |
-| DHC-6 Twin Otter | half | L✓ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
-| DHC-6 Twin Otter | max | L✓ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
+| DHC-6 Twin Otter | light | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ |
+| DHC-6 Twin Otter | half | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ |
+| DHC-6 Twin Otter | max | L✗ T✓ | L✗ T✓ | L✗ T✓ | L✗ T✗ | L✗ T✓ | L✗ T✗ | L✗ T✗ | L✗ T✓ |
 
 How to read it: the C172 row is the one that matters for fairness, because every career starts in one. It lands everywhere at light and half loads and takes off from everywhere except the quarry at half load. At max weight it can't leave the plateau (EGL) or the quarry. That is the trade-off the game is built on: tight strips mean light loads. The PA28, C182 and Twin Otter rows mostly measure the bot rather than the aircraft. It was tuned on the C172 and C310, and the PA28's JSBSim model needs about -0.6 elevator of trim at approach speed. Treat red cells there as 'the bot can't', not 'a human can't'.
 
@@ -117,32 +125,32 @@ How to read it: the C172 row is the one that matters for fairness, because every
 
 | | n | flagged | intercepted | busted | crashed | delivered | boat seized |
 |---|---|---|---|---|---|---|---|
-| **all** | 630 | 57% | 44% | 37% | 19% | 26% | 5% |
-| tactic: low | 210 | 60% | 50% | 44% | 25% | 12% | 4% |
-| tactic: high | 210 | 52% | 40% | 28% | 0% | 54% | 5% |
-| tactic: evasive | 210 | 58% | 43% | 37% | 31% | 12% | 4% |
-| police: light | 90 | 40% | 27% | 13% | 31% | 54% | 0% |
-| police: standard | 90 | 40% | 27% | 27% | 18% | 34% | 4% |
-| police: heavy | 90 | 40% | 28% | 26% | 20% | 33% | 4% |
-| police: aerostat | 90 | 78% | 58% | 47% | 0% | 34% | 4% |
-| police: patrol | 90 | 43% | 31% | 27% | 29% | 24% | 4% |
-| police: tipped | 90 | 60% | 46% | 36% | 32% | 3% | 9% |
-| police: all_in | 90 | 98% | 96% | 81% | 1% | 0% | 6% |
-| zone: west | 210 | 53% | 46% | 41% | 35% | 24% | 0% |
-| zone: north | 210 | 67% | 58% | 60% | 21% | 19% | 0% |
-| zone: sea | 210 | 51% | 30% | 9% | 0% | 36% | 14% |
+| **all** | 630 | 58% | 47% | 39% | 2% | 23% | 6% |
+| tactic: low | 210 | 60% | 50% | 44% | 0% | 10% | 6% |
+| tactic: high | 210 | 55% | 40% | 29% | 2% | 49% | 5% |
+| tactic: evasive | 210 | 60% | 50% | 45% | 3% | 10% | 6% |
+| police: light | 90 | 43% | 26% | 22% | 2% | 53% | 0% |
+| police: standard | 90 | 43% | 26% | 26% | 2% | 30% | 7% |
+| police: heavy | 90 | 43% | 33% | 29% | 2% | 28% | 7% |
+| police: aerostat | 90 | 77% | 58% | 47% | 1% | 30% | 7% |
+| police: patrol | 90 | 42% | 36% | 33% | 3% | 19% | 7% |
+| police: tipped | 90 | 61% | 51% | 39% | 3% | 2% | 9% |
+| police: all_in | 90 | 98% | 97% | 80% | 0% | 0% | 6% |
+| zone: west | 210 | 44% | 37% | 35% | 1% | 23% | 0% |
+| zone: north | 210 | 76% | 70% | 75% | 5% | 16% | 0% |
+| zone: sea | 210 | 54% | 33% | 8% | 0% | 30% | 18% |
 
 Tactic × posture (delivered):
 
 | tactic | light | standard | heavy | aerostat | patrol | tipped | all_in |
 |---|---|---|---|---|---|---|---|
-| low | 33% | 13% | 13% | 13% | 13% | 0% | 0% |
-| high | 97% | 77% | 73% | 77% | 47% | 10% | 0% |
-| evasive | 33% | 13% | 13% | 13% | 13% | 0% | 0% |
+| low | 33% | 10% | 10% | 10% | 10% | 0% | 0% |
+| high | 93% | 70% | 63% | 70% | 37% | 7% | 0% |
+| evasive | 33% | 10% | 10% | 10% | 10% | 0% | 0% |
 
-Calibration fed to the season simulator: `Calibration(detect={'west': 0.333, 'north': 0.533, 'sea': 0.333}, aerostat_detect={'west': 0.333, 'north': 0.133, 'sea': 0.667}, intercept_per_unit={'heli': 0.7, 'interceptor': 1.0}, intercept_k=1.383, bust_given_intercept=0.786, crash={'west': 0.06, 'north': 0.06, 'sea': 0.01}, cutter_seize=0.35, boat_catch_if_spotted=0.5)`
+Calibration fed to the season simulator: `Calibration(detect={'west': 0.233, 'north': 0.667, 'sea': 0.4}, aerostat_detect={'west': 0.467, 'north': 0.0, 'sea': 0.533}, intercept_per_unit={'heli': 0.7, 'interceptor': 1.0}, intercept_k=1.121, bust_given_intercept=0.809, crash={'west': 0.033, 'north': 0.033, 'sea': 0.01}, cutter_seize=0.35, boat_catch_if_spotted=0.5)`
 
-Returns on extra units: heavy (2 helicopters + 2 interceptors) vs standard (1 + 1) intercept hazard, flown 1.08x, season model 1.49x. The season model prices extra units with ln(1 + units); the closer the two, the better it prices the chief's helicopters (entry 14: spares patrol before the run).
+Returns on extra units: heavy (2 helicopters + 2 interceptors) vs standard (1 + 1) intercept hazard, flown 1.65x, season model 1.49x. The season model prices extra units with ln(1 + units); the closer the two, the better it prices the chief's helicopters (entry 14: spares patrol before the run).
 
 ## 3. Whole seasons, HQ vs HQ (strategic)
 
@@ -222,34 +230,34 @@ Win conditions (target: each at least 8% of seasons):
 
 A third, AI-run outfit fights the organisation for the island's markets. Each night it flies its own loads in the zone it likes best (weighted by its turf and the pay, dodging a patrol it hears about). Its flights split the task force's attention; its busts are good press for the police. Where it owns the market the organisation's loads pay up to 40% less, and meeting it on the same route without a truce risks a hijack. The boss can hit it, buy a truce or sell its route to the police; the chief can send a gang unit after it.
 
-- Seasons with at least one hijack: 46%; hijacks per season: 0.63
-- Cartel planes busted per season: 2.89; cartel strength at the end: 43/100
+- Seasons with at least one hijack: 49%; hijacks per season: 0.68
+- Cartel planes busted per season: 2.76; cartel strength at the end: 45/100
 
 ## 5. The realism layer
 
 Weather and moon, pattern-of-life analysis, the canary trap and the rivals' tempers (entries 15-18 above), measured over the same seasons:
 
-- Storm nights per season: 1.55; seasons where a canary caught a leak: 3%
-- Truce betrayals per season, by temper: tit_for_tat 0.006, opportunist 0.072, grudger 0.000
+- Storm nights per season: 1.49; seasons where a canary caught a leak: 3%
+- Truce betrayals per season, by temper: tit_for_tat 0.005, opportunist 0.077, grudger 0.000
 
 Betrayals by nights left in the season (backward induction: the end is when truces break):
 
 | nights left | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| betrayals | 187 | 220 | 252 | 69 | 84 | 91 | 72 | 38 | 22 | 20 |
+| betrayals | 12 | 16 | 25 | 4 | 4 | 13 | 17 | 3 | 0 | 0 |
 
 Route mixing against the analysts (entropy in bits; 1.585 = uniform over three routes):
 
 | organisation bot | route entropy | main run detected |
 |---|---|---|
-| greedy | 0.00 | 77% |
-| cautious | 1.50 | 65% |
-| corrupt | 1.32 | 68% |
-| shadow | 1.50 | 66% |
+| greedy | 0.00 | 80% |
+| cautious | 1.50 | 66% |
+| corrupt | 1.32 | 67% |
+| shadow | 1.51 | 66% |
 | launderer | 1.50 | 69% |
-| adaptive | 1.48 | 67% |
-| smart | 1.38 | 67% |
-| random | 1.38 | 62% |
+| adaptive | 1.46 | 68% |
+| smart | 1.39 | 68% |
+| random | 1.38 | 64% |
 
 ## 6. What a co-pilot is worth
 
@@ -263,28 +271,28 @@ The sea mission (airdrop to the go-fast, standard police) flown three ways: solo
 
 Ramp loading at a bush strip (no ground crew): 16.0 s solo, 10.5 s with a co-pilot.
 
-Ablations: equilibrium win rate with one mechanic switched off (baseline 50.2%). Big swings mean the mechanic matters. Near zero means it's optional flavour.
+Ablations: equilibrium win rate with one mechanic switched off (baseline 58.4%). Big swings mean the mechanic matters. Near zero means it's optional flavour.
 
 | without | organisation win | change |
 |---|---|---|
-| recruit | 67.3% | +17.1 |
-| audit | 66.8% | +16.6 |
-| rule:weather | 37.4% | -12.8 |
-| wiretap | 59.9% | +9.7 |
-| crews | 42.2% | -8.0 |
-| lawyer | 42.4% | -7.8 |
-| tip_off | 44.8% | -5.4 |
-| opsec | 46.8% | -3.4 |
-| rule:pattern | 53.6% | +3.4 |
-| cartel | 53.2% | +3.0 |
-| comeback | 48.0% | -2.2 |
-| decoys | 48.2% | -2.0 |
-| truce | 48.3% | -1.9 |
-| hit_rival | 48.6% | -1.6 |
-| gang_unit | 48.6% | -1.6 |
-| rule:canary | 48.7% | -1.5 |
-| bribe | 49.0% | -1.2 |
-| rule:rival_tempers | 49.7% | -0.5 |
+| crews | 36.0% | -22.4 |
+| rule:weather | 46.0% | -12.4 |
+| lawyer | 46.0% | -12.4 |
+| audit | 68.5% | +10.1 |
+| recruit | 67.5% | +9.1 |
+| tip_off | 52.7% | -5.7 |
+| truce | 53.5% | -4.9 |
+| opsec | 53.5% | -4.9 |
+| rule:canary | 54.0% | -4.4 |
+| wiretap | 62.5% | +4.1 |
+| comeback | 54.8% | -3.6 |
+| hit_rival | 55.4% | -3.1 |
+| gang_unit | 55.4% | -3.1 |
+| cartel | 56.0% | -2.4 |
+| bribe | 56.0% | -2.4 |
+| rule:pattern | 57.8% | -0.6 |
+| decoys | 58.0% | -0.4 |
+| rule:rival_tempers | 58.4% | -0.0 |
 
 ## 7. The live-play systems: the Family, the island, the Company
 
@@ -332,7 +340,7 @@ Open mode's start (the full game with air risk, 20 seeds x 3 hours at each start
 | $25,000 | 0% | $0 | 100% | 2.0 | $11,762 | $49,714 |
 | $40,000 | 0% | $0 | 100% | 2.2 | $16,276 | $54,514 |
 
-The story (40 seeds x 12 hours, the same stand-ins, chapters opening the systems): reached ch2 1980 (100% at 66 min), ch3 1981 (100% at 172 min), ch4 1982 (100% at 240 min), ch5 1983 (92% at 315 min), ch6 1984 (90% at 390 min), ch7 1985 (88% at 435 min), ch8 1986 (80% at 510 min), the end (62% at 495 min). Money p50 $17,290 at the end, net worth (cash, product and street money) p50 $52,364; with air risk: 1.9 busts, 1.8 crashes, $7,085 in fines and $4,562 in repairs a run; $19,687 a run spent on the island's product.
+The story (40 seeds x 12 hours, the same stand-ins, chapters opening the systems): reached ch2 1980 (100% at 66 min), ch3 1981 (100% at 172 min), ch4 1982 (100% at 240 min), ch5 1983 (88% at 336 min), ch6 1984 (88% at 420 min), ch7 1985 (85% at 435 min), ch8 1986 (72% at 531 min), the end (60% at 551 min). Money p50 $18,325 at the end, net worth (cash, product and street money) p50 $53,591; with air risk: 1.8 busts, 1.9 crashes, $7,588 in fines and $4,625 in repairs a run; $17,847 a run spent on the island's product.
 
 The street (all systems on): cocaine in town swung between x0.63 and x1.62 of its usual price in a run (means); guns averaged x1.37; the worst broken network reached 30%; the Company flew 23.9 lots of cocaine north and bought 25.1 lots of guns.
 Without the Company and the rest (control): cocaine x0.60-x1.37, guns x1.11.

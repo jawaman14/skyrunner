@@ -53,14 +53,12 @@ Read these with this file:
   - The log shows duplicate `VK_LAYER_AMD_switchable_graphics` layers and a missing Rockstar Social
     Club Vulkan layer. These are implicit layers registered by other software.
   - It runs fine with `--rendering-driver opengl3`.
-  - Suspects, most likely first:
-    1. a broken implicit layer. Test with `VK_LOADER_LAYERS_DISABLE=~implicit~` (Vulkan loader
-       ≥ 1.3.234), or remove the stale Social Club layer from
-       `HKLM\SOFTWARE\Khronos\Vulkan\ImplicitLayers`;
-    2. the driver version;
-    3. a Godot 4.7.2 Vulkan bug. Try the plain editor build, `--gpu-validation` and `--verbose`.
-  - Once this is confirmed, INSTALL.md troubleshooting should mention it, and possibly an automatic
-    fallback (`rendering/rendering_device/fallback_to_opengl3`).
+  - **Diagnosed (2026-09-29): not a game bug.** A leftover Vulkan Configurator override
+    (`VK_LAYER_LUNARG_override` in `HKCU\SOFTWARE\Khronos\Vulkan\ImplicitLayers`) forces
+    `VK_LAYER_KHRONOS_validation` into every Vulkan app. With `VK_LOADER_LAYERS_DISABLE=VK_LAYER_LUNARG_override`
+    the build runs under Vulkan (Forward+). INSTALL.md troubleshooting now covers it.
+  - Still open: an automatic fallback (`rendering/rendering_device/fallback_to_opengl3`) only helps
+    when Vulkan fails to initialise, not for this mid-run crash, so it isn't worth adding for this.
 - **DHC-6 flaps:** the aircraft balloons when its flaps are lowered at speed. The aero data is at
   fault (it did the same under JSBSim). Documented in BETA.md.
 - **Hands off at high power,** some aircraft roll slowly left from propeller torque. That's

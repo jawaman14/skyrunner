@@ -1,0 +1,15 @@
+{
+	"name": "Disco 96 (WMJX) Miami",
+	"band": "FM",
+	"label": "96",
+	"blurb": "Miami disco, a late evening in January 1979.",
+	"gap_s": 0,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Late evening, 21 Jan 1979",
+			"len": 360.0,
+			"ia": "wmjx-disco-96-1-21-79-late-evening-unscoped"
+		}
+	]
+}

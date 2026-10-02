@@ -1,0 +1,15 @@
+{
+	"name": "Radio Cuba Libre (exile)",
+	"band": "SW",
+	"label": "6990",
+	"blurb": "A clandestine station aimed at Cuba, June 1981.",
+	"gap_s": 30,
+	"clips": [
+		{
+			"file": "01.ogg",
+			"title": "Radio Cuba Libre 6990, 22 Jun 1981",
+			"len": 75.7,
+			"ia": "1981-06-22-clandestine-r-cuba-libre-6990-0330-utc-s-off"
+		}
+	]
+}

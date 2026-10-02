@@ -339,6 +339,37 @@ func test_the_field_order_keys_command_the_nearest_squad() -> void:
 	sess.dispose()
 
 
+## The car's radio: it comes with the car, plays only while you are in it, and R and the tuning keys work it.
+func test_the_car_has_a_radio_that_plays_only_while_driving() -> void:
+	var app := _app({"seed": 9, "location": "COV", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var sess := app.s
+	app._toggle_on_foot()
+	await _frames(20)
+	var radio: CarRadio = app.radio
+	check(radio != null and not radio.stations.is_empty(), "the car has a radio with stations")
+	if radio == null:
+		app.free()
+		return
+	radio.state_path = "user://zz_test_walker_radio.cfg"
+	check(not radio.active, "silent out of the car")
+	app.walker.place(app.car.global_position.x + 3.0, -app.car.global_position.z, 0.0)
+	app._enter_car()
+	check(radio.active, "live in the car")
+	app._radio_key("power")
+	check(radio.on, "R turns it on")
+	var at := radio.idx
+	app._radio_key("up")
+	check(radio.idx == (at + 1) % radio.stations.size(), "and . tunes up")
+	app._radio_key("down")
+	check_eq(radio.idx, at, "and , tunes back")
+	app.car.speed = 0.0
+	app._exit_car()
+	check(not radio.active, "silent again once you are out")
+	DirAccess.remove_absolute(radio.state_path)
+	app.free()
+	sess.dispose()
+
+
 func test_walks_up_a_step() -> void:
 	var app := _app({"seed": 1, "location": "HAR"})
 	app._toggle_on_foot()
