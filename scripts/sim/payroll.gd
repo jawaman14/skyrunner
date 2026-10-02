@@ -490,6 +490,10 @@ func _pilot_runs() -> void:
 			if sess.time < float(_run_t.get(p.id, 0.0)):
 				continue
 			_run_t[p.id] = sess.time + 1200.0
+			var delay := []
+			if not Fuel.pilot_ready(sess, o, p, delay):
+				_run_t[p.id] = sess.time + float(delay[0])  # off to the pump first (paid), the run waits
+				continue
 			var heat := float(sess.police.case("runner").suspicion) / 100.0 if o == "org" else 0.2
 			var ok := 0.55 + 0.35 * float(p.skill) - 0.25 * heat
 			if rng.random() < ok:
