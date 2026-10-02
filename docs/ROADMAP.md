@@ -21,10 +21,10 @@ The balance numbers were measured with JSBSim; the game now flies its own model.
    rather than guessing what it should be.
 
 ## 2. Playtest feedback (first real play session)
-First wave, small and high value. **Done (in PRs):** the Esc pause menu; runways and landing (keyboard
-flight assist, ramped throttle and brake, gentler ground steering, fairer touchdown rules, visible
-runways, the strip audit in docs/STRIPS.md); roads (docs/ROADS.md); throttle steps; F1 scrolling; the
-compass; the tutorial's red squares; crew. **Still to do:** autopilot.
+First wave, small and high value - **all done, in PRs:** the Esc pause menu; runways and landing
+(keyboard flight assist, ramped throttle and brake, gentler ground steering, fairer touchdown rules,
+visible runways, the strip audit in docs/STRIPS.md); roads (docs/ROADS.md); throttle steps; F1
+scrolling; the compass; the tutorial's red squares; crew; autopilot. Second wave (below) is next.
 - **Esc menu.** Done: resume, save, load, settings (graphics, volume, colours, flight assist, controls),
   quit to lobby or desktop.
 - **Runways.** Done, see docs/STRIPS.md. Open there: mountain strips versus the Cessna 182 and half loads.
@@ -48,11 +48,32 @@ compass; the tutorial's red squares; crew. **Still to do:** autopilot.
   - "isn't clear where they are / what they do": the hiring hall (SHIFT+W) has a new "Who's working for
     me?" choice listing everyone - role, and what they're doing (Payroll.doing(): watching a named
     stash, with a squad, driving a truck, ...) - not just the headcount it showed before.
-- **Autopilot:**
-  - it circles;
-  - it should route itself to airfields (RoutePlanner);
-  - it should fly differently with illegal cargo (low, transponder off, around radar) than with legal
-    cargo (direct, at cruise altitude).
+- **Autopilot.** Done. U still just holds heading and altitude; a second U (no new key: SHIFT+U
+  already means something else when the island's in the game) routes to a destination - the active
+  job's strip if there is one landable, else the nearest airfield other than the one just departed;
+  a third U turns it off. Legal cargo is a straight shot at a proper cruise altitude; a hot load is
+  a winding RoutePlanner valley route low over the ground. The altitude is one number for the whole
+  leg (the route's highest terrain plus a margin), not continuous terrain-following, which would
+  react late to what's coming up.
+  - **"It circled":** confirmed, and it was a real bug, not just a missing feature - aiming the bank
+    straight at the destination and re-aiming every frame (pure pursuit) is only stable far from a
+    bank-limited turn's own turn radius; from a bad initial angle it can settle into a permanent
+    orbit around the point instead of ever reaching it. Fixed by flying a fixed course line for each
+    leg with a cross-track correction (Autopilot._along_across, the same technique PilotBot already
+    uses for a landing centreline) instead of re-aiming at a moving reference frame.
+  - **"You automatically have the squawker on, and decide whether to turn it off depending on
+    heat":** right, and the sim already agrees - PoliceSystem._classify gives a clean squawk zero
+    suspicion gain unless it's already been tipped, so squawking is the *safer* default even with a
+    hot load, not an automatic tell. Session._autopilot_navigate only goes dark on a hot leg once
+    there's heat to hide from: wanted, tipped, or suspicion at or above 50
+    (AUTOPILOT_HOT_DARK_SUSPICION) - and only below the clutter floor does dark actually make the
+    track vanish; above it, a squawk that cuts out is itself the tell (HELP_TEXT already said this).
+  - Open: it doesn't route round known radar coverage, only under its clutter floor (same idea, more
+    work: RoutePlanner has no notion of an avoid-zone yet, only terrain cost).
+  - tests/test_autopilot.gd (13): the U cycle, legal altitude/route shape, hot altitude/route shape
+    while still squawking with no heat on you, going dark once wanted/tipped/suspicious, no circling
+    from a bad angle, hands back control on arrival, target selection (job over nearest, never the
+    field just left), and the too-close-to-bother fallback.
 
 Second wave, larger features:
 - **A phone on foot** to reach the crew and desk menus.
