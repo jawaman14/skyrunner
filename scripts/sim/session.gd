@@ -2680,7 +2680,7 @@ func save() -> void:
 		"money": money,
 		"owned": o,
 		"aircraft": aircraft_key,
-		"location": location if parked else (log.departed_from if log.departed_from else START_FIELD),
+		"location": save_location(),
 		"gear": g,
 		"upgrades": Py.sorted_by(upgrades["runner"].keys(), func(k): return k),
 		"map_seed": map_seed,
@@ -2696,6 +2696,11 @@ func save() -> void:
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "  "))
+
+
+## Where a load puts you: here if parked, else the field you took off from.
+func save_location() -> String:
+	return location if parked else (log.departed_from if log.departed_from else START_FIELD)
 
 
 static func read_save(path: String) -> Dictionary:

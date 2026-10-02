@@ -19,7 +19,7 @@ extends Node
 ##
 ## With no arguments the lobby opens, which sets the same options with menus.
 
-const SAVE_DIR := "user://"
+var save_dir := "user://"  ## the tests point it elsewhere so they never touch a player's saves
 
 var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1,
 	"players": 0, "layer": 0, "graphics": "high", "watch": false, "shot": "", "frames": 90, "hour": -1.0,
@@ -27,7 +27,10 @@ var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bin
 
 
 func _ready() -> void:
-	UIStyle.set_palette(ControlsConfig.settings().palette)  # neon, or colour-safe (F8 in the 3D seat)
+	var look := ControlsConfig.settings()
+	UIStyle.set_palette(look.palette)  # neon, or colour-safe (F8 in the 3D seat, or the pause menu)
+	PauseMenu.apply_volume(float(look.volume))
+	args["graphics"] = str(look.graphics)  # the pause menu's choice; --graphics still wins
 	var a := OS.get_cmdline_user_args()
 	var i := 0
 	while i < a.size():
@@ -46,14 +49,36 @@ func _ready() -> void:
 	if not a.is_empty():
 		args["lobby"] = false
 	if args["lobby"]:
-		var lobby := Lobby.new()
-		add_child(lobby)
-		lobby.start.connect(func(opts):
-			lobby.queue_free()
-			args.merge(opts, true)
-			start())
+		show_lobby()
 		return
 	start()
+
+
+func show_lobby() -> void:
+	var lobby := Lobby.new()
+	add_child(lobby)
+	lobby.start.connect(func(opts):
+		lobby.queue_free()
+		args.merge(opts, true)
+		start())
+
+
+## The pause menu's exits: tear the game down, then reload its save, open the lobby, or quit.
+func _leave(to: String) -> void:
+	if to == "desktop":
+		get_tree().quit()
+		return
+	for c in get_children():
+		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient:
+			remove_child(c)
+			c.queue_free()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	args["new"] = false  # a reload is the save as it is now, never a fresh game
+	if to == "load":
+		args["graphics"] = str(ControlsConfig.settings().graphics)
+		start()
+	else:
+		show_lobby()
 
 
 func start() -> void:
@@ -79,7 +104,7 @@ func start() -> void:
 		return
 	var mode: String = args["mode"]
 	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and features == null
-	var save := SAVE_DIR + ("campaign.json" if mode == Roles.CAMPAIGN else ("story.json" if story else "save.json"))
+	var save := save_dir + ("campaign.json" if mode == Roles.CAMPAIGN else ("story.json" if story else "save.json"))
 	if args["new"] and FileAccess.file_exists(save):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(save))
 	var opts := {"seed": args["seed"], "mode": mode, "ai_law_upgrades": true, "ground_war": true, "chronicle": true, "agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "fog": true}  # the AI chief shops as forfeiture comes in
@@ -132,6 +157,7 @@ func start() -> void:
 	var app := PilotApp.new()
 	add_child(app)
 	app.setup(sess, args["graphics"], bot, server)
+	app.leave.connect(_leave)
 	if args["hour"] >= 0:
 		app.scene.set_hour(args["hour"])
 	if args["shot"] != "":

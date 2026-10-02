@@ -45,7 +45,23 @@ First wave, small and high value:
 
 Second wave, larger features:
 - **A phone on foot** to reach the crew and desk menus.
-- **Workers as physical NPCs** who walk, load, refuel and repair, and can be given specific tasks.
+- **Physical NPCs (the design rule, from playtest).** Every worker, driver, soldier and dealer has to
+  be *somewhere*: a body on the map that walks or drives there, not a row in a table. The sim stays
+  the authority (deterministic, seeded, headless), but position and travel time become real inputs:
+  - **Agents.** A worker gets a position, a route and a task (walk, load, refuel, repair, drive, guard,
+    fight). Trucks, boats and squads are agents' vehicles and groups: a squad is its men, a convoy is
+    its driver and escort. Payroll, Logistics, GroundWar and StashNet keep their books, but a job is
+    done when the agent arrives and does it, not when a timer runs out.
+  - **Turf war.** Squads and firefights are made of those bodies, present at the place, with contact,
+    cover and losses coming from who is physically there. The engine still resolves outcomes (odds,
+    morale, arrests, the Family's and the court's reactions); the 3D world shows the same people.
+  - **Pathfinding.** Better than one A* on the road graph: cost by road class and slope, no impossible
+    roads, off-road for foot, ramps and bridges, avoiding known checkpoints, ambushes and hot spots,
+    re-routing when blocked, no pile-ups at junctions.
+  - **Order of work:** (1) an `Agent` and a task queue in the sim behind a static switch; (2) drivers
+    and hauled cargo in Logistics; (3) squads built of agents; (4) the 3D side shows every agent;
+    (5) the pathfinding upgrade; each step keeps the parity tests green and gets its own PR and BALANCE
+    entry (agents change travel times, so the balance moves).
 - **Map:**
   - some roads are too steep or in the wrong place;
   - bridges over streams;

@@ -6,6 +6,7 @@ extends Control
 signal answered(yes: bool)
 
 var msg: Label
+var yes_btn: Button
 
 
 func setup(text: String, yes_text := "Leave", no_text := "Stay") -> ConfirmBox:
@@ -37,10 +38,10 @@ func setup(text: String, yes_text := "Leave", no_text := "Stay") -> ConfirmBox:
 	no.text = "%s  (ESC)" % no_text
 	no.pressed.connect(func(): key("esc"))
 	row.add_child(no)
-	var yes := Button.new()
-	yes.text = "%s  (ENTER)" % yes_text
-	yes.pressed.connect(func(): key("enter"))
-	row.add_child(yes)
+	yes_btn = Button.new()
+	yes_btn.text = "%s  (ENTER)" % yes_text
+	yes_btn.pressed.connect(func(): key("enter"))
+	row.add_child(yes_btn)
 	return self
 
 

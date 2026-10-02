@@ -148,7 +148,7 @@ are already set up; Godot offers to download the export templates), or
    | L | load planner and fuel |
    | F8 | controls: rebind keys, bind a joystick, yoke or pedals |
    | F12 | save a feedback bundle for a bug report |
-   | Esc | close a menu, or quit |
+   | Esc | close a menu, or open the pause menu (resume, save, load, settings, quit) |
 
    F1 in game is the full, current list.
 4. **Graphics**: the lobby's *Graphics* setting, or start with `--graphics low|medium|high`.
