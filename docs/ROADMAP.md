@@ -62,14 +62,10 @@ Second wave, larger features:
     and hauled cargo in Logistics; (3) squads built of agents; (4) the 3D side shows every agent;
     (5) the pathfinding upgrade; each step keeps the parity tests green and gets its own PR and BALANCE
     entry (agents change travel times, so the balance moves).
-- **Roads (next up, asked for in playtest).** The five roads in `MapCity.ROADS` are hand-drawn
-  polylines with 2-3 km straight legs that ignore the ground. Replace them with a planned network:
-  a seeded, terrain-aware A* between the places that matter (strips, town, stashes, HQs, farms) with
-  cost by grade (about 8% ceiling), no water, smoothed curves, junctions merged, and bridges where a
-  river has to be crossed (deck drawn, walkable). Then bake the terrain again and re-run the balance:
-  the roads are what trucks, squads and the ground war travel on.
+- **Roads.** Done (in a PR): a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
+  see docs/ROADS.md. Still open there: La Selva has no road, and the balance has to be re-run on it.
 - **Map:**
-  - bridges over streams (with the roads);
+  - more bridges if more rivers are ever crossed (the planner makes them, the renderer draws them);
   - a starter car at the airport.
 - **Physical logistics by truck, boat or plane.** Player-set pick-up and drop-off jobs for hired
   bots, multi-stop routes, and automatic refuelling at fuel stations. Fuel prices join the economy.
