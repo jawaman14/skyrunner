@@ -2802,6 +2802,7 @@ func save() -> void:
 		data["story"] = story.to_dict()
 	if tutorial != null:
 		data["tutorial"] = tutorial.to_dict()
+	data["sim"] = StrategicSave.capture(self)  # stashes, stock, crew, case, court, squads (docs/ROADMAP.md, Saves)
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "  "))
@@ -2837,4 +2838,6 @@ static func load_or_new(path: String, opts := {}) -> Session:
 	if data.get("arsenal") is Dictionary:
 		o["arsenal"] = data["arsenal"]
 	o["save_path"] = path
-	return Session.new(o)
+	var s := Session.new(o)
+	StrategicSave.restore(s, data["sim"] if data.get("sim") is Dictionary else {})
+	return s
