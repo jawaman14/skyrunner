@@ -188,5 +188,5 @@ sprites - and `tests/test_export_filter.gd` fails if a used pack is excluded or 
 line out of `exclude_filter` in all three presets.
 
 Not done: collision on the city's buildings (the on-foot walker passes through them, as before), roof details and ground-floor awnings
-from the Commercial kit's `detail-*` pieces, crosswalks, the furniture in the villa and the hangars, docks and cargo from the Pirate kit
+from the Commercial kit's `detail-*` pieces, crosswalks, furniture in the hangars (the villa's desk, map table, sofas and bookcase and the club's bar stools, sofas, speakers and office are furnished, in a PR: `Buildings.Kit.prop`, at 2.4x because the kit is dolls'-house sized), docks and cargo from the Pirate kit
 at the port, Quaternius's downtown pieces, and the 2D packs (glyphs for the controls screens, the crosshair, map symbols).
