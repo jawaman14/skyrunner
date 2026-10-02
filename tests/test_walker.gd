@@ -339,6 +339,37 @@ func test_the_field_order_keys_command_the_nearest_squad() -> void:
 	sess.dispose()
 
 
+## The race's gates are drawn in the world while a race is on: a ring and a beam at the next gate.
+func test_the_race_markers_show_the_next_gate() -> void:
+	var app := _app({"seed": 9, "location": "COV", "features": Session.SANDBOX_FEATURES, "ground_war": true, "races": true})
+	var sess := app.s
+	await _frames(5)
+	var rm: RaceMarkers = null
+	for c in app.get_children():
+		if c is RaceMarkers:
+			rm = c
+	check(rm != null, "the app has race markers")
+	if rm == null:
+		app.free()
+		return
+	check(not rm.next_ring.visible, "nothing drawn with no race on")
+	var course = sess.races.courses_here()[0]
+	sess.money = 5000
+	check_eq(sess.races.enter(course.id), "", "entered")
+	for k in 3:
+		await _tree().process_frame
+	check(rm.next_ring.visible and rm.beam.visible, "the next gate has a ring and a beam")
+	var g: Vector3 = course.gates[0]
+	check_near(rm.next_ring.position.x, g.x, 0.01, "at the start gate (x)")
+	check_near(rm.next_ring.position.z, -g.y, 0.01, "and (z)")
+	sess.races.abort("test")
+	for k in 3:
+		await _tree().process_frame
+	check(not rm.next_ring.visible, "and gone again when the race ends")
+	app.free()
+	sess.dispose()
+
+
 func test_walks_up_a_step() -> void:
 	var app := _app({"seed": 1, "location": "HAR"})
 	app._toggle_on_foot()
