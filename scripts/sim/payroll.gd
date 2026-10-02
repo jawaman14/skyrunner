@@ -70,6 +70,7 @@ var flips := {"org": 0, "rival": 0}
 var lost := {"org": 0, "rival": 0}
 var last := {"org": "", "rival": ""}
 var squads := {}  ## squad id -> [worker ids]
+var people: People  ## the workers' bodies (Agent.ENABLED): where each stands, and the trip to a new post
 var _serial := 0
 var _pay_t := 0.0
 var _think_t := 0.0
@@ -81,6 +82,7 @@ var _t := 0.0
 func _init(sess_, rng_: PyRandom) -> void:
 	sess = sess_
 	rng = rng_
+	people = People.new(sess_)
 	for o in ["org", "rival"]:
 		_refresh(o)
 
@@ -570,6 +572,7 @@ func update(dt: float) -> void:
 	var step := _t
 	_t = 0.0
 	_reconcile_squads()
+	people.update(step)
 	_pay_t += step
 	if _pay_t >= PAY_S:
 		_pay_t = 0.0
@@ -597,6 +600,9 @@ func doing(w: Dictionary) -> String:
 	var a := str(w.assigned)
 	if a.begins_with("stash-"):
 		var st = sess.stash_net.get_stash(a.trim_prefix("stash-")) if sess.stash_net != null else null
+		var away: float = people.left_m(str(w.get("id", "")))
+		if st != null and away > 0.0:
+			return "heading out to %s, %.1f km to go" % [st.name, away / 1000.0]
 		return "watching %s" % st.name if st != null else "on lookout"
 	if a.begins_with("truck-") or a.begins_with("cash-"):
 		# his body is on the road now (Agent): how far he has to go
