@@ -15,6 +15,11 @@ signal leave(to: String)
 ## The flight keys are rebindable actions (ControlsConfig: F8), the analogue axes FlightAxes.
 const CREW_KEYS := {KEY_N: "transponder", KEY_U: "autopilot", KEY_K: "kick", KEY_O: "call_boat", KEY_V: "pump", KEY_I: "turn_around"}
 const PRESS_KEYS := {KEY_ENTER: "confirm", KEY_KP_ENTER: "confirm"}
+const TAXI_MS := 13.0  ## m/s the cab averages
+const TAXI_ROAD := 1.3  ## roads wind: this much longer than the crow flies
+const TAXI_BASE := 15  ## $ flag-fall
+const TAXI_PER_M := 250.0  ## ... and a dollar a quarter-kilometre
+const TAXI_STEPS_PER_FRAME := 30  ## sim seconds run per frame during a ride
 const MENU_KEYS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_ENTER: "enter",
 	KEY_KP_ENTER: "enter", KEY_A: "a", KEY_PLUS: "+", KEY_EQUAL: "+", KEY_KP_ADD: "+", KEY_MINUS: "-", KEY_KP_SUBTRACT: "-", KEY_F: "f", KEY_G: "g", KEY_Q: "q"}
 
@@ -37,7 +42,8 @@ Beta     F12 feedback bundle: a zip of what happened (build, machine, flight, lo
 On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mouse look
          Guns (with a ground war): 1-4 pistol / rifle / machine gun / RPG from the armoury  H holster  R reload  LMB fire
          E use (job board, fuel, hangar, the boss's desk)   F torch   T the phone: crew, buyers, lawyer,
-            the Family, the General, the desk and dispatch, without the walk
+            the Family, the General, the desk, dispatch - and a taxi (fare up front) to the aircraft, the desk,
+            the job board, the hangar or a stash house
          At the boss's desk (with a ground war): Q swaps the orders for squad command - CLICK a squad,
             RIGHT-CLICK the map to send it, buttons for melt away / hold / disband / raise one. Q again
             or ESC hands the squads straight back to the AI, the same as leaving the lieutenant's seat.
@@ -108,6 +114,9 @@ var bale_nodes := {}
 var beacons: Array = []  ## [key, [nodes]]
 var _frame := 0
 var on_foot := false
+var taxi_left := 0.0  ## sim seconds of a taxi ride still to go: the world runs ahead of the clock while it does
+var _taxi_to: Dictionary = {}
+var taxi_label: Label
 var walker: Walker = null
 var gun: Gunplay = null
 var _auto_bot := false  ## the AI took the stick because nobody's in the pilot seat  ## the walker's gun (sessions with a ground war)
@@ -158,13 +167,16 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
 			m.intel = true
 		if k[0] == "phone":
 			m.called.connect(_phone_call)
+		if k[0] == "taxi":
+			m.stops_fn = taxi_stops
+			m.chosen.connect(_taxi_go)
 		m.setup(sess)
 		m.closed.connect(_menu_closed)
 		menus[k[0]] = m
@@ -700,6 +712,8 @@ func _phone_call(action: String) -> void:
 			_open("hq")
 		"logistics":
 			toggle_logistics()
+		"taxi":
+			_open("taxi")
 		_:
 			var tk := open_talk(action)
 			if tk != null and on_foot and walker != null:
@@ -707,6 +721,99 @@ func _phone_call(action: String) -> void:
 				tk.finished.connect(func():
 					if on_foot and walker != null:
 						walker.look_enabled = true)
+
+
+## Where a taxi will take you: the aircraft, whatever this airfield has (the boss's desk, the job board,
+## the load planner, the hangar) and each stash house still standing - with the distance, the ride and
+## the fare.
+func taxi_stops() -> Array:
+	var out := []
+	if walker == null:
+		return out
+	var here := Vector2(walker.global_position.x, -walker.global_position.z)
+	var st: FlightModel.FlightState = s.state
+	var h := deg_to_rad(st.heading)
+	var half: float = s.spec.visual.span_m * 0.5 + 1.2
+	out.append({"name": "The %s" % s.spec.name, "at": Vector2(st.x - cos(h) * half, st.y + sin(h) * half), "heading": st.heading})
+	for pair in [["hq_org", "The boss's desk"], ["jobs", "The job board"], ["load", "The load planner"], ["hangar", "The hangar"]]:
+		for a in _find_areas(scene, pair[0], []):
+			if pair[0] != "hq_org" and a.get_meta("field", s.location) != s.location:
+				continue
+			var p: Vector3 = a.global_position
+			var back: Vector3 = a.get_parent().global_transform.basis.z.normalized()  # buildings face local -z
+			var spot: Vector3 = p - back * 1.2
+			out.append({"name": pair[1], "at": Vector2(spot.x, -spot.z), "heading": rad_to_deg(atan2(p.x - spot.x, -(p.z - spot.z)))})
+			break
+	if s.stash_net != null:
+		for stash in s.stash_net.live():
+			var at := Vector2(stash.x, stash.y)
+			if s.ground != null and s.ground.graph.road_nodes > 0:
+				at = s.ground.graph.nodes[s.ground.graph.nearest(at)]  # the street outside
+			out.append({"name": "%s (stash house)" % stash.name, "at": at, "heading": 0.0})
+	for r in out:
+		var d: float = here.distance_to(r.at)
+		r["dist"] = d
+		r["secs"] = maxf(20.0, d * TAXI_ROAD / TAXI_MS)
+		r["fare"] = TAXI_BASE + int(d / TAXI_PER_M)
+	return out
+
+
+func _find_areas(node: Node, action: String, out: Array) -> Array:
+	if node is Area3D and node.get_meta("action", "") == action:
+		out.append(node)
+	for c in node.get_children():
+		_find_areas(c, action, out)
+	return out
+
+
+## The taxi leaves: the fare is paid, the clock runs ahead (TAXI_STEPS_PER_FRAME sim seconds a frame)
+## until the ride is over, and then the walker is put down at the other end.
+func _taxi_go(i: int) -> void:
+	var stops := taxi_stops()
+	if i < 0 or i >= stops.size() or walker == null:
+		return
+	var stop: Dictionary = stops[i]
+	if s.money < int(stop.fare):
+		s.say("The driver wants $%d up front." % int(stop.fare))
+		return
+	s.money -= int(stop.fare)
+	_taxi_to = stop
+	taxi_left = float(stop.secs)
+	walker.process_mode = Node.PROCESS_MODE_DISABLED
+	walker.look_enabled = false
+	if taxi_label == null:
+		taxi_label = UIStyle.label("", 22, UIStyle.WHITE)
+		taxi_label.add_theme_stylebox_override("normal", UIStyle.panel_box(Color(0, 0, 0, 0.6)))
+		taxi_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		taxi_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		taxi_label.position += Vector2(0, 60)
+		ui.add_child(taxi_label)
+	taxi_label.visible = true
+	s.say("To %s: about %d min, $%d." % [stop.name, int(ceil(float(stop.secs) / 60.0)), int(stop.fare)])
+
+
+## While a ride is on, run the world ahead (parked and on foot, so whole-second steps are fine).
+func _taxi_tick(inp, bc) -> void:
+	if taxi_left <= 0.0:
+		return
+	var n := 0
+	while taxi_left > 0.0 and n < TAXI_STEPS_PER_FRAME:
+		var step := minf(taxi_left, 1.0)
+		s.update(step, inp, bc)
+		taxi_left -= step
+		n += 1
+	if taxi_label != null:
+		taxi_label.text = "  In the taxi to %s ...  %d min to go  " % [_taxi_to.name, int(ceil(maxf(0.0, taxi_left) / 60.0))]
+	if taxi_left <= 0.0:
+		taxi_left = 0.0
+		if walker != null:
+			walker.process_mode = Node.PROCESS_MODE_INHERIT
+			walker.look_enabled = true
+			var at: Vector2 = _taxi_to.at
+			walker.place(at.x, at.y, float(_taxi_to.heading))
+		if taxi_label != null:
+			taxi_label.visible = false
+		s.say("Here you are: %s." % _taxi_to.name)
 
 
 func _on_use(action: String, area: Area3D) -> void:
@@ -805,6 +912,7 @@ func _process(delta: float) -> void:
 		var remote: bool = s.seats.human(Roles.PILOT) and s.seats.seats[Roles.PILOT].token != ""
 		var bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 		s.update(dt, inp, bc)
+		_taxi_tick(inp, bc)
 		nerves.update(s, dt)
 		if _frame % 15 == 0:
 			_talk_cues()

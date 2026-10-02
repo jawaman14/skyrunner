@@ -190,7 +190,10 @@ Second wave, larger features:
   BALANCE entry 36 (a larger re-run with a confidence interval is under way).
 - **Map:**
   - more bridges if more rivers are ever crossed (the planner makes them, the renderer draws them);
-  - a starter car at the airport.
+  - a starter car at the airport: the **taxi half is done** (in a PR): the phone's "A taxi" lists the aircraft, the boss's
+    desk, the job board, the load planner, the hangar and each live stash house with the distance, the ride (13 m/s over
+    roads 1.3x the crow's line) and the fare ($15 + $1 per 250 m, paid up front); a ride runs the world ahead at 30 sim
+    seconds a frame and puts you down at the other end. The **drivable car** (decided 2026-10-03: both) is still to do.
 - **Physical logistics by truck, boat or plane.** Player-set pick-up and drop-off jobs for hired
   bots, multi-stop routes, and automatic refuelling at fuel stations. Fuel prices join the economy.
 - **Saves keep the organisation.** Done (in a PR; the old line here said "boats don't carry over to a new

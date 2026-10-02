@@ -416,7 +416,7 @@ Command-line flags (all optional; any flag skips the lobby):
 Dedicated server: `$GODOT --headless --path . --script res://scripts/net/dedicated.gd -- --port 47800`.
 Every seat is run by the AI until a player claims it.
 
-Controls: F1 in game lists them; F8 rebinds them (keys, gamepad, yoke, throttle quadrant, pedals); F2 for time of day; and on foot: TAB get out / climb in, WASD walk (Shift runs, Space jumps), mouse look, E use, F torch, T the phone (crew, buyers, lawyer, the desk and dispatch without the walk).
+Controls: F1 in game lists them; F8 rebinds them (keys, gamepad, yoke, throttle quadrant, pedals); F2 for time of day; and on foot: TAB get out / climb in, WASD walk (Shift runs, Space jumps), mouse look, E use, F torch, T the phone (crew, buyers, lawyer, the desk and dispatch without the walk, and a taxi to anywhere you would otherwise walk).
 
 Demo videos: [docs/video/](docs/video/):
 - [`demo-ui.mp4`](docs/video/demo-ui.mp4): the redesigned UI in use - lobby, job board, load planner,
