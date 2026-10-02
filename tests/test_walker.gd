@@ -230,6 +230,84 @@ func test_a_taxi_takes_you_to_the_desk() -> void:
 	app.free()
 	s.dispose()
 
+## The starter car: parked beside the aircraft, E at it to get in, WASD to drive, E to get out once it has all but stopped.
+func test_the_starter_car_can_be_driven() -> void:
+	var app := _app({"seed": 9, "location": "COV", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var sess := app.s
+	app._toggle_on_foot()
+	await _frames(30)
+	var car: Car = app.car
+	check(car != null, "a starter car is parked")
+	if car == null:
+		app.free()
+		return
+	check(car.global_position.distance_to(app.player.global_position) < 40.0, "beside the aircraft (%.0f m)" % car.global_position.distance_to(app.player.global_position))
+	var w: Walker = app.walker
+	w.place(car.global_position.x + 60.0, -car.global_position.z, 0.0)
+	app._enter_car()
+	check(app.driving == null, "not from 60 m away")
+	w.place(car.global_position.x + 3.0, -car.global_position.z, 0.0)
+	app._enter_car()
+	check(app.driving == car and car.driven, "in the driver's seat")
+	var start := car.global_position
+	_key(KEY_W, true)
+	await _frames(120)
+	check(car.speed > 5.0, "under way (%.1f m/s)" % car.speed)
+	check(car.global_position.distance_to(start) > 15.0, "and gone somewhere (%.0f m)" % car.global_position.distance_to(start))
+	check(car.speed <= car.top_speed() + 0.5, "never faster than the ground allows (%.1f of %.1f)" % [car.speed, car.top_speed()])
+	app._exit_car()
+	check(app.driving == car, "it will not let you out at speed")
+	var h0 := car.heading_deg()
+	_key(KEY_D, true)
+	await _frames(60)
+	_key(KEY_D, false)
+	check(absf(angle_difference(deg_to_rad(h0), deg_to_rad(car.heading_deg()))) > deg_to_rad(15.0), "D turns it (%.0f -> %.0f degrees)" % [h0, car.heading_deg()])
+	_key(KEY_W, false)
+	_key(KEY_S, true)
+	var n := 0
+	while car.speed > 1.0 and n < 400:
+		await _frames(1)
+		n += 1
+	_key(KEY_S, false)
+	check(car.speed < 1.5, "S brings it to a stop (%d frames)" % n)
+	car.speed = 0.0
+	app._exit_car()
+	check(app.driving == null and not car.driven, "out of the car")
+	check(w.visible, "and walking again")
+	check(Vector2(w.global_position.x - car.global_position.x, w.global_position.z - car.global_position.z).length() < 5.0, "beside it")
+	app.free()
+	sess.dispose()
+
+## Driving through a police checkpoint at speed is noticed; slowing down is a wave-through.
+func test_running_a_police_checkpoint_costs_suspicion() -> void:
+	var app := _app({"seed": 9, "location": "COV", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var sess := app.s
+	app._toggle_on_foot()
+	await _frames(20)
+	var car: Car = app.car
+	app.walker.place(car.global_position.x + 3.0, -car.global_position.z, 0.0)
+	app._enter_car()
+	check(app.driving == car, "driving")
+	var at := car.game_xy()
+	var cp: GroundWar.Squad = sess.ground.recruit("police", "car", at + Vector2(20, 0), false)
+	cp.tactic = "checkpoint"
+	cp.state = "holding"
+	var c = sess.police.case("runner")
+	var before: float = c.suspicion
+	car.speed = 3.0
+	app._car_checkpoints()
+	check_eq(c.suspicion, before, "creeping through is a wave-through")
+	car.speed = 12.0
+	app._car_checkpoints()
+	check_eq(c.suspicion, before + app.CHECKPOINT_HEAT, "running it at speed costs suspicion")
+	app._car_checkpoints()
+	check_eq(c.suspicion, before + app.CHECKPOINT_HEAT, "once, not every frame")
+	sess.time += app.CHECKPOINT_AGAIN_S + 1.0
+	app._car_checkpoints()
+	check_eq(c.suspicion, before + 2.0 * app.CHECKPOINT_HEAT, "and again after a while")
+	app.free()
+	sess.dispose()
+
 
 func test_walks_up_a_step() -> void:
 	var app := _app({"seed": 1, "location": "HAR"})
