@@ -864,6 +864,8 @@ func seat_driver(role: String, human: bool) -> void:
 				family.ai = not (human or humans.has(Roles.LIEUTENANT))
 			if payroll != null:
 				payroll.ai["org"] = not (human or humans.has(Roles.LIEUTENANT))
+			if ground != null:
+				ground.commanders["org"].ai = not (human or humans.has(Roles.LIEUTENANT))
 			if nights != null:
 				if human:
 					_ai_defaults[role] = nights.runner_ai
@@ -880,7 +882,7 @@ func seat_driver(role: String, human: bool) -> void:
 				command(role, "release_unit", {})
 		Roles.LIEUTENANT:
 			if ground != null:
-				ground.commanders["org"].ai = not human
+				ground.commanders["org"].ai = not (human or humans.has(Roles.BOSS))
 			if family != null:
 				family.ai = not (human or humans.has(Roles.BOSS))
 			if payroll != null:

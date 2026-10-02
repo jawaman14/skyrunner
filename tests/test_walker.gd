@@ -119,6 +119,50 @@ func test_the_boss_desk_gives_orders() -> void:
 	app.free()
 
 
+## Q at the villa desk swaps the orders board for the same squad command a
+## human boss's seat gives in co-op (StationApp.squad_mode) - and claims the
+## seat for as long as that lasts, same as it already does for a human
+## lieutenant, so the AI stands aside.
+func test_the_boss_desk_commands_squads() -> void:
+	var app := _app({"seed": 9, "location": "COV", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var s := app.s
+	s.money = 20000
+	app._toggle_on_foot()
+	var desks := _areas(app.scene, "hq_org", [])
+	check_eq(desks.size(), 1, "one boss's desk")
+	if desks.is_empty():
+		app.free()
+		return
+	_stand_before(app.walker, desks[0])
+	await _frames(6)
+	app.walker.use()
+	var m: HQMenu = app.menus["hq"]
+	check(m.visible, "the desk is open")
+	check(m.squad_mode, "no season to run, so it opens straight on the squads")
+	check_eq(s.seats.who(Roles.BOSS), "human", "claimed for as long as this lasts")
+	check(not s.ground.commanders.org.ai, "the AI stands aside while the boss runs the squads")
+	m.key("raise_car")
+	var q: GroundWar.Squad = s.ground.of("org").back()
+	check(q != null and q.kind == "car", "raised a car crew")
+	m._on_map_click(MOUSE_BUTTON_LEFT, q.pos() + Vector2(100, 0))
+	check_eq(m.sel_squad, q.id, "clicked: selected")
+	m._on_map_click(MOUSE_BUTTON_RIGHT, Vector2(q.x + 3000, q.y + 3000))
+	check(q.human, "right-click gave it a human's order")
+	check(str(q.order.get("type", "")) != "", "some order went through: %s" % q.order.get("type"))
+	m.key("melt")
+	check_eq(q.tactic, "melt", "the melt button")
+	m.key("q")
+	check(not m.squad_mode, "Q again: back to the desk")
+	check_eq(s.seats.who(Roles.BOSS), "ai", "and handed back")
+	check(s.ground.commanders.org.ai, "the AI runs them again")
+	m.key("q")
+	check_eq(s.seats.who(Roles.BOSS), "human", "back on the squads")
+	m.close()
+	check_eq(s.seats.who(Roles.BOSS), "ai", "walking away from the desk hands them back too")
+	check(s.ground.commanders.org.ai, "to the AI")
+	app.free()
+
+
 func test_walks_up_a_step() -> void:
 	var app := _app({"seed": 1, "location": "HAR"})
 	app._toggle_on_foot()
