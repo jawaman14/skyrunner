@@ -48,6 +48,7 @@ var tasks: Array = []  ## Task queue; tasks[0] is the one under way
 var _working := 0.0  ## seconds spent on the current task since arriving
 var _held := 0.0  ## seconds the agent is stuck for (pulled over, waiting out a fight)
 var _carry := 0.0  ## time left over when a task finished mid-tick, spent on the next one
+var busy_s := 0.0  ## seconds spent moving or working since it was made (held time is not counted)
 
 
 func _init(id_: String, kind_: String, x_: float, y_: float) -> void:
@@ -123,14 +124,18 @@ func _route_to(task: Task, graph: RoadGraph = null) -> void:
 func update(dt: float, graph: RoadGraph = null) -> String:
 	if tasks.is_empty():
 		return ""
+	var fresh := dt
 	dt += _carry
 	_carry = 0.0
 	if _held > 0.0:
 		var stuck := minf(_held, dt)
 		_held -= stuck
 		dt -= stuck
+		busy_s += maxf(0.0, fresh - stuck)
 		if dt <= 0.0:
 			return ""
+	else:
+		busy_s += fresh
 	var t: Task = tasks[0]
 	if route.is_empty():
 		_route_to(t, graph)
