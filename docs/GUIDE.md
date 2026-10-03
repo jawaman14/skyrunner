@@ -128,7 +128,7 @@ Every flight key and gamepad button can be rebound (**F8**). The keys below are 
 | B or Space | Brakes |
 | Y | Mouse yoke on / off (mouse position is the stick) |
 | C | Camera: chase, cockpit, tower |
-| M | The big map (the minimap) |
+| M | The big map (the island chart); the round radar in the corner turns with your nose, `+` / `-` change its range, Shift+M holds north up |
 | P | Pause |
 | N | Transponder on / off |
 | 7 | Squawk code: 1200 (VFR), then 7700, 7600, 7500 |
@@ -156,6 +156,8 @@ invert, deadzone and expo (**F8**).
 | Shift+B | Benny Ruiz and the buyers |
 | Shift+L | Your lawyer (when arrested) |
 | Shift+F | The Family: the offer, your man's read on it (1–4 answer, Enter go on) |
+| Shift+T | The phone from the cockpit: every number you have (a new one is announced and marked NEW) |
+| Shift+C | Ring the Sunrise Collective (acid for grass) |
 | Shift+Y / Shift+N / Shift+P | Take / turn down the newest Family offer / pay the tribute |
 | Shift+G | The General's aide on the island frequency |
 | Shift+U / Shift+I | Four mules on the airliner / a container on the freighter |
@@ -199,7 +201,7 @@ Your own recordings go in `user://radio/`.
 | F3 | Hand the aircraft to the AI (so you can sit at another desk) / take it back |
 | F4 | The multiplayer menu: games on your network, the table (mute, remove, seats, chat), voice settings |
 | F6 | Performance overlay |
-| F7 | Radio Costa 88, an 80s synth station |
+| F7 | The radio on / off in the aircraft (`,` and `.` tune): the same real 1979-86 broadcasts as the car's, on one dial |
 | F8 | Controls and settings: rebind keys and axes, read-aloud, the colour-safe palette |
 | F9 | Screen filter: off, VHS, colour-blindness simulations |
 | F10 / Shift+F10 | Skip the tutorial step / tutorial on or off |
@@ -442,7 +444,7 @@ van, a steel box truck, a fast van, an ambulance conversion, an armoured truck).
 ### 5.13d The Sunrise Collective (DESIGN 44)
 
 Up in the hills a commune of chemists, led by Nico Cozz (an invented character), makes blotter acid and wants grass for the festival and campus
-circuit. Ring them with **Shift+N** in the cockpit, **J** at the boss's and fixer's desks, or from the phone. A van calls at your fullest stash
+circuit. Grass comes cheap from the bush strips: land at one, take the "Our own grass" job off the board (J) and fly it into a stash house. Then ring Nico. Ring them with **Shift+C** in the cockpit, **J** at the boss's and fixer's desks, or from the phone. A van calls at your fullest stash
 and swaps the grass for sheets of acid (about 2.4 a hundredweight, better as they trust you); you sell the sheets back through their circuit
 (about $260 a sheet). It pays roughly 40 % better than selling the grass to the Family, but the lab is raided now and then and goes to
 ground for hours, and every sheet adds a little to the task force's case. Festivals make the circuit hungry; a campus crackdown makes it

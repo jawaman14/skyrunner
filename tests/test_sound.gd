@@ -27,9 +27,6 @@ func test_the_loops_are_well_formed() -> void:
 	for w in [Soundscape.noise_loop("wind", 0.08), Soundscape.surf_loop(), Soundscape.horn_loop(), Soundscape.rotor_loop(),
 			Soundscape.siren_loop(), Soundscape.outboard_loop()]:
 		check(w.loop_mode == AudioStreamWAV.LOOP_FORWARD and w.loop_end == w.data.size() / 2 and _rms(w) > 0.02, "a clean loop")
-	var m := Soundscape.music_loop()
-	check_near(m.data.size() / 2.0 / Soundscape.RATE, 16.0 * 60.0 / Soundscape.MUSIC_BPM, 0.01, "four bars at 112 bpm")
-	check(_rms(m) > 0.05, "and it plays something")
 	check(Soundscape.engine_loop() == e, "made once, cached")
 
 
@@ -63,9 +60,6 @@ func test_the_aircraft_sounds_follow_the_flight() -> void:
 	s.say("Tower, go ahead")
 	app.sound._process(1.0 / 30)
 	check(app.sound.radio.stream == Soundscape.squelch(), "a squelch")
-	# F7
-	check(app.sound.toggle_music(), "Radio Costa 88 on")
-	check(not app.sound.toggle_music(), "and off")
 	app.free()
 	s.dispose()
 

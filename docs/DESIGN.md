@@ -1212,11 +1212,12 @@ period's underground, not a portrait of any real person or group. Nothing in the
 | The raid | a 1.2% ten-minute chance plus 4% of the case's suspicion: the lab goes to ground for three hours, its stock is lost, trust falls 15; a van at a stash door adds 0.4 heat a hundredweight |
 | The AI | `auto` (the organisation's bot switches it on): trades the fullest stash's grass above 200 lb every half hour and sells what it holds |
 
-The talk is `dialogue/psych.dialogue` through `Talk.State`'s `ps_*` fields and the snapshot's `psych` view: **Shift+N** in the cockpit, **J** at the
+The talk is `dialogue/psych.dialogue` through `Talk.State`'s `ps_*` fields and the snapshot's `psych` view: **Shift+C** in the cockpit, **J** at the
 boss's and fixer's desks, the phone's "The Sunrise Collective". Commands: `acid_barter`, `acid_sell`, `acid_auto` (the pilot, the boss and the fixer). Saved by `StrategicSave`. `tests/test_psychedelics.gd` has 13 tests; BALANCE entry 49 (arithmetic only).
 
-Not yet: acid as a good in the economy's markets and the logistics' trucks (it moves instantly and sells through the circuit only), a lab on the
-map and a trip's effect on the screen.
+Acid is a good in the logistics network: the sheets sit in the stash houses (`Logistics.goods()`), trucks carry them from stash to stash, a raid on a stash takes them
+and makes the street scarcer for a while (`RAID_SCARCITY`, decaying over two hours), and the street price walks (`WALK_VOL`) around the scene's mood. A sale leaves the
+money at the stash for a truck to bring home. Not yet: a lab on the map and a trip's effect on the screen.
 
 
 ## 45. The dedicated server

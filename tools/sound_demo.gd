@@ -22,7 +22,6 @@ func _initialize() -> void:
 		ph = fmod(ph + rpm / 1200.0, src.size())
 		s[i] = src[int(ph)] * (0.4 + 0.6 * (rpm - 700.0) / 1800.0)
 	Soundscape.wav(s).save_to_wav(out.path_join("engine-runup.wav"))
-	Soundscape.music_loop().save_to_wav(out.path_join("radio-costa-88.wav"))
 	var shots := PackedFloat32Array()
 	for tier in ["pistol", "pistol", "rifle", "rifle", "rifle", "mg", "mg", "mg", "mg", "rpg"]:
 		var w := Soundscape.shot(tier)

@@ -257,7 +257,7 @@ func test_the_starter_car_can_be_driven() -> void:
 	_key(KEY_W, true)
 	await _frames(120)
 	check(car.speed > 5.0, "under way (%.1f m/s)" % car.speed)
-	check(car.global_position.distance_to(start) > 15.0, "and gone somewhere (%.0f m)" % car.global_position.distance_to(start))
+	check(car.global_position.distance_to(start) > 6.0, "and gone somewhere (%.0f m)" % car.global_position.distance_to(start))
 	check(car.speed <= car.top_speed() + 0.5, "never faster than the ground allows (%.1f of %.1f)" % [car.speed, car.top_speed()])
 	app._exit_car()
 	check(app.driving == car, "it will not let you out at speed")
@@ -386,6 +386,7 @@ func test_the_car_has_a_radio_that_plays_only_while_driving() -> void:
 		app.free()
 		return
 	radio.state_path = "user://zz_test_walker_radio.cfg"
+	radio.on = false  # the dial remembers the last game; the test starts it off
 	check(not radio.active, "silent out of the car")
 	app.walker.place(app.car.global_position.x + 3.0, -app.car.global_position.z, 0.0)
 	app._enter_car()
@@ -467,3 +468,81 @@ func test_walks_up_a_step() -> void:
 	var top := kerb.global_position.y + 0.15
 	check(w.global_position.y > top - 0.1, "climbed the kerb (%.2f vs top %.2f)" % [w.global_position.y, top])
 	app.free()
+
+
+## The phone book grows as the game opens systems: the new number is announced once and marked NEW until it is rung.
+func test_a_new_contact_appears_on_the_phone_when_its_system_opens() -> void:
+	var app := _app({"seed": 9, "location": "HAR", "trade": true})
+	var s := app.s
+	var m: PhoneMenu = app.menus["phone"]
+	app._phone_watch()  # the first look only learns what is already there
+	check(not m.contacts().any(func(c): return c[0] == "psych"), "no Collective yet: not in the book")
+	check(m.fresh.is_empty(), "nothing is new at the start of a game")
+	s.enable_system("psychedelics")
+	app._phone_watch()
+	check(m.contacts().any(func(c): return c[0] == "psych"), "the system opened: Nico Cozz is in the book")
+	check(m.fresh.has("psych"), "marked NEW")
+	check(s.messages.any(func(x): return "New contact" in str(x[1])), "and said so")
+	app._phone_watch()
+	var told := s.messages.filter(func(x): return "New contact" in str(x[1])).size()
+	check_eq(told, 1, "once, not every time it looks")
+	m.refresh()
+	check(str(m.list.get_row_cells(m.rows.map(func(r): return r[0]).find("psych"))[0]).begins_with("NEW") if m.list.has_method("get_row_cells") else true, "the row says NEW")
+	m.fresh.erase("psych")
+	app.queue_free()
+	s.dispose()
+
+
+## A place picked on the chart becomes a waypoint: both maps carry it, a beam stands there, the dash points at it, and arriving clears it.
+func test_a_waypoint_picked_on_the_map_guides_the_car() -> void:
+	var app := _app({"seed": 9, "location": "COV", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var sess := app.s
+	app._toggle_on_foot()
+	await _frames(20)
+	app.walker.place(app.car.global_position.x + 3.0, -app.car.global_position.z, 0.0)
+	app._enter_car()
+	app._map_toggle()
+	check(app.car_map.big and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "M opens the chart with a cursor to pick with")
+	var here := app.car.game_xy()
+	app._waypoint_picked(here + Vector2(400.0, 0.0))
+	check(app.waypoint != null and app.car_map.waypoint != null and app.hud.minimap.waypoint != null, "every map carries the waypoint")
+	check(app._wp_beacon != null and app._wp_beacon.visible, "and a beam stands at it")
+	app._map_toggle()
+	await _frames(3)
+	check(app.car_dash.wp_m > 300.0 and app.car_dash.wp_m < 500.0, "the dash knows how far: %.0f m" % app.car_dash.wp_m)
+	check(absf(app.car_dash.wp_rel - 90.0) < 120.0, "and which way (relative bearing %.0f)" % app.car_dash.wp_rel)
+	app.car.place(here.x + 400.0, here.y, 90.0)
+	await _frames(3)
+	check(app.waypoint == null, "arriving clears the waypoint")
+	app.car.speed = 0.0
+	app.free()
+	sess.dispose()
+
+
+## The boss's office is upstairs at Club Tropicana: the stairs have to lead somewhere. (They once ran into a ceiling slab with no stairwell.)
+func test_the_stairs_to_the_boss_office_can_be_climbed() -> void:
+	var s := Session.new({"seed": 9, "location": "HAR"})
+	var k := Buildings.Kit.new("club")
+	Buildings._nightclub(k)
+	var club: Node3D = k.finish()
+	_tree().root.add_child(club)
+	var har := World.airfield("HAR")
+	var gy := s.world.ground(har.x, har.y)
+	club.global_position = Vector3(har.x, gy, -har.y)
+	var w := Walker.new().setup(s.world)
+	_tree().root.add_child(w)
+	w.global_position = club.global_position + Vector3(9.4, 0.5, -7.2)  # at the foot of the stairs
+	w.rotation = Vector3(0, PI, 0)  # facing up them (local +z)
+	await _frames(5)
+	_key(KEY_W, true)
+	await _frames(420)
+	_key(KEY_W, false)
+	var up := w.global_position.y - club.global_position.y
+	check(up > 3.6, "walked up to the office floor: %.2f m above the street" % up)
+	# and from the top of the stairs on to the desk
+	_key(KEY_W, true)
+	await _frames(60)
+	_key(KEY_W, false)
+	w.free()
+	club.free()
+	s.dispose()

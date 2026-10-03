@@ -10,8 +10,10 @@ extends RefCounted
 ##                  lb / 100 x rate() sheets. The rate is SHEETS_PER_100LB, better with trust and with grass dear, worse
 ##                  with the circuit hungry (acid dear). The lab holds only what it has made (OUTPUT_PER_HOUR, up to
 ##                  STOCK_CAP) and wants only WEED_APPETITE_LB of grass every REFILL_S. A van at the door warms the stash.
-##   the circuit    `sell(sheets)`: the sheets go out through the Collective's network at STREET_SHEET x CIRCUIT_SHARE x the
-##                  scene (a festival, a campus crackdown), up to CIRCUIT_CAP an interval. It is soft money: little heat.
+##   the circuit    `sell(sheets, stash)`: the Collective's network collects the sheets at the stash's door and leaves the street money in
+##                  it (a truck takes it home), at STREET_SHEET x CIRCUIT_SHARE x mood() (the scene, a price walk, the scarcity after a raid),
+##                  up to CIRCUIT_CAP an interval. With logistics the sheets are stash stock like grass: Logistics moves them by truck
+##                  (the `acid` good, in sheets), a raid on the stash takes them, and they are worth `price()` a sheet.
 ##   the lab        raided now and then (the odds climb with the task force's case against us): it goes to ground for HIDE_S,
 ##                  its stock is gone, trust falls. Nico comes back; he always does.
 ##   the AI         `auto` barters the fullest stash's grass whenever it has 200 lb to spare and sells what it holds.
@@ -39,6 +41,10 @@ const RAID_BASE := 0.012  ## a ten-minute chance
 const HIDE_S := 10800.0
 const AUTO_EVERY_S := 1800.0
 const AUTO_KEEP_LB := 200.0  ## the AI leaves this much grass in the stash for the Family
+const WALK_VOL := 0.04  ## the price walk's size per square-root minute
+const WALK_REVERT_S := 1800.0
+const RAID_SCARCITY := 0.3  ## what a raid adds to the price of a sheet, easing off over SCARCITY_TAU_S
+const SCARCITY_TAU_S := 7200.0
 ## [name, scene multiplier, seconds, headline]
 const SCENE := [
 	["festival", 1.35, 5400.0, "A festival up the coast: the circuit is hungry and the sheets fetch more"],
@@ -50,7 +56,9 @@ const SCENE := [
 var sess
 var rng: PyRandom
 var stock := 30.0  ## sheets at the lab, ready to trade
-var held := 0.0  ## our sheets
+var held := 0.0  ## our sheets when the game has no logistics (with it they sit in the stashes: acid_at, held_total)
+var walk := 1.0  ## the street's price index for blotter (a mean-reverting walk, own stream)
+var scarcity := 0.0  ## a raid dries up the supply: the sheets are dear for hours
 var trust := 30.0  ## 0..100
 var status := "open"  ## open | hiding
 var hide_until := -1.0
@@ -69,6 +77,7 @@ var _t := 0.0
 var _evt_t := 0.0
 var _raid_t := 0.0
 var _auto_t := 0.0
+var _walk_t := 0.0
 
 
 func _init(s) -> void:
@@ -90,18 +99,53 @@ func why_not() -> String:
 	return ""
 
 
+## What the street thinks of a sheet now: the scene (a festival, a crackdown), the walk, and the scarcity after a raid.
+func mood() -> float:
+	return scene * walk * (1.0 + scarcity)
+
+
 ## Sheets for a hundred pounds of grass now: better with trust and a dear market, worse with the circuit hungry.
 func rate() -> float:
 	var weed_mult := 1.0
 	if sess.econ != null:
 		weed_mult = float(sess.econ.mult("marijuana", "town"))
-	var r := SHEETS_PER_100LB * (1.0 + TRUST_BONUS * trust / 100.0) * weed_mult / scene
+	var r := SHEETS_PER_100LB * (1.0 + TRUST_BONUS * trust / 100.0) * weed_mult / mood()
 	return clampf(r, SHEETS_PER_100LB * 0.6, SHEETS_PER_100LB * 1.6)
 
 
 ## What a sheet fetches from the circuit now.
 func price() -> float:
-	return STREET_SHEET * scene * CIRCUIT_SHARE
+	return STREET_SHEET * mood() * CIRCUIT_SHARE
+
+
+## The sheets in a stash (the pool, with no logistics).
+func acid_at(stash: String) -> float:
+	if sess.logistics != null:
+		return float(sess.logistics.stock.get(stash, {}).get("acid", 0.0))
+	return held
+
+
+## All our sheets: in the stashes, on the road (not counted: a truck's load is its own), or the pool.
+func held_total() -> float:
+	if sess.logistics == null:
+		return held
+	var n := 0.0
+	for id in sess.logistics.stock:
+		n += float(sess.logistics.stock[id].get("acid", 0.0))
+	return n
+
+
+## The stash with the most sheets: [id, sheets] ("" if none).
+func fullest_stash() -> Array:
+	var best := ""
+	var most := 0.0
+	if sess.logistics != null:
+		for id in sess.logistics.stock:
+			var n: float = float(sess.logistics.stock[id].get("acid", 0.0))
+			if n > most and id != Logistics.HQ:
+				most = n
+				best = id
+	return [best, most]
 
 
 func _grass_at(stash: String) -> float:
@@ -139,7 +183,10 @@ func barter(stash: String, lb: float) -> String:
 	var sheets := lb / 100.0 * r
 	_take_grass(stash, lb)
 	stock -= sheets
-	held += sheets
+	if sess.logistics != null:
+		sess.logistics.stock[stash]["acid"] = float(sess.logistics.stock[stash].get("acid", 0.0)) + sheets  # the van leaves the sheets at the stash
+	else:
+		held += sheets
 	weed_left -= lb
 	bartered += lb
 	trust = minf(100.0, trust + 0.6 * lb / 100.0)
@@ -151,24 +198,36 @@ func barter(stash: String, lb: float) -> String:
 	return ""
 
 
-func sell(sheets: float) -> String:
+## Sell `sheets` through the circuit from `stash` (the fullest one if none is named): the Collective's people collect at the door and
+## leave the street money in that stash (it has to be trucked home like any other).
+func sell(sheets: float, stash := "") -> String:
 	var err := why_not()
 	if err != "":
 		return err
-	var n := minf(sheets, minf(held, circuit_left))
-	if held <= 0.0:
-		return "We have no acid to sell."
+	if sess.logistics != null and stash == "":
+		stash = str(fullest_stash()[0])
+	var have := acid_at(stash)
+	if have <= 0.0:
+		return "We have no acid to sell." if stash == "" or sess.logistics == null else "There is no acid at %s." % sess.logistics.name_of(stash)
+	var n := minf(sheets, minf(have, circuit_left))
 	if n < 0.5:
 		return "The circuit has had enough for now."
 	var pay := int(price() * n)
-	sess.money += pay
-	held -= n
+	if sess.logistics != null:
+		sess.logistics.stock[stash]["acid"] -= n
+		sess.logistics.cash[stash] += pay
+		var st = sess.stash_net.get_stash(stash)
+		if st != null:
+			st.heat += STASH_HEAT_PER_100LB * n / 4.0  # collectors at the door
+	else:
+		sess.money += pay
+		held -= n
 	circuit_left -= n
 	sold += n
 	earned += pay
 	var c = sess.police.case("runner")
 	c.suspicion = minf(100.0, c.suspicion + SUSPICION_PER_SHEET * n)
-	last = "Sold %.1f sheets through the circuit: +$%s." % [n, Py.money(pay)]
+	last = ("Sold %.1f sheets through the circuit: $%s left at %s." % [n, Py.money(pay), sess.logistics.name_of(stash)]) if sess.logistics != null else "Sold %.1f sheets through the circuit: +$%s." % [n, Py.money(pay)]
 	sess.say(last)
 	sess.bus.emit("acid_sold", sess.time, last, ["runner"], {"sheets": n, "pay": pay})
 	return ""
@@ -192,6 +251,13 @@ func update(dt: float) -> void:
 	else:
 		stock = minf(STOCK_CAP, stock + OUTPUT_PER_HOUR * dt / 3600.0)
 	weed_left = minf(WEED_APPETITE_LB, weed_left + WEED_APPETITE_LB * dt / REFILL_S)
+	scarcity = maxf(0.0, scarcity * exp(-dt / SCARCITY_TAU_S))
+	_walk_t += dt
+	if _walk_t >= 10.0:  # the street's price: Ornstein-Uhlenbeck about 1
+		var step := _walk_t
+		_walk_t = 0.0
+		walk = 1.0 + (walk - 1.0) * exp(-step / WALK_REVERT_S) + rng.gauss(0.0, WALK_VOL * sqrt(step / 60.0))
+		walk = clampf(walk, 0.6, 1.6)
 	circuit_left = minf(CIRCUIT_CAP, circuit_left + CIRCUIT_CAP * dt / REFILL_S)
 	if scene_until >= 0.0 and sess.time >= scene_until:
 		scene = 1.0
@@ -223,6 +289,7 @@ func update(dt: float) -> void:
 func _raid() -> void:
 	status = "hiding"
 	hide_until = sess.time + HIDE_S
+	scarcity = RAID_SCARCITY  # the supply is cut: the sheets on the street are dear
 	stock = 0.0
 	trust = maxf(0.0, trust - 15.0)
 	raids += 1
@@ -243,16 +310,32 @@ func _auto() -> void:
 				best = id
 		if best != "" and most > AUTO_KEEP_LB + MIN_LB:
 			barter(best, most - AUTO_KEEP_LB)
-	if held >= 5.0:
+	if sess.logistics != null:
+		var f := fullest_stash()
+		if float(f[1]) >= 5.0:
+			sell(float(f[1]), str(f[0]))
+	elif held >= 5.0:
 		sell(held)
 
 
 func view(_side := "runner") -> Dictionary:
-	return {"name": NAME, "chemist": CHEMIST, "status": status, "stock": snappedf(stock, 0.1), "held": snappedf(held, 0.1), "trust": int(trust),
+	return {"name": NAME, "chemist": CHEMIST, "status": status, "stock": snappedf(stock, 0.1), "held": snappedf(held_total(), 0.1), "mood": snappedf(mood(), 0.01), "trust": int(trust),
 		"rate": snappedf(rate(), 0.01), "price": int(price()), "weed_left": int(weed_left), "circuit_left": snappedf(circuit_left, 0.1),
 		"hide_min": maxi(0, int(ceil((hide_until - sess.time) / 60.0))) if status == "hiding" else 0, "scene": scene_name,
 		"auto": auto, "bartered": int(bartered), "sold": snappedf(sold, 0.1), "earned": earned, "raids": raids, "last": last,
-		"stashes": _stash_grass()}
+		"stashes": _stash_grass(), "acid_stashes": _stash_acid()}
+
+
+## The stashes with sheets in them: [{id, name, sheets}], fullest first.
+func _stash_acid() -> Array:
+	var out := []
+	if sess.logistics != null and sess.stash_net != null:
+		for st in sess.stash_net.live():
+			var n: float = float(sess.logistics.stock.get(st.id, {}).get("acid", 0.0))
+			if n >= 0.5:
+				out.append({"id": st.id, "name": st.name, "sheets": snappedf(n, 0.1)})
+		out.sort_custom(func(a, b): return a.sheets > b.sheets)
+	return out
 
 
 ## The stashes with grass in them: [{id, name, lb}], fullest first (what a barter can draw on).

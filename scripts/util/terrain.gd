@@ -30,6 +30,12 @@ const CACHE_VERSION := 2
 const BAKED_DIR := "res://data/terrain"
 const CACHE_DIR := "user://terrain"
 static var disk_cache := true
+## The natural pass (_naturalise): ridged, domain-warped relief and thermal erosion over the hills and mountains, with the
+## coast, the lowlands and everything within reach of a strip left exactly as the classic generator made them. Off by
+## default so the tests and the balance sims keep the terrain the numbers were measured on (the Python-frozen fixtures);
+## the game turns it on (main.gd, the dedicated server, tools/bake_terrain.gd). It changes the cache key, so the two
+## variants are baked side by side.
+static var natural := false
 static var bake_to := ""  ## tools/bake_terrain.gd: write here instead of the user cache
 
 
@@ -167,6 +173,8 @@ func generate_custom(p_seed: int, params: Dictionary, airfields: Array) -> void:
 
 
 static func _cache_key(what: Array) -> String:
+	if natural:
+		what = what + ["natural"]  # the classic keys stay as they were, so the shipped bakes still match
 	return var_to_str([CACHE_VERSION, what]).sha256_text().substr(0, 24)
 
 
@@ -230,11 +238,11 @@ func _generate(p_seed: int, airfields: Array) -> void:
 			var hv := land * (35 + 260 * nz + 120 * dt) + land * ridge * 1150
 			hv = hv - (1 - land) * 60
 			h[k] = hv
-	_shape_fields(h)
+	_shape_fields(h, p_seed)
 	_plant_trees(p_seed)
 
 
-func _shape_fields(h: PackedFloat64Array) -> void:
+func _shape_fields(h: PackedFloat64Array, p_seed := 0) -> void:
 	var cv := _cv()
 	# guarantee land for offshore strips
 	for af in _fields:
@@ -288,6 +296,8 @@ func _shape_fields(h: PackedFloat64Array) -> void:
 					hv = hv * (1 - blend) + elev * blend
 				h[k] = hv
 		_field_elev[af.code] = elev
+	if natural:
+		_naturalise(h, p_seed)
 	_h = PackedFloat32Array()
 	_h.resize(h.size())
 	for k in h.size():
@@ -390,8 +400,97 @@ func _generate_custom(p_seed: int, params: Dictionary, airfields: Array) -> void
 				var bump := exp(-((dx * dx + dy * dy) / r2))
 				hv = maxf(hv, bump * float(isl[3]) * (0.7 + 0.6 * dt) - (1 - bump) * 60)
 			h[k] = hv
-	_shape_fields(h)
+	_shape_fields(h, p_seed)
 	_plant_trees(p_seed)
+
+
+## Bilinear lookup in a GRID x GRID float64 field at fractional cell coordinates.
+static func _at(v: PackedFloat64Array, fx: float, fy: float) -> float:
+	fx = _clip(fx, 0.0, GRID - 1.001)
+	fy = _clip(fy, 0.0, GRID - 1.001)
+	var i := int(fx)
+	var j := int(fy)
+	var tx := fx - i
+	var ty := fy - j
+	var k := j * GRID + i
+	return v[k] * (1 - tx) * (1 - ty) + v[k + 1] * tx * (1 - ty) + v[k + GRID] * (1 - tx) * ty + v[k + GRID + 1] * tx * ty
+
+
+## Rework the hills into something that reads as eroded land rather than blended noise: ridge lines and gullies from
+## warped ridged noise (more relief the higher the ground), a fine crumple on top, then thermal erosion so no slope
+## stands steeper than rock would. The change is weighted by `mask`, which is zero on the coast and the lowlands (under
+## 30 m, full by 120 m) and within reach of every airfield (the runway rectangle plus its blend plus 200 m, fading out
+## over 700 m more), so strips, their approaches and the shoreline keep exactly the heights the generator gave them.
+func _naturalise(h: PackedFloat64Array, p_seed: int) -> void:
+	var rng := NpRandom.new()
+	rng.seed(p_seed + 7001)  # its own stream: nothing the classic generator draws moves
+	var wx := _fbm(rng, GRID, 5, 4)
+	var wy := _fbm(rng, GRID, 5, 4)
+	var rid := _fbm(rng, GRID, 9, 5)
+	var gul := _fbm(rng, GRID, 22, 4)
+	var fine := _fbm(rng, GRID, 64, 2)
+	_normalise(rid)
+	_normalise(gul)
+	var mask := PackedFloat64Array()
+	mask.resize(GRID * GRID)
+	for k in mask.size():
+		mask[k] = _smoothstep(30.0, 120.0, h[k])
+	var cv := _cv()
+	for af in _fields:
+		var reach: float = (650.0 if af.setting == "beach" else 260.0) + 200.0
+		var r1: float = reach + 700.0
+		var box: float = maxf(af.length, af.width) / 2.0 + r1 + CELL
+		var c0 := maxi(0, int((af.x - box + HALF) / CELL))
+		var c1 := mini(GRID - 1, int((af.x + box + HALF) / CELL) + 1)
+		var r0 := maxi(0, int((af.y - box + HALF) / CELL))
+		var r2 := mini(GRID - 1, int((af.y + box + HALF) / CELL) + 1)
+		for r in range(r0, r2 + 1):
+			var dy: float = cv[r] - af.y
+			for c in range(c0, c1 + 1):
+				var dx: float = cv[c] - af.x
+				var along: float = absf(dx * af.ux + dy * af.uy) - af.length / 2.0
+				var across: float = absf(dx * af.uy - dy * af.ux) - af.width / 2.0
+				var dist: float = PyMath.hypot(maxf(along, 0.0), maxf(across, 0.0))
+				var k := r * GRID + c
+				mask[k] *= _smoothstep(reach, r1, dist)
+	var out := h.duplicate()
+	for r in GRID:
+		for c in GRID:
+			var k := r * GRID + c
+			var m: float = mask[k]
+			if m <= 0.0:
+				continue
+			var fx: float = c + (wx[k] - 0.5) * 40.0  # warp the lookup up to ~20 cells: ridges bend instead of following the lattice
+			var fy: float = r + (wy[k] - 0.5) * 40.0
+			var ridged := 1.0 - absf(2.0 * _at(rid, fx, fy) - 1.0)  # 1 on a crest line, 0 in a gully
+			ridged = ridged * ridged
+			var gully := 1.0 - absf(2.0 * _at(gul, fx, fy) - 1.0)
+			var up := _clip((h[k] - 40.0) / 650.0, 0.0, 1.0)  # more relief where the mountains are
+			var amp := 45.0 + 250.0 * up
+			var d := amp * (ridged - 0.32) + 0.35 * amp * (gully - 0.5) * (1.0 - ridged) + 7.0 * (fine[k] - 0.5)
+			out[k] = h[k] + m * d
+	# thermal erosion: slopes steeper than the talus angle shed material to their lower neighbours
+	var talus := CELL * 0.75  # about 37 degrees
+	for it in 6:
+		var shift := PackedFloat64Array()
+		shift.resize(GRID * GRID)
+		for r in range(1, GRID - 1):
+			for c in range(1, GRID - 1):
+				var k := r * GRID + c
+				var m: float = mask[k]
+				if m <= 0.0:
+					continue
+				var hk: float = out[k]
+				for n in [k - 1, k + 1, k - GRID, k + GRID]:
+					var dh: float = hk - out[n]
+					if dh > talus:
+						var mv: float = 0.25 * (dh - talus) * minf(m, mask[n])
+						shift[k] -= mv
+						shift[n] += mv
+		for k in out.size():
+			out[k] += shift[k]
+	for k in h.size():
+		h[k] = out[k]
 
 
 func set_data(heights: PackedFloat32Array, trees: PackedFloat32Array, airfields: Array) -> void:

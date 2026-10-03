@@ -11,8 +11,6 @@ extends Node
 ##                 police helicopters' rotors and cruisers' sirens, go-fast
 ##                 outboards, surf when you're low over the coast, rain and
 ##                 thunder with the weather
-##   the music     Radio Costa 88 (F7): a synth loop out of 1985 - bass, arp,
-##                 gated drums - built note by note the first time it plays
 ##
 ## Every sound is a looped or one-shot AudioStreamWAV made once (static cache);
 ## loops are cut to whole cycles so they don't click. Headless, the dummy audio
@@ -20,7 +18,6 @@ extends Node
 
 const RATE := 22050
 const ENGINE_F0 := 40.0  ## the loop's blade-pass frequency, Hz (1200 rpm on a two-blade prop)
-const MUSIC_BPM := 112.0
 
 static var _cache := {}
 
@@ -33,7 +30,6 @@ var surf: AudioStreamPlayer
 var rain: AudioStreamPlayer
 var radio: AudioStreamPlayer
 var ui: AudioStreamPlayer
-var music: AudioStreamPlayer
 var _pending: Array = []  ## players whose loop waits for the tree
 var world := {}  ## key -> AudioStreamPlayer3D (rotors, sirens, outboards)
 var _last_msg = null  ## the newest radio message heard
@@ -56,7 +52,6 @@ func setup(app_) -> Soundscape:
 	rain = _player(noise_loop("rain", 0.5), -60.0)
 	radio = _player(null, -10.0)
 	ui = _player(null, -8.0)
-	music = _player(null, -12.0)  # Radio Costa 88: built on first play
 	var fx = app.scene.fx if app.scene != null else null
 	if fx != null and fx.has_signal("lightning"):
 		fx.lightning.connect(func(): get_tree().create_timer(1.5).timeout.connect(on_lightning))
@@ -277,45 +272,6 @@ static func outboard_loop() -> AudioStreamWAV:
 		return wav(s, true))
 
 
-## Radio Costa 88: four bars of 1985 - A minor, F, C, G - bass, a square-wave
-## arpeggio, gated kick and snare, hats. Built once, looped.
-static func music_loop() -> AudioStreamWAV:
-	return _cached("music", func():
-		var beat := 60.0 / MUSIC_BPM
-		var n := int(RATE * beat * 16.0)
-		var s := PackedFloat32Array()
-		s.resize(n)
-		var chords := [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]]  # MIDI: Am F C G
-		var rng := RandomNumberGenerator.new()
-		rng.seed = 88
-		for i in n:
-			var t := float(i) / RATE
-			var b := t / beat  # beats
-			var bar := int(b / 4.0) % 4
-			var ch: Array = chords[bar]
-			var v := 0.0
-			# bass: eighth notes on the root, an octave down
-			var bf := 440.0 * pow(2.0, (float(ch[0]) - 12.0 - 69.0) / 12.0)
-			var e8 := fmod(b * 2.0, 1.0)
-			v += 0.22 * (2.0 * fmod(bf * t, 1.0) - 1.0) * exp(-e8 * 2.5)
-			# arpeggio: sixteenths up the chord, square wave
-			var step := int(b * 4.0) % 3
-			var af := 440.0 * pow(2.0, (float(ch[step]) + 12.0 - 69.0) / 12.0)
-			var e16 := fmod(b * 4.0, 1.0)
-			v += 0.09 * (1.0 if fmod(af * t, 1.0) < 0.5 else -1.0) * exp(-e16 * 4.0)
-			# pad: the chord, soft
-			for m in ch:
-				v += 0.035 * sin(TAU * 440.0 * pow(2.0, (float(m) - 69.0) / 12.0) * t)
-			# drums: kick on every beat, a gated snare on 2 and 4, hats on the eighths
-			var eb := fmod(b, 1.0)
-			v += 0.5 * sin(TAU * (55.0 + 90.0 * exp(-eb * 30.0)) * t) * exp(-eb * 9.0)
-			if int(b) % 2 == 1:
-				v += 0.28 * rng.randf_range(-1.0, 1.0) * (1.0 if eb < 0.18 else 0.0)
-			v += 0.05 * rng.randf_range(-1.0, 1.0) * exp(-e8 * 40.0)
-			s[i] = v * 0.8
-		return wav(s, true))
-
-
 ## The Hotel Cielo's band: a 1950s mambo at 124 BPM, eight bars of Dm7, G7, Cmaj7, A7 (two bars each), a tumbao bass, a piano
 ## montuno in eighths, the 3-2 son clave on a woodblock and maracas. Whole bars, so it loops cleanly.
 static func casino_band() -> AudioStreamWAV:
@@ -423,15 +379,6 @@ func click(kind := "click") -> void:
 		ui.stream = load(path)
 		ui.play()
 
-
-func toggle_music() -> bool:
-	if music.playing:
-		music.stop()
-	else:
-		if music.stream == null:
-			music.stream = music_loop()
-		music.play()
-	return music.playing
 
 
 ## A one-shot at a world position (3D, falls off with distance).

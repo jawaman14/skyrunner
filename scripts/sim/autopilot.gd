@@ -10,11 +10,14 @@ extends RefCounted
 ##
 ## engage_route() (Session._cmd_autopilot, a second U) adds waypoints to fly -
 ## a winding, terrain-masking RoutePlanner route low over the ground with the
-## transponder off for a hot leg, or a single waypoint (the destination
-## itself) direct at a proper cruise altitude for a legal one. The altitude is
-## one number for the whole leg, set once from the route's highest terrain
-## plus a margin (Session picks it): simpler and safer than following the
-## terrain as it flies, which reacts late to what's coming up.
+## transponder off for a hot leg, or for a legal one a cruise leg to a fix on
+## the runway's extended centreline, a descent down a 3-degree path to a
+## second fix and then down the runway (Session._approach_route): a join and a
+## final, not a straight line at the field's centre. The cruise altitude is one
+## number, set once from the route's highest terrain plus a margin (Session
+## picks it): simpler and safer than following the terrain as it flies, which
+## reacts late to what's coming up. A waypoint may carry its own altitude (the
+## descent legs do).
 
 var engaged := false
 var alt_target := 0.0  ## m MSL
@@ -22,7 +25,7 @@ var hdg_target := 0.0
 var pitch_base := 2.0  ## learned trim pitch, deg
 var elev_i := 0.0
 var min_ias_kts := 0.0  ## below this, give up altitude to keep flying speed
-var waypoints: Array = []  ## [[x, y], ...] still to fly; empty = plain heading hold
+var waypoints: Array = []  ## [[x, y], or [x, y, alt_m], ...] still to fly; empty = plain heading hold. A third number is the altitude to fly on the way to that point.
 var wp_i := 0
 var arrived := false  ## engage_route() reached its last waypoint this frame (Session says so once)
 var _leg_from := [0.0, 0.0]  ## the current leg's other end, for the course line (see update())
@@ -85,6 +88,8 @@ func update(dt: float, s: FlightModel.FlightState, c: FlightModel.Controls) -> F
 				arrived = true
 				waypoints = []
 		if wp_i < waypoints.size():
+			if wp.size() > 2:
+				alt_target = float(wp[2])  # this leg has its own altitude: the descent down the glide path
 			var across: float = ac[1]
 			var gs := maxf(20.0, s.gs_kts * 0.514444)
 			var v_lat := Py.clamp(-across * CROSS_TRACK_GAIN, -CROSS_TRACK_MAX_MS, CROSS_TRACK_MAX_MS)

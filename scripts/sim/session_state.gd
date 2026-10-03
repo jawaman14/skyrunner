@@ -203,6 +203,8 @@ const SYSTEMS := ["ground_war", "agency", "island", "trade", "logistics", "payro
 # ================================================================ commands
 
 
+const APPROACH_JOIN_M := 9000.0  ## the autopilot's join point, out along the runway's centreline
+const APPROACH_FINAL_M := 5000.0  ## and its final fix: 3 degrees down from here is the runway end
 const AUTOPILOT_MIN_ROUTE_M := 3000.0  ## closer than this isn't worth engaging the navigate leg for
 const AUTOPILOT_HOT_DARK_SUSPICION := 50.0  ## a hot leg goes dark once suspicion's at least this, even without a tip or a wanted level yet
 
@@ -430,6 +432,8 @@ func enable_system(key: String, career := false) -> bool:
 			if logistics != null or trade == null or stash_net == null:
 				return false
 			logistics = Logistics.new(self)
+			if psych != null:
+				logistics.ensure_acid()
 		"payroll":
 			if payroll != null or not Payroll.ENABLED:
 				return false
@@ -457,6 +461,8 @@ func enable_system(key: String, career := false) -> bool:
 			if psych != null or not Psychedelics.ENABLED or trade == null:
 				return false
 			psych = Psychedelics.new(self)
+			if logistics != null:
+				logistics.ensure_acid()
 		"dealership":
 			if dealer != null or not Dealership.ENABLED:
 				return false

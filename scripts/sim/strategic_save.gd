@@ -35,7 +35,7 @@ const ISLAND_INTS := ["n", "cost", "value", "mules"]
 const CASINO := ["status", "stake", "owed", "heat", "case_", "unrest", "rival", "bought_out_until", "closed_until", "audit_until", "uprising_until", "act",
 	"act_until", "cage_log", "laundered", "fees", "collected", "last", "force_uprising_at", "_t", "_evt_t", "_law_t"]
 const DEALER := ["owned", "active", "spent", "auto", "rev", "_serial", "_insured", "_auto_t"]
-const PSYCH := ["stock", "held", "trust", "status", "hide_until", "weed_left", "circuit_left", "scene", "scene_name", "scene_until", "bartered", "sold", "earned", "raids", "auto", "last", "_t", "_evt_t", "_raid_t", "_auto_t"]
+const PSYCH := ["walk", "scarcity", "_walk_t", "stock", "held", "trust", "status", "hide_until", "weed_left", "circuit_left", "scene", "scene_name", "scene_until", "bartered", "sold", "earned", "raids", "auto", "last", "_t", "_evt_t", "_raid_t", "_auto_t"]
 const AGENCY := ["trust", "exposure", "protected_until", "quashed", "flights", "burned", "pay_mult", "offer_chance", "_gift_t", "_t",
 	"stings", "hung_out", "withheld", "last_read", "_game_t", "war_chest", "coke_lots", "gun_lots", "pipe_last", "_pipe_t", "_pipe_pause",
 	"next_market"]
@@ -208,6 +208,7 @@ static func restore(s: Session, d: Dictionary) -> void:
 		var l: Logistics = s.logistics
 		var ld: Dictionary = d.logistics
 		l.stock = ld.get("stock", {})
+		l.ensure_acid()  # (an older save has no shelf for it)
 		l.cash = _ints(ld.get("cash", {}))
 		l.cash_since = ld.get("cash_since", {})
 		l.aboard = int(ld.get("aboard", 0))
@@ -306,6 +307,8 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 		SaveVars.restore(s.island, d.island, ISLAND, ISLAND_INTS)
 	if d.get("psych") is Dictionary:
 		s.enable_system("psychedelics")
+		if s.logistics != null:
+			s.logistics.ensure_acid()
 		if s.psych != null:
 			SaveVars.restore(s.psych, d.psych, PSYCH)
 	if d.get("dealer") is Dictionary:

@@ -13,6 +13,8 @@ if ps_status == "hiding"
 
 ~ greet
 {{ps_name}}: [[Peace. Sunrise Collective, Nico speaking.|Hey, man. Nico. You've got something green for us?|The hills are quiet and the kettle's on. Nico.]]
+if ps_bartered <= 0
+	{{ps_name}}: Word is you move grass. We're a lot of people up here with a lot of blotter and no way to the festivals. Grass is cheap at the bush strips up in the hills: land at one, take the 'Our own grass' job off the board (J) and fly the bales down to a stash house of yours. Then we send a van and leave you sheets. The kids pay well for sheets. That's the whole deal.
 => talk
 
 ~ hiding
@@ -20,6 +22,8 @@ if ps_status == "hiding"
 => END
 
 ~ talk
+if ps_best_lb < 20
+	{{ps_name}}: You haven't got twenty pounds of green in any stash house of yours. Land at a bush strip, take the 'Our own grass' job on the board (J), fly the bales into a stash house, then ring me back.
 - Trade grass for acid: everything {{ps_best_name}} has. ({{ps_best_lb}} lb) [if ps_best_lb >= 20 and ps_stock > 0]
 	do barter_best()
 	if result != ""
@@ -34,7 +38,7 @@ if ps_status == "hiding"
 	else
 		{{ps_name}}: A hundred pounds. Fair is fair.
 	=> talk
-- Send the sheets out through the circuit. ({{ps_held}} sheets, ${{ps_price}} each) [if ps_held >= 1]
+- Send the sheets out through the circuit. ({{ps_held}} sheets, ${{ps_price}} each; the money stays at {{ps_acid_name}}) [if ps_held >= 1]
 	do sell_acid()
 	if result != ""
 		{{ps_name}}: {{result}}
@@ -56,7 +60,7 @@ if ps_status == "hiding"
 	=> END
 
 ~ word
-{{ps_name}}: The lab has {{ps_stock}} sheets ready. For a hundred pounds of grass I can give you {{ps_rate}} sheets right now; we want {{ps_weed_left}} lb more this half hour. Trust: {{ps_trust}} out of a hundred.
+{{ps_name}}: The street is {{ps_mood}} times its usual price for blotter. The lab has {{ps_stock}} sheets ready. For a hundred pounds of grass I can give you {{ps_rate}} sheets right now; we want {{ps_weed_left}} lb more this half hour. Trust: {{ps_trust}} out of a hundred.
 if ps_scene != ""
 	{{ps_name}}: And the scene is on: {{ps_scene}}.
 {{ps_name}}: Sheets go for about ${{ps_price}} to you through the circuit; it will take another {{ps_circuit_left}} this half hour. So far we've had {{ps_bartered}} lb of your grass, you've moved {{ps_sold}} sheets and made ${{ps_earned}}.

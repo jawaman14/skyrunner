@@ -166,6 +166,10 @@ class State:
 	var ps_best_id := ""
 	var ps_best_name := ""
 	var ps_best_lb := 0
+	var ps_acid_id := ""  ## the stash with the most sheets
+	var ps_acid_name := ""
+	var ps_acid_sheets := 0.0
+	var ps_mood := 1.0
 	var ps_earned := 0
 	var ps_bartered := 0
 	var ps_sold := 0.0
@@ -330,6 +334,11 @@ class State:
 			ps_best_id = str(stashes[0].id) if not stashes.is_empty() else ""
 			ps_best_name = str(stashes[0].name) if not stashes.is_empty() else ""
 			ps_best_lb = int(stashes[0].lb) if not stashes.is_empty() else 0
+			var acid: Array = pz.get("acid_stashes", [])
+			ps_acid_id = str(acid[0].id) if not acid.is_empty() else ""
+			ps_acid_name = str(acid[0].name) if not acid.is_empty() else ""
+			ps_acid_sheets = float(acid[0].sheets) if not acid.is_empty() else 0.0
+			ps_mood = float(pz.get("mood", 1.0))
 		var dz: Dictionary = snap.get("dealer", {})
 		dealer = not dz.is_empty()
 		if dealer:
@@ -429,7 +438,7 @@ class State:
 		return _do("acid_barter", {"stash": ps_best_id, "lb": 100.0})
 
 	func sell_acid() -> bool:
-		return _do("acid_sell", {"sheets": ps_held})
+		return _do("acid_sell", {"sheets": ps_acid_sheets if ps_acid_id != "" else ps_held, "stash": ps_acid_id})
 
 	func toggle_acid_auto() -> bool:
 		return _do("acid_auto", {"on": not ps_auto})

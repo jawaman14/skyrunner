@@ -17,6 +17,7 @@ var announcer: LanDiscovery.Announcer = null
 
 
 func _init() -> void:
+	Terrain.natural = not OS.get_cmdline_user_args().has("--classic-terrain")
 	var env := {}
 	for k in DedicatedServer.DEFAULTS:
 		var e := "SKYRUNNER_" + str(k).to_upper()

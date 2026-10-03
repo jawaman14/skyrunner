@@ -37,7 +37,7 @@ Seats    F3 hand the aircraft to the AI (take another seat from a station) / tak
 Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)
 Table    F4 multiplayer menu: games on your network, who is at the table (mute, remove), chat, voice settings
 Voice    hold ` to talk on your side's net (a radio: range, hills, static), SHIFT + ` to the whole table (hosting or joined)
-Radio    F7 Radio Costa 88: synth music out of 1985     In the car: R radio on / off, , and . (or [ and ]) tune: real 1979-86 broadcasts
+Radio    F7 radio on / off, , and . tune (in the aircraft); in the car R, , and . : real 1979-86 broadcasts, the same dial
 Learn    F10 skip a tutorial step   SHIFT+F10 tutorial on / off (the lobby's Tutorial box, or --tutorial)
 Screen   F9 filter: off / VHS / colour-blindness simulations (protan, deutan, tritan, mono)
 Beta     F12 feedback bundle: a zip of what happened (build, machine, flight, log, screenshot) to send back
@@ -118,6 +118,7 @@ var boat_nodes := {}
 var bale_nodes := {}
 var beacons: Array = []  ## [key, [nodes]]
 var _frame := 0
+var _phone_known := {}  ## the numbers the phone had when last looked at
 var on_foot := false
 var car: Car = null  ## the starter car (made the first time you step out of the aircraft)
 var driving: Car = null  ## the car you are in, if you are
@@ -153,7 +154,9 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	nerves = Nerves.new().setup()
 	nerves.layer = 0  # over the 3D view, under the HUD (layer 1) and menus
 	add_child(nerves)
-	sound = Soundscape.new().setup(self)  # engine, wind, radio, the world, the music
+	sound = Soundscape.new().setup(self)  # engine, wind, radio, the world
+	radio = CarRadio.new().setup(self)  # one dial for the cockpit and the car
+	add_child(radio)
 	add_child(sound)
 	effects = FX.new()
 	effects.name = "effects"
@@ -179,6 +182,15 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
+	car_map = Minimap.new()  # the radar for the car and for walking: it follows the car or the walker, not the aircraft
+	car_map.visible = false
+	ui.add_child(car_map)
+	car_map.setup(sess)
+	car_map.waypoint_picked.connect(_waypoint_picked)
+	hud.minimap.waypoint_picked.connect(_waypoint_picked)
+	car_dash = CarDash.new()
+	car_dash.visible = false
+	ui.add_child(car_dash)
 	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu], ["dealer", DealerMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
@@ -195,6 +207,9 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	if sess.races != null:
 		add_child(RaceMarkers.new().setup(sess))
 	foot_prompt = UIStyle.label("", 20, UIStyle.WHITE)
+	foot_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long line wraps instead of running off the screen
+	foot_prompt.custom_minimum_size = Vector2(640, 0)
+	foot_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	foot_prompt.add_theme_stylebox_override("normal", UIStyle.panel_box(Color(0, 0, 0, 0.55)))
 	foot_prompt.set_anchors_preset(Control.PRESET_CENTER)
 	foot_prompt.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -359,7 +374,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 				KEY_ESCAPE:
 					open_pause()
 				KEY_M:
-					hud.minimap.toggle()
+					_map_toggle()
 				KEY_F1:
 					help.visible = not help.visible
 			get_viewport().set_input_as_handled()
@@ -400,7 +415,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 					else:
 						open_pause()
 				KEY_M:
-					hud.minimap.toggle()
+					_map_toggle()
 				KEY_F1:
 					help.visible = not help.visible
 				KEY_F2:
@@ -425,8 +440,12 @@ func _unhandled_input(ev: InputEvent) -> void:
 			open_talk("family")  # a sit-down with the Family
 		elif ev.shift_pressed and k == KEY_G and s.island != null:
 			open_talk("general")  # the General's aide on the island frequency
-		elif ev.shift_pressed and k == KEY_N and s.psych != null:
-			open_talk("psych")  # the Sunrise Collective: Nico Cozz, acid for grass
+		elif ev.shift_pressed and k == KEY_C and s.psych != null:
+			open_talk("psych")  # the Sunrise Collective: Nico Cozz, acid for grass (Shift+N is the Family's no)
+		elif ev.shift_pressed and k == KEY_T:
+			_open("phone")  # the phone from the cockpit: every number you have
+		elif ev.shift_pressed and k == KEY_V and s.dealer != null:
+			_open("dealer")  # the car lot, without the walk
 		elif ev.shift_pressed and k == KEY_K and s.casino != null:
 			open_talk("casino")  # the Hotel Cielo: Lenny Vance, the manager
 		elif ev.shift_pressed and k in [KEY_U, KEY_I] and s.island != null:
@@ -500,8 +519,12 @@ func _unhandled_input(ev: InputEvent) -> void:
 		elif k == KEY_F12:
 			var path := Beta.report(s, get_viewport())
 			s.say("Feedback bundle saved: %s" % ProjectSettings.globalize_path(path) if path != "" else "Couldn't write the feedback bundle.")
-		elif k == KEY_F7 and sound != null:
-			s.say("Radio Costa 88: %s" % ("on - hits from 1985" if sound.toggle_music() else "off"))
+		elif k == KEY_F7:
+			_radio_key("power")  # the cockpit radio: the same real broadcasts as the car's
+		elif k == KEY_PERIOD:
+			_radio_key("up")
+		elif k == KEY_COMMA:
+			_radio_key("down")
 
 
 var debug_menu: CanvasLayer = null
@@ -512,7 +535,11 @@ var screen_filter: ScreenFilter = null
 var controls_menu: ControlsMenu = null
 var pack_menu: PackMenu = null
 var sound: Soundscape = null
-var radio: CarRadio = null  ## the car's radio (made with the car)
+var car_map: Minimap = null  ## the radar and chart while on foot or driving
+var waypoint = null  ## the ground point you picked on the chart (Vector2), or null
+var _wp_beacon: MeshInstance3D = null
+var car_dash: CarDash = null  ## the dashboard, shown while driving
+var radio: CarRadio = null  ## the radio: the cockpit's (F7) and the car's (R); silent on foot
 var talk: TalkBalloon = null  ## a conversation on screen (the Family, the General's aide)
 var _offers_seen := {}
 var _was_on_island := false
@@ -684,8 +711,72 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 
 func _input(ev: InputEvent) -> void:
 	# click to grab the mouse again while walking
-	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null:
+	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and not _map_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+## M: the chart. On foot or at the wheel it is the car's map (it follows you); in the aircraft the HUD's own.
+func _map_toggle() -> void:
+	var m: Minimap = car_map if on_foot else hud.minimap
+	m.toggle()
+	if on_foot:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if m.big else Input.MOUSE_MODE_CAPTURED  # the cursor to pick a place with
+		if walker != null:
+			walker.look_enabled = not m.big
+
+
+func _map_open() -> bool:
+	return (car_map != null and car_map.big) or hud.minimap.big
+
+
+## A click on a chart: a waypoint. A pink beam stands at it so you can see where you are going, and the dashboard points the way.
+func _waypoint_picked(p: Vector2) -> void:
+	waypoint = null if p == Vector2.INF else p
+	car_map.waypoint = waypoint
+	hud.minimap.waypoint = waypoint
+	if waypoint == null:
+		s.say("Waypoint cleared.")
+		if _wp_beacon != null:
+			_wp_beacon.visible = false
+		return
+	if _wp_beacon == null:
+		_wp_beacon = MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 2.0
+		cyl.bottom_radius = 4.0
+		cyl.height = 600.0
+		_wp_beacon.mesh = cyl
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_color = Color(1.0, 0.3, 0.68, 0.35)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_wp_beacon.material_override = mat
+		_wp_beacon.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(_wp_beacon)
+	var wp: Vector2 = waypoint
+	_wp_beacon.global_position = Vector3(wp.x, s.world.ground(wp.x, wp.y) + 300.0, -wp.y)
+	_wp_beacon.visible = true
+	s.say("Waypoint set. Follow the pink beam and the arrow on the dash; right-click the chart to clear it.")
+
+
+## Each frame on foot or at the wheel: the map follows you, and a waypoint you have reached is done with.
+func _map_tick() -> void:
+	var xy: Array = [0.0, 0.0]
+	var hd := 0.0
+	if driving != null:
+		var g := driving.game_xy()
+		xy = [g.x, g.y]
+		hd = driving.heading_deg()
+	elif walker != null:
+		xy = walker.game_xy()
+		hd = rad_to_deg(-walker.rotation.y)
+	car_map.focus = {"x": float(xy[0]), "y": float(xy[1]), "heading": hd}
+	car_map.visible = _active_menu() == null
+	if waypoint != null and driving != null:
+		var wp: Vector2 = waypoint
+		if Vector2(float(xy[0]), float(xy[1])).distance_to(wp) < 30.0:
+			_waypoint_picked(Vector2.INF)
+			s.say("You have arrived.")
 
 
 func _menu_closed() -> void:
@@ -936,8 +1027,6 @@ func _ensure_car(st: FlightModel.FlightState) -> void:
 		car.apply_spec(s.dealer.drive_spec())
 		_dealer_rev = s.dealer.rev
 	add_child(car)
-	radio = CarRadio.new().setup(self)
-	add_child(radio)
 	var h := deg_to_rad(st.heading)
 	var off: float = s.spec.visual.span_m * 0.5 + 9.0
 	car.place(st.x + cos(h) * off, st.y - sin(h) * off, st.heading + 90.0)
@@ -961,7 +1050,7 @@ func _enter_car() -> void:
 		s.tutorial.note("driving")
 	if radio != null:
 		radio.active = true
-	s.say("Driving: W / S throttle and brake, A / D steer, SPACE handbrake, R radio, , and . tune, E to get out." + (("  " + radio.line()) if radio != null and radio.on else ""))
+	s.say("At the wheel: W / S gas and brake, A / D steer, Space handbrake, R radio, E to get out.")
 
 
 ## Driving through a police checkpoint without slowing is noticed: suspicion on the runner's case, once per checkpoint
@@ -997,7 +1086,7 @@ func _car_race() -> void:
 		s.races.feed("car", driving.game_xy(), 0.0)
 
 
-## R, and the tuning keys, in the car: the radio on / off, the next station up, the next down.
+## R in the car, F7 in the aircraft, and the tuning keys: the radio on / off, the next station up, the next down.
 func _radio_key(what: String) -> void:
 	if radio == null:
 		return
@@ -1038,6 +1127,7 @@ func _exit_car() -> void:
 	driving.driven = false
 	driving.speed = 0.0
 	driving = null
+	car_dash.visible = false
 
 
 func _on_use(action: String, area: Area3D) -> void:
@@ -1118,9 +1208,27 @@ func _poll_stick(inp: ControlMapper.InputFrame) -> void:
 
 
 # ------------------------------------------------------------ loop
+## The phone book grows as systems open: a number you did not have last time is announced and marked NEW in the phone.
+func _phone_watch() -> void:
+	var m: PhoneMenu = menus.get("phone")
+	if m == null:
+		return
+	var first := _phone_known.is_empty()
+	for c in m.contacts():
+		if not _phone_known.has(c[0]):
+			_phone_known[c[0]] = true
+			if not first:
+				m.fresh[c[0]] = true
+				s.say("New contact on your phone: %s - %s." % [c[1], c[2]])
+
+
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.1)
 	_frame += 1
+	if radio != null:
+		radio.active = driving != null or not on_foot
+	if _frame % 30 == 1:
+		_phone_watch()
 	if _frame % 10 == 0:
 		if s.tutorial != null and tutorial_panel == null:
 			tutorial_panel = TutorialPanel.new()
@@ -1166,7 +1274,9 @@ func _process(delta: float) -> void:
 	hud.visible = m == null and not on_foot
 	if on_foot and s.foot != null and s.foot.down != "":
 		_foot_down()
+	car_map.visible = on_foot and m == null
 	if on_foot:
+		_map_tick()
 		_foot_hud()
 		_car_checkpoints()
 		_car_race()
@@ -1253,11 +1363,14 @@ func _foot_hud() -> void:
 		walker.global_position = driving.global_position + Vector3(0, 1.0, 0)  # the walker rides along: the phone, the taxi and the sim see where you are
 		var ml2 := []
 		for msg in s.messages:
-			if s.time - msg[0] < 8:
+			if s.time - msg[0] < 5:
 				ml2.append(msg[1])
-		foot_prompt.text = "\n".join(["%d km/h  -  %s   [E] get out" % [int(absf(driving.speed) * 3.6), "road" if driving.on_road() else "off-road"]] + ml2.slice(-2))
-		foot_prompt.visible = _active_menu() == null
+		car_dash.visible = _active_menu() == null and not _map_open()
+		car_dash.set_data(driving, radio, scene.night > 0.35, waypoint)
+		foot_prompt.text = "\n".join(ml2.slice(-2))
+		foot_prompt.visible = _active_menu() == null and not ml2.is_empty() and not _map_open()
 		return
+	car_dash.visible = false
 	if s.foot != null:
 		walker.speed_scale = s.foot.speed_factor()
 	var lines := []
