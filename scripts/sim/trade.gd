@@ -502,6 +502,13 @@ func trace() -> String:
 		var c = sess.police.case("runner")
 		c.suspicion = minf(100.0, c.suspicion + 4.0 * recent.size())
 		found.append("%d bulk sales by the smuggling organisation (suspicion +%d)" % [recent.size(), 4 * recent.size()])
+	var cg = sess.casino
+	if cg != null and cg.status == "open" and cg.cage_left() < Casino.CAGE_CAP:
+		var moved: int = Casino.CAGE_CAP - cg.cage_left()
+		var c2 = sess.police.case("runner")
+		c2.suspicion = minf(100.0, c2.suspicion + 3.0 * float(moved) / 2000.0)
+		cg.case_ = minf(100.0, cg.case_ + 5.0)
+		found.append("the %s's cage: $%s of street cash moved through it this hour (suspicion +%d)" % [Casino.NAME, Py.money(moved), int(3.0 * float(moved) / 2000.0)])
 	sess.law_say("Following the money: " + ("; ".join(found) if not found.is_empty() else "the trail's cold"))
 	return ""
 

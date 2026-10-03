@@ -188,6 +188,8 @@ func _update_world(dt: float) -> void:
 	for ev in maritime.events:
 		_maritime_event(ev[0], ev[1])
 	maritime.events.clear()
+	if casino != null:
+		casino.update(dt)
 	if analyst != null:
 		analyst.update(dt)
 	if undercover != null:

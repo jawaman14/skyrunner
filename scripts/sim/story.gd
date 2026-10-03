@@ -59,6 +59,14 @@ const CHAPTERS := [
 		+ "Fly it, walk it through the airport on mules, or ship it in a container [SHIFT+G].",
 		["island", "role_mule"],
 		[["island_runs", "Bring a load home from Isla Soberana", 1]]],
+	[1984, "The House",
+		"The Family owns more than the docks. On Isla Soberana, in the capital, it runs the Hotel Cielo: a white\n"
+		+ "tower over the bay, roulette and chemin de fer, a cabaret under the stars, and a cage in the cellar where\n"
+		+ "money goes in as chips and comes out as cheques. Buy a piece of the house, wash your street cash through\n"
+		+ "the cage [SHIFT+K]. But Havana had casinos too, once, and the General's island is not as calm as it looks.",
+		["casino"],
+		[["casino_stake", "Buy a stake in the Hotel Cielo", 1], ["casino_laundered", "Put $15,000 of street cash through its cage", 15000],
+			["casino_out", "Get out of Isla Soberana when the government falls", 1]]],
 	[1985, "The Company",
 		"A man with a government haircut and no government ID. His friends fight a war in\n"
 		+ "Central America that Congress won't pay for. Fly his crates south, bring his\n"
@@ -99,13 +107,16 @@ var chapter: Campaign.Chapter:
 
 
 func to_dict() -> Dictionary:
-	return {"index": index, "progress": progress, "done": completed_all}
+	return {"index": index, "progress": progress, "done": completed_all, "v": 2}
 
 
 static func from_dict(d) -> Story:
 	if not (d is Dictionary):
 		d = {}
-	var st := Story.new(int(d.get("index", 0)), d.get("progress"))
+	var idx := int(d.get("index", 0))
+	if int(d.get("v", 1)) < 2 and idx >= 6:
+		idx += 1  # a save from before 'The House' was added between Isla Soberana and the Company
+	var st := Story.new(idx, d.get("progress"))
 	st.completed_all = bool(d.get("done", false))
 	return st
 
@@ -162,7 +173,7 @@ func _open(i: int, announce: bool) -> void:
 const NAMES := {"logistics": "logistics (stock and cash have to be moved)", "trade": "the trade", "payroll": "the hiring hall", "chronicle": "the papers",
 	"ground_war": "the street war with Los Cuervos", "guns": "gun runs and gun sales", "role_soldier": "soldiers",
 	"family": "the Moretti family", "court": "the federal court", "island": "Isla Soberana", "role_mule": "mules",
-	"agency": "the Company"}
+	"agency": "the Company", "casino": "the Hotel Cielo"}
 
 
 func objective_lines() -> Array:
@@ -171,7 +182,7 @@ func objective_lines() -> Array:
 		var v: float = progress.get(o.key, 0.0)
 		var mark := "x" if v >= o.target else " "
 		var count := ""
-		if o.key in ["trade_earned", "bank", "net_worth", "cash_home"]:
+		if o.key in ["trade_earned", "bank", "net_worth", "cash_home", "casino_laundered"]:
 			count = " ($%s/$%s)" % [Py.money(int(v)), Py.money(int(o.target))]
 		elif o.target > 1:
 			count = " (%d/%d)" % [int(v), int(o.target)]
@@ -209,6 +220,12 @@ func _on_event(ev: EventBus.Event) -> void:
 			_bump("island_runs")
 		"cash_home":
 			_bump("cash_home", float(d.get("amount", 0.0)))
+		"casino_stake":
+			_put("casino_stake", 1.0)
+		"casino_laundered":
+			_bump("casino_laundered", float(d.get("amount", 0.0)))
+		"casino_out":
+			_put("casino_out", 1.0)
 		"bulk_sale":
 			if d.get("buyer") == "family":
 				_bump("family_deal")
@@ -232,7 +249,20 @@ func tick(s) -> void:
 	if s.family != null and s.family.gone and progress.get("family_deal", 0.0) < 1.0:
 		_put("family_deal", 1.0)
 		s.say("The Commission trial took the Morettis before we could deal with them. The story moves on.")
-	if s.agency != null and (not s.agency.active() or s.agency.hung_out) and index == 6 and progress.get("agency_jobs", 0.0) < 99.0:
+	if chapter.title == "The House" and s.casino != null:
+		var cz: Casino = s.casino
+		if cz.status == "seized" or not cz.active() or s.family.gone:
+			for k in ["casino_stake", "casino_laundered"]:
+				_put(k, 99999.0)
+			_put("casino_out", 1.0)
+			if cz.status != "seized":
+				s.say("The Family's house is out of reach: the story moves on.")
+		else:
+			_put("casino_stake", 1.0 if cz.stake > 0.0 or cz.laundered > 0 else 0.0)
+			if progress.get("casino_stake", 0.0) >= 1.0 and progress.get("casino_laundered", 0.0) >= 15000.0 and cz.force_uprising_at < 0.0 and cz.status == "open":
+				cz.force_uprising_at = s.time + 600.0
+				s.say("Word from the capital: the General's colonels are meeting. It may be time to be somewhere else.")
+	if s.agency != null and (not s.agency.active() or s.agency.hung_out) and chapter.title == "The Company" and progress.get("agency_jobs", 0.0) < 99.0:
 		for k in ["agency_jobs", "guns_to_company"]:
 			_put(k, 99.0)
 		s.say("The Company has cut us loose. So much for friends in Washington - the story moves on.")
