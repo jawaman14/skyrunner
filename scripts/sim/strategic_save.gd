@@ -68,7 +68,8 @@ static func capture(s: Session) -> Dictionary:
 	if s.payroll != null:
 		d["payroll"] = _payroll(s)
 	if s.races != null:
-		d["races"] = {"paid_at": s.races.paid_at.duplicate(), "won": s.races.won, "results": s.races.results.duplicate(true)}
+		d["races"] = {"paid_at": s.races.paid_at.duplicate(), "won": s.races.won, "betting": s.races.betting,
+			"results": s.races.results.duplicate(true)}
 	if s.rackets != null:
 		d["rackets"] = {"policy": s.rackets.policy.duplicate(), "held": s.rackets.held, "collected": s.rackets.collected}
 	if s.renown != null:
@@ -205,6 +206,7 @@ static func restore(s: Session, d: Dictionary) -> void:
 	if s.races != null and d.get("races") is Dictionary:
 		s.races.paid_at = d.races.get("paid_at", {})
 		s.races.won = int(d.races.get("won", 0))
+		s.races.betting = int(d.races.get("betting", 0))
 		s.races.results = d.races.get("results", [])
 	if s.rackets != null and d.get("rackets") is Dictionary:
 		for m in d.rackets.get("policy", {}):

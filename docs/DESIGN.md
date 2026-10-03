@@ -876,6 +876,13 @@ once an hour (after that it is for the glory). You are out, and the fee is gone,
 land from the circuit or take three times par. The save keeps what each course last paid and the winnings.
 `Races.ENABLED` switches it off.
 
+**The race chip and the book.** A chip on the HUD says where you are ("RACE  The Smuggler's Cove dash  gate 4/11  1:12.4
+par 4:42.0", or "take the start gate" before the clock runs). The track menu (the phone's *the track*) takes a bet on
+yourself: B cycles the stake ($0 / 100 / 200 / 300), N chooses a win (pays 3x the stake, the stake is not returned) or a
+place (top three, 1.5x). The stake is paid with the entry and is lost if you drop out. The book is only open on a race
+that is paying, a course that paid within the hour takes no bets, so betting cannot be a faster way to the same money.
+The save keeps the book's running total.
+
 ## 30. Effects and lighting (the 2026-10-03 upgrade)
 
 **Fire** (`FX.burn`): three layers - an outer flame (Kenney `fire_01`), a white-hot core (`flame_04`) and embers that drift up

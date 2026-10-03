@@ -227,7 +227,7 @@ Second wave, larger features:
   charge or fall back the nearest of our squads. **The rackets** too (DESIGN section 27): the streets we hold pay tribute (fair or squeezed, from the phone's
   collectors) and the rival squads we rout leave prisoners to ransom, turn or release. **Stash works** (DESIGN section 28): a hidden vault and a guard post, two levels each, bought in the logistics menu.
   **The arena** (DESIGN section 29): a street race in the car and an air circuit at every strip, a field of four
-  against the clock, prize money and renown by place. Not done: betting, races between players, a lap counter on the HUD.
+  against the clock, prize money and renown by place. A race chip on the HUD and a book (bets on a win or a place) are done. Not done: races between players.
 - **Saves keep the organisation.** Done (the old line here said "boats don't carry over to a new
   game or map", which turned out to be the whole of a save: it kept only money, aircraft, gear, upgrades,
   location, the arsenal, campaign, story and tutorial, and every stash house, crew member, squad and case
