@@ -69,7 +69,7 @@ func _leave(to: String) -> void:
 		get_tree().quit()
 		return
 	for c in get_children():
-		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient:
+		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient or c is VoiceChat:
 			remove_child(c)
 			c.queue_free()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -158,6 +158,8 @@ func start() -> void:
 	add_child(app)
 	app.setup(sess, args["graphics"], bot, server)
 	app.leave.connect(_leave)
+	if server != null:
+		add_child(VoiceChat.new().attach_host(server))  # push-to-talk radio voice for the table
 	if args["hour"] >= 0:
 		app.scene.set_hour(args["hour"])
 	if args["shot"] != "":
@@ -190,6 +192,7 @@ func _join() -> void:
 
 
 func _seat(link: NetClient, role: String) -> void:
+	add_child(VoiceChat.new().attach_client(link))
 	if role in [Roles.INTERCEPTOR, Roles.PILOT] or (role == Roles.COPILOT and args["seat3d"]):
 		var seat := RemoteSeat.new()
 		add_child(seat)

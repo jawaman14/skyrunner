@@ -969,6 +969,29 @@ func _cmd_hq(role: String, a: Dictionary):
 	return nights.order(Roles.side(role), order, args)
 
 
+## Where a seat's radio is: [x, y, z (m MSL, null on the ground)], or null when the seat has no place on the map. The
+## pilot and co-pilot are the aircraft; the desks are their headquarters' masts (RadioNet.DF_MAST_M up).
+func role_position(role: String):
+	match role:
+		Roles.PILOT, Roles.COPILOT:
+			if state == null:
+				return null
+			return [state.x, state.y, null if state.on_ground else state.alt]
+		Roles.BOSS, Roles.LIEUTENANT, Roles.CONTROLLER, Roles.CHIEF, Roles.PATROL:
+			var kind := "org" if role in [Roles.BOSS, Roles.LIEUTENANT] else "law"
+			var h = world.map.hqs.get(kind)
+			if h != null:
+				return [h.x, h.y, world.ground(h.x, h.y) + RadioNet.DF_MAST_M]
+	return null
+
+
+## A voice transmission on the side's net has ended (`dur` s on the air): from the air it is a runner transmission like
+## any other, so the DF stations get their bearing (and, with the intercept upgrade, the law hears the words).
+func voice_transmitted(role: String, dur: float) -> void:
+	if RadioNet.REALISM and role in [Roles.PILOT, Roles.COPILOT] and state != null and not state.on_ground:
+		_df_on(radio.transmit(time, "runner", squawk, "(voice)", [state.x, state.y, state.alt], clampf(dur, 1.0, 20.0)))
+
+
 func _cmd_chat(role: String, a: Dictionary):
 	var text := str(a.get("text", "")).substr(0, 200)
 	if Roles.side(role) == "runner":

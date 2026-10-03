@@ -26,6 +26,11 @@ const DEFAULT_PORT := 47800
 const MAX_LINE := 1 << 20
 const SNAPSHOT_HZ := 20.0
 const HELLO_TIMEOUT_MS := 10000
+const VOICE_FRAMES_PER_S := 40  ## a talker sends 25 a second; more than this is dropped
+const VOICE_MAX_S := 30.0  ## a transmission this long is cut off (a stuck key)
+
+## A voice frame for the host's own player (the pilot's game is the host): {from, id, role, ch, s, q, k, d, end}.
+signal voice_heard(msg: Dictionary)
 
 
 class Conn:
@@ -49,6 +54,9 @@ var inbox: Array = []  ## [role, seq, name, args]
 var sticks := {}  ## role -> [roll, pitch, throttle]
 var sess = null  ## the Session the seats belong to (set by attach or the first pump)
 var chat_log: Array = []  ## [from, role, side, text, to]
+var host_role := Roles.PILOT  ## the seat the host plays itself (its voice comes from there)
+var host_name := "host"
+var _keyed := {}  ## talker id -> {t0, n, sec} (when the key went down; frames this second)
 var _seats_rev := -1
 var _seats_t := 0.0
 var _seq := 0
@@ -207,6 +215,9 @@ func _message(c: Conn, msg: Dictionary) -> void:
 				c.peer.put_data(line({"t": "claimed", "role": ""}))
 				_seats_rev = -1
 			return
+		"voice":
+			relay_voice(c.token, c.name, c.role, str(msg.get("ch", "net")), int(msg.get("s", 0)), str(msg.get("d", "")), bool(msg.get("end", false)))
+			return
 		"say":
 			var text := str(msg.get("text", "")).strip_edges().substr(0, 200)
 			if text != "":
@@ -263,6 +274,48 @@ func chat(from: String, role: String, text: String, to := "all") -> void:
 			sess.say(t)
 		if to == "all" or side == "law":
 			sess.law_say(t)
+
+
+## One voice frame (or, with `end`, the key coming up) from a talker: routed by the radio's rules (VoiceRouter) to
+## whoever hears it, each with the quality they hear it at. A transmission on the net also goes to the DF stations
+## when it ends (Session.voice_transmitted). `from_id` is the talker's token ("host" for the host's own voice).
+func relay_voice(from_id: String, from_name: String, from_role: String, ch: String, seq: int, d: String, end: bool) -> void:
+	if sess == null or not (ch in ["net", "all"]) or d.length() > VoiceCodec.MAX_FRAME_B64:
+		return
+	var now := Time.get_ticks_msec() / 1000.0
+	var k: Dictionary = _keyed.get(from_id, {})
+	if k.is_empty() or now - float(k.get("last", -99.0)) > 1.0:
+		k = {"t0": now, "n": 0, "sec": int(now), "last": now}  # a new transmission: the key went down
+	if int(k.sec) != int(now):
+		k.sec = int(now)
+		k.n = 0
+	k.n = int(k.n) + 1
+	k.last = now
+	_keyed[from_id] = k
+	if int(k.n) > VOICE_FRAMES_PER_S or now - float(k.t0) > VOICE_MAX_S:
+		if end:
+			_keyed.erase(from_id)
+		return
+	var listeners := conns.filter(func(c): return c.joined).map(func(c): return {"id": c.token, "role": c.role})
+	listeners.append({"id": "host", "role": host_role})
+	for r in VoiceRouter.route(sess, from_id, from_role, ch, listeners):
+		var msg := {"t": "voice", "from": from_name, "id": from_id, "role": from_role, "ch": ch, "s": seq, "q": snappedf(float(r.q), 0.01),
+			"k": r.kind, "d": d, "end": end}
+		if str(r.id) == "host":
+			voice_heard.emit(msg)
+			continue
+		for c in conns:
+			if c.joined and c.token == str(r.id):
+				c.peer.put_data(line(msg))
+	if end:
+		if ch == "net":
+			sess.voice_transmitted(from_role, now - float(k.t0))
+		_keyed.erase(from_id)
+
+
+## The host's own microphone (its seat is host_role).
+func host_voice(ch: String, seq: int, d: String, end: bool) -> void:
+	relay_voice("host", host_name, host_role, ch, seq, d, end)
 
 
 func _broadcast_seats() -> void:
