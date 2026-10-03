@@ -1037,3 +1037,34 @@ stream (seed + 929).
   at a bush strip only when it is under 40. The save keeps each aircraft's condition.
 
 The mechanic's desk: ↑ ↓ choose the part, Enter repairs it, B both, S stops the work, I inspects, F adds 10 % fuel.
+
+
+## 40. The Hotel Cielo: the Family's casino on Isla Soberana
+
+`scripts/sim/casino.gd` (`Casino`; behind `Casino.ENABLED` and `Casino.REVOLUTION`; `casino: true` in the session options, or the
+story chapter *The House*; needs the Family and the island). The Cielo is a business you do through a conversation with its
+manager, Lenny Vance (`dialogue/casino.dialogue`): Shift+K in the cockpit, X at the boss's, lieutenant's, co-pilot's and fixer's
+desks, or the phone. (Its physical form is section 41.) Its own RNG stream is seed + 939.
+
+- **The house** takes about $16,000 gross an hour, more with tourists (the island's weather and politics: a hurricane cuts it to
+  40 %, a boatlift lifts it 30 %, a headliner on the bill 50 %), less when the Lucky Palm leans on it. The General skims 6 to 14 %
+  (the less he likes you, the more) and the Family 12 %; the rest belongs to the owners. You buy a **stake** from the Family in
+  tenths, $9,000 a tenth, up to 40 %; your share builds up in the house's account to **collect**.
+- **The cage** is chips in, clean cheques out: street cash from any stash goes in and comes out in the safe minus the Family's 8 %
+  and the General's skim (14 to 22 % in all), up to $8,000 an hour. Besides the convenience (no truck to be stopped) it cleans the
+  money trail: the runner's case cools 1.5 points a thousand. Every dollar warms the house's **heat** (0.8 a thousand, cooling 0.25 a
+  minute), and heat becomes the task force's **case** (0.2 a minute at full heat).
+- **The General** can be paid ($3,000): his regard +8, the island's unrest -10, the heat -5.
+- **The Lucky Palm** (Dante Varga) leans on the house until bought out ($20,000, six hours of peace and +10 % take); at full pressure
+  it burns the kitchens: the house is dark for half an hour and 10 % of the account goes.
+- **The task force** (the controller's or chief's F key: `dialogue/casino_file.dialogue`): a wiretap in the counting room ($3,000,
+  +20 case), an audit (the commission has the cage's books for 30 minutes, +10 case, +25 if cash has gone through it), a raid
+  ($5,000, once the case is 50 %: the house is dark 30 minutes, 40 % of the owners' money forfeited to the task force, the Family's
+  respect -8). With no human at the desk the AI chief does it by itself when the heat passes 55. Trace-the-money finds the cage.
+- **The revolution** (Havana, 1959): the island's unrest rises 0.15 a minute, faster with the heat, a purge, a hurricane or a
+  shortage, slower the more the General likes you. At 100 the government falls (`Island.purge`, the island closed for an hour):
+  you have 20 minutes to **evacuate** with 70 % of your account and 40 % of what the stake would fetch, or the house falls with your
+  share in it (the Family's respect -20). Either way the house is seized and the island's new men are cool to you.
+- **In the story**, chapter 7 *The House* (1984) opens it: buy a stake, put $15,000 of street cash through the cage, and when both are
+  done the colonels meet and the uprising is set ten minutes out; get out alive and the chapter ends. If the Family is gone or the
+  house is seized first, the chapter does not strand you. Saves from before the chapter was added shift their chapter number.
