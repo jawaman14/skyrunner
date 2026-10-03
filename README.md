@@ -148,6 +148,7 @@ parity fixtures and you never need it to build, play or test ([docs/PORTING.md](
 
 ## Docs
 
+- [docs/GUIDE.md](docs/GUIDE.md): the player's guide: every role, every mechanic and every key.
 - [docs/FEATURES.md](docs/FEATURES.md): the long feature reference (what the README used to list, system by system).
 - [docs/DESIGN.md](docs/DESIGN.md): roles, gadgets and counters, every system, the storyline, the ground war, the
   seat model, voice and the waiting room.
