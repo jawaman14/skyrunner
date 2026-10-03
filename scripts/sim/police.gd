@@ -268,6 +268,7 @@ var cases := {}
 var tips: Array = []
 var events: Array = []  ## runner-facing messages
 var law_events: Array = []  ## controller-facing messages
+var analyst = null  ## Analyst: when a human holds that seat, tips wait on her desk (Session sets it)
 var score := {"busts": 0, "clean_stops": 0, "bales_seized": 0, "boats_seized": 0}
 var visibility := 1.0  ## weather and moon: scales how far crews see (Session.set_weather)
 var heli_grounded := false  ## dense sea fog: the helicopters can't fly (Session.set_weather)
@@ -524,9 +525,19 @@ func set_aerostat(on: bool):
 	return null
 
 
-func add_tip(x: float, y: float, radius: float, text: String, squawk := "", target_id = null) -> void:
+## A tip reaches the task force. With a human analyst the tip waits on that desk (`truth`: whether it is a real lead, which only
+## the sim knows); otherwise dispatch has it at once.
+func add_tip(x: float, y: float, radius: float, text: String, squawk := "", target_id = null, truth := true) -> void:
 	if not features.has("informants"):
 		return
+	if analyst != null and analyst.active():
+		analyst.intake(x, y, radius, text, squawk, target_id, truth)
+		return
+	release_tip(x, y, radius, text, squawk, target_id)
+
+
+## Dispatch acts on a tip (the analyst forwarded it, or there is no analyst).
+func release_tip(x: float, y: float, radius: float, text: String, squawk := "", target_id = null) -> void:
 	tips.append(Tip.new(now, x, y, radius, text, squawk))
 	Py.keep_last(tips, 12)
 	law_events.append("TIP: " + text)

@@ -69,6 +69,9 @@ func _init(opts := {}) -> void:
 		if PoliceSystem.LAW_FEATURES.has(f):
 			law[f] = true
 	police = PoliceSystem.new(world, _rng(seed + 99), radio, "human" if humans.has(Roles.CONTROLLER) else "ai", law)
+	analyst = Analyst.new(self)
+	police.analyst = analyst
+	analyst.held = humans.has(Roles.ANALYST)
 	if island != null:
 		police.territory_y = Island.TERRITORY_Y
 	if opts.get("renown", false) and Renown.ENABLED:
@@ -121,6 +124,10 @@ func _init(opts := {}) -> void:
 ## Break the reference cycles (night director, campaign, bus subscribers) so a
 ## finished Session is freed; batch simulators build thousands of them.
 func dispose() -> void:
+	if analyst != null:
+		analyst.sess = null
+	analyst = null
+	police.analyst = null
 	payroll = null
 	court = null
 	island = null

@@ -58,7 +58,7 @@ Any seat without a human is filled by AI, so the same match can be played by 1 t
 | **Controller** (radar/intel desk) | Reads the fused radar picture, classifies tracks, dispatches helicopters, interceptors and cutters, sets radio encryption, requests the aerostat | Radar tracks (with position noise, no identity for non-squawking targets), tips, DF bearings. Never the true runner position. | [done] (station client + AI fallback) |
 | **Interceptor pilot** | Flies the chase aircraft and makes the visual ID | Out the window, its own radar | AI [done]; human pilot [done] (`RemoteSeat`) |
 | **Coast Guard cutter** | Hunts boats and seizes floating bales | Surface radar | [done] AI; human [planned] |
-| **Analyst** | Works the informant network, fuel-purchase records and tail numbers | Tip feed | [planned] (folded into Controller now) |
+| **Analyst** | Works the informant network, fuel-purchase records and tail numbers | Tip feed | [done] (section 34) |
 | **Undercover agent** | Plants a tracking beacon on a runner aircraft on the ground | | [planned] |
 
 ### Hidden role (versus, [planned])
@@ -954,3 +954,21 @@ the host sees who is not ready and presses **Start the game** when everyone has 
   (mode, players, seats, whether it can start) when it changes, and `start {role}` when the game begins (`HostServer.begin` hands every
   chosen seat to the session, and the guests go straight into theirs). A guest who joins a game that is already running gets the old seat
   picker, so joining mid-game still works.
+
+
+## 34. The analyst: the desk every tip crosses
+
+The task force's analyst seat (`scripts/sim/analyst.gd`, `Roles.ANALYST`, behind `Analyst.ENABLED`). Without a player in it
+nothing changes: a tip goes straight to dispatch. With one, tips wait on the desk first (`PoliceSystem.add_tip` hands them
+to `Analyst.intake`; `release_tip` is what dispatch does with one):
+
+- **What arrives**: an informant's word, an undercover agent's leak, the fuel desk's note that a tail number bought ferry
+  fuel, an anonymous caller, and a double agent's plant. The sim knows which are real (`truth`); the desk does not.
+- **Verify** (V, 45 s): checks the source and the tail number; the verdict, *sound* or *doubtful*, is right 85% of the time.
+- **Forward** (F): to dispatch, where a helicopter goes up for it. A false lead costs the task force $1,000 in funds.
+- **Bin** (X): a real lead thrown away is a load that got through (counted as a miss).
+- **Stale**: a tip nobody touches goes to dispatch as it is after 150 s, and a desk holds at most 12 (the oldest is
+  forwarded). Handing the seat back forwards everything waiting.
+
+The seat is in the waiting room, the seat picker and the police-mode seat list like the others. The desk's dice are their own
+stream (seed + 909). Not saved: the desk is empty after a load.

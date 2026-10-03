@@ -71,7 +71,7 @@ func _spy_roll(job: Jobs.Job) -> void:
 		var decoys: Array = world.airfields.filter(func(a): return a.code != job.dest and a.kind in ["bush", "shady"])
 		if not decoys.is_empty():
 			var af: Airfield = decoys[urng.randint(0, decoys.size() - 1)]
-			police.add_tip(af.x, af.y, 2500, "informant: a load lands at %s tonight" % af.name, "", null)
+			police.add_tip(af.x, af.y, 2500, "informant: a load lands at %s tonight" % af.name, "", null, false)
 
 
 ## The ramp crew's idea of loading: first free spot from the front.
