@@ -27,6 +27,7 @@ var spot := 0  ## roulette: index into SPOTS; baccarat: index into SIDES
 var number := 17  ## the number a straight-up bet is on
 var layout: Array = []  ## the roulette bets laid and not yet spun
 var felt: Label
+var stage: VBoxContainer  ## what is on the felt, as pictures (CasinoMenu.card_node and the rest)
 var note := ""  ## the last refusal, until the next move
 
 
@@ -35,9 +36,15 @@ func _build() -> void:
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	panel.add_theme_stylebox_override("panel", UIStyle.box(Color(0.04, 0.26, 0.14, 0.96), 18, Color(0.75, 0.6, 0.25, 0.8), 3, Vector4(28, 22, 28, 22)))
 	content.add_child(panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 12)
+	panel.add_child(v)
+	stage = VBoxContainer.new()  # the cards, dice, reels and the ball, drawn
+	stage.add_theme_constant_override("separation", 8)
+	v.add_child(stage)
 	felt = UIStyle.label("", 22, Color(0.95, 0.95, 0.88), UIStyle.mono())
 	felt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	panel.add_child(felt)
+	v.add_child(felt)
 
 
 ## Sit down at `which` ("roulette", "blackjack", "craps", "baccarat" or "slots").
@@ -68,6 +75,7 @@ func refresh() -> void:
 		hints.set_hints([["ESC", "leave the table", "esc"]])
 		return
 	var play: Dictionary = c.last_play if str(c.last_play.get("game", "")) == game else {}
+	_fill_stage(play)
 	match game:
 		"roulette":
 			felt.text = _roulette(play)
@@ -103,6 +111,129 @@ func _hints() -> Array:
 	return out
 
 
+# ------------------------------------------------------------------ the pictures
+const SUITS := ["♠", "♥", "♦", "♣"]
+const RED_SUITS := [1, 2]
+
+
+## The suit a card shows: the shoe deals ranks only, so the suit is dressed on (the same card in the same place is always the same suit).
+static func suit_of(rank: int, place: int) -> int:
+	return (rank * 3 + place * 5 + 1) % 4
+
+
+## A playing card (a back when `down`).
+static func card_node(rank: int, place: int, down := false, baccarat := false) -> Control:
+	var p := PanelContainer.new()
+	p.custom_minimum_size = Vector2(66, 94)
+	var suit := suit_of(rank, place)
+	p.add_theme_stylebox_override("panel", UIStyle.box(Color(0.55, 0.1, 0.16) if down else Color(0.97, 0.95, 0.9), 7, Color(0.08, 0.08, 0.1, 0.9), 2, Vector4(6, 4, 6, 4)))
+	p.set_meta("rank", rank if not down else -1)
+	var face := "10" if (baccarat and rank == 0) else card(rank)  # baccarat deals the pip value: a nought is a ten, jack, queen or king
+	var l := UIStyle.label("" if down else "%s\n%s" % [face, SUITS[suit]], 26, Color(0.78, 0.08, 0.1) if suit in RED_SUITS else Color(0.08, 0.08, 0.12))
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	p.add_child(l)
+	return p
+
+
+## A die showing `n`.
+static func die_node(n: int) -> Control:
+	var p := PanelContainer.new()
+	p.custom_minimum_size = Vector2(72, 72)
+	p.add_theme_stylebox_override("panel", UIStyle.box(Color(0.96, 0.95, 0.92), 12, Color(0.15, 0.1, 0.1), 2, Vector4(6, 4, 6, 4)))
+	p.set_meta("die", n)
+	var l := UIStyle.label(str(n), 42, Color(0.75, 0.05, 0.08))
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	p.add_child(l)
+	return p
+
+
+## A slot reel stopped on `sym` (7, B bar, L lemon, P plum, O orange, M melon, C cherry, - blank).
+static func reel_node(sym: String) -> Control:
+	var p := PanelContainer.new()
+	p.custom_minimum_size = Vector2(104, 120)
+	p.add_theme_stylebox_override("panel", UIStyle.box(Color(0.1, 0.06, 0.08), 10, Color(0.85, 0.7, 0.25), 3, Vector4(6, 4, 6, 4)))
+	p.set_meta("sym", sym)
+	var colours := {"7": Color(1.0, 0.2, 0.2), "B": Color(0.95, 0.95, 0.95), "L": Color(1.0, 0.9, 0.2), "P": Color(0.7, 0.35, 0.9), "O": Color(1.0, 0.6, 0.15), "M": Color(0.35, 0.85, 0.35), "C": Color(1.0, 0.25, 0.4), "-": Color(0.35, 0.35, 0.4)}
+	var l := UIStyle.label(sym if sym != "-" else "·", 64, colours.get(sym, Color.WHITE))
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	p.add_child(l)
+	return p
+
+
+## The roulette ball's pocket: a coloured disc with its number.
+static func pocket_node(n: int, colour: String) -> Control:
+	var p := PanelContainer.new()
+	p.custom_minimum_size = Vector2(84, 84)
+	var bg := Color(0.1, 0.55, 0.2) if colour == "green" else (Color(0.78, 0.08, 0.1) if colour == "red" else Color(0.07, 0.07, 0.09))
+	p.add_theme_stylebox_override("panel", UIStyle.box(bg, 42, Color(0.9, 0.8, 0.35), 3, Vector4(4, 4, 4, 4)))
+	p.set_meta("pocket", n)
+	var l := UIStyle.label(str(n), 36, Color.WHITE)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	p.add_child(l)
+	return p
+
+
+func _row(caption: String, nodes: Array, total := "") -> void:
+	var r := HBoxContainer.new()
+	r.add_theme_constant_override("separation", 10)
+	var cap := UIStyle.label(caption, 18, Color(0.85, 0.85, 0.75))
+	cap.custom_minimum_size = Vector2(110, 0)
+	cap.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	r.add_child(cap)
+	for n in nodes:
+		r.add_child(n)
+	if total != "":
+		var t := UIStyle.label(total, 22, Color(0.95, 0.9, 0.6))
+		t.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		r.add_child(t)
+	stage.add_child(r)
+
+
+## Draw what is on the felt (rebuilt on every refresh).
+func _fill_stage(play: Dictionary) -> void:
+	for ch in stage.get_children():
+		stage.remove_child(ch)
+		ch.queue_free()
+	match game:
+		"blackjack":
+			if play.has("player"):
+				var live := not bool(play.get("done", true))
+				var dealer := []
+				for i in play.dealer.size():
+					dealer.append(card_node(int(play.dealer[i]), i))
+				if live:
+					dealer.append(card_node(1, 9, true))
+				_row("DEALER", dealer, "" if live else str(CasinoGames.Blackjack.value(play.dealer)[0]))
+				var mine := []
+				for i in play.player.size():
+					mine.append(card_node(int(play.player[i]), i + 5))
+				var v: Array = CasinoGames.Blackjack.value(play.player)
+				_row("YOU", mine, "%d%s" % [int(v[0]), " soft" if v[1] else ""])
+		"baccarat":
+			if play.has("player"):
+				var pl := []
+				for i in play.player.size():
+					pl.append(card_node(int(play.player[i]), i, false, true))
+				var bk := []
+				for i in play.banker.size():
+					bk.append(card_node(int(play.banker[i]), i + 4, false, true))
+				_row("PLAYER", pl, str(CasinoGames.Baccarat.total(play.player)))
+				_row("BANKER", bk, str(CasinoGames.Baccarat.total(play.banker)))
+		"craps":
+			if play.has("dice"):
+				_row("DICE", [die_node(int(play.dice[0])), die_node(int(play.dice[1]))], str(int(play.dice[0]) + int(play.dice[1])))
+		"roulette":
+			if play.has("n"):
+				_row("THE BALL", [pocket_node(int(play.n), str(play.colour))])
+		"slots":
+			var reels: Array = play.get("reels", ["-", "-", "-"])
+			_row("", [reel_node(str(reels[0])), reel_node(str(reels[1])), reel_node(str(reels[2]))], ("pays %dx" % int(play.mult)) if int(play.get("mult", 0)) > 0 else "")
+
+
 # ------------------------------------------------------------------ the felts
 static func card(r: int) -> String:
 	return {1: "A", 11: "J", 12: "Q", 13: "K"}.get(r, str(r))
@@ -132,8 +263,6 @@ func _roulette(play: Dictionary) -> String:
 			total += int(b.amount)
 			names.append("%s $%d" % [str(b.name), int(b.amount)])
 		t += "On the layout: %s   (total $%s)\n" % [", ".join(names), Py.money(total)]
-	if not play.is_empty():
-		t += "\nThe ball: %d %s." % [int(play.n), str(play.colour)]
 	return t
 
 
@@ -142,8 +271,6 @@ func _blackjack(play: Dictionary) -> String:
 	if play.is_empty():
 		return t + "Place your stake and deal."
 	var live := not bool(play.get("done", true))
-	t += "Dealer:  %s%s\n" % [hand(play.dealer), "  ?" if live else "  (%d)" % CasinoGames.Blackjack.value(play.dealer)[0]]
-	t += "You:      %s  (%d%s)\n" % [hand(play.player), CasinoGames.Blackjack.value(play.player)[0], " soft" if CasinoGames.Blackjack.value(play.player)[1] else ""]
 	if live:
 		t += "\nBasic strategy says: %s." % str(play.get("advice", ""))
 	return t
@@ -155,8 +282,6 @@ func _craps(play: Dictionary) -> String:
 	if cr == null:
 		return t + "The stick is waiting for a line bet."
 	t += "Pass $%d   Don't pass $%d   Odds $%d   Point: %s\n" % [cr.pass_bet, cr.dont_bet, cr.odds, str(cr.point) if cr.point != 0 else "off (come-out roll)"]
-	if play.has("dice"):
-		t += "\nThe dice: %s." % " and ".join(PackedStringArray(play.dice.map(func(d): return str(d))))
 	return t
 
 
@@ -164,18 +289,12 @@ func _baccarat(play: Dictionary) -> String:
 	var t := "Punto banco, eight decks.  Player pays 1, banker 0.95, tie 8.\n\n"
 	t += "Your bet:  < %s >   $%s\n" % [SIDES[spot], Py.money(stake())]
 	if not play.is_empty() and play.has("player"):
-		t += "\nPlayer: %s  (%d)\nBanker: %s  (%d)\nThe %s wins." % [hand(play.player), CasinoGames.Baccarat.total(play.player), hand(play.banker), CasinoGames.Baccarat.total(play.banker), str(play.winner)]
+		t += "\nThe %s wins." % str(play.winner)
 	return t
 
 
 func _slots(play: Dictionary) -> String:
 	var t := "Three reels, seven pays 450, bar 90, cherries pay too.   Return 91.9 %.\n\n"
-	if play.has("reels"):
-		t += "     [ %s ]   [ %s ]   [ %s ]" % [str(play.reels[0]), str(play.reels[1]), str(play.reels[2])]
-		if int(play.mult) > 0:
-			t += "      pays %dx" % int(play.mult)
-	else:
-		t += "     [ - ]   [ - ]   [ - ]"
 	return t
 
 

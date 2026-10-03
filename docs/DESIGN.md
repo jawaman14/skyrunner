@@ -1162,7 +1162,9 @@ courtyard (`casino_band`: a mambo at 124 BPM, Dm7 G7 Cmaj7 A7, tumbao bass, pian
 (`casino_room`), both with short ranges (14 and 10 m units) so they are heard in and around the hotel; and a sound for every hand at
 a table: chips, or a rising arpeggio and coins for a slot win (a longer one from $2,000).
 
-Not yet: the table games' cards drawn rather than printed.
+**The felt is drawn** (`CasinoMenu.card_node`, `die_node`, `reel_node`, `pocket_node`, `_fill_stage`): the dealer's and your cards (the dealer's hole card face down
+until the hand is played), baccarat's two hands (a nought is shown as a ten), the two dice, the three reels and the roulette ball's pocket are pictures on the
+green, rebuilt on every refresh. The shoe deals ranks only, so a card's suit is dressed on (`suit_of`: the same card in the same place is always the same suit).
 
 
 ## 43. The car dealership
