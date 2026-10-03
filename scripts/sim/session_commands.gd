@@ -681,6 +681,13 @@ func _cmd_casino(role: String, a: Dictionary):
 	return err if err != "" else null
 
 
+func _cmd_casino_play(role: String, a: Dictionary):
+	if casino == null:
+		return "There is no casino in this game."
+	var err := casino.play(str(a.get("game", "")), a)
+	return err if err != "" else null
+
+
 func _cmd_casino_case(role: String, a: Dictionary):
 	if casino == null:
 		return "There is no casino in this game."
