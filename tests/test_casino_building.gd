@@ -74,6 +74,69 @@ func test_the_lights_go_out_and_the_door_is_boarded_when_the_house_is_shut() -> 
 	check(not boards.visible and lamp.visible and sign3.visible, "and lit again")
 
 
+func test_the_staff_work_and_the_patrons_stroll_the_aisles() -> void:
+	var n := _building()
+	var crowd: CasinoCrowd = n.find_child("crowd", true, false)
+	check(crowd != null, "the crowd is in the hotel")
+	check(crowd.staff.size() >= 15, "dealers, cashiers, a barman and a band: %d" % crowd.staff.size())
+	check_eq(crowd.patrons.size(), CasinoCrowd.PATRONS, "and the guests")
+	var before := []
+	for f in crowd.patrons:
+		before.append(f.pos)
+	for i in 600:
+		crowd._process(0.1)  # a minute of the evening
+	var moved := 0
+	for i in crowd.patrons.size():
+		if crowd.patrons[i].pos != before[i]:
+			moved += 1
+	check(moved >= crowd.patrons.size() / 2, "most of them have walked somewhere: %d" % moved)
+	for f in crowd.patrons:
+		check(CasinoCrowd.NODES.has(f.node), "always on the aisles")
+	CasinoBuilding.set_open(n.find_child("hotel-cielo", true, false), false)
+	check(not crowd.visible, "and they go home when the house is shut")
+
+
+func test_the_house_has_its_sounds() -> void:
+	var band := Soundscape.casino_band()
+	check_eq(band.loop_mode, AudioStreamWAV.LOOP_FORWARD, "the band loops")
+	var secs := float(band.data.size()) / 2.0 / float(Soundscape.RATE)
+	check_near(secs, 8.0 * 4.0 * 60.0 / 124.0, 0.01, "eight whole bars of 124 BPM")
+	var peak := 0
+	for i in range(0, band.data.size() - 1, 2):
+		peak = maxi(peak, absi(band.data.decode_s16(i)))
+	check(peak > 3000 and peak < 32000, "audible and not clipped: %d" % peak)
+	check_eq(Soundscape.casino_room().loop_mode, AudioStreamWAV.LOOP_FORWARD, "the room murmurs on")
+	check(Soundscape.slot_win(true).data.size() > Soundscape.slot_win(false).data.size(), "a jackpot rings longer than a win")
+	check(Soundscape.chips().data.size() > 1000, "chips")
+
+
+func test_the_hotels_points_are_in_the_world() -> void:
+	var s := _session()
+	var stage := CasinoBuilding.world_point(s.world, 26.0, 2.5, 66.0)
+	var front := CasinoBuilding.world_point(s.world, 0.0, 0.0, 0.0)
+	var at := CasinoBuilding.site()
+	check_near(front.x, float(at.x), 0.01, "the front door is at the site")
+	check_near(-front.z, float(at.y), 0.01, "in game metres")
+	check(stage.distance_to(front) > 60.0, "the stage is a long way behind it: %.0f m" % stage.distance_to(front))
+
+
+func test_every_aisle_connects_to_the_others() -> void:
+	var crowd := CasinoCrowd.make([], 1)
+	var seen := {"lobby_c": true}
+	var queue := ["lobby_c"]
+	while not queue.is_empty():
+		var nm: String = queue.pop_front()
+		for m in crowd._adj.get(nm, []):
+			if not seen.has(m):
+				seen[m] = true
+				queue.append(m)
+	for nm in CasinoCrowd.NODES:
+		check(seen.has(nm), "%s can be reached from the lobby" % nm)
+	for e in CasinoCrowd.EDGES:
+		check(CasinoCrowd.NODES.has(e[0]) and CasinoCrowd.NODES.has(e[1]), "edge %s-%s names real nodes" % [e[0], e[1]])
+	crowd.free()
+
+
 func test_it_can_be_switched_off() -> void:
 	CasinoBuilding.ENABLED = false
 	var n := _building()

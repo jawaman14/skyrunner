@@ -1138,8 +1138,19 @@ island's own heights and the runway's elevation). `IslandRender.build` adds it a
 Menus now pass any letter that is not J, L or H (which still toggle the job board, load planner and hangar) through to the open menu as
 `key("s")` and the like; the race menu's B and N had only worked by clicking their hints before.
 
-Not yet: dealers and patrons that move, sound (the wheel, the slot bells, the band), and the table games' cards drawn rather than
-printed.
+**The people** (`scripts/render/casino_crowd.gd`, `CasinoCrowd`): the staff (dealers, cashiers, the bartender, the receptionist, the
+bandsmen: about 20 posts recorded by `CasinoBuilding._figure`) sway at their posts with their arms working, and sixteen patrons stroll
+the aisles. The patrons walk a graph of open lanes (`NODES` and `EDGES`: the lobby, the gate to the floor, the lanes between the tables
+and the slot banks, the salon, the cage, the way out to the courtyard, the courtyard's lanes), pick a random node, take the
+breadth-first route, stand there four to fourteen seconds looking at the table or the stage, and go on. They are scenery: no
+colliders, no sim state, their own `RandomNumberGenerator`; the lights-out switch hides them.
+
+**The sound** (`Soundscape._casino_sounds`, synthesised like the rest): while the house trades, a 3D loop of the band in the
+courtyard (`casino_band`: a mambo at 124 BPM, Dm7 G7 Cmaj7 A7, tumbao bass, piano montuno, 3-2 clave, maracas) and a murmur on the floor
+(`casino_room`), both with short ranges (14 and 10 m units) so they are heard in and around the hotel; and a sound for every hand at
+a table: chips, or a rising arpeggio and coins for a slot win (a longer one from $2,000).
+
+Not yet: the table games' cards drawn rather than printed.
 
 
 ## 43. The car dealership
@@ -1162,7 +1173,8 @@ player can toggle it with `fleet_auto` (the dealer screen's A key). It never buy
 
 **Commands** (`buy_vehicle`, `sell_vehicle`, `use_vehicle`, `fleet_auto`): the pilot's, and the boss's and the fixer's for the trucks. The pilot's
 screen is `DealerMenu` (the phone's "The dealership", or E at a showroom: `Buildings.showroom`, a glass-fronted dealer with four cars on the lot,
-at every hub and regional airfield). The boss's and fixer's desks do not have a screen for it yet.
+at every hub and regional airfield). The boss's and fixer's desks reach the same lot by phone: **V** opens `dialogue/dealer.dialogue` (Marty Quintero, through
+`Talk.State`'s `dl_*` fields and the snapshot's `dealer` view, `Dealership.view_lite`): buy any car or truck, sell the newest, toggle the AI.
 
 Saved by `StrategicSave` (owned, active, spent, auto). `tests/test_dealership.gd` has 13 tests. BALANCE entry 48 (arithmetic only: the
 balance runs build no dealership).

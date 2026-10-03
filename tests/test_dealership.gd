@@ -253,3 +253,25 @@ func test_the_dealer_screen_buys_sells_and_drives() -> void:
 	m.key("a")
 	check(s.dealer.auto, "A hands the fleet to the AI")
 	m.free()
+
+
+func test_the_dealer_talks_to_any_seat() -> void:
+	var s := _session()
+	check(Talk.resource("dealer") != null, "Marty Quintero's script compiles")
+	for role in [Roles.PILOT, Roles.BOSS, Roles.FIXER]:
+		check(Roles.allowed(role, "buy_vehicle") and Roles.allowed(role, "sell_vehicle"), "%s can buy and sell vehicles" % role)
+		check(Snapshot.build(s, role).has("dealer"), "%s's snapshot carries the lot" % role)
+	check(not Snapshot.build(s, Roles.CONTROLLER).has("dealer"), "the law does not see the organisation's lot")
+	var link := LocalLink.new(s, Roles.FIXER)
+	var st := Talk.State.new(func(): return link.snapshot(), func(n: String, a: Dictionary) -> Array:
+		link.send_command(n, a)
+		return link.last_result)
+	check(st.dealer and st.dl_price("van") == 14000 and st.dl_can("van"), "the state reads the lot")
+	check(st.buy_vehicle("van") and st.dl_trucks == 1, "buys a van through the command")
+	check(st.dl_fleet_line.contains("1 truck"), "and describes the fleet: %s" % st.dl_fleet_line)
+	check(st.buy_vehicle("fast") and s.stash_net.haul_ms == 15.0, "a second truck")
+	check(st.sell_truck() and st.dl_trucks == 1, "sells the newest")
+	check(st.toggle_fleet_auto() and s.dealer.auto and st.dl_auto, "hands the fleet to the AI")
+	s.money = 100
+	st.refresh()
+	check(not st.dl_can("armoured"), "and cannot afford the armoured truck")

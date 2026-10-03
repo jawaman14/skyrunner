@@ -38,6 +38,7 @@ var _pending: Array = []  ## players whose loop waits for the tree
 var world := {}  ## key -> AudioStreamPlayer3D (rotors, sirens, outboards)
 var _last_msg = null  ## the newest radio message heard
 var _last_msg_set := false
+var _casino_played := -1  ## Casino.played when last heard (a hand, a spin or a pull plays a sound)
 var _law := 0
 var _mag := -1
 var _t := 0.0
@@ -315,6 +316,105 @@ static func music_loop() -> AudioStreamWAV:
 		return wav(s, true))
 
 
+## The Hotel Cielo's band: a 1950s mambo at 124 BPM, eight bars of Dm7, G7, Cmaj7, A7 (two bars each), a tumbao bass, a piano
+## montuno in eighths, the 3-2 son clave on a woodblock and maracas. Whole bars, so it loops cleanly.
+static func casino_band() -> AudioStreamWAV:
+	return _cached("casino-band", func():
+		var beat := 60.0 / 124.0
+		var bars := 8
+		var n := int(RATE * beat * 4.0 * bars)
+		var s := PackedFloat32Array()
+		s.resize(n)
+		var chords := [[50, 53, 57, 60], [43, 47, 50, 53], [48, 52, 55, 59], [45, 49, 52, 55]]
+		var clave := [0.0, 1.5, 3.0, 5.0, 6.0]  # 3-2: three in the first bar, two in the second
+		var bass_hits := [0.0, 1.5, 2.0, 3.5]
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 1957
+		for i in n:
+			var t := float(i) / RATE
+			var b := t / beat
+			var bar := int(b / 4.0) % bars
+			var ch: Array = chords[int(floorf(float(bar) / 2.0)) % 4]
+			var in_bar := fmod(b, 4.0)
+			var v := 0.0
+			# the tumbao: root and fifth, a plucked sine with a second harmonic
+			for h in bass_hits:
+				var e: float = in_bar - h
+				if e >= 0.0 and e < 1.0:
+					var note: float = float(ch[0]) - 12.0 + (7.0 if h == 2.0 else 0.0)
+					var f := 440.0 * pow(2.0, (note - 69.0) / 12.0)
+					v += 0.3 * (sin(TAU * f * t) + 0.3 * sin(TAU * 2.0 * f * t)) * exp(-e * 3.5)
+			# the montuno: eighths up and down the chord, a soft hammered tone
+			var e8 := fmod(b * 2.0, 1.0)
+			var step: int = [0, 2, 1, 3, 2, 1, 3, 2][int(b * 2.0) % 8]
+			var pf := 440.0 * pow(2.0, (float(ch[step]) + 12.0 - 69.0) / 12.0)
+			v += 0.13 * (sin(TAU * pf * t) + 0.35 * sin(TAU * 2.0 * pf * t) + 0.1 * sin(TAU * 3.0 * pf * t)) * exp(-e8 * 5.0)
+			# the chord, a horn pad on the downbeat of each bar
+			if in_bar < 0.5:
+				for m in ch:
+					v += 0.03 * sin(TAU * 440.0 * pow(2.0, (float(m) + 12.0 - 69.0) / 12.0) * t) * exp(-in_bar * 2.0)
+			# the clave over the 8-beat cycle
+			var cyc := fmod(b, 8.0)
+			for h in clave:
+				var e: float = (cyc - h) * beat
+				if e >= 0.0 and e < 0.06:
+					v += 0.14 * sin(TAU * 2400.0 * t) * exp(-e * 90.0)
+			# maracas: noise on every eighth, the offbeat a little louder
+			var mar := rng.randf_range(-1.0, 1.0) * exp(-e8 * 28.0) * (0.07 if int(b * 2.0) % 2 == 0 else 0.1)
+			v += mar
+			s[i] = v * 0.9
+		return wav(s, true))
+
+
+## The room: a few dozen people talking, dealers calling, chips.
+static func casino_room() -> AudioStreamWAV:
+	return noise_loop("casino-room", 0.06, 3.0)
+
+
+## A slot machine's win: a rising arpeggio, then coins. `big` for a jackpot.
+static func slot_win(big: bool) -> AudioStreamWAV:
+	return _cached("slot-win-%s" % big, func():
+		var notes := [72, 76, 79, 84, 88, 91, 96] if big else [72, 76, 79, 84]
+		var n := int(RATE * (0.2 * notes.size() + 0.8))
+		var s := PackedFloat32Array()
+		s.resize(n)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 777
+		for i in n:
+			var t := float(i) / RATE
+			var v := 0.0
+			for k in notes.size():
+				var e := t - 0.12 * k
+				if e >= 0.0:
+					var f := 440.0 * pow(2.0, (float(notes[k]) - 69.0) / 12.0)
+					v += 0.25 * (1.0 if fmod(f * t, 1.0) < 0.5 else -1.0) * exp(-e * 6.0)
+			# the coins: little rings after the run
+			var ct := t - 0.12 * notes.size()
+			if ct > 0.0:
+				v += 0.12 * rng.randf_range(-1.0, 1.0) * exp(-fmod(ct, 0.09) * 60.0)
+			s[i] = v * 0.7
+		return wav(s))
+
+
+## Chips: a short stack clatter for a bet or a payout.
+static func chips() -> AudioStreamWAV:
+	return _cached("chips", func():
+		var n := int(RATE * 0.35)
+		var s := PackedFloat32Array()
+		s.resize(n)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 55
+		for i in n:
+			var t := float(i) / RATE
+			var v := 0.0
+			for k in 5:
+				var e := t - 0.045 * k
+				if e >= 0.0:
+					v += sin(TAU * (3200.0 + 400.0 * k) * t) * exp(-e * 70.0) * 0.3 + rng.randf_range(-1.0, 1.0) * exp(-e * 90.0) * 0.12
+			s[i] = v
+		return wav(s))
+
+
 # ------------------------------------------------------------------ playing it
 func click(kind := "click") -> void:
 	var f: String = {"click": "click1", "choose": "click3", "hover": "rollover2", "toggle": "switch3", "alert": "switch7"}.get(kind, "click1")
@@ -347,13 +447,13 @@ func play_at(stream: AudioStream, pos: Vector3, db := 0.0) -> void:
 	p.finished.connect(p.queue_free)
 
 
-func _loop3d(key: String, stream: AudioStream, pos: Vector3, db: float) -> void:
+func _loop3d(key: String, stream: AudioStream, pos: Vector3, db: float, unit := 60.0, reach := 4000.0) -> void:
 	var p: AudioStreamPlayer3D = world.get(key)
 	if p == null:
 		p = AudioStreamPlayer3D.new()
 		p.stream = stream
-		p.unit_size = 60.0
-		p.max_distance = 4000.0
+		p.unit_size = unit
+		p.max_distance = reach
 		p.volume_db = db
 		add_child(p)
 		p.play()
@@ -432,6 +532,7 @@ func _radio(s, flying: bool) -> void:
 func _world_sounds(s) -> void:
 	for k in world:
 		world[k].set_meta("seen", false)
+	_casino_sounds(s)
 	for u in s.police.units:
 		if u.state == "crashed":
 			continue
@@ -454,6 +555,23 @@ func _world_sounds(s) -> void:
 		if not world[k].get_meta("seen", false):
 			world[k].queue_free()
 			world.erase(k)
+
+
+## The Hotel Cielo, while the house trades: the band in the courtyard, the murmur on the floor, and the table you play at.
+func _casino_sounds(s) -> void:
+	if s.casino == null or not s.casino.trading():
+		return
+	var w: World = s.world
+	_loop3d("casino-band", casino_band(), CasinoBuilding.world_point(w, 26.0, 2.5, 66.0), 2.0, 14.0, 160.0)
+	_loop3d("casino-floor", casino_room(), CasinoBuilding.world_point(w, 0.0, 3.0, 27.0), -3.0, 10.0, 70.0)
+	var played: int = s.casino.played
+	if _casino_played >= 0 and played != _casino_played and s.location == Island.CODE:
+		var lp: Dictionary = s.casino.last_play
+		var net := int(lp.get("net", 0))
+		var game := str(lp.get("game", ""))
+		ui.stream = slot_win(net >= 2000) if (net > 0 and game == "slots") else chips()
+		ui.play()
+	_casino_played = played
 
 
 ## Lightning: thunder a moment later.

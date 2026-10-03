@@ -271,6 +271,29 @@ func _auto_buy() -> void:
 		buy(pick, true)
 
 
+## The small view the seats' snapshots carry (the talk with the dealer reads it): id -> [price, can buy, use] and what is owned.
+func view_lite() -> Dictionary:
+	var cat := {}
+	for sp in CATALOGUE:
+		cat[str(sp.id)] = [int(sp.price), why_not(str(sp.id)) == "", str(sp.use)]
+	var cars := 0
+	var trucks := 0
+	var last_car := {}
+	var last_truck := {}
+	for v in owned:
+		var sp := spec(str(v.id))
+		var row := {"serial": int(v.serial), "name": str(sp.name), "resale": int(float(sp.price) * RESALE)}
+		if sp.use == "drive":
+			cars += 1
+			last_car = row
+		else:
+			trucks += 1
+			last_truck = row
+	var f := fleet()
+	return {"cat": cat, "cars": cars, "trucks": trucks, "last_car": last_car, "last_truck": last_truck, "insurance": insurance_hour(), "auto": auto,
+		"speed": int(float(f.speed) * 3.6), "cover": int(float(f.stealth) * 100.0), "steel": int(float(f.armour) * 100.0), "limit": MAX_OWNED}
+
+
 func view() -> Dictionary:
 	var cat := []
 	for sp in CATALOGUE:

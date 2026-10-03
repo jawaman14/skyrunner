@@ -153,6 +153,8 @@ static func _runner(sess: Session, role: String) -> Dictionary:
 		out["family"] = sess.family.view("runner")
 	if sess.casino != null:
 		out["casino"] = sess.casino.view("runner")
+	if sess.dealer != null:
+		out["dealer"] = sess.dealer.view_lite()
 	if sess.island != null:
 		out["island"] = sess.island.view("runner")
 	if sess.court != null:
