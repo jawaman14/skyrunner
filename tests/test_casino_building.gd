@@ -202,7 +202,7 @@ func test_the_slot_screen_pulls_the_handle_for_the_stake() -> void:
 	m.key("enter")
 	check_eq(s.casino.played, 1, "one pull")
 	check(str(s.casino.last_play.get("game", "")) == "slots", "slots")
-	check(m.felt.text.contains("["), "the reels are shown")
+	check_eq(m.stage.get_child_count(), 1, "the reels are shown")
 
 
 func test_the_roulette_screen_lays_bets_and_spins() -> void:
@@ -224,6 +224,40 @@ func test_the_roulette_screen_lays_bets_and_spins() -> void:
 	check(m.note.contains("bet"), "no bets, no spin: %s" % m.note)
 
 
+func test_the_felt_shows_the_cards_dice_reels_and_ball_as_pictures() -> void:
+	var s := _session()
+	var m := _menu(s)
+	m.sit("slots")
+	m.key("enter")
+	check_eq(m.stage.get_child_count(), 1, "the reels are on the felt")
+	var reels: Array = m.stage.get_child(0).get_children().filter(func(n): return n.has_meta("sym"))
+	check_eq(reels.size(), 3, "three of them")
+	check_eq(str(reels[0].get_meta("sym")), str(s.casino.last_play.reels[0]), "showing what came up")
+	m.sit("blackjack")
+	m.key("enter")
+	var rows := m.stage.get_child_count()
+	check(rows >= 2, "the dealer's cards and yours: %d rows" % rows)
+	var cards: Array = []
+	for r in m.stage.get_children():
+		cards += r.get_children().filter(func(n): return n.has_meta("rank"))
+	check(cards.size() >= 4, "at least four cards on the felt: %d" % cards.size())
+	if not bool(s.casino.last_play.get("done", true)):
+		check(cards.any(func(c): return int(c.get_meta("rank")) == -1), "the dealer's hole card is face down")
+	check_eq(CasinoMenu.suit_of(7, 2), CasinoMenu.suit_of(7, 2), "a card keeps its suit")
+	m.sit("craps")
+	m.key("p")
+	m.key("r")
+	if s.casino.last_play.has("dice"):
+		check(m.stage.get_child_count() >= 1 and m.stage.get_child(0).get_children().filter(func(n): return n.has_meta("die")).size() == 2, "two dice")
+	m.sit("roulette")
+	m.key("enter")
+	m.key("s")
+	check(m.stage.get_child_count() == 1 and m.stage.get_child(0).get_children().any(func(n): return n.has_meta("pocket")), "the ball in its pocket")
+	m.sit("baccarat")
+	m.key("enter")
+	check_eq(m.stage.get_child_count(), 2, "the player's hand and the banker's")
+
+
 func test_the_blackjack_screen_deals_hits_and_stands() -> void:
 	var s := _session()
 	var m := _menu(s)
@@ -234,7 +268,7 @@ func test_the_blackjack_screen_deals_hits_and_stands() -> void:
 	if live:
 		m.key("s")
 	check(bool(s.casino.last_play.get("done", false)), "the hand is played out")
-	check(m.felt.text.contains("Dealer"), "the felt shows both hands")
+	check(m.stage.get_child_count() >= 2, "the felt shows both hands")
 
 
 func test_the_tables_are_closed_to_the_screen_when_you_are_not_there() -> void:
