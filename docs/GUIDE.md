@@ -418,6 +418,18 @@ in the end a revolution you have twenty minutes to get out of. Ring Lenny Vance 
 lieutenant's, co-pilot's and fixer's desks, or from the phone. The controller and the chief press **F** for the casino file. It is
 the story's chapter *The House* (1984).
 
+You can also walk in. Land at Aeropuerto Soberano, press **TAB** to get out and walk 150 m along the apron to the hotel
+(a pink-and-white block under a twelve-storey slab, its sign visible from the runway). Inside: the lobby and bar, a mezzanine
+office (**E** at Lenny's desk is the same conversation as the phone call), the cage (**E** to talk: cash, chips, the Family's
+account), and the floor with three roulette wheels, four blackjack tables, two craps tables, a baccarat salon and the slot banks.
+**E** at a table sits you down at its screen: **+ / -** change the stake ($5 to $500), **ENTER** is the main move, and the hints
+along the foot say the rest (roulette: LEFT/RIGHT picks the bet, **S** spins; blackjack: **A** hit, **S** stand, **D** double;
+craps: **P** pass, **D** don't pass, **O** odds, **ENTER** rolls). The odds are the real ones (DESIGN 41). Out the back is the
+cabaret courtyard under its four concrete arches. When the house is dark, shut by the commission, in revolt or seized, the
+lights go out and the door is boarded.
+![The Hotel Cielo at night](img/casino-front.png)
+![The gaming floor](img/casino-floor.png)
+
 ### 5.14 The court (DESIGN 16)
 
 A bust is a federal case. **Charges** (possession, trafficking, firearms, conspiracy). **The bail hearing**: post it all, buy
