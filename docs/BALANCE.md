@@ -91,13 +91,15 @@ Drivers pull over when they see police on the road ahead; a passing patrol pulls
 
 40. **Renown: a name that is worth something.** *Found:* Nothing in the economy paid for having done well: the thousandth delivery bought the same crew, the same prices and the same attention as the first. Renown (scripts/sim/renown.gd, read off the event bus) is a score earned by loads delivered (3), island customs cleared (3), raids foiled (3), a jury that lets the pilot walk (6), sales (1 to 5 by size) and lost at half weight by busts, crashes, raided stashes, seized trucks and men who talk. Five tiers (0 / 40 / 120 / 300 / 650): each tier adds 3 points of skill and 2 of loyalty to every candidate, 1.5% to what bulk buyers pay, and slows the task force's cooling of suspicion by 6%. *Changed:* 200 seeds x 3 hours, renown on against off: trade +0.5% mean (p50 -0.1%), the whole game +0.5% (p50 +0.8%), logistics +0.8% (p50 +0.5%), the street war +3.0% (p50 +5.6%); the control, Family, island, Agency and payroll-only configurations are the same (nothing flies, nothing sells). Suspicion in the whole game rose from 15.8 to 16.6 and the task force's funds from $10.2k to $10.5k: the famous are watched. The effect is small by design: a name should be a reward for being good at the game, not a reason to be. The street war's +5.6% p50 is the one to watch: its median sits on a cliff between turf won and lost, and a few points of price move it. Renown.ENABLED turns it off for the parity tests.
 
-37. **Veteran squads: fights teach.** *Found:* A squad that had fought ten times shot exactly as well as one raised that morning, and an order to a squad was a map click at a desk. Squads now carry experience (GroundWar.VETERANS): a fight survived is 1, a fight won 2, and a squad that has lost half its men loses half its experience. Four ranks (Green / Blooded / Veteran / Elite at 0 / 4 / 10 / 20): each rank adds 7% to fire per man, lets the squad hold until its morale is 0.04 lower, and costs 25% more upkeep. On foot the man on the ground can now hold, call to him, charge or fall back the nearest squad of ours (Z / X / C / V; GroundWar.field_order). *Changed:* 200 seeds x 3 hours of the street war configuration, veterans on against off: money $53.3k against $53.4k mean (-0.2%), p50 $47,943 against $47,942, the same wars (14.7 fights, 5.1 of ours lost against 5.3, 18.2 arrests against 18.3). The whole map sees only 14.7 fights in three hours, so few squads reach even the first rank, and whatever the effect is lies below what 200 seeds can resolve. It is a long-game system and three hours is not the long game. Left on.
+41. **Veteran squads: fights teach.** *Found:* A squad that had fought ten times shot exactly as well as one raised that morning, and an order to a squad was a map click at a desk. Squads now carry experience (GroundWar.VETERANS): a fight survived is 1, a fight won 2, and a squad that has lost half its men loses half its experience. Four ranks (Green / Blooded / Veteran / Elite at 0 / 4 / 10 / 20): each rank adds 7% to fire per man, lets the squad hold until its morale is 0.04 lower, and costs 25% more upkeep. On foot the man on the ground can now hold, call to him, charge or fall back the nearest squad of ours (Z / X / C / V; GroundWar.field_order). *Changed:* 200 seeds x 3 hours of the street war configuration, veterans on against off: money $53.3k against $53.4k mean (-0.2%), p50 $47,943 against $47,942, the same wars (14.7 fights, 5.1 of ours lost against 5.3, 18.2 arrests against 18.3). The whole map sees only 14.7 fights in three hours, so few squads reach even the first rank, and whatever the effect is lies below what 200 seeds can resolve. It is a long-game system and three hours is not the long game. Left on.
 
-38. **The rackets: tribute and prisoners.** *Found:* Holding a street paid nothing directly (it moved prices, a little), and a rival squad we beat just walked home. Now (scripts/sim/rackets.gd, behind Rackets.ENABLED and `rackets: true`) the collectors go round the four markets every 10 minutes and a market where we hold over half the street pays up to $160 at full control, scaled by renown; each market's terms are fair, squeeze (2.2x, but our hold there drops 15% and the case warms 2 points) or off. When our squad routs one of Los Cuervos' a third of the survivors are taken: ransomed ($350 a head, as much as the cartel has), put on the payroll as soldiers (skill 0.3, loyalty 0.25) or let go (a little renown); a few get away every 10 minutes. *Changed:* 200 seeds x 3 hours of the street war configuration, rackets on against off: money $53,326 against $53,333 mean, p50 $48,541 against $47,943 (+1.2%), the same wars (14.7 fights, 5.3 of ours lost against 5.1, 18.0 arrests against 18.2); suspicion 0.45 against 0.41. The mean did not move: the simulator's organisation leaves every market on the default fair terms and never ransoms, turns or releases a prisoner (the AI does not use the menu), so what it measures is tribute at fair terms plus the men lost to capture. The systems are for a player who does hold a street and works the menu; the numbers say only that switching them on does not break the economy.
+42. **The rackets: tribute and prisoners.** *Found:* Holding a street paid nothing directly (it moved prices, a little), and a rival squad we beat just walked home. Now (scripts/sim/rackets.gd, behind Rackets.ENABLED and `rackets: true`) the collectors go round the four markets every 10 minutes and a market where we hold over half the street pays up to $160 at full control, scaled by renown; each market's terms are fair, squeeze (2.2x, but our hold there drops 15% and the case warms 2 points) or off. When our squad routs one of Los Cuervos' a third of the survivors are taken: ransomed ($350 a head, as much as the cartel has), put on the payroll as soldiers (skill 0.3, loyalty 0.25) or let go (a little renown); a few get away every 10 minutes. *Changed:* 200 seeds x 3 hours of the street war configuration, rackets on against off: money $53,326 against $53,333 mean, p50 $48,541 against $47,943 (+1.2%), the same wars (14.7 fights, 5.3 of ours lost against 5.1, 18.0 arrests against 18.2); suspicion 0.45 against 0.41. The mean did not move: the simulator's organisation leaves every market on the default fair terms and never ransoms, turns or releases a prisoner (the AI does not use the menu), so what it measures is tribute at fair terms plus the men lost to capture. The systems are for a player who does hold a street and works the menu; the numbers say only that switching them on does not break the economy.
 
-39. **Stash works: what a house can be built into.** *Found:* A stash house was a place and a heat number; the only way to make one safer was to avoid it. Two works now (scripts/sim/stash_works.gd, two levels each, paid from the safe, state on the stash itself): a hidden vault ($2,500 then $6,000) so a raid carries off 35% less of what is inside a level (the rest is spirited away to another house, the cash straight to the safe), and a guard post ($2,000 then $5,000) so the traffic warms the house 20% less and the heat cools 25% faster a level. The logistics menu builds them at the house in 'from'. *Changed:* Not measured: the balance simulator's organisation never builds, so the 200-seed configurations are unchanged by construction (the works default to level 0). What a level buys is exact and is in the tests: a level-2 vault saves 70% of a raided house's product and cash; a level-2 guard post halves a delivery's heat penalty (x0.6) and cools the house 1.5x as fast. What they cost is the part to watch: $8,500 buys the full vault, against raids that lose a house 0.5 times a run.
+43. **Stash works: what a house can be built into.** *Found:* A stash house was a place and a heat number; the only way to make one safer was to avoid it. Two works now (scripts/sim/stash_works.gd, two levels each, paid from the safe, state on the stash itself): a hidden vault ($2,500 then $6,000) so a raid carries off 35% less of what is inside a level (the rest is spirited away to another house, the cash straight to the safe), and a guard post ($2,000 then $5,000) so the traffic warms the house 20% less and the heat cools 25% faster a level. The logistics menu builds them at the house in 'from'. *Changed:* Not measured: the balance simulator's organisation never builds, so the 200-seed configurations are unchanged by construction (the works default to level 0). What a level buys is exact and is in the tests: a level-2 vault saves 70% of a raided house's product and cash; a level-2 guard post halves a delivery's heat penalty (x0.6) and cools the house 1.5x as fast. What they cost is the part to watch: $8,500 buys the full vault, against raids that lose a house 0.5 times a run.
 
-40. **The arena: races for a name and prize money.** *Found:* The car and the aircraft had nothing to do for their own sake. scripts/sim/races.gd adds two courses at whatever strip you are at: a street race (the roads from the strip to the club and the farthest stash house within 6 km and back, a gate every 500 m; needs a ground war for its roads) and an air circuit (six gates, 2.5 km from the strip, 180 m up). The entry is a tenth of the prize ($70 / $140; prizes $700 / $1,400); the first gate starts the clock; a field of four rivals runs par x 0.85-1.35; first takes the prize, second half, third a quarter, and renown +6 / +3 / +1. A course pays once an hour. *Changed:* Not measured: neither the simulator's organisation nor its pilot enters races, so the configurations are unchanged. The ceiling is the thing to watch: one course pays at most $700 an hour on the street and $1,400 in the air (a player who flew only the circuit could make $1,400 an hour, against $1,500 every five minutes for the simulator's flown runs, so it is a side income, not a strategy).
+44. **The arena: races for a name and prize money.** *Found:* The car and the aircraft had nothing to do for their own sake. scripts/sim/races.gd adds two courses at whatever strip you are at: a street race (the roads from the strip to the club and the farthest stash house within 6 km and back, a gate every 500 m; needs a ground war for its roads) and an air circuit (six gates, 2.5 km from the strip, 180 m up). The entry is a tenth of the prize ($70 / $140; prizes $700 / $1,400); the first gate starts the clock; a field of four rivals runs par x 0.85-1.35; first takes the prize, second half, third a quarter, and renown +6 / +3 / +1. A course pays once an hour. *Changed:* Not measured: neither the simulator's organisation nor its pilot enters races, so the configurations are unchanged. The ceiling is the thing to watch: one course pays at most $700 an hour on the street and $1,400 in the air (a player who flew only the circuit could make $1,400 an hour, against $1,500 every five minutes for the simulator's flown runs, so it is a side income, not a strategy).
+
+45. **The run is worth less: the equilibrium back inside the target.** *Found:* After the castering-gear fix cut the crash rate (entry 35) the strategic equilibrium stood at 58.4% runner wins on a 100-season-per-cell run, outside the 50% +/- 5 target, and the later systems never touched it (they live in the street game, not the HQ season). The first re-run at 200 per cell read 54.6% and looked like noise; it was the sample: 1,000 per cell (40,000 seasons) reads 58.3% for the unchanged rules, 56.3% at 500 and 55.5% at 300, so the drift was real and the 200-per-cell figure the outlier. The largest lever is the crews (removing them alone drops the runner to 34-42%), but the cleanest single number is what a run is worth: HQ rule run_payout, the base value of one run for the C172. *Changed:* Swept at 1,000 seasons per cell: run_payout 12000 (before) 58.3%, 11500 55.0%, 11000 53.1%, 10750 51.7%, 10500 49.5%, 10000 46.1%. Changed to 10750 (12000 until now; 15000 until the airdrop fix), then 2,000 per cell (80,000 seasons) to confirm: 51.6%. At 10750 the targets hold: comebacks 21.8% of seasons (target 15-35%), every ending above 8% (convicted at trial 36.4%, walked free 29.0%, retired rich 14.4%, boss indicted 11.1%, organisation broke 9.1%), 9.2 nights on average, 28.6% of seasons ended early. Dropping any one mechanic still moves the equilibrium (largest: crews 42%, lawyer 42%, audit 68%, recruit 69%), so none is dominant. The Python-parity rules keep run_payout 15000 and are untouched. The live street game does not use this number.
 
 ## 1. Can you get in and out? (feasibility)
 
@@ -158,75 +160,76 @@ Returns on extra units: heavy (2 helicopters + 2 interceptors) vs standard (1 + 
 
 ## 3. Whole seasons, HQ vs HQ (strategic)
 
-4000 simulated seasons, 8 organisation strategies × 5 task-force strategies. Cells are the organisation's win rate.
+40000 simulated seasons, 8 organisation strategies × 5 task-force strategies. Cells are the organisation's win rate.
 
 | boss \ chief | interdiction | investigator | balanced | adaptive | random |
 |---|---|---|---|---|---|
-| greedy | 29% | 95% | 26% | 16% | 80% |
-| cautious | 70% | 12% | 53% | 77% | 56% |
-| corrupt | 40% | 13% | 25% | 11% | 17% |
-| shadow | 64% | 1% | 32% | 56% | 30% |
-| launderer | 59% | 93% | 42% | 33% | 81% |
-| adaptive | 84% | 97% | 69% | 43% | 83% |
-| smart | 60% | 69% | 50% | 39% | 65% |
-| random | 61% | 21% | 22% | 49% | 38% |
+| greedy | 29% | 94% | 21% | 13% | 67% |
+| cautious | 68% | 8% | 38% | 74% | 57% |
+| corrupt | 31% | 4% | 13% | 10% | 8% |
+| shadow | 60% | 3% | 25% | 56% | 24% |
+| launderer | 54% | 82% | 29% | 29% | 71% |
+| adaptive | 74% | 96% | 60% | 37% | 79% |
+| smart | 62% | 56% | 35% | 32% | 45% |
+| random | 54% | 22% | 29% | 50% | 34% |
 
-- **Equilibrium win rate (organisation): 58.4%** (target 50 ± 5)
-- Equilibrium mix, organisation: cautious 45%, adaptive 55%
-- Equilibrium mix, task force: investigator 29%, adaptive 71%
-- Raw win rate over all pairings: 49% for the organisation
-- Average season length: 9.1 nights; decided before the last night: 33%
-- Comebacks (half-time leader loses): 21%; close finishes: 46%
+- **Equilibrium win rate (organisation): 51.7%** (target 50 ± 5)
+- Equilibrium mix, organisation: cautious 39%, adaptive 61%
+- Equilibrium mix, task force: balanced 63%, adaptive 37%
+- Raw win rate over all pairings: 43% for the organisation
+- Average season length: 9.2 nights; decided before the last night: 29%
+- Comebacks (half-time leader loses): 22%; close finishes: 48%
 
 How seasons end:
 
-- law: season over: convicted at trial: 31%
+- law: season over: convicted at trial: 36%
 - runner: season over: walked free: 29%
-- runner: retired rich: 20%
+- runner: retired rich: 14%
 - law: boss indicted: 11%
 - law: organisation broke: 9%
 
-Dominance between archetypes (a bot archetype being beaten everywhere is fine; a *mechanic* nobody should use is not, see the next table): runner 'cautious' dominates 'corrupt'; runner 'cautious' dominates 'shadow'; runner 'launderer' dominates 'greedy'; runner 'launderer' dominates 'corrupt'; runner 'adaptive' dominates 'greedy'; runner 'adaptive' dominates 'corrupt'; runner 'adaptive' dominates 'launderer'; runner 'adaptive' dominates 'smart'; runner 'smart' dominates 'corrupt'; law 'balanced' dominates 'interdiction'
+Dominance between archetypes (a bot archetype being beaten everywhere is fine; a *mechanic* nobody should use is not, see the next table): runner 'cautious' dominates 'corrupt'; runner 'cautious' dominates 'shadow'; runner 'shadow' dominates 'corrupt'; runner 'launderer' dominates 'corrupt'; runner 'adaptive' dominates 'greedy'; runner 'adaptive' dominates 'corrupt'; runner 'adaptive' dominates 'launderer'; runner 'adaptive' dominates 'smart'; runner 'smart' dominates 'corrupt'; runner 'random' dominates 'corrupt'; law 'balanced' dominates 'interdiction'
 
 What each organisation order is worth (win rate when the random bot used it vs didn't):
 
 | order | effect | uses |
 |---|---|---|
-| lie_low | +35 pts | 465 |
-| lawyer | +26 pts | 478 |
-| buy_front | +22 pts | 142 |
-| gear | +22 pts | 320 |
-| crews | +21 pts | 326 |
-| tip_off | +16 pts | 453 |
-| loyalty | +12 pts | 360 |
-| decoys | +9 pts | 321 |
-| opsec | +8 pts | 363 |
-| counterintel | +5 pts | 355 |
-| hit_rival | +1 pts | 323 |
-| truce | -5 pts | 356 |
-| bribe | -11 pts | 343 |
+| tip_off | +21 pts | 4688 |
+| buy_front | +16 pts | 1111 |
+| lie_low | +14 pts | 4708 |
+| loyalty | +12 pts | 3307 |
+| crews | +11 pts | 2998 |
+| lawyer | +10 pts | 4753 |
+| counterintel | +10 pts | 3111 |
+| gear | +9 pts | 3272 |
+| opsec | +9 pts | 3409 |
+| decoys | +7 pts | 3120 |
+| truce | +2 pts | 3361 |
+| hit_rival | -0 pts | 2847 |
+| bribe | -8 pts | 3377 |
+| upgrade | -20 pts | 17 |
 
 What each task-force order is worth (win rate when the random bot used it vs didn't):
 
 | order | effect | uses |
 |---|---|---|
-| wiretap | +26 pts | 616 |
-| press | +17 pts | 599 |
-| audit | +15 pts | 786 |
-| canary | +5 pts | 676 |
-| encryption | +2 pts | 788 |
-| ia_sweep | +1 pts | 774 |
-| aerostat | -3 pts | 785 |
-| recruit | -11 pts | 789 |
-| gang_unit | -27 pts | 783 |
+| audit | +34 pts | 7880 |
+| wiretap | +25 pts | 6317 |
+| press | +11 pts | 5995 |
+| ia_sweep | +10 pts | 7849 |
+| aerostat | +7 pts | 7848 |
+| gang_unit | +2 pts | 7868 |
+| canary | +0 pts | 6779 |
+| encryption | -1 pts | 7830 |
+| recruit | -2 pts | 7841 |
 
 Win conditions (target: each at least 8% of seasons):
 
 | ending | share |
 |---|---|
-| retired rich | 20% |
+| retired rich | 14% |
 | walked free | 29% |
-| convicted at trial | 31% |
+| convicted at trial | 36% |
 | boss indicted | 11% |
 | organisation broke | 9% |
 
@@ -235,20 +238,20 @@ Win conditions (target: each at least 8% of seasons):
 A third, AI-run outfit fights the organisation for the island's markets. Each night it flies its own loads in the zone it likes best (weighted by its turf and the pay, dodging a patrol it hears about). Its flights split the task force's attention; its busts are good press for the police. Where it owns the market the organisation's loads pay up to 40% less, and meeting it on the same route without a truce risks a hijack. The boss can hit it, buy a truce or sell its route to the police; the chief can send a gang unit after it.
 
 - Seasons with at least one hijack: 49%; hijacks per season: 0.68
-- Cartel planes busted per season: 2.76; cartel strength at the end: 45/100
+- Cartel planes busted per season: 2.82; cartel strength at the end: 45/100
 
 ## 5. The realism layer
 
 Weather and moon, pattern-of-life analysis, the canary trap and the rivals' tempers (entries 15-18 above), measured over the same seasons:
 
-- Storm nights per season: 1.49; seasons where a canary caught a leak: 3%
-- Truce betrayals per season, by temper: tit_for_tat 0.005, opportunist 0.077, grudger 0.000
+- Storm nights per season: 1.56; seasons where a canary caught a leak: 3%
+- Truce betrayals per season, by temper: tit_for_tat 0.006, opportunist 0.078, grudger 0.000
 
 Betrayals by nights left in the season (backward induction: the end is when truces break):
 
 | nights left | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| betrayals | 12 | 16 | 25 | 4 | 4 | 13 | 17 | 3 | 0 | 0 |
+| betrayals | 149 | 274 | 285 | 70 | 85 | 111 | 87 | 36 | 21 | 20 |
 
 Route mixing against the analysts (entropy in bits; 1.585 = uniform over three routes):
 
@@ -256,11 +259,11 @@ Route mixing against the analysts (entropy in bits; 1.585 = uniform over three r
 |---|---|---|
 | greedy | 0.00 | 80% |
 | cautious | 1.50 | 66% |
-| corrupt | 1.32 | 67% |
-| shadow | 1.51 | 66% |
-| launderer | 1.50 | 69% |
-| adaptive | 1.46 | 68% |
-| smart | 1.39 | 68% |
+| corrupt | 1.33 | 69% |
+| shadow | 1.51 | 67% |
+| launderer | 1.50 | 70% |
+| adaptive | 1.49 | 68% |
+| smart | 1.39 | 67% |
 | random | 1.38 | 64% |
 
 ## 6. What a co-pilot is worth
@@ -275,28 +278,28 @@ The sea mission (airdrop to the go-fast, standard police) flown three ways: solo
 
 Ramp loading at a bush strip (no ground crew): 16.0 s solo, 10.5 s with a co-pilot.
 
-Ablations: equilibrium win rate with one mechanic switched off (baseline 58.4%). Big swings mean the mechanic matters. Near zero means it's optional flavour.
+Ablations: equilibrium win rate with one mechanic switched off (baseline 51.7%). Big swings mean the mechanic matters. Near zero means it's optional flavour.
 
 | without | organisation win | change |
 |---|---|---|
-| crews | 36.0% | -22.4 |
-| rule:weather | 46.0% | -12.4 |
-| lawyer | 46.0% | -12.4 |
-| audit | 68.5% | +10.1 |
-| recruit | 67.5% | +9.1 |
-| tip_off | 52.7% | -5.7 |
-| truce | 53.5% | -4.9 |
-| opsec | 53.5% | -4.9 |
-| rule:canary | 54.0% | -4.4 |
-| wiretap | 62.5% | +4.1 |
-| comeback | 54.8% | -3.6 |
-| hit_rival | 55.4% | -3.1 |
-| gang_unit | 55.4% | -3.1 |
-| cartel | 56.0% | -2.4 |
-| bribe | 56.0% | -2.4 |
-| rule:pattern | 57.8% | -0.6 |
-| decoys | 58.0% | -0.4 |
-| rule:rival_tempers | 58.4% | -0.0 |
+| recruit | 68.5% | +16.8 |
+| audit | 68.1% | +16.4 |
+| rule:weather | 39.0% | -12.7 |
+| wiretap | 62.6% | +10.9 |
+| crews | 42.1% | -9.6 |
+| lawyer | 42.2% | -9.5 |
+| tip_off | 45.2% | -6.5 |
+| opsec | 46.6% | -5.1 |
+| decoys | 48.7% | -3.0 |
+| truce | 48.8% | -2.9 |
+| comeback | 48.9% | -2.8 |
+| hit_rival | 49.0% | -2.6 |
+| gang_unit | 49.0% | -2.6 |
+| rule:canary | 49.4% | -2.3 |
+| rule:pattern | 53.2% | +1.5 |
+| rule:rival_tempers | 50.3% | -1.4 |
+| cartel | 53.0% | +1.3 |
+| bribe | 50.6% | -1.1 |
 
 ## 7. The live-play systems: the Family, the island, the Company
 
