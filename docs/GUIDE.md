@@ -424,7 +424,7 @@ office (**E** at Lenny's desk is the same conversation as the phone call), the c
 account), and the floor with three roulette wheels, four blackjack tables, two craps tables, a baccarat salon and the slot banks.
 **E** at a table sits you down at its screen: **+ / -** change the stake ($5 to $500), **ENTER** is the main move, and the hints
 along the foot say the rest (roulette: LEFT/RIGHT picks the bet, **S** spins; blackjack: **A** hit, **S** stand, **D** double;
-craps: **P** pass, **D** don't pass, **O** odds, **ENTER** rolls). The odds are the real ones (DESIGN 41). Out the back is the
+craps: **P** pass, **D** don't pass, **O** odds, **ENTER** rolls). The odds are the real ones (DESIGN 41), and the cards, dice, reels and the roulette ball are drawn on the felt. Out the back is the
 cabaret courtyard under its four concrete arches. When the house is dark, shut by the commission, in revolt or seized, the
 lights go out and the door is boarded.
 ![The Hotel Cielo at night](img/casino-front.png)
