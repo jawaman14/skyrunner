@@ -33,6 +33,8 @@ const PAYS_EVERY_S := 3600.0  ## a course pays once an hour
 const TIME_LIMIT := 3.0  ## x par
 const PLACE_SHARE := [1.0, 0.5, 0.25]
 const RENOWN_BY_PLACE := [0.0, 6.0, 3.0, 1.0]  ## (index by place: 1..3) renown
+const BET_STEPS := [0, 100, 200, 300]  ## the stakes the book takes, $ (on a race that is paying: see enter())
+const BET_ODDS := {"win": 3.0, "place": 1.5}  ## a winning bet pays stake x this (place = in the top three); the stake is not returned
 
 class Course:
 	var id := ""
@@ -54,6 +56,7 @@ var run: Dictionary = {}  ## the one under way: {id, next, t0 (or -1: not starte
 var paid_at := {}  ## course id -> sim time it last paid
 var results: Array = []  ## [{id, name, place, time, prize, t}], newest last
 var won := 0  ## $ in prizes
+var betting := 0  ## $ won (or, below zero, lost) at the book, net of the stakes
 var _cache: Array = []  ## the courses at the strip we are at (the roads are not cheap to find)
 var _cache_key := ""
 
@@ -191,7 +194,10 @@ func cooldown(id: String) -> float:
 	return maxf(0.0, float(paid_at.get(id, -1e9)) + PAYS_EVERY_S - sess.time)
 
 
-func enter(id: String) -> String:
+## Enter a race. `bet` is a stake on yourself (one of BET_STEPS) and `on` what it is on: "win" or "place" (top three).
+## The book is only open on a race that is paying (a course that has paid within the hour takes no bets: that is what
+## keeps betting from being a faster way to the same money), and a bet is lost if you drop out.
+func enter(id: String, bet := 0, on := "win") -> String:
 	if active():
 		return "You are already in a race."
 	var c := course(id)
@@ -199,18 +205,26 @@ func enter(id: String) -> String:
 		return "No such race here."
 	if c.kind == "car" and sess.ground == null:
 		return "There are no roads to race on."
-	if sess.money < c.fee:
-		return "The entry is $%s." % Py.money(c.fee)
-	sess.money -= c.fee
-	run = {"id": c.id, "next": 0, "t0": -1.0, "splits": [], "entered": sess.time}
-	sess.say("RACE - %s: the fee is paid. Take the start gate (the first one) to begin; gates in order." % c.name)
+	if not BET_STEPS.has(bet):
+		return "The book takes $100, $200 or $300."
+	if bet > 0:
+		if not BET_ODDS.has(on):
+			return "Bet on a win or a place."
+		if cooldown(id) > 0.0:
+			return "The book is shut on that race: it paid within the hour."
+	if sess.money < c.fee + bet:
+		return "The entry is $%s%s." % [Py.money(c.fee), (" and the bet $%s" % Py.money(bet)) if bet > 0 else ""]
+	sess.money -= c.fee + bet
+	run = {"id": c.id, "next": 0, "t0": -1.0, "splits": [], "entered": sess.time, "bet": bet, "on": on}
+	sess.say("RACE - %s: the fee is paid%s. Take the start gate (the first one) to begin; gates in order." % [c.name,
+		(" and $%s down on a %s" % [Py.money(bet), on]) if bet > 0 else ""])
 	return ""
 
 
 func abort(why: String) -> void:
 	if not active():
 		return
-	sess.say("RACE - out: %s. The fee is gone." % why)
+	sess.say("RACE - out: %s. The fee is gone%s." % [why, (" and so is the $%s bet" % Py.money(int(run.get("bet", 0)))) if int(run.get("bet", 0)) > 0 else ""])
 	run = {}
 
 
@@ -254,6 +268,20 @@ func update(dt: float) -> void:
 		abort("too slow")
 
 
+## The HUD's race chip: where you are in the race under way ("" when none is on).
+func hud_line() -> String:
+	if not active():
+		return ""
+	var c := course(str(run.id))
+	if c == null:
+		return ""
+	if float(run.t0) < 0.0:
+		return "RACE  %s  take the start gate" % c.name
+	var gates: int = c.gates.size() - 1
+	var t: float = sess.time - float(run.t0)
+	return "RACE  %s  gate %d/%d  %s  par %s" % [c.name, maxi(0, int(run.next) - 1), gates, _clock(t), _clock(c.par_s)]
+
+
 func _clock(t: float) -> String:
 	return "%d:%04.1f" % [int(t / 60.0), fmod(t, 60.0)]
 
@@ -285,12 +313,24 @@ func _finish(c: Course) -> void:
 		sess.money += prize
 		won += prize
 		paid_at[c.id] = sess.time
+	var bet: int = int(run.get("bet", 0))
+	var payout := 0
+	if bet > 0:
+		var hit: bool = (str(run.on) == "win" and place == 1) or (str(run.on) == "place" and place <= 3)
+		if hit:
+			payout = int(float(bet) * float(BET_ODDS[str(run.on)]))
+			sess.money += payout
+			betting += payout - bet
+		else:
+			betting -= bet
 	if place <= 3 and sess.renown != null:
 		sess.renown.add(float(RENOWN_BY_PLACE[place]), "placed %d in %s" % [place, c.name])
-	results.append({"id": c.id, "name": c.name, "place": place, "time": t, "prize": prize, "t": sess.time})
+	results.append({"id": c.id, "name": c.name, "place": place, "time": t, "prize": prize, "bet": bet, "payout": payout, "t": sess.time})
 	Py.keep_last(results, 20)
 	sess.say("RACE - %s: %s, place %d of %d%s." % [c.name, _clock(t), place, FIELD + 1,
 		(", $%s" % Py.money(prize)) if prize > 0 else (" (it paid within the hour)" if cool > 0.0 and place <= 3 else "")])
+	if bet > 0:
+		sess.say("RACE - the book: %s." % (("your $%s on a %s pays $%s" % [Py.money(bet), str(run.on), Py.money(payout)]) if payout > 0 else "your $%s on a %s is lost" % [Py.money(bet), str(run.on)]))
 	sess.bus.emit("race_run", sess.time, "", ["runner"], {"id": c.id, "place": place, "time": t, "prize": prize})
 	run = {}
 
@@ -302,4 +342,5 @@ func view() -> Dictionary:
 		d["cooldown"] = cooldown(c.id)
 		d["field_best"] = field(c)[0]
 		rows.append(d)
-	return {"courses": rows, "run": run.duplicate(), "results": results.duplicate(true), "won": won}
+	return {"courses": rows, "run": run.duplicate(), "results": results.duplicate(true), "won": won, "betting": betting,
+		"bet_steps": BET_STEPS, "odds": BET_ODDS}

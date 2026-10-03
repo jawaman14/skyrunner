@@ -187,3 +187,87 @@ func test_the_phone_command_and_the_save() -> void:
 	check_eq(v.courses.size(), 2, "the view lists both")
 	s.dispose()
 	t.dispose()
+
+
+func test_the_hud_chip_follows_the_race() -> void:
+	var s := _sess()
+	var hud := Hud.new()
+	(Engine.get_main_loop() as SceneTree).root.add_child(hud)
+	hud.setup(s)
+	hud.refresh()
+	check(not hud.chips["race"].visible, "no race, no chip")
+	check_eq(s.races.hud_line(), "", "and no line")
+	var c = s.races.courses_here()[0]
+	s.money = 5000
+	check_eq(s.races.enter(c.id), "", "entered")
+	check(s.races.hud_line().contains("take the start gate"), "told to take the start gate: %s" % s.races.hud_line())
+	hud.refresh()
+	check(hud.chips["race"].visible, "the chip is up")
+	var g0: Vector3 = c.gates[0]
+	s.races.feed(c.kind, Vector2(g0.x, g0.y), g0.z)
+	var g1: Vector3 = c.gates[1]
+	s.time += 12.0
+	s.races.feed(c.kind, Vector2(g1.x, g1.y), g1.z)
+	var line: String = s.races.hud_line()
+	check(line.contains("gate 1/%d" % (c.gates.size() - 1)) and line.contains("0:12.0") and line.contains("par"), "the gate, the clock and par: %s" % line)
+	s.races.abort("test")
+	hud.refresh()
+	check(not hud.chips["race"].visible, "the chip goes with the race")
+	hud.free()
+	s.dispose()
+
+
+func _run_to_finish(s: Session, c, secs: float) -> void:
+	_drive(s, c, secs)
+
+
+func test_a_bet_on_a_win_pays_three_to_one_and_a_loss_is_lost() -> void:
+	var s := _sess()
+	var c = s.races.courses_here()[0]
+	s.money = 5000
+	check_eq(s.races.enter(c.id, 200, "win"), "", "a $200 bet on a win is taken")
+	check_eq(s.money, 5000 - c.fee - 200, "the fee and the stake are paid at the window")
+	var before: int = s.money
+	_drive(s, c, c.par_s * 0.5)  # far faster than the field: first place
+	check_eq(s.money, before + c.prize + 600, "the prize and $600 from the book")
+	check_eq(s.races.betting, 400, "the book is $400 up on the stake")
+	check_eq(s.races.results.back().payout, 600, "recorded")
+	# the course has paid: the book is shut for the next hour
+	check(s.races.enter(c.id, 100, "win").contains("shut"), "no bets on a race that paid within the hour")
+	check_eq(s.races.enter(c.id), "", "though you can still run it for the glory")
+	s.races.abort("test")
+	# the air circuit has not paid: a losing bet
+	var air = s.races.courses_here()[1]
+	check_eq(s.races.enter(air.id, 100, "win"), "", "a bet on the circuit")
+	_drive(s, air, air.par_s * 1.3)  # slower than most of the field
+	check(s.races.results.back().place > 1, "not first")
+	check_eq(s.races.results.back().payout, 0, "so the book keeps the $100")
+	check_eq(s.races.betting, 300, "and the book is $300 up")
+	s.dispose()
+
+
+func test_a_place_bet_pays_for_the_top_three_and_dropping_out_loses_the_stake() -> void:
+	var s := _sess()
+	var c = s.races.courses_here()[0]
+	s.money = 5000
+	check_eq(s.races.enter(c.id, 300, "place"), "", "a place bet")
+	s.races.abort("you left the car")
+	check_eq(s.money, 5000 - c.fee - 300, "dropping out loses the fee and the stake")
+	check_eq(s.races.enter(c.id, 300, "place"), "", "and you can try again (nothing paid)")
+	_drive(s, c, c.par_s * 0.5)
+	check_eq(s.races.results.back().payout, 450, "first place also pays a place bet: 1.5 x $300")
+	s.dispose()
+
+
+func test_the_book_has_limits() -> void:
+	var s := _sess()
+	var c = s.races.courses_here()[0]
+	s.money = 5000
+	check(s.races.enter(c.id, 250, "win").contains("$100"), "only the set stakes")
+	check(s.races.enter(c.id, 100, "exacta").contains("win or a place"), "only a win or a place")
+	s.money = c.fee + 50
+	check(s.races.enter(c.id, 100, "win").contains("entry"), "the stake must be in hand as well as the fee")
+	check(not s.races.active(), "nothing entered")
+	var r: Array = s.command(Roles.PILOT, "race_enter", {"id": c.id, "bet": 100, "on": "win"})
+	check(not r[0], "the command refuses too")
+	s.dispose()

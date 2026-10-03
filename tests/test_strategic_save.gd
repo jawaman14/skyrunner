@@ -175,6 +175,7 @@ func test_the_rest_of_the_world_survives_a_save() -> void:
 	s.rackets.ransomed = 2
 	s.rackets.ransom_cash = 9000
 	s.rackets.held = 3
+	s.races.betting = 250
 	var rq = s.ground.recruit("rival", "car", Vector2(1200.0, -800.0), false)
 	check(rq is GroundWar.Squad, "a rival squad out on the road")
 	var rid: String = rq.id
@@ -215,6 +216,7 @@ func test_the_rest_of_the_world_survives_a_save() -> void:
 	check_eq(t.rackets.ransomed, 2, "the ransoms")
 	check_eq(t.rackets.ransom_cash, 9000, "and what they paid")
 	check_eq(t.rackets.held, 3, "the prisoners still held")
+	check_eq(t.races.betting, 250, "and what the book owes or is owed")
 	var rivals := t.ground.of("rival")
 	check_eq(rivals.size(), 1, "the one rival squad, not a fresh deployment")
 	check(rivals[0].id == rid and absf(rivals[0].x - 1200.0) < 0.01 and absf(rivals[0].y + 800.0) < 0.01, "where it was: %s at (%.0f, %.0f)" % [rivals[0].id, rivals[0].x, rivals[0].y])

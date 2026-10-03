@@ -47,7 +47,7 @@ Any seat without a human is filled by AI, so the same match can be played by 1 t
 | **Pilot** | Flies. Transponder, flaps, autopilot. | Out the window, HUD, radar-detector light | [done] |
 | **Co-pilot / kicker** | Loads the aircraft (twice the loading speed), pumps ferry fuel, kicks bales out over drop zones, runs the radio scanner and calls the boat | Tactical map: own aircraft, boat, bales, intercepted police traffic, radar-warning status | [done] (station client + AI fallback) |
 | **Spotter** | Watches one airstrip from the ground. Reports police units and roadblocks near it. Can relocate (takes time). | Units within 5 km of the watched strip, reported with a delay | [done] (AI-driven reports; human uses the station client) |
-| **Boat captain** | Go-fast boat. Waits at the rendezvous, fishes bales out of the water, runs for the cove. | Surface picture around the boat | [done] AI; human-driven boat [planned] |
+| **Boat captain** | Go-fast boat. Waits at the rendezvous, fishes bales out of the water, runs for the cove. | Surface picture around the boat | [done] AI; a human takes the seat at a 2D desk and right-clicks to send the go-fast |
 | **Fixer** | Books jobs, hires spotters, buys gear, manages heat and money between flights | Job boards, black market | [planned] (the pilot does this now) |
 | **Mechanic** | Field refuelling from caches, quick repairs at bush strips | | [planned] |
 
@@ -57,7 +57,7 @@ Any seat without a human is filled by AI, so the same match can be played by 1 t
 |---|---|---|---|
 | **Controller** (radar/intel desk) | Reads the fused radar picture, classifies tracks, dispatches helicopters, interceptors and cutters, sets radio encryption, requests the aerostat | Radar tracks (with position noise, no identity for non-squawking targets), tips, DF bearings. Never the true runner position. | [done] (station client + AI fallback) |
 | **Interceptor pilot** | Flies the chase aircraft and makes the visual ID | Out the window, its own radar | AI [done]; human pilot [done] (`RemoteSeat`) |
-| **Coast Guard cutter** | Hunts boats and seizes floating bales | Surface radar | [done] AI; human [planned] |
+| **Coast Guard cutter** | Hunts boats and seizes floating bales | Surface radar | [done] AI; a human takes the seat at a 2D desk and sends the cutter |
 | **Analyst** | Works the informant network, fuel-purchase records and tail numbers | Tip feed | [done] (section 34) |
 | **Undercover agent** | Plants a tracking beacon on a runner aircraft on the ground | | [planned] |
 
@@ -875,6 +875,13 @@ the field is the prize: first the whole prize, second half, third a quarter, and
 once an hour (after that it is for the glory). You are out, and the fee is gone, if you get out of the car mid-race,
 land from the circuit or take three times par. The save keeps what each course last paid and the winnings.
 `Races.ENABLED` switches it off.
+
+**The race chip and the book.** A chip on the HUD says where you are ("RACE  The Smuggler's Cove dash  gate 4/11  1:12.4
+par 4:42.0", or "take the start gate" before the clock runs). The track menu (the phone's *the track*) takes a bet on
+yourself: B cycles the stake ($0 / 100 / 200 / 300), N chooses a win (pays 3x the stake, the stake is not returned) or a
+place (top three, 1.5x). The stake is paid with the entry and is lost if you drop out. The book is only open on a race
+that is paying, a course that paid within the hour takes no bets, so betting cannot be a faster way to the same money.
+The save keeps the book's running total.
 
 ## 30. Effects and lighting (the 2026-10-03 upgrade)
 

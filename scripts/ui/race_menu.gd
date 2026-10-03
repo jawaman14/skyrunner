@@ -5,6 +5,8 @@ extends GameMenu
 
 var list: DataTable
 var rows: Array = []
+var bet_i := 0  ## index into Races.BET_STEPS
+var on := "win"  ## what the bet is on: "win" or "place"
 
 
 func _build() -> void:
@@ -24,7 +26,8 @@ func refresh() -> void:
 	title.text = "THE TRACK"
 	var v: Dictionary = s.races.view() if s.races != null else {}
 	var won: int = int(v.get("won", 0))
-	subtitle.text = "$%s in hand   -   $%s won in the arena" % [Py.money(s.money), Py.money(won)]
+	var book := int(v.get("betting", 0))
+	subtitle.text = "$%s in hand   -   $%s won in the arena   -   the book %s$%s" % [Py.money(s.money), Py.money(won), "+" if book >= 0 else "-", Py.money(absi(book))]
 	var keep := list.selected_row()
 	list.clear_rows()
 	rows = v.get("courses", [])
@@ -37,7 +40,10 @@ func refresh() -> void:
 	var last: Array = v.get("results", [])
 	footer.text = "No races run yet. Drive or fly through the gates in order; first takes the prize, second half, third a quarter." if last.is_empty() else "Last: %s, place %d, %s%s" % [
 		str(last[last.size() - 1].name), int(last[last.size() - 1].place), _clock(float(last[last.size() - 1].time)), (", $%s" % Py.money(int(last[last.size() - 1].prize))) if int(last[last.size() - 1].prize) > 0 else ""]
-	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "enter the race", "enter"], ["ESC", "back", "esc"]])
+	var stake: int = Races.BET_STEPS[bet_i]
+	var line := "bet: none" if stake == 0 else "bet $%s on a %s (pays %sx)" % [Py.money(stake), on, str(Races.BET_ODDS[on]).trim_suffix(".0")]
+	footer.text += "   -   " + line
+	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "enter the race", "enter"], ["B", "stake: $0 / 100 / 200 / 300", "b"], ["N", "win or place", "n"], ["ESC", "back", "esc"]])
 
 
 static func _clock(t: float) -> String:
@@ -50,11 +56,17 @@ func key(k: String) -> void:
 			list.move(-1)
 		"down":
 			list.move(1)
+		"b":
+			bet_i = (bet_i + 1) % Races.BET_STEPS.size()
+			refresh()
+		"n":
+			on = "place" if on == "win" else "win"
+			refresh()
 		"enter":
 			var i := list.selected_row()
 			if i < 0 or i >= rows.size():
 				return
-			var r: Array = s.command(Roles.PILOT, "race_enter", {"id": rows[i].id})
+			var r: Array = s.command(Roles.PILOT, "race_enter", {"id": rows[i].id, "bet": Races.BET_STEPS[bet_i], "on": on})
 			if not r[0]:
 				s.say(str(r[1]))
 			else:
