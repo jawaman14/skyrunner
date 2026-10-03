@@ -1,0 +1,37 @@
+# The task force's casino file: the Hotel Cielo on Isla Soberana, the Family's house. The controller's and the chief's F key.
+# Acts through Talk.State: wiretap(), audit(), raid().
+
+~ start
+if not casino
+	Radio: There is no casino file in this game.
+	=> END
+if cs_status == "seized"
+	Radio: The island's new government has nationalised the Cielo. The file is closed.
+	=> END
+=> file
+
+~ file
+Radio: The Hotel Cielo: the case against the house stands at {{cs_case}}%. The cage is {{cs_cage_note}}. {{cs_closed_note}}
+- Put a microphone in the counting room. ({{money_s(cs_wiretap)}})
+	do wiretap()
+	if result != ""
+		Radio: {{result}}
+	else
+		Radio: The wire is in. The case is {{cs_case}}%.
+	=> file
+- Send the gaming commission to open the cage's books. ({{money_s(cs_audit)}})
+	do audit()
+	if result != ""
+		Radio: {{result}}
+	else
+		Radio: The commission has the books. The cage is shut for half an hour.
+	=> file
+- Raid the house. ({{money_s(cs_raid)}}, the case must be {{cs_raid_case}}%) [if cs_case >= cs_raid_case]
+	do raid()
+	if result != ""
+		Radio: {{result}}
+	else
+		Radio: The doors are down and the tables are covered. The house is dark.
+	=> file
+- That's all.
+	=> END

@@ -27,6 +27,8 @@ static func build(sess: Session, role: String, seq := 0) -> Dictionary:
 		snap.merge(_law(sess), true)
 		if role == Roles.INTERCEPTOR:
 			snap.merge(_police_pilot(sess, role), true)
+		if sess.casino != null:
+			snap["casino"] = sess.casino.view("law")
 		if role == Roles.ANALYST and sess.analyst != null:
 			snap["analyst"] = sess.analyst.view()
 		if role == Roles.UNDERCOVER and sess.undercover != null:
@@ -136,6 +138,8 @@ static func _runner(sess: Session, role: String) -> Dictionary:
 	out["intel"] = intel
 	out["scanner"] = sess.scanner_log.slice(-8).map(func(m): return m[1]) if sess.gear.has("scanner") else null
 	out["upgrades"] = sess.upgrades["runner"].keys()
+	if sess.airframe != null:
+		out["airframe"] = sess.airframe.view(role == Roles.MECHANIC)
 	out["market"] = sess.econ.board()
 	if sess.arsenals.has("org"):
 		out["arsenal"] = sess.arsenals["org"].to_dict()
@@ -147,6 +151,8 @@ static func _runner(sess: Session, role: String) -> Dictionary:
 		out["agency"] = sess.agency.view("runner")
 	if sess.family != null:
 		out["family"] = sess.family.view("runner")
+	if sess.casino != null:
+		out["casino"] = sess.casino.view("runner")
 	if sess.island != null:
 		out["island"] = sess.island.view("runner")
 	if sess.court != null:

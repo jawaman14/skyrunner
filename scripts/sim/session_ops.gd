@@ -159,7 +159,8 @@ func fuel_source() -> Array:
 	if af.kind in ["hub", "regional"]:
 		return [FUEL_PRICE_PER_LB * econ.fuel_mult(), 1e9]
 	if af.kind == "bush":
-		return [FUEL_PRICE_PER_LB * 2 * econ.fuel_mult(), 1e9 if cache <= 0 else cache]  # farmer's drums, or your cache
+		var haggle := 0.6 if airframe != null and airframe.held else 1.0  # a mechanic who knows the farmer
+		return [FUEL_PRICE_PER_LB * 2 * haggle * econ.fuel_mult(), 1e9 if cache <= 0 else cache]  # farmer's drums, or your cache
 	return [0.0, cache] if cache > 0 else [0.0, 0.0]  # shady strips: only what you flew in
 
 

@@ -48,6 +48,10 @@ func step(dt: float) -> FlightModel.Controls:
 		return bot.step(dt)
 	if not s.parked or not s.unloading.is_empty():
 		return null
+	if s.airframe != null:
+		s.airframe.auto_service()  # the ground crew sees to a worn aircraft; the bot waits for the work
+		if not s.airframe.work.is_empty():
+			return null
 	_wait += dt
 	if _wait < 3.0:  # a moment on the ground between flights
 		return null

@@ -49,7 +49,7 @@ Any seat without a human is filled by AI, so the same match can be played by 1 t
 | **Spotter** | Watches one airstrip from the ground. Reports police units and roadblocks near it. Can relocate (takes time). | Units within 5 km of the watched strip, reported with a delay | [done] (AI-driven reports; human uses the station client) |
 | **Boat captain** | Go-fast boat. Waits at the rendezvous, fishes bales out of the water, runs for the cove. | Surface picture around the boat | [done] AI; a human takes the seat at a 2D desk and right-clicks to send the go-fast |
 | **Fixer** | Books jobs, hires spotters, buys gear, manages heat and money between flights | Job boards, the crew, the Family | [done] (section 36) |
-| **Mechanic** | Field refuelling from caches, quick repairs at bush strips | | [planned] |
+| **Mechanic** | Field refuelling from caches, quick repairs at bush strips | The aircraft's true condition, the cost of the work | [done] (section 39) |
 
 ### Law side
 
@@ -1019,3 +1019,61 @@ maps) puts wooden piers into San Telmo's harbour: along the basin's head, one ev
 water's edge, with crates, barrels and chests stacked at the foot and a rowboat or a small ship moored alongside. The positions
 come from the map and a hash of the pier's number (no random stream), so they are the same every time. Scenery only: nothing
 is solid. ![the docks](img/port-docks.png)
+
+
+## 39. Wear, repairs and the mechanic
+
+`scripts/sim/airframe.gd` (`Airframe`, behind `Airframe.ENABLED`; asked for with the session option `airframe: true`, which the
+game's own start sets) gives each aircraft you own an **engine** and an **airframe** condition, 0 to 100, on their own RNG
+stream (seed + 929).
+
+- **What wears.** The engine wears 0.12 points a minute in the air (about 7 an hour). The airframe wears on touchdowns harder
+  than 60 % of the gear's limit (up to 14 points at the limit), on gravel, grass, dirt and sand strips (0.4 to 0.8 a landing),
+  and in a storm (0.1 a minute).
+- **What it does.** Engine under 60: it runs rough and gives less power, down to 80 % at zero (the HUD says ENGINE ROUGH).
+  Engine under 30: it may quit in the air (up to 5 % a minute at zero) for 90 seconds, the throttle forced to idle, and then
+  catches again (ENGINE OUT). Airframe under 50: the gear collapses at a softer landing, down to 60 % of the limit
+  (AIRFRAME WEAK).
+- **Repairs** happen on the ground, over time and for money by the point (engine $30, airframe $20 at a hangar). A hangar (a
+  field with a shop, or a hub or regional strip) does 12 points a minute; a bush strip patches at 5 a minute at 1.5x the
+  price; a **mechanic** (a human in `Roles.MECHANIC`) does 24 a minute, anywhere, at 0.6x the price. The aircraft cannot take
+  off while the work is running (the cowling is off, the throttle held at idle); it stops by itself when the work is done, the
+  money runs out or the aircraft is moved. From the hangar menu (H) the service row starts and stops the work on both.
+- **What you see.** The pilot and everyone else read good / worn / poor / failing. The mechanic reads the numbers, the
+  chance it quits a minute, the power left and what the gear will take (his I key says it aloud), and haggles the farmer's drum
+  fuel 40 % cheaper at bush strips.
+- **The AI ground crew**: a bot (`AutoRunner`) has a worn aircraft (under 70) serviced at a hangar before it flies, and patched
+  at a bush strip only when it is under 40. The save keeps each aircraft's condition.
+
+The mechanic's desk: ↑ ↓ choose the part, Enter repairs it, B both, S stops the work, I inspects, F adds 10 % fuel.
+
+
+## 40. The Hotel Cielo: the Family's casino on Isla Soberana
+
+`scripts/sim/casino.gd` (`Casino`; behind `Casino.ENABLED` and `Casino.REVOLUTION`; `casino: true` in the session options, or the
+story chapter *The House*; needs the Family and the island). The Cielo is a business you do through a conversation with its
+manager, Lenny Vance (`dialogue/casino.dialogue`): Shift+K in the cockpit, X at the boss's, lieutenant's, co-pilot's and fixer's
+desks, or the phone. (Its physical form is section 41.) Its own RNG stream is seed + 939.
+
+- **The house** takes about $16,000 gross an hour, more with tourists (the island's weather and politics: a hurricane cuts it to
+  40 %, a boatlift lifts it 30 %, a headliner on the bill 50 %), less when the Lucky Palm leans on it. The General skims 6 to 14 %
+  (the less he likes you, the more) and the Family 12 %; the rest belongs to the owners. You buy a **stake** from the Family in
+  tenths, $9,000 a tenth, up to 40 %; your share builds up in the house's account to **collect**.
+- **The cage** is chips in, clean cheques out: street cash from any stash goes in and comes out in the safe minus the Family's 8 %
+  and the General's skim (14 to 22 % in all), up to $8,000 an hour. Besides the convenience (no truck to be stopped) it cleans the
+  money trail: the runner's case cools 1.5 points a thousand. Every dollar warms the house's **heat** (0.8 a thousand, cooling 0.25 a
+  minute), and heat becomes the task force's **case** (0.2 a minute at full heat).
+- **The General** can be paid ($3,000): his regard +8, the island's unrest -10, the heat -5.
+- **The Lucky Palm** (Dante Varga) leans on the house until bought out ($20,000, six hours of peace and +10 % take); at full pressure
+  it burns the kitchens: the house is dark for half an hour and 10 % of the account goes.
+- **The task force** (the controller's or chief's F key: `dialogue/casino_file.dialogue`): a wiretap in the counting room ($3,000,
+  +20 case), an audit (the commission has the cage's books for 30 minutes, +10 case, +25 if cash has gone through it), a raid
+  ($5,000, once the case is 50 %: the house is dark 30 minutes, 40 % of the owners' money forfeited to the task force, the Family's
+  respect -8). With no human at the desk the AI chief does it by itself when the heat passes 55. Trace-the-money finds the cage.
+- **The revolution** (Havana, 1959): the island's unrest rises 0.15 a minute, faster with the heat, a purge, a hurricane or a
+  shortage, slower the more the General likes you. At 100 the government falls (`Island.purge`, the island closed for an hour):
+  you have 20 minutes to **evacuate** with 70 % of your account and 40 % of what the stake would fetch, or the house falls with your
+  share in it (the Family's respect -20). Either way the house is seized and the island's new men are cool to you.
+- **In the story**, chapter 7 *The House* (1984) opens it: buy a stake, put $15,000 of street cash through the cage, and when both are
+  done the colonels meet and the uprising is set ten minutes out; get out alive and the chapter ends. If the Family is gone or the
+  house is seized first, the chapter does not strand you. Saves from before the chapter was added shift their chapter number.

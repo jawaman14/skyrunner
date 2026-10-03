@@ -32,6 +32,8 @@ const ISLAND := ["relations", "passage_until", "status", "status_until", "price_
 	"inspections_until", "shipments", "delivered", "caught", "intercepts", "next_mules", "next_ship", "rival_shipped", "rival_caught",
 	"_rival_t", "last", "_serial", "_t", "_event_t", "_mig_t"]
 const ISLAND_INTS := ["n", "cost", "value", "mules"]
+const CASINO := ["status", "stake", "owed", "heat", "case_", "unrest", "rival", "bought_out_until", "closed_until", "audit_until", "uprising_until", "act",
+	"act_until", "cage_log", "laundered", "fees", "collected", "last", "force_uprising_at", "_t", "_evt_t", "_law_t"]
 const AGENCY := ["trust", "exposure", "protected_until", "quashed", "flights", "burned", "pay_mult", "offer_chance", "_gift_t", "_t",
 	"stings", "hung_out", "withheld", "last_read", "_game_t", "war_chest", "coke_lots", "gun_lots", "pipe_last", "_pipe_t", "_pipe_pause",
 	"next_market"]
@@ -67,6 +69,8 @@ static func capture(s: Session) -> Dictionary:
 			"aboard": l.aboard, "lost": l.lost.duplicate(true), "lost_by": l.lost_by.duplicate(true)}
 	if s.payroll != null:
 		d["payroll"] = _payroll(s)
+	if s.airframe != null:
+		d["airframe"] = {"cond": s.airframe.cond.duplicate(true), "failures": s.airframe.failures, "spent": s.airframe.spent}
 	if s.races != null:
 		d["races"] = {"paid_at": s.races.paid_at.duplicate(), "won": s.races.won, "betting": s.races.betting,
 			"results": s.races.results.duplicate(true)}
@@ -103,6 +107,8 @@ static func _capture_world(s: Session, d: Dictionary) -> void:
 			d["market"] = SaveVars.capture(s.econ.market, MARKET)
 	if s.island != null:
 		d["island"] = SaveVars.capture(s.island, ISLAND)
+	if s.casino != null:
+		d["casino"] = SaveVars.capture(s.casino, CASINO)
 	if s.agency != null:
 		d["agency"] = SaveVars.capture(s.agency, AGENCY)
 	if s.chronicle != null:
@@ -203,6 +209,12 @@ static func restore(s: Session, d: Dictionary) -> void:
 		l.lost_by = _ints(ld.get("lost_by", l.lost_by))
 	if s.payroll != null and d.get("payroll") is Dictionary:
 		_restore_payroll(s.payroll, d.payroll)
+	if s.airframe != null and d.get("airframe") is Dictionary:
+		var ad: Dictionary = d.airframe
+		for k in ad.get("cond", {}):
+			s.airframe.cond[str(k)] = {"engine": float(ad.cond[k].get("engine", 100.0)), "airframe": float(ad.cond[k].get("airframe", 100.0))}
+		s.airframe.failures = int(ad.get("failures", 0))
+		s.airframe.spent = int(ad.get("spent", 0))
 	if s.races != null and d.get("races") is Dictionary:
 		s.races.paid_at = d.races.get("paid_at", {})
 		s.races.won = int(d.races.get("won", 0))
@@ -286,6 +298,8 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 			SaveVars.restore(s.econ.market, d.market, MARKET)
 	if s.island != null and d.get("island") is Dictionary:
 		SaveVars.restore(s.island, d.island, ISLAND, ISLAND_INTS)
+	if s.casino != null and d.get("casino") is Dictionary:
+		SaveVars.restore(s.casino, d.casino, CASINO)
 	if s.agency != null and d.get("agency") is Dictionary:
 		SaveVars.restore(s.agency, d.agency, AGENCY)
 	if s.chronicle != null and d.get("chronicle") is Dictionary:

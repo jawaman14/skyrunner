@@ -103,6 +103,8 @@ var law_log: Array = []
 var scanner_log: Array = []
 var scanner_channels := ["police"]  ## what the runner's scanner is programmed for (RadioNet.REALISM)
 var upgrades := {"runner": {}, "law": {}}  ## bought tree nodes (Upgrades)
+var casino: Casino = null  ## the Hotel Cielo, the Family's house on the island (Casino; the story's 'The House' or `casino: true`)
+var airframe: Airframe = null  ## engine and airframe wear, repairs (Airframe; `airframe: true` asks for it)
 var undercover: Undercover = null  ## the agent who plants a tracking beacon (Undercover)
 var analyst: Analyst = null  ## the tip desk (Analyst; a human seat holds tips back from dispatch)
 var law_funds := 8000.0  ## the task force's upgrade money: a budget plus forfeiture from busts and seizures
@@ -193,7 +195,7 @@ var parked: bool:
 ## hear the event bus). Live play asks for all of them; the story mode switches
 ## them on chapter by chapter (Story), each on its own stream, so a system that
 ## arrives in 1983 behaves as it would have from the start.
-const SYSTEMS := ["ground_war", "agency", "island", "trade", "logistics", "payroll", "court", "family", "chronicle"]
+const SYSTEMS := ["ground_war", "agency", "island", "trade", "logistics", "payroll", "court", "family", "chronicle", "casino"]
 
 
 # ================================================================ commands
@@ -445,6 +447,10 @@ func enable_system(key: String, career := false) -> bool:
 			if chronicle != null or not Chronicle.ENABLED:
 				return false
 			chronicle = Chronicle.new(self, _rng(seed + 83))
+		"casino":
+			if casino != null or not Casino.ENABLED or island == null or family == null:
+				return false
+			casino = Casino.new(self)
 		_:
 			return false
 	return true
