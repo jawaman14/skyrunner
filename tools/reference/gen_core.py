@@ -5,7 +5,7 @@ Reference values from the Python game for the Godot port's parity tests.
 
   python3 tools/reference/gen_core.py > tests/fixtures/core_ref.json
 
-Needs the Python game in reference/python and its requirements.
+Needs the Python game in reference/python (check out the git tag python-prototype-archive; it is no longer on main) and its requirements.
 """
 import itertools
 import json

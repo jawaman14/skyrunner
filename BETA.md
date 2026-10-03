@@ -68,8 +68,9 @@ ask for one.
   as real ones do.
 - The DHC-6 Twin Otter balloons hard when its flaps come out at speed (its aerodynamic data
   gives a very large flap lift, under JSBSim too): slow to about 80 kt before taking flap.
-- The balance was measured with the old flight model, and a re-run is under way. Expect money
-  and police odds to shift between beta builds.
+- The balance was re-measured on the game's own flight model (docs/BALANCE.md, entry 35), but the
+  systems added since (fuel, renown, rackets, races) have shifted it again and a full re-run is
+  queued. Expect money and police odds to move between beta builds.
 - Text-to-speech (the read-aloud option) needs the OS speech service; on Linux that is
   speech-dispatcher.
 - Rendering without a GPU (llvmpipe) works but is slow.

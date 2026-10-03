@@ -64,10 +64,6 @@ func threshold(end: int) -> Array:
 	return [x + s * ux * length / 2, y + s * uy * length / 2]
 
 
-func is_short() -> bool:
-	return length < 500
-
-
 func to_dict() -> Dictionary:
 	return {"code": code, "x": x, "y": y, "heading": heading, "length": length, "width": width, "elev": elev,
 		"setting": setting, "tree_lines": tree_lines, "haul_road": haul_road}

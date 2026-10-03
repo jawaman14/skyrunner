@@ -16,9 +16,7 @@ The balance numbers were measured with JSBSim; the game now flies its own model.
    per matrix cell than the run it's compared against, so a bigger re-run would help confirm the
    drift is real before anyone retunes a rule. See entry 35 (docs/BALANCE.md) for the numbers.
 4. Done: `tools/live_balance.gd -- 80 3` and `-- 40 12 story`; BALANCE entry 35 written and
-   `docs/BALANCE.md` regenerated. **Open:** "BETA.md's balance note" - no `docs/BETA.md` exists in
-   this repo (nor anywhere else under that name), so nothing was added under that name; flagging
-   rather than guessing what it should be.
+   `docs/BALANCE.md` regenerated. BETA.md (at the repo root, not under docs/) now carries the balance note.
 
 ## 2. Playtest feedback (first real play session)
 First wave, small and high value - **all done, in PRs:** the Esc pause menu; runways and landing

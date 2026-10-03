@@ -26,7 +26,7 @@ On Windows, run the same through Git Bash or WSL, or call the Godot exe directly
   fixtures shift. New systems sit behind a static `ENABLED`-style switch that the parity tests
   turn off.
 - **Fixtures:** tests/fixtures/README.md says which are frozen from the Python prototype
-  (reference/python, archival; never regenerate casually) and which are Godot golden files
+  (the `python-prototype-archive` tag, archival; never regenerate casually) and which are Godot golden files
   (`T.golden()`, regenerate only for an intended behaviour change and say so in the commit).
 - Balance changes get a BALANCE entry via `cli.gd -- report` (docs/BALANCE.md is generated).
 - Scratch scripts go outside the repo, never `tools/zz_*`.

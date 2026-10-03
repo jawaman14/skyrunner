@@ -24,6 +24,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Repo hygiene
+        run: bash tools/hygiene.sh
       - name: Godot
         run: echo "GODOT=$(${GAME}/tools/get_godot.sh)" >> "$GITHUB_ENV"
       - name: Test suite

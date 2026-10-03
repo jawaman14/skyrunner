@@ -951,12 +951,3 @@ func landing_check(s, field_: Airfield, carrying_hot: bool, tid := "runner") -> 
 		events.append("Customs inspection!")
 		return true
 	return false
-
-
-## [Pursuer, distance] or null
-func nearest_threat(s):
-	var live := units.filter(func(u): return not (u.state in ["crashed", "return"]))
-	if live.is_empty():
-		return null
-	var u: Pursuer = Py.min_by(live, func(u): return u.dist_to(s))
-	return [u, u.dist_to(s)]

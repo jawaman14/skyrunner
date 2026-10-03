@@ -467,23 +467,6 @@ static func island_lines(isl: Dictionary) -> Array:
 	return out
 
 
-## The organisation's payroll.
-static func payroll_lines(p: Dictionary) -> Array:
-	if p.is_empty():
-		return []
-	var c: Dictionary = p.counts
-	var out := ["CREW (%s)  $%s a payday in %d s, loyalty %d%%   W the hiring hall" % ["AI" if p.ai else "you", Py.money(int(p.wage_bill)),
-		int(p.payday_s), int(100 * float(p.loyalty))]]
-	out.append("  %d soldiers  %d drivers  %d mules  %d lookouts  %d accountants  %d pilots" % [c.soldier, c.driver, c.mule, c.lookout, c.accountant, c.pilot])
-	if int(p.unpaid) > 0:
-		out.append("  LAST PAYDAY $%s SHORT" % Py.money(int(p.unpaid)))
-	for j in p.get("jail", []):
-		out.append("  In custody: %s (%s)%s, trial in %d s" % [j.name, j.role, "" if j.lawyer else " - no lawyer", int(j.trial_s)])
-	if str(p.get("last", "")) != "":
-		out.append("  Last: %s" % p.last)
-	return out
-
-
 static func _jail_law_line(p: Dictionary) -> String:
 	if p.is_empty() or p.get("jail", []).is_empty():
 		return ""

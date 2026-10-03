@@ -59,10 +59,6 @@ static func build(world: World, q: Quality) -> Node3D:
 	return root
 
 
-static func _buildings(list: Array, q: Quality) -> MultiMeshInstance3D:
-	return box_layer(list.filter(func(b): return b.style != "crane"), q)
-
-
 ## The shader boxes for `boxes` (the city's buildings, or one chunk of them). `idx` is each box's number in the whole
 ## list, which seeds its colour, so a box is the same colour whichever chunk it is drawn in.
 static func box_layer(boxes: Array, q: Quality, idx := []) -> MultiMeshInstance3D:

@@ -1,6 +1,6 @@
 # Porting Skyrunner from Python/Panda3D to Godot 4
 
-The Python game (`reference/python/`) was ported module by module to Godot 4.4 (now running on 4.7, GDScript only; it
+The Python game (the git tag `python-prototype-archive`; it is no longer in the tree) was ported module by module to Godot 4.4 (now running on 4.7, GDScript only; it
 used a small C++ GDExtension until the flight model and the exact-maths helpers were rewritten in GDScript,
 see "Leaving JSBSim" below). Every simulation module was checked against the Python original by running both on
 the same seeds and comparing the output. This file explains how that was done, what matched exactly,
@@ -37,8 +37,8 @@ For each module, a generator under `tools/reference/` runs the Python game and w
 | `trials_ref.json` | `gen_trials.py` | `test_trials_parity.gd` | The trial inputs; the flown results now check against `flight_golden.json` |
 | `flight_golden.json` | `tools/regen_flight_golden.gd` (Godot) | `test_core_parity.gd`, `test_bots_parity.gd`, `test_trials_parity.gd` | Everything that flies, as the game's own flight model flies it: a determinism check, bit for bit |
 
-Re-generate a fixture with `python3 tools/reference/gen_<name>.py` (from `reference/python` with its
-virtualenv active).
+Re-generate a fixture with `python3 tools/reference/gen_<name>.py` from a checkout of the tag
+`python-prototype-archive` (the Python game lives under `reference/python` there), with its virtualenv active.
 
 ## Lessons (the traps)
 

@@ -4,7 +4,7 @@ Bush flying, weight and balance, and the long arm of the law, on a fictional Car
 1979-89. Pure Godot 4: GDScript all the way down, with its own 6-DOF flight model reading
 [JSBSim](https://github.com/JSBSim-Team/jsbsim)-format aircraft data. No plug-ins, no compiler: a stock Godot
 4.7 opens it, plays it and exports it to Linux, Windows and macOS. This is the game. (It started as a Python prototype in
-`reference/python/`, kept only as the archival reference that generated the frozen parity fixtures in
+the git tag `python-prototype-archive`, the archival reference that generated the frozen parity fixtures in
 `tests/fixtures/`; you never need it to build, play or test.)
 
 **Get it:** [INSTALL.md](INSTALL.md) walks through downloading a build for Windows, Linux or macOS
