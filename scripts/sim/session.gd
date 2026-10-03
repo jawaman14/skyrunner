@@ -72,6 +72,8 @@ func _init(opts := {}) -> void:
 	analyst = Analyst.new(self)
 	police.analyst = analyst
 	analyst.held = humans.has(Roles.ANALYST)
+	undercover = Undercover.new(self)
+	undercover.held = humans.has(Roles.UNDERCOVER)
 	if island != null:
 		police.territory_y = Island.TERRITORY_Y
 	if opts.get("renown", false) and Renown.ENABLED:
@@ -127,6 +129,9 @@ func dispose() -> void:
 	if analyst != null:
 		analyst.sess = null
 	analyst = null
+	if undercover != null:
+		undercover.sess = null
+	undercover = null
 	police.analyst = null
 	payroll = null
 	court = null

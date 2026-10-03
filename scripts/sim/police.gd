@@ -268,6 +268,7 @@ var cases := {}
 var tips: Array = []
 var events: Array = []  ## runner-facing messages
 var law_events: Array = []  ## controller-facing messages
+var beacon_until := -1.0  ## a tracking beacon on the runner's aircraft reports until then (Undercover)
 var analyst = null  ## Analyst: when a human holds that seat, tips wait on her desk (Session sets it)
 var score := {"busts": 0, "clean_stops": 0, "bales_seized": 0, "boats_seized": 0}
 var visibility := 1.0  ## weather and moon: scales how far crews see (Session.set_weather)
@@ -661,6 +662,14 @@ func tick(dt: float, now_: float, targets: Array) -> Dictionary:
 		detections = sensors.sweep(targets.map(func(t): return t.sig), now)
 		for t in targets:
 			_classify(t, SWEEP_INTERVAL_S)
+		if beacon_until > now and by_id.has("runner"):
+			# a planted beacon: the picture carries the aircraft wherever it is, with a tight error
+			var bsig: SensorNet.Signature = by_id["runner"].sig
+			sensors.report(bsig, now, "BCN", Undercover.TRACK_SIGMA_M)
+			var bc := case("runner")
+			bc.last_known = [bsig.x, bsig.y, now]
+			if bc.first_known == null:
+				bc.first_known = [bsig.x, bsig.y]
 
 	# units
 	var seen_by := {}

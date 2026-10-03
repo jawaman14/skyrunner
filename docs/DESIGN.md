@@ -59,7 +59,7 @@ Any seat without a human is filled by AI, so the same match can be played by 1 t
 | **Interceptor pilot** | Flies the chase aircraft and makes the visual ID | Out the window, its own radar | AI [done]; human pilot [done] (`RemoteSeat`) |
 | **Coast Guard cutter** | Hunts boats and seizes floating bales | Surface radar | [done] AI; a human takes the seat at a 2D desk and sends the cutter |
 | **Analyst** | Works the informant network, fuel-purchase records and tail numbers | Tip feed | [done] (section 34) |
-| **Undercover agent** | Plants a tracking beacon on a runner aircraft on the ground | | [planned] |
+| **Undercover agent** | Plants a tracking beacon on a runner aircraft on the ground | The strip the aircraft is parked at, the odds, their cover | [done] (section 35) |
 
 ### Hidden role (versus, [planned])
 **The informant.** One runner-side player may secretly be working for the task force. They
@@ -979,3 +979,17 @@ to `Analyst.intake`; `release_tip` is what dispatch does with one):
 
 The seat is in the waiting room, the seat picker and the police-mode seat list like the others. The desk's dice are their own
 stream (seed + 909). Not saved: the desk is empty after a load.
+
+
+## 35. The undercover agent: a beacon on the parked aircraft
+
+The task force's agent seat (`scripts/sim/undercover.gd`, `Roles.UNDERCOVER`, behind `Undercover.ENABLED`). The AI chief never
+does this (the law upgrade "undercover" still leaks destinations by itself); it is a seat for a player.
+
+- **Plant** (P): only while the aircraft is parked at a strip. It works 75% of the time, 50% when a spotter of the runners'
+  watches that strip. A live beacon (25 minutes) puts the aircraft on the controller's picture wherever it flies, with a
+  25 m error, radar or no radar, transponder or none (`PoliceSystem.tick` reports it as source `BCN`).
+- **Fail** and the agent is burned: half the cover goes, the crew is told a stranger was seen at the tail, and the agent
+  lies low for 10 minutes. Cover regrows one point in 30 s; at zero the agent is blown for 20 minutes.
+- **The counter**: a runner with the bug sweep upgrade finds a fresh beacon half the time (the agent then lies low for 5
+  minutes). The seat's dice are their own stream (seed + 919).

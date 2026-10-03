@@ -312,6 +312,9 @@ func seat_driver(role: String, human: bool) -> void:
 		Roles.PATROL:
 			if ground != null:
 				ground.commanders["police"].ai = not human
+		Roles.UNDERCOVER:
+			if undercover != null:
+				undercover.held = human
 		Roles.ANALYST:
 			if analyst != null:
 				analyst.held = human
@@ -650,6 +653,13 @@ func _cmd_analyst(role: String, a: Dictionary):
 			err = analyst.discard(id)
 		_:
 			err = "Verify, forward or discard."
+	return err if err != "" else null
+
+
+func _cmd_plant_beacon(role: String, a: Dictionary):
+	if undercover == null:
+		return "There is no agent in this game."
+	var err := undercover.plant()
 	return err if err != "" else null
 
 
