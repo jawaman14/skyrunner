@@ -640,13 +640,25 @@ The game had grown a dozen systems, all on from the first minute. The story (`st
 | Chapter | Year | Opens | Goals |
 |---|---|---|---|
 | Square Grouper | 1979 | trade (grass only), payroll, the papers | 300 lb of grass landed, a dealer on a corner, $4,000 from the trade |
-| The Connection | 1980 | logistics | $3,000 of street money home; the Colombian connection calls |
-| Cocaine Cowboys | 1981 | the street war, gun runs and gun sales, soldiers | 60 lb of cocaine flown home, 8 weapons in the armoury |
+| The Connection | 1980 | logistics, the dealership | $3,000 of street money home; the Colombian connection calls; *side goal:* buy a vehicle (+$2,000) |
+| Blotter | 1980 | the Sunrise Collective (acid for grass) | 150 lb of grass traded for acid, 20 sheets sold; the lab is taken at the end |
+| Cocaine Cowboys | 1981 | the street war, gun runs and gun sales, soldiers | 60 lb of cocaine flown home, 8 weapons in the armoury; *side goal:* a truck with real cover or steel (+$3,000) |
 | Family Business | 1982 | the Moretti family | a deal with them (offer, loan or bulk sale); $30,000 in the bank |
 | The Task Force | 1983 | the federal court | 3 hot loads delivered, the case under 60% |
 | Isla Soberana | 1984 | the island, mules | a load home from the island |
+| The House | 1984 | the Hotel Cielo | a stake, $15,000 through the cage, out alive when the government falls; *side goal:* win $2,000 at the tables (+$3,000) |
 | The Company | 1985 | the Agency | a job for the Company, 4 guns sold to it |
 | Kingpin | 1986 | (all open) | $65,000 in cash, stock and street money |
+| The Hearings | 1987 | - | the case under 50% for 30 minutes running; $40,000 in the bank |
+| Last Flight | 1988 | - | $90,000 in cash, stock and street money; the case under 50% for 20 minutes running; then the story is told |
+
+**Side goals (2026-10-03).** A goal can be optional (`[key, text, target, true, bonus]` in `Story.CHAPTERS`): it is never needed to finish the chapter, shows
+"(optional: +$X)" on the card, and pays its bonus once when met. **Blotter** (a new chapter, 1980) is the Collective's story (DESIGN 44) and is dark: when it is done
+the task force takes the lab, a bread van is found in a ravine, Nico Cozz is gone for six hours and the case against us grows by ten points. **The Hearings** and
+**Last Flight** are the endgame the title (1979-1989) promised: the Company's war ends in a subpoena, and the goals are a cold case (`case_cold`, counted in
+consecutive minutes under 50% suspicion, the clock resetting if it rises) and money. Saves carry `v: 3` (a version 2 save before Blotter moves up one chapter from
+Cocaine Cowboys on). The story's balance run (`tools/live_balance.gd -- 40 16 story`, 16 hours now) at 40 seeds: Blotter takes about two hours in the stand-in's hands, 95% reach
+The Task Force, 80% reach The Hearings, 55% reach Last Flight and 40% finish (BALANCE entry 50).
 
 **How it works**
 - `Session.enable_system(key)` builds a system mid-game. Each system has always had its own random stream, so one that arrives in 1983 behaves as it would have from the start.

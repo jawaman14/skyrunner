@@ -215,13 +215,16 @@ Beyond the prototype:
   | Year | Chapter | Opens |
   |---|---|---|
   | 1979 | Square Grouper | grass, the stash houses, the hiring hall, the papers |
-  | 1980 | The Connection | logistics; the Colombians call when you've moved enough |
+  | 1980 | The Connection | logistics, the dealership; the Colombians call when you've moved enough |
+  | 1980 | Blotter | the Sunrise Collective: acid for grass (the lab is taken at the end) |
   | 1981 | Cocaine Cowboys | cocaine, Los Cuervos and the street war, gun runs, soldiers |
   | 1982 | Family Business | the Moretti family |
   | 1983 | The Task Force | the federal court: bail, lawyers, pleas, juries |
   | 1984 | Isla Soberana | the island, mules and containers |
   | 1985 | The Company | the Agency and its pipeline |
   | 1986 | Kingpin | sixty-five grand, and walk away |
+  | 1987 | The Hearings | the Company's war ends in a subpoena: keep the case cold, bank $40,000 |
+  | 1988 | Last Flight | ninety grand and a clear case, then the story is told |
 
   The goals are measured by the systems themselves (pounds landed, dealers on corners, cash home, a deal
   with the Morettis, loads from the island). A faction that's gone before you deal with it doesn't strand
