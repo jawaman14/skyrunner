@@ -208,12 +208,12 @@ func test_nico_talks_to_any_seat() -> void:
 	check(st.toggle_acid_auto() and s.psych.auto, "hands the trading to the AI")
 
 
-func test_the_story_opens_it_in_1980() -> void:
+func test_the_story_opens_it_in_1980_with_its_own_chapter() -> void:
 	var found := ""
 	for ch in Story.CHAPTERS:
 		if ch[3].has("psychedelics"):
 			found = str(ch[1])
-	check_eq(found, "The Connection", "the chapter about the product and the money")
+	check_eq(found, "Blotter", "its own chapter, after the connection")
 
 
 func test_the_collective_survives_a_save() -> void:

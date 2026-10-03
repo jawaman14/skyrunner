@@ -64,6 +64,10 @@ func test_chapters_open_the_game_in_order() -> void:
 	check(s.logistics != null, "1980: logistics - product and cash have places now")
 	check_near(s.logistics.total("marijuana"), 250.0, 0.01, "what we held is in a stash")
 	s.story.advance()
+	check_eq(s.story.chapter.title, "Blotter")
+	check(s.psych != null, "1980: the Sunrise Collective")
+	check(s.ground == null, "still no war")
+	s.story.advance()
 	check(s.trade.connected, "1981: the Colombians have called")
 	check(s.ground != null and s.foot != null, "Los Cuervos and the street war")
 	check(s.unlocked("guns") and s.unlocked("role_soldier"), "guns and soldiers")
@@ -85,14 +89,20 @@ func test_chapters_open_the_game_in_order() -> void:
 	check_eq(s.story.chapter.title, "Kingpin")
 	s.money = 300000
 	s.story.tick(s)
-	check(s.story.completed_all, "a quarter of a million: the end")
+	check_eq(s.story.chapter.title, "The Hearings", "a quarter of a million is not the end now")
+	s.story.progress["case_cold"] = 30.0
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "Last Flight", "a cold case and $40,000 in the bank: on")
+	s.story.progress["case_cold"] = 20.0
+	s.story.tick(s)
+	check(s.story.completed_all, "$90,000 and clear of the law: the end")
 	for k in Story.LOCKS:
 		check(s.unlocked(k), k + " open after the end")
 	s.dispose()
 
 
 func test_the_war_can_arrive_mid_game() -> void:
-	var s := _story(1)
+	var s := _story(Story.index_of("Blotter"))
 	for i in 120:
 		s.update(1.0, ControlMapper.InputFrame.new(), null)
 	s.story.advance()
@@ -103,7 +113,7 @@ func test_the_war_can_arrive_mid_game() -> void:
 
 
 func test_a_saved_story_rebuilds_its_chapters() -> void:
-	var d := {"index": 5, "progress": {"island_runs": 1.0}, "done": false}
+	var d := {"index": 6, "progress": {"island_runs": 1.0}, "done": false, "v": 3}
 	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "career": true})
 	var st := Story.from_dict(d)
 	st.attach(s)
@@ -113,7 +123,10 @@ func test_a_saved_story_rebuilds_its_chapters() -> void:
 	for sys in [s.trade, s.logistics, s.payroll, s.ground, s.family, s.court, s.island]:
 		check(sys != null, "chapters 1-6 built")
 	check(s.agency == null, "chapter 7 not yet")
-	check_eq(Story.from_dict(st.to_dict()).index, 5, "round trip")
+	check_eq(Story.from_dict(st.to_dict()).index, 6, "round trip")
+	check_eq(Story.from_dict({"index": 5, "progress": {}, "done": false}).chapter.title, "Isla Soberana", "a version 1 save's chapter 6 is still Isla Soberana")
+	check_eq(Story.from_dict({"index": 1, "progress": {}, "done": false, "v": 2}).chapter.title, "The Connection", "and a version 2 save before Blotter stays put")
+	check_eq(Story.from_dict({"index": 2, "progress": {}, "done": false, "v": 2}).chapter.title, "Cocaine Cowboys", "while its chapter 3 moves up one")
 	s.dispose()
 
 
@@ -129,12 +142,12 @@ func test_open_mode_has_everything() -> void:
 
 
 func test_the_chapter_list() -> void:
-	check_eq(Story.CHAPTERS.size(), 9)
+	check_eq(Story.CHAPTERS.size(), 12)
 	var years := Story.CHAPTERS.map(func(c): return c[0])
 	var sorted := years.duplicate()
 	sorted.sort()
 	check_eq(years, sorted, "in date order")
-	var opened := Story.opens_through(9)
+	var opened := Story.opens_through(12)
 	for k in Session.SYSTEMS:
 		check(k in opened, "chapter by chapter, every system opens: " + k)
 	for k in Story.LOCKS:
@@ -142,7 +155,7 @@ func test_the_chapter_list() -> void:
 
 
 func test_no_softlocks_when_a_faction_is_gone() -> void:
-	var s := _story(3)
+	var s := _story(Story.index_of("Family Business"))
 	check_eq(s.story.chapter.title, "Family Business")
 	s.family.gone = true
 	s.money = 70000
@@ -174,3 +187,53 @@ func test_open_mode_starts_with_a_float_and_a_save_keeps_its_money() -> void:
 	check_eq(u.money, Session.START_MONEY, "without a float (the story) it's the old start")
 	u.dispose()
 	DirAccess.remove_absolute(path)
+
+
+func test_blotter_wants_the_collective_and_ends_with_the_lab_taken() -> void:
+	var s := _story(Story.index_of("Blotter"))
+	check(s.psych != null, "the Collective is there")
+	s.bus.emit("acid_barter", s.time, "", ["runner"], {"lb": 120.0, "sheets": 3.0})
+	s.bus.emit("acid_barter", s.time, "", ["runner"], {"lb": 90.0, "sheets": 2.0})
+	s.bus.emit("acid_sold", s.time, "", ["runner"], {"sheets": 21.0, "pay": 5000})
+	var before: float = s.police.case("runner").suspicion
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "Cocaine Cowboys", "210 lb traded and 21 sheets sold: on")
+	check_eq(s.psych.status, "hiding", "the task force took the lab")
+	check(s.psych.hide_until - s.time > 5.0 * 3600.0, "and Nico is gone for hours")
+	check(s.police.case("runner").suspicion >= before + 9.9, "and the trail leads to us")
+	s.dispose()
+
+
+func test_side_goals_pay_once_and_are_never_needed() -> void:
+	var s := _story(Story.index_of("The Connection"))
+	var m: int = s.money
+	s.story.progress["cash_home"] = 3000.0
+	s.story.progress["connected"] = 1.0
+	s.trade.connected = true
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "Blotter", "the required goals end the chapter without the side goal")
+	var t := _story(Story.index_of("The Connection"))
+	var n: int = t.money
+	t.bus.emit("vehicle_bought", t.time, "", ["runner"], {"id": "coupe", "price": 6500})
+	t.story.tick(t)
+	check_eq(t.money, n + 2000, "the side goal paid its bonus")
+	t.story.tick(t)
+	check_eq(t.money, n + 2000, "once")
+	check(t.story.objective_lines().any(func(l): return str(l).contains("optional: +$2,000")), "and the card says it is optional")
+	check(m > 0, "")
+	s.dispose()
+	t.dispose()
+
+
+func test_the_hearings_count_cold_minutes_in_a_row() -> void:
+	var s := _story(Story.index_of("The Hearings"))
+	s.story.tick(s)
+	for i in 10:
+		s.time += 60.0
+		s.story.tick(s)
+	check_near(s.story.progress["case_cold"], 10.0, 0.01, "ten cold minutes")
+	s.police.case("runner").suspicion = 70.0
+	s.time += 60.0
+	s.story.tick(s)
+	check_eq(s.story.progress["case_cold"], 0.0, "a hot case starts the hour again")
+	s.dispose()

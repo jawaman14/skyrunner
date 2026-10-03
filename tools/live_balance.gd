@@ -150,6 +150,8 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 		t += STEP
 		s.time = t
 		if s.story != null:
+			if s.psych != null:
+				s.psych.auto = true  # the organisation's AI trades with the Collective (the story's Blotter wants it)
 			s.story.tick(s)
 			nw_max = maxf(nw_max, float(s.story.progress.get("net_worth", 0.0)))
 			while chapter_min.size() < s.story.index + 1 + (1 if s.story.completed_all else 0):
@@ -170,6 +172,10 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 			if held or (air != null and not _fly(s, air)):
 				pay = 0
 			s.money += pay
+			if pay > 0 and s.psych != null and s.logistics != null and s.stash_net != null:  # a flown run lands grass in a stash (what Blotter trades)
+				var live: Array = s.stash_net.live()
+				if not live.is_empty():
+					s.logistics.add(str(live[0].id), "marijuana", 250.0)  # a flown grass load is 8-16 bales of 22-32 lb
 			if (s.story != null or s.renown != null) and pay > 0:  # the story counts the pilot's flown jobs (every other one hot), and renown their loads
 				s.bus.emit("job_delivered", t, "", ["runner"], {"job_id": -1, "pay": pay, "dest": "", "hot": int(t / (RUN_EVERY_S if air == null else AIR_EVERY_S)) % 2 == 0,
 					"good": "", "lb": 0.0, "agency": false, "origin": ""})
@@ -191,6 +197,8 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 		if s.casino != null:
 			s.casino.update(STEP)
 			_casino_ai(s, t)
+		if s.psych != null:
+			s.psych.update(STEP)
 		if s.payroll != null:
 			s.payroll.update(STEP)
 		if s.island != null:
@@ -319,7 +327,10 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 	if s.story != null:
 		r["story"] = {"chapter": s.story.index + 1 + (1 if s.story.completed_all else 0), "minutes": chapter_min,
 			"net_worth": float(s.money) + (s.trade.stock_value() if s.trade != null else 0.0) + (s.logistics.cash_out() if s.logistics != null else 0.0), "nw_max": nw_max,
-			"stuck": [] if s.story.completed_all else s.story.chapter.objectives.filter(func(o): return float(s.story.progress.get(o.key, 0.0)) < float(o.target)).map(func(o): return "%s: %s" % [s.story.chapter.title, o.key])}
+			"stuck": [] if s.story.completed_all else s.story.chapter.objectives.filter(func(o): return not o.optional and float(s.story.progress.get(o.key, 0.0)) < float(o.target)).map(func(o): return "%s: %s" % [s.story.chapter.title, o.key])}
+	if s.psych != null:
+		r["psych"] = {"status": s.psych.status, "raids": s.psych.raids, "bartered": s.psych.bartered, "sold": s.psych.sold, "trust": s.psych.trust,
+			"held": s.psych.held, "stock": s.psych.stock, "suspicion": float(s.police.case("runner").suspicion)}
 	if s.agency != null:
 		r["agency"] = {"flights": s.agency.flights, "hung_out": s.agency.hung_out, "burned": s.agency.burned,
 			"stings": r.get("stings", 0), "withheld": s.agency.withheld, "exposure": s.agency.exposure}
@@ -497,6 +508,10 @@ func _summary(rows: Array) -> Dictionary:
 			"net_worth": _stats(rows.filter(func(r): return r.has("story")).map(func(r): return r.story.net_worth)),
 			"nw_1986": rows.filter(func(r): return r.has("story") and r.story.nw_max > 0.0).map(func(r): return int(r.story.nw_max)),
 			"stuck": _histogram(rows.filter(func(r): return r.has("story")).map(func(r): return r.story.stuck))}
+	if rows.any(func(r): return r.has("psych")):
+		sm["psych"] = {"raids": _mean(rows, "psych", "raids"), "bartered": _mean(rows, "psych", "bartered"), "sold": _mean(rows, "psych", "sold"),
+			"trust": _mean(rows, "psych", "trust"), "suspicion": _mean(rows, "psych", "suspicion"), "stock": _mean(rows, "psych", "stock"),
+			"hiding": float(rows.filter(func(r): return r.has("psych") and r.psych.status == "hiding").size()) / rows.size()}
 	if rows.any(func(r): return r.has("agency")):
 		sm["agency"] = {"flights": _mean(rows, "agency", "flights"), "hangout_rate": _rate(rows, "agency", "hung_out"),
 			"burned_rate": _rate(rows, "agency", "burned"), "withheld": _mean(rows, "agency", "withheld"),

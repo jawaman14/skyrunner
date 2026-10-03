@@ -226,7 +226,7 @@ func test_staying_through_the_uprising_loses_everything() -> void:
 
 func test_the_story_chapter_runs_from_the_stake_to_the_getaway() -> void:
 	var s := _session({"story": false})
-	var st := Story.new(6)  # 'The House'
+	var st := Story.new(Story.index_of("The House"))
 	st.attach(s)
 	check_eq(st.chapter.title, "The House", "the chapter")
 	check(s.casino != null, "the house opens with it")
@@ -251,13 +251,14 @@ func test_the_story_chapter_runs_from_the_stake_to_the_getaway() -> void:
 
 func test_the_chapter_does_not_strand_the_story() -> void:
 	var s := _session()
-	var st := Story.new(6)
+	var st := Story.new(Story.index_of("The House"))
 	st.attach(s)
 	s.family.gone = true
 	st.tick(s)
 	check_eq(st.chapter.title, "The Company", "the Family gone: the story moves on")
 	var old := Story.from_dict({"index": 6, "progress": {}, "done": false})
 	check_eq(old.chapter.title, "The Company", "an older save's chapter 7 is still the Company")
+	check_eq(Story.from_dict({"index": 7, "progress": {}, "done": false, "v": 2}).chapter.title, "The Company", "and a version 2 save's")
 	check_eq(Story.from_dict(old.to_dict()).chapter.title, "The Company", "and it round-trips")
 
 

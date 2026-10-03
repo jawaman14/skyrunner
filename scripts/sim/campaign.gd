@@ -12,6 +12,8 @@ class Objective:
 	var key: String
 	var text: String
 	var target := 1.0
+	var optional := false  ## a side goal (the story's): never needed to finish the chapter
+	var bonus := 0  ## what an optional goal pays, once, when it is met
 
 	func _init(k: String, t: String, target_ := 1.0) -> void:
 		key = k

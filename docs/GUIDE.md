@@ -34,8 +34,8 @@ Everything is physical. Weight and balance decide whether you take off. Product 
 or an aircraft moves them. The police see you only through radar, radio, tips and eyes, never through the sim's secrets.
 
 **The loop:** take a job, load, fly it, deliver, spend the money (aircraft, gear, crew, stash works), and keep the heat
-down. **The goal** depends on the mode: in the story, each chapter has measured goals and the last is *Kingpin* (65 grand
-and walk away); in open and sandbox play, make the organisation as big as you can; on the law side, shut it down.
+down. **The goal** depends on the mode: in the story, each chapter has measured goals (some chapters add optional side goals that pay a bonus) and the last is *Last Flight* (1988: ninety grand,
+a cold case, and the long way out); in open and sandbox play, make the organisation as big as you can; on the law side, shut it down.
 
 ---
 
@@ -50,15 +50,15 @@ Run the game with no arguments and the **lobby** opens. It sets the same things 
 | **Tutorial (Palmetto Cay)** | The original four-chapter campaign on the classic island: mail runs, a favour for Manny, airdrops, the long legs. |
 | **Co-op: friends crew for you** | You host; friends take the co-pilot, spotter, boat, boss, lieutenant or fixer seats. |
 | **Versus** | Humans on both sides; the AI fills the empty seats. |
-| **Unlocks: Story / Open** | *Story* (the default): nine chapters, 1979 to 1986, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
+| **Unlocks: Story / Open** | *Story* (the default): twelve chapters, 1979 to 1988, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
 | **Map** | Costa Brava, the city coast (default); the classic island; or a generated island by number. |
 | **Tutorial box** | Lessons that finish when you do the thing, and tips when something new happens. |
 | **Multiplayer** | Host a game with a waiting room, or look for games on your network (also **F4** in game). |
 
 **The story, in brief.** *Square Grouper* (1979, grass and stash houses) → *The Connection* (1980, logistics; the
-Colombians call) → *Cocaine Cowboys* (1981, cocaine, Los Cuervos, the street war) → *Family Business* (1982, the
+Colombians call) → *Blotter* (1980, the Sunrise Collective: acid for grass, and the task force takes the lab) → *Cocaine Cowboys* (1981, cocaine, Los Cuervos, the street war) → *Family Business* (1982, the
 Morettis) → *The Task Force* (1983, the federal court) → *Isla Soberana* (1984, the island) → *The House* (1984, the Family's casino) → *The Company* (1985, the
-Agency) → *Kingpin* (1986). A chapter's goals are measured by the systems themselves (pounds landed, dealers on corners,
+Agency) → *Kingpin* (1986) → *The Hearings* (1987, keep the case cold) → *Last Flight* (1988). A chapter's goals are measured by the systems themselves (pounds landed, dealers on corners,
 cash home). A faction already gone before you meet it does not strand a chapter.
 
 **Saving.** Press ESC for the pause menu: resume, save, load, settings, quit to the lobby or the desktop. A save is written
