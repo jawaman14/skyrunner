@@ -4,6 +4,7 @@ extends SceneTree
 ## view: ground (default: parked at HAR) | air (climbing out near Eagle's Nest) |
 ##       org | law | rival (looking at that HQ) | overview (high above the island)
 ##       city (the port city from over the harbour) | estuary | farm (map-specific: the city coast)
+##       phone (on foot, the phone out on its home screen) |
 ##       car (at the wheel, the dashboard and the radio) |
 ##       foot (on foot beside the parked aircraft, looking at the hangars) |
 ##       villa (on foot inside the org's villa, at the boss's desk) |
@@ -135,7 +136,7 @@ func _areas(node: Node, action: String, out: Array) -> Array:
 
 func _process(_d) -> bool:  # (MainLoop: true would quit)
 	n += 1
-	if n == 2 and view in ["foot", "villa", "gun", "pack", "car", "carmap"]:
+	if n == 2 and view in ["foot", "villa", "gun", "pack", "car", "carmap", "phone"]:
 		_on_foot()
 	if fixed_cam != null:
 		app.set_process(false)  # the app would move its camera back (processing re-enables on ready)
@@ -197,6 +198,8 @@ func _process(_d) -> bool:  # (MainLoop: true would quit)
 		app.s.arsenals.org.add("rifle", 12)
 		app.s.payroll.ai["org"] = false
 		app.open_talk("buyers")
+	if n == 8 and view == "phone":
+		app._open("phone")
 	if n == 30 and view == "carmap":
 		app._map_toggle()
 		app._waypoint_picked(Vector2(app.car.game_xy().x + 3000.0, app.car.game_xy().y + 1500.0))

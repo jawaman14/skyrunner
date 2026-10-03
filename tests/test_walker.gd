@@ -179,6 +179,9 @@ func test_the_phone_reaches_the_desk_and_the_crew_from_anywhere() -> void:
 	await _frames(3)
 	_key(KEY_T, false)
 	check(m.visible, "T takes the phone out")
+	check(m.page == "home", "it opens on the home screen, apps in a grid")
+	m.key("1")
+	check(m.page == "contacts", "1 opens Contacts")
 	var acts: Array = m.rows.map(func(r): return r[0])
 	check("desk" in acts, "the desk is in the phone book: %s" % [acts])
 	if s.payroll != null:
@@ -545,4 +548,40 @@ func test_the_stairs_to_the_boss_office_can_be_climbed() -> void:
 	_key(KEY_W, false)
 	w.free()
 	club.free()
+	s.dispose()
+
+
+## The phone's apps: ESC steps back to the home screen, Bank shows the money, Messages the banners, Radio tunes, Jobs puts a waypoint down.
+func test_the_phone_apps() -> void:
+	var app := _app({"seed": 9, "location": "HAR", "trade": true, "logistics": true})
+	var s := app.s
+	var m: PhoneMenu = app.menus["phone"]
+	m.open()
+	m.key("5")
+	check(m.page == "bank" and m.list.row_count() >= 1 and m.list.cell(0, 0).contains("In hand"), "Bank: the money in hand first")
+	m.close()
+	check(m.visible and m.page == "home", "ESC goes back to the home screen, not away")
+	app.notify.push("Phone", "Test message", "phone")
+	m.key("2")
+	check(m.page == "messages" and m.list.row_count() >= 1 and m.list.cell(0, 0).contains("Test message"), "Messages: the newest banner first")
+	m.close()
+	if app.radio != null and not app.radio.stations.is_empty():
+		app.radio.state_path = "user://zz_test_phone_radio.cfg"
+		m.key("6")
+		m.list.select(0)
+		m.key("enter")
+		check(app.radio.on and app.radio.idx == 0, "Radio: ENTER tunes to the station")
+		app.radio.power(false)
+		DirAccess.remove_absolute(app.radio.state_path)
+		m.close()
+	var job := Jobs.Job.new(Jobs.new_id(), "test", "cargo", "HAR", "VAL", [], 100, {})
+	s.active_jobs.append(job)
+	m.key("4")
+	check(m.page == "jobs" and m.list.row_count() == 1, "Jobs: the job you took")
+	m.list.select(0)
+	m.key("enter")
+	check(app.waypoint != null and not m.visible, "ENTER on it puts a waypoint down and the phone away")
+	var val := World.airfield("VAL")
+	check((app.waypoint as Vector2).distance_to(Vector2(val.x, val.y)) < 2000.0, "at the job's strip")
+	app.free()
 	s.dispose()

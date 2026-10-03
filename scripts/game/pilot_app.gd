@@ -215,6 +215,10 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 		m.setup(sess)
 		m.closed.connect(_menu_closed)
 		menus[k[0]] = m
+	var ph: PhoneMenu = menus["phone"]
+	ph.notify = notify
+	ph.radio = radio
+	ph.waypoint_to.connect(_waypoint_picked)
 	if sess.races != null:
 		add_child(RaceMarkers.new().setup(sess))
 	# on foot and at the wheel: what was just said runs as a subtitle low in the middle, and what you can do here is a
@@ -888,6 +892,10 @@ func _toggle_on_foot() -> void:
 ## desk and dispatch without walking to them.
 func _phone_call(action: String) -> void:
 	match action:
+		"map":
+			_map_toggle()
+		"settings":
+			open_pause()
 		"desk":
 			_open("hq")
 		"logistics":

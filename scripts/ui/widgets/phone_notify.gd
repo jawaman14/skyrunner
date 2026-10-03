@@ -16,6 +16,7 @@ const ICON_COLORS := {"phone": Color(0.3, 0.9, 0.5), "family": Color(1.0, 0.75, 
 	"job": Color(0.35, 1.0, 0.4), "bank": Color(0.5, 0.9, 1.0), "alert": Color(1.0, 0.3, 0.25)}
 
 var _cards: Array = []  ## [{node, until, actions, data}]
+var history: Array = []  ## every card ever pushed, oldest first ({sender, body, kind}): the phone's Messages app reads it
 
 
 func _init() -> void:
@@ -26,6 +27,9 @@ func _init() -> void:
 
 ## `actions`: [[key_label, action_id, caption], ...], e.g. [["Y", "accept", "take it"], ["N", "decline", "leave it"]].
 func push(sender: String, body: String, kind := "phone", actions: Array = [], data: Variant = null, ttl := 7.0) -> PanelContainer:
+	history.append({"sender": sender, "body": body, "kind": kind})
+	if history.size() > 60:
+		history.pop_front()
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.custom_minimum_size = Vector2(300, 0)
