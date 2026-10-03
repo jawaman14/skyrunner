@@ -1012,6 +1012,15 @@ turn around or call the boat). Nothing new in the sim: it is a desk over the com
 needs no stand-in (the pilot, or the AI boss, does the same things when nobody sits here).
 
 
+## 37. The docks (Kenney's Pirate Kit)
+
+`scripts/render/port_dress.gd` (`PortDress`, behind `PortDress.ENABLED`, off on the lowest graphics preset and on the other
+maps) puts wooden piers into San Telmo's harbour: along the basin's head, one every 170 m, six deck tiles running out from the
+water's edge, with crates, barrels and chests stacked at the foot and a rowboat or a small ship moored alongside. The positions
+come from the map and a hash of the pier's number (no random stream), so they are the same every time. Scenery only: nothing
+is solid. ![the docks](img/port-docks.png)
+
+
 ## 39. Wear, repairs and the mechanic
 
 `scripts/sim/airframe.gd` (`Airframe`, behind `Airframe.ENABLED`; asked for with the session option `airframe: true`, which the
