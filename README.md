@@ -1,482 +1,178 @@
-# Skyrunner (Godot 4)
+# Skyrunner
 
-Bush flying, weight and balance, and the long arm of the law, on a fictional Caribbean coast in
-1979-89. Pure Godot 4: GDScript all the way down, with its own 6-DOF flight model reading
-[JSBSim](https://github.com/JSBSim-Team/jsbsim)-format aircraft data. No plug-ins, no compiler: a stock Godot
-4.7 opens it, plays it and exports it to Linux, Windows and macOS. This is the game. (It started as a Python prototype in
-the git tag `python-prototype-archive`, the archival reference that generated the frozen parity fixtures in
-`tests/fixtures/`; you never need it to build, play or test.)
+**Bush flying, smuggling and the long arm of the law, on a fictional Caribbean coast, 1979-89.**
 
-**Get it:** [INSTALL.md](INSTALL.md) walks through downloading a build for Windows, Linux or macOS
-(or running from source in Godot), the first launch, and troubleshooting. Beta testers: [BETA.md](BETA.md)
-says what to try and how to report (F12). Version **0.9.0-beta.1**.
+You start as a bush pilot with half a Cessna and a fuel bill. You can end up as the organisation the coast
+answers to: the crews, the stash houses, the street war, the lawyers, the Family and the Company. Or you can
+sit at the task force's desk and hunt that pilot down. Every seat is playable alone (the AI plays the rest) or
+with friends over the network.
 
-It has:
-- five aircraft with every item a point mass at its station arm
-- tight strips
-- the task force and its sensors, airdrops and boats, and the campaign
-- co-op and versus seats over the network, and the two HQs' seasons
-- the pilot bot and the balance simulators
+It is all one Godot 4 project: pure GDScript, no plug-ins to build and no compiler, with its own 6-DOF flight model
+reading [JSBSim](https://github.com/JSBSim-Team/jsbsim)-format aircraft data. A stock Godot 4.7 opens it, plays it and
+exports it to Linux, Windows and macOS.
 
-Beyond the prototype:
-- **Load planner.** Pick the station for every item, set the fuel with a slider or presets (25/50/75%,
-  full, or "route + 30 min"), and watch the take-off and zero-fuel CG move on the envelope, with
-  endurance, range and the route's reserve.
-- **HQ order menus for both sides.** The boss and the chief get navigable order lists. Each order shows
-  its cost, its effect and its current state. LEFT/RIGHT sets it (which front, who to bribe, how many
-  crews, which zone to patrol) and ENTER issues it.
-- **A competing smuggling organisation: Los Cuervos.** A third, AI-run cartel flies its own loads every
-  night:
-  - It fights you for turf: where it owns the market your loads pay less.
-  - It splits the task force's attention.
-  - It hijacks your load if you meet it on the same route without a truce.
-  - The boss can hit it, buy a truce or sell its route to the police.
-  - The chief can send a gang unit after it.
-  - Its planes fly in the 3D game as AI traffic.
-- **On foot, first person.** TAB out of a parked aircraft and walk the apron, the hangars and the three
-  headquarters. E uses what you face: the job board, the load planner at the fuel desk, the hangar
-  workbench, the boss's desk (the organisation's orders) and the map table (what you know of Los
-  Cuervos). F is a torch. The island, every building and the parked aircraft are solid; you climb
-  kerbs and terraces but can't swim.
-- **Generated islands.** `--map N` (or the lobby's island picker) grows island N: terrain, ten strips
-  sited and rated for approach, and the HQs placed where each side would want them - the villa near the
-  cove, the task force by the hub, the rival compound up in the hills. `--map 0` is the classic island.
-- **The realism layer** (found and tuned by the scenario sweeps; details in
-  [docs/BALANCE.md](docs/BALANCE.md) 14-19):
-  - *Weather and the moon.* A nightly forecast both HQs see (right 75% of the time). Cloud, rain and a
-    dark moon hide you; storms ground helicopters and the aerostat, keep cutters in port, and more than
-    double crash risk. In the air: wind and gusty turbulence in the flight model, rain, lightning, the moon's phase.
-    Parked aircraft are tied down. On calm, dry nights, about three in ten, sea fog rolls in: visibility
-    drops to a few hundred metres, the crews see 35-60% less, thick fog (over 75%) grounds the
-    helicopters, and the radar doesn't care.
-  - *Pattern of life.* The task force's analysts learn your routine: repeat a route and they expect you
-    (up to +45% detection). Mixing your routes is the inspection game's answer.
-  - *Canary trap.* The chief can feed a bribed dispatcher a fake patrol. Swerve around it and your man is
-    arrested, so a leak is never ground truth.
-  - *Rival tempers.* Los Cuervos are tit-for-tat, grudge-holders or opportunists, and you learn which
-    from how they behave. Truces unravel as the season runs out (backward induction).
-  - *Spare helicopters patrol.* The task force keeps one helicopter for the chase and flies every
-    spare over a zone before the run - where the analysts expect you. Flag one and it joins the
-    chase as a flanker, aiming ahead to cut you off; two aircraft on your tail box you in (the bust
-    meter fills 50% faster). The sims showed why: one chaser already catches every runner it can
-    reach, so extra aircraft pay by finding you, not by chasing harder.
-  - *Nerves.* Stress follows what real smuggling pilots feared. Past the Yerkes-Dodson hump the screen
-    tunnels, you hear your heartbeat and your hands shake (8-12 Hz, human hands only). A co-pilot
-    steadies you.
-- **Radar and radio that behave like the real thing:**
-  - *Radar.* 4/3-earth horizon, sea clutter that rises with the wind, rain clutter, and an MTI notch:
-    cross the beam or fly slow and a primary radar cancels you as clutter. Every site turns at its own
-    rate (ASR 4.8 s, the aerostat 12 s); detection falls off with range and the aircraft's size. Tracks
-    keep a trail and, with a transponder on, Mode C altitude. Squawk codes are real: 1200 VFR, and 7700,
-    7600 and 7500 get a response from Center (key 7). The desk shades each site's blind valleys (G).
-  - *Radio.* VHF line of sight over the terrain; police dispatch and tactical channels, the runner crew
-    and the boat. The length of a call sets how well it DFs (SHIFT+O sends a one-second codeword), and a
-    least-squares fix draws its error ellipse on the desk's map. Crew chat is radio too.
-- **Upgrade trees for both sides** (hangar LEFT/RIGHT for the runner; U at the task-force desk):
-  | Runner | |
-  |---|---|
-  | Electronics & counter-surveillance | scanner -> programmable scanner -> burst transmitter; radar detector -> direction-finding detector -> transponder spoofer |
-  | Espionage | lookouts; bug sweeps -> mole in dispatch -> double agent |
-  | Airframe | ferry tank; low-visibility paint -> quiet propeller; heavy-duty gear |
-  | Weaponry | armed boat crew -> armed strip guards |
+| | |
+|---|---|
+| **Play it** | [INSTALL.md](INSTALL.md): download a build or run from source. Beta testers: [BETA.md](BETA.md) (report with F12). |
+| **Version** | 0.9.0-beta.1 |
+| **Engine** | Godot 4.7.2, GDScript only, Jolt physics |
+| **Size** | about 44,000 lines of game code, about 740 tests |
 
-  | Task force | |
-  |---|---|
-  | Sensors | Doppler processing -> airborne early warning; coastal radar |
-  | Signals | encrypted radios; helicopter DF -> intercept runner channels -> jammer van (J) |
-  | Intelligence | informant network -> undercover agent; mole hunt |
-  | Interdiction | armed helicopter -> Blackhawk; fast patrol boat |
-
-  The runner pays from their money. The task force pays from its funds: a budget of $40 a minute plus
-  asset forfeiture ($3,000 a bust, $1,500 + $100 a bale for a seized boat, more when the crew was
-  armed). With no human at the desk the AI chief buys the cheapest thing it can afford as the money
-  comes in. Weaponry is abstract: it changes chases, boardings and raids, never shows a wound, and it
-  raises the stakes.
-- **Costa Brava, the city coast (the default map).** The port city of San Telmo (a street grid of
-  ~6,900 buildings with windows lit at night, the docks with cranes and a harbour basin), the
-  international airport on the coastal plain, a meandering river to a mangrove estuary, a farm plain
-  of patchwork fields, a jungle range with a mesa strip, scrub hills and the old quarry, the cove and
-  the cays. Land use drives the terrain shader, the vegetation (mangroves, jungle, thorn scrub) and
-  the physics: buildings are obstacles, kept out of every glide path. The HQs are Club Tropicana
-  downtown (the boss's office upstairs), the customs house on the docks with a radar tower, and Los
-  Cuervos' hacienda in the foothills. `--map city`, `--map 0` (classic), `--map N` (generated), or
-  the lobby's map picker; old saves keep their island.
-- **Stash houses.** Eight of them (a farm barn, a mangrove shack, Warehouse 7 on the docks, a lock-up
-  in Barrio Chino, a jungle camp, a quarry shed, a boathouse on the cays, a hillside villa). A stash
-  run lands at a nearby strip; the crew trucks the load in while you fly on. Police overhead or a
-  roadblock can stop the truck (likelier as the stash heats up with use, at a police strip, or when
-  you're tipped). The task force can raid a stash it knows about (X at the desk; the AI raids busy
-  ones), burning it for good.
-- **Markets.** Every good has a price in each market (the town and the three zones) that moves with
-  rival turf and rival flights (they undercut you on drugs and buy guns), police presence (a risk
-  premium where they're thick), seizures (scarcity island-wide), your own deliveries (a glut where you
-  sell), fuel (a price of its own that passes through to fares, freight and fuel drums), storms and
-  the news. Contraband is paid at the street price on delivery; legal work as agreed. J, then
-  LEFT/RIGHT, shows the market.
-- **Gun running and arsenals.** The organisation, the task force and Los Cuervos each hold weapons
-  (pistols, rifles, machine guns, RPGs) and ammunition. Gun runs bring crates in: on delivery sell
-  them at the street price or keep them for your soldiers (G on the job board). The fence buys, a
-  dealer sells. Whatever the police seize - a busted load, a stopped truck, a raided stash, the
-  guns off men arrested in a firefight - goes into the police arsenal and arms their patrols.
-- **The ground war.** Soldiers, Los Cuervos' crews and narcotics squads on foot, in cars and trucks,
-  driving the city's roads. Firefights are Lanchester's square law on weapons, cover and nerve.
-  The organisation and Los Cuervos fight as guerrillas (ambushes at chokepoints, hit and run,
-  melting into the barrio, the jungle and the mangroves, decoy cars, harassment); the task force
-  fights like a narcotics unit (stakeouts, tailing a truck home, informants' controlled buys,
-  buy-busts, a cordon before the raid, checkpoints, saturation patrols, SWAT, and restraint: it
-  doesn't fire first and it prefers arrests). Trucks run the roads past checkpoints, with escorts.
-  Who's on the streets moves the markets and, night by night, Los Cuervos' turf. The AI commands
-  every side until a human takes the **lieutenant** or **patrol commander** seat; the boss, chief
-  and controller can take over too (Q at their desk).
-- **On foot with a gun.** Out of the aircraft, 1-4 draw a pistol, rifle, machine gun or RPG from the
-  armoury; the left button fires (walls stop rounds). Squads who have it in for you shoot back.
-  Go down near the police and you're arrested; elsewhere it's a doctor's bill and the gun.
-- **Every seat is the AI's until someone takes it.** Join a game mid-way, see the live seat list,
-  and take any role the AI is playing: pilot, co-pilot, spotter, boat, boss, lieutenant,
-  controller, police pilot, cutter, chief or patrol. Leave, and the AI takes it back; drop, and
-  the seat waits 30 s for your reconnect token. Table talk to everyone or your side. F3 hands the
-  aircraft to the AI so the host can sit at another desk. ([docs/MULTIPLAYER.md](docs/MULTIPLAYER.md) section 7)
-- **The news.** Breaks and bad luck for all three outfits, some random and some milestones (the
-  first delivery, a burned stash, officers down, flash money that gets noticed), each changing
-  something real, run as headlines by the island's papers and radio. A timeline of real
-  1979-86 headlines runs too, from the Mariel boatlift to Iran-Contra.
-- **The Agency.** A covert arms pipeline to the Contras runs through the island's strips. Fly for
-  it and it protects you: busts quashed from Washington, checkpoints told to wave your trucks
-  through. Every quash leaves a trail; the task force can dig (V at the desk), and when it's
-  exposed the hearings end it. Fiction, inspired by the documented Iran-Contra record
-  ([docs/DESIGN.md](docs/DESIGN.md) section 13). It plays a double game too: under pressure it
-  gives your name away, lets the DEA have a flight, or "mails" your pay.
-- **The Family.** A (fictional) Cosa Nostra family whose help might be a trap. Every offer (a loan,
-  laundering, the docks' union, a gun fence, a crew of soldiers, a lawyer) comes with our people's
-  read on it, right about four times in five. It levies a street tax when you're rich, sells to
-  Los Cuervos too, and a RICO case with a rat in it turns it against you (section 14). Sit down
-  with Sal Moretti (Shift+F in the cockpit, C at the desks): hear the offer, your man's read on it,
-  press him for a second read, take it or leave it; pay or stall the tribute.
-- **Isla Soberana.** An island republic over the southern horizon (SOB). Product is cheap there;
-  get it home by air, as mules on the airliner, or in a container on the freighter. Customs' odds
-  depend on both sides' perks: bought baggage handlers, forged papers and false bottoms against
-  dogs, profiling, X-ray and crackdowns. The task force can't follow past the line; the General
-  sells passage past his MiGs until a purge closes the island (section 15). His aide, Captain
-  Ibarra, meets you on the ramp when you land, or on the radio (Shift+G / G): passage, the
-  island's news, mules and containers with customs' odds in the answers. What gets through lands in
-  the docks stash as product to sell, not as cash (when logistics is on).
-- **The court.** A bust is a federal case now:
-  - **Charges:** possession, trafficking, firearms, conspiracy.
-  - **The bail hearing:** post it all, buy a bond, or sit in custody. The prosecutor calls a rich
-    pilot or a friend of the island a flight risk.
-  - **Lawyers:** the public defender, a Calle Ocho attorney, a Brickell Avenue drug lawyer, or
-    the Family's man, who may be working for the other side.
-  - **Motions:** suppress an illegal search, discovery, continuances.
-  - **Off the books:** a witness leaned on, a judge who takes money (either can become
-    obstruction).
-  - **The outcome:** a plea, a cooperation deal that sells out the organisation, or a jury.
-  - **The sentence:** mandatory minimums after 1986, the aircraft forfeited, time inside to wait
-    out, and one appeal.
-
-  Skip bail to the island and you're a fugitive. The task force prosecutes from its desk (N W K
-  D Y), or the AI does. Talk it through with your lawyer (Shift+L; section 16).
-- **Hired hands.** Both cartels run on a payroll:
-  - **Roles:** soldiers crew the squads (no soldiers, no squad); drivers take the trucks past
-    checkpoints; mules fly the island run; lookouts see raids coming; an accountant cleans the
-    books or skims them; contract pilots fly runs of their own.
-  - **Hiring:** hire from Manny Ortega's hall (Shift+W, W at the desks). Skill shows; loyalty only
-    as a hint.
-  - **Payday every 10 minutes:** the unpaid skim, walk off or call the task force.
-  - **The arrested** get cases of their own: a lawyer keeps them quiet, the prosecutor's deal
-    (A at the desk) makes them talk.
-  - **The AI:** Los Cuervos hire, pay, lose people and trade with the island the same way. The
-    organisation's AI runs your payroll when nobody sits the boss's or lieutenant's chair.
-
-  See [docs/DESIGN.md](docs/DESIGN.md) section 17.
-- **Sound.** Synthesized, so nothing to license:
-  - the engine and propeller, pitched by the engine RPM;
-  - the wind, the stall horn and the tyres;
-  - the radio's squelch;
-  - gunfire at the fights and from your own gun;
-  - police rotors, sirens and outboards;
-  - surf, rain and thunder;
-  - Radio Costa 88, an 80s synth station (F7).
-
-  The UI clicks are Kenney's (CC0). Samples are in `docs/audio/`.
-- **Your own controls (F8).**
-  - Every flight key and gamepad button can be rebound. The remapping and button names come from Input Helper.
-  - Each analogue control is bound by moving it: yoke, throttle lever, rudder pedals, left and right toe brakes. They can be on several USB devices, which are matched by name, so replugging or reordering them doesn't matter.
-  - Each has invert, deadzone and expo. Everything is saved to `user://controls.cfg`.
-- **Tutorial (optional).** The lobby's *Tutorial* box (ticked for your first game) or `--tutorial`.
-  - **Lessons in any mode.** It works in the story, the open world and the sandbox. Each lesson finishes
-    when you do the thing: take a job, open the load planner, climb past 300 ft, deliver, try the
-    transponder.
-  - **Lessons follow the game.** A system's lesson waits until the system is in the game: the hiring
-    hall, trucking cash home, cash for the growers, going on foot, bulk buyers, the Family, the island,
-    the Company. In the story, each chapter's new faction gets its lesson when it opens.
-  - **Tips.** One-off tips cover the first time you're wanted, low on fuel, busted, in fog or a storm,
-    short of wages, raided, a truck stopped, or the Colombians calling.
-  - **Controls.** F10 skips a step, SHIFT+F10 turns it off or on. Progress rides in the save.
-  - **The desks too.** The boss, the lieutenant, the controller, the chief, the patrol desk and the
-    co-pilot get their own lessons, in their own keys (orders, logistics, squads, launches, raids, sweeps,
-    RICO, the prosecutor). They finish on that seat's own orders, so they work from a remote seat.
-- **The story: Costa Brava, 1979-1989** (the lobby's *Unlocks: Story*, the default). Eight chapters take you
-  from a bush pilot flying square grouper to the organisation the coast answers to. Each chapter opens part
-  of the game, so you meet each system on its own first:
-
-  | Year | Chapter | Opens |
-  |---|---|---|
-  | 1979 | Square Grouper | grass, the stash houses, the hiring hall, the papers |
-  | 1980 | The Connection | logistics; the Colombians call when you've moved enough |
-  | 1981 | Cocaine Cowboys | cocaine, Los Cuervos and the street war, gun runs, soldiers |
-  | 1982 | Family Business | the Moretti family |
-  | 1983 | The Task Force | the federal court: bail, lawyers, pleas, juries |
-  | 1984 | Isla Soberana | the island, mules and containers |
-  | 1985 | The Company | the Agency and its pipeline |
-  | 1986 | Kingpin | sixty-five grand, and walk away |
-
-  The goals are measured by the systems themselves (pounds landed, dealers on corners, cash home, a deal
-  with the Morettis, loads from the island). A faction that's gone before you deal with it doesn't strand
-  a chapter. `--chapter N` skips ahead. *Unlocks: Open* (`--unlocks open`) has every faction and mechanic
-  from the first minute, cocaine included, and starts with a $10,000 float. The old flying campaign on the classic island is still there
-  as *Flying lessons*.
-- **Logistics: product and cash are somewhere** (SHIFT+H in the aircraft, K at the boss's and
-  lieutenant's desks).
-  - Loads land in a stash house, and a dealer sells only what's in a stash in his own market.
-  - Street money piles up where it's made. Wages, loads, lawyers and upgrades come out of the club's safe,
-    so the cash has to be trucked home, or flown home as cash bags (about $4,500 a pound, and evidence if
-    you're busted).
-  - Bulk lots go by truck to the buyer's meet (the Morettis' club in town, Los Cuervos' hacienda), and the
-    money rides back. The Company sends a plane instead: it lands at the strip nearest the goods.
-  - The growers and the connection want cash on the strip, so you fly money out and product in.
-  - Every truck can be stopped at a roadblock or a checkpoint (all of it forfeited), hijacked by Los
-    Cuervos, escorted through, or talked past by a good driver. A raid takes the stash's product and cash.
-  - Guns are physical too: the armoury sits in one place (the club, or a stash). A gun sale is trucked
-    to the buyer; the whole armoury can be moved. A seized gun truck arms the police, a hijacked one
-    Los Cuervos.
-  - The maps colour our trucks by what they carry (cash green, product white, guns red, a buyer's lot
-    amber) with a line to where each is going; a ring marks one pulled over for police ahead. Each truck
-    in the panel has an **Escort** button: the nearest free squad of ours rides with it.
-  - The AI boss runs regular pickups and moves product to where the dealers are.
-- **The trade: dealers, buyers, and grass before cocaine.**
-  - You start the way the 1970s smugglers did: cheap, bulky loads of grass from the farm strips into your stash.
-  - Dealers (hire them from Manny) sell it corner by corner, competing with Los Cuervos' dealers. They get picked
-    up by the police and caught in the street wars.
-  - Bulk buyers (SHIFT+B, Benny Ruiz):
-    - the Morettis, whose sales flood the town;
-    - the Company, which feeds its pipeline;
-    - rifles to the Family, the Company or Los Cuervos, each arming a different side of the wars.
-  - Cocaine opens once the Colombians call.
-  - The law sweeps corners and follows the money.
-- **A street that moves.**
-  - Under the prices, each drug has supply and demand in each market, a distribution network that can break,
-    and an upstream source.
-  - **Arrests** dry the corners: your bust, your workers', Los Cuervos' men, a gunfight's prisoners.
-  - So do **raids** and **seizures**, and informants roll up whole networks.
-  - Competing factions move it:
-    - rival containers flood the docks;
-    - their losses dry up their markets;
-    - the Family's fall takes the gun fence.
-  - Island hurricanes and purges raise the wholesale price.
-  - Island loads pay today's street price.
-  - The market page shows supply/demand per market and which networks are broken, and why.
-- **The Company's pipeline.** Cocaine north, guns south, as in the Contra era:
-  - it floods one market with cheap cocaine;
-  - it spends the proceeds on guns, so gun prices rise;
-  - it offers protected "return legs";
-  - it leaves a trail the task force can follow.
-- **Fire, smoke and weather you can see.**
-  - Crashed police aircraft and your own wreck burn, and burned-out stash houses smoke; the smoke leans downwind.
-  - RPGs going off in the ground war's fights, and your own, blow up with flash, sparks, smoke and debris that tumbles on the physics engine (Jolt).
-  - Bales throw up a splash when they hit the sea.
-  - Storms soak the world: darker ground, shining roads, rain rings on the sea. It dries off slowly afterwards.
-  - Sprites are Kenney's Particle Pack (CC0).
-- **Street furniture.** KayKit's CC0 City Builder Bits in town:
-  - lamp posts that light at night;
-  - traffic lights at the junction;
-  - hydrants, benches, dumpsters and bins.
-- **Your pack (I on foot).**
-  - Carry spare guns, rounds and medkits, up to 24 kg; over 12 kg you slow down.
-  - 5 uses a medkit.
-  - Climbing back in returns the guns to the armoury.
-  - Arrested, the pack is evidence for the task force.
-- **Read aloud (F8).** Conversations and radio calls in the operating system's voice.
-- **Colour-safe palette and screen filters.**
-  - Under simulated colour blindness, the neon status colours collapse into each other. Examples: "on" green vs the pink accent under protanopia, and warning amber vs danger red under deuteranopia.
-  - The colour-safe palette (F8) switches to Okabe–Ito-style colours that stay apart under all three simulations. `test_accessibility` checks every pair: ΔE ≥ 20.
-  - F9 cycles a VHS-tape filter and the colour-blindness simulations used for that check.
-- **One UI, redesigned.** A single theme across every screen; real tables with titled columns (the job
-  board colours the landing roll against the strip length); key caps in every footer that you can
-  also click; readouts as tiles; a HUD laid out by what you need when (status chips, wanted stars,
-  flight tiles, job cards, fading radio toasts, and a crew strip saying what the co-pilot is doing).
-  The co-pilot's desk opens on a Flight tab of crew jobs with live tiles, has a chat line to the pilot,
-  and hires a spotter wherever you click a strip. ESC asks before leaving a seat. The UI scales with
-  the window (tested 1024x768 to 2560x1080).
-- **Graphics overhaul:**
-  - chunked, LOD'd terrain with a biome splat shader (sand, grass, forest floor, dry grass, rock
-    triplanar on steep faces, normal-mapped); a depth-aware sea with shoreline foam; a procedural sky
-    with clouds, sun, stars and the moon; palm, broadleaf, conifer and bush MultiMeshes swaying in the
-    wind; hangars, terminals, fuel desks and the three HQs as real walkable buildings with lit windows
-    and lamps
-  - a day/night cycle driving sun, sky and fog
-  - runway edge and threshold lights, aircraft nav lights, strobes and landing lights, and police
-    light bars and a searchlight at night
-  - shaded terrain (rock on steep faces, detail noise, a wet shoreline) and animated water
-  - MultiMesh forests, directional shadows, glow, and SSAO and volumetric fog on Forward+
-  - dust on unpaved take-off rolls, boat wakes and prop discs
-
-- **The 1980s-coast look.** Pastel art-deco blocks (flamingo, mint, lilac, peach) with white,
-  turquoise or pink trim along the roofline, "speed line" bands, and neon strips that glow pink and
-  cyan after dark; palm-lined boulevards; a sky that goes orange, magenta and violet at sunset and
-  violet at night, with the city's glow on the haze; a saturated colour grade. The UI is hot pink
-  and electric cyan on deep violet with brush-script neon headlines (Kaushan Script and Monoton,
-  both under the SIL Open Font Licence, in `assets/fonts/`), and a big banner when a run pays off
-  or you're busted. Original art throughout: the genre's look, nobody's assets.
-
-- **Low-poly models (Kenney, CC0).** The people, cars, guns, boats and street palms are from Kenney's
-  public-domain kits (Blocky Characters, Car Kit, Weapon Pack, Watercraft Kit, Nature Kit), in
-  `assets/models/kenney/` and loaded through `ModelLib`, which scales them to metres and turns them
-  to face forward. The nearest men in the ground war are animated characters: the faction's looks
-  (suits and vests for the organisation, bandoliers for Los Cuervos, uniforms, plain clothes and SWAT
-  black for the task force), the gun from their squad's loadout at the chest, and the kit's walk,
-  run, aim, fire and fall. Further out they're cheap MultiMesh figures. The first-person gun is the
-  Weapon Pack's; the go-fast is a speedboat, and the cutter a white hull with an orange-red stripe.
-  The aircraft stay procedural, built to the aircraft data's dimensions. Without the model files
-  everything falls back to procedural boxes.
-
-| **Dusk on the boulevard** | **Sunset over San Telmo** | **The city at night** |
+| **Dusk on the boulevard** | **A firefight at the docks** | **The city at night** |
 |---|---|---|
-| ![street](docs/img/vice-street.png) | ![dusk](docs/img/vice-dusk.png) | ![night](docs/img/vice-night.png) |
-| **The lieutenant's desk** | **Take a seat: the AI plays the rest** | **A firefight at the docks** |
-| ![lieutenant](docs/img/ui-lieutenant.png) | ![seats](docs/img/ui-seats.png) | ![docks](docs/img/ground-docks.png) |
-| **The cast and the cars (Kenney CC0)** | **On foot with a rifle** | **Isla Soberana, over the horizon** |
-| ![cast](docs/img/models-cast.png) | ![rifle](docs/img/foot-rifle.png) | ![island](docs/img/island-approach.png) |
-| **A sit-down with the Family** | **The General's aide on the ramp** | **The bail hearing** |
-| ![talk](docs/img/talk.png) | ![aide](docs/img/talk_island.png) | ![court](docs/img/court.png) |
-| **Manny Ortega's hiring hall** | **The same, colour-safe palette** | **Through the VHS filter (F9)** |
-| ![crew](docs/img/crew.png) | ![crew-safe](docs/img/crew-safe.png) | ![vhs](docs/img/vhs.png) |
-| **Controls (F8): keys, buttons, yoke, pedals** | **Downtown: KayKit street furniture, a burning wreck** | **The same street in a storm: wet** |
-| ![controls](docs/img/controls.png) | ![street](docs/img/street-fire.png) | ![rain](docs/img/street-rain.png) |
-| **Your pack (I, on foot)** | **Sea fog (80%): the helicopters stay home** | **Logistics (SHIFT+H): stashes, cash, trucks** |
-| ![pack](docs/img/pack.png) | ![fog](docs/img/fog.png) | ![logistics](docs/img/logistics.png) |
-| **The story: 1981, Cocaine Cowboys** | **The tutorial: a lesson and a tip** | **The lieutenant's desk, learning** |
-| ![story](docs/img/story.png) | ![tutorial](docs/img/tutorial.png) | ![desk tutorial](docs/img/tutorial-desk.png) |
+| ![street](docs/img/vice-street.png) | ![docks](docs/img/ground-docks.png) | ![night](docs/img/city-night.png) |
+| **Load planner** | **The boss's desk** | **Take a seat: the AI plays the rest** |
+| ![load](docs/img/ui-load.png) | ![boss](docs/img/ui-boss.png) | ![seats](docs/img/ui-seats.png) |
 
-| Mid-afternoon on the runway (medium) | Dusk, climbing out near Eagle's Nest (high) | Night: edge lights on |
-|---|---|---|
-| ![runway](docs/img/runway-medium.png) | ![dusk](docs/img/dusk-high.png) | ![night](docs/img/night-runway.png) |
-| **Load planner** | **Boss: the organisation's orders** | **Task-force desk** |
-| ![load](docs/img/ui-load.png) | ![boss](docs/img/ui-boss.png) | ![desk](docs/img/ui-desk.png) |
-| **Job board** | **Chief: the task force's orders** | **Low preset** |
-| ![jobs](docs/img/ui-jobs.png) | ![chief](docs/img/ui-chief.png) | ![low](docs/img/low-preset.png) |
-| **On foot at the hangars** | **The boss's desk, inside the villa** | **The villa, sited by the generator** |
-| ![foot](docs/img/on-foot-hangar.png) | ![villa](docs/img/villa-desk.png) | ![org](docs/img/hq-org.png) |
-| **A storm night** | **Full moon** | **Generated island #7** |
-| ![storm](docs/img/storm.png) | ![moon](docs/img/full-moon.png) | ![map7](docs/img/map-seed7.png) |
-| **The HUD, crewed airdrop** | **Co-pilot's desk** | **Lobby** |
-| ![hud](docs/img/ui-hud.png) | ![copilot](docs/img/ui-copilot.png) | ![lobby](docs/img/ui-lobby.png) |
-| **Runner upgrades (hangar)** | **Task-force upgrades (desk, U)** | **The market** |
-| ![upgrades](docs/img/ui-upgrades.png) | ![lawtree](docs/img/ui-lawtree.png) | ![market](docs/img/ui-market.png) |
-| **San Telmo, downtown** | **The port at night** | **Costa Brava, the map** |
-| ![downtown](docs/img/city-downtown.png) | ![night](docs/img/city-night.png) | ![map](docs/img/map-city.png) |
+*(More screenshots are in [docs/img/](docs/img/); they were rendered on a GPU-less machine with Godot's compatibility
+renderer, so SSAO and volumetric fog, which need Forward+ on a real GPU, are missing.)*
 
-*(Rendered on a GPU-less box: Mesa llvmpipe with Godot's compatibility renderer under Xvfb. SSAO and
-volumetric fog need Forward+ on a real GPU.)*
-
-## Build and run
-
-Players: [INSTALL.md](INSTALL.md) is the step-by-step install guide. Beta testers: [BETA.md](BETA.md)
-for what to test and how to report problems (F12).
+## Quick start
 
 ```bash
 git clone https://github.com/jawaman14/skyrunner && cd skyrunner
-GODOT=$(./tools/get_godot.sh)        # pinned Godot 4.7.2 into .tools/ (or use your own 4.7 install)
-$GODOT --path .                      # lobby: pick a mode, or join a friend's game
-$GODOT --path . -- --mode campaign   # or skip the lobby with flags (below)
-./tools/test.sh                      # the test suite, headless (about 2 minutes)
+GODOT=$(./tools/get_godot.sh)         # pinned Godot 4.7.2 into .tools/ (or use your own 4.7 install)
+$GODOT --path .                       # the lobby: pick a mode, or host or join a game
+$GODOT --path . -- --unlocks open     # skip the lobby: everything open from the first minute
+./tools/test.sh                       # the test suite, headless (about 7 minutes)
 ```
 
-Nothing to build: open the folder in Godot 4.7 and press play. The built-in maps' terrain ships
-baked in `data/terrain/` (`tools/bake_terrain.gd`); a generated island grows its terrain on first use
-(about 10 s in GDScript) and caches it in `user://terrain/`.
+Nothing to build: you can also just open the folder in Godot 4.7 and press play. Press **F1** in game for the
+keys, **F8** to rebind them, **F4** for the multiplayer menu.
 
-Command-line flags (all optional; any flag skips the lobby):
+## The game
+
+### Fly
+
+- **Five aircraft** with every item a point mass at its station arm, a **load planner** that shows the take-off
+  and zero-fuel centre of gravity moving on the envelope, and tight bush strips where the numbers matter.
+- **A flight model written for the game** (`scripts/sim/flight/`): propeller torque, stalls, wind,
+  gusts and rain, flown with keyboard assist, a gamepad, a yoke or pedals (every control rebindable, F8).
+- **Weather you can see and plan around.** A nightly forecast (right three times in four), the moon, storms that
+  ground helicopters and balloons, sea fog, wet roads, fire and smoke that lean downwind, street lamps and headlights
+  that really light the street.
+- **Radar and radio that behave like the real thing.** A 4/3-earth horizon, sea clutter, an MTI notch, real squawk
+  codes; VHF line of sight over the terrain; direction finding that fixes the length of your calls.
+
+### Run the coast
+
+- **The story** (the default): eight chapters, 1979 to 1986 (*Square Grouper*, *The Connection*, *Cocaine
+  Cowboys*, *Family Business*, *The Task Force*, *Isla Soberana*, *The Company*, *Kingpin*). Each chapter opens part
+  of the game, so you meet each system on its own. *Unlocks: Open* has all of it from the start; the old flying
+  campaign is still there as *Flying lessons*.
+- **Costa Brava**, the default map: the port city of San Telmo (about 6,900 buildings), docks, an airport, a river
+  and mangrove estuary, a farm plain, a jungle range, the cove and the cays. Or a generated island (`--map N`).
+- **Logistics and trade.** Product and cash are somewhere: trucked, flown, hijacked, stopped at checkpoints. Fuel
+  has a price. Dealers sell corner by corner, bulk buyers take lots, and the markets move with arrests, raids,
+  rivals and storms.
+- **Hired hands.** Soldiers, drivers, mules, lookouts, accountants and pilots on a payroll, with wages, loyalty
+  and people who walk off or talk.
+- **The ground war.** Squads on foot and in cars fighting over the streets, with veterans who rank up and field
+  orders you can give on foot. Rival cartel Los Cuervos fights back and splits the task force's attention.
+- **Renown, rackets and stash works.** How big your name is (it changes prices, hiring and how closely you are
+  watched); tribute from the streets you hold and the prisoners you take; a hidden vault and a guard post for each
+  stash.
+- **The arena.** A street race in the car and an air circuit at every strip, for prize money and renown.
+- **Powers that help and hurt.** The Family (a Cosa Nostra family whose offers might be traps), the Company (a
+  covert arms pipeline that protects you until it does not), Isla Soberana (cheap product over the horizon, a General
+  who sells passage), and a federal **court** when you are busted: bail, lawyers, motions, pleas, juries, sentences.
+- **On foot.** Walk the apron, the hangars and the headquarters; draw a gun; carry a pack; use the phone for crew,
+  buyers and a taxi; drive the car beside the aircraft, with real 1979-86 broadcasts on its radio.
+- **A tutorial** that teaches by doing, in any mode, for every seat.
+
+### Hunt them
+
+- **The task-force desk**: the radar picture, dispatch, aerostat, encryption, informants, wiretaps, audits and
+  budget; upgrade trees for both sides; stakeouts, tails, buy-busts, checkpoints and SWAT on the ground.
+- **The two HQs' seasons**: the organisation's boss and the task force's chief give nightly orders against each
+  other's, with a rival cartel as a third player.
+
+### Play together
+
+- **Every seat is the AI's until someone takes it**: pilot, co-pilot, spotter, boat, boss, lieutenant, controller,
+  police pilot, cutter, chief or patrol. Join mid-game, take a seat, leave and the AI takes it back.
+- **A waiting room** before the game starts: players join, pick seats and ready up; the host starts it.
+- **Voice that works like a radio**: push-to-talk (`` ` ``), with a radio sound, channels by side, range and hills
+  that cut you up, and a task force that can intercept the runners' net (or a scrambled channel if they encrypt).
+- **The multiplayer menu (F4)**: games on your network, the table (mute, remove, seats, chat) and voice settings.
+
+## Command line
+
+All flags are optional; any flag skips the lobby.
 
 | Flag | Meaning |
 |---|---|
+| `--unlocks story\|open` | the story chapters (default) or everything from the start |
+| `--tutorial` / `--chapter N` | the tutorial; skip ahead to a story chapter |
 | `--mode solo\|campaign\|coop\|versus` | game mode (co-op and versus host remote seats) |
 | `--police` | the task-force desk against AI runners, offline |
 | `--players N` / `--layer 1-5` | seats and rule layers for a table of N (5+ adds the HQs and seasons) |
+| `--map city\|N` | `city` = Costa Brava (default for new games), `0` = the classic island, `N` = generated island N |
 | `--graphics low\|medium\|high` | quality preset |
 | `--watch` | the pilot bot flies the career; you watch |
 | `--host` / `--port 47800` | open remote seats in solo |
-| `--connect HOST:PORT [--role R] [--name N] [--seat3d]` | join; `--role pick` (or none from the lobby) opens the live seat list; or sit straight down as `pilot` (3D), `copilot`, `spotter`, `boat`, `boss`, `lieutenant`, `controller`, `interceptor` (3D), `cutter`, `chief` or `patrol` |
-| `--hour 0-24` | time of day to start at (F2 advances it in game) |
-| `--shot out.png --frames N` / `--smoke N` | render N frames and save a screenshot / run N frames of a new game, print `SMOKE OK` and quit (CI smoke tests) |
-| `--map city\|N` | map: `city` = Costa Brava (the default for new games), 0 = the classic island, N = generated island N |
-| `--weather clear\|cloud\|storm[,moon]` | tonight's weather outside a season (moon 0 = new .. 1 = full) |
-| `--new`, `--seed N` | fresh save; job-board seed |
-| `--shot out.png [--frames 90]` | render and save a screenshot, then quit |
+| `--connect HOST:PORT [--role R] [--name N] [--seat3d]` | join; `--role pick` opens the live seat list |
+| `--hour 0-24` / `--weather clear\|cloud\|storm[,moon]` | time of day and weather to start at |
+| `--new` / `--seed N` | a fresh save / the job-board seed |
+| `--shot out.png --frames N` / `--smoke N` | render and save a screenshot / run N frames headless and print `SMOKE OK` (CI) |
 
-Dedicated server: `$GODOT --headless --path . --script res://scripts/net/dedicated.gd -- --port 47800`.
-Every seat is run by the AI until a player claims it.
+A dedicated server: `$GODOT --headless --path . --script res://scripts/net/dedicated.gd -- --port 47800`. Every
+seat is run by the AI until a player claims it.
 
-Controls: F1 in game lists them; F8 rebinds them (keys, gamepad, yoke, throttle quadrant, pedals); F2 for time of day; and on foot: TAB get out / climb in, WASD walk (Shift runs, Space jumps), mouse look, E use, F torch, T the phone (crew, buyers, lawyer, the desk and dispatch without the walk, and a taxi to anywhere you would otherwise walk); E at the car beside the aircraft to drive it (W/S, A/D, SPACE).
+## For developers
 
-Demo videos: [docs/video/](docs/video/):
-- [`demo-ui.mp4`](docs/video/demo-ui.mp4): the redesigned UI in use - lobby, job board, load planner,
-  hangar, the HUD on a crewed airdrop, the co-pilot's desk, both HQ boards, the task-force desk
-  (`tools/ui_tour.gd`)
-- [`demo-tour.mp4`](docs/video/demo-tour.mp4): on foot, the boss's desk, the three HQs (`tools/tour.gd`)
-- [`demo-city.mp4`](docs/video/demo-city.mp4): Costa Brava - fly-overs of the city, estuary and farm
-  plain, a crewed airdrop with the radar detector, the task-force desk (radar sweeps, coverage, DF
-  bearings and ellipse, the jammer), a stash run's truck, the market and the upgrade trees, the port
-  at night (`tools/city_tour.gd`)
-- [`demo-ground.mp4`](docs/video/demo-ground.mp4): the ground war, the seats and the 1980s-coast look -
-  sunset over San Telmo, a firefight on a palm-lined boulevard, the lieutenant's and patrol
-  commander's desks, the seat picker, on foot with a rifle, a run paying off, the city's neon at
-  night (`tools/ground_tour.gd`)
-- [`demo-bust.mp4`](docs/video/demo-bust.mp4): a bot flight against the task force, split screen
-  (`tools/record_demo.sh`, optionally in weather)
+The code is a seeded, replayable simulation that runs headless (`scripts/sim/`), with the 3D game, the 2D desks and
+the network layered on top. [CLAUDE.md](CLAUDE.md) has the conventions; the short version:
 
-## Balance tooling
+- **Deterministic.** Every random draw is seeded on its own stream (the table is in
+  [docs/DESIGN.md](docs/DESIGN.md)); new systems sit behind a static switch registered in `scripts/sim/switches.gd`,
+  and a test scans the sim for global random draws and clock reads.
+- **Warnings are errors.** Give locals an explicit type whenever the value is a Variant.
+- **Tests.** `./tools/test.sh [filter]`: about 740 tests in 90 files, including parity and golden fixtures
+  ([tests/fixtures/README.md](tests/fixtures/README.md)). CI runs them as three parallel shards, exports Linux,
+  Windows and macOS builds and smoke-tests them ([.github/workflows/](.github/workflows/)).
+- **Layout.** `scripts/sim/` the simulation (`Session` is a chain of layers, state to commands); `scripts/bots/`
+  the pilot bot and route planning; `scripts/balance/` the balance simulators; `scripts/game/` the 3D pilot app;
+  `scripts/station/` and `scripts/ui/` the 2D desks and menus; `scripts/net/` multiplayer and voice.
+- **Balance** is measured, not guessed: `scripts/balance/cli.gd` and `tools/live_balance.gd` write
+  [docs/BALANCE.md](docs/BALANCE.md) (a change needs at least 200 seeds behind it).
 
 ```bash
-$GODOT --headless --path . --script res://scripts/balance/cli.gd -- all --workers 4   # feasibility, tactical, strategic, report
-$GODOT --headless --path . --script res://scripts/balance/cli.gd -- strategic --n 1000
-$GODOT --headless --path . --script res://scripts/balance/cli.gd -- crew --seeds 10     # solo vs AI vs human co-pilot
-$GODOT --headless --path . --script res://scripts/balance/cli.gd -- tune --n 100 --grid '{"rival_market": [0.3, 0.4]}'
-$GODOT --headless --path . --script res://tools/equilibrium.gd -- 500 '{"weather": false}'   # one rule set's equilibrium
+$GODOT --headless --import                                              # after adding scripts or assets
+$GODOT --headless --path . -- --unlocks open --watch --new --smoke 1800  # the CI smoke run
+$GODOT --headless --path . --script res://scripts/balance/cli.gd -- all --workers 4
 ```
 
-Results go to `sim-results/*.json` and the report to [docs/BALANCE.md](docs/BALANCE.md).
+The game started as a Python prototype, kept on the git tag `python-prototype-archive`; it generated the frozen
+parity fixtures and you never need it to build, play or test ([docs/PORTING.md](docs/PORTING.md)).
 
 ## Docs
 
-- [docs/DESIGN.md](docs/DESIGN.md): roles, gadgets and counters, systems, the storyline, the ground war
-  and the seat model.
-- [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md): design research for asymmetric versus play, layers,
-  hidden information, the network protocol.
-- [docs/PORTING.md](docs/PORTING.md): how the Godot build was checked bit-exact against the Python
-  prototype (RNGs, terrain, flights, seasons); that prototype is archival now.
-- [docs/BALANCE.md](docs/BALANCE.md): the Godot build's balance report, rival cartel included.
+- [docs/FEATURES.md](docs/FEATURES.md): the long feature reference (what the README used to list, system by system).
+- [docs/DESIGN.md](docs/DESIGN.md): roles, gadgets and counters, every system, the storyline, the ground war, the
+  seat model, voice and the waiting room.
+- [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md): design research for asymmetric versus play, hidden information and the
+  network protocol.
+- [docs/BALANCE.md](docs/BALANCE.md): the balance report, with a numbered entry for every change.
+- [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/REVIEW_2026-10.md](docs/REVIEW_2026-10.md): what is done and the work queue.
+- [docs/LIBRARIES.md](docs/LIBRARIES.md): the open-source libraries and art used or considered.
+- Demo videos in [docs/video/](docs/video/): the UI, the on-foot tour, the city, the ground war and a bust.
 
 ## Licences
 
-The game's own code and content are MIT ([LICENSE](LICENSE)).
+The game's own code and content are MIT ([LICENSE](LICENSE)). All the people, organisations and places in it are fictional.
 
-The aircraft, engine and propeller descriptions in `data/jsbsim/` come from the JSBSim project and
-are LGPL-2.1 (licence in `data/jsbsim/COPYING.LGPL`); they are data, read by the game's own flight
-model (`scripts/sim/flight/`), and files we changed say so in an XML comment (the C172's propeller
-carries our calibration factors). No JSBSim code is used or shipped.
+- **Aircraft data.** The aircraft, engine and propeller descriptions in `data/jsbsim/` come from the JSBSim project
+  and are LGPL-2.1 (`data/jsbsim/COPYING.LGPL`). They are data read by the game's own flight model; changed files
+  say so in an XML comment. No JSBSim code is shipped.
+- **Radio recordings are the exception.** `assets/radio/` holds short excerpts of real 1979-86 broadcasts from the
+  Internet Archive, included at the project owner's decision for a historical-fiction game. They are **not** CC0 or
+  MIT; read [assets/radio/README.md](assets/radio/README.md) before redistributing.
+- **Art.** Low-poly models from Kenney (CC0, `assets/models/kenney/`), KayKit's City Builder Bits (CC0) and
+  Quaternius's Downtown City MegaKit (CC0); Kenney's particle sprites and UI sounds (CC0). Fonts are Kaushan Script
+  and Monoton (SIL OFL, `assets/fonts/`). Every other sound is synthesized in `scripts/game/sound.gd`.
+- **Add-ons** (all in `addons/`, each with its licence): Dialogue Manager and Input Helper (Nathan Hoad, MIT), Debug
+  Menu (Hugo Locurcio, MIT), SimpleGodotCRTShader (Henrique Lacreta Alves, MIT) and GATO's colour-blindness shader
+  (MPL-2.0, unmodified). Godot and Jolt are MIT.
 
-Godot is MIT.
-
-The UI sounds are Kenney's UI Audio (CC0), in `assets/audio/kenney_ui/`; every other sound is
-synthesized in `scripts/game/sound.gd`. The conversations run on Nathan Hoad's Dialogue Manager (MIT; its runtime in
-`addons/dialogue_manager/`, the scripts in `dialogue/`). The performance overlay (F6) is Hugo
-Locurcio's Debug Menu add-on, MIT, in `addons/debug_menu/`. Key and button remapping uses Nathan Hoad's
-Input Helper (MIT, `addons/input_helper/`). The VHS filter is Henrique Lacreta Alves' SimpleGodotCRTShader
-(MIT, `addons/crt_shader/`), and the colour-blindness simulation is GATO's shader (MPL-2.0, unmodified, in
-`addons/gato_screen_filters/`). Fire and smoke use Kenney's Particle Pack (CC0, `assets/fx/kenney_particles/`); the
-street furniture is Kay Lousberg's KayKit City Builder Bits (CC0, `assets/models/kaykit/city/`). Physics runs on
-Jolt, built into Godot.
-[docs/LIBRARIES.md](docs/LIBRARIES.md) surveys the other open-source Godot libraries considered.
-
-The 3D models in `assets/models/kenney/` are Kenney's (www.kenney.nl), CC0 1.0 (public domain);
-see `assets/models/kenney/LICENSE.txt`.
+[docs/LIBRARIES.md](docs/LIBRARIES.md) lists the libraries considered and the art removed again.
