@@ -200,7 +200,7 @@ func _autopilot_navigate() -> void:
 		var c := police.case("runner")
 		transponder = not (c.wanted > 0 or c.tipped or c.suspicion >= AUTOPILOT_HOT_DARK_SUSPICION)
 	else:
-		wps = [[af.x, af.y]]
+		wps = _approach_route(af)
 	var peak := world.ground(state.x, state.y)
 	var prev: Array = [state.x, state.y]
 	for wp in wps:
@@ -210,9 +210,44 @@ func _autopilot_navigate() -> void:
 			peak = maxf(peak, world.ground(p[0], p[1]))
 		prev = wp
 	var margin := Autopilot.LOW_AGL_M if hot else Autopilot.CRUISE_AGL_M
+	if not hot:
+		wps[0] = [wps[0][0], wps[0][1], peak + margin]
+		if wps.size() > 2:  # the descent legs must clear the ground they cross, whatever the glide path says
+			wps[1][2] = maxf(float(wps[1][2]), maxf(world.ground(wps[1][0], wps[1][1]), world.ground(wps[2][0], wps[2][1])) + 90.0)
 	autopilot.engage_route(state, wps, peak + margin, fm.controls.elevator)
-	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name, "low over the ground" if hot else "direct",
+	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name, "low over the ground" if hot else "joining the approach",
 		"squawking" if transponder else "transponder off", Py.f((peak + margin) / FT, 0)])
+
+
+## A legal leg to `af`: a join on the extended centreline of the runway end it comes at, then down a 3-degree
+## path to a final fix and along the runway at 30 m. [x, y, alt_m] each (the first altitude is set by the caller
+## to the cruise altitude). Which end: whichever puts the join nearer the aircraft, so it never overflies the field
+## to turn back onto it. Close in (less than the join's distance), it goes straight to the final fix.
+func _approach_route(af: Airfield) -> Array:
+	var elev := world.airfield_elev(af)
+	var best: Array = []
+	var best_d := INF
+	for end in [0, 1]:
+		var th: Array = af.threshold(end)
+		var sgn := -1.0 if end == 0 else 1.0  ## the way out along the extended centreline from this threshold
+		var fix := [th[0] + sgn * af.ux * APPROACH_FINAL_M, th[1] + sgn * af.uy * APPROACH_FINAL_M]
+		var d := PyMath.hypot(fix[0] - state.x, fix[1] - state.y)
+		if d < best_d:
+			best_d = d
+			best = [th, sgn, fix]
+	var th2: Array = best[0]
+	var sg: float = best[1]
+	var fix2: Array = best[2]
+	var join := [th2[0] + sg * af.ux * APPROACH_JOIN_M, th2[1] + sg * af.uy * APPROACH_JOIN_M]
+	var final_alt := elev + APPROACH_FINAL_M * tan(deg_to_rad(3.0)) + 15.0
+	var route: Array = []
+	if PyMath.hypot(join[0] - state.x, join[1] - state.y) > APPROACH_JOIN_M * 0.6:
+		route.append([join[0], join[1], final_alt + 200.0])
+	else:
+		route.append([fix2[0], fix2[1], final_alt + 200.0])
+	route.append([fix2[0], fix2[1], final_alt])
+	route.append([th2[0], th2[1], elev + 30.0])
+	return route
 
 
 ## An active job's own strip (not an airdrop: that's a point in the water, not somewhere to land),
@@ -691,7 +726,7 @@ func _cmd_acid_barter(role: String, a: Dictionary):
 func _cmd_acid_sell(role: String, a: Dictionary):
 	if psych == null:
 		return "There is no Collective in this game."
-	var err := psych.sell(float(_num(a, "sheets", 1e9)))
+	var err := psych.sell(float(_num(a, "sheets", 1e9)), str(a.get("stash", "")))
 	return err if err != "" else null
 
 
@@ -931,7 +966,7 @@ func _cmd_move_goods(role: String, a: Dictionary):
 	if logistics == null:
 		return "No logistics in this game: the product is just there."
 	var g := str(a.get("good", ""))
-	if not g in Trade.GOODS:
+	if not g in logistics.goods():
 		return "Move what?"
 	var err: String = logistics.send(str(a.get("from", "")), str(a.get("to", "")), g, float(_num(a, "lb", 0)))
 	return err if err != "" else null

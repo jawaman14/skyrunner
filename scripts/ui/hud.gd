@@ -6,10 +6,10 @@ extends Control
 ##   top-right     money and aircraft, then a card per active job (distance,
 ##                 bearing, time left), campaign objectives under those
 ##   left          radio and crew messages as fading toasts
-##   bottom-left   the crew strip (what the co-pilot is doing) over the flight
+##   bottom-left   the crew strip (what the co-pilot is doing) over the attitude ball and the flight
 ##                 tiles: IAS, ALT, AGL, VS, HDG, GS, power, fuel, flaps, W&B
 ##   bottom-centre ground hints as key caps, the PAPI when on approach
-##   bottom-right  the minimap
+##   bottom-right  the radar (round, track-up; + and - for range, Shift+M north-up, M the island chart)
 ## Everything is anchored, so it holds together from 1024x768 to 4K.
 
 var pulse := 0.0  ## the pilot's heart rate when it's up (Nerves), else 0
@@ -36,7 +36,7 @@ var center: Label
 var hints: KeyHints
 var papi_label: Label
 var papi_dots: Array = []
-var compass: Compass
+var attitude: Attitude
 var minimap: Minimap
 
 
@@ -55,7 +55,6 @@ func setup(sess: Session) -> Hud:
 	_build_wanted()
 	_build_status()
 	_build_flight()
-	_build_compass()
 	toasts = ToastFeed.new()
 	_anchor(toasts, Vector4(0, 0.30, 0.42, 0.62), Vector4(14, 0, 0, -6))
 	zones["toasts"] = toasts
@@ -168,14 +167,6 @@ func _bar(col: Color) -> ProgressBar:
 	return b
 
 
-## Below the wanted stars: the heading tape and wind arrow.
-func _build_compass() -> void:
-	compass = Compass.new()
-	_anchor(compass, Vector4(0.36, 0, 0.64, 0), Vector4(0, 114, 0, 172))
-	zones["compass"] = compass
-	add_child(compass)
-
-
 func _build_status() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6)
@@ -201,7 +192,7 @@ func _build_flight() -> void:
 	v.add_theme_constant_override("separation", 6)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.alignment = BoxContainer.ALIGNMENT_END
-	_anchor(v, Vector4(0, 0.62, 0.36, 1), Vector4(14, 0, 0, -12))
+	_anchor(v, Vector4(0, 0.62, 0.38, 1), Vector4(14, 0, 0, -12))
 	zones["flight"] = v
 	crew = _panel(Color(0.02, 0.1, 0.12, 0.7))
 	crew_lbl = UIStyle.label("", 14, UIStyle.CYAN)
@@ -216,19 +207,38 @@ func _build_flight() -> void:
 	pv.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(pv)
 	var h := HBoxContainer.new()
-	h.add_theme_constant_override("separation", 8)
+	h.add_theme_constant_override("separation", 10)
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pv.add_child(h)
+	# left: the attitude ball with the heading under it; right: the numbers in rows of three, then the fuel
+	var left := VBoxContainer.new()
+	left.add_theme_constant_override("separation", 6)
+	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_child(left)
+	attitude = Attitude.new()
+	left.add_child(attitude)
+	tiles["hdg"] = StatTile.new().setup("HDG", false, 18)
+	left.add_child(tiles["hdg"])
+	var right := VBoxContainer.new()
+	right.add_theme_constant_override("separation", 6)
+	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(right)
 	var g := GridContainer.new()
-	g.columns = 4
+	g.columns = 3
 	g.add_theme_constant_override("h_separation", 6)
 	g.add_theme_constant_override("v_separation", 6)
 	g.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	h.add_child(g)
-	for n in [["ias", "IAS kt"], ["alt", "ALT ft"], ["agl", "AGL ft"], ["vs", "VS fpm"],
-			["hdg", "HDG"], ["gs", "GS kt"], ["pwr", "Power"], ["fuel", "Fuel lb"]]:
-		tiles[n[0]] = StatTile.new().setup(n[1], n[0] == "fuel", 18)
+	right.add_child(g)
+	for n in [["ias", "IAS kt"], ["alt", "ALT ft"], ["agl", "AGL ft"], ["vs", "VS fpm"], ["gs", "GS kt"], ["pwr", "Power"]]:
+		tiles[n[0]] = StatTile.new().setup(n[1], false, 18)
+		tiles[n[0]].size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		g.add_child(tiles[n[0]])
-	var foot := UIStyle.label("", 13, UIStyle.CAPTION, UIStyle.mono())
+	tiles["fuel"] = StatTile.new().setup("Fuel lb", true, 18)
+	tiles["fuel"].size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right.add_child(tiles["fuel"])
+	var foot := UIStyle.label("", 12, UIStyle.CAPTION, UIStyle.mono())
+	foot.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pv.add_child(foot)
 	tiles["wb"] = foot
 	add_child(v)
@@ -256,7 +266,7 @@ func refresh() -> void:
 	var lo: Loadout = s.loadout
 	_flight(st, c, lo)
 	_chip_row(st, c)
-	compass.set_data(st.heading, s.weather)
+	attitude.set_data(st.pitch, st.roll)
 	_wanted()
 	_status(st, lo)
 	_crew(lo)
@@ -281,6 +291,8 @@ func refresh() -> void:
 	elif s.parked:
 		center.text = ""
 		var h := [["J", "jobs"], ["L", "load & fuel"], ["H", "hangar & gear"], ["TAB", "get out"], ["F1", "help"]]
+		if s.dealer != null:
+			h.insert(3, ["SHIFT+V", "car lot"])
 		if not lo.compute().ok():
 			h.append(["L", "LOAD OUT OF LIMITS"])
 		if not lo.pending.is_empty():
@@ -304,14 +316,14 @@ func _flight(st: FlightModel.FlightState, c: FlightModel.Controls, lo: Loadout) 
 	tiles["pwr"].set_value("%.0f%%" % (c.throttle * 100), UIStyle.WHITE, -1.0, "%.0f rpm" % st.rpm)
 	var cap := lo.mass.fuel_capacity_lb()
 	var he: Array = s.range_estimate()
-	var sub := ("%.0f km / %.0f min" % [he[1], he[0] * 60]) if not st.on_ground else "range: airborne only"
+	var sub := ("%.0f km  %.0f min" % [he[1], he[0] * 60]) if not st.on_ground else "range in the air"
 	var ferry := lo.ferry_fuel_lb()
 	if ferry > 0 or not lo.ferry_tanks().is_empty():
-		sub += "  +%.0f ferry" % ferry
+		sub += "  +%.0f lb ferry" % ferry
 	var low: bool = st.fuel_lb < 20 and not st.on_ground
 	tiles["fuel"].set_value("%.0f" % st.fuel_lb, UIStyle.RED if low else (UIStyle.AMBER if st.fuel_lb < 0.2 * cap else UIStyle.GREEN),
 		st.fuel_lb / maxf(1.0, cap), sub)
-	tiles["wb"].text = "FLAP %d/3  TRIM %+.2f  WT %.0f lb  CG %.1f in%s" % [int(round(c.flaps * 3)), -c.pitch_trim, st.weight_lb,
+	tiles["wb"].text = "FLAPS %d/3  TRIM %+.2f  %.0f lb  CG %.1f%s" % [int(round(c.flaps * 3)), -c.pitch_trim, st.weight_lb,
 		st.cg_in, "  BRAKE" if c.brake > 0.5 else ""]
 
 

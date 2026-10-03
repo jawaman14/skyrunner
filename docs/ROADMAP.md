@@ -28,8 +28,8 @@ scrolling; the compass; the tutorial's red squares; crew; autopilot. Second wave
 - **Runways.** Done, see docs/STRIPS.md. Open there: mountain strips versus the Cessna 182 and half loads.
 - **Throttle.** Done: Z/X ramp (twice for instant), R/F a finer step.
 - **F1 help.** Done: a ScrollContainer, mouse-wheel scroll, the same panel proportions as F8.
-- **Compass.** Done: a heading tape under the wanted stars (scripts/ui/widgets/compass.gd), with a wind
-  arrow (points toward where the wind is blowing FROM, a weather-vane needle) when a season has weather.
+- **Compass.** Was a heading tape under the wanted stars; removed on request. The heading is a tile under the attitude ball, the wind is the WX chip,
+  and the round radar's rim carries the compass points.
 - **Tutorial.** Done: the HUD tells Tutorial the moment the PAPI lights are actually on screen
   (Hud._papi -> note("papi_seen")), and a one-off tip explains them.
 - **Crew.** Done, three playtest complaints that turned out to be one: the organisation's AI already

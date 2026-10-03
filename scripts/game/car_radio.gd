@@ -301,6 +301,24 @@ func _save() -> void:
 	cf.save(state_path)
 
 
+## For the dashboard: what is on the dial and what is playing, as numbers and words.
+func now_playing() -> Dictionary:
+	var st := station()
+	if st == null:
+		return {"stations": false}
+	var d := {"stations": true, "on": on, "dial": st.dial(), "name": st.name, "title": "", "static": false, "progress": 0.0}
+	if on:
+		var a := st.air(clock())
+		if int(a.i) < 0:
+			d["static"] = true
+			d["title"] = "signal fading"
+		else:
+			var clip := st.clips[int(a.i)] as Clip
+			d["title"] = clip.title
+			d["progress"] = float(a.off) / maxf(clip.dur, 1.0)
+	return d
+
+
 ## What the dial says: the band and frequency, the station, and what is on now.
 func line() -> String:
 	var st := station()

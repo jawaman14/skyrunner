@@ -115,12 +115,21 @@ func test_hot_cargo_goes_dark_once_tipped() -> void:
 	s.dispose()
 
 
-func test_a_legal_leg_is_a_straight_shot() -> void:
+func test_a_legal_leg_joins_the_approach_instead_of_a_straight_shot() -> void:
 	var s := _sess()
 	_airborne(s)
 	s.command(Roles.PILOT, "autopilot", {})
 	s.command(Roles.PILOT, "autopilot", {})
-	check_eq(s.autopilot.waypoints.size(), 1, "direct: one waypoint, the destination itself")
+	var w: Array = s.autopilot.waypoints
+	check_eq(w.size(), 3, "a join, a final fix and the runway end")
+	var af := s._autopilot_target()
+	var last: Array = w[w.size() - 1]
+	var th0: Array = af.threshold(0)
+	var th1: Array = af.threshold(1)
+	check(PyMath.hypot(last[0] - th0[0], last[1] - th0[1]) < 1.0 or PyMath.hypot(last[0] - th1[0], last[1] - th1[1]) < 1.0, "it ends at a runway end, not the field's middle")
+	check(float(w[1][2]) < float(w[0][2]) and float(w[2][2]) < float(w[1][2]), "and comes down: each leg lower than the one before")
+	var local: Array = af.to_local(w[1][0], w[1][1])
+	check(absf(float(local[1])) < 1.0, "the final fix is on the runway's centreline")
 	s.dispose()
 
 
@@ -129,8 +138,9 @@ func test_a_legal_leg_is_a_straight_shot() -> void:
 ## This flies from almost the worst angle (nearly the reverse of the course) and checks it actually
 ## gets there instead of circling for ten simulated minutes.
 func test_it_does_not_circle_a_distant_target() -> void:
-	var s := _sess()
+	var s := _sess({"trade": true})
 	var val := World.airfield("VAL")
+	s.active_jobs.append(Jobs.Job.new(Jobs.new_id(), "test", "cargo", "HAR", "VAL", [], 100, {}))  # VAL is the destination, not whatever is nearest
 	# aimed almost exactly away from VAL to begin with
 	var away := Py.wrap180(PilotBot.bearing(val.x, val.y, val.x + 15000.0, val.y - 15000.0) + 180.0)
 	s.spawn_airborne(val.x + 15000.0, val.y - 15000.0, away, 500.0, 95.0)

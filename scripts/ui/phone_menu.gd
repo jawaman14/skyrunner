@@ -1,14 +1,16 @@
 class_name PhoneMenu
 extends GameMenu
-## The phone, on foot (T): ring the people who otherwise need a walk to the desk or a landing at
+## The phone (T on foot, Shift+T from the cockpit): ring the people who otherwise need a walk to the desk or a landing at
 ## the right strip - Manny's hiring hall, the buyers, the lawyer, the Family, the General's aide -
-## or open the boss's orders and the logistics view. Picking one closes the phone and emits
+## or open the boss's orders and the logistics view. The book is only the people you have: each system that
+## opens (a story chapter, a Family offer taken) adds its number, announced and marked NEW until you ring it. Picking one closes the phone and emits
 ## `called(action)`; the pilot app does the rest, the same call the shortcut keys make.
 
 signal called(action: String)
 
 var list: DataTable
 var rows: Array = []  ## [action, who, about]
+var fresh := {}  ## numbers added since you last rang them (PilotApp._phone_watch): marked NEW
 
 
 func _build() -> void:
@@ -61,7 +63,7 @@ func refresh() -> void:
 	list.clear_rows()
 	rows = contacts()
 	for r in rows:
-		list.add_row([r[1], r[2]])
+		list.add_row([("NEW  " if fresh.has(r[0]) else "") + str(r[1]), r[2]])
 	if not rows.is_empty():
 		list.select_near(keep if keep >= 0 else 0)
 	footer.text = "" if not rows.is_empty() else "Nobody to call yet."
@@ -79,5 +81,6 @@ func key(k: String) -> void:
 			if i < 0 or i >= rows.size():
 				return
 			var action: String = rows[i][0]
+			fresh.erase(action)
 			close()
 			called.emit(action)

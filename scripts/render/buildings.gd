@@ -331,6 +331,23 @@ static func showroom(k: Kit, c: Vector3, w := 14.0, d := 9.0) -> void:
 	k.prop("chairDesk", c + Vector3(w / 2 - 2.0, 0, d / 2 - 2.8), 0.0)
 	k.interact(c + Vector3(w / 2 - 2.0, 1.0, d / 2 - 3.2), "dealer", "The dealership: cars to drive, trucks for the stash runs", 2.6)
 	k.lamp(c + Vector3(0, 3.4, 0), 1.6, 12.0)
+	# a tall lit sign you can see from the circuit, and a way in from the lot itself (the desk is at the back)
+	var px := c.x + w / 2 + 3.0
+	var pz := c.z - d / 2 - 2.0
+	k.box(Vector3(px, 7.0, pz), Vector3(0.5, 14.0, 0.5), "metal", false)
+	k.box(Vector3(px, 15.2, pz), Vector3(8.0, 3.0, 0.4), "neon", false)
+	var sign_text := Label3D.new()
+	sign_text.text = "CAR LOT"
+	sign_text.font_size = 96
+	sign_text.pixel_size = 0.014
+	sign_text.outline_size = 16
+	sign_text.modulate = Color(1, 1, 1)
+	sign_text.outline_modulate = Color(0.1, 0.0, 0.2)
+	sign_text.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+	sign_text.no_depth_test = false
+	sign_text.position = Vector3(px, 15.2, pz - 0.35)
+	k.root.add_child(sign_text)
+	k.interact(Vector3(c.x + 3.0, 1.0, c.z - d / 2 - 2.2), "dealer", "The car lot: cars to drive, trucks for the stash runs", 3.2)
 	k.vehicle("sedan-sports", 4.5, c + Vector3(-4.0, 0, -d / 2 - 4.0), 20.0)
 	k.vehicle("suv-luxury", 5.0, c + Vector3(1.0, 0, -d / 2 - 6.0), -15.0)
 	k.vehicle("van", 5.2, c + Vector3(5.5, 0, -d / 2 - 4.0), 10.0)
@@ -578,6 +595,9 @@ static func _compound(k: Kit) -> void:
 ## downtown corner, neon on the facade, a dance floor below and the boss's
 ## office above - reached by the stairs at the back. The desk (orders) and the
 ## map table (Los Cuervos) are in the office.
+const STAIR_HOLE := Rect2(8.1, -6.4, 2.6, 7.6)  ## the club's stairwell in the office floor: x, z, width, depth (local metres)
+
+
 static func _nightclub(k: Kit) -> void:
 	var w := 22.0
 	var d := 16.0
@@ -587,7 +607,24 @@ static func _nightclub(k: Kit) -> void:
 		k.wall(-w / 2, d / 2, w / 2, d / 2, y, 4.1, 0.3, "stucco_pink")
 		k.wall(-w / 2, -d / 2, -w / 2, d / 2, y, 4.1, 0.3, "stucco_pink")
 		k.wall(w / 2, -d / 2, w / 2, d / 2, y, 4.1, 0.3, "stucco_pink", 1.4 if y == 0 else 0.0)
-		k.box(Vector3(0, y + 4.15, 0), Vector3(w + 0.4, 0.2, d + 0.4), "concrete_dark")
+		if y == 0.0:
+			# the office floor, with a stairwell cut out over the stairs (without it the stairs run into the ceiling and
+			# nobody can climb them): four slabs around the hole
+			var x0 := -w / 2 - 0.2
+			var x1 := w / 2 + 0.2
+			var z0 := -d / 2 - 0.2
+			var z1 := d / 2 + 0.2
+			var hx0: float = STAIR_HOLE.position.x
+			var hx1: float = STAIR_HOLE.end.x
+			var hz0: float = STAIR_HOLE.position.y
+			var hz1: float = STAIR_HOLE.end.y
+			k.box(Vector3((x0 + hx0) / 2, 4.15, 0), Vector3(hx0 - x0, 0.2, z1 - z0), "concrete_dark")
+			k.box(Vector3((hx1 + x1) / 2, 4.15, 0), Vector3(x1 - hx1, 0.2, z1 - z0), "concrete_dark")
+			k.box(Vector3((hx0 + hx1) / 2, 4.15, (hz1 + z1) / 2), Vector3(hx1 - hx0, 0.2, z1 - hz1), "concrete_dark")
+			k.box(Vector3((hx0 + hx1) / 2, 4.15, (z0 + hz0) / 2), Vector3(hx1 - hx0, 0.2, hz0 - z0), "concrete_dark")
+			k.box(Vector3(hx0 - 0.05, 4.8, (hz0 + hz1) / 2), Vector3(0.1, 1.1, hz1 - hz0), "metal")  # the rail along the open side
+		else:
+			k.box(Vector3(0, y + 4.15, 0), Vector3(w + 0.4, 0.2, d + 0.4), "concrete_dark")
 	# neon: the name over the door, a stripe around the parapet
 	k.box(Vector3(0, 5.6, -d / 2 - 0.25), Vector3(12, 1.6, 0.1), "neon", false)
 	k.box(Vector3(0, 8.5, -d / 2 - 0.2), Vector3(w, 0.25, 0.1), "neon_cyan", false)

@@ -186,32 +186,101 @@ func test_f1_help_scrolls_instead_of_being_cropped() -> void:
 	s.dispose()
 
 
-func test_compass_relative_wind_and_tape_mapping() -> void:
-	check_near(Compass.relative_wind(90.0, 90.0), 0.0, 0.001, "wind from dead ahead is a headwind: 0")
-	check_near(absf(Compass.relative_wind(90.0, 270.0)), 180.0, 0.001, "wind from behind is a tailwind: +-180")
-	check_near(Compass.relative_wind(90.0, 180.0), 90.0, 0.001, "wind from the right wing: +90")
-	check_near(Compass.relative_wind(350.0, 10.0), 20.0, 0.001, "wraps past north: +20, not -340")
-
-	var c := Compass.new()
-	c.size = Vector2(200, 58)
-	c.heading = 350.0
-	check_near(c._tape_x(10.0), 100.0 + 20.0 / Compass.SPAN_DEG * 100.0, 0.5, "10 deg sits right of centre when heading is 350")
-	check_near(c._tape_x(350.0), 100.0, 0.5, "the nose itself is dead centre")
-	check(c._tape_x(fposmod(350.0 - Compass.SPAN_DEG - 20.0, 360.0)) == null, "well off the tape is not drawn")
-	c.free()
+func test_attitude_ball_leans_toward_the_low_wing() -> void:
+	check_near(Attitude.down_vector(0.0).x, 0.0, 0.001, "wings level: the ground is straight down")
+	check(Attitude.down_vector(30.0).x > 0.4, "banked right: the ground leans to the right")
+	check(Attitude.down_vector(-30.0).x < -0.4, "banked left: to the left")
+	var a := Attitude.new()
+	a.set_data(200.0, 10.0)
+	check_near(a.pitch, 90.0, 0.001, "pitch is clamped so the ball cannot run off its scale")
+	a.free()
 
 
-func test_compass_in_the_hud_handles_no_weather_and_some() -> void:
+func test_the_radar_turns_with_the_nose_and_the_chart_holds_north() -> void:
 	var s := Session.new({"seed": 7})
 	s.update(1.0 / 30)
-	var hud := Hud.new()
-	_tree().root.add_child(hud)
-	hud.setup(s)
-	hud.refresh()
-	check(hud.compass != null and hud.zones.has("compass"), "the compass is a HUD zone")
-	check(not hud.compass.has_wind, "no weather system: no wind arrow")
-	s.set_weather({"sky": "clear", "wind_dir": 45.0, "wind_kt": 12.0, "moon": 0.5})
-	hud.refresh()
-	check(hud.compass.has_wind and hud.compass.wind_kt == 12.0, "weather on: the arrow has something to show")
-	hud.free()
+	var m := Minimap.new()
+	_tree().root.add_child(m)
+	m.setup(s)
+	m._frame()
+	var st: FlightModel.FlightState = s.state
+	check(m.to_screen(st.x, st.y).distance_to(m._c) < 0.01, "you are at the centre of the radar")
+	var ahead := deg_to_rad(st.heading)
+	var p := m.to_screen(st.x + sin(ahead) * 1000.0, st.y + cos(ahead) * 1000.0)
+	check(absf(p.x - m._c.x) < 0.01 and p.y < m._c.y, "a point dead ahead is straight up the scope, whatever the heading")
+	m.north_up = true
+	m._frame()
+	var n := m.to_screen(st.x, st.y + 1000.0)
+	check(absf(n.x - m._c.x) < 0.01 and n.y < m._c.y, "north-up: north is up")
+	var z := m.range_km()
+	m.zoom(1)
+	check(m.range_km() > z, "zoom steps outward")
+	m.zoom(-9)
+	m.zoom(-1)
+	check_eq(m.zoom_i, 0, "and stops at the closest range")
+	m.toggle()
+	m._frame()
+	check(m.big and m._h == 0.0, "the chart is north-up")
+	check(m.to_screen(0.0, 0.0).distance_to(Vector2(m._chart_px(), m._chart_px()) / 2.0) < 0.5, "centred on the island")
+	m.free()
+	s.dispose()
+
+
+func test_a_click_on_the_open_chart_sets_a_waypoint_and_right_click_clears_it() -> void:
+	var s := Session.new({"seed": 7})
+	s.update(1.0 / 30)
+	var m := Minimap.new()
+	_tree().root.add_child(m)
+	m.setup(s)
+	var got := []
+	m.waypoint_picked.connect(func(p): got.append(p))
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	click.position = Vector2(10, 10)
+	m._gui_input(click)
+	check(m.waypoint == null and got.is_empty(), "the small radar does not take clicks")
+	m.toggle()
+	check_eq(m.mouse_filter, Control.MOUSE_FILTER_STOP, "the open chart does")
+	click.position = Vector2(m._chart_px(), m._chart_px()) / 2.0
+	m._gui_input(click)
+	check(m.waypoint != null and got.size() == 1, "a click on the open chart picks a place")
+	var w: Vector2 = m.waypoint
+	check(w.length() < 400.0, "the middle of the chart is the middle of the island: %s" % w)
+	var right := InputEventMouseButton.new()
+	right.button_index = MOUSE_BUTTON_RIGHT
+	right.pressed = true
+	m._gui_input(right)
+	check(m.waypoint == null and got.size() == 2 and got[1] == Vector2.INF, "right-click clears it")
+	m.free()
+	s.dispose()
+
+
+func test_the_places_panel_lists_what_is_yours_and_what_is_locked() -> void:
+	var s := Session.new({"seed": 7, "map_seed": MapCity.SEED, "features": Session.SANDBOX_FEATURES, "trade": true, "logistics": true})
+	s.update(1.0 / 30)
+	var all := Places.list(s)
+	var names := all.map(func(p): return str(p.name))
+	check(names.any(func(n): return "boss's desk" in n), "the boss's desk is on the list: %s" % [names.slice(0, 4)])
+	check(all.any(func(p): return p.kind == "casino" and p.state == "locked" and "opens in" in str(p.note)), "a place not yet open says what opens it")
+	check(all.any(func(p): return p.kind == "stash") or s.stash_net == null, "stash houses are listed when there are any")
+	var ord := Places.ordered(all)
+	check(ord[0].state == "mine", "yours come first")
+	check(ord[ord.size() - 1].state in ["locked", "open"], "and what is not open comes last")
+	var mk := Places.markers(all)
+	check(mk.all(func(p): return p.state != "locked"), "a locked place gets no marker on the chart")
+	var m := Minimap.new()
+	_tree().root.add_child(m)
+	m.setup(s)
+	m.toggle()
+	m._process(0.1)
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	click.position = Vector2(m._chart_px() + 40.0, 34.0 * m._scale() + 4.0)  # the first row
+	var got := []
+	m.waypoint_picked.connect(func(p): got.append(p))
+	m._gui_input(click)
+	check(got.size() == 1 and m.waypoint != null, "a click on a place in the panel sets the waypoint")
+	m.free()
 	s.dispose()

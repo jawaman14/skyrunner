@@ -4,6 +4,7 @@ extends SceneTree
 ## view: ground (default: parked at HAR) | air (climbing out near Eagle's Nest) |
 ##       org | law | rival (looking at that HQ) | overview (high above the island)
 ##       city (the port city from over the harbour) | estuary | farm (map-specific: the city coast)
+##       car (at the wheel, the dashboard and the radio) |
 ##       foot (on foot beside the parked aircraft, looking at the hangars) |
 ##       villa (on foot inside the org's villa, at the boss's desk) |
 ##       gun (on foot by the hangars with a rifle from the armoury) |
@@ -28,6 +29,7 @@ var street_fire := Vector2.ZERO
 
 
 func _init():
+	Terrain.natural = OS.get_environment("SR_CLASSIC") == ""  # the game's terrain; SR_CLASSIC=1 for the classic generator
 	var a := OS.get_cmdline_user_args()
 	if a.size() > 0: q = a[0]
 	if a.size() > 1: hour = float(a[1])
@@ -51,6 +53,8 @@ func _init():
 		opts.merge({"map_seed": MapCity.SEED, "features": Session.SANDBOX_FEATURES, "court": true})
 	elif view == "street":
 		opts["map_seed"] = MapCity.SEED
+	elif view == "psych":
+		opts.merge({"map_seed": MapCity.SEED, "features": Session.SANDBOX_FEATURES, "trade": true, "psychedelics": true, "logistics": true, "family": true, "payroll": true})
 	elif view in ["talk", "talk_island"]:
 		opts.merge({"map_seed": MapCity.SEED, "features": Session.SANDBOX_FEATURES, "family": true, "island": true})
 	if a.size() > 5: opts["map_seed"] = int(a[5])
@@ -131,7 +135,7 @@ func _areas(node: Node, action: String, out: Array) -> Array:
 
 func _process(_d) -> bool:  # (MainLoop: true would quit)
 	n += 1
-	if n == 2 and view in ["foot", "villa", "gun", "pack"]:
+	if n == 2 and view in ["foot", "villa", "gun", "pack", "car", "carmap"]:
 		_on_foot()
 	if fixed_cam != null:
 		app.set_process(false)  # the app would move its camera back (processing re-enables on ready)
@@ -193,6 +197,19 @@ func _process(_d) -> bool:  # (MainLoop: true would quit)
 		app.s.arsenals.org.add("rifle", 12)
 		app.s.payroll.ai["org"] = false
 		app.open_talk("buyers")
+	if n == 30 and view == "carmap":
+		app._map_toggle()
+		app._waypoint_picked(Vector2(app.car.game_xy().x + 3000.0, app.car.game_xy().y + 1500.0))
+	if n == 6 and view in ["car", "carmap"]:  # in the car, on the move, the radio on
+		app.walker.place(app.car.global_position.x + 3.0, -app.car.global_position.z, 0.0)
+		app._enter_car()
+		app.radio.power(true)
+	if n in range(8, 60) and view in ["car", "carmap"] and app.driving != null:
+		app.driving._drive(1.0, 0.25 if n > 40 else 0.0, false, 1.0 / 30.0)
+	if n == 3 and view == "psych":
+		app.open_talk("psych")
+	if n in [6, 7, 8] and view == "psych" and app.talk != null:
+		app.talk.advance()
 	if n in [6, 7] and view == "buyers" and app.talk != null:
 		app.talk.advance()
 	if n == 3 and view == "controls":

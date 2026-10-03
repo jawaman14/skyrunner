@@ -188,7 +188,7 @@ Beyond the prototype:
   - gunfire at the fights and from your own gun;
   - police rotors, sirens and outboards;
   - surf, rain and thunder;
-  - Radio Costa 88, an 80s synth station (F7).
+  - One radio for the cockpit (F7, `,` `.`) and the car (R, `,` `.`): real 1979-86 broadcasts; the car's dashboard shows the station and what is playing.
 
   The UI clicks are Kenney's (CC0). Samples are in `docs/audio/`.
 - **Your own controls (F8).**
