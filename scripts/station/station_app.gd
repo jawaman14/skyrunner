@@ -223,8 +223,10 @@ func _hints() -> Array:
 			out = [["UP/DOWN", "tip", "down"], ["V", "verify (45 s)", "v"], ["F", "forward to dispatch", "f"], ["X", "bin it", "x"]]
 		Roles.UNDERCOVER:
 			out = [["P", "plant the beacon", "p"]]
+		Roles.MECHANIC:
+			out = [["UP/DOWN", "part", "down"], ["ENTER", "repair it", "enter"], ["B", "both", "b"], ["S", "stop the work", "s"], ["I", "inspect", "i"], ["F", "fuel +10%", "f"]]
 		Roles.FIXER:
-			out = [["UP/DOWN", "job", "down"], ["ENTER", "take / drop it", "enter"], ["W", "the hiring hall", "w"], ["C", "the Family", "c"], ["L", "the lawyer", "l"],
+			out = [["X", "the casino", "x"], ["UP/DOWN", "job", "down"], ["ENTER", "take / drop it", "enter"], ["W", "the hiring hall", "w"], ["C", "the Family", "c"], ["L", "the lawyer", "l"],
 				["M", "the buyers", "m"], ["K", "logistics", "k"], ["G", "scanner", "g"], ["H", "radar detector", "h"], ["S", "spotter here", "s"], ["F", "ferry tank", "f"]]
 		Roles.BOAT:
 			out = [["RIGHT-CLICK", "send the go-fast there", ""]]
@@ -375,6 +377,8 @@ func _key(k: String) -> void:
 			_law_key(k, snap)
 		Roles.FIXER:
 			_fixer_key(k, snap)
+		Roles.MECHANIC:
+			_mechanic_key(k, snap)
 		Roles.SPOTTER:
 			if k in ["up", "down"]:
 				GameMenu.list_move(list, 1 if k == "down" else -1)
@@ -455,6 +459,13 @@ func open_talk(name: String, title := "start") -> TalkBalloon:
 func _island_key(k: String, snap: Dictionary) -> bool:
 	if snap.get("island", {}).is_empty():
 		return false
+	if not snap.get("casino", {}).is_empty():
+		if k == "x" and role in [Roles.BOSS, Roles.LIEUTENANT, Roles.COPILOT, Roles.FIXER]:
+			open_talk("casino")  # the Hotel Cielo: Lenny Vance on the line
+			return true
+		if k == "f" and role in [Roles.CONTROLLER, Roles.CHIEF]:
+			open_talk("casino_file")  # the task force's file on the house
+			return true
 	if role == Roles.LIEUTENANT and k in ["u", "i", "g"]:
 		if k == "g":
 			open_talk("general")  # the General's aide on the island frequency
@@ -911,6 +922,8 @@ func _process(delta: float) -> void:
 				_draw_analyst(snap)
 			Roles.UNDERCOVER:
 				_draw_undercover(snap)
+			Roles.MECHANIC:
+				_draw_mechanic(snap)
 			Roles.FIXER:
 				_draw_fixer(snap)
 			_:
@@ -1060,6 +1073,55 @@ func _fixer_key(k: String, snap: Dictionary) -> void:
 			_cmd("buy_gear", {"name": "ferry_tank"})
 		"s":
 			_cmd("hire_spotter", {})
+
+
+## The mechanic's desk: the engine and the airframe in real numbers, what the work costs here, and the repair under way.
+func _draw_mechanic(snap: Dictionary) -> void:
+	var a: Dictionary = snap.get("airframe", {})
+	var ac = snap.get("aircraft")
+	title.text = "MECHANIC"
+	if a.is_empty():
+		subtitle.text = "no wear in this game"
+		_set_list("none", [], [])
+		info.text = "This game has no engine or airframe wear: nothing to repair."
+		return
+	subtitle.text = "$%s   -   %s%s" % [Py.money(int(snap.get("money", 0))), str(ac.location).to_upper() if ac is Dictionary and ac.get("location") else "in the air",
+		"   -   WORK UNDER WAY" if a.working else ""]
+	_runner_tiles(ac, snap)
+	_set_list("mechanic", ["engine", "airframe"], [
+		["Engine", "%.1f%%" % float(a.engine_pts), str(a.engine), "$%d a point" % int(a.engine_price)],
+		["Airframe", "%.1f%%" % float(a.airframe_pts), str(a.airframe), "$%d a point" % int(a.airframe_price)]],
+		{0: UIStyle.RED if a.engine in ["poor", "failing"] else UIStyle.WHITE, 1: UIStyle.RED if a.airframe in ["poor", "failing"] else UIStyle.WHITE},
+		[{"title": "Part", "min": 100}, {"title": "Condition", "align": "right", "mono": true, "min": 100}, {"title": "Looks", "min": 90}, {"title": "Parts", "expand": true}])
+	var lines := ["Here: %s, %d points a minute%s." % [str(a.place) if str(a.place) != "" else "no strip", int(a.rate), " (you work fast, and cheap)" if a.mechanic else ""]]
+	lines.append("Power %d%%.  The engine quits %.1f%% a minute.  The gear takes %d%% of its limit." % [int(round(float(a.power) * 100.0)), float(a.fail_pct_min), int(round(float(a.gear_factor) * 100.0))])
+	if a.out:
+		lines.append("THE ENGINE IS OUT.")
+	lines.append("%d failures so far; $%s spent on parts." % [int(a.failures), Py.money(int(a.spent))])
+	var top: Array = snap.get("messages", []).slice(-4).map(func(m): return "  " + str(m))
+	top.reverse()
+	info.text = "
+".join(["RADIO"] + top + [""] + lines)
+	detail.text = "The aircraft can't fly while the work is running. The pilot sees only good / worn / poor; you see the numbers."
+
+
+func _mechanic_key(k: String, snap: Dictionary) -> void:
+	var i := GameMenu.selected(list)
+	match k:
+		"up", "down":
+			GameMenu.list_move(list, 1 if k == "down" else -1)
+		"enter":
+			if i >= 0 and i < _list_keys.size():
+				_cmd("service", {"part": _list_keys[i]})
+		"b":
+			_cmd("service", {"part": "both"})
+		"s":
+			_cmd("stop_work")
+		"i":
+			_cmd("inspect")
+		"f":
+			var lo: Dictionary = snap.get("loadout", {})
+			_cmd("set_fuel", {"lb": float(lo.get("fuel", 0)) + 0.1 * float(lo.get("fuel_cap", 0))})
 
 
 ## The agent's desk: where the aircraft is parked, the odds, the cover, and the beacon.

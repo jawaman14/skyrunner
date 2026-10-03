@@ -87,10 +87,12 @@ func _rules(dt: float, s: FlightModel.FlightState) -> void:
 		lg.last_touchdown_fpm = fpm
 		lg.max_touchdown_fpm = maxf(lg.max_touchdown_fpm, fpm)
 		var limit := spec.gear_limit_fpm * (0.75 if loadout.compute(null, false).overweight_lb > 0 else 1.0) \
-			* (1.5 if upgrades["runner"].has("heavy_gear") else 1.0)
+			* (1.5 if upgrades["runner"].has("heavy_gear") else 1.0) * (airframe.gear_factor() if airframe != null else 1.0)
 		if fpm > limit * GEAR_MARGIN:
 			_crash("Gear collapsed on a %s fpm touchdown" % Py.f(fpm, 0))
 			return
+		if airframe != null and lg.airborne:
+			airframe.touchdown(fpm, limit, af_here)
 		if lg.airborne:
 			say("Touchdown %s fpm" % Py.f(fpm, 0) + (" - butter!" if fpm < 150 else (" - hard landing!" if fpm > limit else "")))
 

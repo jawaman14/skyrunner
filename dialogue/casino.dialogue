@@ -1,0 +1,95 @@
+# The Hotel Cielo, Isla Soberana: the Family's casino, as Havana had them in the 1950s. Its manager, Lenny Vance, takes the
+# calls. (Fiction: nobody here is a real person.)
+#
+# Reads and acts through Talk.State: {{cs_*}} fields and buy_stake(), collect(), launder(), pay_general(), buy_out(), evacuate().
+
+~ start
+if not casino
+	Radio: No answer at the Cielo. Perhaps there is nothing to ring.
+	=> END
+if cs_status == "seized"
+	=> seized
+if cs_status == "uprising"
+	=> uprising
+=> greet
+
+~ greet
+if cs_trading
+	{{manager}}: [[Hotel Cielo, Lenny Vance. The house is full tonight.|Lenny. You've caught me between a headliner and a high roller.|Vance. What can the Cielo do for a friend of the Family?]]
+else
+	{{manager}}: The house is dark for now. {{cs_dark_note}}
+=> talk
+
+~ talk
+- Buy a tenth of the house. ({{money_s(cs_stake_price)}}, you hold {{cs_stake_pct}}%) [if cs_can_buy]
+	do buy_stake()
+	if result != ""
+		{{manager}}: {{result}}
+	else
+		{{manager}}: Mr. Moretti will be pleased. You hold {{cs_stake_pct}}% of the Cielo now.
+	=> talk
+- Collect your share. ({{money_s(cs_owed)}} in the account) [if cs_owed > 0]
+	do collect()
+	if result != ""
+		{{manager}}: {{result}}
+	else
+		{{manager}}: A cheque, drawn on a bank that does not exist. Cash it quickly.
+	=> talk
+- Put street cash through the cage. ({{cs_cash_line}}) [if cs_has_cash]
+	do launder()
+	if result != ""
+		{{manager}}: {{result}}
+	else
+		{{manager}}: Chips in, cheque out. Nobody counts chips twice. {{cs_launder_line}}
+	=> talk
+- Pay the General's aide. ({{money_s(cs_general_payoff)}})
+	do pay_general()
+	if result != ""
+		{{manager}}: {{result}}
+	else
+		{{manager}}: Envelopes keep an island calm. For a while.
+	=> talk
+- Buy out {{cs_rival_name}}. ({{money_s(cs_rival_buyout)}}) [if cs_rival > 30 and not cs_bought_out]
+	do buy_out()
+	if result != ""
+		{{manager}}: {{result}}
+	else
+		{{manager}}: Varga took the money and the first boat. The tables are ours.
+	=> talk
+- "How is the house doing?"
+	=> word
+- That's all.
+	{{manager}}: [[Come and see the show.|The Cielo never closes.|Mind the General's people on the way out.]]
+	=> END
+
+~ word
+{{manager}}: The house takes about {{money_s(cs_gross_hour)}} an hour on a good night. The General's people skim {{cs_skim_pct}}%, the Family {{cs_family_pct}}%; your share is {{money_s(cs_share_hour)}} an hour.
+if cs_act != ""
+	{{manager}}: And {{cs_act}} on the bill: the tourists are in.
+if cs_rival > 60
+	{{manager}}: {{cs_rival_name}} is leaning on us. Varga's boys were in the kitchens again yesterday.
+if cs_heat > 60
+	{{manager}}: The gaming commission has been asking about the cage. I would go easy on it for a few days.
+if cs_unrest > 70
+	{{manager}}: (lower) The cabbies say there are men in the hills. The old general's days are numbered, and so are ours if we stay.
+elif cs_unrest > 40
+	{{manager}}: The bellhops have started reading newspapers in the lobby. That is never good.
+=> talk
+
+~ uprising
+{{manager}}: (shouting over gunfire) They are in the street! The government is gone! There is a launch at the harbour, {{cs_uprising_min}} minutes, and then nothing!
+- Get out on the launch. ({{money_s(cs_evac_total)}} comes with you)
+	do evacuate()
+	if result != ""
+		{{manager}}: {{result}}
+	else
+		{{manager}}: Go. Go! Viva... whatever they are shouting now.
+	=> END
+- Stay and hold the house.
+	{{manager}}: (a crash) Then God help you. Nobody is coming.
+	=> END
+
+~ seized
+{{manager}}: [[(a stranger's voice) The Hotel Cielo is the property of the People.|(static) The casino has been nationalised.]]
+Radio: Nothing more from the island.
+=> END

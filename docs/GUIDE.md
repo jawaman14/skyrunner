@@ -50,14 +50,14 @@ Run the game with no arguments and the **lobby** opens. It sets the same things 
 | **Tutorial (Palmetto Cay)** | The original four-chapter campaign on the classic island: mail runs, a favour for Manny, airdrops, the long legs. |
 | **Co-op: friends crew for you** | You host; friends take the co-pilot, spotter, boat, boss, lieutenant or fixer seats. |
 | **Versus** | Humans on both sides; the AI fills the empty seats. |
-| **Unlocks: Story / Open** | *Story* (the default): eight chapters, 1979 to 1986, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
+| **Unlocks: Story / Open** | *Story* (the default): nine chapters, 1979 to 1986, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
 | **Map** | Costa Brava, the city coast (default); the classic island; or a generated island by number. |
 | **Tutorial box** | Lessons that finish when you do the thing, and tips when something new happens. |
 | **Multiplayer** | Host a game with a waiting room, or look for games on your network (also **F4** in game). |
 
 **The story, in brief.** *Square Grouper* (1979, grass and stash houses) → *The Connection* (1980, logistics; the
 Colombians call) → *Cocaine Cowboys* (1981, cocaine, Los Cuervos, the street war) → *Family Business* (1982, the
-Morettis) → *The Task Force* (1983, the federal court) → *Isla Soberana* (1984, the island) → *The Company* (1985, the
+Morettis) → *The Task Force* (1983, the federal court) → *Isla Soberana* (1984, the island) → *The House* (1984, the Family's casino) → *The Company* (1985, the
 Agency) → *Kingpin* (1986). A chapter's goals are measured by the systems themselves (pounds landed, dealers on corners,
 cash home). A faction already gone before you meet it does not strand a chapter.
 
@@ -70,7 +70,7 @@ jobs in flight are not kept.
 
 ## 3. The roles (seats)
 
-There are fourteen seats. Each is an AI until a human takes it. In the waiting room and in the seat list you see who holds
+There are fifteen seats. Each is an AI until a human takes it. In the waiting room and in the seat list you see who holds
 what; leave a seat and the AI takes it back (a dropped connection holds the seat for 30 seconds).
 
 ### The organisation
@@ -83,6 +83,7 @@ what; leave a seat and the AI takes it back (a dropped connection holds the seat
 | **Boat captain** | The go-fast: waits at the rendezvous, picks bales out of the water, runs for the cove | The surface picture around the boat | 2D desk: right-click the map to send it |
 | **Boss** | The organisation's HQ: nightly orders (fronts, laundering, bribes, crews, routes, gear), the season's books | The HQ board; with a ground war, the squads (Q) | 2D desk |
 | **Lieutenant** | The soldiers on the streets: raise squads, give orders, hold the corners; also the Family, the island, the hiring hall, logistics | The squad map, the armoury, who holds each market | 2D desk |
+| **Mechanic** | Keeps the aircraft flying: repairs in the field (quicker and cheaper than a hangar), reads the engine and airframe in real numbers, haggles for the farmer's fuel | The true condition, the cost of the work, the repair under way | 2D desk |
 | **Fixer** | The business between flights: books and drops jobs, buys gear, hires spotters and crew, sees the Family, the lawyer and the buyers, watches the heat and the money | The job board, the payroll, the pilot's case, the street | 2D desk |
 
 ### The task force
@@ -103,7 +104,7 @@ every tip at once; nobody plants beacons (the law upgrade *undercover* still lea
 boss or chief the AI steps back from that HQ; with a human lieutenant or patrol commander, the AI stops commanding that
 side's squads.
 
-**Which modes have which seats.** Solo: pilot. Co-op: pilot, co-pilot, spotter, boat, boss, lieutenant, fixer. Police (the
+**Which modes have which seats.** Solo: pilot. Co-op: pilot, co-pilot, spotter, boat, boss, lieutenant, fixer, mechanic. Police (the
 task-force desk against AI runners): controller, police pilot, cutter, chief, patrol, analyst, undercover. Versus: all of
 them. The Tutorial campaign: pilot, co-pilot, spotter, boat.
 
@@ -230,6 +231,8 @@ street trade is on), **D** decoys, **R** route. **Q** swaps the orders for the s
 elsewhere: patrol / hold the street); **Tab** next squad; **A** ambush here, **M** melt away, **H** hold, **D** disband;
 **F / V / K** raise a foot squad / a car / a truck. Also **C** the Family, **G** the General's aide, **U / I** mules /
 container, **L** the pilot's lawyer, **W** the hiring hall, **K** logistics.
+
+**Mechanic.** ↑ ↓ choose the part (engine, airframe), **Enter** repairs it, **B** both, **S** stops the work, **I** inspects (says the real numbers aloud), **F** adds 10 % fuel.
 
 **Fixer.** ↑ ↓ choose a job, **Enter** takes or drops it; **W** the hiring hall, **C** the Family (with **Y / N / P**), **L** the
 lawyer, **M** the buyers, **K** logistics; **G** scanner, **H** radar detector, **F** ferry tank, **S** a spotter at this strip.
@@ -407,6 +410,14 @@ handlers, forged papers and false bottoms against dogs, profiling, X-ray, crackd
 line; the General sells passage past his MiGs until a purge closes the island. His aide meets you on the ramp, or on the radio
 (Shift+G).
 
+### 5.13b The Hotel Cielo (DESIGN 40)
+
+The Family's casino on Isla Soberana: a stake in the house (tenths, up to 40 %), the cage (street cash in, clean cheques out, for a
+fee, and it cools your case), the General's skim and favours, a rival casino, the task force's wiretaps, audits and raids, and
+in the end a revolution you have twenty minutes to get out of. Ring Lenny Vance with **Shift+K** in the cockpit, **X** at the boss's,
+lieutenant's, co-pilot's and fixer's desks, or from the phone. The controller and the chief press **F** for the casino file. It is
+the story's chapter *The House* (1984).
+
 ### 5.14 The court (DESIGN 16)
 
 A bust is a federal case. **Charges** (possession, trafficking, firearms, conspiracy). **The bail hearing**: post it all, buy
@@ -457,6 +468,16 @@ the same route without a truce; they are tit-for-tat, grudge-holders or opportun
   your cover and you lie low for ten minutes; at zero cover you are blown for twenty. A runner's bug sweep may find the beacon.
   (DESIGN 35)
 - **Fixer** (organisation). A desk over the pilot's business commands without the flying ones. (DESIGN 36)
+- **Mechanic** (organisation). See 5.17b. (DESIGN 39)
+
+### 5.17b Wear and repairs (DESIGN 39)
+
+Each aircraft has an **engine** and an **airframe** condition. The engine wears with flying hours; the airframe with hard
+landings, rough strips and storms. A tired engine runs rough (less power, ENGINE ROUGH on the HUD) and below 30 may quit in the
+air for 90 seconds; a worn airframe weakens the gear so a softer landing collapses it. You see good / worn / poor; the mechanic
+sees the numbers. **Repairs** run on the ground, take time and cost money by the point: a hangar is quick, a bush strip slow and
+dear, a mechanic quick and cheap anywhere. The aircraft cannot fly while the work runs. Start it from the hangar (**H**, the
+service row) or the fixer's desk; a bot's ground crew does it for you.
 
 ### 5.18 Nerves and stress
 

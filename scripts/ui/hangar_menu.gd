@@ -47,6 +47,8 @@ func _rows() -> Array:
 		out.append(["spotter", s.location])
 	if s.features.has("copilot"):
 		out.append(["copilot", null])
+	if s.airframe != null:
+		out.append(["service", null])
 	return out
 
 
@@ -85,6 +87,13 @@ func refresh() -> void:
 				var watching := ", ".join(s.spotters.map(func(sp): return sp.code))
 				list.add_row(["CREW", "Spotter at %s" % s.location, "watching: %s" % (watching if watching else "none"),
 					"$%d" % Session.SPOTTER_FEE])
+			"service":
+				var af: Airframe = s.airframe
+				var cost := int(round((100.0 - af.engine()) * af.price("engine") + (100.0 - af.airframe()) * af.price("airframe")))
+				list.add_row(["SERVICE", "Engine %s  -  airframe %s" % [Airframe.band_of(af.engine()), Airframe.band_of(af.airframe())],
+					("work under way" if not af.work.is_empty() else "%d points a minute here (%s)" % [int(af.terms()[0]), af.place() if af.place() != "" else "no strip"]),
+					"STOP" if not af.work.is_empty() else ("$" + Py.money(cost) if cost > 0 else "as new")],
+					{"cell_colors": {3: UIStyle.CYAN if not af.work.is_empty() else UIStyle.WHITE}})
 			"copilot":
 				var who: String = {"human": "human (online)", "ai": "Rosa (AI)"}.get(s.copilot, "none")
 				list.add_row(["CREW", "Co-pilot: " + who, "loads 2x faster, kicks bales, pumps ferry fuel",
@@ -110,6 +119,8 @@ func _detail() -> void:
 			detail.text = "ENTER toggles the AI co-pilot. A human co-pilot joins from the lobby (station or --seat3d)."
 		"spotter":
 			detail.text = "A spotter radios when police aircraft or cars come near this strip."
+		"service":
+			detail.text = "ENTER starts the work on both (it takes time, and the aircraft cannot fly meanwhile); ENTER again stops it. A hangar is quicker than a bush strip; a mechanic is quicker and cheaper than either."
 
 
 func key(k: String) -> void:
@@ -143,6 +154,9 @@ func key(k: String) -> void:
 					err = s.buy_gear(r[1])
 				"spotter":
 					err = s.hire_spotter(r[1])
+				"service":
+					var res: Array = s.command(Roles.PILOT, "stop_work" if not s.airframe.work.is_empty() else "service", {"part": "both"})
+					err = null if res[0] else res[1]
 				"copilot":
 					if s.copilot == "human":
 						err = "Your co-pilot is a real person - ask them."
