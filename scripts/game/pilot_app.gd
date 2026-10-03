@@ -179,7 +179,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu], ["dealer", DealerMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
@@ -517,6 +517,7 @@ var _was_on_island := false
 var _court_stage := ""
 var _casino_node: Node3D = null  ## the Hotel Cielo's building, once found (it exists only on the island)
 var _casino_looked := false
+var _dealer_rev := 0  ## Dealership.rev when the car was last built
 var _casino_open := -1  ## 1 lit, 0 dark, -1 not yet set
 
 
@@ -769,6 +770,8 @@ func _phone_call(action: String) -> void:
 			_open("taxi")
 		"rackets":
 			_open("rackets")
+		"dealer":
+			_open("dealer")
 		"track":
 			_open("track")
 		_:
@@ -800,6 +803,20 @@ func _sit_casino(game: String) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if walker != null:
 		walker.look_enabled = false
+
+
+## A new active car from the dealership: the one parked by the aircraft becomes it (not while it is being driven).
+func _dealer_sync() -> void:
+	if s.dealer == null or car == null or s.dealer.rev == _dealer_rev or driving != null:
+		return
+	_dealer_rev = s.dealer.rev
+	var at := car.game_xy()
+	var hd := car.heading_deg()
+	car.queue_free()
+	car = Car.new().setup(s.world, "org")
+	car.apply_spec(s.dealer.drive_spec())
+	add_child(car)
+	car.place(at.x, at.y, hd)
 
 
 ## The Hotel Cielo's lights follow the house: lit while it trades, dark and boarded when it is shut, seized or burning.
@@ -913,6 +930,9 @@ func _ensure_car(st: FlightModel.FlightState) -> void:
 	if car != null:
 		return
 	car = Car.new().setup(s.world, "org")
+	if s.dealer != null:
+		car.apply_spec(s.dealer.drive_spec())
+		_dealer_rev = s.dealer.rev
 	add_child(car)
 	radio = CarRadio.new().setup(self)
 	add_child(radio)
@@ -1030,6 +1050,11 @@ func _on_use(action: String, area: Area3D) -> void:
 			_open({"jobs": "j", "load": "l", "hangar": "h"}[action])
 		"casino_roulette", "casino_blackjack", "casino_craps", "casino_baccarat", "casino_slots":
 			_sit_casino(action.trim_prefix("casino_"))
+		"dealer":
+			if s.dealer == null:
+				s.say("The showroom is closed: the dealership is not open in this game yet.")
+			else:
+				_open("dealer")
 		"casino_cage", "casino_office":
 			_talk_standing("casino")
 		"hq_org":
@@ -1125,6 +1150,7 @@ func _process(delta: float) -> void:
 		if _frame % 15 == 0:
 			_talk_cues()
 			_casino_state()
+			_dealer_sync()
 		if server != null:
 			server.publish(s)
 	if _weather_rev != s.weather_rev:

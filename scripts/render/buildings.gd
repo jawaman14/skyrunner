@@ -124,6 +124,24 @@ class Kit:
 			n.add_child(sb)
 		return Transform3D(Basis(Vector3.UP, deg_to_rad(yaw)), at) * b  # where it stands, in the building's frame
 
+	## A car from Kenney's Car Kit on display at `at` (wheels on y), turned `yaw` degrees, `length` metres long. Solid, as a box.
+	func vehicle(file: String, length: float, at: Vector3, yaw := 0.0) -> void:
+		var n := ModelLib.vehicle(file, length)
+		if n == null:
+			return
+		n.position = at
+		n.rotation.y = deg_to_rad(yaw)
+		root.add_child(n)
+		var sb := StaticBody3D.new()
+		var cs := CollisionShape3D.new()
+		var bs := BoxShape3D.new()
+		bs.size = Vector3(2.0, 1.4, length * 0.9)
+		cs.shape = bs
+		sb.add_child(cs)
+		sb.position = at + Vector3(0, 0.7, 0)
+		sb.rotation.y = deg_to_rad(yaw)
+		root.add_child(sb)
+
 	## Axis-aligned box (centre, size) in the building's frame.
 	func box(c: Vector3, s: Vector3, key: String, collide := true) -> void:
 		var h := s / 2
@@ -299,6 +317,26 @@ static func _windows(k: Kit, x0: float, x1: float, z: float, y: float, n: int, f
 		k.box(Vector3(x, y, z + facing * 0.02), Vector3(1.1, 1.2, 0.08), "window_lit", false)
 
 
+## The car dealership: a glass-fronted showroom with an office desk (E: the dealership menu) and the lot's cars out front.
+static func showroom(k: Kit, c: Vector3, w := 14.0, d := 9.0) -> void:
+	k.box(c + Vector3(0, 0.05, -d / 2 - 4.5), Vector3(w + 6, 0.1, d + 9), "concrete", false)  # the lot
+	k.wall(c.x - w / 2, c.z + d / 2, c.x + w / 2, c.z + d / 2, 0, 4.0, 0.3, "white")  # back wall
+	k.wall(c.x - w / 2, c.z - d / 2, c.x - w / 2, c.z + d / 2, 0, 4.0, 0.3, "white")
+	k.wall(c.x + w / 2, c.z - d / 2, c.x + w / 2, c.z + d / 2, 0, 4.0, 0.3, "white")
+	k.box(c + Vector3(0, 4.15, 0), Vector3(w + 0.8, 0.3, d + 0.8), "concrete_dark")  # roof
+	k.box(c + Vector3(0, 0.45, -d / 2), Vector3(w, 0.9, 0.3), "white")  # the sill
+	k.box(c + Vector3(0, 2.4, -d / 2), Vector3(w - 0.6, 2.7, 0.1), "glass")  # the show window
+	k.box(c + Vector3(0, 3.6, -d / 2 - 0.25), Vector3(w * 0.7, 0.9, 0.1), "neon", false)  # the sign board
+	k.box(c + Vector3(w / 2 - 2.0, 0.55, d / 2 - 1.6), Vector3(2.6, 1.1, 1.0), "wood")  # the desk
+	k.prop("chairDesk", c + Vector3(w / 2 - 2.0, 0, d / 2 - 2.8), 0.0)
+	k.interact(c + Vector3(w / 2 - 2.0, 1.0, d / 2 - 3.2), "dealer", "The dealership: cars to drive, trucks for the stash runs", 2.6)
+	k.lamp(c + Vector3(0, 3.4, 0), 1.6, 12.0)
+	k.vehicle("sedan-sports", 4.5, c + Vector3(-4.0, 0, -d / 2 - 4.0), 20.0)
+	k.vehicle("suv-luxury", 5.0, c + Vector3(1.0, 0, -d / 2 - 6.0), -15.0)
+	k.vehicle("van", 5.2, c + Vector3(5.5, 0, -d / 2 - 4.0), 10.0)
+	k.vehicle("delivery", 6.0, c + Vector3(-4.0, 0, -d / 2 - 11.0), 90.0)
+
+
 static func hangar(k: Kit, c: Vector3, w := 18.0, d := 20.0, with_board := true) -> void:
 	k.box(c + Vector3(0, -0.1, 0), Vector3(w + 2, 0.2, d + 2), "concrete")  # floor pad
 	k.wall(c.x - w / 2, c.z + d / 2, c.x + w / 2, c.z + d / 2, c.y, w / 2, 0.3, "metal")  # back wall
@@ -375,11 +413,13 @@ static func airfield_site(world: World, af: Airfield) -> Node3D:
 			hangar(k, Vector3(-38, 0, 14), 22, 24)
 			hangar(k, Vector3(-64, 0, 14), 22, 24, false)
 			fuel_pump(k, Vector3(14, 0, -6))
+			showroom(k, Vector3(64, 0, 14))
 		"regional":
 			terminal(k, Vector3(0, 0, 14), 20, 10)
 			tower(k, Vector3(20, 0, 14), 10)
 			hangar(k, Vector3(-26, 0, 12), 18, 20)
 			fuel_pump(k, Vector3(10, 0, -6))
+			showroom(k, Vector3(42, 0, 12))
 		"bush":
 			shed(k, Vector3(0, 0, 8), 7, 5, "wood")
 			drums(k, Vector3(7, 0, 4))

@@ -34,6 +34,7 @@ const ISLAND := ["relations", "passage_until", "status", "status_until", "price_
 const ISLAND_INTS := ["n", "cost", "value", "mules"]
 const CASINO := ["status", "stake", "owed", "heat", "case_", "unrest", "rival", "bought_out_until", "closed_until", "audit_until", "uprising_until", "act",
 	"act_until", "cage_log", "laundered", "fees", "collected", "last", "force_uprising_at", "_t", "_evt_t", "_law_t"]
+const DEALER := ["owned", "active", "spent", "auto", "rev", "_serial", "_insured", "_auto_t"]
 const AGENCY := ["trust", "exposure", "protected_until", "quashed", "flights", "burned", "pay_mult", "offer_chance", "_gift_t", "_t",
 	"stings", "hung_out", "withheld", "last_read", "_game_t", "war_chest", "coke_lots", "gun_lots", "pipe_last", "_pipe_t", "_pipe_pause",
 	"next_market"]
@@ -109,6 +110,8 @@ static func _capture_world(s: Session, d: Dictionary) -> void:
 		d["island"] = SaveVars.capture(s.island, ISLAND)
 	if s.casino != null:
 		d["casino"] = SaveVars.capture(s.casino, CASINO)
+	if s.dealer != null:
+		d["dealer"] = SaveVars.capture(s.dealer, DEALER)
 	if s.agency != null:
 		d["agency"] = SaveVars.capture(s.agency, AGENCY)
 	if s.chronicle != null:
@@ -298,6 +301,11 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 			SaveVars.restore(s.econ.market, d.market, MARKET)
 	if s.island != null and d.get("island") is Dictionary:
 		SaveVars.restore(s.island, d.island, ISLAND, ISLAND_INTS)
+	if d.get("dealer") is Dictionary:
+		s.enable_system("dealership")
+		if s.dealer != null:
+			SaveVars.restore(s.dealer, d.dealer, DEALER)
+			s.dealer.apply()
 	if s.casino != null and d.get("casino") is Dictionary:
 		SaveVars.restore(s.casino, d.casino, CASINO)
 	if s.agency != null and d.get("agency") is Dictionary:

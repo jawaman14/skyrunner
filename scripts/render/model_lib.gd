@@ -147,6 +147,12 @@ static func car(faction: String, kind: String) -> Node3D:
 	return wrapped(path, fit_scale(path, CAR_LEN[k]))
 
 
+## Any car of Kenney's Car Kit by file name (the dealership's), `length` metres bumper to bumper, facing -Z.
+static func vehicle(file: String, length: float) -> Node3D:
+	var path := "cars/" + file
+	return wrapped(path, fit_scale(path, length))
+
+
 ## A boat, `kind` gofast | cutter, facing -Z, waterline near 0.
 static func boat(kind: String) -> Node3D:
 	var b: Array = BOATS.get(kind, BOATS.gofast)

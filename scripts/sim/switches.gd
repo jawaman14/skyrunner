@@ -23,7 +23,7 @@ const OPT_IN := [
 	"Rackets.ENABLED", "Renown.ENABLED", "StashWorks.ENABLED", "CityDress.ENABLED", "ModelLib.ENABLED",
 	"Scenery.ENABLED", "GroundWar.ENGAGEMENT", "GroundWar.SMART_ROUTES", "GroundWar.VETERANS",
 	"Logistics.ROUNDS", "Tactical.PYTHON", "RadioNet.REALISM", "Analyst.ENABLED", "Casino.ENABLED", "Casino.REVOLUTION", "Airframe.ENABLED", "Undercover.ENABLED", "PortDress.ENABLED", "DowntownDress.ENABLED",
-	"CasinoBuilding.ENABLED",
+	"CasinoBuilding.ENABLED", "Dealership.ENABLED",
 ]
 
 

@@ -122,6 +122,9 @@ class Truck:
 		return [lerpf(x0, x1, f), lerpf(y0, y1, f)]
 
 
+var haul_ms := TRUCK_MS  ## the trucks' speed: the fleet's best (Dealership), else TRUCK_MS
+var risk_mult := 1.0  ## ... what the fleet's cover leaves of the roadblock odds
+var armour := 0.0  ## ... and the chance a truck drives through the roadblock that would have seized it
 var stashes: Array = []  ## map dictionaries plus state: heat, burned
 var trucks: Array = []
 var rng: PyRandom
@@ -193,12 +196,12 @@ func dispatch(job: Jobs.Job, af: Airfield, now: float, pay: int, risk := 0.0) ->
 	t.x1 = st.x
 	t.y1 = st.y
 	t.t0 = now
-	t.dur = TRUCK_LOAD_S + PyMath.hypot(st.x - af.x, st.y - af.y) * 1.3 / TRUCK_MS  # roads wind: 1.3x the crow's line
+	t.dur = TRUCK_LOAD_S + PyMath.hypot(st.x - af.x, st.y - af.y) * 1.3 / haul_ms  # roads wind: 1.3x the crow's line
 	t.pay = pay
 	t.items = job.items.size()
 	t.weapons = job.weapons
 	t.gun_mode = job.gun_mode
-	var p := clampf(0.04 + float(st.heat) / 300.0 + risk, 0.0, 0.85)
+	var p := clampf((0.04 + float(st.heat) / 300.0 + risk) * risk_mult, 0.0, 0.85)
 	if st.burned:
 		p = 1.0
 	if rng.random() < p:
@@ -226,6 +229,10 @@ func update(dt: float, now: float, police_units: Array) -> Array:
 		var why := ""
 		if t.stop_at >= 0 and t.frac(now) >= t.stop_at:
 			why = "a roadblock"
+			if armour > 0.0 and rng.random() < armour:  # a steel truck drives through it (Dealership)
+				t.stop_at = -1.0
+				get_stash(t.stash).heat += HEAT_SEIZED * 0.5
+				why = ""
 		for u in police_units:
 			if u.state != "crashed" and u.z < 900 and PyMath.hypot(u.x - p[0], u.y - p[1]) < STOP_RANGE_M:
 				why = "police %s overhead" % u.kind
