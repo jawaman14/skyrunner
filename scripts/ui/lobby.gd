@@ -6,6 +6,7 @@ extends Control
 ## presses, and the key caps at the bottom say so.
 
 signal start(opts: Dictionary)
+signal multiplayer_requested  ## the Multiplayer button: games on the network, the table, voice settings
 
 var mode_ob: OptionButton
 var unlocks_ob: OptionButton
@@ -130,6 +131,10 @@ func _ready() -> void:
 	v.add_child(go_btn)
 	v.add_child(HSeparator.new())
 	v.add_child(UIStyle.caption("Join a game"))
+	var mp := Button.new()
+	mp.text = "Multiplayer: games on my network, voice settings"
+	mp.pressed.connect(func(): multiplayer_requested.emit())
+	v.add_child(mp)
 	var j := HBoxContainer.new()
 	addr = LineEdit.new()
 	addr.placeholder_text = "host:47800"

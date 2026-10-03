@@ -58,4 +58,6 @@ func set_muted(id: String, on: bool) -> void:
 
 ## What the key is called on the screen.
 func key_name() -> String:
+	if ptt_key == KEY_QUOTELEFT:
+		return "` (the key under ESC)"
 	return OS.get_keycode_string(ptt_key)
