@@ -13,10 +13,12 @@ func _init() -> void:
 		if f.ends_with(".bin"):
 			DirAccess.remove_absolute(dir.path_join(f))
 	Terrain.bake_to = dir
-	for map_seed in [MapCity.SEED, 0]:
-		World.use_map(map_seed)
-		World.new()
-		print("baked map ", map_seed)
+	for natural in [false, true]:  # both variants: the classic one the tests and balance sims use, the one the game plays
+		Terrain.natural = natural
+		for map_seed in [MapCity.SEED, 0]:
+			World.use_map(map_seed)
+			World.new()
+			print("baked map ", map_seed, " natural=", natural)
 	for f in DirAccess.get_files_at(dir):
 		print(f, " ", FileAccess.get_file_as_bytes(dir.path_join(f)).size())
 	quit()

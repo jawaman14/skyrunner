@@ -42,6 +42,7 @@ func _run() -> void:
 			printerr("FAIL %s: script failed to load (parse error above)" % f)
 			failed += 1
 			continue
+		Terrain.natural = false  # main.gd turns it on for the game; a test that loads main must not leak it into the next file
 		var inst = script.new()
 		var names: Array[String] = []
 		for m in script.get_script_method_list():

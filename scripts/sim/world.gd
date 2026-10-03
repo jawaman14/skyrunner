@@ -66,7 +66,7 @@ func _init(p_seed := 7) -> void:
 	airfields = AIRFIELDS
 	var generated: bool = map.params != null
 	seed = map.terrain_seed if generated else p_seed
-	var key := "%s/%d" % [map.id, seed]
+	var key := "%s/%d%s" % [map.id, seed, "/natural" if Terrain.natural else ""]
 	if not _terrain_cache.has(key):
 		var t := Terrain.new()
 		var dicts := []

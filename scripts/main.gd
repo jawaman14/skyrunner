@@ -29,6 +29,7 @@ var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bin
 
 
 func _ready() -> void:
+	Terrain.natural = not OS.get_cmdline_user_args().has("--classic-terrain")  # eroded hills; --classic-terrain for the generator the balance numbers were measured on
 	var look := ControlsConfig.settings()
 	UIStyle.set_palette(look.palette)  # neon, or colour-safe (F8 in the 3D seat, or the pause menu)
 	PauseMenu.apply_volume(float(look.volume))
