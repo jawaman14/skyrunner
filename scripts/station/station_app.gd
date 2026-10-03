@@ -221,6 +221,8 @@ func _hints() -> Array:
 			out = [["UP/DOWN", "pick a strip", "down"], ["ENTER", "send the spotter (60 s)", "enter"]]
 		Roles.ANALYST:
 			out = [["UP/DOWN", "tip", "down"], ["V", "verify (45 s)", "v"], ["F", "forward to dispatch", "f"], ["X", "bin it", "x"]]
+		Roles.UNDERCOVER:
+			out = [["P", "plant the beacon", "p"]]
 		Roles.BOAT:
 			out = [["RIGHT-CLICK", "send the go-fast there", ""]]
 		Roles.CONTROLLER:
@@ -344,6 +346,9 @@ func _key(k: String) -> void:
 		tabs.current_tab = int(k) - 1
 		return
 	if role == Roles.ANALYST and _analyst_key(k):
+		return
+	if role == Roles.UNDERCOVER and k == "p":
+		_cmd("plant_beacon")
 		return
 	if k == "q" and commands_squads(snap) and not role in [Roles.LIEUTENANT, Roles.PATROL]:
 		squad_mode = not squad_mode
@@ -899,6 +904,8 @@ func _process(delta: float) -> void:
 				_draw_squads(snap)
 			Roles.ANALYST:
 				_draw_analyst(snap)
+			Roles.UNDERCOVER:
+				_draw_undercover(snap)
 			_:
 				_draw_runner(snap)
 	if link is NetClient and not link.players.is_empty():
@@ -992,6 +999,27 @@ func _draw_analyst(snap: Dictionary) -> void:
 	if sel >= 0 and sel < rows.size():
 		var r: Dictionary = rows[sel]
 		detail.text = "%s: %s%s" % [str(r.id), str(r.text), ("   tail %s" % str(r.squawk)) if str(r.squawk) != "" else ""]
+
+
+## The agent's desk: where the aircraft is parked, the odds, the cover, and the beacon.
+func _draw_undercover(snap: Dictionary) -> void:
+	var u: Dictionary = snap.get("undercover", {})
+	title.text = "UNDERCOVER"
+	subtitle.text = "cover %d%%   -   %d planted, %d spotted, %d found" % [int(u.get("cover", 0)), int(u.get("planted", 0)), int(u.get("burned", 0)), int(u.get("found", 0))]
+	_set_list("none", [], [])
+	var lines := []
+	if u.get("at") == null:
+		lines.append("The aircraft is in the air (or down). A beacon can only go on while it is parked at a strip.")
+	else:
+		lines.append("The aircraft is parked at %s." % u.at_name)
+		lines.append("A plant works %d%% of the time here." % int(round(float(u.odds) * 100.0)))
+	if int(u.get("lying_low_s", 0)) > 0:
+		lines.append("You are lying low for %d s." % int(u.lying_low_s))
+	if int(u.get("beacon_s", 0)) > 0:
+		lines.append("")
+		lines.append("A BEACON IS LIVE: the picture carries the aircraft for %d more minutes." % int(ceil(float(u.beacon_s) / 60.0)))
+	info.text = "\n".join(lines)
+	detail.text = "A failed plant costs half your cover and a stranger is seen at the tail; at zero you are blown for twenty minutes. A spotter on the strip makes it harder; a bug sweep may find the beacon."
 
 
 func _analyst_key(k: String) -> bool:

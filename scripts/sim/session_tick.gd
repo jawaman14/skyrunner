@@ -186,6 +186,8 @@ func _update_world(dt: float) -> void:
 	maritime.events.clear()
 	if analyst != null:
 		analyst.update(dt)
+	if undercover != null:
+		undercover.update(dt)
 	_update_intel(dt)
 
 

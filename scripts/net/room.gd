@@ -10,9 +10,9 @@ extends RefCounted
 
 const HOST := "host"
 const RUNNER_ROLES := [Roles.PILOT, Roles.COPILOT, Roles.SPOTTER, Roles.BOAT, Roles.BOSS, Roles.LIEUTENANT]
-const LAW_ROLES := [Roles.CONTROLLER, Roles.INTERCEPTOR, Roles.CUTTER, Roles.CHIEF, Roles.PATROL, Roles.ANALYST]
+const LAW_ROLES := [Roles.CONTROLLER, Roles.INTERCEPTOR, Roles.CUTTER, Roles.CHIEF, Roles.PATROL, Roles.ANALYST, Roles.UNDERCOVER]
 ## What the host can sit in: the pilot (3D), or a desk it can run as a 2D station (the police pilot's 3D seat is for guests).
-const HOST_ROLES := [Roles.PILOT, Roles.COPILOT, Roles.SPOTTER, Roles.BOAT, Roles.BOSS, Roles.LIEUTENANT, Roles.CONTROLLER, Roles.CUTTER, Roles.CHIEF, Roles.PATROL, Roles.ANALYST]
+const HOST_ROLES := [Roles.PILOT, Roles.COPILOT, Roles.SPOTTER, Roles.BOAT, Roles.BOSS, Roles.LIEUTENANT, Roles.CONTROLLER, Roles.CUTTER, Roles.CHIEF, Roles.PATROL, Roles.ANALYST, Roles.UNDERCOVER]
 
 var mode := Roles.COOP
 var players := {}  ## id -> {id, name, role, ready, host}
