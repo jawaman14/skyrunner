@@ -174,18 +174,8 @@ func test_intersect_parallel_is_none() -> void:
 ## Python's radar (one look a second, a binary clutter floor): these are ports
 ## of, or replays against, the Python game. The Godot radar is tests/test_radar.gd.
 func before_each() -> void:
-	SensorNet.REALISM = false
-	Economy.REALISM = false  # Python has fixed prices (the markets: tests/test_economy.gd)
-	Arsenal.REALISM = false  # no gun runs or arsenals in Python (tests/test_arsenal.gd)
-	GroundWar.ENABLED = false
-	Chronicle.ENABLED = false
-	Agency.ENABLED = false
+	Switches.parity_off()  # the Godot-only rules off: replaying the Python game
 
 
 func after_each() -> void:
-	SensorNet.REALISM = true
-	Economy.REALISM = true
-	Arsenal.REALISM = true
-	GroundWar.ENABLED = true
-	Chronicle.ENABLED = true
-	Agency.ENABLED = true
+	Switches.parity_on()

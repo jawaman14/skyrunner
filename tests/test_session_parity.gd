@@ -11,25 +11,11 @@ const TOL := 1e-9
 func before_each() -> void:
 	if ref.is_empty():
 		ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/session_ref.json"))
-	SensorNet.REALISM = false  # replaying Python's radar (the Godot one: tests/test_radar.gd)
-	Economy.REALISM = false  # Python has fixed prices (the markets: tests/test_economy.gd)
-	Arsenal.REALISM = false  # no gun runs or arsenals in Python (tests/test_arsenal.gd)
-	GroundWar.ENABLED = false
-	Chronicle.ENABLED = false
-	Agency.ENABLED = false
-	Agent.ENABLED = false
-	Fuel.ENABLED = false
+	Switches.parity_off()  # the Godot-only rules off: replaying the Python game
 
 
 func after_each() -> void:
-	SensorNet.REALISM = true
-	Economy.REALISM = true
-	Arsenal.REALISM = true
-	GroundWar.ENABLED = true
-	Chronicle.ENABLED = true
-	Agency.ENABLED = true
-	Agent.ENABLED = true
-	Fuel.ENABLED = true
+	Switches.parity_on()
 
 
 func _same(got, want, what: String) -> void:
