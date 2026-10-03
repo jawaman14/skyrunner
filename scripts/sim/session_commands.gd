@@ -634,7 +634,7 @@ func _cmd_stash_works(role: String, a: Dictionary):
 func _cmd_race_enter(role: String, a: Dictionary):
 	if races == null:
 		return "There is no arena here."
-	var err: String = races.enter(str(a.get("id", "")))
+	var err: String = races.enter(str(a.get("id", "")), int(a.get("bet", 0)), str(a.get("on", "win")))
 	return err if err != "" else null
 
 
