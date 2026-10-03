@@ -1,0 +1,65 @@
+# The Sunrise Collective: a commune in the hills that makes blotter acid and wants grass. Nico Cozz, its chemist, takes the calls.
+# (Fiction: Nico, the Collective and its people are invented; nothing here says how acid is made.)
+#
+# Reads and acts through Talk.State: {{ps_*}} fields and barter_best(), barter_hundred(), sell_acid(), toggle_acid_auto().
+
+~ start
+if not psych
+	Radio: The line to the hills is dead. Nobody there yet.
+	=> END
+if ps_status == "hiding"
+	=> hiding
+=> greet
+
+~ greet
+{{ps_name}}: [[Peace. Sunrise Collective, Nico speaking.|Hey, man. Nico. You've got something green for us?|The hills are quiet and the kettle's on. Nico.]]
+=> talk
+
+~ hiding
+{{ps_name}}: (a payphone, far off) The lab got hit, man. We're lying low. Try me in {{ps_hide_min}} minutes. Bring the green.
+=> END
+
+~ talk
+- Trade grass for acid: everything {{ps_best_name}} has. ({{ps_best_lb}} lb) [if ps_best_lb >= 20 and ps_stock > 0]
+	do barter_best()
+	if result != ""
+		{{ps_name}}: {{result}}
+	else
+		{{ps_name}}: Beautiful. A van will pick it up and leave the sheets in your glove box.
+	=> talk
+- Trade a hundred pounds. [if ps_best_lb >= 100 and ps_stock > 0]
+	do barter_hundred()
+	if result != ""
+		{{ps_name}}: {{result}}
+	else
+		{{ps_name}}: A hundred pounds. Fair is fair.
+	=> talk
+- Send the sheets out through the circuit. ({{ps_held}} sheets, ${{ps_price}} each) [if ps_held >= 1]
+	do sell_acid()
+	if result != ""
+		{{ps_name}}: {{result}}
+	else
+		{{ps_name}}: The festival kids have it. Money's on its way.
+	=> talk
+- "How is it going up there?"
+	=> word
+- Let my people handle the trading. [if not ps_auto]
+	do toggle_acid_auto()
+	{{ps_name}}: Your people, my people. Everybody's people. Right on.
+	=> talk
+- Stop the standing arrangement. [if ps_auto]
+	do toggle_acid_auto()
+	{{ps_name}}: Back to handshakes, then.
+	=> talk
+- That's all.
+	{{ps_name}}: [[Stay golden.|Mind the narcs.|Come up for the sunrise.]]
+	=> END
+
+~ word
+{{ps_name}}: The lab has {{ps_stock}} sheets ready. For a hundred pounds of grass I can give you {{ps_rate}} sheets right now; we want {{ps_weed_left}} lb more this half hour. Trust: {{ps_trust}} out of a hundred.
+if ps_scene != ""
+	{{ps_name}}: And the scene is on: {{ps_scene}}.
+{{ps_name}}: Sheets go for about ${{ps_price}} to you through the circuit; it will take another {{ps_circuit_left}} this half hour. So far we've had {{ps_bartered}} lb of your grass, you've moved {{ps_sold}} sheets and made ${{ps_earned}}.
+if ps_raids > 0
+	{{ps_name}}: They've hit the lab {{ps_raids}} times. We rebuild. That's the thing about us.
+=> talk

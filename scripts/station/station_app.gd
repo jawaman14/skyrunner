@@ -226,7 +226,7 @@ func _hints() -> Array:
 		Roles.MECHANIC:
 			out = [["UP/DOWN", "part", "down"], ["ENTER", "repair it", "enter"], ["B", "both", "b"], ["S", "stop the work", "s"], ["I", "inspect", "i"], ["F", "fuel +10%", "f"]]
 		Roles.FIXER:
-			out = [["V", "the dealership", "v"], ["X", "the casino", "x"], ["UP/DOWN", "job", "down"], ["ENTER", "take / drop it", "enter"], ["W", "the hiring hall", "w"], ["C", "the Family", "c"], ["L", "the lawyer", "l"],
+			out = [["J", "the Collective", "j"], ["V", "the dealership", "v"], ["X", "the casino", "x"], ["UP/DOWN", "job", "down"], ["ENTER", "take / drop it", "enter"], ["W", "the hiring hall", "w"], ["C", "the Family", "c"], ["L", "the lawyer", "l"],
 				["M", "the buyers", "m"], ["K", "logistics", "k"], ["G", "scanner", "g"], ["H", "radar detector", "h"], ["S", "spotter here", "s"], ["F", "ferry tank", "f"]]
 		Roles.BOAT:
 			out = [["RIGHT-CLICK", "send the go-fast there", ""]]
@@ -240,6 +240,7 @@ func _hints() -> Array:
 			if role == Roles.BOSS:
 				out.append(["K", "logistics", "k"])
 				out.append(["V", "the dealership", "v"])
+				out.append(["J", "the Collective", "j"])
 		Roles.LIEUTENANT, Roles.PATROL:
 			out = [["UP/DOWN", "squad", "down"]]
 			out += [["C", "talk to the Family", "c"], ["G", "the General's aide", "g"], ["U/I", "mules / a container", "u"], ["L", "the pilot's lawyer", "l"], ["W", "the hiring hall", "w"], ["K", "logistics", "k"]] if role == Roles.LIEUTENANT else [["O", "RICO case", "o"]]
@@ -458,6 +459,9 @@ func open_talk(name: String, title := "start") -> TalkBalloon:
 ## container on the freighter, G buy the General's passage. The controller's:
 ## L a crackdown at the airport, P container inspections at the port.
 func _island_key(k: String, snap: Dictionary) -> bool:
+	if k == "j" and role in [Roles.BOSS, Roles.FIXER] and not snap.get("psych", {}).is_empty():
+		open_talk("psych")  # the Sunrise Collective: Nico Cozz on the line
+		return true
 	if k == "v" and role in [Roles.BOSS, Roles.FIXER] and not snap.get("dealer", {}).is_empty():
 		open_talk("dealer")  # Palmetto Motors: Marty Quintero on the line
 		return true

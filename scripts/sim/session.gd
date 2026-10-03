@@ -136,6 +136,9 @@ func dispose() -> void:
 		airframe.sess = null
 	airframe = null
 	casino = null
+	if psych != null:
+		psych.sess = null
+	psych = null
 	if dealer != null:
 		dealer.sess = null
 	dealer = null

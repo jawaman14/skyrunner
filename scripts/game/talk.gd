@@ -149,6 +149,27 @@ class State:
 	var cand: Array = []  ## up to four candidates: {id, name, role, skill, wage, hint}
 	var jailed: Array = []  ## crew in custody without a lawyer: {id, name, role}
 	var crew_list: Array = []  ## everyone on the payroll: {id, name, role, status, assigned, doing}
+	# the Sunrise Collective (Nico Cozz)
+	var psych := false
+	var ps_name := "Nico Cozz"
+	var ps_status := ""
+	var ps_stock := 0.0
+	var ps_held := 0.0
+	var ps_trust := 0
+	var ps_rate := 0.0
+	var ps_price := 0
+	var ps_weed_left := 0
+	var ps_circuit_left := 0.0
+	var ps_hide_min := 0
+	var ps_scene := ""
+	var ps_auto := false
+	var ps_best_id := ""
+	var ps_best_name := ""
+	var ps_best_lb := 0
+	var ps_earned := 0
+	var ps_bartered := 0
+	var ps_sold := 0.0
+	var ps_raids := 0
 	# the dealership (Palmetto Motors)
 	var dealer := false
 	var dl_name := "Marty Quintero"
@@ -286,6 +307,29 @@ class State:
 		trade_last = str(t.get("last", ""))
 		rifles = int(snap.get("arsenal", {}).get("stock", {}).get("rifle", 0))
 		jailed = p.get("jail", []).filter(func(j): return not j.lawyer)
+		var pz: Dictionary = snap.get("psych", {})
+		psych = not pz.is_empty()
+		if psych:
+			ps_name = str(pz.chemist)
+			ps_status = str(pz.status)
+			ps_stock = float(pz.stock)
+			ps_held = float(pz.held)
+			ps_trust = int(pz.trust)
+			ps_rate = float(pz.rate)
+			ps_price = int(pz.price)
+			ps_weed_left = int(pz.weed_left)
+			ps_circuit_left = float(pz.circuit_left)
+			ps_hide_min = int(pz.hide_min)
+			ps_scene = str(pz.scene)
+			ps_auto = bool(pz.auto)
+			ps_earned = int(pz.earned)
+			ps_bartered = int(pz.bartered)
+			ps_sold = float(pz.sold)
+			ps_raids = int(pz.raids)
+			var stashes: Array = pz.stashes
+			ps_best_id = str(stashes[0].id) if not stashes.is_empty() else ""
+			ps_best_name = str(stashes[0].name) if not stashes.is_empty() else ""
+			ps_best_lb = int(stashes[0].lb) if not stashes.is_empty() else 0
 		var dz: Dictionary = snap.get("dealer", {})
 		dealer = not dz.is_empty()
 		if dealer:
@@ -376,6 +420,19 @@ class State:
 
 	func container() -> bool:
 		return _do("island_ship", {"method": "ship", "amount": 500})
+
+	# the Sunrise Collective
+	func barter_best() -> bool:
+		return _do("acid_barter", {"stash": ps_best_id, "lb": float(ps_best_lb)})
+
+	func barter_hundred() -> bool:
+		return _do("acid_barter", {"stash": ps_best_id, "lb": 100.0})
+
+	func sell_acid() -> bool:
+		return _do("acid_sell", {"sheets": ps_held})
+
+	func toggle_acid_auto() -> bool:
+		return _do("acid_auto", {"on": not ps_auto})
 
 	# the dealership
 	func dl_price(id: String) -> int:

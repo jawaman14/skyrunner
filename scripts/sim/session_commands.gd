@@ -681,6 +681,27 @@ func _cmd_casino(role: String, a: Dictionary):
 	return err if err != "" else null
 
 
+func _cmd_acid_barter(role: String, a: Dictionary):
+	if psych == null:
+		return "There is no Collective in this game."
+	var err := psych.barter(str(a.get("stash", "")), float(_num(a, "lb", 0)))
+	return err if err != "" else null
+
+
+func _cmd_acid_sell(role: String, a: Dictionary):
+	if psych == null:
+		return "There is no Collective in this game."
+	var err := psych.sell(float(_num(a, "sheets", 1e9)))
+	return err if err != "" else null
+
+
+func _cmd_acid_auto(role: String, a: Dictionary):
+	if psych == null:
+		return "There is no Collective in this game."
+	var err := psych.set_auto(bool(a.get("on", false)))
+	return err if err != "" else null
+
+
 func _cmd_buy_vehicle(role: String, a: Dictionary):
 	if dealer == null:
 		return "There is no dealership in this game."
