@@ -55,6 +55,8 @@ var sticks := {}  ## role -> [roll, pitch, throttle]
 var sess = null  ## the Session the seats belong to (set by attach or the first pump)
 var chat_log: Array = []  ## [from, role, side, text, to]
 var host_role := Roles.PILOT  ## the seat the host plays itself (its voice comes from there)
+var room: Room = null  ## the waiting room, before the game exists (null once it has started)
+var _room_rev := -1
 var locked := false  ## closed to new players (a player who held a seat can still come back)
 var banned := {}  ## tokens of players the host removed: they cannot rejoin this game
 var max_players := 16
@@ -120,6 +122,9 @@ static func read_lines(peer: StreamPeerTCP, buf: PackedByteArray) -> Array:
 
 
 func _process(_dt: float) -> void:
+	if room != null and sess == null and room.rev != _room_rev:
+		_room_rev = room.rev
+		_broadcast_room()
 	while tcp.is_listening() and tcp.is_connection_available():
 		var c := Conn.new()
 		c.peer = tcp.take_connection()
@@ -154,6 +159,73 @@ func attach(sess_) -> void:
 	sess = sess_
 
 
+## Open a waiting room: listen now, before the game exists. Players join, choose seats and ready up (the room screen),
+## and the host calls begin(session) to start.
+func start_room(port_ := DEFAULT_PORT, mode_ := Roles.COOP, bind := "*", seed := 7, host_name_ := "host"):
+	host_name = host_name_
+	room = Room.new(mode_, host_name_)
+	return start(port_, mode_, bind, seed)
+
+
+func _room_message(c: Conn, msg: Dictionary) -> void:
+	if room == null:
+		return
+	var pid := public_id(c.token)
+	match msg.get("t"):
+		"room_claim":
+			var why := room.claim(pid, str(msg.get("role", "")))
+			if why != "":
+				c.peer.put_data(line({"t": "claim_failed", "msg": why}))
+		"room_release":
+			room.release(pid)
+		"ready":
+			room.set_ready(pid, bool(msg.get("on", false)))
+		"say":
+			var text := str(msg.get("text", "")).strip_edges().substr(0, 200)
+			if text != "":
+				chat(c.name, "", text, "all")
+
+
+func _broadcast_room() -> void:
+	var msg := room.to_dict()
+	msg["t"] = "room"
+	for c in conns:
+		if c.joined:
+			c.peer.put_data(line(msg))
+
+
+## The host's own pick, in the room.
+func host_claim(role: String) -> String:
+	return room.claim(Room.HOST, role) if room != null else "No waiting room."
+
+
+## Start the game: the Session exists now; everyone gets the seat they chose (the AI keeps the rest) and is told to begin.
+func begin(sess_: Session) -> void:
+	sess = sess_
+	if room == null:
+		return
+	var host_seat := room.host_role()
+	if host_seat != Roles.PILOT:
+		sess.seats.release(Roles.PILOT)  # (a session starts with its pilot's seat the local player's: the host is at a desk)
+	for id in room.players:
+		var p: Dictionary = room.players[id]
+		if p.role == "":
+			continue
+		if p.host:
+			sess.seats.claim(p.role, p.name, "")
+			continue
+		for c in conns:
+			if c.joined and public_id(c.token) == id:
+				if sess.seats.claim(p.role, p.name, c.token) == "":
+					c.role = p.role
+					clients[p.role] = c
+	room = null
+	_seats_rev = -1
+	for c in conns:
+		if c.joined:
+			c.peer.put_data(line({"t": "start", "role": c.role, "mode": mode, "seed": world_seed, "host_role": host_seat}))
+
+
 func _hello(c: Conn, hello: Dictionary) -> void:
 	var role := str(hello.get("role", ""))
 	var name := str(hello.get("name", "player")).substr(0, 32)
@@ -161,7 +233,7 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 	var err := ""
 	if hello.get("t") != "hello" or not (v in [2, Snapshot.PROTOCOL_VERSION]):
 		err = "Protocol mismatch (server v%d)." % Snapshot.PROTOCOL_VERSION
-	elif sess == null:
+	elif sess == null and room == null:
 		err = "The host isn't ready yet."
 	elif role != "" and not Roles.valid(role):
 		err = "No such role %s." % role
@@ -179,13 +251,22 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 	var refusal := ""
 	if banned.has(c.token):
 		refusal = "The host has removed you from this game."
-	elif locked and sess.seats.held_for(c.token) == "":
+	elif locked and (sess == null or sess.seats.held_for(c.token) == ""):
 		refusal = "The host has closed the table to new players."
 	elif conns.filter(func(x): return x.joined).size() >= max_players:
 		refusal = "The table is full (%d)." % max_players
 	if refusal != "":
 		c.peer.put_data(line({"t": "error", "msg": refusal}))
 		_drop(c)
+		return
+	if sess == null:  # the waiting room: sit down, pick a seat, get ready
+		var pid := public_id(c.token)
+		room.add(pid, name)
+		if role != "":
+			room.claim(pid, role)  # (a seat asked for on the way in; if it is taken they simply have none yet)
+		c.joined = true
+		c.peer.put_data(line({"t": "welcome", "role": "", "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION, "phase": "room"}))
+		_room_rev = -1
 		return
 	# a returning player takes back the seat held for them
 	var held: String = sess.seats.held_for(c.token)
@@ -205,6 +286,9 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 
 
 func _message(c: Conn, msg: Dictionary) -> void:
+	if sess == null:
+		_room_message(c, msg)
+		return
 	match msg.get("t"):
 		"claim":
 			var role := str(msg.get("role", ""))
@@ -264,6 +348,8 @@ func _message(c: Conn, msg: Dictionary) -> void:
 
 func _drop(c: Conn) -> void:
 	conns.erase(c)
+	if sess == null and room != null and c.joined:
+		room.remove(public_id(c.token))
 	if c.joined and c.role != "" and clients.get(c.role) == c:
 		clients.erase(c.role)
 		sticks.erase(c.role)

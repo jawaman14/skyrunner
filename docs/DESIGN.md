@@ -938,3 +938,19 @@ host's own port and seats: the beacon is only where the game is.
 
 **The host runs the table** (`HostServer`): `kick(id, ban)`, `locked`, `max_players` (16), `roster()`. Players are known to each other by a
 **public id** (a hash of their reconnect token; the token itself is only ever sent to its owner), which is what voice frames, mutes and kicks use.
+
+## 33. The waiting room: choosing roles before the game starts
+
+The lobby's **Host a multiplayer game** opens a **waiting room** instead of starting at once (`Room`, `RoomScreen`; `HostServer.start_room`).
+The host listens before the game exists; friends join (from the Multiplayer list, an address, or `--connect`) and see every seat by side
+(the runners, the task force) with who has it (a player or the AI). Each player takes one seat or gives it back, ticks **ready**, and chats;
+the host sees who is not ready and presses **Start the game** when everyone has a seat and is ready. Seats nobody took are the AI's.
+
+- **The host takes a seat too**: the pilot's (3D, the default) or a desk (a 2D station: `HostDesk` runs the session, serves the guests, and
+  the AI flies the aircraft until a guest takes the pilot's seat). The police pilot's 3D seat is for guests.
+- **Rules**: a co-op table is the runners only (the law is the AI); a task-force game has no pilot; one player a seat and one seat a
+  player; changing seat un-readies a guest; the host can remove a player or close the table.
+- **On the wire**: `welcome` carries `phase: room`; guests send `room_claim`, `room_release`, `ready`, `say`; the host broadcasts `room`
+  (mode, players, seats, whether it can start) when it changes, and `start {role}` when the game begins (`HostServer.begin` hands every
+  chosen seat to the session, and the guests go straight into theirs). A guest who joins a game that is already running gets the old seat
+  picker, so joining mid-game still works.

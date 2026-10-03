@@ -19,7 +19,10 @@ var seats: Array = []  ## the live roster: [{role, side, who, name}]
 var players: Array = []  ## [{name, role}]
 var chat_log: Array = []  ## [{from, role, side, text, to}]
 var claim_error = null
+var phase := "game"  ## "room" while the host is still in the waiting room
+var room_state: Dictionary = {}  ## {mode, players, seats, start}: the waiting room as the host last sent it
 signal role_changed(role: String)
+signal started(role: String)  ## the host started the game from the waiting room: your seat (or "" for none yet)
 signal voice_heard(msg: Dictionary)  ## a talker as the host routed it: {from, id, role, ch, s, q, k, d, end}
 var _buf := PackedByteArray()
 var _seq := 0
@@ -68,10 +71,18 @@ func poll() -> void:
 		match msg.get("t"):
 			"welcome":
 				welcome = msg
+				phase = str(msg.get("phase", "game"))
 				token = str(msg.get("token", token))
 				if str(msg.get("role", "")) != role:
 					role = str(msg.get("role", ""))
 					role_changed.emit(role)
+			"room":
+				room_state = msg
+			"start":
+				phase = "game"
+				role = str(msg.get("role", ""))
+				room_state = {}
+				started.emit(role)
 			"seats":
 				seats = msg.get("seats", [])
 				players = msg.get("players", [])
@@ -94,6 +105,19 @@ func poll() -> void:
 				latest = msg
 			"ack":
 				acks[int(msg.get("seq", 0))] = [bool(msg.get("ok")), str(msg.get("msg", ""))]
+
+
+## In the waiting room: choose a seat, give it back, say you are ready.
+func room_claim(role_: String) -> void:
+	_put({"t": "room_claim", "role": role_})
+
+
+func room_release() -> void:
+	_put({"t": "room_release"})
+
+
+func set_ready(on: bool) -> void:
+	_put({"t": "ready", "on": on})
 
 
 ## Take a seat (the AI hands it over), or leave it (back to the AI).
