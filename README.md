@@ -148,6 +148,7 @@ parity fixtures and you never need it to build, play or test ([docs/PORTING.md](
 
 ## Docs
 
+- [docs/FEATURES.md](docs/FEATURES.md): the long feature reference (what the README used to list, system by system).
 - [docs/DESIGN.md](docs/DESIGN.md): roles, gadgets and counters, every system, the storyline, the ground war, the
   seat model, voice and the waiting room.
 - [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md): design research for asymmetric versus play, hidden information and the
