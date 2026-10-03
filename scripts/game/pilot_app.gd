@@ -134,7 +134,8 @@ var walker: Walker = null
 var gun: Gunplay = null
 var _auto_bot := false  ## the AI took the stick because nobody's in the pilot seat  ## the walker's gun (sessions with a ground war)
 var ground_body: StaticBody3D = null
-var foot_prompt: Label
+var foot_prompt: Label  ## the subtitle on foot and at the wheel
+var act_hints: KeyHints  ## what you can do here, as key caps
 var aircraft_body: StaticBody3D = null
 
 
@@ -182,6 +183,16 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
+	notify = PhoneNotify.new()  # the phone's banners: new numbers, the Family's offers
+	notify.anchor_left = 0.0
+	notify.anchor_right = 0.0
+	notify.anchor_top = 0.0
+	notify.anchor_bottom = 0.30
+	notify.offset_left = 14.0
+	notify.offset_right = 340.0
+	notify.offset_top = 78.0
+	notify.offset_bottom = -4.0
+	ui.add_child(notify)
 	car_map = Minimap.new()  # the radar for the car and for walking: it follows the car or the walker, not the aircraft
 	car_map.visible = false
 	ui.add_child(car_map)
@@ -206,16 +217,34 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 		menus[k[0]] = m
 	if sess.races != null:
 		add_child(RaceMarkers.new().setup(sess))
-	foot_prompt = UIStyle.label("", 20, UIStyle.WHITE)
+	# on foot and at the wheel: what was just said runs as a subtitle low in the middle, and what you can do here is a
+	# row of key caps under it ([E] Get in the car) - no box in the middle of the view
+	foot_prompt = UIStyle.label("", 18, UIStyle.WHITE)
 	foot_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long line wraps instead of running off the screen
-	foot_prompt.custom_minimum_size = Vector2(640, 0)
 	foot_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	foot_prompt.add_theme_stylebox_override("normal", UIStyle.panel_box(Color(0, 0, 0, 0.55)))
-	foot_prompt.set_anchors_preset(Control.PRESET_CENTER)
-	foot_prompt.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	foot_prompt.position += Vector2(0, 70)
+	foot_prompt.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	foot_prompt.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	foot_prompt.add_theme_constant_override("shadow_offset_x", 2)
+	foot_prompt.add_theme_constant_override("shadow_offset_y", 2)
+	foot_prompt.add_theme_constant_override("outline_size", 6)
+	foot_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	foot_prompt.anchor_left = 0.2
+	foot_prompt.anchor_right = 0.8
+	foot_prompt.anchor_top = 1.0
+	foot_prompt.anchor_bottom = 1.0
+	foot_prompt.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	foot_prompt.visible = false
 	ui.add_child(foot_prompt)
+	act_hints = KeyHints.new()
+	act_hints.alignment = FlowContainer.ALIGNMENT_CENTER
+	act_hints.anchor_left = 0.25
+	act_hints.anchor_right = 0.75
+	act_hints.anchor_top = 1.0
+	act_hints.anchor_bottom = 1.0
+	act_hints.offset_top = -96.0
+	act_hints.offset_bottom = -60.0
+	act_hints.visible = false
+	ui.add_child(act_hints)
 	help = _help_overlay(HELP_TEXT, UIStyle.WHITE)
 	var ver := UIStyle.label(Beta.label() + "   F12 feedback", 12, UIStyle.DIM)
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -535,6 +564,7 @@ var screen_filter: ScreenFilter = null
 var controls_menu: ControlsMenu = null
 var pack_menu: PackMenu = null
 var sound: Soundscape = null
+var notify: PhoneNotify = null  ## the phone's banners
 var car_map: Minimap = null  ## the radar and chart while on foot or driving
 var waypoint = null  ## the ground point you picked on the chart (Vector2), or null
 var _wp_beacon: MeshInstance3D = null
@@ -568,7 +598,9 @@ func _talk_cues() -> void:
 		for o in s.family.offers:
 			if not _offers_seen.has(o.id):
 				_offers_seen[o.id] = true
-				s.say("%s wants a word. SHIFT+F to sit down with him." % Talk.CAPO)
+				notify.push("The Family", "%s wants a word: %s
+SHIFT+F to sit down with him." % [Talk.CAPO, str(o.text)], "family",
+					[["SHIFT+Y", "accept", "yes"], ["SHIFT+N", "decline", "no"]], o.id, 10.0)
 	if s.court != null:
 		# the lawyer is there at the bail hearing and when the sentence comes down
 		var st := s.court.stage()
@@ -810,6 +842,7 @@ func _toggle_on_foot() -> void:
 		cam.current = true
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		foot_prompt.visible = false
+		act_hints.visible = false
 		s.say("Back in the %s." % s.spec.name)
 		return
 	if not s.parked:
@@ -1219,12 +1252,28 @@ func _phone_watch() -> void:
 			_phone_known[c[0]] = true
 			if not first:
 				m.fresh[c[0]] = true
+				notify.push("Phone", "New contact: %s. %s." % [c[1], c[2]], "phone")
 				s.say("New contact on your phone: %s - %s." % [c[1], c[2]])
+
+
+## When an offer is gone so is its card (it was answered, or it ran out).
+func _offers_watch() -> void:
+	if s.family == null or notify == null:
+		return
+	var live := {}
+	for o in s.family.offers:
+		live[o.id] = true
+	for id in _offers_seen.keys():
+		if not live.has(id):
+			notify.drop_data(id)
+			_offers_seen.erase(id)
 
 
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.1)
 	_frame += 1
+	if _frame % 10 == 3:
+		_offers_watch()
 	if radio != null:
 		radio.active = driving != null or not on_foot
 	if _frame % 30 == 1:
@@ -1367,23 +1416,33 @@ func _foot_hud() -> void:
 				ml2.append(msg[1])
 		car_dash.visible = _active_menu() == null and not _map_open()
 		car_dash.set_data(driving, radio, scene.night > 0.35, waypoint)
-		foot_prompt.text = "\n".join(ml2.slice(-2))
-		foot_prompt.visible = _active_menu() == null and not ml2.is_empty() and not _map_open()
+		_subtitle(ml2.slice(-2), car_dash.size.y + 40.0)
+		act_hints.visible = false
 		return
 	car_dash.visible = false
 	if s.foot != null:
 		walker.speed_scale = s.foot.speed_factor()
-	var lines := []
+	var acts := []
 	if walker.focus != null:
-		lines.append("[E] " + str(walker.focus.get_meta("label")))
+		acts.append(["E", str(walker.focus.get_meta("label"))])
 	if walker.global_position.distance_to(player.global_position) < 9.0:
-		lines.append("[TAB] Climb into the %s" % s.spec.name)
+		acts.append(["TAB", "Climb into the %s" % s.spec.name])
+	var free_view := _active_menu() == null and pack_menu == null and not _map_open()
+	act_hints.set_hints(acts)
+	act_hints.visible = free_view and not acts.is_empty()
 	var ml := []
 	for msg in s.messages:
 		if s.time - msg[0] < 8:
 			ml.append(msg[1])
-	foot_prompt.text = "\n".join(lines + ml.slice(-2))
-	foot_prompt.visible = not foot_prompt.text.is_empty() and _active_menu() == null and pack_menu == null
+	_subtitle(ml.slice(-2) if free_view else [], 110.0)
+
+
+## The last thing said, as a subtitle `above` px from the bottom of the screen.
+func _subtitle(lines: Array, above: float) -> void:
+	foot_prompt.text = "\n".join(lines)
+	foot_prompt.offset_bottom = -above
+	foot_prompt.offset_top = -above - 80.0
+	foot_prompt.visible = not lines.is_empty() and _active_menu() == null and not _map_open()
 
 
 static func _basis(heading: float, pitch := 0.0, roll := 0.0) -> Basis:

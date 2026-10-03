@@ -193,9 +193,43 @@ func test_the_desks_and_the_cockpit_open_them() -> void:
 	Engine.get_main_loop().root.add_child(app)
 	app.setup(s, "low")
 	app._talk_cues()
-	check(s.messages.any(func(m): return "wants a word" in m[1]), "the cockpit hears Sal wants a word")
+	check(app.notify.asking() and not s.family.offers.is_empty() and app.notify.has_data(s.family.offers[0].id), "the cockpit's phone buzzes: Sal wants a word")
 	s.location = Island.CODE
 	app._talk_cues()
 	check(app.talk != null, "landing on the island: the aide on the ramp")
 	app.free()
 	s.dispose()
+
+
+func test_a_call_is_a_phone_thread_of_bubbles() -> void:
+	var s := Session.new({"seed": 3, "map_seed": MapCity.SEED, "features": Session.SANDBOX_FEATURES, "trade": true})
+	s.update(1.0 / 30)
+	var b := await _balloon(s, "psych")
+	await _until_choice(b)
+	check(b.thread != null and b.thread.get_child_count() >= 1, "their lines are bubbles in a thread")
+	check(b.who.text != "", "the header names who is on the line: %s" % b.who.text)
+	var before := b.thread.get_child_count()
+	if not b._answers.is_empty():
+		await b.choose(b._answers.size() - 1)
+		check(b.thread.get_child_count() >= before + 1, "your answer joins the thread")
+	b.queue_free()
+	s.dispose()
+
+
+func test_the_familys_offer_arrives_as_a_phone_notification() -> void:
+	var notify := PhoneNotify.new()
+	Engine.get_main_loop().root.add_child(notify)
+	var card := notify.push("The Family", "A loan: $10,000 now", "family", [["SHIFT+Y", "accept", "take it"], ["SHIFT+N", "decline", "leave it"]], "F1")
+	check(card != null and notify.count() == 1 and notify.asking(), "a card is up and waiting for an answer")
+	check(notify.has_data("F1"), "it knows which offer it is about")
+	notify.push("Phone", "New contact", "phone")
+	notify.push("Phone", "Another", "phone")
+	check(notify.count() <= PhoneNotify.MAX_CARDS, "the oldest makes room: never more than %d cards" % PhoneNotify.MAX_CARDS)
+	notify.drop_data("F1")
+	check(not notify.has_data("F1"), "when the offer is gone the card goes")
+	var seen := []
+	notify.answered.connect(func(a, _d): seen.append(a))
+	notify.push("The Family", "Another offer", "family", [["Y", "accept", "yes"]], "F2")
+	check_eq(notify.answer("y"), "accept", "the key answers the newest card that asks")
+	check_eq(seen, ["accept"], "and says what was chosen")
+	notify.queue_free()
