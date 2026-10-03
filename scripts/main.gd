@@ -25,7 +25,7 @@ var save_dir := "user://"  ## the tests point it elsewhere so they never touch a
 
 var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1,
 	"players": 0, "layer": 0, "graphics": "high", "watch": false, "shot": "", "frames": 90, "hour": -1.0,
-	"map": -1, "weather": "", "connect": "", "role": "copilot", "name": "player", "seat3d": false, "lobby": true, "unlocks": "story", "chapter": 0, "tutorial": false, "smoke": 0}
+	"map": -1, "weather": "", "connect": "", "host_room": null, "role": "copilot", "name": "player", "seat3d": false, "lobby": true, "unlocks": "story", "chapter": 0, "tutorial": false, "smoke": 0}
 
 
 func _ready() -> void:
@@ -60,10 +60,50 @@ func show_lobby() -> void:
 	var lobby := Lobby.new()
 	add_child(lobby)
 	lobby.multiplayer_requested.connect(func(): open_mp())
+	lobby.room_requested.connect(func(opts):
+		lobby.queue_free()
+		args.merge(opts, true)
+		_open_room())
 	lobby.start.connect(func(opts):
 		lobby.queue_free()
 		args.merge(opts, true)
 		start())
+
+
+## Voice and the network beacon for a hosting game.
+func _host_extras(server) -> void:
+	if server == null:
+		return
+	add_child(VoiceChat.new().attach_host(server))  # push-to-talk radio voice for the table
+	var ann := LanDiscovery.Announcer.new()
+	add_child(ann)
+	ann.start(func(): return {} if not server.announce else {"name": "%s's game" % server.host_name, "port": server.port, "mode": server.mode, "players": server.roster().size(), "locked": server.locked})
+
+
+## The host's waiting room: listen now, show the room, and when the host starts, build the game with the server that is already
+## listening (its players have chosen their seats).
+func _open_room() -> void:
+	var server := HostServer.new()
+	add_child(server)
+	var mode: String = "versus" if args["mode"] == "versus" else "coop"
+	var err = server.start_room(args["port"], mode, "*", args["seed"], str(args["name"]))
+	if err:
+		push_warning(str(err))
+		server.queue_free()
+		show_lobby()
+		return
+	var room := RoomScreen.new()
+	add_child(room)
+	room.setup(server, null)
+	room.start_game.connect(func():
+		room.queue_free()
+		args["host_room"] = server
+		args["mode"] = mode
+		start())
+	room.cancelled.connect(func():
+		room.queue_free()
+		server.queue_free()
+		show_lobby())
 
 
 ## F4 (and the lobby's Multiplayer button): the multiplayer menu over whatever is running.
@@ -118,7 +158,7 @@ func _leave(to: String) -> void:
 		get_tree().quit()
 		return
 	for c in get_children():
-		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient or c is VoiceChat or c is LanDiscovery.Announcer or c is MultiplayerMenu:
+		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient or c is VoiceChat or c is LanDiscovery.Announcer or c is MultiplayerMenu or c is RoomScreen or c is HostDesk:
 			remove_child(c)
 			c.queue_free()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -190,7 +230,14 @@ func start() -> void:
 		if args["tutorial"]:
 			sess.tutorial.enabled = true
 	var server = null
-	if args["host"] or mode in [Roles.COOP, Roles.VERSUS]:
+	var host_seat := Roles.PILOT
+	if args["host_room"] != null:  # the waiting room: its server is already listening, and its players have chosen their seats
+		server = args["host_room"]
+		args["host_room"] = null
+		host_seat = server.room.host_role() if server.room != null else Roles.PILOT
+		server.begin(sess)
+		sess.say("Hosting on port %d: your friends are seated; the AI plays every seat nobody took." % server.port)
+	elif args["host"] or mode in [Roles.COOP, Roles.VERSUS]:
 		server = HostServer.new()
 		server.host_name = str(args["name"])
 		add_child(server)
@@ -204,15 +251,17 @@ func start() -> void:
 	if args["watch"]:
 		bot = AutoRunner.new(sess)
 		sess.say("Watching the AI fly. [C] cycles cameras.")
+	if host_seat != Roles.PILOT and server != null:  # the host took a desk in the waiting room: a 2D station, the aircraft flown by the AI
+		var desk := HostDesk.new()
+		add_child(desk)
+		desk.setup(sess, server, host_seat)
+		_host_extras(server)
+		return
 	var app := PilotApp.new()
 	add_child(app)
 	app.setup(sess, args["graphics"], bot, server)
 	app.leave.connect(_leave)
-	if server != null:
-		add_child(VoiceChat.new().attach_host(server))  # push-to-talk radio voice for the table
-		var ann := LanDiscovery.Announcer.new()
-		add_child(ann)
-		ann.start(func(): return {} if not server.announce else {"name": "%s's game" % server.host_name, "port": server.port, "mode": server.mode, "players": server.roster().size(), "locked": server.locked})
+	_host_extras(server)
 	if args["hour"] >= 0:
 		app.scene.set_hour(args["hour"])
 	if args["shot"] != "":
@@ -232,16 +281,33 @@ func _join() -> void:
 	add_child(link)
 	var role: String = args["role"] if args["role"] != "pick" else ""
 	link.open(host, port, args["name"], role)
-	if role == "":
-		# the live seat list: take whatever the AI is playing
-		var picker := SeatPicker.new()
-		add_child(picker)
-		picker.setup(link)
-		picker.seated.connect(func(r):
-			picker.queue_free()
-			_seat(link, r), CONNECT_ONE_SHOT)
+	# the waiting room if the host is still in it; if the game is already running, the old way (a seat by name, or the picker)
+	var room := RoomScreen.new()
+	add_child(room)
+	room.setup(null, link)
+	room.started.connect(func(r):
+		room.queue_free()
+		_enter_game(link, r), CONNECT_ONE_SHOT)
+	room.game_running.connect(func():
+		room.queue_free()
+		_enter_game(link, link.role), CONNECT_ONE_SHOT)
+	room.cancelled.connect(func():
+		room.queue_free()
+		link.queue_free()
+		show_lobby())
+
+
+## Into the game as `role` ("" = no seat yet: pick one from the live list).
+func _enter_game(link: NetClient, role: String) -> void:
+	if role != "":
+		_seat(link, role)
 		return
-	_seat(link, role)
+	var picker := SeatPicker.new()
+	add_child(picker)
+	picker.setup(link)
+	picker.seated.connect(func(r):
+		picker.queue_free()
+		_seat(link, r), CONNECT_ONE_SHOT)
 
 
 func _seat(link: NetClient, role: String) -> void:

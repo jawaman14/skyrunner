@@ -6,6 +6,7 @@ extends Control
 ## presses, and the key caps at the bottom say so.
 
 signal start(opts: Dictionary)
+signal room_requested(opts: Dictionary)  ## "Host a multiplayer game": open the waiting room with these options
 signal multiplayer_requested  ## the Multiplayer button: games on the network, the table, voice settings
 
 var mode_ob: OptionButton
@@ -129,6 +130,10 @@ func _ready() -> void:
 	go_btn.add_theme_color_override("font_color", UIStyle.WHITE)
 	go_btn.pressed.connect(_go)
 	v.add_child(go_btn)
+	var room_btn := Button.new()
+	room_btn.text = "Host a multiplayer game: open a waiting room where friends pick their seats"
+	room_btn.pressed.connect(func(): room_requested.emit(_opts()))
+	v.add_child(room_btn)
 	v.add_child(HSeparator.new())
 	v.add_child(UIStyle.caption("Join a game"))
 	var mp := Button.new()
@@ -184,13 +189,17 @@ func _plan() -> void:
 	plan_lbl.text = plan.describe()
 
 
-func _go() -> void:
-	if tutorial_cb.button_pressed:
-		ControlsConfig.save_setting("tutorial_seen", true)  # next time it's the player's call
-	start.emit({"mode": MODES[mode_ob.selected][1] if MODES[mode_ob.selected][1] != "police" else "solo",
+func _opts() -> Dictionary:
+	return {"mode": MODES[mode_ob.selected][1] if MODES[mode_ob.selected][1] != "police" else "solo",
 		"police": MODES[mode_ob.selected][1] == "police", "players": int(players.value) if players.value > 1 else 0,
 		"graphics": graphics_ob.get_item_text(graphics_ob.selected), "seed": int(seed_box.value), "new": new_cb.button_pressed,
-		"watch": watch_cb.button_pressed, "tutorial": tutorial_cb.button_pressed, "unlocks": UNLOCKS[unlocks_ob.selected][1], "host": host_cb.button_pressed, "map": [MapCity.SEED, 0, int(map_box.value)][map_ob.selected]})
+		"watch": watch_cb.button_pressed, "tutorial": tutorial_cb.button_pressed, "unlocks": UNLOCKS[unlocks_ob.selected][1], "host": host_cb.button_pressed, "map": [MapCity.SEED, 0, int(map_box.value)][map_ob.selected]}
+
+
+func _go() -> void:
+	if tutorial_cb.button_pressed:
+		ControlsConfig.save_setting("tutorial_seen", true)
+	start.emit(_opts())
 
 
 func _join() -> void:
