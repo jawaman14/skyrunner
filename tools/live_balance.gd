@@ -318,7 +318,8 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 			"held_min": air.held_s / 60.0, "pay": air.pay}
 	if s.story != null:
 		r["story"] = {"chapter": s.story.index + 1 + (1 if s.story.completed_all else 0), "minutes": chapter_min,
-			"net_worth": float(s.money) + (s.trade.stock_value() if s.trade != null else 0.0) + (s.logistics.cash_out() if s.logistics != null else 0.0), "nw_max": nw_max}
+			"net_worth": float(s.money) + (s.trade.stock_value() if s.trade != null else 0.0) + (s.logistics.cash_out() if s.logistics != null else 0.0), "nw_max": nw_max,
+			"stuck": [] if s.story.completed_all else s.story.chapter.objectives.filter(func(o): return float(s.story.progress.get(o.key, 0.0)) < float(o.target)).map(func(o): return "%s: %s" % [s.story.chapter.title, o.key])}
 	if s.agency != null:
 		r["agency"] = {"flights": s.agency.flights, "hung_out": s.agency.hung_out, "burned": s.agency.burned,
 			"stings": r.get("stings", 0), "withheld": s.agency.withheld, "exposure": s.agency.exposure}
@@ -405,6 +406,20 @@ func _pct(xs: Array, q: float) -> float:
 	return float(v[clampi(int(q * (v.size() - 1)), 0, v.size() - 1)])
 
 
+## How many runs ended with each unmet goal: {"Chapter: key": count}, fullest first (the run's tally of where the story stalls).
+func _histogram(lists: Array) -> Dictionary:
+	var n := {}
+	for l in lists:
+		for k in l:
+			n[k] = int(n.get(k, 0)) + 1
+	var keys := n.keys()
+	keys.sort_custom(func(a, b): return n[a] > n[b])
+	var out := {}
+	for k in keys:
+		out[k] = n[k]
+	return out
+
+
 func _stats(xs: Array) -> Dictionary:
 	var m := 0.0
 	for x in xs:
@@ -480,7 +495,8 @@ func _summary(rows: Array) -> Dictionary:
 			reached.append({"chapter": n + 1, "share": float(at.size()) / rows.size(), "min_p50": _pct(at, 0.5)})
 		sm["story"] = {"chapter": _stats(rows.map(func(r): return r.story.chapter)), "reached": reached,
 			"net_worth": _stats(rows.filter(func(r): return r.has("story")).map(func(r): return r.story.net_worth)),
-			"nw_1986": rows.filter(func(r): return r.has("story") and r.story.nw_max > 0.0).map(func(r): return int(r.story.nw_max))}
+			"nw_1986": rows.filter(func(r): return r.has("story") and r.story.nw_max > 0.0).map(func(r): return int(r.story.nw_max)),
+			"stuck": _histogram(rows.filter(func(r): return r.has("story")).map(func(r): return r.story.stuck))}
 	if rows.any(func(r): return r.has("agency")):
 		sm["agency"] = {"flights": _mean(rows, "agency", "flights"), "hangout_rate": _rate(rows, "agency", "hung_out"),
 			"burned_rate": _rate(rows, "agency", "burned"), "withheld": _mean(rows, "agency", "withheld"),
