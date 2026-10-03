@@ -35,6 +35,7 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
 View     C cycle camera (chase / cockpit / tower)    M big map    P pause   F2 time of day
 Seats    F3 hand the aircraft to the AI (take another seat from a station) / take it back
 Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)
+Voice    hold ` to talk on your side's net (a radio: range, hills, static), SHIFT + ` to the whole table (hosting or joined)
 Radio    F7 Radio Costa 88: synth music out of 1985     In the car: R radio on / off, , and . (or [ and ]) tune: real 1979-86 broadcasts
 Learn    F10 skip a tutorial step   SHIFT+F10 tutorial on / off (the lobby's Tutorial box, or --tutorial)
 Screen   F9 filter: off / VHS / colour-blindness simulations (protan, deutan, tritan, mono)

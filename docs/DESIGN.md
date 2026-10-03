@@ -894,3 +894,28 @@ OmniLights (5 on medium, 10 on high, none on low) follows the lamps within 90 m 
 road and pavement at night.
 
 **The car's headlights**: two spot lights come on at night (the scene's night above 0.35) while you drive.
+
+## 31. Voice chat that works like a radio
+
+Push-to-talk voice between the people at the table (`scripts/net/voice_*.gd`, `radio_voice.gd`). **Hold ` to talk on your side's
+net; SHIFT + ` to the whole table** (rebindable in `user://voice.cfg`). It rides the host connection the seats already use: no new port.
+
+- **On the wire** (`VoiceCodec`): 8 kHz mono, 40 ms frames of 320 samples, mu-law (one byte a sample): 8 kB/s plus base64 in the
+  JSON line (about 11 kB/s per talker). `{t: voice, ch: net|all, s, d, end}` up; the host sends each listener
+  `{t: voice, from, id, role, ch, s, q, k, d, end}` with the quality they hear it at and what kind of hearing it is. The host drops
+  frames over 25 a second or a transmission over 30 s (a stuck key).
+- **Who hears whom** (`VoiceRouter`, on the host): the **net** is your side's seats (runners: pilot, co-pilot, boss, lieutenant,
+  spotter, boat; law: controller, chief, patrol, interceptor, cutter); the **table** is everyone, clear, always. On the net the
+  quality falls with distance and is zero past the VHF horizon or behind a hill (`RadioNet.can_hear`, the scanner's and DF
+  stations' own line-of-sight); the pilot and co-pilot are the aircraft (so altitude buys range), the desks are their
+  headquarters' masts, and seats with no place on the map (spotter, boat) are a flat 0.75.
+- **The other side listening in**: the law hears the runners' net once it owns **Intercept runner channels**, at 0.85 of the quality;
+  a runner hears the police net with the **scanner**, and it arrives **scrambled** when the task force has paid for encryption.
+  A runner transmission from the air is also a real runner transmission for DF: when the key comes up the DF stations take their
+  bearing (`Session.voice_transmitted`), a long call sharpening it like any other.
+- **The sound** (`RadioVoice`): a 300 Hz to 2.8 kHz band, a little crunch, hiss that grows as the signal weakens, dropouts at the edge
+  of range, a squelch click as a talker keys up and a burst of noise as they let go; a scrambled voice is spectrally inverted
+  (the rhythm of speech, none of the words). The effect slider in the settings runs from a clean voice to the full radio.
+- **Devices**: `VoiceChat` captures the microphone through a muted capture bus (project setting `audio/driver/enable_input`; the macOS build
+  declares the permission) and plays each talker through a generator; without a microphone it is a listener only. Settings
+  (microphone, key, volumes, effect strength, mutes) are in `user://voice.cfg`, never in a save.

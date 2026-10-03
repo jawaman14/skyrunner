@@ -20,6 +20,7 @@ var players: Array = []  ## [{name, role}]
 var chat_log: Array = []  ## [{from, role, side, text, to}]
 var claim_error = null
 signal role_changed(role: String)
+signal voice_heard(msg: Dictionary)  ## a talker as the host routed it: {from, id, role, ch, s, q, k, d, end}
 var _buf := PackedByteArray()
 var _seq := 0
 var _hello_sent := false
@@ -81,6 +82,8 @@ func poll() -> void:
 				role_changed.emit(role)
 			"claim_failed":
 				claim_error = str(msg.get("msg", ""))
+			"voice":
+				voice_heard.emit(msg)
 			"chat":
 				chat_log.append(msg)
 				Py.keep_last(chat_log, 50)
@@ -100,6 +103,11 @@ func claim(role_: String) -> void:
 
 func release() -> void:
 	_put({"t": "release"})
+
+
+## One 40 ms voice frame (base64 of VoiceCodec.pack) on the side's net or to the whole table; `end` is the key coming up.
+func send_voice(ch: String, seq: int, d: String, end := false) -> void:
+	_put({"t": "voice", "ch": ch, "s": seq, "d": d, "end": end})
 
 
 ## Table talk: to everyone, or to your side only.
