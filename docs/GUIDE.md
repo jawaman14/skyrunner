@@ -50,14 +50,14 @@ Run the game with no arguments and the **lobby** opens. It sets the same things 
 | **Tutorial (Palmetto Cay)** | The original four-chapter campaign on the classic island: mail runs, a favour for Manny, airdrops, the long legs. |
 | **Co-op: friends crew for you** | You host; friends take the co-pilot, spotter, boat, boss, lieutenant or fixer seats. |
 | **Versus** | Humans on both sides; the AI fills the empty seats. |
-| **Unlocks: Story / Open** | *Story* (the default): eight chapters, 1979 to 1986, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
+| **Unlocks: Story / Open** | *Story* (the default): nine chapters, 1979 to 1986, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
 | **Map** | Costa Brava, the city coast (default); the classic island; or a generated island by number. |
 | **Tutorial box** | Lessons that finish when you do the thing, and tips when something new happens. |
 | **Multiplayer** | Host a game with a waiting room, or look for games on your network (also **F4** in game). |
 
 **The story, in brief.** *Square Grouper* (1979, grass and stash houses) → *The Connection* (1980, logistics; the
 Colombians call) → *Cocaine Cowboys* (1981, cocaine, Los Cuervos, the street war) → *Family Business* (1982, the
-Morettis) → *The Task Force* (1983, the federal court) → *Isla Soberana* (1984, the island) → *The Company* (1985, the
+Morettis) → *The Task Force* (1983, the federal court) → *Isla Soberana* (1984, the island) → *The House* (1984, the Family's casino) → *The Company* (1985, the
 Agency) → *Kingpin* (1986). A chapter's goals are measured by the systems themselves (pounds landed, dealers on corners,
 cash home). A faction already gone before you meet it does not strand a chapter.
 
@@ -409,6 +409,14 @@ on the airliner (Shift+U) or in a container on the freighter (Shift+I). Customs'
 handlers, forged papers and false bottoms against dogs, profiling, X-ray, crackdowns). The task force cannot follow past the
 line; the General sells passage past his MiGs until a purge closes the island. His aide meets you on the ramp, or on the radio
 (Shift+G).
+
+### 5.13b The Hotel Cielo (DESIGN 40)
+
+The Family's casino on Isla Soberana: a stake in the house (tenths, up to 40 %), the cage (street cash in, clean cheques out, for a
+fee, and it cools your case), the General's skim and favours, a rival casino, the task force's wiretaps, audits and raids, and
+in the end a revolution you have twenty minutes to get out of. Ring Lenny Vance with **Shift+K** in the cockpit, **X** at the boss's,
+lieutenant's, co-pilot's and fixer's desks, or from the phone. The controller and the chief press **F** for the casino file. It is
+the story's chapter *The House* (1984).
 
 ### 5.14 The court (DESIGN 16)
 

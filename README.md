@@ -56,8 +56,8 @@ keys, **F8** to rebind them, **F4** for the multiplayer menu.
 
 ### Run the coast
 
-- **The story** (the default): eight chapters, 1979 to 1986 (*Square Grouper*, *The Connection*, *Cocaine
-  Cowboys*, *Family Business*, *The Task Force*, *Isla Soberana*, *The Company*, *Kingpin*). Each chapter opens part
+- **The story** (the default): nine chapters, 1979 to 1986 (*Square Grouper*, *The Connection*, *Cocaine
+  Cowboys*, *Family Business*, *The Task Force*, *Isla Soberana*, *The House*, *The Company*, *Kingpin*). Each chapter opens part
   of the game, so you meet each system on its own. *Unlocks: Open* has all of it from the start; the old flying
   campaign is still there as the *Tutorial* (Palmetto Cay, four chapters).
 - **Costa Brava**, the default map: the port city of San Telmo (about 6,900 buildings), docks, an airport, a river

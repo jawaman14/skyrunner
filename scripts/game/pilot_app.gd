@@ -423,6 +423,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 			open_talk("family")  # a sit-down with the Family
 		elif ev.shift_pressed and k == KEY_G and s.island != null:
 			open_talk("general")  # the General's aide on the island frequency
+		elif ev.shift_pressed and k == KEY_K and s.casino != null:
+			open_talk("casino")  # the Hotel Cielo: Lenny Vance, the manager
 		elif ev.shift_pressed and k in [KEY_U, KEY_I] and s.island != null:
 			# Isla Soberana quick orders: Shift+U four mules, Shift+I a container
 			var r: Array = s.command(Roles.PILOT, "island_ship", {"method": "mules" if k == KEY_U else "ship", "amount": 4 if k == KEY_U else 500})

@@ -659,6 +659,35 @@ func _cmd_analyst(role: String, a: Dictionary):
 	return err if err != "" else null
 
 
+func _cmd_casino(role: String, a: Dictionary):
+	if casino == null:
+		return "There is no casino in this game."
+	var err := ""
+	match str(a.get("do", "")):
+		"stake":
+			err = casino.buy_stake()
+		"collect":
+			err = casino.collect()
+		"launder":
+			err = casino.launder(str(a.get("stash", "")), int(a.get("amount", 0)))
+		"general":
+			err = casino.pay_general()
+		"rival":
+			err = casino.buy_out_rival()
+		"evacuate":
+			err = casino.evacuate()
+		_:
+			err = "Stake, collect, launder, general, rival or evacuate."
+	return err if err != "" else null
+
+
+func _cmd_casino_case(role: String, a: Dictionary):
+	if casino == null:
+		return "There is no casino in this game."
+	var err := casino.case_action(str(a.get("do", "")))
+	return err if err != "" else null
+
+
 func _cmd_service(role: String, a: Dictionary):
 	if airframe == null:
 		return "No wear in this game: nothing to service."

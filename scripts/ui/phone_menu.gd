@@ -33,6 +33,8 @@ func contacts() -> Array:
 		out.append(["family", Talk.CAPO, "a sit-down with the Family"])
 	if s.island != null:
 		out.append(["general", "The General's aide", "the island frequency"])
+	if s.casino != null:
+		out.append(["casino", "The Hotel Cielo", "Lenny Vance: your stake, the cage, the General, the Lucky Palm"])
 	if s.nights != null or s.ground != null:
 		out.append(["desk", "The desk", "the boss's orders (and the squads, if there's a war on)"])
 	if s.races != null:

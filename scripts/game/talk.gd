@@ -149,6 +149,43 @@ class State:
 	var cand: Array = []  ## up to four candidates: {id, name, role, skill, wage, hint}
 	var jailed: Array = []  ## crew in custody without a lawyer: {id, name, role}
 	var crew_list: Array = []  ## everyone on the payroll: {id, name, role, status, assigned, doing}
+	# the casino (the Hotel Cielo)
+	var manager := "Lenny Vance"
+	var casino := false
+	var cs_status := ""
+	var cs_trading := false
+	var cs_stake_pct := 0
+	var cs_stake_price := 0
+	var cs_can_buy := false
+	var cs_owed := 0
+	var cs_heat := 0
+	var cs_unrest := 0
+	var cs_rival := 0
+	var cs_rival_name := ""
+	var cs_rival_buyout := 0
+	var cs_bought_out := false
+	var cs_gross_hour := 0
+	var cs_share_hour := 0
+	var cs_skim_pct := 0
+	var cs_family_pct := 0
+	var cs_act := ""
+	var cs_general_payoff := 0
+	var cs_uprising_min := 0
+	var cs_evac_total := 0
+	var cs_has_cash := false
+	var cs_cash_line := ""
+	var cs_dark_note := ""
+	var cs_stash_id := ""
+	var cs_launder_n := 0
+	var cs_launder_line := ""
+	# the casino file (the law's side)
+	var cs_case := 0
+	var cs_cage_note := ""
+	var cs_closed_note := ""
+	var cs_wiretap := 0
+	var cs_audit := 0
+	var cs_raid := 0
+	var cs_raid_case := 0
 
 	func _init(snap_fn_: Callable, cmd_fn_: Callable) -> void:
 		snap_fn = snap_fn_
@@ -238,6 +275,49 @@ class State:
 		trade_last = str(t.get("last", ""))
 		rifles = int(snap.get("arsenal", {}).get("stock", {}).get("rifle", 0))
 		jailed = p.get("jail", []).filter(func(j): return not j.lawyer)
+		var cz: Dictionary = snap.get("casino", {})
+		casino = not cz.is_empty()
+		if casino:
+			cs_status = str(cz.get("status", ""))
+			if cz.has("stake"):  # the owners' view
+				cs_trading = bool(cz.get("trading", false))
+				cs_stake_pct = int(round(100.0 * float(cz.stake)))
+				cs_stake_price = int(cz.stake_price)
+				cs_can_buy = float(cz.stake) < float(cz.stake_max) - 0.001
+				cs_owed = int(cz.owed)
+				cs_heat = int(cz.heat)
+				cs_unrest = int(cz.unrest)
+				cs_rival = int(cz.rival)
+				cs_rival_name = str(cz.rival_name)
+				cs_rival_buyout = int(cz.rival_buyout)
+				cs_bought_out = bool(cz.bought_out)
+				cs_gross_hour = int(cz.gross_hour)
+				cs_share_hour = int(cz.share_hour)
+				cs_skim_pct = int(round(100.0 * float(cz.skim)))
+				cs_family_pct = int(round(100.0 * float(cz.family_cut)))
+				cs_act = str(cz.act)
+				cs_general_payoff = int(cz.general_payoff)
+				cs_uprising_min = int(ceil(float(cz.uprising_s) / 60.0))
+				cs_evac_total = int(cz.evac_cash) + int(cz.evac_stake)
+				cs_dark_note = ("A raid or a fire: %d more minutes." % int(ceil(float(cz.dark_s) / 60.0))) if int(cz.dark_s) > 0 else "The island is not in a state to gamble."
+				var best: Dictionary = {}
+				for st in cz.get("stashes", []):
+					if best.is_empty() or int(st.cash) > int(best.cash):
+						best = st
+				cs_has_cash = not best.is_empty() and int(cz.cage_left) >= 100 and int(cz.cage_shut_s) == 0 and int(cz.dark_s) == 0
+				cs_stash_id = str(best.get("id", ""))
+				cs_launder_n = mini(int(best.get("cash", 0)), int(cz.cage_left))
+				cs_cash_line = ("$%s of the $%s at %s; the cage has $%s left this hour" % [Py.money(cs_launder_n), Py.money(int(best.get("cash", 0))), str(best.get("name", "")),
+					Py.money(int(cz.cage_left))]) if not best.is_empty() else "no street cash in the stashes"
+				cs_launder_line = "The Family and the General took their cut."
+			else:  # the law's view
+				cs_case = int(cz.get("case", 0))
+				cs_wiretap = int(cz.get("wiretap", 0))
+				cs_audit = int(cz.get("audit", 0))
+				cs_raid = int(cz.get("raid", 0))
+				cs_raid_case = int(cz.get("raid_case", 0))
+				cs_cage_note = ("shut for the audit: %d more minutes" % int(ceil(float(cz.audit_s) / 60.0))) if int(cz.get("audit_s", 0)) > 0 else "open"
+				cs_closed_note = ("The house is dark for %d minutes." % int(ceil(float(cz.closed_s) / 60.0))) if int(cz.get("closed_s", 0)) > 0 else ""
 
 	func _do(name: String, args := {}) -> bool:
 		var r: Array = cmd_fn.call(name, args)
@@ -273,6 +353,34 @@ class State:
 
 	func container() -> bool:
 		return _do("island_ship", {"method": "ship", "amount": 500})
+
+	# the casino
+	func buy_stake() -> bool:
+		return _do("casino", {"do": "stake"})
+
+	func collect() -> bool:
+		return _do("casino", {"do": "collect"})
+
+	func launder() -> bool:
+		return _do("casino", {"do": "launder", "stash": cs_stash_id, "amount": cs_launder_n})
+
+	func pay_general() -> bool:
+		return _do("casino", {"do": "general"})
+
+	func buy_out() -> bool:
+		return _do("casino", {"do": "rival"})
+
+	func evacuate() -> bool:
+		return _do("casino", {"do": "evacuate"})
+
+	func wiretap() -> bool:
+		return _do("casino_case", {"do": "wiretap"})
+
+	func audit() -> bool:
+		return _do("casino_case", {"do": "audit"})
+
+	func raid() -> bool:
+		return _do("casino_case", {"do": "raid"})
 
 	# the payroll
 	func has_cand(i: int) -> bool:

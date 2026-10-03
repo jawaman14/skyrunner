@@ -77,6 +77,9 @@ func test_chapters_open_the_game_in_order() -> void:
 	check_eq(s.police.territory_y, Island.TERRITORY_Y, "the task force stops at the island's line")
 	check(s.agency == null, "no Company yet")
 	s.story.advance()
+	check(s.casino != null, "1984: the Family's house on the island")
+	check(s.agency == null, "still no Company")
+	s.story.advance()
 	check(s.agency != null and s.agency.prng != null, "1985: the Company and its pipeline")
 	s.story.advance()
 	check_eq(s.story.chapter.title, "Kingpin")
@@ -126,12 +129,12 @@ func test_open_mode_has_everything() -> void:
 
 
 func test_the_chapter_list() -> void:
-	check_eq(Story.CHAPTERS.size(), 8)
+	check_eq(Story.CHAPTERS.size(), 9)
 	var years := Story.CHAPTERS.map(func(c): return c[0])
 	var sorted := years.duplicate()
 	sorted.sort()
 	check_eq(years, sorted, "in date order")
-	var opened := Story.opens_through(8)
+	var opened := Story.opens_through(9)
 	for k in Session.SYSTEMS:
 		check(k in opened, "chapter by chapter, every system opens: " + k)
 	for k in Story.LOCKS:
@@ -145,6 +148,7 @@ func test_no_softlocks_when_a_faction_is_gone() -> void:
 	s.money = 70000
 	s.story.tick(s)
 	check_eq(s.story.chapter.title, "The Task Force", "the Morettis convicted first: the chapter still ends")
+	s.story.advance()
 	s.story.advance()
 	s.story.advance()
 	check_eq(s.story.chapter.title, "The Company")

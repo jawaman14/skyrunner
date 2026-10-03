@@ -226,7 +226,7 @@ func _hints() -> Array:
 		Roles.MECHANIC:
 			out = [["UP/DOWN", "part", "down"], ["ENTER", "repair it", "enter"], ["B", "both", "b"], ["S", "stop the work", "s"], ["I", "inspect", "i"], ["F", "fuel +10%", "f"]]
 		Roles.FIXER:
-			out = [["UP/DOWN", "job", "down"], ["ENTER", "take / drop it", "enter"], ["W", "the hiring hall", "w"], ["C", "the Family", "c"], ["L", "the lawyer", "l"],
+			out = [["X", "the casino", "x"], ["UP/DOWN", "job", "down"], ["ENTER", "take / drop it", "enter"], ["W", "the hiring hall", "w"], ["C", "the Family", "c"], ["L", "the lawyer", "l"],
 				["M", "the buyers", "m"], ["K", "logistics", "k"], ["G", "scanner", "g"], ["H", "radar detector", "h"], ["S", "spotter here", "s"], ["F", "ferry tank", "f"]]
 		Roles.BOAT:
 			out = [["RIGHT-CLICK", "send the go-fast there", ""]]
@@ -459,6 +459,13 @@ func open_talk(name: String, title := "start") -> TalkBalloon:
 func _island_key(k: String, snap: Dictionary) -> bool:
 	if snap.get("island", {}).is_empty():
 		return false
+	if not snap.get("casino", {}).is_empty():
+		if k == "x" and role in [Roles.BOSS, Roles.LIEUTENANT, Roles.COPILOT, Roles.FIXER]:
+			open_talk("casino")  # the Hotel Cielo: Lenny Vance on the line
+			return true
+		if k == "f" and role in [Roles.CONTROLLER, Roles.CHIEF]:
+			open_talk("casino_file")  # the task force's file on the house
+			return true
 	if role == Roles.LIEUTENANT and k in ["u", "i", "g"]:
 		if k == "g":
 			open_talk("general")  # the General's aide on the island frequency

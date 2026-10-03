@@ -65,6 +65,8 @@ func _initialize() -> void:
 		"open": {"family": true, "island": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "career": true, "renown": true,
 			"ground_war": true, "rackets": true, "logistics": true, "court": true, "air": true, "start": Session.START_MONEY},
 		"story": {"story": true, "career": true, "air": true},
+		"nocasino": {"trade": true, "career": true, "renown": true, "payroll": true, "family": true, "agency": true, "logistics": true, "island": true},
+		"casino": {"trade": true, "career": true, "renown": true, "payroll": true, "family": true, "agency": true, "logistics": true, "island": true, "casino": true},
 	}
 	if a.size() > 2 and a[2] == "open_sweep":  # open mode's start: what a float buys (entry 34)
 		var base: Dictionary = configs.open
@@ -75,6 +77,8 @@ func _initialize() -> void:
 			configs["open_%dk" % k] = c
 	elif a.size() > 2 and a[2] == "air":  # the air risk against the same systems without it
 		configs = {"noair": configs.noair, "air": configs.air}
+	elif a.size() > 2 and a[2] == "casino":  # the Hotel Cielo against the same systems without it
+		configs = {"nocasino": configs.nocasino, "casino": configs.casino}
 	elif a.size() > 2:  # one config only
 		configs = {a[2]: configs[a[2]]}
 	else:
@@ -82,6 +86,8 @@ func _initialize() -> void:
 		configs.erase("air")  # its own run too (-- 80 3 air, with noair beside it), so the others stay comparable
 		configs.erase("noair")
 		configs.erase("open")
+		configs.erase("nocasino")  # its own run too (-- 200 3 casino)
+		configs.erase("casino")
 	var first := int(a[3]) if a.size() > 3 else 1  # the first seed (to rerun one)
 	var out := {"seeds": seeds, "hours": hours, "stand_ins": {"run_pay": RUN_PAY, "run_every_s": RUN_EVERY_S,
 		"law_pay": LAW_PAY, "law_every_s": LAW_EVERY_S, "mule_max": MULE_MAX, "ship_max": SHIP_MAX}, "configs": {}}
@@ -182,6 +188,9 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 					_agency_flight(s, air)
 		if s.chronicle != null:
 			s.chronicle.update(STEP)
+		if s.casino != null:
+			s.casino.update(STEP)
+			_casino_ai(s, t)
 		if s.payroll != null:
 			s.payroll.update(STEP)
 		if s.island != null:
@@ -268,6 +277,8 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 	r["money"] = s.money
 	# what the organisation is worth: the safe, product at the town's street price, street money still out
 	r["net_worth"] = float(s.money) + (s.trade.stock_value() if s.trade != null else 0.0) + (s.logistics.cash_out() if s.logistics != null else 0.0)
+	if s.casino != null:  # a stake is worth what it cost, and the account is cash owed
+		r["net_worth"] += s.casino.stake / Casino.STAKE_STEP * float(Casino.STAKE_PRICE) + float(s.casino.owed)
 	if s.ground != null:
 		r["open"] = {"squads_max": squads_max, "squad": squads_max > 0, "first_squad_min": first_squad if first_squad >= 0.0 else hours * 60.0}
 		var g: GroundWar = s.ground
@@ -285,6 +296,10 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 		r.tribute_paid = s.family.tribute_total
 		r["family"] = {"cons": s.family.cons, "loans": s.family.loans_taken, "rat": s.family.rat, "gone": s.family.gone,
 			"respect": s.family.respect, "taxed": s.family.taxed}
+	if s.casino != null:
+		var cz: Casino = s.casino
+		r["casino"] = {"stake": cz.stake, "owed": cz.owed, "laundered": cz.laundered, "fees": cz.fees, "collected": cz.collected, "heat": cz.heat, "case": cz.case_,
+			"unrest": cz.unrest, "status": cz.status, "uprising": cz.status != "open"}
 	if s.island != null:
 		r["island"] = {"caught": s.island.caught, "delivered": s.island.delivered, "intercepts": s.island.intercepts,
 			"closed_frac": closed_s / (hours * 3600.0), "relations": s.island.relations}
@@ -309,6 +324,36 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 			"stings": r.get("stings", 0), "withheld": s.agency.withheld, "exposure": s.agency.exposure}
 	s.dispose()
 	return r
+
+
+## The organisation's AI at the Hotel Cielo: a stake once it is rich, the cage when the heat allows, the share collected, the General
+## paid when the island simmers, the rival bought out when it leans, and out on the launch when the government falls.
+func _casino_ai(s: Session, t: float) -> void:
+	var c: Casino = s.casino
+	if c.status == "uprising":
+		c.evacuate()
+		return
+	if c.status != "open":
+		return
+	var at := int(t)
+	if at % 600 == 0 and t > 1800.0 and c.stake < Casino.STAKE_MAX and s.money > 30000:
+		c.buy_stake()
+	if at % 600 == 0 and s.logistics != null and c.heat < 50.0:
+		var best := ""
+		var most := 0
+		for st in s.stash_net.stashes:
+			var cash: int = int(s.logistics.cash.get(st.id, 0))
+			if cash > most and not st.burned:
+				most = cash
+				best = st.id
+		if most >= 2000:
+			c.launder(best, most)
+	if at % 1800 == 0:
+		c.collect()
+		if c.unrest > 60.0 and s.money > 10000:
+			c.pay_general()
+		if c.rival > 60.0 and s.money > 40000:
+			c.buy_out_rival()
 
 
 ## A flight's roll (air risk on): a bust or a crash goes through the session, as in
