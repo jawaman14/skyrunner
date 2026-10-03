@@ -42,6 +42,16 @@ const WAR := ["spent", "fights_total", "lost_men", "arrests_total", "officers_do
 	"_upkeep_acc"]
 const WAR_INTS := ["recruit", "upkeep", "arms", "org", "rival", "police"]
 const WAR_PLAIN := ["control", "hot_spots"]
+const SEASON := ["night", "phase", "winner", "reason", "history", "runner_log", "law_log", "cartel_bonus", "plan_hist", "disabled",
+	"forecast", "weather", "moon0", "sightings"]
+const SEASON_INTS := ["wind_kt"]
+const ORG := ["dirty", "clean", "heat", "loyalty", "fronts", "bribes", "lawyer", "tier", "exposure", "gear", "opsec", "crews", "decoys",
+	"route", "lie_low", "counterintel", "laundered_tonight", "actions", "ready"]
+const RIVAL := ["name", "strength", "cash", "turf", "truce_nights", "grudge", "busts", "temper", "wronged", "wronged_night", "kept",
+	"betrayals", "revealed", "betrayed", "zone", "runs", "tipped", "hit"]
+const TASK_FORCE := ["bank_k", "support", "evidence", "informants", "encryption", "fed_arrived", "budget_k", "funded", "aerostat", "patrol",
+	"wiretap", "audit", "ia_sweep", "press", "gang_unit", "canary", "canary_zone", "actions", "ready"]
+const DIRECTOR := ["_ai_mem", "_paid_before", "ended_at"]
 
 
 static func capture(s: Session) -> Dictionary:
@@ -76,6 +86,8 @@ static func capture(s: Session) -> Dictionary:
 		d["squads"] = {"list": squads, "serial": s.ground._serial, "full": true}
 		d["war"] = _capture_war(s.ground)
 	_capture_world(s, d)
+	if s.nights != null:
+		d["nights"] = _capture_nights(s.nights)
 	return d
 
 
@@ -102,6 +114,27 @@ static func _capture_world(s: Session, d: Dictionary) -> void:
 		d["arsenals"] = ars
 	if s.rackets != null:
 		d["rackets"].merge(SaveVars.capture(s.rackets, RACKETS), true)
+
+
+## The Organisation layer's nightly planning game. A save is parked, so a night that was mid-operation
+## comes back at its planning phase (the plan is rebuilt when the pilot next takes off) and the bots
+## plan it afresh; the two random streams carry on from where they were.
+static func _capture_nights(n: NightDirector) -> Dictionary:
+	var ss: HQ.Season = n.season
+	var out := {"season": SaveVars.capture(ss, SEASON), "org": SaveVars.capture(ss.org, ORG), "law": SaveVars.capture(ss.law, TASK_FORCE),
+		"director": SaveVars.capture(n, DIRECTOR), "phase": n.phase,
+		"rng": {"season": ss.rng.get_state(), "bots": n._bot_rng.get_state()}}
+	if ss.rival != null:
+		out["rival"] = SaveVars.capture(ss.rival, RIVAL)
+	if ss.rrng != null:
+		out["rng"]["rival"] = ss.rrng.get_state()
+	if ss.xrng != null:
+		out["rng"]["extra"] = ss.xrng.get_state()
+	var reports := []
+	for r: HQ.NightReport in ss.reports:
+		reports.append({"night": r.night, "lines": r.lines.duplicate(), "runner_lines": r.runner_lines.duplicate(), "law_lines": r.law_lines.duplicate()})
+	out["reports"] = reports
+	return out
 
 
 static func _capture_war(g: GroundWar) -> Dictionary:
@@ -197,6 +230,47 @@ static func restore(s: Session, d: Dictionary) -> void:
 	if s.ground != null and d.get("war") is Dictionary:
 		_restore_war(s.ground, d.war)
 	_restore_world(s, d)
+	if s.nights != null and d.get("nights") is Dictionary:
+		_restore_nights(s.nights, d.nights)
+
+
+static func _restore_nights(n: NightDirector, d: Dictionary) -> void:
+	var ss: HQ.Season = n.season
+	if d.get("season") is Dictionary:
+		SaveVars.restore(ss, d.season, SEASON, SEASON_INTS)
+	if d.get("org") is Dictionary:
+		SaveVars.restore(ss.org, d.org, ORG)
+	if d.get("law") is Dictionary:
+		SaveVars.restore(ss.law, d.law, TASK_FORCE)
+	if ss.rival != null and d.get("rival") is Dictionary:
+		SaveVars.restore(ss.rival, d.rival, RIVAL)
+	if d.get("director") is Dictionary:
+		SaveVars.restore(n, d.director, DIRECTOR)
+	var rng: Dictionary = d.get("rng", {})
+	if rng.get("season") is Array:
+		ss.rng.set_state(rng.season)
+	if rng.get("bots") is Array:
+		n._bot_rng.set_state(rng.bots)
+	if ss.rrng != null and rng.get("rival") is Array:
+		ss.rrng.set_state(rng.rival)
+	if ss.xrng != null and rng.get("extra") is Array:
+		ss.xrng.set_state(rng.extra)
+	ss.reports = []
+	for r in d.get("reports", []):
+		var nr := HQ.NightReport.new(int(r.night), [])
+		nr.lines = r.get("lines", [])
+		nr.runner_lines = r.get("runner_lines", [])
+		nr.law_lines = r.get("law_lines", [])
+		ss.reports.append(nr)
+	# parked: a night that was mid-operation starts again from planning
+	if ss.phase == "operation":
+		ss.phase = "planning"
+	n.phase = "planning"
+	n.main = null
+	n.crews = []
+	n.ended_at = null
+	n._ai_planned = false
+	n._show_forecast()  # the world's weather is tonight's forecast again
 
 
 static func _restore_world(s: Session, d: Dictionary) -> void:
