@@ -1,6 +1,6 @@
 extends SceneTree
 ## godot --headless --script res://tests/run_tests.gd [-- filter]
-## Runs every tests/test_*.gd; exit code is the number of failed tests.
+## Runs every tests/test_*.gd; exit code is the number of failed tests. SHARD=i/n runs one slice of the files.
 
 var _started := false
 
@@ -22,6 +22,17 @@ func _run() -> void:
 		if f.begins_with("test_") and f.ends_with(".gd") and f != "test_case.gd":
 			files.append(f)
 	files.sort()
+	# SHARD="i/n" (1-based) runs every n-th file starting at the i-th: CI runs the suite as parallel jobs
+	var shard := OS.get_environment("SHARD")
+	if shard.contains("/"):
+		var parts := shard.split("/")
+		var si := int(parts[0]) - 1
+		var sn := maxi(1, int(parts[1]))
+		var mine: Array[String] = []
+		for k in files.size():
+			if k % sn == si:
+				mine.append(files[k])
+		files = mine
 	var passed := 0
 	var failed := 0
 	var t0 := Time.get_ticks_msec()
