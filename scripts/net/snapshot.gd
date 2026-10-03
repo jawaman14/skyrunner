@@ -136,6 +136,8 @@ static func _runner(sess: Session, role: String) -> Dictionary:
 	out["intel"] = intel
 	out["scanner"] = sess.scanner_log.slice(-8).map(func(m): return m[1]) if sess.gear.has("scanner") else null
 	out["upgrades"] = sess.upgrades["runner"].keys()
+	if sess.airframe != null:
+		out["airframe"] = sess.airframe.view(role == Roles.MECHANIC)
 	out["market"] = sess.econ.board()
 	if sess.arsenals.has("org"):
 		out["arsenal"] = sess.arsenals["org"].to_dict()

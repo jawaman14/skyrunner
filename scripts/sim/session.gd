@@ -82,6 +82,9 @@ func _init(opts := {}) -> void:
 		rackets = Rackets.new(self)
 	if opts.get("races", false) and Races.ENABLED:
 		races = Races.new(self)
+	if opts.get("airframe", false) and Airframe.ENABLED:
+		airframe = Airframe.new(self)
+		airframe.held = humans.has(Roles.MECHANIC)
 	radio.df_stations = []
 	for a in world.airfields:
 		if a.police:
@@ -129,6 +132,9 @@ func dispose() -> void:
 	if analyst != null:
 		analyst.sess = null
 	analyst = null
+	if airframe != null:
+		airframe.sess = null
+	airframe = null
 	if undercover != null:
 		undercover.sess = null
 	undercover = null

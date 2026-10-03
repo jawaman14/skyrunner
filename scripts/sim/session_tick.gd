@@ -64,12 +64,16 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 		if tie != _tied:
 			_tied = tie
 			_apply_wind()
+	if airframe != null:
+		controls = airframe.limit(controls)  # a rough or failed engine, or the cowling off for a repair
 	fm.controls = controls
 	var s := fm.step(dt, world.ground)
 	state = s
 	if s.valid:
 		loadout.fuel_lb = s.fuel_lb
 	_rules(dt, s)
+	if airframe != null:
+		airframe.update(dt, s)
 	if not (phase in ["crashed", "busted"]):
 		_crew_work(dt, s)
 	if phase == "parked" and not unloading.is_empty():

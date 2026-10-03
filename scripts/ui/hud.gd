@@ -133,7 +133,7 @@ func _build_chips() -> void:
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_anchor(row, Vector4(0, 0, 0.36, 0), Vector4(14, 12, 0, 70))
 	zones["chips"] = row
-	for n in ["xpdr", "ap", "race", "crew", "kick", "pump", "radar", "wx", "pulse", "cam"]:
+	for n in ["xpdr", "ap", "race", "cond", "crew", "kick", "pump", "radar", "wx", "pulse", "cam"]:
 		chips[n] = Chip.new().setup(n.to_upper())
 		row.add_child(chips[n])
 	add_child(row)
@@ -322,6 +322,21 @@ func _chip_row(st: FlightModel.FlightState, c: FlightModel.Controls) -> void:
 	chips["ap"].set_state("AP", UIStyle.CYAN, s.autopilot.engaged)
 	var who: String = {"human": "CREW: CO-PILOT", "ai": "CREW: ROSA"}.get(s.copilot, "SOLO")
 	chips["crew"].set_state(who, UIStyle.CYAN, Py.truthy(s.copilot))
+	var cond := ""
+	var cond_col := UIStyle.AMBER
+	if s.airframe != null:
+		if s.airframe.engine_out():
+			cond = "ENGINE OUT"
+			cond_col = UIStyle.RED
+		elif s.airframe.rough():
+			cond = "ENGINE ROUGH"
+		elif s.airframe.airframe() < Airframe.AIRFRAME_WEAK_BELOW:
+			cond = "AIRFRAME WEAK"
+		elif not s.airframe.work.is_empty():
+			cond = "REPAIR UNDER WAY"
+			cond_col = UIStyle.CYAN
+	chips["cond"].visible = cond != ""
+	chips["cond"].set_state(cond, cond_col, true)
 	var race: String = s.races.hud_line() if s.races != null else ""
 	chips["race"].visible = race != ""
 	chips["race"].set_state(race, UIStyle.AMBER, true)
