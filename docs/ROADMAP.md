@@ -10,11 +10,11 @@ The balance numbers were measured with JSBSim; the game now flies its own model.
 2. Done: `cli.gd -- feasibility` again (the castering-gear fix changed takeoffs): 240 trials, a net
    +12 passes (concentrated at Old Quarry for the Cessna 182 - the mountain-strip question
    docs/STRIPS.md left open), but the twins lost some landings. See entry 35.
-3. Done: `cli.gd -- strategic --n 100`: the equilibrium moved to 58.4%, outside the 50 ± 5% target -
-   almost certainly the crash-rate drop removing a tax that kept the sides even (ablating "crews"
-   alone drops it to 36%, by far the largest lever). **Not tuned yet** - this is 10x fewer seasons
-   per matrix cell than the run it's compared against, so a bigger re-run would help confirm the
-   drift is real before anyone retunes a rule. See entry 35 (docs/BALANCE.md) for the numbers.
+3. Done: `cli.gd -- strategic --n 100`: the equilibrium moved to 58.4%, outside the 50 +/- 5% target - almost
+   certainly the crash-rate drop removing a tax that kept the sides even (ablating "crews" alone drops it to 36%,
+   by far the largest lever). **Tuned (BALANCE entry 45):** a run of 200 per cell read 54.6% by luck; 1,000 per
+   cell confirmed 58.3%, a sweep of the base value of a run (HQ rule `run_payout`) found 10750 puts it at 51.7%
+   (51.6% at 2,000 per cell), and every other target holds there (comebacks 21.8%, every ending above 8%).
 4. Done: `tools/live_balance.gd -- 80 3` and `-- 40 12 story`; BALANCE entry 35 written and
    `docs/BALANCE.md` regenerated. BETA.md (at the repo root, not under docs/) now carries the balance note.
 

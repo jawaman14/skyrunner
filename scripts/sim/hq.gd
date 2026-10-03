@@ -22,7 +22,7 @@ const RULES := {
 	"start_budget_k": 15.0,
 	"actions_per_night": 3,
 	"overhead": 1500,  # per night: crew wages, hangar, "consulting" (1000 until the airdrop fix; BALANCE.md)
-	"run_payout": 12000,  # base value of one run for the C172 (15000 until the airdrop fix; BALANCE.md)
+	"run_payout": 10750,  # base value of one run for the C172 (15000 until the airdrop fix, 12000 until entry 45; BALANCE.md)
 	"crew_fee": 3000,  # contract crew (AI run)
 	"crew_share": 0.6,  # organisation's share of a contract crew's load
 	"decoy_fee": 1500,
