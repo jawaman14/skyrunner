@@ -19,6 +19,8 @@ extends Node
 ##
 ## With no arguments the lobby opens, which sets the same options with menus.
 
+var _finder: LanDiscovery.Finder = null  ## listens for games on the network (the multiplayer menu's list)
+var _mp: MultiplayerMenu = null
 var save_dir := "user://"  ## the tests point it elsewhere so they never touch a player's saves
 
 var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1,
@@ -57,10 +59,57 @@ func _ready() -> void:
 func show_lobby() -> void:
 	var lobby := Lobby.new()
 	add_child(lobby)
+	lobby.multiplayer_requested.connect(func(): open_mp())
 	lobby.start.connect(func(opts):
 		lobby.queue_free()
 		args.merge(opts, true)
 		start())
+
+
+## F4 (and the lobby's Multiplayer button): the multiplayer menu over whatever is running.
+func _unhandled_key_input(ev: InputEvent) -> void:
+	if ev is InputEventKey and ev.pressed and not ev.echo and ev.keycode == KEY_F4 and _mp == null:
+		open_mp()
+		get_viewport().set_input_as_handled()
+
+
+func open_mp() -> MultiplayerMenu:
+	if _mp != null:
+		return _mp
+	if _finder == null:
+		_finder = LanDiscovery.Finder.new().start()
+		add_child(_finder)
+	var server: HostServer = null
+	var link: NetClient = null
+	var voice: VoiceChat = null
+	for c in get_children():
+		if c is HostServer:
+			server = c
+		elif c is NetClient:
+			link = c
+		elif c is VoiceChat:
+			voice = c
+	_mp = MultiplayerMenu.new()
+	add_child(_mp)
+	_mp.player_name = str(args["name"])
+	_mp.setup(server, link, voice, _finder)
+	_mp.join_requested.connect(_mp_join)
+	_mp.closed.connect(func(): _mp = null)
+	return _mp
+
+
+## The menu asked to join a game: leave whatever is running and connect.
+func _mp_join(address: String, role: String, player_name: String) -> void:
+	args["connect"] = address
+	args["role"] = role if role != "" else "pick"
+	args["name"] = player_name
+	if _mp != null:
+		_mp.queue_free()
+		_mp = null
+	for c in get_children():
+		if c is Lobby:
+			c.queue_free()
+	_leave("join")
 
 
 ## The pause menu's exits: tear the game down, then reload its save, open the lobby, or quit.
@@ -69,12 +118,12 @@ func _leave(to: String) -> void:
 		get_tree().quit()
 		return
 	for c in get_children():
-		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient or c is VoiceChat:
+		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient or c is VoiceChat or c is LanDiscovery.Announcer or c is MultiplayerMenu:
 			remove_child(c)
 			c.queue_free()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	args["new"] = false  # a reload is the save as it is now, never a fresh game
-	if to == "load":
+	if to == "load" or to == "join":
 		args["graphics"] = str(ControlsConfig.settings().graphics)
 		start()
 	else:
@@ -143,6 +192,7 @@ func start() -> void:
 	var server = null
 	if args["host"] or mode in [Roles.COOP, Roles.VERSUS]:
 		server = HostServer.new()
+		server.host_name = str(args["name"])
 		add_child(server)
 		var err = server.start(args["port"], mode if mode != Roles.SOLO else Roles.COOP)
 		if err:
@@ -160,6 +210,9 @@ func start() -> void:
 	app.leave.connect(_leave)
 	if server != null:
 		add_child(VoiceChat.new().attach_host(server))  # push-to-talk radio voice for the table
+		var ann := LanDiscovery.Announcer.new()
+		add_child(ann)
+		ann.start(func(): return {} if not server.announce else {"name": "%s's game" % server.host_name, "port": server.port, "mode": server.mode, "players": server.roster().size(), "locked": server.locked})
 	if args["hour"] >= 0:
 		app.scene.set_hour(args["hour"])
 	if args["shot"] != "":

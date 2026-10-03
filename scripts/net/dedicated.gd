@@ -31,6 +31,10 @@ func _init() -> void:
 		printerr(err)
 		quit(1)
 		return
+	srv.host_name = "server"
+	var ann := LanDiscovery.Announcer.new()
+	root.add_child.call_deferred(ann)
+	ann.start(func(): return {"name": "Task-force server", "port": srv.port, "mode": srv.mode, "players": srv.roster().size() - 1, "locked": srv.locked})  # shows up in the multiplayer menu on the network
 	print("Skyrunner task-force server on port %d - connect with --connect HOST:%d --role controller" % [srv.port, srv.port])
 
 

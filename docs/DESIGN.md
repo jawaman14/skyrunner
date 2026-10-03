@@ -919,3 +919,22 @@ net; SHIFT + ` to the whole table** (rebindable in `user://voice.cfg`). It rides
 - **Devices**: `VoiceChat` captures the microphone through a muted capture bus (project setting `audio/driver/enable_input`; the macOS build
   declares the permission) and plays each talker through a generator; without a microphone it is a listener only. Settings
   (microphone, key, volumes, effect strength, mutes) are in `user://voice.cfg`, never in a save.
+
+## 32. The multiplayer menu, the table and finding games
+
+**F4 in a game** (or the lobby's *Multiplayer* button) opens the multiplayer menu (`MultiplayerMenu`, opened by `Main.open_mp`), with three tabs:
+
+- **Games**: the games on your network (LAN discovery), double-click to join; or join by address with a seat and a name; and, when you
+  host, where your game is (the addresses a friend would type), whether it is **shown on the network**, and whether the table is **closed
+  to new players** (someone who held a seat can still come back).
+- **Table**: the roster (the host first, a dot for whoever is talking), **mute** anyone, **remove** anyone (the host: they are told, and cannot
+  rejoin this game), take a free seat or give yours back to the AI, and the table's chat (to everyone, or to your side).
+- **Voice**: voice chat on/off, the push-to-talk key (click, then press the key you want), the microphone, microphone and radio volumes, how
+  much radio is in your voice (0 clean ... 1 full), and a loop-back test with a level meter.
+
+**Finding games** (`LanDiscovery`): a hosting game (and the dedicated server) sends a small JSON beacon every two seconds by UDP broadcast to
+port 47801 (name, TCP port, mode, players, closed); the menu listens and forgets a game not heard from for 7 s. Joining still goes through the
+host's own port and seats: the beacon is only where the game is.
+
+**The host runs the table** (`HostServer`): `kick(id, ban)`, `locked`, `max_players` (16), `roster()`. Players are known to each other by a
+**public id** (a hash of their reconnect token; the token itself is only ever sent to its owner), which is what voice frames, mutes and kicks use.

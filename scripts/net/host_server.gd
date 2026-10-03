@@ -55,8 +55,12 @@ var sticks := {}  ## role -> [roll, pitch, throttle]
 var sess = null  ## the Session the seats belong to (set by attach or the first pump)
 var chat_log: Array = []  ## [from, role, side, text, to]
 var host_role := Roles.PILOT  ## the seat the host plays itself (its voice comes from there)
+var locked := false  ## closed to new players (a player who held a seat can still come back)
+var banned := {}  ## tokens of players the host removed: they cannot rejoin this game
+var max_players := 16
 var host_name := "host"
-var _keyed := {}  ## talker id -> {t0, n, sec} (when the key went down; frames this second)
+var announce := true  ## the LAN beacon says where this game is (the menu switches it)
+var _keyed := {}  ## talker token -> {t0, n, sec, last} (when the key went down; frames this second)
 var _seats_rev := -1
 var _seats_t := 0.0
 var _seq := 0
@@ -172,6 +176,17 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 	c.token = str(hello.get("token", "")).substr(0, 64)
 	if c.token == "":
 		c.token = "%08x%08x" % [randi(), randi()]
+	var refusal := ""
+	if banned.has(c.token):
+		refusal = "The host has removed you from this game."
+	elif locked and sess.seats.held_for(c.token) == "":
+		refusal = "The host has closed the table to new players."
+	elif conns.filter(func(x): return x.joined).size() >= max_players:
+		refusal = "The table is full (%d)." % max_players
+	if refusal != "":
+		c.peer.put_data(line({"t": "error", "msg": refusal}))
+		_drop(c)
+		return
 	# a returning player takes back the seat held for them
 	var held: String = sess.seats.held_for(c.token)
 	if held != "" and role == "":
@@ -279,6 +294,12 @@ func chat(from: String, role: String, text: String, to := "all") -> void:
 ## One voice frame (or, with `end`, the key coming up) from a talker: routed by the radio's rules (VoiceRouter) to
 ## whoever hears it, each with the quality they hear it at. A transmission on the net also goes to the DF stations
 ## when it ends (Session.voice_transmitted). `from_id` is the talker's token ("host" for the host's own voice).
+## A player's public id: what the others see them as (the voice roster, mutes, kicks). The token is the reconnect
+## credential, so it is never sent to anyone but its owner.
+static func public_id(token: String) -> String:
+	return token if token == "host" else token.sha1_text().substr(0, 10)
+
+
 func relay_voice(from_id: String, from_name: String, from_role: String, ch: String, seq: int, d: String, end: bool) -> void:
 	if sess == null or not (ch in ["net", "all"]) or d.length() > VoiceCodec.MAX_FRAME_B64:
 		return
@@ -299,7 +320,7 @@ func relay_voice(from_id: String, from_name: String, from_role: String, ch: Stri
 	var listeners := conns.filter(func(c): return c.joined).map(func(c): return {"id": c.token, "role": c.role})
 	listeners.append({"id": "host", "role": host_role})
 	for r in VoiceRouter.route(sess, from_id, from_role, ch, listeners):
-		var msg := {"t": "voice", "from": from_name, "id": from_id, "role": from_role, "ch": ch, "s": seq, "q": snappedf(float(r.q), 0.01),
+		var msg := {"t": "voice", "from": from_name, "id": public_id(from_id), "role": from_role, "ch": ch, "s": seq, "q": snappedf(float(r.q), 0.01),
 			"k": r.kind, "d": d, "end": end}
 		if str(r.id) == "host":
 			voice_heard.emit(msg)
@@ -318,9 +339,31 @@ func host_voice(ch: String, seq: int, d: String, end: bool) -> void:
 	relay_voice("host", host_name, host_role, ch, seq, d, end)
 
 
+## Remove a player (their token): they are told why, and with `ban` they cannot come back this game.
+func kick(token: String, ban := true) -> bool:
+	for c in conns:
+		if c.joined and (c.token == token or public_id(c.token) == token):
+			c.peer.put_data(line({"t": "error", "msg": "The host has removed you from this game."}))
+			if ban:
+				banned[c.token] = true
+			_drop(c)
+			return true
+	return false
+
+
+## Who is at the table: [{token, name, role, host}], the host first.
+func roster() -> Array:
+	var out := [{"token": "host", "id": "host", "name": host_name, "role": host_role, "host": true}]
+	for c in conns:
+		if c.joined:
+			out.append({"token": c.token, "id": public_id(c.token), "name": c.name, "role": c.role, "host": false})
+	return out
+
+
 func _broadcast_seats() -> void:
 	var roster: Array = sess.seats.roster()
-	var players := conns.filter(func(c): return c.joined).map(func(c): return {"name": c.name, "role": c.role})
+	var players := [{"id": "host", "name": host_name, "role": host_role}]
+	players.append_array(conns.filter(func(c): return c.joined).map(func(c): return {"id": public_id(c.token), "name": c.name, "role": c.role}))
 	for c in conns:
 		if c.joined:
 			c.peer.put_data(line({"t": "seats", "seats": roster, "players": players, "you": c.role}))
