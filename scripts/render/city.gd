@@ -48,6 +48,7 @@ static func build(world: World, q: Quality) -> Node3D:
 	for b in l.buildings:
 		if b.style == "crane":
 			root.add_child(_crane(b))
+	root.add_child(PortDress.build(world, q))  # piers, crates and moored boats on the docks (Pirate Kit)
 	root.add_child(_roads(world, l.roads))
 	root.add_child(_road_details(world, l.roads))
 	root.add_child(_bridges(world, l.roads, l.bridges))
