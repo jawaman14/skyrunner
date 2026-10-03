@@ -979,3 +979,13 @@ to `Analyst.intake`; `release_tip` is what dispatch does with one):
 
 The seat is in the waiting room, the seat picker and the police-mode seat list like the others. The desk's dice are their own
 stream (seed + 909). Not saved: the desk is empty after a load.
+
+
+## 38. Downtown landmarks (Quaternius's Downtown City MegaKit)
+
+`scripts/render/downtown_dress.gd` (`DowntownDress`, behind `DowntownDress.ENABLED`; off on the lowest preset) stands the kit's three
+finished brick-and-glass buildings (large, medium, small) on the footprints of the twelve tallest towers nearest the city's
+centre, instead of the Kenney lot models. The kit's buildings are real-scale and carry their own textured materials, so each is
+its own node, drawn within `CityDress`'s range; beyond it the tower's shader box is drawn as before. Footprints, heights and
+colliders are unchanged. The pack in the repository is cut down to those three buildings and their textures.
+![downtown landmarks](img/downtown-landmarks.png)
