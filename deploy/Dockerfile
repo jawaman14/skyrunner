@@ -24,6 +24,7 @@ RUN curl -sSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/d
 
 RUN useradd --create-home --shell /usr/sbin/nologin skyrunner && mkdir /data && chown skyrunner /data
 COPY --chown=skyrunner . /app
+RUN chmod +x /app/deploy/entrypoint.sh
 USER skyrunner
 WORKDIR /app
 
