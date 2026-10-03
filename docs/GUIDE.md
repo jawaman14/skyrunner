@@ -436,7 +436,7 @@ Open from the phone (**The dealership**) or press **E** at the glass showroom be
 five cars for you to drive (the hatch, the coupe, the SUV, the Marlin GT, the Palmetto Limited) and five trucks for the stash runs (a courier
 van, a steel box truck, a fast van, an ambulance conversion, an armoured truck). **ENTER** buys; **LEFT/RIGHT** moves to your own vehicles, where
 **ENTER** makes a car the one you drive and **S** sells (55 % back). Your trucks set the speed, the cover and the steel of every stash run.
-**A** lets the AI manage the fleet. Vehicles cost insurance by the hour. It opens with logistics in the story.
+**A** lets the AI manage the fleet. The boss and the fixer press **V** at their desks to ring the dealer. Vehicles cost insurance by the hour. It opens with logistics in the story.
 ![The dealership](img/dealership.png)
 
 ### 5.14 The court (DESIGN 16)

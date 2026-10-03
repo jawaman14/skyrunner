@@ -149,6 +149,17 @@ class State:
 	var cand: Array = []  ## up to four candidates: {id, name, role, skill, wage, hint}
 	var jailed: Array = []  ## crew in custody without a lawyer: {id, name, role}
 	var crew_list: Array = []  ## everyone on the payroll: {id, name, role, status, assigned, doing}
+	# the dealership (Palmetto Motors)
+	var dealer := false
+	var dl_name := "Marty Quintero"
+	var dl_cat := {}
+	var dl_cars := 0
+	var dl_trucks := 0
+	var dl_last_car := {}
+	var dl_last_truck := {}
+	var dl_insurance := 0
+	var dl_auto := false
+	var dl_fleet_line := ""
 	# the casino (the Hotel Cielo)
 	var manager := "Lenny Vance"
 	var casino := false
@@ -275,6 +286,18 @@ class State:
 		trade_last = str(t.get("last", ""))
 		rifles = int(snap.get("arsenal", {}).get("stock", {}).get("rifle", 0))
 		jailed = p.get("jail", []).filter(func(j): return not j.lawyer)
+		var dz: Dictionary = snap.get("dealer", {})
+		dealer = not dz.is_empty()
+		if dealer:
+			dl_cat = dz.cat
+			dl_cars = int(dz.cars)
+			dl_trucks = int(dz.trucks)
+			dl_last_car = dz.last_car
+			dl_last_truck = dz.last_truck
+			dl_insurance = int(dz.insurance)
+			dl_auto = bool(dz.auto)
+			dl_fleet_line = ("%d car%s to drive, %d truck%s on the runs: %d km/h, %d%% cover, %d%% steel; insurance $%s an hour" % [dl_cars, "" if dl_cars == 1 else "s", dl_trucks, "" if dl_trucks == 1 else "s",
+				int(dz.speed), int(dz.cover), int(dz.steel), Py.money(dl_insurance)])
 		var cz: Dictionary = snap.get("casino", {})
 		casino = not cz.is_empty()
 		if casino:
@@ -353,6 +376,25 @@ class State:
 
 	func container() -> bool:
 		return _do("island_ship", {"method": "ship", "amount": 500})
+
+	# the dealership
+	func dl_price(id: String) -> int:
+		return int(dl_cat.get(id, [0])[0])
+
+	func dl_can(id: String) -> bool:
+		return bool(dl_cat.get(id, [0, false])[1])
+
+	func buy_vehicle(id: String) -> bool:
+		return _do("buy_vehicle", {"id": id})
+
+	func sell_car() -> bool:
+		return _do("sell_vehicle", {"serial": int(dl_last_car.get("serial", 0))})
+
+	func sell_truck() -> bool:
+		return _do("sell_vehicle", {"serial": int(dl_last_truck.get("serial", 0))})
+
+	func toggle_fleet_auto() -> bool:
+		return _do("fleet_auto", {"on": not dl_auto})
 
 	# the casino
 	func buy_stake() -> bool:

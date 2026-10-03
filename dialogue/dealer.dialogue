@@ -1,0 +1,92 @@
+# Palmetto Motors: Marty Quintero's dealership, by phone. The same lot as the pilot's dealer screen, for any seat (the boss's and
+# the fixer's V key, the phone). (Fiction: nobody here is a real person.)
+#
+# Reads and acts through Talk.State: {{dl_*}} fields and buy_vehicle(), sell_car(), sell_truck(), toggle_fleet_auto().
+
+~ start
+if not dealer
+	Radio: Nobody answers at the dealership. It is not open yet.
+	=> END
+{{dl_name}}: [[Palmetto Motors, Marty Quintero.|Marty. Cars, vans, and no questions about the vans.|Quintero. What are we driving today?]]
+=> lot
+
+~ lot
+- Cars to drive.
+	=> cars
+- Trucks for the stash runs.
+	=> trucks
+- "What does the fleet look like?"
+	{{dl_name}}: {{dl_fleet_line}}.
+	=> lot
+- Sell your newest car. ({{dl_last_car.get("name", "")}}: {{money_s(dl_last_car.get("resale", 0))}}) [if dl_cars > 0]
+	do sell_car()
+	if result != ""
+		{{dl_name}}: {{result}}
+	else
+		{{dl_name}}: Sold. I will not ask where the scratches came from.
+	=> lot
+- Sell your newest truck. ({{dl_last_truck.get("name", "")}}: {{money_s(dl_last_truck.get("resale", 0))}}) [if dl_trucks > 0]
+	do sell_truck()
+	if result != ""
+		{{dl_name}}: {{result}}
+	else
+		{{dl_name}}: Sold. Somebody will love it.
+	=> lot
+- Let my people run the fleet. [if not dl_auto]
+	do toggle_fleet_auto()
+	{{dl_name}}: Done: when there is money and a better truck, your people buy it.
+	=> lot
+- Take the fleet back. [if dl_auto]
+	do toggle_fleet_auto()
+	{{dl_name}}: Done: nothing is bought without your say-so.
+	=> lot
+- That's all.
+	{{dl_name}}: [[Drive safe.|Mind the roadblocks.|Come back when the van gets too warm.]]
+	=> END
+
+~ cars
+{{dl_name}}: What the pilot drives. Delivered to the aircraft, so you have to be on the ground.
+- Sunrise Hatch. ({{money_s(dl_price("hatch"))}}) Cheap and cheerful. [if dl_can("hatch")]
+	do buy_vehicle("hatch")
+	=> bought
+- Harbor Coupe. ({{money_s(dl_price("coupe"))}}) The starter car's twin. [if dl_can("coupe")]
+	do buy_vehicle("coupe")
+	=> bought
+- Valley SUV. ({{money_s(dl_price("suv"))}}) For the cane roads. [if dl_can("suv")]
+	do buy_vehicle("suv")
+	=> bought
+- Marlin GT. ({{money_s(dl_price("roadster"))}}) The fastest thing in the county. [if dl_can("roadster")]
+	do buy_vehicle("roadster")
+	=> bought
+- Palmetto Limited. ({{money_s(dl_price("luxury"))}}) Leather, air conditioning, a bar. [if dl_can("luxury")]
+	do buy_vehicle("luxury")
+	=> bought
+- Back.
+	=> lot
+
+~ trucks
+{{dl_name}}: The fleet's best truck sets the speed, its best cover cuts the roadblock odds, its steel is the roadblock that does not stop it.
+- Courier Van. ({{money_s(dl_price("van"))}}) 45 km/h, a little cover. [if dl_can("van")]
+	do buy_vehicle("van")
+	=> bought
+- Steel Box Truck. ({{money_s(dl_price("box"))}}) 41 km/h, 25% steel. [if dl_can("box")]
+	do buy_vehicle("box")
+	=> bought
+- Midnight Van. ({{money_s(dl_price("fast"))}}) 54 km/h, 25% cover. [if dl_can("fast")]
+	do buy_vehicle("fast")
+	=> bought
+- Ambulance Conversion. ({{money_s(dl_price("ambulance"))}}) 50 km/h, 45% cover: nobody stops an ambulance. [if dl_can("ambulance")]
+	do buy_vehicle("ambulance")
+	=> bought
+- Armoured Truck. ({{money_s(dl_price("armoured"))}}) 34 km/h, 60% steel. [if dl_can("armoured")]
+	do buy_vehicle("armoured")
+	=> bought
+- Back.
+	=> lot
+
+~ bought
+if result != ""
+	{{dl_name}}: {{result}}
+else
+	{{dl_name}}: Pleasure. The keys are yours.
+=> lot

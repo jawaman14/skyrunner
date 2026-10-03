@@ -47,6 +47,7 @@ static func build(world: World) -> Node3D:
 	if not ENABLED or not Island.ENABLED:
 		return root
 	var k := Buildings.Kit.new("hotel-cielo")
+	_people = []
 	_forecourt(k)
 	_shell(k)
 	_tower(k)
@@ -62,6 +63,7 @@ static func build(world: World) -> Node3D:
 	node.rotation.y = at.yaw
 	node.name = "hotel-cielo"
 	node.add_child(_boards())
+	node.add_child(CasinoCrowd.make(_people, 1959))
 	_signs(node)
 	root.add_child(node)
 	return root
@@ -96,6 +98,13 @@ static func ground(world: World) -> StaticBody3D:
 	return body
 
 
+## A point of the hotel (x across, y up, z deep in its own frame) in world metres, for the sound and the tests.
+static func world_point(world: World, lx: float, ly: float, lz: float) -> Vector3:
+	var at := site()
+	var xf := Transform3D(Basis(Vector3.UP, float(at.yaw)), Vector3(at.x, world.ground(at.x, at.y), -at.y))
+	return xf * Vector3(lx, ly, lz)
+
+
 ## Lit and open, or dark and boarded.
 static func set_open(node: Node3D, open: bool) -> void:
 	if node == null:
@@ -104,6 +113,10 @@ static func set_open(node: Node3D, open: bool) -> void:
 		l.visible = open
 	for t in node.find_children("*", "Label3D", true, false):
 		t.visible = open
+	var crowd := node.find_child("crowd", true, false)
+	if crowd != null:
+		crowd.visible = open
+		crowd.set_process(open)
 	var boards := node.find_child("boards", true, false)
 	if boards != null:
 		boards.visible = not open
@@ -112,9 +125,12 @@ static func set_open(node: Node3D, open: bool) -> void:
 
 
 # ------------------------------------------------------------------ helpers
-static func _figure(k: Buildings.Kit, x: float, y: float, z: float, coat := "black") -> void:
-	k.cylinder(Vector3(x, y, z), 0.24, 1.15, coat, 8, false)
-	k.cylinder(Vector3(x, y + 1.15, z), 0.13, 0.22, "stucco_pink", 8, false)
+## A member of staff at a post (the dealers, the cashiers, the bartender, the band): recorded here, drawn and animated by CasinoCrowd.
+static var _people: Array = []
+
+
+static func _figure(_k: Buildings.Kit, x: float, y: float, z: float, coat := "black") -> void:
+	_people.append([x, y, z, coat])
 
 
 static func _stool(k: Buildings.Kit, x: float, z: float) -> void:
