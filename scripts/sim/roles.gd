@@ -46,7 +46,7 @@ const _GROUND_OPS := ["accept_job", "drop_job", "move_item", "loadmaster", "set_
 const _CREW_AIR := ["kick", "pump", "call_boat", "auto_kick"]
 
 static var PERMISSIONS := {
-	PILOT: _GROUND_OPS + _CREW_AIR + ["buy_aircraft", "buy_gear", "hire_spotter", "transponder", "squawk", "upgrade", "service", "stop_work", "casino", "autopilot",
+	PILOT: _GROUND_OPS + _CREW_AIR + ["buy_aircraft", "buy_gear", "hire_spotter", "transponder", "squawk", "upgrade", "service", "stop_work", "casino", "casino_play", "autopilot",
 		"confirm", "chat", "turn_around", "hq", "gun_mode", "field_order", "rackets", "stash_works", "race_enter", "sell_weapons", "buy_weapons", "family_accept", "family_decline", "family_probe", "family_stall", "pay_tribute", "island_ship", "buy_passage", "court_bail", "court_hire", "court_motion", "court_tamper", "court_bribe", "court_plea", "court_cooperate", "court_appeal", "court_wait", "hire_worker", "fire_worker", "pay_bonus", "pay_worker_lawyer", "post_lookout", "sell_product", "move_goods", "move_cash", "cash_round", "goods_round", "move_armoury", "escort_truck", "load_cash", "unload_cash"],
 	COPILOT: _GROUND_OPS + _CREW_AIR + ["hire_spotter", "casino", "chat", "tutorial", "load_cash", "unload_cash", "gun_mode", "family_accept", "family_decline", "family_probe", "family_stall", "pay_tribute", "island_ship", "buy_passage"],
 	SPOTTER: ["spotter_move", "chat", "tutorial"],
