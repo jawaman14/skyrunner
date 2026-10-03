@@ -158,9 +158,6 @@ README.txt or UPSTREAM.txt) and covered by tests/test_assets.gd. This is the sto
 | Kenney [Pirate Kit](https://kenney.nl/assets/pirate-kit), [Survival Kit](https://kenney.nl/assets/survival-kit), [Factory Kit](https://kenney.nl/assets/factory-kit) | CC0 | 72 / 80 / 143 | Docks, barrels and crates for the port and the cay; tents, crates and fires for the jungle camp; warehouses. |
 | [KayKit City Builder Bits](https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0): all of the free pack | CC0 | 41 (6 were in) | Buildings, roads, park tiles, vehicles, trees. |
 | Quaternius [Downtown City MegaKit](https://quaternius.itch.io/downtown-city-megakit) (free Standard) | CC0 | 153 | Modular downtown facades, shopfronts and street pieces. |
-| Quaternius [Stylized Nature MegaKit](https://quaternius.itch.io/stylized-nature-megakit) (free Standard), [Ultimate Nature Pack](https://quaternius.itch.io/150-lowpoly-nature-models) | CC0 | 68 / 150 | A second, painterly look for the jungle and the island's flora. |
-| Quaternius [Realistic Car Pack](https://quaternius.itch.io/lowpoly-cars), [Modular Street Pack](https://quaternius.itch.io/lowpoly-modular-street) | CC0 | 7 / 25 | A different set of cars; street furniture and signs. |
-| Kenney 2D: Input Prompts, Game Icons, UI Pack, Cursor Pack (crosshairs), Minimap, Flags, Map Pack, Explosions, Emotes, Road Textures | CC0 | ~3,200 sprites | Button glyphs for the controls screens; HUD icons; the on-foot gun sight; the 2D desks' map symbols; the flags of the island's neighbours. See assets/ui/README.txt. |
 
 How they were fetched: Kenney's from the CC0 mirror [shorepine/kenney](https://github.com/shorepine/kenney) (glTF, 110 MB sparse-cloned,
 only the kits above), KayKit's from its repository, Quaternius's from the packs' own itch.io pages (their free "Standard" downloads;
@@ -190,3 +187,5 @@ line out of `exclude_filter` in all three presets.
 The city's buildings are now solid (`CityDress.colliders`, one box per building: the walker and the car stop against them). Not done: roof details and ground-floor awnings
 from the Commercial kit's `detail-*` pieces, crosswalks, furniture in the hangars (the villa's desk, map table, sofas and bookcase and the club's bar stools, sofas, speakers and office are furnished,: `Buildings.Kit.prop`, at 2.4x because the kit is dolls'-house sized), docks and cargo from the Pirate kit
 at the port, Quaternius's downtown pieces, and the 2D packs (glyphs for the controls screens, the crosshair, map symbols).
+
+**Removed in October 2026 (unused; CC0; fetch again if needed):** Kenney survival, factory, retro-urban, modular-buildings and city-roads kits; Quaternius Stylized Nature, Ultimate Nature, Realistic Car and Modular Street packs; all of Kenney's 2D packs (Input Prompts, Game Icons, UI Pack, Cursors, Minimap, Flags, Map Pack, Explosions, Emotes, Road Textures). The flags are real countries' flags and the game's world is fictional; the cursors are thin outlines or plain white and read worse than the system pointer on the game's dark and bright scenes; the rest had no place in the layout.

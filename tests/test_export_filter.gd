@@ -4,7 +4,7 @@ extends TestCase
 ## exclude_filter in export_presets.cfg; this test fails both ways round (a used pack that is excluded would
 ## draw nothing in a build; an unused one that is not would ship for nothing).
 
-const PACK_ROOTS := ["res://assets/models/kenney", "res://assets/models/kaykit", "res://assets/models/quaternius", "res://assets/ui"]
+const PACK_ROOTS := ["res://assets/models/kenney", "res://assets/models/kaykit", "res://assets/models/quaternius"]
 
 
 func _packs() -> Array:
@@ -14,7 +14,7 @@ func _packs() -> Array:
 		if d == null:
 			continue
 		for sub in d.get_directories():
-			if root.ends_with("kaykit") or root.ends_with("quaternius") or root.ends_with("/ui"):
+			if root.ends_with("kaykit") or root.ends_with("quaternius"):
 				if root.ends_with("kaykit"):
 					for s2 in DirAccess.open(root + "/" + sub).get_directories():
 						out.append(root + "/" + sub + "/" + s2)

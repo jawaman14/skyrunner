@@ -1,6 +1,6 @@
 extends TestCase
-## The vendored art (assets/models, assets/ui): each pack is all there, carries its licence, and a sample of
-## its models and sprites imports and loads (the import itself fails loudly in `--import`; this catches a
+## The vendored art (assets/models): each pack is all there, carries its licence, and a sample of
+## its models imports and loads (the import itself fails loudly in `--import`; this catches a
 ## pack that was truncated or half-copied).
 
 const MODEL_PACKS := {
@@ -17,13 +17,6 @@ const MODEL_PACKS := {
 	"res://assets/models/kaykit/city": [41, "gltf"],
 	"res://assets/models/quaternius/downtown_city": [153, "gltf"],
 }
-const SPRITE_PACKS := {
-	"res://assets/ui/input_prompts": 500,
-	"res://assets/ui/cursors": 200,
-	"res://assets/ui/flags": 400,
-}
-
-
 ## Every file with extension `ext` under `dir`, recursively.
 func _files(dir: String, ext: String) -> Array:
 	var out := []
@@ -65,19 +58,9 @@ func test_every_model_pack_is_all_there_and_loads() -> void:
 
 func test_every_model_pack_says_where_it_came_from_and_its_licence() -> void:
 	for p in ["res://assets/models/kenney/LICENSE.txt", "res://assets/models/kenney/UPSTREAM.txt", "res://assets/models/kaykit/city/LICENSE.txt",
-			"res://assets/models/kaykit/city/UPSTREAM.txt", "res://assets/models/quaternius/README.txt", "res://assets/ui/README.txt"]:
+			"res://assets/models/kaykit/city/UPSTREAM.txt", "res://assets/models/quaternius/README.txt"]:
 		check(FileAccess.file_exists(p), "%s exists" % p)
 	var q := FileAccess.get_file_as_string("res://assets/models/quaternius/README.txt")
 	check("CC0" in q, "the Quaternius packs are marked CC0")
 	for dir in ["downtown_city"]:
 		check(FileAccess.file_exists("res://assets/models/quaternius/%s/LICENSE.txt" % dir), "%s keeps its licence file" % dir)
-
-
-func test_the_sprite_packs_are_all_there_and_load() -> void:
-	for dir in SPRITE_PACKS:
-		var files := _files(dir, "png")
-		check(files.size() >= int(SPRITE_PACKS[dir]), "%s: %d sprites (want %d)" % [dir, files.size(), int(SPRITE_PACKS[dir])])
-		if files.is_empty():
-			continue
-		for i in [0, files.size() - 1]:
-			check(load(files[i]) is Texture2D, "%s loads as a texture" % files[i])
