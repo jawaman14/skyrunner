@@ -425,6 +425,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 			open_talk("family")  # a sit-down with the Family
 		elif ev.shift_pressed and k == KEY_G and s.island != null:
 			open_talk("general")  # the General's aide on the island frequency
+		elif ev.shift_pressed and k == KEY_N and s.psych != null:
+			open_talk("psych")  # the Sunrise Collective: Nico Cozz, acid for grass
 		elif ev.shift_pressed and k == KEY_K and s.casino != null:
 			open_talk("casino")  # the Hotel Cielo: Lenny Vance, the manager
 		elif ev.shift_pressed and k in [KEY_U, KEY_I] and s.island != null:

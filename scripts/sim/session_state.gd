@@ -103,6 +103,7 @@ var law_log: Array = []
 var scanner_log: Array = []
 var scanner_channels := ["police"]  ## what the runner's scanner is programmed for (RadioNet.REALISM)
 var upgrades := {"runner": {}, "law": {}}  ## bought tree nodes (Upgrades)
+var psych: Psychedelics = null  ## the Sunrise Collective: acid for grass (Psychedelics; `psychedelics: true`, or the story's 1980)
 var dealer: Dealership = null  ## the car dealership: cars for the pilot, trucks for the stashes (Dealership; `dealership: true`)
 var casino: Casino = null  ## the Hotel Cielo, the Family's house on the island (Casino; the story's 'The House' or `casino: true`)
 var airframe: Airframe = null  ## engine and airframe wear, repairs (Airframe; `airframe: true` asks for it)
@@ -196,7 +197,7 @@ var parked: bool:
 ## hear the event bus). Live play asks for all of them; the story mode switches
 ## them on chapter by chapter (Story), each on its own stream, so a system that
 ## arrives in 1983 behaves as it would have from the start.
-const SYSTEMS := ["ground_war", "agency", "island", "trade", "logistics", "payroll", "court", "family", "chronicle", "casino", "dealership"]
+const SYSTEMS := ["ground_war", "agency", "island", "trade", "logistics", "payroll", "court", "family", "chronicle", "casino", "dealership", "psychedelics"]
 
 
 # ================================================================ commands
@@ -452,6 +453,10 @@ func enable_system(key: String, career := false) -> bool:
 			if casino != null or not Casino.ENABLED or island == null or family == null:
 				return false
 			casino = Casino.new(self)
+		"psychedelics":
+			if psych != null or not Psychedelics.ENABLED or trade == null:
+				return false
+			psych = Psychedelics.new(self)
 		"dealership":
 			if dealer != null or not Dealership.ENABLED:
 				return false

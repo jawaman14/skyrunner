@@ -48,6 +48,8 @@ func step(dt: float) -> FlightModel.Controls:
 		return bot.step(dt)
 	if not s.parked or not s.unloading.is_empty():
 		return null
+	if s.psych != null:
+		s.psych.auto = true  # the organisation's AI trades its spare grass for acid and sells it
 	if s.dealer != null:
 		s.dealer.auto = true  # the AI runs the fleet: it buys the trucks the organisation can afford
 	if s.airframe != null:

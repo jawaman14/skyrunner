@@ -1180,3 +1180,26 @@ Saved by `StrategicSave` (owned, active, spent, auto). `tests/test_dealership.gd
 balance runs build no dealership).
 
 Also in this change: the Palmetto Cay campaign is four chapters (see section 6) and the former chapters 5 to 8 are cut.
+
+
+## 44. The Sunrise Collective: acid for grass
+
+`scripts/sim/psychedelics.gd` (`Psychedelics`, `Session.psych`, behind `ENABLED` and the `psychedelics` system; the story's 1980 chapter,
+*The Connection*, opens it with logistics and the dealership; needs the trade). **Fiction:** Nico Cozz and the Sunrise Collective are invented;
+they are a commune of chemists in the hills of the coast who make blotter acid and run the festival and campus circuit, in the spirit of the
+period's underground, not a portrait of any real person or group. Nothing in the game says how acid is made: the lab is a number that makes sheets.
+
+| Part | What |
+|---|---|
+| The barter | `barter(stash, lb)`: a van calls at a stash and takes grass; we get `lb / 100 x rate()` sheets (a sheet is a hundred doses). `rate()` is 2.4 per hundredweight, up to 25% better with trust, times the grass market over the circuit's mood, clamped to 0.6x to 1.6x |
+| The lab | makes 30 sheets an hour up to a shelf of 90; the Collective takes only 400 lb of grass a half hour |
+| The circuit | `sell(sheets)`: $325 a sheet x 0.8 x the scene, up to 40 sheets a half hour; each sheet adds 0.12 to the task force's suspicion |
+| The scene | a festival (x1.35), a campus crackdown (x0.7), a heatwave of concerts (x1.15), a bad batch on the street (x0.8): a 12% chance each ten minutes, own stream seed + 953 |
+| The raid | a 1.2% ten-minute chance plus 4% of the case's suspicion: the lab goes to ground for three hours, its stock is lost, trust falls 15; a van at a stash door adds 0.4 heat a hundredweight |
+| The AI | `auto` (the organisation's bot switches it on): trades the fullest stash's grass above 200 lb every half hour and sells what it holds |
+
+The talk is `dialogue/psych.dialogue` through `Talk.State`'s `ps_*` fields and the snapshot's `psych` view: **Shift+N** in the cockpit, **J** at the
+boss's and fixer's desks, the phone's "The Sunrise Collective". Commands: `acid_barter`, `acid_sell`, `acid_auto` (the pilot, the boss and the fixer). Saved by `StrategicSave`. `tests/test_psychedelics.gd` has 13 tests; BALANCE entry 49 (arithmetic only).
+
+Not yet: acid as a good in the economy's markets and the logistics' trucks (it moves instantly and sells through the circuit only), a lab on the
+map and a trip's effect on the screen.

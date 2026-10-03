@@ -439,6 +439,15 @@ van, a steel box truck, a fast van, an ambulance conversion, an armoured truck).
 **A** lets the AI manage the fleet. The boss and the fixer press **V** at their desks to ring the dealer. Vehicles cost insurance by the hour. It opens with logistics in the story.
 ![The dealership](img/dealership.png)
 
+### 5.13d The Sunrise Collective (DESIGN 44)
+
+Up in the hills a commune of chemists, led by Nico Cozz (an invented character), makes blotter acid and wants grass for the festival and campus
+circuit. Ring them with **Shift+N** in the cockpit, **J** at the boss's and fixer's desks, or from the phone. A van calls at your fullest stash
+and swaps the grass for sheets of acid (about 2.4 a hundredweight, better as they trust you); you sell the sheets back through their circuit
+(about $260 a sheet). It pays roughly 40 % better than selling the grass to the Family, but the lab is raided now and then and goes to
+ground for hours, and every sheet adds a little to the task force's case. Festivals make the circuit hungry; a campus crackdown makes it
+quiet. It opens with the story's 1980 chapter.
+
 ### 5.14 The court (DESIGN 16)
 
 A bust is a federal case. **Charges** (possession, trafficking, firearms, conspiracy). **The bail hearing**: post it all, buy

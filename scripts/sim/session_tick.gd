@@ -192,6 +192,8 @@ func _update_world(dt: float) -> void:
 		casino.update(dt)
 	if dealer != null:
 		dealer.update(dt)
+	if psych != null:
+		psych.update(dt)
 	if analyst != null:
 		analyst.update(dt)
 	if undercover != null:
