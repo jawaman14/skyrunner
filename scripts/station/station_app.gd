@@ -223,6 +223,9 @@ func _hints() -> Array:
 			out = [["UP/DOWN", "tip", "down"], ["V", "verify (45 s)", "v"], ["F", "forward to dispatch", "f"], ["X", "bin it", "x"]]
 		Roles.UNDERCOVER:
 			out = [["P", "plant the beacon", "p"]]
+		Roles.FIXER:
+			out = [["UP/DOWN", "job", "down"], ["ENTER", "take / drop it", "enter"], ["W", "the hiring hall", "w"], ["C", "the Family", "c"], ["L", "the lawyer", "l"],
+				["M", "the buyers", "m"], ["K", "logistics", "k"], ["G", "scanner", "g"], ["H", "radar detector", "h"], ["S", "spotter here", "s"], ["F", "ferry tank", "f"]]
 		Roles.BOAT:
 			out = [["RIGHT-CLICK", "send the go-fast there", ""]]
 		Roles.CONTROLLER:
@@ -370,6 +373,8 @@ func _key(k: String) -> void:
 			_hq_key(k, snap)
 		Roles.CONTROLLER:
 			_law_key(k, snap)
+		Roles.FIXER:
+			_fixer_key(k, snap)
 		Roles.SPOTTER:
 			if k in ["up", "down"]:
 				GameMenu.list_move(list, 1 if k == "down" else -1)
@@ -386,23 +391,23 @@ func _family_key(k: String, snap: Dictionary) -> bool:
 	var fam: Dictionary = snap.get("family", {})
 	if fam.is_empty() or fam.get("gone", false):
 		return false
-	if role in [Roles.LIEUTENANT, Roles.COPILOT] and k == "c":
+	if role in [Roles.LIEUTENANT, Roles.COPILOT, Roles.FIXER] and k == "c":
 		open_talk("family")  # a sit-down with Sal Moretti
 		return true
-	if role in [Roles.LIEUTENANT, Roles.COPILOT] and k == "w" and not snap.get("payroll", {}).is_empty():
+	if role in [Roles.LIEUTENANT, Roles.COPILOT, Roles.FIXER] and k == "w" and not snap.get("payroll", {}).is_empty():
 		open_talk("crew")  # the hiring hall
 		return true
 	if role == Roles.CONTROLLER and k == "a" and not snap.get("payroll", {}).get("jail", []).is_empty():
 		_cmd("offer_worker_deal")  # the arrested worker who knows the most
 		return true
-	if role in [Roles.LIEUTENANT, Roles.COPILOT] and k == "l" and bool(snap.get("court", {}).get("open", false)):
+	if role in [Roles.LIEUTENANT, Roles.COPILOT, Roles.FIXER] and k == "l" and bool(snap.get("court", {}).get("open", false)):
 		open_talk("lawyer")  # the pilot's lawyer
 		return true
 	if role == Roles.CONTROLLER and k in ["n", "w", "k", "d", "y"] and bool(snap.get("court", {}).get("open", false)):
 		# the prosecutor: no bail, a witness's immunity, the bank records, a conspiracy count, a plea offer
 		_cmd({"n": "court_no_bail", "w": "court_immunity", "k": "court_forfeiture", "d": "court_charge", "y": "court_offer_plea"}[k])
 		return true
-	if role in [Roles.LIEUTENANT, Roles.COPILOT] and k in ["y", "n", "p"]:
+	if role in [Roles.LIEUTENANT, Roles.COPILOT, Roles.FIXER] and k in ["y", "n", "p"]:
 		var offers: Array = fam.get("offers", [])
 		if k == "p":
 			_cmd("pay_tribute")
@@ -511,10 +516,10 @@ static func _court_law_line(c: Dictionary) -> String:
 func _trade_key(k: String, snap: Dictionary) -> bool:
 	if snap.get("trade", {}).is_empty() or squad_mode:
 		return false
-	if role in [Roles.BOSS, Roles.LIEUTENANT, Roles.COPILOT] and k == "m":
+	if role in [Roles.BOSS, Roles.LIEUTENANT, Roles.COPILOT, Roles.FIXER] and k == "m":
 		open_talk("buyers")
 		return true
-	if role in [Roles.BOSS, Roles.LIEUTENANT] and k == "k" and snap.has("logistics"):
+	if role in [Roles.BOSS, Roles.LIEUTENANT, Roles.FIXER] and k == "k" and snap.has("logistics"):
 		open_logistics()
 		return true
 	if role in [Roles.CONTROLLER, Roles.CHIEF, Roles.PATROL] and k == "m":
@@ -906,6 +911,8 @@ func _process(delta: float) -> void:
 				_draw_analyst(snap)
 			Roles.UNDERCOVER:
 				_draw_undercover(snap)
+			Roles.FIXER:
+				_draw_fixer(snap)
 			_:
 				_draw_runner(snap)
 	if link is NetClient and not link.players.is_empty():
@@ -999,6 +1006,60 @@ func _draw_analyst(snap: Dictionary) -> void:
 	if sel >= 0 and sel < rows.size():
 		var r: Dictionary = rows[sel]
 		detail.text = "%s: %s%s" % [str(r.id), str(r.text), ("   tail %s" % str(r.squawk)) if str(r.squawk) != "" else ""]
+
+
+## The fixer's desk: the jobs on the board here and the ones taken, the heat, the crew, the money and the people to see.
+func _draw_fixer(snap: Dictionary) -> void:
+	var ac = snap.get("aircraft")
+	title.text = "FIXER"
+	var wanted := int(ac.wanted) if ac is Dictionary else 0
+	subtitle.text = "$%s   -   heat %d%%%s" % [Py.money(int(snap.get("money", 0))), int(float(ac.suspicion)) if ac is Dictionary else 0, ("   WANTED " + "★".repeat(wanted)) if wanted > 0 else ""]
+	_runner_tiles(ac, snap)
+	var keys := []
+	var cells := []
+	for j in snap.get("board", []):
+		keys.append(["board", j.id])
+		cells.append(["BOARD", str(j.title), "$" + Py.money(int(j.payout))])
+	for j in snap.get("jobs", []):
+		keys.append(["active", j.id])
+		cells.append(["TAKEN", str(j.title), "$" + Py.money(int(j.payout))])
+	_set_list("jobs", keys, cells, {}, [{"title": "", "min": 70}, {"title": "Job", "expand": true}, {"title": "Pay", "align": "right", "mono": true, "min": 90}])
+	var lines := []
+	var pr: Dictionary = snap.get("payroll", {})
+	if not pr.is_empty():
+		var n := 0
+		for r in pr.counts:
+			n += int(pr.counts[r])
+		lines.append("THE CREW: %d on the payroll, wages $%s, payday in %d min%s" % [n, Py.money(int(pr.wage_bill)), int(ceil(float(pr.payday_s) / 60.0)),
+			(", $%s unpaid" % Py.money(int(pr.unpaid))) if int(pr.unpaid) > 0 else ""])
+	var sp: Array = snap.get("spotters", [])
+	lines.append("SPOTTERS: " + (", ".join(sp.map(func(s): return str(s.code))) if not sp.is_empty() else "none"))
+	for l in court_lines(snap.get("court", {})) + family_lines(snap.get("family", {}), snap.get("agency", {})) + trade_lines(snap.get("trade", {})) + island_lines(snap.get("island", {})):
+		lines.append(l)
+	var top: Array = snap.get("messages", []).slice(-4).map(func(m): return "  " + str(m))
+	top.reverse()
+	info.text = "
+".join(["RADIO"] + top + [""] + lines)
+	detail.text = "Jobs here and the ones in hand; park at a field to see its board." if keys.is_empty() else ""
+
+
+func _fixer_key(k: String, snap: Dictionary) -> void:
+	var i := GameMenu.selected(list)
+	match k:
+		"up", "down":
+			GameMenu.list_move(list, 1 if k == "down" else -1)
+		"enter":
+			if i >= 0 and i < _list_keys.size():
+				var r: Array = _list_keys[i]
+				_cmd("accept_job" if r[0] == "board" else "drop_job", {"job_id": r[1]})
+		"g":
+			_cmd("buy_gear", {"name": "scanner"})
+		"h":
+			_cmd("buy_gear", {"name": "detector"})
+		"f":
+			_cmd("buy_gear", {"name": "ferry_tank"})
+		"s":
+			_cmd("hire_spotter", {})
 
 
 ## The agent's desk: where the aircraft is parked, the odds, the cover, and the beacon.

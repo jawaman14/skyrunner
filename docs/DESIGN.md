@@ -48,7 +48,7 @@ Any seat without a human is filled by AI, so the same match can be played by 1 t
 | **Co-pilot / kicker** | Loads the aircraft (twice the loading speed), pumps ferry fuel, kicks bales out over drop zones, runs the radio scanner and calls the boat | Tactical map: own aircraft, boat, bales, intercepted police traffic, radar-warning status | [done] (station client + AI fallback) |
 | **Spotter** | Watches one airstrip from the ground. Reports police units and roadblocks near it. Can relocate (takes time). | Units within 5 km of the watched strip, reported with a delay | [done] (AI-driven reports; human uses the station client) |
 | **Boat captain** | Go-fast boat. Waits at the rendezvous, fishes bales out of the water, runs for the cove. | Surface picture around the boat | [done] AI; a human takes the seat at a 2D desk and right-clicks to send the go-fast |
-| **Fixer** | Books jobs, hires spotters, buys gear, manages heat and money between flights | Job boards, black market | [planned] (the pilot does this now) |
+| **Fixer** | Books jobs, hires spotters, buys gear, manages heat and money between flights | Job boards, the crew, the Family | [done] (section 36) |
 | **Mechanic** | Field refuelling from caches, quick repairs at bush strips | | [planned] |
 
 ### Law side
@@ -993,3 +993,20 @@ does this (the law upgrade "undercover" still leaks destinations by itself); it 
   lies low for 10 minutes. Cover regrows one point in 30 s; at zero the agent is blown for 20 minutes.
 - **The counter**: a runner with the bug sweep upgrade finds a fresh beacon half the time (the agent then lies low for 5
   minutes). The seat's dice are their own stream (seed + 919).
+
+
+## 36. The fixer: the business between flights
+
+The organisation's business desk (`Roles.FIXER`, a runner-side seat open at a co-op table, in the waiting room and in the seat
+list). The pilot flies; the fixer does everything the pilot does on the ground that is not flying, from a 2D desk:
+
+- **Jobs** (the table): the board at the field the aircraft is parked at and the jobs in hand; ENTER books or drops one.
+- **Gear and spotters**: G the scanner, H the radar detector, F the ferry tank, S a spotter at this strip.
+- **The people**: W the hiring hall (Manny Ortega), C the Family (Sal Moretti's offers, Y / N / P at the desk), L the pilot's
+  lawyer, M the buyers (Benny Ruiz), K logistics (stock, cash and trucks).
+- **The picture**: the money, the heat (suspicion and wanted stars), the payroll and payday, the spotters watching, the
+  pilot's case, the Family's offers, the street and the island.
+
+The permission list is the pilot's business commands without the flying ones (no kick, pump, autopilot, transponder, squawk,
+turn around or call the boat). Nothing new in the sim: it is a desk over the commands that were already there, so the AI
+needs no stand-in (the pilot, or the AI boss, does the same things when nobody sits here).
