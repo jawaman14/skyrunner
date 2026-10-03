@@ -236,9 +236,13 @@ Second wave, larger features:
   their posts, candidates, jail, wages owed), the runner's case file, the court case and its history, the
   organisation's squads, and the session clock so a trial date still means what it did. A save is written
   parked at an airfield, so nothing is in flight: trucks, boats (they only exist as a go-fast per drop job),
-  jobs and the workers on them are not saved - those workers load free. **Not kept yet:** the Family, the
-  island, trade (corner stock, market state), the economy's prices, the season and HQ, Los Cuervos' and the
-  task force's own squads (the other two sides deploy fresh).
+  jobs and the workers on them are not saved - those workers load free. Also kept now, by name through
+  `SaveVars` (lists of property names in `strategic_save.gd`, each round-tripped through JSON in
+  `tests/test_strategic_save.gd`): the Family (regard, the loan, offers, tribute), the product trade, the
+  economy and its market, the island, the Company, the chronicle, the three arsenals, the ground war's books
+  and commanders, the rackets' counters and prisoners, and the rival and task-force squads (where they stood,
+  at rest). **Not kept yet:** the HQ season (`NightDirector` / `HQ.Season`, the Organisation layer's nightly
+  planning game: a deep object graph, its own PR).
 
 ## 3. Later
 - A real-app playtest pass on every seat.

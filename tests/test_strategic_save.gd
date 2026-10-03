@@ -89,8 +89,8 @@ func test_a_save_keeps_the_organisation() -> void:
 	var tq: GroundWar.Squad = orgs[0]
 	check(tq.id == squad_id and tq.men == men, "the same squad: %s with %d men" % [tq.id, tq.men])
 	check(t.payroll.squads.has(squad_id), "and its men are still on the payroll")
-	check_eq(t.ground.of("rival").size(), 2, "the other sides deployed as at the start")
-	check_eq(t.ground.of("police").size(), 3, "all of them")
+	check_eq(t.ground.of("rival").size(), 0, "no rival squad was out when it was saved, so none is raised on the load")
+	check_eq(t.ground.of("police").size(), 0, "and none of the task force's")
 	# and the game goes on: ten minutes with no script error
 	for i in 600:
 		t.update(1.0)
@@ -136,3 +136,145 @@ func test_an_older_save_with_no_sim_section_loads_as_before() -> void:
 	check_eq(t.time, 0.0, "a fresh clock")
 	check(t.payroll != null and t.ground != null, "the systems are there, as at a new game")
 	t.dispose()
+
+
+func _world_opts() -> Dictionary:
+	var o := _opts()
+	o.merge({"family": true, "island": true, "agency": true, "chronicle": true, "rackets": true, "renown": true, "races": true}, true)
+	return o
+
+
+func test_the_rest_of_the_world_survives_a_save() -> void:
+	var o := _world_opts()
+	o["save_path"] = PATH
+	var s := Session.new(o)
+	_quiet(s)
+	s.update(1.0 / 30)
+	s.time = 5000.0
+	s.family.respect = 71.0
+	s.family.loans_taken = 2
+	s.family.loan = {"amount": 5000, "owed": 6000, "due": 9000.0, "honest": true}
+	s.family.offers.append({"id": "o1", "kind": "loan", "text": "A friend", "cost": 300, "amount": 5000, "read": "", "honest": true, "expires": 6000.0})
+	s.family.knows["HAR-1"] = true
+	s.trade.stock["cocaine"] = 55.5
+	s.trade.earned = 1234
+	s.trade.bulk_log.append([4000.0, "marina", "cocaine", 10.0])
+	s.econ.scarcity["cocaine"] = 0.4
+	s.econ.law_kit = 3
+	s.econ.events.append({"good": "cocaine", "mult": 1.5, "until": 8000.0, "text": "A shortage"})
+	s.econ.market.supply["cocaine"] = s.econ.market.supply.get("cocaine", {})
+	s.island.relations = 33.0
+	s.island.delivered = 7
+	s.island.shipments.append({"id": "M1", "method": "mules", "n": 4, "lb": 40, "cost": 2000, "value": 8000, "eta": 7000.0, "p": 0.8, "mules": 4})
+	s.agency.trust = 55.0
+	s.agency.quashed = 2
+	s.chronicle.fired["opening"] = 100.0
+	s.arsenals["org"].stock["rifle"] = 6
+	s.arsenals["org"].ammo = 777
+	s.rackets.rounds = 4
+	s.rackets.ransomed = 2
+	s.rackets.ransom_cash = 9000
+	s.rackets.held = 3
+	var rq = s.ground.recruit("rival", "car", Vector2(1200.0, -800.0), false)
+	check(rq is GroundWar.Squad, "a rival squad out on the road")
+	var rid: String = rq.id
+	var pq = s.ground.recruit("police", "car", Vector2(-300.0, 450.0), false)
+	check(pq is GroundWar.Squad, "and a task-force car")
+	s.ground.commanders["rival"].cash = 1234.0
+	s.ground.lost_men["org"] = 3
+	s.ground.fights_total = 9
+	s.ground.control["town"]["org"] = 2.5
+	s.save()
+	s.dispose()
+	var t := Session.load_or_new(PATH, _world_opts())
+	_quiet(t)
+	check_eq(t.time, 5000.0, "the clock")
+	check_eq(t.family.respect, 71.0, "the Family's regard")
+	check_eq(t.family.loans_taken, 2, "and its count of loans")
+	check_eq(t.family.loan.owed, 6000, "the loan we owe")
+	check_eq(typeof(t.family.loan.owed), TYPE_INT, "as a whole number")
+	check_eq(typeof(t.family.offers[0].cost), TYPE_INT, "an offer's price too")
+	check(t.family.knows.has("HAR-1"), "what the Family has learned")
+	check_eq(t.trade.stock["cocaine"], 55.5, "the product stock")
+	check_eq(t.trade.earned, 1234, "what the trade has made")
+	check_eq(typeof(t.trade.earned), TYPE_INT, "a whole number")
+	check_eq(t.trade.bulk_log.size(), 1, "the bulk buyers' log")
+	check_eq(t.econ.scarcity["cocaine"], 0.4, "the economy's scarcity")
+	check_eq(t.econ.law_kit, 3, "the task force's kit")
+	check_eq(t.econ.events.size(), 1, "the price events")
+	check_eq(t.island.relations, 33.0, "the General's regard")
+	check_eq(t.island.delivered, 7, "the island's deliveries")
+	check_eq(typeof(t.island.shipments[0].n), TYPE_INT, "a shipment's mules are a count")
+	check_eq(t.agency.trust, 55.0, "the Company's trust")
+	check_eq(t.agency.quashed, 2, "and what it has quashed")
+	check(t.chronicle.fired.has("opening"), "the news the chronicle has already run")
+	check_eq(t.arsenals["org"].stock["rifle"], 6, "the armoury")
+	check_eq(typeof(t.arsenals["org"].stock["rifle"]), TYPE_INT, "in whole guns")
+	check_eq(t.arsenals["org"].ammo, 777, "and its rounds")
+	check_eq(t.rackets.rounds, 4, "the rackets' rounds")
+	check_eq(t.rackets.ransomed, 2, "the ransoms")
+	check_eq(t.rackets.ransom_cash, 9000, "and what they paid")
+	check_eq(t.rackets.held, 3, "the prisoners still held")
+	var rivals := t.ground.of("rival")
+	check_eq(rivals.size(), 1, "the one rival squad, not a fresh deployment")
+	check(rivals[0].id == rid and absf(rivals[0].x - 1200.0) < 0.01 and absf(rivals[0].y + 800.0) < 0.01, "where it was: %s at (%.0f, %.0f)" % [rivals[0].id, rivals[0].x, rivals[0].y])
+	check_eq(t.ground.of("police").size(), 1, "and the task-force car")
+	check_eq(t.ground.commanders["rival"].cash, 1234.0, "Los Cuervos' war chest")
+	check_eq(t.ground.lost_men["org"], 3, "the war's cost")
+	check_eq(typeof(t.ground.lost_men["org"]), TYPE_INT, "in whole men")
+	check_eq(t.ground.fights_total, 9, "the fights fought")
+	check_eq(t.ground.control["town"]["org"], 2.5, "who holds the streets")
+	t.dispose()
+
+
+func test_a_loaded_world_plays_on_without_errors() -> void:
+	var o := _world_opts()
+	o["save_path"] = PATH
+	var s := Session.new(o)
+	s.update(1.0 / 30)
+	for i in 900:
+		s.update(1.0)
+	s.save()
+	s.dispose()
+	var t := Session.load_or_new(PATH, _world_opts())
+	for i in 1800:
+		t.update(1.0)
+	check(t.time > 2600.0, "half an hour on after the load: t=%.0f" % t.time)
+	check(t.family != null and t.island != null and t.trade != null, "every system still there")
+	t.dispose()
+
+
+func test_save_vars_round_trips_through_json() -> void:
+	var holder := Squad2.new()
+	holder.n = 5
+	holder.f = 2.5
+	holder.b = true
+	holder.s = "x"
+	holder.v = Vector2(3.0, -4.0)
+	holder.d = {"cost": 7, "when": 1.5, "inner": [{"cost": 9, "keep": 2.0}]}
+	var keys := ["n", "f", "b", "s", "v", "d"]
+	var saved: Dictionary = SaveVars.through_json(SaveVars.capture(holder, keys))
+	var back := Squad2.new()
+	SaveVars.restore(back, saved, keys, ["cost"])
+	check_eq(back.n, 5, "an int")
+	check_eq(typeof(back.n), TYPE_INT, "stays an int")
+	check_eq(back.f, 2.5, "a float")
+	check(back.b, "a bool")
+	check_eq(back.s, "x", "a string")
+	check_eq(back.v, Vector2(3.0, -4.0), "a Vector2 comes back as one")
+	check_eq(typeof(back.d.cost), TYPE_INT, "a key named in ints is an int")
+	check_eq(typeof(back.d.inner[0].cost), TYPE_INT, "even when nested in an array")
+	check_eq(typeof(back.d.when), TYPE_FLOAT, "and the others are left alone")
+	var half := Squad2.new()
+	half.n = 99
+	SaveVars.restore(half, {"f": 1.0}, keys)
+	check_eq(half.n, 99, "a property missing from the save keeps its value")
+
+
+class Squad2:
+	var n := 0
+	var f := 0.0
+	var b := false
+	var s := ""
+	var v := Vector2.ZERO
+	var d := {}

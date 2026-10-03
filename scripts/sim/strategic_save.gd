@@ -8,11 +8,40 @@ extends RefCounted
 ## organisation's squads (at their base, as they stood) and the session clock - so every timestamp in
 ## the above, a trial date or a hiring day, still means what it did.
 ##
+## Beyond that, the rest of the world is kept by name through SaveVars: the Family, the product trade, the
+## economy and its market, the island, the Company, the chronicle, the three arsenals, the ground war's
+## books and commanders, the rackets' counters, and the rival and task-force squads (where they stood, at
+## rest). The lists of property names below are the whole contract: a new field a system wants kept goes
+## in its list, and tests/test_strategic_save.gd round-trips every list through JSON.
+##
 ## Lives under the save's "sim" key; a save without one (older, or a game with none of these systems)
 ## loads as before. JSON turns whole numbers into floats, so the ones the sim treats as counts are
 ## put back with int() on the way in.
 
 const VERSION := 1
+
+const FAMILY := ["respect", "greed", "rico", "rat", "gone", "offers", "loan", "docks_until", "docks_honest", "muscle", "lawyer",
+	"tribute_due", "tribute_by", "taxed", "tribute_total", "_tax_next", "_stalled", "payroll_until", "knows", "loans_taken",
+	"accepted", "cons", "last", "_serial", "_t", "_offer_t", "_side_t", "_rat_t"]
+const FAMILY_INTS := ["cost", "amount", "owed"]
+const TRADE := ["stock", "connected", "appetite", "sold", "landed", "earned", "street_sales", "last", "bulk_log", "_t", "_war_t",
+	"_sales_acc"]
+const ECON := ["walk", "fuel_walk", "scarcity", "glut", "busts", "events", "news", "storm", "law_kit", "_t", "_now"]
+const MARKET := ["supply", "demand", "disruption", "source", "news", "why", "_last_news", "_demand_events", "_t", "_now"]
+const ISLAND := ["relations", "passage_until", "status", "status_until", "price_mult", "airport_heat", "port_heat", "crackdown_until",
+	"inspections_until", "shipments", "delivered", "caught", "intercepts", "next_mules", "next_ship", "rival_shipped", "rival_caught",
+	"_rival_t", "last", "_serial", "_t", "_event_t", "_mig_t"]
+const ISLAND_INTS := ["n", "cost", "value", "mules"]
+const AGENCY := ["trust", "exposure", "protected_until", "quashed", "flights", "burned", "pay_mult", "offer_chance", "_gift_t", "_t",
+	"stings", "hung_out", "withheld", "last_read", "_game_t", "war_chest", "coke_lots", "gun_lots", "pipe_last", "_pipe_t", "_pipe_pause",
+	"next_market"]
+const CHRONICLE := ["history_i", "_hist_t", "fired", "entries", "counts", "_next", "_t"]
+const ARSENAL := ["stock", "ammo", "cache", "seized_total"]
+const RACKETS := ["rounds", "taken", "escaped", "ransomed", "ransom_cash", "turned", "released", "last_round", "_tt", "_te"]
+const WAR := ["spent", "fights_total", "lost_men", "arrests_total", "officers_down", "_round_t", "_informant_t", "_org_recruit_t",
+	"_upkeep_acc"]
+const WAR_INTS := ["recruit", "upkeep", "arms", "org", "rival", "police"]
+const WAR_PLAIN := ["control", "hot_spots"]
 
 
 static func capture(s: Session) -> Dictionary:
@@ -41,11 +70,48 @@ static func capture(s: Session) -> Dictionary:
 			"serial": s.court._serial}
 	if s.ground != null:
 		var squads := []
-		for q: GroundWar.Squad in s.ground.of("org"):
-			squads.append({"id": q.id, "kind": q.kind, "men": q.men, "men0": q.men0, "loadout": q.loadout.duplicate(), "ammo": q.ammo,
-				"morale": q.morale, "tag": q.tag, "xp": q.xp})
-		d["squads"] = {"list": squads, "serial": s.ground._serial}
+		for q: GroundWar.Squad in s.ground.squads:
+			squads.append({"id": q.id, "faction": q.faction, "kind": q.kind, "men": q.men, "men0": q.men0, "loadout": q.loadout.duplicate(),
+				"ammo": q.ammo, "morale": q.morale, "tag": q.tag, "xp": q.xp, "x": q.x, "y": q.y, "hx": q.home.x, "hy": q.home.y})
+		d["squads"] = {"list": squads, "serial": s.ground._serial, "full": true}
+		d["war"] = _capture_war(s.ground)
+	_capture_world(s, d)
 	return d
+
+
+static func _capture_world(s: Session, d: Dictionary) -> void:
+	if s.family != null:
+		d["family"] = SaveVars.capture(s.family, FAMILY)
+	if s.trade != null:
+		d["trade"] = SaveVars.capture(s.trade, TRADE)
+	if s.econ != null:
+		d["econ"] = SaveVars.capture(s.econ, ECON)
+		if s.econ.market != null:
+			d["market"] = SaveVars.capture(s.econ.market, MARKET)
+	if s.island != null:
+		d["island"] = SaveVars.capture(s.island, ISLAND)
+	if s.agency != null:
+		d["agency"] = SaveVars.capture(s.agency, AGENCY)
+	if s.chronicle != null:
+		d["chronicle"] = SaveVars.capture(s.chronicle, CHRONICLE)
+	var ars := {}
+	for side in s.arsenals:
+		if s.arsenals[side] != null:
+			ars[side] = SaveVars.capture(s.arsenals[side], ARSENAL)
+	if not ars.is_empty():
+		d["arsenals"] = ars
+	if s.rackets != null:
+		d["rackets"].merge(SaveVars.capture(s.rackets, RACKETS), true)
+
+
+static func _capture_war(g: GroundWar) -> Dictionary:
+	var out := SaveVars.capture(g, WAR + WAR_PLAIN)
+	var cmd := {}
+	for f in g.commanders:
+		var c: GroundWar.Commander = g.commanders[f]
+		cmd[f] = {"cash": c.cash, "think_t": c.think_t, "log": c.log.duplicate(true)}
+	out["commanders"] = cmd
+	return out
 
 
 ## The workers who are on a job that ends with the save (a truck, a cash run, a squad that is not
@@ -55,7 +121,7 @@ static func _payroll(s: Session) -> Dictionary:
 	var p: Payroll = s.payroll
 	var keep := {}
 	if s.ground != null:
-		for q: GroundWar.Squad in s.ground.of("org"):
+		for q: GroundWar.Squad in s.ground.squads:
 			keep[q.id] = true
 	var workers := []
 	for w in p.workers:
@@ -128,6 +194,46 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.court._serial = int(d.court.get("serial", 0))
 	if s.ground != null and d.get("squads") is Dictionary:
 		_restore_squads(s, d.squads)
+	if s.ground != null and d.get("war") is Dictionary:
+		_restore_war(s.ground, d.war)
+	_restore_world(s, d)
+
+
+static func _restore_world(s: Session, d: Dictionary) -> void:
+	if s.family != null and d.get("family") is Dictionary:
+		SaveVars.restore(s.family, d.family, FAMILY, FAMILY_INTS)
+	if s.trade != null and d.get("trade") is Dictionary:
+		SaveVars.restore(s.trade, d.trade, TRADE)
+	if s.econ != null and d.get("econ") is Dictionary:
+		SaveVars.restore(s.econ, d.econ, ECON)
+		if s.econ.market != null and d.get("market") is Dictionary:
+			SaveVars.restore(s.econ.market, d.market, MARKET)
+	if s.island != null and d.get("island") is Dictionary:
+		SaveVars.restore(s.island, d.island, ISLAND, ISLAND_INTS)
+	if s.agency != null and d.get("agency") is Dictionary:
+		SaveVars.restore(s.agency, d.agency, AGENCY)
+	if s.chronicle != null and d.get("chronicle") is Dictionary:
+		SaveVars.restore(s.chronicle, d.chronicle, CHRONICLE)
+	if d.get("arsenals") is Dictionary:
+		for side in d.arsenals:
+			var a = s.arsenals.get(side)
+			if a != null:
+				SaveVars.restore(a, d.arsenals[side], ARSENAL, Arsenal.ORDER)
+				a.stock = _ints(a.stock)
+	if s.rackets != null and d.get("rackets") is Dictionary:
+		SaveVars.restore(s.rackets, d.rackets, RACKETS)
+
+
+static func _restore_war(g: GroundWar, d: Dictionary) -> void:
+	SaveVars.restore(g, d, WAR, WAR_INTS)
+	SaveVars.restore(g, d, WAR_PLAIN)
+	var cmd: Dictionary = d.get("commanders", {})
+	for f in cmd:
+		if g.commanders.has(f):
+			var c: GroundWar.Commander = g.commanders[f]
+			c.cash = float(cmd[f].get("cash", c.cash))
+			c.think_t = float(cmd[f].get("think_t", 0.0))
+			c.log = cmd[f].get("log", [])
 
 
 static func _restore_payroll(p: Payroll, d: Dictionary) -> void:
@@ -159,10 +265,12 @@ static func _restore_squads(s: Session, d: Dictionary) -> void:
 	var g: GroundWar = s.ground
 	g._started = true
 	g._serial = int(d.get("serial", 0))
+	var full: bool = bool(d.get("full", false))
 	for sd in d.get("list", []):
+		var f := str(sd.get("faction", "org"))
 		var q := GroundWar.Squad.new()
 		q.id = str(sd.id)
-		q.faction = "org"
+		q.faction = f
 		q.kind = str(sd.kind)
 		q.men = int(sd.men)
 		q.men0 = int(sd.men0)
@@ -171,13 +279,20 @@ static func _restore_squads(s: Session, d: Dictionary) -> void:
 		q.morale = float(sd.get("morale", GroundWar.MORALE0.org))
 		q.tag = str(sd.get("tag", ""))
 		q.xp = float(sd.get("xp", 0.0))
-		var base: Vector2 = g.hq("org")
-		q.x = base.x
-		q.y = base.y
-		q.home = base
+		if f == "org" or not full:
+			var base: Vector2 = g.hq("org")
+			q.x = base.x
+			q.y = base.y
+			q.home = base
+		else:  # the other sides stand where they were
+			q.x = float(sd.get("x", 0.0))
+			q.y = float(sd.get("y", 0.0))
+			q.home = Vector2(float(sd.get("hx", q.x)), float(sd.get("hy", q.y)))
 		q.state = "holding"
 		g.squads.append(q)
-	for k in 2:  # keep in step with GroundWar._deploy
+	if full:
+		return
+	for k in 2:  # an older save: keep in step with GroundWar._deploy
 		g.recruit("rival", "foot" if k == 0 else "car", null, false)
 	for k in 3:
 		g.recruit("police", "car", null, false)
