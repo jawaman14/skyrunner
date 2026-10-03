@@ -1,11 +1,11 @@
 class_name Campaign
 extends RefCounted
-## Campaign: Palmetto Cay, 1979-1986.
+## Campaign "Tutorial (Palmetto Cay)": four chapters, 1979-1982.
 ##
 ## Each chapter switches on one or two new systems for both sides and sets a few
 ## objectives. The complexity ramp is the point: by 1982 you're juggling ferry
 ## fuel, a co-pilot, a boat and informants, but you met each of them alone first.
-## See docs/DESIGN.md section 6 for the full storyline, including chapters 5-8.
+## It teaches the systems one at a time; the long game is the Costa Brava story (Story.CHAPTERS).
 
 
 class Objective:
@@ -29,7 +29,6 @@ class Chapter:
 	var objectives: Array
 	var stock := {"heli": 1, "interceptor": 0, "cutter": 0}
 	var setup = null  ## Callable(sess) or null
-	var playable := true
 
 	func _init(num_: int, year_: int, title_: String, briefing_: String, runner_: Array, law_: Array,
 			objectives_: Array, opts := {}) -> void:
@@ -124,10 +123,6 @@ static func _chapters() -> Array:
 			["interceptors", "rivals", "cutters", "informants"],
 			[Objective.new("to_cove", "Fly in from the south and get 3 bales to the cove", 3)],
 			{"stock": {"heli": 1, "interceptor": 2, "cutter": 1}, "setup": Campaign._long_legs_setup}),
-		Chapter.new(5, 1983, "The Balloon", "The task force puts an aerostat radar over the coast.", [], [], [], {"playable": false}),
-		Chapter.new(6, 1984, "Blue Water", "Cutters, encrypted police radio and direction finding.", [], [], [], {"playable": false}),
-		Chapter.new(7, 1985, "The Leak", "Someone in the crew is talking.", [], [], [], {"playable": false}),
-		Chapter.new(8, 1986, "Last Run / Flip", "The biggest run of your life, or Agent Hart's deal.", [], [], [], {"playable": false}),
 	]
 
 
@@ -229,13 +224,13 @@ func tick(s) -> void:
 	if Py.all(ch.objectives, func(o): return progress.get(o.key, 0.0) >= o.target):
 		s.say("Chapter %d complete: %s!" % [ch.num, ch.title])
 		var nxt := index + 1
-		if nxt < CHAPTERS.size() and CHAPTERS[nxt].playable:
+		if nxt < CHAPTERS.size():
 			index = nxt
 			progress = {}
 			apply(s)
 		else:
 			completed_all = true
-			s.say("That's the story so far - chapters 5-8 arrive in the next phase. Free play unlocked.")
+			s.say("That's the tutorial finished. Free play unlocked (the Costa Brava story is the long game).")
 			for f in ["contraband", "airdrop", "copilot", "scanner", "detector", "ferry", "spotters"]:
 				s.features[f] = true
 		s.save()

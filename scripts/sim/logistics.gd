@@ -492,7 +492,7 @@ func _dispatch_multi(c: Dictionary, points: Array) -> void:
 	for i in c.stops.size():
 		t.stops.append({"site": c.stops[i], "at": points[i + 1]})
 	t.route = all
-	t.dur = StashNet.TRUCK_LOAD_S + total / StashNet.TRUCK_MS + c.stops.size() * StashNet.TRUCK_STOP_S
+	t.dur = StashNet.TRUCK_LOAD_S + total / sess.stash_net.haul_ms + c.stops.size() * StashNet.TRUCK_STOP_S
 	t.pay = _value(c)
 	t.heat = 5.0
 	t.no_trail = c.to == HQ
@@ -608,7 +608,7 @@ func _dispatch(c: Dictionary, a: Vector2, b: Vector2) -> void:
 	t.x1 = b.x
 	t.y1 = b.y
 	t.t0 = sess.time
-	t.dur = StashNet.TRUCK_LOAD_S + a.distance_to(b) * 1.3 / StashNet.TRUCK_MS
+	t.dur = StashNet.TRUCK_LOAD_S + a.distance_to(b) * 1.3 / sn.haul_ms
 	t.pay = _value(c)
 	t.heat = 5.0  # a van between our own places: quieter than a load off an aircraft
 	t.no_trail = c.to == HQ  # cash for the club: stop it or let it go, there's nowhere to follow it
@@ -621,8 +621,8 @@ func _dispatch(c: Dictionary, a: Vector2, b: Vector2) -> void:
 		t.waved = d[1]
 	if sess.ground != null:
 		t.route = sess.ground.route("org", a, b)
-		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / StashNet.TRUCK_MS
-	elif sn.rng.random() < clampf(risk, 0.0, 0.8) and not t.waved:
+		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / sn.haul_ms
+	elif sn.rng.random() < clampf(risk * sn.risk_mult, 0.0, 0.8) and not t.waved:
 		t.stop_at = sn.rng.uniform(0.2, 0.9)
 	var km := (RoadGraph.length(t.route) if t.route.size() >= 2 else a.distance_to(b) * 1.3) / 1000.0
 	var fuel_note := Fuel.truck(sess, t, km)

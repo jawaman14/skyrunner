@@ -1154,6 +1154,8 @@ func truck_contacts() -> Array:
 					if not t.waved:
 						_say("law", "%s was told to let a truck through: orders from Washington" % q.id)
 					t.waved = true
+				elif sess.dealer != null and sess.dealer.gets_past(t.job_id, q.id):
+					pass  # the cover or the steel of the organisation's own trucks (Dealership) got it past this stop
 				else:
 					out.append([t, "seized", "a %s %s" % [q.id, "checkpoint" if q.tactic == "checkpoint" else "patrol"]])
 				break

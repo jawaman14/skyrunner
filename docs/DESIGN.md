@@ -125,7 +125,9 @@ than the full response, which is how the side with less information stays viable
   unless encrypted. The runner scanner intercepts plain police messages. Runner
   transmissions can be heard by DF stations.
 
-## 6. Storyline (campaign)
+## 6. Storyline (the Palmetto Cay tutorial campaign)
+
+**Decision (2026-10-03):** the campaign is four chapters, a tutorial that teaches one system at a time. The long game is the Costa Brava story (`Story.CHAPTERS`, DESIGN 25 and the later story sections). The former chapters 5 to 8 (The Balloon, Blue Water, The Leak, Last Run / Flip) are cut; the paragraphs below about them are the original pitch and are not planned.
 
 **Setting.** Palmetto Cay, a fictional island between the Florida Keys and the Bahamas,
 1979–1986. The tone draws on the era's documentaries and dramas about the South Florida
@@ -144,10 +146,6 @@ Cessna 172. His sister *Rosa* runs the mail contract and is your first co-pilot.
 | 2 | 1980 | **A Favor for Manny** | Contraband, radar floors, flying low | Deliver one hot cargo without reaching wanted ★ | [done] |
 | 3 | 1981 | **Kickers** | Co-pilot, airdrops, boat rendezvous, radio calls | Drop 4 bales to the *Lady Luck*, 3 must reach the cove | [done] |
 | 4 | 1982 | **Long Legs** | Ferry tanks, fuel planning, offshore entry, fuel caches | Fly in from the south entry point with a ferry tank and make a drop | [done] |
-| 5 | 1983 | **The Balloon** | Aerostat radar goes up, radar detector, spotters | Complete a run inside aerostat coverage without being tracked for more than 60 s | [planned] |
-| 6 | 1984 | **Blue Water** | Coast Guard cutters, encrypted police radio, DF | Make two drops in one night with encryption active | [planned] |
-| 7 | 1985 | **The Leak** | Informants, decoy flights, hidden-role versus | Find the leak (one of three spotters) before the big run | [planned] |
-| 8 | 1986 | **Last Run / Flip** | Everything | Branch: pull off the biggest run of your life, **or** take Hart's deal and play the finale on the law side | [planned] |
 
 **The task-force campaign** (law side, 1983–1986) replays the same years from Hart's desk:
 building the radar net, getting encryption budget approved, turning Callahan's spotters. In
@@ -1142,3 +1140,31 @@ Menus now pass any letter that is not J, L or H (which still toggle the job boar
 
 Not yet: dealers and patrons that move, sound (the wheel, the slot bells, the band), and the table games' cards drawn rather than
 printed.
+
+
+## 43. The car dealership
+
+`scripts/sim/dealership.gd` (`Dealership`, `Session.dealer`, behind `ENABLED` and the `dealership` system; the story opens it with logistics)
+sells vehicles for the organisation's money. Nothing in it draws a random number except the checkpoint roll below, which has its own
+stream (seed + 947).
+
+| Use | Vehicles | What they do |
+|---|---|---|
+| drive | Sunrise Hatch $4,000, Harbor Coupe $6,500, Valley SUV $12,000, Marlin GT $21,000, Palmetto Limited $30,000 | the car the pilot drives on the ground: top road speed 23 to 34 m/s, cross-country 10 to 17, acceleration 8 to 13. The first car bought is the active one; `use_vehicle` switches (0 is the starter car). `Car.apply_spec` gives the car its numbers and its Kenney model; `PilotApp._dealer_sync` swaps the parked car when `Dealership.rev` changes |
+| haul | Courier Van $14,000, Steel Box Truck $24,000, Midnight Van $38,000, Ambulance Conversion $55,000, Armoured Truck $70,000 | the stash trucks. The fleet's best speed is the trucks' speed (`StashNet.haul_ms`, 9.5 to 15 m/s, in place of `TRUCK_MS` once a truck is owned), its best cover (`risk_mult`, up to 45% off the roadblock odds) and its best steel (`armour`, up to 60%: the chance a truck drives through the roadblock that would have seized it). A checkpoint or patrol that pulls a truck over (`GroundWar.truck_contacts`) is beaten by `Dealership.gets_past`, rolled once for each truck and stop |
+
+Owning costs insurance by the hour ($40 a car, $90 a truck); selling returns 55% of the price; ten vehicles at most. A car must be bought parked
+(it is delivered to the aircraft); a truck can be bought from anywhere.
+
+**The AI.** `Dealership.auto` lets the AI manage the fleet: every 15 minutes it buys the truck with the best gain in speed, cover and steel per
+$10,000 that it can pay for with $40,000 to spare, while one would improve the fleet. `AutoRunner` (the organisation's bot) switches it on; a
+player can toggle it with `fleet_auto` (the dealer screen's A key). It never buys cars for the pilot.
+
+**Commands** (`buy_vehicle`, `sell_vehicle`, `use_vehicle`, `fleet_auto`): the pilot's, and the boss's and the fixer's for the trucks. The pilot's
+screen is `DealerMenu` (the phone's "The dealership", or E at a showroom: `Buildings.showroom`, a glass-fronted dealer with four cars on the lot,
+at every hub and regional airfield). The boss's and fixer's desks do not have a screen for it yet.
+
+Saved by `StrategicSave` (owned, active, spent, auto). `tests/test_dealership.gd` has 13 tests. BALANCE entry 48 (arithmetic only: the
+balance runs build no dealership).
+
+Also in this change: the Palmetto Cay campaign is four chapters (see section 6) and the former chapters 5 to 8 are cut.

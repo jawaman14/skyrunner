@@ -430,6 +430,15 @@ lights go out and the door is boarded.
 ![The Hotel Cielo at night](img/casino-front.png)
 ![The gaming floor](img/casino-floor.png)
 
+### 5.13c The dealership (DESIGN 43)
+
+Open from the phone (**The dealership**) or press **E** at the glass showroom beside the terminal at a hub or regional airfield. The lot lists
+five cars for you to drive (the hatch, the coupe, the SUV, the Marlin GT, the Palmetto Limited) and five trucks for the stash runs (a courier
+van, a steel box truck, a fast van, an ambulance conversion, an armoured truck). **ENTER** buys; **LEFT/RIGHT** moves to your own vehicles, where
+**ENTER** makes a car the one you drive and **S** sells (55 % back). Your trucks set the speed, the cover and the steel of every stash run.
+**A** lets the AI manage the fleet. Vehicles cost insurance by the hour. It opens with logistics in the story.
+![The dealership](img/dealership.png)
+
 ### 5.14 The court (DESIGN 16)
 
 A bust is a federal case. **Charges** (possession, trafficking, firearms, conspiracy). **The bail hearing**: post it all, buy

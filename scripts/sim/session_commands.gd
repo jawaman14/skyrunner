@@ -681,6 +681,34 @@ func _cmd_casino(role: String, a: Dictionary):
 	return err if err != "" else null
 
 
+func _cmd_buy_vehicle(role: String, a: Dictionary):
+	if dealer == null:
+		return "There is no dealership in this game."
+	var err := dealer.buy(str(a.get("id", "")))
+	return err if err != "" else null
+
+
+func _cmd_sell_vehicle(role: String, a: Dictionary):
+	if dealer == null:
+		return "There is no dealership in this game."
+	var err := dealer.sell(int(a.get("serial", 0)))
+	return err if err != "" else null
+
+
+func _cmd_use_vehicle(role: String, a: Dictionary):
+	if dealer == null:
+		return "There is no dealership in this game."
+	var err := dealer.use_car(int(a.get("serial", 0)))
+	return err if err != "" else null
+
+
+func _cmd_fleet_auto(role: String, a: Dictionary):
+	if dealer == null:
+		return "There is no dealership in this game."
+	var err := dealer.set_auto(bool(a.get("on", false)))
+	return err if err != "" else null
+
+
 func _cmd_casino_play(role: String, a: Dictionary):
 	if casino == null:
 		return "There is no casino in this game."

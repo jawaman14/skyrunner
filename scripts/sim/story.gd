@@ -30,8 +30,10 @@ const CHAPTERS := [
 		"The boatlift brings a hundred thousand people across the straits, and a few of them\n"
 		+ "know the Colombians. Grass pays by the ton; the white stuff pays by the ounce.\n"
 		+ "And it's a business now: product sits in a stash, the money piles up on the corners,\n"
-		+ "and the growers want cash on the strip. Truck it, fly it, count it [SHIFT+H].",
-		["logistics"],
+		+ "and the growers want cash on the strip. Truck it, fly it, count it [SHIFT+H].
+"
+		+ "A dealership will sell you vans for the trucks and a car of your own [phone].",
+		["logistics", "dealership"],
 		[["cash_home", "Truck or fly $3,000 of street money home", 3000],
 			["connected", "Get the call from the Colombian connection", 1]]],
 	[1981, "Cocaine Cowboys",
@@ -170,7 +172,7 @@ func _open(i: int, announce: bool) -> void:
 			sess.payroll._refresh(o)  # the hall hires for what's open now
 
 
-const NAMES := {"logistics": "logistics (stock and cash have to be moved)", "trade": "the trade", "payroll": "the hiring hall", "chronicle": "the papers",
+const NAMES := {"logistics": "logistics (stock and cash have to be moved)", "dealership": "the car dealership", "trade": "the trade", "payroll": "the hiring hall", "chronicle": "the papers",
 	"ground_war": "the street war with Los Cuervos", "guns": "gun runs and gun sales", "role_soldier": "soldiers",
 	"family": "the Moretti family", "court": "the federal court", "island": "Isla Soberana", "role_mule": "mules",
 	"agency": "the Company", "casino": "the Hotel Cielo"}

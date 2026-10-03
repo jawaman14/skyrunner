@@ -70,4 +70,4 @@ func test_save_roundtrip() -> void:
 	var c := Campaign.new(2, {"kicked": 3})
 	var d := Campaign.from_dict(c.to_dict())
 	check(d.index == 2 and d.progress == {"kicked": 3}, "roundtrip")
-	check(Campaign.CHAPTERS[3].playable and not Campaign.CHAPTERS[4].playable)
+	check_eq(Campaign.CHAPTERS.size(), 4, "the tutorial is four chapters")

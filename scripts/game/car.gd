@@ -19,6 +19,10 @@ const GRAVITY := 9.81
 const ROAD_M := 7.0  ## within this of a road centre line is the road
 
 var world: World
+var road_ms := ROAD_MS  ## this car's top speed on a road (Dealership cars differ)
+var off_ms := OFFROAD_MS
+var accel := ACCEL
+var body_node: Node3D = null  ## the model
 var driven := false
 var headlights: Array = []  ## the two lamps (on at night, while it is driven)
 var speed := 0.0  ## m/s along the heading (negative: reversing)
@@ -37,7 +41,8 @@ func setup(w: World, faction := "org") -> Car:
 	cs.shape = box
 	cs.position = Vector3(0, 0.75, 0)
 	add_child(cs)
-	add_child(SquadRender.vehicle(faction, "car"))
+	body_node = SquadRender.vehicle(faction, "car")
+	add_child(body_node)
 	for sx in [-0.7, 0.7]:
 		var hl := SpotLight3D.new()
 		hl.name = "headlight"
@@ -77,6 +82,21 @@ func setup(w: World, faction := "org") -> Car:
 	return self
 
 
+## Become a Dealership car: its numbers and its body. An empty spec leaves the starter car.
+func apply_spec(sp: Dictionary) -> void:
+	if sp.is_empty():
+		return
+	road_ms = float(sp.road)
+	off_ms = float(sp.off)
+	accel = float(sp.accel)
+	var m := ModelLib.vehicle(str(sp.model), float(sp.len))
+	if m != null:
+		if body_node != null:
+			body_node.queue_free()
+		body_node = m
+		add_child(body_node)
+
+
 ## Put the car down at a game-frame point (x east, y north), facing `heading_deg`.
 func place(x: float, y: float, heading_deg: float) -> void:
 	global_position = Vector3(x, world.ground(x, y) + 0.4, -y)
@@ -100,7 +120,7 @@ func on_road() -> bool:
 
 ## What the surface under it lets it do.
 func top_speed() -> float:
-	return ROAD_MS if on_road() else OFFROAD_MS
+	return road_ms if on_road() else off_ms
 
 
 func _physics_process(dt: float) -> void:
@@ -120,9 +140,9 @@ func _physics_process(dt: float) -> void:
 func _drive(throttle: float, steer: float, handbrake: bool, dt: float) -> void:
 	var cap := top_speed()
 	if throttle > 0.0:
-		speed += (BRAKE if speed < 0.0 else ACCEL) * throttle * dt
+		speed += (BRAKE if speed < 0.0 else accel) * throttle * dt
 	elif throttle < 0.0:
-		speed -= (BRAKE if speed > 0.0 else ACCEL * 0.7) * -throttle * dt
+		speed -= (BRAKE if speed > 0.0 else accel * 0.7) * -throttle * dt
 	else:
 		speed = move_toward(speed, 0.0, DRAG * dt)
 	if handbrake:

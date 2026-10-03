@@ -190,6 +190,8 @@ func _update_world(dt: float) -> void:
 	maritime.events.clear()
 	if casino != null:
 		casino.update(dt)
+	if dealer != null:
+		dealer.update(dt)
 	if analyst != null:
 		analyst.update(dt)
 	if undercover != null:
