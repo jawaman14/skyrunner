@@ -315,6 +315,9 @@ func seat_driver(role: String, human: bool) -> void:
 		Roles.UNDERCOVER:
 			if undercover != null:
 				undercover.held = human
+		Roles.MECHANIC:
+			if airframe != null:
+				airframe.held = human
 		Roles.ANALYST:
 			if analyst != null:
 				analyst.held = human
@@ -654,6 +657,31 @@ func _cmd_analyst(role: String, a: Dictionary):
 		_:
 			err = "Verify, forward or discard."
 	return err if err != "" else null
+
+
+func _cmd_service(role: String, a: Dictionary):
+	if airframe == null:
+		return "No wear in this game: nothing to service."
+	var part := str(a.get("part", "both"))
+	var parts: Array = ["engine", "airframe"] if part == "both" else [part]
+	var err := airframe.repair(parts, float(a.get("to", 100.0)))
+	return err if err != "" else null
+
+
+func _cmd_stop_work(role: String, a: Dictionary):
+	if airframe == null:
+		return "No wear in this game."
+	airframe.stop("you called it off")
+	return null
+
+
+func _cmd_inspect(role: String, a: Dictionary):
+	if airframe == null:
+		return "No wear in this game."
+	var v := airframe.view(true)
+	say("INSPECTION: engine %.0f%% (power %d%%, quits %.1f%% a minute), airframe %.0f%% (the gear takes %d%% of its limit)." % [v.engine_pts, int(round(float(v.power) * 100.0)),
+		float(v.fail_pct_min), v.airframe_pts, int(round(float(v.gear_factor) * 100.0))])
+	return null
 
 
 func _cmd_plant_beacon(role: String, a: Dictionary):

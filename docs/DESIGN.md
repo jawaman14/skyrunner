@@ -49,7 +49,7 @@ Any seat without a human is filled by AI, so the same match can be played by 1 t
 | **Spotter** | Watches one airstrip from the ground. Reports police units and roadblocks near it. Can relocate (takes time). | Units within 5 km of the watched strip, reported with a delay | [done] (AI-driven reports; human uses the station client) |
 | **Boat captain** | Go-fast boat. Waits at the rendezvous, fishes bales out of the water, runs for the cove. | Surface picture around the boat | [done] AI; a human takes the seat at a 2D desk and right-clicks to send the go-fast |
 | **Fixer** | Books jobs, hires spotters, buys gear, manages heat and money between flights | Job boards, the crew, the Family | [done] (section 36) |
-| **Mechanic** | Field refuelling from caches, quick repairs at bush strips | | [planned] |
+| **Mechanic** | Field refuelling from caches, quick repairs at bush strips | The aircraft's true condition, the cost of the work | [done] (section 39) |
 
 ### Law side
 
@@ -1010,3 +1010,30 @@ list). The pilot flies; the fixer does everything the pilot does on the ground t
 The permission list is the pilot's business commands without the flying ones (no kick, pump, autopilot, transponder, squawk,
 turn around or call the boat). Nothing new in the sim: it is a desk over the commands that were already there, so the AI
 needs no stand-in (the pilot, or the AI boss, does the same things when nobody sits here).
+
+
+## 39. Wear, repairs and the mechanic
+
+`scripts/sim/airframe.gd` (`Airframe`, behind `Airframe.ENABLED`; asked for with the session option `airframe: true`, which the
+game's own start sets) gives each aircraft you own an **engine** and an **airframe** condition, 0 to 100, on their own RNG
+stream (seed + 929).
+
+- **What wears.** The engine wears 0.12 points a minute in the air (about 7 an hour). The airframe wears on touchdowns harder
+  than 60 % of the gear's limit (up to 14 points at the limit), on gravel, grass, dirt and sand strips (0.4 to 0.8 a landing),
+  and in a storm (0.1 a minute).
+- **What it does.** Engine under 60: it runs rough and gives less power, down to 80 % at zero (the HUD says ENGINE ROUGH).
+  Engine under 30: it may quit in the air (up to 5 % a minute at zero) for 90 seconds, the throttle forced to idle, and then
+  catches again (ENGINE OUT). Airframe under 50: the gear collapses at a softer landing, down to 60 % of the limit
+  (AIRFRAME WEAK).
+- **Repairs** happen on the ground, over time and for money by the point (engine $30, airframe $20 at a hangar). A hangar (a
+  field with a shop, or a hub or regional strip) does 12 points a minute; a bush strip patches at 5 a minute at 1.5x the
+  price; a **mechanic** (a human in `Roles.MECHANIC`) does 24 a minute, anywhere, at 0.6x the price. The aircraft cannot take
+  off while the work is running (the cowling is off, the throttle held at idle); it stops by itself when the work is done, the
+  money runs out or the aircraft is moved. From the hangar menu (H) the service row starts and stops the work on both.
+- **What you see.** The pilot and everyone else read good / worn / poor / failing. The mechanic reads the numbers, the
+  chance it quits a minute, the power left and what the gear will take (his I key says it aloud), and haggles the farmer's drum
+  fuel 40 % cheaper at bush strips.
+- **The AI ground crew**: a bot (`AutoRunner`) has a worn aircraft (under 70) serviced at a hangar before it flies, and patched
+  at a bush strip only when it is under 40. The save keeps each aircraft's condition.
+
+The mechanic's desk: ↑ ↓ choose the part, Enter repairs it, B both, S stops the work, I inspects, F adds 10 % fuel.

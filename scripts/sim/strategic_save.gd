@@ -67,6 +67,8 @@ static func capture(s: Session) -> Dictionary:
 			"aboard": l.aboard, "lost": l.lost.duplicate(true), "lost_by": l.lost_by.duplicate(true)}
 	if s.payroll != null:
 		d["payroll"] = _payroll(s)
+	if s.airframe != null:
+		d["airframe"] = {"cond": s.airframe.cond.duplicate(true), "failures": s.airframe.failures, "spent": s.airframe.spent}
 	if s.races != null:
 		d["races"] = {"paid_at": s.races.paid_at.duplicate(), "won": s.races.won, "betting": s.races.betting,
 			"results": s.races.results.duplicate(true)}
@@ -203,6 +205,12 @@ static func restore(s: Session, d: Dictionary) -> void:
 		l.lost_by = _ints(ld.get("lost_by", l.lost_by))
 	if s.payroll != null and d.get("payroll") is Dictionary:
 		_restore_payroll(s.payroll, d.payroll)
+	if s.airframe != null and d.get("airframe") is Dictionary:
+		var ad: Dictionary = d.airframe
+		for k in ad.get("cond", {}):
+			s.airframe.cond[str(k)] = {"engine": float(ad.cond[k].get("engine", 100.0)), "airframe": float(ad.cond[k].get("airframe", 100.0))}
+		s.airframe.failures = int(ad.get("failures", 0))
+		s.airframe.spent = int(ad.get("spent", 0))
 	if s.races != null and d.get("races") is Dictionary:
 		s.races.paid_at = d.races.get("paid_at", {})
 		s.races.won = int(d.races.get("won", 0))
