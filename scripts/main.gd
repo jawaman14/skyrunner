@@ -25,7 +25,7 @@ var save_dir := "user://"  ## the tests point it elsewhere so they never touch a
 
 var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1,
 	"players": 0, "layer": 0, "graphics": "high", "watch": false, "shot": "", "frames": 90, "hour": -1.0,
-	"map": -1, "weather": "", "connect": "", "host_room": null, "role": "copilot", "name": "player", "seat3d": false, "lobby": true, "unlocks": "story", "chapter": 0, "tutorial": false, "smoke": 0}
+	"map": -1, "weather": "", "connect": "", "host_room": null, "role": "copilot", "name": "player", "password": "", "seat3d": false, "lobby": true, "unlocks": "story", "chapter": 0, "tutorial": false, "smoke": 0}
 
 
 func _ready() -> void:
@@ -84,6 +84,7 @@ func _host_extras(server) -> void:
 ## listening (its players have chosen their seats).
 func _open_room() -> void:
 	var server := HostServer.new()
+	server.password = str(args["password"])
 	add_child(server)
 	var mode: String = "versus" if args["mode"] == "versus" else "coop"
 	var err = server.start_room(args["port"], mode, "*", args["seed"], str(args["name"]))
@@ -239,6 +240,7 @@ func start() -> void:
 		sess.say("Hosting on port %d: your friends are seated; the AI plays every seat nobody took." % server.port)
 	elif args["host"] or mode in [Roles.COOP, Roles.VERSUS]:
 		server = HostServer.new()
+		server.password = str(args["password"])
 		server.host_name = str(args["name"])
 		add_child(server)
 		var err = server.start(args["port"], mode if mode != Roles.SOLO else Roles.COOP)
@@ -274,12 +276,17 @@ func start() -> void:
 ## the 2D station for everyone else.
 func _join() -> void:
 	var a: String = args["connect"]
+	var at := a.find("@")  # password@host:port
+	if at > 0:
+		args["password"] = a.substr(0, at)
+		a = a.substr(at + 1)
 	var i := a.rfind(":")
 	var host := a.substr(0, i) if i > 0 else "127.0.0.1"
 	var port := int(a.substr(i + 1)) if i >= 0 else HostServer.DEFAULT_PORT
 	var link := NetClient.new()
 	add_child(link)
 	var role: String = args["role"] if args["role"] != "pick" else ""
+	link.password = str(args["password"])
 	link.open(host, port, args["name"], role)
 	# the waiting room if the host is still in it; if the game is already running, the old way (a seat by name, or the picker)
 	var room := RoomScreen.new()

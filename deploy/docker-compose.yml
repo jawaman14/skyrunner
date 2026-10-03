@@ -1,0 +1,23 @@
+# docker compose -f deploy/docker-compose.yml up -d --build
+# Set the password in the environment or an .env file next to this one:  SKYRUNNER_PASSWORD=secret
+services:
+  skyrunner:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: skyrunner-server
+    restart: unless-stopped
+    ports:
+      - "47800:47800/tcp"
+    environment:
+      SKYRUNNER_NAME: "Skyrunner server"
+      SKYRUNNER_MODE: "coop"          # coop, versus or police
+      SKYRUNNER_UNLOCKS: "open"       # open (everything from the start) or story
+      SKYRUNNER_PASSWORD: "${SKYRUNNER_PASSWORD:-}"
+      SKYRUNNER_MAX_PLAYERS: "16"
+    volumes:
+      - skyrunner-data:/data
+    stop_grace_period: 30s            # time to save on `docker compose stop`
+
+volumes:
+  skyrunner-data:

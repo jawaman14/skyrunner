@@ -11,6 +11,7 @@ var sess: Session
 var prefer_hot := true
 var bot: PilotBot = null
 var flights := 0
+var skipped := {}  ## job id -> true: loads that would not fit the aircraft even re-planned (never picked again)
 var log: Array = []
 var _wait := 0.0
 
@@ -27,7 +28,7 @@ func _pick():
 	var seats := spec.seat_count() - (1 if s.copilot else 0)
 	var jobs := Py.filter(board, func(j):
 		var pax := Py.count(j.items, func(i): return i.kind == "passenger")
-		return pax <= seats and j.weight_lb() < spec.mtow_lb * 0.25)
+		return pax <= seats and j.weight_lb() < spec.mtow_lb * 0.25 and not skipped.has(j.id))
 	if jobs.is_empty():
 		return null
 	# Python's key is the tuple (hot, payout); payouts are far below 1e12
@@ -70,6 +71,10 @@ func step(dt: float) -> FlightModel.Controls:
 	var job: Jobs.Job = s.active_jobs[0]
 	if not s.loadout.compute().ok():
 		s.hire_loadmaster()
+	if not s.loadout.unassigned().is_empty():  # it does not fit even re-planned: put the job back and take another (a server's pilot must not wait forever)
+		skipped[job.id] = true
+		s.drop_job(job)
+		return null
 	var legs := PilotBot.mission_for(s, job, s.location)
 	s.set_fuel(PilotBot.plan_fuel_lb(s, legs))
 	bot = PilotBot.new(s, legs)

@@ -1,49 +1,54 @@
 extends SceneTree
-## Dedicated headless server (no pilot seat): police-vs-AI for remote desks
-## (port of `python -m skyrunner.net.server`).
+## The dedicated server's entry point (see DedicatedServer and docs/SERVER.md):
 ##
-##   godot --headless --script res://scripts/net/dedicated.gd -- [--port 47800] [--seed 1] [--seconds N]
+##   godot --headless --path . --script res://scripts/net/dedicated.gd -- [options]
+##
+##   --port 47800        --bind "*"          --seed 1           --map -1 (the city coast)
+##   --mode coop|versus|police               --unlocks open|story
+##   --name "My server"  --password secret   --max-players 16
+##   --save user://dedicated.json   --autosave 120 (seconds, 0 = off)   --stop-file /path (touch it for a clean stop)
+##   --autopilot true    (the AI flies the aircraft until a player takes the pilot's seat)
+##   --lan               (announce on the local network too; off in the cloud)
+##   --seconds N         (stop after N server seconds: for tests)   --quiet
+## Every option is also an environment variable: SKYRUNNER_PORT, SKYRUNNER_MODE, SKYRUNNER_PASSWORD, SKYRUNNER_MAX_PLAYERS, ...
 
-var sess: Session
-var srv: HostServer
-var seconds := -1.0
-var t := 0.0
-var acc := 0.0
-const DT := 1.0 / 30
+var server: DedicatedServer
+var announcer: LanDiscovery.Announcer = null
 
 
 func _init() -> void:
-	var a := OS.get_cmdline_user_args()
-	var port := HostServer.DEFAULT_PORT
-	var seed := 1
-	for i in a.size() - 1:
-		match a[i]:
-			"--port": port = int(a[i + 1])
-			"--seed": seed = int(a[i + 1])
-			"--seconds": seconds = float(a[i + 1])
-	sess = Session.new({"mode": Roles.POLICE, "seed": seed, "map_seed": MapCity.SEED, "ground_war": true, "chronicle": true, "agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true, "career": true, "fog": true,
-		"money": Session.OPEN_FLOAT})  # AI runs the desk until a controller joins
-	srv = HostServer.new()
-	srv.attach(sess)
-	root.add_child.call_deferred(srv)
-	var err = srv.start(port, Roles.POLICE)
-	if err:
-		printerr(err)
+	var env := {}
+	for k in DedicatedServer.DEFAULTS:
+		var e := "SKYRUNNER_" + str(k).to_upper()
+		if OS.has_environment(e):
+			env[e] = OS.get_environment(e)
+	var parsed := DedicatedServer.parse(OS.get_cmdline_user_args(), env)
+	if str(parsed.error) != "":
+		printerr("skyrunner server: " + str(parsed.error))
+		quit(2)
+		return
+	server = DedicatedServer.new(parsed.cfg)
+	var err := server.start()
+	if err != "":
+		printerr("skyrunner server: " + err)
 		quit(1)
 		return
-	srv.host_name = "server"
-	var ann := LanDiscovery.Announcer.new()
-	root.add_child.call_deferred(ann)
-	ann.start(func(): return {"name": "Task-force server", "port": srv.port, "mode": srv.mode, "players": srv.roster().size() - 1, "locked": srv.locked})  # shows up in the multiplayer menu on the network
-	print("Skyrunner task-force server on port %d - connect with --connect HOST:%d --role controller" % [srv.port, srv.port])
+	root.add_child(server.srv)  # the sockets are polled from the node's _process
+	if bool(server.cfg.lan):
+		announcer = LanDiscovery.Announcer.new()
+		root.add_child(announcer)
+		announcer.start(func(): return {"name": str(server.cfg.name), "port": server.srv.port, "mode": server.srv.mode, "players": server.players(), "locked": server.srv.locked})
 
 
 func _process(delta: float) -> bool:
-	acc += delta
-	while acc >= DT:
-		acc -= DT
-		srv.pump(sess)
-		sess.update(DT)
-		t += DT
-	srv.publish(sess)
-	return seconds > 0 and t >= seconds
+	if server == null:
+		return true
+	if server.step(delta):
+		server.shutdown()
+		return true
+	return false
+
+
+func _notification(what: int) -> void:
+	if what == Node.NOTIFICATION_WM_CLOSE_REQUEST and server != null:
+		server.shutdown()
