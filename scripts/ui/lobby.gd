@@ -142,7 +142,7 @@ func _ready() -> void:
 	v.add_child(mp)
 	var j := HBoxContainer.new()
 	addr = LineEdit.new()
-	addr.placeholder_text = "host:47800"
+	addr.placeholder_text = "host:47800 (password@host:47800)"
 	addr.custom_minimum_size = Vector2(200, 0)
 	role_ob = OptionButton.new()
 	for r in JOIN_ROLES:

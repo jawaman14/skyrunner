@@ -1,0 +1,11 @@
+.git
+.github
+.godot
+.tools
+export
+skyrunner-godot
+sim-results
+docs/img
+reference
+tests/fixtures
+*.md.bak

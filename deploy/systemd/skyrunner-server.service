@@ -1,0 +1,24 @@
+# A Skyrunner dedicated server as a systemd service (no Docker): copy to /etc/systemd/system/, then
+#   sudo systemctl daemon-reload && sudo systemctl enable --now skyrunner-server
+# Expects the project in /opt/skyrunner, Godot 4.7.2 at /usr/local/bin/godot, a user `skyrunner`, and /var/lib/skyrunner for the save.
+# Options: edit /etc/skyrunner-server.env (SKYRUNNER_PASSWORD=..., SKYRUNNER_MODE=..., see docs/SERVER.md).
+[Unit]
+Description=Skyrunner dedicated server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=skyrunner
+WorkingDirectory=/opt/skyrunner
+EnvironmentFile=-/etc/skyrunner-server.env
+Environment=SKYRUNNER_SAVE=/var/lib/skyrunner/dedicated.json SKYRUNNER_STOP_FILE=/var/lib/skyrunner/stop
+ExecStartPre=/bin/rm -f /var/lib/skyrunner/stop
+ExecStart=/usr/local/bin/godot --headless --path /opt/skyrunner --script res://scripts/net/dedicated.gd
+# a clean stop: the server saves and exits when the stop file appears (Godot ignores SIGTERM)
+ExecStop=/bin/sh -c 'touch /var/lib/skyrunner/stop; for i in $(seq 1 20); do kill -0 $MAINPID 2>/dev/null || exit 0; sleep 1; done'
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1215,3 +1215,20 @@ boss's and fixer's desks, the phone's "The Sunrise Collective". Commands: `acid_
 
 Not yet: acid as a good in the economy's markets and the logistics' trucks (it moves instantly and sells through the circuit only), a lab on the
 map and a trip's effect on the screen.
+
+
+## 45. The dedicated server
+
+`DedicatedServer` (`scripts/net/dedicated_server.gd`, run by `scripts/net/dedicated.gd`) is a headless host: the same `HostServer` (protocol v3) with
+nobody in the host's seat (`HostServer.dedicated`), the pilot's seat released to the AI, and `AutoRunner` flying the aircraft until a player takes it
+(the hand-over `HostDesk` and `PilotApp` make). A fixed 30 Hz loop (`step`, five steps at most per frame) runs `pump`, the session and
+`publish`. Options are flags or `SKYRUNNER_*` environment variables (`parse`). What a server adds: a **password** (`HostServer.password`, the hello's `password`
+field; `NetClient.password`; `--password` and `password@host:port` on the client), a **status probe** (`{"t":"status"}` before any hello answers with the
+name, mode, player count, whether a password is set and the clock, and hangs up), a **log** (`log_fn`: joins, leaves, claims, refusals), **saves** (every
+`--autosave` seconds, when the last player leaves, and on a clean stop; the save is picked up on the next start, the story included), a **stop file**
+(Godot ignores SIGTERM: touch the file and the server saves and exits), and `--max-players`. `deploy/` has the Dockerfile and its SIGTERM-to-stop-file entrypoint,
+a compose file, a systemd unit and the Google Compute Engine scripts; `tools/server_probe.gd` is the probe (and `--join ROLE` takes a seat). CI runs the server from source
+and builds and runs the image. Operating it is `docs/SERVER.md`.
+
+An hour of server time takes about 100 s of one core and 140 MB. Soaking it found a bug in the AI pilot: `AutoRunner` accepted a load that did not fit even
+after the loadmaster re-planned it and then waited for the loading to finish for ever; it now puts the job back and never picks it again (`skipped`).

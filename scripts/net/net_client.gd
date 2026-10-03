@@ -14,6 +14,7 @@ var latest = null
 var welcome = null
 var error = null
 var acks := {}
+var password := ""  ## a password-protected server's (sent in the hello)
 var token := ""  ## the host's reconnect token (from the welcome); send it again to take back a held seat
 var seats: Array = []  ## the live roster: [{role, side, who, name}]
 var players: Array = []  ## [{name, role}]
@@ -60,6 +61,8 @@ func poll() -> void:
 		return
 	if not _hello_sent:
 		var hello := {"t": "hello", "v": Snapshot.PROTOCOL_VERSION, "name": name_, "role": role}
+		if password != "":
+			hello["password"] = password
 		if token != "":
 			hello["token"] = token
 		peer.put_data(HostServer.line(hello))

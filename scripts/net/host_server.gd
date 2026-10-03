@@ -60,6 +60,9 @@ var _room_rev := -1
 var locked := false  ## closed to new players (a player who held a seat can still come back)
 var banned := {}  ## tokens of players the host removed: they cannot rejoin this game
 var max_players := 16
+var dedicated := false  ## nobody plays the host's seat: the roster's first entry is the server itself
+var password := ""  ## a dedicated server's: a hello without it is refused ("" = open to anyone who can reach the port)
+var log_fn: Callable = Callable()  ## called with a line of text for joins, leaves and refusals (the dedicated server prints them)
 var host_name := "host"
 var announce := true  ## the LAN beacon says where this game is (the menu switches it)
 var _keyed := {}  ## talker token -> {t0, n, sec, last} (when the key went down; frames this second)
@@ -226,7 +229,22 @@ func begin(sess_: Session) -> void:
 			c.peer.put_data(line({"t": "start", "role": c.role, "mode": mode, "seed": world_seed, "host_role": host_seat}))
 
 
+func _log(text: String) -> void:
+	if log_fn.is_valid():
+		log_fn.call(text)
+
+
+## What a status probe (or the multiplayer menu's list) may know before it has joined: no secrets.
+func status() -> Dictionary:
+	return {"t": "status", "name": host_name, "mode": mode, "players": roster().size() - (1 if dedicated else 0), "max": max_players, "locked": locked, "password": password != "",
+		"v": Snapshot.PROTOCOL_VERSION, "time": snappedf(sess.time, 0.1) if sess != null else 0.0, "phase": "room" if (sess == null and room != null) else "game"}
+
+
 func _hello(c: Conn, hello: Dictionary) -> void:
+	if hello.get("t") == "status":  # a health check: answer and hang up (a load balancer or `nc` can ask without joining)
+		c.peer.put_data(line(status()))
+		_drop(c)
+		return
 	var role := str(hello.get("role", ""))
 	var name := str(hello.get("name", "player")).substr(0, 32)
 	var v := int(hello.get("v", -1))
@@ -239,8 +257,11 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		err = "No such role %s." % role
 	elif v == 2 and role == "":
 		err = "Protocol v2 needs a role."
+	elif password != "" and str(hello.get("password", "")) != password:
+		err = "This server needs a password (join as password@host:port, or --password)."
 	if err != "":
 		c.peer.put_data(line({"t": "error", "msg": err}))
+		_log("refused %s: %s" % [name, err])
 		_drop(c)
 		return
 	c.name = name
@@ -257,6 +278,7 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		refusal = "The table is full (%d)." % max_players
 	if refusal != "":
 		c.peer.put_data(line({"t": "error", "msg": refusal}))
+		_log("refused %s: %s" % [name, refusal])
 		_drop(c)
 		return
 	if sess == null:  # the waiting room: sit down, pick a seat, get ready
@@ -282,6 +304,7 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		clients[role] = c
 	c.joined = true
 	c.peer.put_data(line({"t": "welcome", "role": c.role, "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION}))
+	_log("%s joined%s (%d here)" % [name, (" as " + c.role) if c.role != "" else " (no seat yet)", conns.filter(func(x): return x.joined).size()])
 	_seats_rev = -1  # everyone gets the new roster
 
 
@@ -303,6 +326,7 @@ func _message(c: Conn, msg: Dictionary) -> void:
 				c.role = role
 				clients[role] = c
 				c.peer.put_data(line({"t": "claimed", "role": role}))
+				_log("%s took the %s seat" % [c.name, role])
 			_seats_rev = -1
 			return
 		"release":
@@ -347,6 +371,8 @@ func _message(c: Conn, msg: Dictionary) -> void:
 
 
 func _drop(c: Conn) -> void:
+	if c.joined and conns.has(c):
+		_log("%s left%s" % [c.name, (" (seat %s held for them)" % c.role) if c.role != "" else ""])
 	conns.erase(c)
 	if sess == null and room != null and c.joined:
 		room.remove(public_id(c.token))
