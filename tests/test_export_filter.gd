@@ -82,7 +82,7 @@ func test_the_export_presets_leave_out_exactly_the_art_nothing_uses() -> void:
 	var presets := _excludes()
 	check(presets.size() >= 3, "the Linux, Windows and macOS presets are there (%d)" % presets.size())
 	var packs := _packs()
-	check(packs.size() > 20, "the vendored packs are found (%d)" % packs.size())
+	check(packs.size() > 10, "the vendored packs are found (%d)" % packs.size())
 	for pack in packs:
 		var used := _used(pack, code)
 		for pr in presets:

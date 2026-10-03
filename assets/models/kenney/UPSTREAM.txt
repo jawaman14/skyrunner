@@ -9,13 +9,8 @@ Kenney 3D kits, CC0, from https://github.com/shorepine/kenney @ 3694c68 (3d/<kit
   city-commercial      city_commercial/     41
   city-industrial      city_industrial/     25
   city-suburban        city_suburban/       40
-  city-roads           city_roads/          72
   furniture            furniture/           140
   pirate               pirate/              72
-  survival             survival/            80
-  factory              factory/             143
-  retro-urban          retro_urban/         124
-  modular-buildings    modular_buildings/   108
 
-The kits other than the ones in use are vendored to fill the world in (docs/LIBRARIES.md, fifth pass); scripts/render/model_lib.gd
+Besides the kits in use, the Pirate Kit is kept for the harbour's docks (the other unused kits - city-roads, survival, factory, retro-urban and modular-buildings - were removed in October 2026; they are CC0 and can be fetched again from the repository above); scripts/render/model_lib.gd
 loads by path, so nothing here changes the game until a module asks for it. The .import files are not committed (.gitignore).

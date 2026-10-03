@@ -12,31 +12,15 @@ const MODEL_PACKS := {
 	"res://assets/models/kenney/city_commercial": [41, "glb"],
 	"res://assets/models/kenney/city_industrial": [25, "glb"],
 	"res://assets/models/kenney/city_suburban": [40, "glb"],
-	"res://assets/models/kenney/city_roads": [72, "glb"],
 	"res://assets/models/kenney/furniture": [140, "glb"],
 	"res://assets/models/kenney/pirate": [72, "glb"],
-	"res://assets/models/kenney/survival": [80, "glb"],
-	"res://assets/models/kenney/factory": [143, "glb"],
-	"res://assets/models/kenney/retro_urban": [124, "glb"],
-	"res://assets/models/kenney/modular_buildings": [108, "glb"],
 	"res://assets/models/kaykit/city": [41, "gltf"],
 	"res://assets/models/quaternius/downtown_city": [153, "gltf"],
-	"res://assets/models/quaternius/stylized_nature": [68, "gltf"],
-	"res://assets/models/quaternius/ultimate_nature": [150, "fbx"],
-	"res://assets/models/quaternius/cars": [7, "fbx"],
-	"res://assets/models/quaternius/modular_street": [25, "fbx"],
 }
 const SPRITE_PACKS := {
 	"res://assets/ui/input_prompts": 500,
-	"res://assets/ui/game_icons": 300,
-	"res://assets/ui/ui_pack": 300,
 	"res://assets/ui/cursors": 200,
-	"res://assets/ui/minimap": 100,
 	"res://assets/ui/flags": 400,
-	"res://assets/ui/map_pack": 150,
-	"res://assets/ui/explosions": 50,
-	"res://assets/ui/emotes": 200,
-	"res://assets/ui/road_textures": 150,
 }
 
 
@@ -85,7 +69,7 @@ func test_every_model_pack_says_where_it_came_from_and_its_licence() -> void:
 		check(FileAccess.file_exists(p), "%s exists" % p)
 	var q := FileAccess.get_file_as_string("res://assets/models/quaternius/README.txt")
 	check("CC0" in q, "the Quaternius packs are marked CC0")
-	for dir in ["downtown_city", "stylized_nature", "ultimate_nature", "cars"]:
+	for dir in ["downtown_city"]:
 		check(FileAccess.file_exists("res://assets/models/quaternius/%s/LICENSE.txt" % dir), "%s keeps its licence file" % dir)
 
 
