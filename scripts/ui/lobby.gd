@@ -27,7 +27,7 @@ var plan_lbl: Label
 var go_btn: Button
 var hints: KeyHints
 
-const MODES := [["Solo", "solo"], ["Flying lessons (Palmetto Cay)", "campaign"], ["Co-op: friends crew for you", "coop"],
+const MODES := [["Solo", "solo"], ["Tutorial (Palmetto Cay)", "campaign"], ["Co-op: friends crew for you", "coop"],
 	["Versus: friends run the task force", "versus"], ["Task-force desk vs AI runners", "police"]]
 const UNLOCKS := [["Story: Costa Brava 1979-1989", "story"], ["Open: every faction and mechanic", "open"]]
 const JOIN_ROLES := ["", "copilot", "spotter", "boat", "boss", "lieutenant", "controller", "interceptor", "cutter", "chief", "patrol"]

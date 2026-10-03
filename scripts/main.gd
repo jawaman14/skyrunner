@@ -6,7 +6,7 @@ extends Node
 ##   godot -- --unlocks open                 # open world: every faction and mechanic from the start
 ##   godot -- --tutorial                     # the tutorial: lessons as you play, tips when things happen
 ##   godot -- --chapter 4                    # the story, skipping ahead to chapter 4 (1982)
-##   godot -- --mode campaign                # flying lessons: Palmetto Cay, the classic island
+##   godot -- --mode campaign                # the tutorial campaign: Palmetto Cay, the classic island
 ##   godot -- --mode coop                    # host: friends join as co-pilot / spotter
 ##   godot -- --mode versus                  # host: a friend runs the task-force desk
 ##   godot -- --police                       # play the task force against AI runners
