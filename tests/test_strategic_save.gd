@@ -244,6 +244,67 @@ func test_a_loaded_world_plays_on_without_errors() -> void:
 	t.dispose()
 
 
+func _hq_opts() -> Dictionary:
+	var o := _world_opts()
+	o["features"] = Session.SANDBOX_FEATURES + ["hq"]
+	return o
+
+
+func test_the_hq_season_survives_a_save() -> void:
+	var o := _hq_opts()
+	o["save_path"] = PATH
+	var s := Session.new(o)
+	_quiet(s)
+	s.update(1.0 / 30)
+	check(s.nights != null, "the Organisation layer is on")
+	var ss: HQ.Season = s.nights.season
+	ss.night = 4
+	ss.org.heat = 33.5
+	ss.org.fronts.append(HQ.FRONTS.keys()[1])
+	ss.org.bribes["sheriff"] = true
+	ss.org.crews = 2
+	ss.law.support = 61.0
+	ss.law.informants = 3
+	ss.history.append({"night": 3, "dirty": 12000})
+	ss.sightings.append("west")
+	ss.runner_log.append("a line")
+	check(ss.rival != null, "the rival cartel is in")
+	ss.rival.strength = 77.0
+	ss.rival.grudge = 2
+	for i in 5:
+		ss.rng.random()
+		ss.rrng.random()
+	var rng_state: Array = ss.rng.get_state()
+	var rrng_state: Array = ss.rrng.get_state()
+	var f_sky: String = ss.forecast.get("sky", "")
+	s.save()
+	s.dispose()
+	var t := Session.load_or_new(PATH, _hq_opts())
+	_quiet(t)
+	var ts: HQ.Season = t.nights.season
+	check_eq(ts.night, 4, "the night")
+	check_eq(ts.org.heat, 33.5, "the organisation's heat")
+	check(ts.org.bribes.has("sheriff"), "the bribes")
+	check_eq(ts.org.crews, 2, "tonight's crews")
+	check_eq(typeof(ts.org.crews), TYPE_INT, "a whole number")
+	check_eq(ts.law.support, 61.0, "the task force's support")
+	check_eq(ts.law.informants, 3, "and its informants")
+	check_eq(ts.history.size(), 1, "the season so far")
+	check_eq(ts.sightings, ["west"], "the sightings")
+	check_eq(ts.runner_log, ["a line"], "the log")
+	check_eq(ts.rival.strength, 77.0, "Los Cuervos' strength")
+	check_eq(ts.rival.grudge, 2, "and their grudge")
+	check_eq(typeof(ts.rival.grudge), TYPE_INT, "in whole nights")
+	check_eq(ts.rng.get_state(), rng_state, "the season's dice carry on where they were")
+	check_eq(ts.rrng.get_state(), rrng_state, "and the rival's")
+	check_eq(ts.forecast.get("sky", ""), f_sky, "tonight's forecast")
+	check_eq(t.nights.phase, "planning", "back at planning")
+	for i in 300:
+		t.update(1.0)
+	check(t.nights.season.phase != "", "five minutes on, no errors")
+	t.dispose()
+
+
 func test_save_vars_round_trips_through_json() -> void:
 	var holder := Squad2.new()
 	holder.n = 5

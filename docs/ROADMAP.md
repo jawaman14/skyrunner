@@ -241,8 +241,9 @@ Second wave, larger features:
   `tests/test_strategic_save.gd`): the Family (regard, the loan, offers, tribute), the product trade, the
   economy and its market, the island, the Company, the chronicle, the three arsenals, the ground war's books
   and commanders, the rackets' counters and prisoners, and the rival and task-force squads (where they stood,
-  at rest). **Not kept yet:** the HQ season (`NightDirector` / `HQ.Season`, the Organisation layer's nightly
-  planning game: a deep object graph, its own PR).
+  at rest). And the HQ season (`NightDirector` / `HQ.Season`: the organisation, the task force, Los Cuervos,
+  the season's books and both random streams); a night that was mid-operation comes back at its planning
+  phase. Nothing of the world is left out of a save now, except what is in flight (trucks, boats, jobs).
 
 ## 3. Later
 - A real-app playtest pass on every seat.
