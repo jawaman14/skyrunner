@@ -16,14 +16,6 @@ const M_PER_DEG_LAT := 111132.92 - 559.82 * 1.0 + 1.175 * 1.0
 const M_PER_DEG_LON := 111412.84 * 1.0 - 93.5 * 1.0
 
 
-static func xy_to_latlon(x: float, y: float) -> Array:
-	return [LAT0 + y / M_PER_DEG_LAT, LON0 + x / M_PER_DEG_LON]
-
-
-static func latlon_to_xy(lat: float, lon: float) -> Array:
-	return [(lon - LON0) * M_PER_DEG_LON, (lat - LAT0) * M_PER_DEG_LAT]
-
-
 class Controls:
 	var aileron := 0.0  ## -1 left .. +1 right
 	var elevator := 0.0  ## -1 nose up .. +1 nose down (the aircraft data's convention)

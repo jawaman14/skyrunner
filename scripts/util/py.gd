@@ -151,10 +151,6 @@ static func dist2(a: Array, b: Array) -> float:
 	return PyMath.hypot(a[0] - b[0], a[1] - b[1])
 
 
-static func dist3(a: Array, b: Array) -> float:
-	return PyMath.hypot3(a[0] - b[0], a[1] - b[1], a[2] - b[2])
-
-
 static func round_n(x: float, n: int) -> float:
 	return PyMath.round_n(x, n)
 
@@ -196,10 +192,6 @@ static func keep_last(lst: Array, n: int) -> void:
 		var drop := lst.size() - n
 		for i in drop:
 			lst.remove_at(0)
-
-
-static func dict_get(d: Dictionary, k, default = null):
-	return d[k] if d.has(k) else default
 
 
 ## Python truthiness: None/0/""/[]/{} are false. GDScript's bool() only takes numbers.

@@ -10,7 +10,7 @@ asymmetric **traffickers vs. law enforcement** game. It supports solo play again
 co-op crews, and team-vs-team multiplayer, and it follows a campaign that gets harder
 year by year.
 
-Status legend: **[done]** in the code now · **[phase 3+]** planned, see *Roadmap*.
+Status legend: **[done]** in the code now · **[planned]** planned, see *Roadmap* (the extra human roles are queued in docs/REVIEW_2026-10.md).
 
 ---
 
@@ -33,7 +33,7 @@ Status legend: **[done]** in the code now · **[phase 3+]** planned, see *Roadma
 | **Solo runner** | Pilot | Police, optional AI co-pilot | [done] |
 | **Solo task force** | Controller | AI smuggler flights + boats | [done] |
 | **Co-op crew** | Pilot + co-pilot (+ spotter) | Police | [done] (co-pilot and spotter use the station client) |
-| **Versus** | Runner crew vs. controller (+ interceptor pilot) | Empty roles | [done]; controller and spotter use the station client; interceptor pilot is [phase 3+] |
+| **Versus** | Runner crew vs. controller (+ interceptor pilot) | Empty roles | [done]; controller and spotter use the station client; the interceptor pilot flies in a 3D seat (`RemoteSeat`) |
 | **Campaign** | Solo or co-op | Scripted threats per chapter | [done]: chapters 1–4 playable, 5–8 scripted in this doc |
 
 Any seat without a human is filled by AI, so the same match can be played by 1 to 6 people.
@@ -47,21 +47,21 @@ Any seat without a human is filled by AI, so the same match can be played by 1 t
 | **Pilot** | Flies. Transponder, flaps, autopilot. | Out the window, HUD, radar-detector light | [done] |
 | **Co-pilot / kicker** | Loads the aircraft (twice the loading speed), pumps ferry fuel, kicks bales out over drop zones, runs the radio scanner and calls the boat | Tactical map: own aircraft, boat, bales, intercepted police traffic, radar-warning status | [done] (station client + AI fallback) |
 | **Spotter** | Watches one airstrip from the ground. Reports police units and roadblocks near it. Can relocate (takes time). | Units within 5 km of the watched strip, reported with a delay | [done] (AI-driven reports; human uses the station client) |
-| **Boat captain** | Go-fast boat. Waits at the rendezvous, fishes bales out of the water, runs for the cove. | Surface picture around the boat | [done] AI; human-driven boat [phase 3+] |
-| **Fixer** | Books jobs, hires spotters, buys gear, manages heat and money between flights | Job boards, black market | [phase 3+] (the pilot does this now) |
-| **Mechanic** | Field refuelling from caches, quick repairs at bush strips | | [phase 3+] |
+| **Boat captain** | Go-fast boat. Waits at the rendezvous, fishes bales out of the water, runs for the cove. | Surface picture around the boat | [done] AI; human-driven boat [planned] |
+| **Fixer** | Books jobs, hires spotters, buys gear, manages heat and money between flights | Job boards, black market | [planned] (the pilot does this now) |
+| **Mechanic** | Field refuelling from caches, quick repairs at bush strips | | [planned] |
 
 ### Law side
 
 | Role | Job | Sees | Status |
 |---|---|---|---|
 | **Controller** (radar/intel desk) | Reads the fused radar picture, classifies tracks, dispatches helicopters, interceptors and cutters, sets radio encryption, requests the aerostat | Radar tracks (with position noise, no identity for non-squawking targets), tips, DF bearings. Never the true runner position. | [done] (station client + AI fallback) |
-| **Interceptor pilot** | Flies the chase aircraft and makes the visual ID | Out the window, its own radar | AI [done]; human pilot [phase 3+] |
-| **Coast Guard cutter** | Hunts boats and seizes floating bales | Surface radar | [done] AI; human [phase 3+] |
-| **Analyst** | Works the informant network, fuel-purchase records and tail numbers | Tip feed | [phase 3+] (folded into Controller now) |
-| **Undercover agent** | Plants a tracking beacon on a runner aircraft on the ground | | [phase 3+] |
+| **Interceptor pilot** | Flies the chase aircraft and makes the visual ID | Out the window, its own radar | AI [done]; human pilot [done] (`RemoteSeat`) |
+| **Coast Guard cutter** | Hunts boats and seizes floating bales | Surface radar | [done] AI; human [planned] |
+| **Analyst** | Works the informant network, fuel-purchase records and tail numbers | Tip feed | [planned] (folded into Controller now) |
+| **Undercover agent** | Plants a tracking beacon on a runner aircraft on the ground | | [planned] |
 
-### Hidden role (versus, [phase 3+])
+### Hidden role (versus, [planned])
 **The informant.** One runner-side player may secretly be working for the task force. They
 score if the crew gets busted and lose if they're caught leaking, so they have to sabotage
 quietly (a bad load plan, "forgetting" to pump fuel, calling the boat on an open channel).
@@ -71,16 +71,16 @@ This is the social-deduction layer that gives crews a reason to watch each other
 
 | Runner tool | What it does | Law counter | Counter to the counter |
 |---|---|---|---|
-| **Flying low** | Below the radar floor (≈45 m AGL + 9 m per km of range), and behind terrain, primary radar can't see you | **Aerostat radar** (tethered balloon at 2.5 km altitude: huge line of sight, low floor) | Stay out of its footprint; it's winched down in high wind [phase 3+] |
+| **Flying low** | Below the radar floor (≈45 m AGL + 9 m per km of range), and behind terrain, primary radar can't see you | **Aerostat radar** (tethered balloon at 2.5 km altitude: huge line of sight, low floor) | Stay out of its footprint; it's winched down in high wind or lightning [done] (HQ season) |
 | **Transponder off** | No secondary return, so no identity | An unidentified primary track builds suspicion fast | Keep squawking to look like legit traffic. But turning it *off* while tracked ("squawk lost") is a big red flag. |
 | **Transponder on** | You look like a normal charter | You're tracked the whole time you're in coverage; an informant tip names your tail | Only squawk on legit legs |
 | **Radar detector** ("fuzzbuster") | Warns when a radar illuminates you, and whether you're above its detection floor | No direct counter (passive) | – |
 | **Radio scanner** | Hears police dispatch in plain voice: unit, base, heading | **Encrypted radio** (controller toggle): dispatch becomes garbled static | Encryption slows coordination (dispatch delay +8 s) |
 | **Boat radio calls** | Needed to bring the boat to the drop point | **Direction finding**: every transmission gives the task force a bearing, and two stations give a fix | Keep calls short, call from a different spot than the drop, or pre-plan the rendezvous with no call (the boat waits longer, and waiting boats get spotted) |
-| **Ground spotters** | Early warning of police at your destination | **Informants**: a hired spotter may leak your destination (a tip with a 3 km circle) | Pay more for trusted spotters [phase 3+], vary destinations |
+| **Ground spotters** | Early warning of police at your destination | **Informants**: a hired spotter may leak your destination (a tip with a 3 km circle) | Pay more for trusted spotters [planned], vary destinations |
 | **Ferry tanks** | Long runs from offshore, no fuel stops | **Fuel-purchase tracking**: buying ferry fuel at a police field raises a tip chance | Fuel caches at bush strips (fly the drums in first) |
-| **Airdrops to boats** | Never land with the goods | **Coast Guard cutters** and the "drop pattern" classifier (a slow, low track circling over water) | Drop fast, drop in the dark [phase 3+], decoy boats [phase 3+] |
-| **Decoy flights** [phase 3+] | A clean aircraft flies the obvious route | Controller has limited units: committing to the decoy is the cost | – |
+| **Airdrops to boats** | Never land with the goods | **Coast Guard cutters** and the "drop pattern" classifier (a slow, low track circling over water) | Drop fast, drop in the dark [planned], decoy boats [planned] |
+| **Decoy flights** [done] (the HQ season's decoy crews) | A clean aircraft flies the obvious route | Controller has limited units: committing to the decoy is the cost | – |
 
 **Resource limits keep the controller honest.** The task force starts with 1 helicopter,
 2 interceptors and 1 cutter, each with a launch delay and a fuel endurance. They're
@@ -107,7 +107,7 @@ than the full response, which is how the side with less information stays viable
   co-pilot, 4 s for the pilot on autopilot. Above 130 kt the door can't be used.
 - Each bale is a ballistic object with drag (terminal velocity ≈ 35 m/s) that inherits the
   aircraft's velocity. If it lands in the water, it floats and drifts. If it lands on land,
-  it's lost (ground drop zones with a pickup truck are [phase 3+]).
+  it's lost (ground drop zones with a pickup truck are [planned]).
 - The boat collects bales within 40 m (5 s each), then runs for the cove. The job pays per
   bale delivered to the cove.
 - **Autopilot** (wing leveller + altitude hold) exists so a solo pilot can go aft and kick.
@@ -144,10 +144,10 @@ Cessna 172. His sister *Rosa* runs the mail contract and is your first co-pilot.
 | 2 | 1980 | **A Favor for Manny** | Contraband, radar floors, flying low | Deliver one hot cargo without reaching wanted ★ | [done] |
 | 3 | 1981 | **Kickers** | Co-pilot, airdrops, boat rendezvous, radio calls | Drop 4 bales to the *Lady Luck*, 3 must reach the cove | [done] |
 | 4 | 1982 | **Long Legs** | Ferry tanks, fuel planning, offshore entry, fuel caches | Fly in from the south entry point with a ferry tank and make a drop | [done] |
-| 5 | 1983 | **The Balloon** | Aerostat radar goes up, radar detector, spotters | Complete a run inside aerostat coverage without being tracked for more than 60 s | [phase 3+] |
-| 6 | 1984 | **Blue Water** | Coast Guard cutters, encrypted police radio, DF | Make two drops in one night with encryption active | [phase 3+] |
-| 7 | 1985 | **The Leak** | Informants, decoy flights, hidden-role versus | Find the leak (one of three spotters) before the big run | [phase 3+] |
-| 8 | 1986 | **Last Run / Flip** | Everything | Branch: pull off the biggest run of your life, **or** take Hart's deal and play the finale on the law side | [phase 3+] |
+| 5 | 1983 | **The Balloon** | Aerostat radar goes up, radar detector, spotters | Complete a run inside aerostat coverage without being tracked for more than 60 s | [planned] |
+| 6 | 1984 | **Blue Water** | Coast Guard cutters, encrypted police radio, DF | Make two drops in one night with encryption active | [planned] |
+| 7 | 1985 | **The Leak** | Informants, decoy flights, hidden-role versus | Find the leak (one of three spotters) before the big run | [planned] |
+| 8 | 1986 | **Last Run / Flip** | Everything | Branch: pull off the biggest run of your life, **or** take Hart's deal and play the finale on the law side | [planned] |
 
 **The task-force campaign** (law side, 1983–1986) replays the same years from Hart's desk:
 building the radar net, getting encryption budget approved, turning Callahan's spotters. In

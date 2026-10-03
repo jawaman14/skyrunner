@@ -460,8 +460,3 @@ func _world_sounds(s) -> void:
 func on_lightning() -> void:
 	radio.stream = thunder()
 	radio.play()
-
-
-func stats() -> Dictionary:
-	return {"engine_db": engine.volume_db, "wind_db": wind.volume_db, "horn_db": horn.volume_db, "world": world.size(),
-		"music": music.playing}
