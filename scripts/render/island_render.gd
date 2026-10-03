@@ -14,6 +14,9 @@ static func build(world: World, q: Quality) -> Node3D:
 	root.add_child(_ground())
 	root.add_child(_palms(q))
 	root.add_child(_town())
+	if CasinoBuilding.ENABLED:
+		root.add_child(CasinoBuilding.ground(world))
+		root.add_child(CasinoBuilding.build(world))
 	for af in world.map.foreign:
 		var n := Models.build_airfield(world, af, q)
 		root.add_child(n)

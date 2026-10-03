@@ -1094,3 +1094,41 @@ account). The dice and cards come from their own stream (seed + 941) so a sessio
 | Craps | Pass and don't pass (bar 12), free odds up to three times the line bet paid at true odds (6 to 5 on the 6 and 8, 3 to 2 on the 5 and 9, 2 to 1 on the 4 and 10; laid at the reverse) | pass 1.41 %, don't pass 1.36 % (1.4 % and 0.8 % with full odds) |
 | Baccarat | Punto banco, eight decks, the full third-card tableau; banker pays 0.95 to 1 (a 5 % commission), player 1 to 1, tie 8 to 1 | banker 1.06 %, player 1.24 %, tie 14.4 % |
 | Slot machines | Three reels of twenty stops (a seven, two bars, three each of bells, plums, oranges, lemons, cherries and two blanks); three sevens pay 450 for 1; cherries from the first reel pay 2 or 5 | 8.1 % (a return of 91.9 %, counted over all 8,000 stops) |
+
+
+## 42. The Hotel Cielo, walkable
+
+`scripts/render/casino_building.gd` (`CasinoBuilding`, behind `ENABLED`) builds the casino as a place, from `Buildings.Kit` boxes and
+cylinders, Kenney furniture and `Label3D` signs, in `IslandRender.build`. The models are 1950s Havana's: the Nacional's grand lobby, the
+Capri's compact floor, the Riviera's slab tower and rooftop sign, the Tropicana's open-air cabaret under concrete arches. It stands on the
+flat of the airfield, 75 m from the runway's centreline and 150 m along it (`site()`), its front (local -z) to the runway:
+
+| Part | What |
+|---|---|
+| Forecourt | pavement, a drive, a porte-cochere with a neon edge, a fountain, palms, the vertical blade sign (CIELO) |
+| Block | 68 x 46 m, 8 m ceiling; a glass curtain wall on mullions, pink stucco sides, a roof slab; a ring of neon in the ceiling |
+| Tower | eleven floors of ribbon windows over the back half, a penthouse, the HOTEL CIELO sign on the roof |
+| Lobby | reception, a bar with a back bar, sofas, palms; a screen wall with a wide opening onto the floor |
+| Mezzanine | the manager's office over the lobby (stairs, glass onto the floor, desk, safe): `casino_office` |
+| Floor | a red carpet round the pit; 3 roulette wheels, 4 blackjack tables, 2 craps tables, 5 banks of 8 slot machines; dealers and stools |
+| Cage | a counter behind a brass grille, three cashiers, a vault door: `casino_cage` |
+| Salon | a walled baccarat room with a red carpet and one oval table: `casino_baccarat` |
+| Courtyard | the Salon Bajo las Estrellas: a stage, round tables with candles, a dance floor, four concrete arches |
+
+The interaction points (`Kit.interact`) are `casino_roulette`, `casino_blackjack`, `casino_craps`, `casino_baccarat`, `casino_slots`,
+`casino_cage` and `casino_office`. `PilotApp._on_use` sends the tables to `CasinoMenu` (`scripts/ui/casino_menu.gd`: a `GameMenu` whose
+moves are `casino_play` commands on the pilot's seat, so the rules, the odds and the money are `Casino.play`'s) and the cage and the
+office to the manager's dialogue (`open_talk("casino")`, standing still). `Casino.at_tables()` still decides whether a seat is free:
+parked on the island with the house open. `PilotApp._casino_state` calls `CasinoBuilding.set_open` every fifteen frames: while the house
+trades the lamps and signs are lit; when it is shut, in revolt or seized (or the session has no casino) they go dark and a board across
+the door becomes solid.
+
+The island had no ground for the walker (`Walker.ground_body` is the mainland's height field, which stops at the edge of the map), so
+`CasinoBuilding.ground` lays one: a `HeightMapShape3D` at 5 m over the strip and 150 m beyond it, sampled from `World.ground` (the
+island's own heights and the runway's elevation). `IslandRender.build` adds it and the hotel together.
+
+Menus now pass any letter that is not J, L or H (which still toggle the job board, load planner and hangar) through to the open menu as
+`key("s")` and the like; the race menu's B and N had only worked by clicking their hints before.
+
+Not yet: dealers and patrons that move, sound (the wheel, the slot bells, the band), and the table games' cards drawn rather than
+printed.

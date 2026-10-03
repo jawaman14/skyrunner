@@ -179,7 +179,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
@@ -336,6 +336,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				m.key(MENU_KEYS[k])
 			elif k in [KEY_J, KEY_L, KEY_H]:
 				_toggle_menu(OS.get_keycode_string(k).to_lower())
+			elif OS.get_keycode_string(k).length() == 1:
+				m.key(OS.get_keycode_string(k).to_lower())  # any other letter: the menu's own keys (the track's B and N, the tables')
 			get_viewport().set_input_as_handled()
 			return
 		if ev.echo:
@@ -513,6 +515,9 @@ var talk: TalkBalloon = null  ## a conversation on screen (the Family, the Gener
 var _offers_seen := {}
 var _was_on_island := false
 var _court_stage := ""
+var _casino_node: Node3D = null  ## the Hotel Cielo's building, once found (it exists only on the island)
+var _casino_looked := false
+var _casino_open := -1  ## 1 lit, 0 dark, -1 not yet set
 
 
 ## Open a conversation (dialogue/<name>.dialogue) from the pilot's seat.
@@ -767,12 +772,47 @@ func _phone_call(action: String) -> void:
 		"track":
 			_open("track")
 		_:
-			var tk := open_talk(action)
-			if tk != null and on_foot and walker != null:
-				walker.look_enabled = false  # stand and talk
-				tk.finished.connect(func():
-					if on_foot and walker != null:
-						walker.look_enabled = true)
+			_talk_standing(action)
+
+
+## A conversation, with the walker standing still for it.
+func _talk_standing(name: String) -> void:
+	var tk := open_talk(name)
+	if tk != null and on_foot and walker != null:
+		walker.look_enabled = false  # stand and talk
+		tk.finished.connect(func():
+			if on_foot and walker != null:
+				walker.look_enabled = true)
+
+
+## Sit down at one of the Hotel Cielo's tables (the walker's E at casino_<game>).
+func _sit_casino(game: String) -> void:
+	if s.casino == null:
+		s.say("The Hotel Cielo is only a hotel in this game: the tables are dark.")
+		return
+	var err: String = s.casino.at_tables()
+	if err != "":
+		s.say(err)
+		return
+	for other in menus.values():
+		other.visible = false
+	menus["casino"].sit(game)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if walker != null:
+		walker.look_enabled = false
+
+
+## The Hotel Cielo's lights follow the house: lit while it trades, dark and boarded when it is shut, seized or burning.
+func _casino_state() -> void:
+	if not _casino_looked:
+		_casino_looked = true
+		_casino_node = scene.find_child("hotel-cielo", true, false) if scene != null else null
+	if _casino_node == null:
+		return
+	var open: bool = s.casino != null and s.casino.trading()
+	if int(open) != _casino_open:
+		_casino_open = int(open)
+		CasinoBuilding.set_open(_casino_node, open)
 
 
 ## Where a taxi will take you: the aircraft, whatever this airfield has (the boss's desk, the job board,
@@ -988,6 +1028,10 @@ func _on_use(action: String, area: Area3D) -> void:
 				s.say("That's %s's %s - your aircraft is at %s." % [World.airfield(field).name, area.get_meta("label"), World.airfield(s.location).name])
 				return
 			_open({"jobs": "j", "load": "l", "hangar": "h"}[action])
+		"casino_roulette", "casino_blackjack", "casino_craps", "casino_baccarat", "casino_slots":
+			_sit_casino(action.trim_prefix("casino_"))
+		"casino_cage", "casino_office":
+			_talk_standing("casino")
 		"hq_org":
 			_open("hq")
 		"hq_rival":
@@ -1080,6 +1124,7 @@ func _process(delta: float) -> void:
 		nerves.update(s, dt)
 		if _frame % 15 == 0:
 			_talk_cues()
+			_casino_state()
 		if server != null:
 			server.publish(s)
 	if _weather_rev != s.weather_rev:
