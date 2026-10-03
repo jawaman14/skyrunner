@@ -132,7 +132,7 @@ func refresh() -> void:
 	rows = board.rows
 	footer.text = ""
 	hints.set_hints([["UP/DOWN", "order", "down"], ["LEFT/RIGHT", "change it", "right"], ["ENTER", "issue", "enter"]]
-		+ (["Q", "squads", "q"] if s.ground != null else []) + [["ESC", "close", "esc"]])
+		+ ([["Q", "squads", "q"]] if s.ground != null else []) + [["ESC", "close", "esc"]])
 
 
 func _intel(ss: Dictionary, head: String) -> void:
