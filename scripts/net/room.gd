@@ -13,13 +13,6 @@ const RUNNER_ROLES := [Roles.PILOT, Roles.COPILOT, Roles.SPOTTER, Roles.BOAT, Ro
 const LAW_ROLES := [Roles.CONTROLLER, Roles.INTERCEPTOR, Roles.CUTTER, Roles.CHIEF, Roles.PATROL]
 ## What the host can sit in: the pilot (3D), or a desk it can run as a 2D station (the police pilot's 3D seat is for guests).
 const HOST_ROLES := [Roles.PILOT, Roles.COPILOT, Roles.SPOTTER, Roles.BOAT, Roles.BOSS, Roles.LIEUTENANT, Roles.CONTROLLER, Roles.CUTTER, Roles.CHIEF, Roles.PATROL]
-const ABOUT := {
-	"pilot": "flies the aircraft (3D)", "copilot": "loads, kicks bales, pumps fuel, runs the scanner and the boat",
-	"spotter": "watches a strip for police", "boat": "the go-fast at the rendezvous", "boss": "the organisation's HQ, night by night",
-	"lieutenant": "the organisation's soldiers on the streets", "controller": "the task force's radar and dispatch desk",
-	"interceptor": "flies a police helicopter or jet (3D)", "cutter": "the Coast Guard cutter", "chief": "the task force's HQ and budget",
-	"patrol": "the narcotics squads on the streets",
-}
 
 var mode := Roles.COOP
 var players := {}  ## id -> {id, name, role, ready, host}
@@ -113,7 +106,7 @@ func seats() -> Array:
 	for role in RUNNER_ROLES + LAW_ROLES:
 		var h := holder(role)
 		var who := "off" if not available(role) else ("player" if h != "" else "ai")
-		out.append({"role": role, "side": Roles.side(role), "about": ABOUT.get(role, ""), "available": available(role), "who": who,
+		out.append({"role": role, "side": Roles.side(role), "about": Roles.ABOUT.get(role, ""), "available": available(role), "who": who,
 			"id": h, "name": players[h].name if h != "" else ""})
 	return out
 

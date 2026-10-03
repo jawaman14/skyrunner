@@ -16,14 +16,6 @@ var hints: KeyHints
 var _keys: Array = []
 var _sig := ""
 
-const ABOUT := {
-	"pilot": "flies the aircraft", "copilot": "loads, kicks bales, pumps fuel, runs the scanner and the boat",
-	"spotter": "watches a strip for police", "boat": "the go-fast at the rendezvous", "boss": "the organisation's HQ, night by night",
-	"lieutenant": "the organisation's soldiers on the streets", "controller": "the task force's radar and dispatch desk",
-	"interceptor": "flies a police helicopter or jet in 3D", "cutter": "the Coast Guard cutter", "chief": "the task force's HQ and budget",
-	"patrol": "the narcotics squads on the streets",
-}
-
 
 func setup(link_: NetClient) -> SeatPicker:
 	link = link_
@@ -91,7 +83,7 @@ func _process(_dt: float) -> void:
 				var seat: String = {"ai": "AI - free", "human": "taken: " + str(s.name), "reserved": "held for " + str(s.name),
 					"off": "not in this game"}.get(s.who, s.who)
 				var col: Color = UIStyle.GREEN if s.who == "ai" else (UIStyle.CAPTION if s.who == "off" else UIStyle.AMBER)
-				table.add_row([s.role, side, seat, ABOUT.get(s.role, "")], {"cell_colors": {2: col}})
+				table.add_row([s.role, side, seat, Roles.ABOUT.get(s.role, "")], {"cell_colors": {2: col}})
 				_keys.append(s.role)
 		table.select(keep if keep >= 0 else 1)
 	var lines := ["Players: " + ", ".join(link.players.map(func(p): return "%s%s" % [p.name, " (%s)" % p.role if p.role != "" else ""]))]

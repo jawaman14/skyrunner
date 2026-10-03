@@ -18,6 +18,15 @@ const CHIEF := "chief"  ## the task force's HQ
 const LIEUTENANT := "lieutenant"  ## the organisation's soldiers on the ground (GroundWar)
 const PATROL := "patrol"  ## the task force's narcotics squads on the ground (GroundWar)
 const ALL := [PILOT, COPILOT, SPOTTER, BOAT, BOSS, LIEUTENANT, CONTROLLER, INTERCEPTOR, CUTTER, CHIEF, PATROL]
+
+## What each seat does, in one line (the waiting room, the seat picker and the multiplayer menu all show this).
+const ABOUT := {
+	"pilot": "flies the aircraft (3D)", "copilot": "loads, kicks bales, pumps fuel, runs the scanner and the boat",
+	"spotter": "watches a strip for police", "boat": "the go-fast at the rendezvous", "boss": "the organisation's HQ, night by night",
+	"lieutenant": "the organisation's soldiers on the streets", "controller": "the task force's radar and dispatch desk",
+	"interceptor": "flies a police helicopter or jet (3D)", "cutter": "the Coast Guard cutter", "chief": "the task force's HQ and budget",
+	"patrol": "the narcotics squads on the streets",
+}
 const _SQUADS := ["squad_order", "recruit_squad", "disband_squad"]
 
 const SOLO := "solo"  ## human pilot vs AI law
