@@ -196,9 +196,10 @@ roadblock is therefore
 $$\Pr[\text{seized}]=p\,(1-a).$$
 At $h=30$ (a warm stash), $r=0$, no fleet: $p=0.04+0.10=0.14$. An ambulance conversion ($\mu=0.55$) gives $0.077$; add an
 armoured truck ($a=0.6$) and the figure falls to $0.077\times0.4=0.031$. Checkpoints and patrols on the ground (the street
-war) add a second, spatial hazard: a truck passing within $120$ m of a patrol is stopped with probability $0.25$ (rising to $0.5$
-if the stash is already known); the fleet's cover and steel combine as $\min(0.9,\,\mu_{\text{cover}}+a)$ and are rolled once for
-each (truck, stop) pair, which is why the result is cached by pair rather than redrawn each tick.
+war) add a second, spatial hazard: a truck within $120$ m of a police checkpoint is stopped outright, and one passing a
+roving patrol is stopped with probability $0.25$ ($0.5$ if the stash it is heading for is already known). The fleet's cover $c$ and
+steel $a$ get a stopped truck past with probability $\min(0.9,\,c+a)$, rolled once for each (truck, stop) pair, which is why the
+result is cached by pair rather than redrawn on every tick (a truck sitting at a checkpoint must get one answer, not many chances).
 
 A second, smaller piece of arithmetic: a truck burns $0.35$ gal/km from a $25$-gal tank, so with a 3-gal reserve its usable range
 is $(25-3)/0.35\approx63$ km; a run longer than that pays a fill-up of $240$ s plus $6$ s per gallon. Run time itself is
@@ -229,9 +230,10 @@ The design target is $v\in[0.45,0.55]$.
 turn plays a best response to the *empirical mixture* of the other side's past plays, and the empirical frequencies converge to
 an optimal mixed strategy. After $T=20{,}000$ rounds the empirical mixtures $(\bar p,\bar q)$ bracket the value,
 $$\min_j\ \bar p^{\!\top}A_{\cdot j}\ \le\ v\ \le\ \max_i\ A_{i\cdot}\bar q,$$
-and the gap between the two sides of that inequality is the exact certificate that the solution is good, which the program can
-report. (Robinson's rate is slow in general, $O(T^{-1/(m+n-2)})$, but for matrices of this size and shape it is ample; a linear
-program would give the exact answer, and fictitious play is used because it is eight lines and prints a certificate.)
+and the gap between the two sides of that inequality is an exact certificate that the solution is good. The code returns the
+bilinear value $\bar p^{\!\top}A\bar q$, which lies inside that bracket. (Robinson's rate is slow in general,
+$O(T^{-1/(m+n-2)})$, but for matrices of this size it is ample; a linear program would give the exact value, and fictitious play
+is used because it is short and needs no solver.)
 
 Two diagnostics come out of the same matrix. A **dominant** strategy (one that beats or ties every column) is a design bug: it
 would mean the choice is not a choice. And an **ablation**: switch a mechanic off (the bribe, the wiretap, the decoys...), recompute
