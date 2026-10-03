@@ -36,7 +36,11 @@ On Windows, run the same through Git Bash or WSL, or call the Godot exe directly
   runs the suite, exports Linux/Windows/macOS and smoke-tests them.
 
 ## Layout
-- `scripts/sim/` headless simulation (Session, world, police, economy, ground war, logistics...);
+- `scripts/sim/` headless simulation (Session, world, police, economy, ground war, logistics...). `Session` is a
+  chain of layers, each extending the one below: `session_state` (constants, members, helpers, persistence) <
+  `session_rules` < `session_ops` < `session_tick` < `session_commands` (the `_cmd_*` handlers) < `session` (construction).
+  A layer may only call down, so a new handler goes in `session_commands.gd`, and anything it needs from a higher
+  layer is a hook declared lower;
   `scripts/sim/flight/` the 6-DOF flight model reading JSBSim-format XML in `data/jsbsim/`.
 - `scripts/bots/` PilotBot and route planning; `scripts/balance/` the balance simulators.
 - `scripts/game/` the 3D pilot app, walker, HUD; `scripts/station/` the 2D desks; `scripts/ui/`.
