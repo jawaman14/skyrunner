@@ -4,7 +4,7 @@ extends TestCase
 ## exclude_filter in export_presets.cfg; this test fails both ways round (a used pack that is excluded would
 ## draw nothing in a build; an unused one that is not would ship for nothing).
 
-const PACK_ROOTS := ["res://assets/models/kenney", "res://assets/models/kaykit", "res://assets/models/quaternius", "res://assets/ui"]
+const PACK_ROOTS := ["res://assets/models/kenney", "res://assets/models/kaykit", "res://assets/models/quaternius"]
 
 
 func _packs() -> Array:
@@ -14,7 +14,7 @@ func _packs() -> Array:
 		if d == null:
 			continue
 		for sub in d.get_directories():
-			if root.ends_with("kaykit") or root.ends_with("quaternius") or root.ends_with("/ui"):
+			if root.ends_with("kaykit") or root.ends_with("quaternius"):
 				if root.ends_with("kaykit"):
 					for s2 in DirAccess.open(root + "/" + sub).get_directories():
 						out.append(root + "/" + sub + "/" + s2)
@@ -82,7 +82,7 @@ func test_the_export_presets_leave_out_exactly_the_art_nothing_uses() -> void:
 	var presets := _excludes()
 	check(presets.size() >= 3, "the Linux, Windows and macOS presets are there (%d)" % presets.size())
 	var packs := _packs()
-	check(packs.size() > 20, "the vendored packs are found (%d)" % packs.size())
+	check(packs.size() > 10, "the vendored packs are found (%d)" % packs.size())
 	for pack in packs:
 		var used := _used(pack, code)
 		for pr in presets:

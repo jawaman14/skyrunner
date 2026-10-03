@@ -14,13 +14,8 @@ Kits used here (unmodified .glb files and their colour-map textures):
   city_commercial/    City Kit (Commercial)
   city_industrial/    City Kit (Industrial)
   city_suburban/      City Kit (Suburban)
-  city_roads/         City Kit (Roads)
   furniture/          Furniture Kit
   pirate/             Pirate Kit (docks, barrels, crates, boats)
-  survival/           Survival Kit
-  factory/            Factory Kit
-  retro_urban/        Retro Urban Kit
-  modular_buildings/  Modular Buildings
 
 Fetched from the CC0 mirror of the Kenney library at
 https://github.com/shorepine/kenney (3d/<kit>/) @ 3694c68. See UPSTREAM.txt.
