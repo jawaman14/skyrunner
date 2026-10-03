@@ -24,7 +24,8 @@ On Windows, run the same through Git Bash or WSL, or call the Godot exe directly
 - **Determinism:** the sim is seeded and replayable. New random draws go on their own RNG stream
   (see the stream table in docs/DESIGN.md), never on an existing one, or the parity/golden
   fixtures shift. New systems sit behind a static `ENABLED`-style switch that the parity tests
-  turn off.
+  turn off. Register every new switch in `scripts/sim/switches.gd` (`tests/test_switches.gd` fails if one is
+  missing, and also scans the sim for global random draws and clock reads).
 - **Fixtures:** tests/fixtures/README.md says which are frozen from the Python prototype
   (the `python-prototype-archive` tag, archival; never regenerate casually) and which are Godot golden files
   (`T.golden()`, regenerate only for an intended behaviour change and say so in the commit).
