@@ -1012,6 +1012,15 @@ turn around or call the boat). Nothing new in the sim: it is a desk over the com
 needs no stand-in (the pilot, or the AI boss, does the same things when nobody sits here).
 
 
+## 37. The docks (Kenney's Pirate Kit)
+
+`scripts/render/port_dress.gd` (`PortDress`, behind `PortDress.ENABLED`, off on the lowest graphics preset and on the other
+maps) puts wooden piers into San Telmo's harbour: along the basin's head, one every 170 m, six deck tiles running out from the
+water's edge, with crates, barrels and chests stacked at the foot and a rowboat or a small ship moored alongside. The positions
+come from the map and a hash of the pier's number (no random stream), so they are the same every time. Scenery only: nothing
+is solid. ![the docks](img/port-docks.png)
+
+
 ## 38. Downtown landmarks (Quaternius's Downtown City MegaKit)
 
 `scripts/render/downtown_dress.gd` (`DowntownDress`, behind `DowntownDress.ENABLED`; off on the lowest preset) stands the kit's three
@@ -1078,3 +1087,20 @@ desks, or the phone. (Its physical form is section 41.) Its own RNG stream is se
 - **In the story**, chapter 7 *The House* (1984) opens it: buy a stake, put $15,000 of street cash through the cage, and when both are
   done the colonels meet and the uprising is set ten minutes out; get out alive and the chapter ends. If the Family is gone or the
   house is seized first, the chapter does not strand you. Saves from before the chapter was added shift their chapter number.
+
+
+## 41. The tables
+
+`scripts/sim/casino_games.gd` (`CasinoGames`) holds the games a 1950s Havana casino dealt, with their real rules and the edge the real
+house had; `Casino.play` settles each hand against the player's money (the command `casino_play`, the pilot's alone, and only at
+the Hotel Cielo on Isla Soberana with the house open). Limits are $5 to $500 a bet. What the house wins from the player's losses is
+shared with our stake like the rest of the take (our tenth of the loss after the General's skim and the Family's cut goes into the
+account). The dice and cards come from their own stream (seed + 941) so a session replays.
+
+| Game | Rules | House edge (checked in `tests/test_casino_games.gd`) |
+|---|---|---|
+| Roulette | European, a single zero. Straight 35, split 17, street 11, corner 8, six line 5, dozen and column 2, red / black / even / odd / low / high 1 to 1 | 2.70 %, on every bet (37 numbers, 36 paid) |
+| Blackjack | Two decks, reshuffled at 26 cards; the dealer stands on every 17, looks under an ace or a ten; blackjack pays 3 to 2; double down on any two cards; no splitting or surrender. The table gives basic-strategy advice | about 0.7 % to 1 % with basic strategy |
+| Craps | Pass and don't pass (bar 12), free odds up to three times the line bet paid at true odds (6 to 5 on the 6 and 8, 3 to 2 on the 5 and 9, 2 to 1 on the 4 and 10; laid at the reverse) | pass 1.41 %, don't pass 1.36 % (1.4 % and 0.8 % with full odds) |
+| Baccarat | Punto banco, eight decks, the full third-card tableau; banker pays 0.95 to 1 (a 5 % commission), player 1 to 1, tie 8 to 1 | banker 1.06 %, player 1.24 %, tie 14.4 % |
+| Slot machines | Three reels of twenty stops (a seven, two bars, three each of bells, plums, oranges, lemons, cherries and two blanks); three sevens pay 450 for 1; cherries from the first reel pay 2 or 5 | 8.1 % (a return of 91.9 %, counted over all 8,000 stops) |

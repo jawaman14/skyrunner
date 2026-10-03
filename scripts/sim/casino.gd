@@ -76,7 +76,12 @@ var fees := 0
 var collected := 0
 var last := ""
 var force_uprising_at := -1.0  ## the story sets this when its goals are met
+var tables := {}  ## the games in progress: "blackjack", "craps", "baccarat" (CasinoGames objects, made when first sat at)
+var last_play := {}  ## the last hand at the tables, for the table's screen: {game, text, net, ...}
+var played := 0  ## hands, spins and pulls
+var gamble_net := 0  ## what the player has won (or lost, below zero) at the tables, all told
 var rng: PyRandom
+var games_rng: PyRandom
 var _t := 0.0
 var _evt_t := 0.0
 var _law_t := 0.0
@@ -86,6 +91,8 @@ func _init(sess_) -> void:
 	sess = sess_
 	rng = PyRandom.new()
 	rng.seed(int(sess.seed) + 939)
+	games_rng = PyRandom.new()
+	games_rng.seed(int(sess.seed) + 941)
 
 
 func active() -> bool:
@@ -318,6 +325,159 @@ func evacuate() -> String:
 	return ""
 
 
+# ------------------------------------------------------------------ the tables
+## "" when the player can sit down at a table: in the building, the house open.
+func at_tables() -> String:
+	var err := why_not()
+	if err != "":
+		return err
+	if not trading():
+		return "The tables are dark."
+	if sess.location != Island.CODE or sess.phase != "parked":
+		return "You are not at the Hotel Cielo."
+	return ""
+
+
+## What the house earns from a loss at the tables, shared out to the owners: our stake's part of the loss goes in the account.
+func _house(net: int) -> void:
+	played += 1
+	gamble_net += net
+	if net < 0:
+		owed += int(float(-net) * stake * (1.0 - skim() - FAMILY_CUT))
+
+
+func _settle(game: String, net: int, text: String, extra := {}) -> void:
+	sess.money += net
+	_house(net)
+	last_play = {"game": game, "net": net, "text": text}
+	last_play.merge(extra)
+	sess.bus.emit("casino_play", sess.time, "", ["runner"], {"game": game, "net": net})
+
+
+func _stake_ok(amount: int) -> String:
+	if amount < CasinoGames.MIN_BET or amount > CasinoGames.MAX_BET:
+		return "The table takes $%d to $%d." % [CasinoGames.MIN_BET, CasinoGames.MAX_BET]
+	if sess.money < amount:
+		return "You do not have $%s." % Py.money(amount)
+	return ""
+
+
+## One move at a table. `a` carries the game's own arguments (see tests/test_casino.gd and DESIGN 41).
+func play(game: String, a: Dictionary) -> String:
+	var err := at_tables()
+	if err != "":
+		return err
+	match game:
+		"roulette":
+			var bets: Array = a.get("bets", [])
+			var total := 0
+			if bets.is_empty():
+				return "Place a bet first."
+			for b in bets:
+				if not CasinoGames.Roulette.valid(b):
+					return "That is not a bet the wheel takes."
+				total += int(b.amount)
+			if sess.money < total:
+				return "You do not have $%s." % Py.money(total)
+			var out := CasinoGames.Roulette.play(bets, games_rng)
+			_settle("roulette", int(out.net), "The ball falls on %d, %s: %s." % [int(out.n), out.colour, _won(int(out.net))], {"n": out.n, "colour": out.colour, "lines": out.lines})
+		"slots":
+			var amount := int(a.get("amount", 0))
+			err = _stake_ok(amount)
+			if err != "":
+				return err
+			var out := CasinoGames.Slots.pull(amount, games_rng)
+			_settle("slots", int(out.net), "%s: %s." % [" ".join(out.reels), _won(int(out.net))], {"reels": out.reels, "mult": out.mult})
+		"baccarat":
+			var amount := int(a.get("amount", 0))
+			err = _stake_ok(amount)
+			if err != "":
+				return err
+			if not tables.has("baccarat"):
+				tables["baccarat"] = CasinoGames.Baccarat.new(games_rng)
+			var out: Dictionary = tables["baccarat"].deal(str(a.get("on", "")), amount)
+			if out.has("error"):
+				return str(out.error)
+			_settle("baccarat", int(out.net), "Player %d, banker %d: the %s wins. %s." % [int(out.player_total), int(out.banker_total), out.winner, _won(int(out.net))],
+				{"player": out.player, "banker": out.banker, "winner": out.winner})
+		"blackjack":
+			return _blackjack(a)
+		"craps":
+			return _craps(a)
+		_:
+			return "The Cielo has roulette, blackjack, craps, baccarat and the slot machines."
+	return ""
+
+
+func _blackjack(a: Dictionary) -> String:
+	if not tables.has("blackjack"):
+		tables["blackjack"] = CasinoGames.Blackjack.new(games_rng)
+	var bj: CasinoGames.Blackjack = tables["blackjack"]
+	var err := ""
+	match str(a.get("do", "")):
+		"deal":
+			var amount := int(a.get("amount", 0))
+			err = _stake_ok(amount)
+			if err != "":
+				return err
+			err = bj.deal(amount)
+		"hit":
+			err = bj.hit()
+		"stand":
+			err = bj.stand()
+		"double":
+			if bj.phase == "player" and sess.money < bj.bet * 2:
+				return "You do not have $%s to double." % Py.money(bj.bet)
+			err = bj.double()
+		_:
+			return "Deal, hit, stand or double."
+	if err != "":
+		return err
+	if bj.phase == "done":
+		var words := {"blackjack": "Blackjack! Three to two.", "win": "You win.", "push": "A push.", "lose": "The dealer wins.", "bust": "Bust.",
+			"dealer_blackjack": "The dealer has blackjack."}
+		_settle("blackjack", bj.net, "%s %s" % [words.get(bj.result, ""), _won(bj.net)], {"player": bj.player.duplicate(), "dealer": bj.dealer.duplicate(), "result": bj.result, "done": true})
+	else:
+		last_play = {"game": "blackjack", "net": 0, "text": "Your move.", "player": bj.player.duplicate(), "dealer": [bj.dealer[0]], "done": false, "advice": bj.advice()}
+	return ""
+
+
+func _craps(a: Dictionary) -> String:
+	if not tables.has("craps"):
+		tables["craps"] = CasinoGames.Craps.new(games_rng)
+	var cr: CasinoGames.Craps = tables["craps"]
+	var err := ""
+	match str(a.get("do", "")):
+		"pass", "dont":
+			var amount := int(a.get("amount", 0))
+			err = _stake_ok(amount)
+			if err != "":
+				return err
+			err = cr.place(str(a.get("do")), amount)
+			if err == "":
+				last_play = {"game": "craps", "net": 0, "text": "$%d on the %s line." % [amount, "pass" if str(a.do) == "pass" else "don't pass"], "point": cr.point}
+		"odds":
+			var amount := int(a.get("amount", 0))
+			if sess.money < amount + cr.pass_bet + cr.dont_bet + cr.odds:
+				return "You do not have the money to back it."
+			err = cr.add_odds(amount)
+		"roll":
+			var out := cr.roll()
+			if out.has("error"):
+				return str(out.error)
+			if out.over:
+				_settle("craps", int(out.net), "%s %s" % [out.text, _won(int(out.net))], {"dice": out.dice, "point": 0})
+			else:
+				last_play = {"game": "craps", "net": 0, "text": out.text, "dice": out.dice, "point": cr.point}
+		_:
+			return "Pass, dont, odds or roll."
+	return err
+
+
+static func _won(net: int) -> String:
+	return ("You win $%s" % Py.money(net)) if net > 0 else (("You lose $%s" % Py.money(-net)) if net < 0 else "You break even")
+
+
 # ------------------------------------------------------------------ the task force
 func case_action(kind: String) -> String:
 	if not ENABLED or sess.island == null or status != "open":
@@ -401,7 +561,7 @@ func view(side: String) -> Dictionary:
 			var c: int = int(sess.logistics.cash.get(st.id, 0))
 			if c > 0 and not st.burned:
 				stashes.append({"id": st.id, "name": st.name, "cash": c})
-	return {"stashes": stashes, "name": NAME, "status": status, "stake": snappedf(stake, 0.01), "stake_price": STAKE_PRICE, "stake_max": STAKE_MAX, "owed": owed, "heat": int(heat),
+	return {"stashes": stashes, "at_tables": at_tables() == "", "play": last_play, "played": played, "gamble_net": gamble_net, "name": NAME, "status": status, "stake": snappedf(stake, 0.01), "stake_price": STAKE_PRICE, "stake_max": STAKE_MAX, "owed": owed, "heat": int(heat),
 		"unrest": int(unrest), "rival": int(rival), "rival_name": RIVAL, "rival_boss": RIVAL_BOSS, "rival_buyout": RIVAL_BUYOUT, "bought_out": sess.time < bought_out_until,
 		"gross_hour": int(gross_per_hour()), "share_hour": int(share_per_hour()), "skim": snappedf(skim(), 0.01), "family_cut": FAMILY_CUT, "cage_family_cut": CAGE_FAMILY_CUT,
 		"cage_left": cage_left(), "cage_cap": CAGE_CAP, "cage_shut_s": maxi(0, int(ceil(audit_until - sess.time))), "dark_s": maxi(0, int(ceil(closed_until - sess.time))),
