@@ -137,6 +137,8 @@ static func street_yaw(x: float, y: float) -> float:
 static func lots(b: Dictionary, i: int) -> Array:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 4177 + i * 7919
+	if DowntownDress.marks.has(i):
+		return []  # a landmark stands here (DowntownDress): no Kenney lots
 	var style: String = b.style
 	var nx := clampi(roundi(float(b.w) / LOT_M), 1, 3)
 	var nz := clampi(roundi(float(b.d) / LOT_M), 1, 3)

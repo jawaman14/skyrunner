@@ -44,7 +44,10 @@ static func build(world: World, q: Quality) -> Node3D:
 	var l := world.map
 	if l.buildings.is_empty() and l.roads.is_empty():
 		return root
-	root.add_child(CityDress.build(l.buildings.filter(func(b): return b.style != "crane"), q))  # the boxes, and the models near the camera
+	var boxes: Array = l.buildings.filter(func(b): return b.style != "crane")
+	DowntownDress.pick(boxes)  # the centre's tallest towers become landmarks (Quaternius), the rest keep the Kenney models
+	root.add_child(CityDress.build(boxes, q))  # the boxes, and the models near the camera
+	root.add_child(DowntownDress.build(boxes, q))
 	for b in l.buildings:
 		if b.style == "crane":
 			root.add_child(_crane(b))

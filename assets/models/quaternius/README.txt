@@ -14,3 +14,5 @@ of each MegaKit is kept (the FBX, OBJ and Unity copies are not); the three older
 Not found on itch.io under any name tried: the Ships Pack and Public Transport Pack from quaternius.com.
 
 Removed in October 2026 (unused, CC0, fetchable again from the pages above): Stylized Nature MegaKit, Ultimate Nature Pack, Realistic Car Pack, Modular Street Pack; and the Ships and Public Transport packs were never found. Downtown City is kept for the city centre.
+
+October 2026: downtown_city is cut down to the three finished buildings the game uses (Building_Large_2, Building_Medium_2_001, Building_Small_1) and the textures they reference; the modular pieces were removed (fetch the pack again from the page above for them).

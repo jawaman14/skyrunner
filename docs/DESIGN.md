@@ -1021,6 +1021,16 @@ come from the map and a hash of the pier's number (no random stream), so they ar
 is solid. ![the docks](img/port-docks.png)
 
 
+## 38. Downtown landmarks (Quaternius's Downtown City MegaKit)
+
+`scripts/render/downtown_dress.gd` (`DowntownDress`, behind `DowntownDress.ENABLED`; off on the lowest preset) stands the kit's three
+finished brick-and-glass buildings (large, medium, small) on the footprints of the twelve tallest towers nearest the city's
+centre, instead of the Kenney lot models. The kit's buildings are real-scale and carry their own textured materials, so each is
+its own node, drawn within `CityDress`'s range; beyond it the tower's shader box is drawn as before. Footprints, heights and
+colliders are unchanged. The pack in the repository is cut down to those three buildings and their textures.
+![downtown landmarks](img/downtown-landmarks.png)
+
+
 ## 39. Wear, repairs and the mechanic
 
 `scripts/sim/airframe.gd` (`Airframe`, behind `Airframe.ENABLED`; asked for with the session option `airframe: true`, which the
