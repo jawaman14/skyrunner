@@ -277,3 +277,14 @@ func test_read_aloud() -> void:
 	Speech.speaker = real
 	snd.free()
 	s.dispose()
+
+
+func test_the_sound_loops_actually_start() -> void:
+	var s := Session.new({"seed": 1, "map_seed": MapCity.SEED, "location": "HAR"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	check(app.sound.engine.playing and app.sound.wind.playing and app.sound.horn.playing, "the engine, wind and horn loops are running (they did not start before)")
+	check(app.sound.rumble.playing and app.sound.surf.playing and app.sound.rain.playing, "and the rumble, surf and rain")
+	app.free()
+	s.dispose()

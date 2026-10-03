@@ -34,6 +34,7 @@ var rain: AudioStreamPlayer
 var radio: AudioStreamPlayer
 var ui: AudioStreamPlayer
 var music: AudioStreamPlayer
+var _pending: Array = []  ## players whose loop waits for the tree
 var world := {}  ## key -> AudioStreamPlayer3D (rotors, sirens, outboards)
 var _last_msg = null  ## the newest radio message heard
 var _last_msg_set := false
@@ -67,8 +68,19 @@ func _player(stream: AudioStream, db: float) -> AudioStreamPlayer:
 	p.volume_db = db
 	add_child(p)
 	if stream != null:
-		p.play()
+		if is_inside_tree():
+			p.play()
+		else:
+			_pending.append(p)  # (a stream cannot start before the node is in the tree: _ready starts it)
 	return p
+
+
+## The loops that were made before this node was in the tree start now (they used to fail to start at all).
+func _ready() -> void:
+	for p in _pending:
+		if is_instance_valid(p):
+			p.play()
+	_pending.clear()
 
 
 # ------------------------------------------------------------------ synthesis
