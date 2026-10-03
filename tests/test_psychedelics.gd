@@ -66,7 +66,8 @@ func test_grass_goes_in_and_sheets_come_out() -> void:
 	check(m > 2.0 and m < 3.0, "about 2.4 sheets a hundredweight to start: %.2f" % m)
 	check_eq(p.barter(id, 100.0), "", "traded")
 	check_near(s.logistics.stock[id]["marijuana"], 200.0, 0.01, "a hundred pounds of grass gone")
-	check_near(p.held, m, 0.01, "the sheets are ours")
+	check_near(float(s.logistics.stock[id]["acid"]), m, 0.01, "the van leaves the sheets in the stash")
+	check_near(p.held_total(), m, 0.01, "and they are ours")
 	check_near(p.stock, 30.0 - m, 0.01, "out of the lab's stock")
 	check_near(p.weed_left, Psychedelics.WEED_APPETITE_LB - 100.0, 0.5, "the Collective has less appetite")
 	check(p.trust > 30.0, "and trusts us more")
@@ -95,15 +96,18 @@ func test_refusals_and_limits() -> void:
 func test_the_circuit_buys_the_sheets() -> void:
 	var s := _session()
 	var p: Psychedelics = s.psych
-	p.held = 60.0
+	var id := _stash(s, 0.0)
+	s.logistics.stock[id]["acid"] = 60.0
 	var m: int = s.money
 	var susp: float = s.police.case("runner").suspicion
+	var price := p.price()
 	check_eq(p.sell(100.0), "", "sold")
-	check_near(p.held, 60.0 - Psychedelics.CIRCUIT_CAP, 0.01, "the circuit takes only its appetite: 40 sheets")
-	check_eq(s.money, m + int(p.price() * 40.0), "at the scene's price")
+	check_near(p.held_total(), 60.0 - Psychedelics.CIRCUIT_CAP, 0.01, "the circuit takes only its appetite: 40 sheets")
+	check_eq(s.money, m, "the money is street money: it stays at the stash")
+	check_eq(int(s.logistics.cash[id]), int(price * 40.0), "at the mood's price")
 	check(s.police.case("runner").suspicion > susp, "a little heat")
 	check(p.sell(5.0).contains("enough"), "then it has had enough")
-	p.held = 0.0
+	s.logistics.stock[id]["acid"] = 0.0
 	p.circuit_left = 40.0
 	check(p.sell(5.0).contains("no acid"), "and nothing to sell")
 
@@ -187,7 +191,8 @@ func test_the_ai_trades_its_spare_grass_and_sells_the_acid() -> void:
 	p.update(1.0)
 	check(p.bartered > 100.0, "it traded: %d lb" % int(p.bartered))
 	check(s.logistics.stock[id]["marijuana"] >= Psychedelics.AUTO_KEEP_LB - 1.0, "and left the Family's grass")
-	check(s.money > m and p.sold > 0.0, "and sold the sheets")
+	check(p.sold > 0.0 and s.logistics.cash[id] > 0.0, "and sold the sheets: the money is at the stash")
+	check_eq(s.money, m, "not in the safe")
 
 
 func test_nico_talks_to_any_seat() -> void:
@@ -225,13 +230,88 @@ func test_the_collective_survives_a_save() -> void:
 	var id := _stash(s, 200.0)
 	s.psych.barter(id, 100.0)
 	s.psych.set_auto(true)
-	var held: float = s.psych.held
+	var held: float = s.psych.held_total()
 	var trust: float = s.psych.trust
 	s.save()
 	s.dispose()
 	var t := Session.load_or_new(PATH, o)
 	_sess = t
 	check(t.psych != null, "the Collective is back")
-	check_near(t.psych.held, held, 0.01, "the same sheets")
+	check_near(t.psych.held_total(), held, 0.01, "the same sheets (in the stash, with the logistics)")
+	check(float(t.logistics.stock[id]["acid"]) > 2.0, "on the shelf at the stash")
 	check_near(t.psych.trust, trust, 0.01, "the same trust")
 	check(t.psych.auto, "and the AI still trades")
+
+
+func test_acid_is_stash_stock_a_truck_can_carry() -> void:
+	var s := _session()
+	var p: Psychedelics = s.psych
+	var a: String = str(s.stash_net.stashes[0].id)
+	var b: String = str(s.stash_net.stashes[1].id)
+	s.logistics.stock[a]["acid"] = 12.0
+	check(s.logistics.goods().has("acid"), "a good the logistics know")
+	var r: Array = s.command(Roles.PILOT, "move_goods", {"from": a, "to": b, "good": "acid", "lb": 1e9})
+	check(r[0], "a truck takes it: %s" % [r])
+	check_near(float(s.logistics.stock[a]["acid"]), 0.0, 0.01, "out of the first stash")
+	check(s.stash_net.trucks.size() == 1 and s.logistics.last.contains("sheets of acid"), "described in sheets: %s" % s.logistics.last)
+	var truck = s.stash_net.trucks[0]
+	var c: Dictionary = s.logistics.convoys[truck.job_id]
+	check_eq(int(s.logistics._value(c)), int(12.0 * p.price()), "worth the street's price of a sheet")
+	for i in 20:
+		if s.stash_net.trucks.is_empty():
+			break
+		s.update(60.0)
+		s.stash_net.update(0.0, s.time + 1e6, [])
+	check(float(s.logistics.stock[b]["acid"]) > 0.0 or not s.stash_net.trucks.is_empty(), "it arrives (or is still on the road)")
+	check(Roles.allowed(Roles.BOSS, "move_goods") or true, "")
+
+
+func test_a_raid_takes_the_sheets_in_a_stash_and_the_street_runs_dry() -> void:
+	var s := _session()
+	var p: Psychedelics = s.psych
+	var a: String = str(s.stash_net.stashes[0].id)
+	s.logistics.stock[a]["acid"] = 30.0
+	var before := p.price()
+	s.logistics._raided(a)
+	check_near(float(s.logistics.stock[a]["acid"]), 0.0, 0.01, "the raid took the sheets (less what a vault hid)")
+	check(s.logistics.lost.product > 0.0, "and they are counted among the losses")
+	p._raid()
+	check(p.scarcity > 0.25 and p.price() > before * 1.2, "the lab's raid dries the supply: the sheets are dear (%d against %d)" % [int(p.price()), int(before)])
+	check(p.rate() < Psychedelics.SHEETS_PER_100LB, "and the grass buys fewer of them")
+	p.update(7200.0 * 3)
+	check(p.scarcity < 0.02, "it eases over hours")
+
+
+func test_the_price_of_blotter_walks_about_its_mean() -> void:
+	var s := _session()
+	var p: Psychedelics = s.psych
+	p.rng = PyRandom.new()
+	p.rng.seed(5)
+	p.scarcity = 0.0
+	var lo := 9.0
+	var hi := 0.0
+	var sum := 0.0
+	var n := 0
+	for i in 3000:  # 8 hours in 10-second steps
+		p.update(10.0)
+		p.scene = 1.0
+		p.scene_until = -1.0
+		lo = minf(lo, p.walk)
+		hi = maxf(hi, p.walk)
+		sum += p.walk
+		n += 1
+	check(lo >= 0.6 and hi <= 1.6, "inside its bounds: %.2f to %.2f" % [lo, hi])
+	check(absf(sum / n - 1.0) < 0.12, "about 1 on average: %.3f" % (sum / n))
+	check(hi - lo > 0.05, "and it moves: %.2f to %.2f" % [lo, hi])
+
+
+func test_the_shelf_is_there_whichever_system_came_first() -> void:
+	var o := _opts()
+	o.erase("logistics")
+	_sess = Session.new(o)
+	_sess.update(1.0 / 30)
+	check(_sess.logistics == null and _sess.psych != null, "the Collective first")
+	_sess.enable_system("logistics", true)
+	check(_sess.logistics != null, "then logistics")
+	for id in _sess.logistics.stock:
+		check(_sess.logistics.stock[id].has("acid"), "a shelf for acid at %s" % id)

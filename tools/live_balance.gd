@@ -199,6 +199,11 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 			_casino_ai(s, t)
 		if s.psych != null:
 			s.psych.update(STEP)
+			if s.logistics != null and int(t) % 1800 == 0:  # the logistics AI's regular pickup (this stand-in runs no trucks): the street money from the sheets comes home, a tenth lost on the way
+				for id in s.logistics.cash:
+					if s.logistics.cash[id] >= 1000.0:
+						s.money += int(s.logistics.cash[id] * 0.9)
+						s.logistics.cash[id] = 0.0
 		if s.payroll != null:
 			s.payroll.update(STEP)
 		if s.island != null:

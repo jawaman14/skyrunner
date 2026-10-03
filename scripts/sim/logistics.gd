@@ -310,7 +310,7 @@ func _undo(c: Dictionary) -> void:
 func _describe(c: Dictionary) -> String:
 	var parts := []
 	if c.lb > 0.0:
-		parts.append("%d lb of %s" % [int(c.lb), c.good])
+		parts.append(("%d sheets of acid" % int(c.lb)) if c.good == "acid" else "%d lb of %s" % [int(c.lb), c.good])
 	var w: Dictionary = c.get("weapons", {})
 	if not w.is_empty():
 		parts.append(Arsenal.describe(w))
@@ -322,7 +322,7 @@ func _describe(c: Dictionary) -> String:
 func _value(c: Dictionary) -> int:
 	var v: float = c.cash
 	if c.lb > 0.0:
-		v += c.lb * sess.trade.street_price(c.good, "town")
+		v += c.lb * price_of(c.good)
 	var w: Dictionary = c.get("weapons", {})
 	if not w.is_empty():
 		v += Arsenal.worth(w, sess.econ.mult("guns", "town"))
@@ -409,12 +409,31 @@ func cash_round(stops: Array, to: String, careful := false) -> String:
 	return ""
 
 
+## Every good that can sit in a stash: grass and cocaine, and the Collective's sheets of acid when it exists.
+func goods() -> Array:
+	return Trade.GOODS + (["acid"] if sess.psych != null else [])
+
+
+## Give every stash a shelf for acid (when the Collective and logistics both exist, in either order, and after a load).
+func ensure_acid() -> void:
+	for id in stock:
+		if not stock[id].has("acid"):
+			stock[id]["acid"] = 0.0
+
+
+## What a pound of `g` (a sheet of acid) is worth.
+func price_of(g: String) -> float:
+	if g == "acid":
+		return sess.psych.price() if sess.psych != null else 0.0
+	return sess.trade.street_price(g, "town")
+
+
 ## A delivery round: ONE truck loads `lb_each` x the stops at `from` (what is there), and drops `lb_each` of `good` at
 ## each stop in order; what is left goes to the last.
 func goods_round(from: String, stops: Array, good: String, lb_each: float, careful := false) -> String:
 	if not stock.has(from) or sess.stash_net.get_stash(from).burned:
 		return "Load from where?"
-	if good not in Trade.GOODS:
+	if good not in goods():
 		return "Deliver what?"
 	if stops.is_empty():
 		return "A delivery round needs stops."
@@ -821,17 +840,17 @@ func _raided(site: String) -> void:
 	var keep := StashWorks.raid_keep(sess.stash_net.get_stash(site))  # a hidden vault: part of it is not found
 	var saved := {}
 	var took := []
-	for g in Trade.GOODS:
+	for g in goods():
 		if stock[site][g] >= 1.0:
 			saved[g] = stock[site][g] * keep
-			took.append("%d lb of %s" % [int(stock[site][g] * (1.0 - keep)), g])
+			took.append(("%d sheets of acid" % int(stock[site][g] * (1.0 - keep))) if g == "acid" else "%d lb of %s" % [int(stock[site][g] * (1.0 - keep)), g])
 			lost.product += stock[site][g] * (1.0 - keep)
 			stock[site][g] = 0.0
 	var saved_cash: float = cash[site] * keep
 	cash[site] -= saved_cash
 	lost_by.raided += int(cash[site])
-	for g in Trade.GOODS:
-		lost_by.raided += int(stock[site][g] * sess.trade.street_price(g, "town"))
+	for g in goods():
+		lost_by.raided += int(stock[site][g] * price_of(g))
 	if cash[site] >= 1.0:
 		took.append("$%s in cash" % Py.money(int(cash[site])))
 		sess.law_funds += cash[site] * 0.5
@@ -996,7 +1015,7 @@ func view() -> Dictionary:
 	var sites := []
 	for st in sess.stash_net.stashes:
 		sites.append({"id": st.id, "name": st.name, "market": st.zone, "burned": st.burned, "strip": st.strip,
-			"cocaine": snappedf(stock[st.id].cocaine, 0.1), "marijuana": snappedf(stock[st.id].marijuana, 0.1), "cash": int(cash[st.id]),
+			"cocaine": snappedf(stock[st.id].cocaine, 0.1), "marijuana": snappedf(stock[st.id].marijuana, 0.1), "acid": snappedf(float(stock[st.id].get("acid", 0.0)), 0.1), "cash": int(cash[st.id]),
 			"vault": StashWorks.level(st, "vault"), "guard": StashWorks.level(st, "guard")})
 	var trucks := []
 	for t in sess.stash_net.trucks:

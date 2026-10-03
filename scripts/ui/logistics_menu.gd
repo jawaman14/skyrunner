@@ -26,7 +26,7 @@ var round_stops: Array = []  ## the stops of the round being planned, in order
 var _names := {}  ## site id -> name, from the last view
 var _sites: Array = []
 var _dests: Array = []
-const WHAT := ["cash", "cocaine", "marijuana", "the armoury", "rifles", "pistols", "machine guns", "RPGs"]
+const WHAT := ["cash", "cocaine", "marijuana", "acid", "the armoury", "rifles", "pistols", "machine guns", "RPGs"]
 const TIER := {"rifles": "rifle", "pistols": "pistol", "machine guns": "mg", "RPGs": "rpg"}
 const BUYERS := [["family", "the Morettis (town)"], ["agency", "the Company (north)"], ["rival", "Los Cuervos (west)"]]
 
@@ -149,7 +149,7 @@ func refresh() -> void:
 		var fu: Dictionary = lv.fuel
 		fuel_label.text = "Fuel: $%.2f a gallon for the trucks and boats, $%.2f avgas (%+d%% on the usual); the fleet has burned $%s so far. A truck or a pilot whose tank will not cover the run fills up first." % [
 			float(fu.ground), float(fu.avgas), int(round(float(fu.trend) * 100.0)), Py.money(int(fu.spent))]
-	rows.add_child(UIStyle.label("%-26s %-6s %9s %9s %10s" % ["", "market", "coke lb", "grass lb", "cash"], 14, UIStyle.DIM, UIStyle.mono()))
+	rows.add_child(UIStyle.label("%-26s %-6s %9s %9s %9s %10s" % ["", "market", "coke lb", "grass lb", "acid", "cash"], 14, UIStyle.DIM, UIStyle.mono()))
 	var ids: Array = lv.sites.filter(func(s): return not s.burned).map(func(s): return s.id)
 	var rebuild: bool = ids != _sites
 	if rebuild:
@@ -158,7 +158,7 @@ func refresh() -> void:
 		from_ob.clear()
 		to_ob.clear()
 	for s in lv.sites:
-		var l := UIStyle.label("%-26s %-6s %9d %9d %10s%s" % [str(s.name).left(26), s.market, int(s.cocaine), int(s.marijuana),
+		var l := UIStyle.label("%-26s %-6s %9d %9d %9d %10s%s" % [str(s.name).left(26), s.market, int(s.cocaine), int(s.marijuana), int(s.get("acid", 0)),
 			"$" + Py.money(int(s.cash)), "  BURNED" if s.burned else (("  vault %d guard %d" % [int(s.get("vault", 0)), int(s.get("guard", 0))]) if int(s.get("vault", 0)) + int(s.get("guard", 0)) > 0 else "")], 14, UIStyle.RED if s.burned else UIStyle.WHITE, UIStyle.mono())
 		rows.add_child(l)
 		if not s.burned and rebuild:
