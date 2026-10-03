@@ -27,6 +27,8 @@ static func build(sess: Session, role: String, seq := 0) -> Dictionary:
 		snap.merge(_law(sess), true)
 		if role == Roles.INTERCEPTOR:
 			snap.merge(_police_pilot(sess, role), true)
+		if role == Roles.ANALYST and sess.analyst != null:
+			snap["analyst"] = sess.analyst.view()
 	if sess.nights != null:
 		snap["season"] = sess.nights.view(side)
 	if sess.tutorial != null:

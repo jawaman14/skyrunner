@@ -184,6 +184,8 @@ func _update_world(dt: float) -> void:
 	for ev in maritime.events:
 		_maritime_event(ev[0], ev[1])
 	maritime.events.clear()
+	if analyst != null:
+		analyst.update(dt)
 	_update_intel(dt)
 
 

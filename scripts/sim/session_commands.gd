@@ -312,6 +312,11 @@ func seat_driver(role: String, human: bool) -> void:
 		Roles.PATROL:
 			if ground != null:
 				ground.commanders["police"].ai = not human
+		Roles.ANALYST:
+			if analyst != null:
+				analyst.held = human
+				if not human:
+					analyst.release_all()  # dispatch gets whatever was waiting
 	var who := "joined as" if human else "handed back"
 	var name: String = humans.get(role, seats.seats[role].name if seats != null else "")
 	var text := ("%s %s %s." % [name, who, role]) if human else ("%s is back on the AI." % role)
@@ -631,6 +636,23 @@ func _cmd_stash_works(role: String, a: Dictionary):
 
 
 ## Enter a race at this airfield: {id}.
+func _cmd_analyst(role: String, a: Dictionary):
+	if analyst == null or not Analyst.ENABLED:
+		return "There is no analyst's desk in this game."
+	var id := str(a.get("id", ""))
+	var err := ""
+	match str(a.get("do", "")):
+		"verify":
+			err = analyst.verify(id)
+		"forward":
+			err = analyst.forward(id)
+		"discard":
+			err = analyst.discard(id)
+		_:
+			err = "Verify, forward or discard."
+	return err if err != "" else null
+
+
 func _cmd_race_enter(role: String, a: Dictionary):
 	if races == null:
 		return "There is no arena here."

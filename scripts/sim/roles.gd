@@ -17,7 +17,8 @@ const CUTTER := "cutter"
 const CHIEF := "chief"  ## the task force's HQ
 const LIEUTENANT := "lieutenant"  ## the organisation's soldiers on the ground (GroundWar)
 const PATROL := "patrol"  ## the task force's narcotics squads on the ground (GroundWar)
-const ALL := [PILOT, COPILOT, SPOTTER, BOAT, BOSS, LIEUTENANT, CONTROLLER, INTERCEPTOR, CUTTER, CHIEF, PATROL]
+const ANALYST := "analyst"  ## the task force's tip desk: informants, fuel records, tail numbers (Analyst)
+const ALL := [PILOT, COPILOT, SPOTTER, BOAT, BOSS, LIEUTENANT, CONTROLLER, INTERCEPTOR, CUTTER, CHIEF, PATROL, ANALYST]
 
 ## What each seat does, in one line (the waiting room, the seat picker and the multiplayer menu all show this).
 const ABOUT := {
@@ -25,7 +26,7 @@ const ABOUT := {
 	"spotter": "watches a strip for police", "boat": "the go-fast at the rendezvous", "boss": "the organisation's HQ, night by night",
 	"lieutenant": "the organisation's soldiers on the streets", "controller": "the task force's radar and dispatch desk",
 	"interceptor": "flies a police helicopter or jet (3D)", "cutter": "the Coast Guard cutter", "chief": "the task force's HQ and budget",
-	"patrol": "the narcotics squads on the streets",
+	"patrol": "the narcotics squads on the streets", "analyst": "the tip desk: check the informants' word, forward or bin it",
 }
 const _SQUADS := ["squad_order", "recruit_squad", "disband_squad"]
 
@@ -50,13 +51,14 @@ static var PERMISSIONS := {
 	CUTTER: ["cutter_goto", "chat", "tutorial"],
 	CHIEF: ["hq", "chat", "tutorial", "squad_order", "recruit_squad", "disband_squad", "investigate_agency", "rico_case", "airport_crackdown", "port_inspections", "court_no_bail", "court_immunity", "court_forfeiture", "court_charge", "court_offer_plea", "offer_worker_deal", "street_sweep", "trace_money"],
 	LIEUTENANT: _SQUADS + ["chat", "tutorial", "gun_mode", "field_order", "rackets", "stash_works", "race_enter", "sell_weapons", "buy_weapons", "set_cache", "family_accept", "family_decline", "family_probe", "family_stall", "pay_tribute", "island_ship", "buy_passage", "hire_worker", "fire_worker", "pay_bonus", "pay_worker_lawyer", "post_lookout", "sell_product", "move_goods", "move_cash", "cash_round", "goods_round", "move_armoury", "escort_truck"],
+	ANALYST: ["analyst", "chat", "tutorial"],
 	PATROL: _SQUADS + ["raid_stash", "chat", "tutorial", "rico_case", "street_sweep"],
 }
 
 ## Roles a human can take in each mode. Everything else is AI or absent.
 const MODE_ROLES := {
 	SOLO: [PILOT],
-	POLICE: [CONTROLLER, INTERCEPTOR, CUTTER, CHIEF, PATROL],
+	POLICE: [CONTROLLER, INTERCEPTOR, CUTTER, CHIEF, PATROL, ANALYST],
 	COOP: [PILOT, COPILOT, SPOTTER, BOAT, BOSS, LIEUTENANT],
 	VERSUS: ALL,
 	CAMPAIGN: [PILOT, COPILOT, SPOTTER, BOAT],
@@ -64,7 +66,7 @@ const MODE_ROLES := {
 
 
 static func side(role: String) -> String:
-	return "law" if role in [CONTROLLER, INTERCEPTOR, CUTTER, CHIEF, PATROL] else "runner"
+	return "law" if role in [CONTROLLER, INTERCEPTOR, CUTTER, CHIEF, PATROL, ANALYST] else "runner"
 
 
 static func allowed(role: String, command: String) -> bool:

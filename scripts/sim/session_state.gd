@@ -103,6 +103,7 @@ var law_log: Array = []
 var scanner_log: Array = []
 var scanner_channels := ["police"]  ## what the runner's scanner is programmed for (RadioNet.REALISM)
 var upgrades := {"runner": {}, "law": {}}  ## bought tree nodes (Upgrades)
+var analyst: Analyst = null  ## the tip desk (Analyst; a human seat holds tips back from dispatch)
 var law_funds := 8000.0  ## the task force's upgrade money: a budget plus forfeiture from busts and seizures
 var econ: Economy  ## the markets: what each good is worth where (Economy)
 var _news_seen := 0

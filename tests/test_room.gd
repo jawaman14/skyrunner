@@ -51,7 +51,7 @@ func test_a_co_op_table_is_runners_only_and_a_task_force_game_has_no_pilot() -> 
 	var co := Room.new(Roles.COOP, "Barry")
 	co.add("a", "Lee")
 	check(co.claim("a", Roles.CONTROLLER) != "", "no law seats in co-op: the law is the AI")
-	check_eq(co.seats().filter(func(s): return s.side == "law").map(func(s): return s.who), ["off", "off", "off", "off", "off"], "they are listed as off")
+	check_eq(co.seats().filter(func(s): return s.side == "law").map(func(s): return s.who), Roles.ALL.filter(func(r): return Roles.side(r) == "law").map(func(_r): return "off"), "they are listed as off")
 	var po := Room.new(Roles.POLICE, "Barry", Roles.CONTROLLER)
 	check_eq(po.host_role(), Roles.CONTROLLER, "a police game starts the host at a desk")
 	check(po.claim("host", Roles.PILOT) != "", "and nobody flies")
@@ -84,7 +84,7 @@ func test_the_room_says_what_each_seat_is() -> void:
 	r.add("a", "Rosa")
 	r.claim("a", Roles.CONTROLLER)
 	var seats := r.seats()
-	check_eq(seats.size(), 11, "every role")
+	check_eq(seats.size(), Roles.ALL.size(), "every role")
 	check_eq(seats[0].role, Roles.PILOT, "runners first")
 	check_eq(seats[0].who, "player", "the pilot is a player (the host)")
 	check_eq(seats[0].name, "Barry", "named")
@@ -93,7 +93,7 @@ func test_the_room_says_what_each_seat_is() -> void:
 	var boat: Dictionary = seats.filter(func(s): return s.role == Roles.BOAT)[0]
 	check(boat.who == "ai" and boat.about != "", "a free seat is the AI's, and says what it does")
 	var d := r.to_dict()
-	check(d.players.size() == 2 and d.seats.size() == 11 and d.mode == Roles.VERSUS, "and the whole room goes to everyone as a dictionary")
+	check(d.players.size() == 2 and d.seats.size() == Roles.ALL.size() and d.mode == Roles.VERSUS, "and the whole room goes to everyone as a dictionary")
 
 
 # ------------------------------------------------------------------ over the wire
@@ -132,7 +132,7 @@ func test_players_join_a_room_before_there_is_a_game() -> void:
 	check(_pump_until(func(): return not rosa.room_state.is_empty()), "and sent the room")
 	check_eq(rosa.room_state.players.size(), 2, "the host and her")
 	var seats: Array = rosa.room_state.seats
-	check_eq(seats.size(), 11, "with every seat")
+	check_eq(seats.size(), Roles.ALL.size(), "with every seat")
 	rosa.room_claim(Roles.COPILOT)
 	check(_pump_until(func(): return _srv.room.holder(Roles.COPILOT) != ""), "she picks the co-pilot's seat")
 	check(_pump_until(func(): return rosa.room_state.seats.filter(func(s): return s.role == Roles.COPILOT)[0].who == "player"), "everybody sees it taken")

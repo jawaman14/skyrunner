@@ -219,6 +219,8 @@ func _hints() -> Array:
 				out += [["ENTER", "do it", "enter"]]
 		Roles.SPOTTER:
 			out = [["UP/DOWN", "pick a strip", "down"], ["ENTER", "send the spotter (60 s)", "enter"]]
+		Roles.ANALYST:
+			out = [["UP/DOWN", "tip", "down"], ["V", "verify (45 s)", "v"], ["F", "forward to dispatch", "f"], ["X", "bin it", "x"]]
 		Roles.BOAT:
 			out = [["RIGHT-CLICK", "send the go-fast there", ""]]
 		Roles.CONTROLLER:
@@ -340,6 +342,8 @@ func _key(k: String) -> void:
 		return
 	if role == Roles.COPILOT and k in ["1", "2", "3"]:
 		tabs.current_tab = int(k) - 1
+		return
+	if role == Roles.ANALYST and _analyst_key(k):
 		return
 	if k == "q" and commands_squads(snap) and not role in [Roles.LIEUTENANT, Roles.PATROL]:
 		squad_mode = not squad_mode
@@ -893,6 +897,8 @@ func _process(delta: float) -> void:
 				_draw_law(snap)
 			Roles.LIEUTENANT, Roles.PATROL:
 				_draw_squads(snap)
+			Roles.ANALYST:
+				_draw_analyst(snap)
 			_:
 				_draw_runner(snap)
 	if link is NetClient and not link.players.is_empty():
@@ -961,6 +967,53 @@ func _runner_tiles(ac, snap: Dictionary) -> void:
 	var w := int(ac.wanted)
 	chips["wanted"].set_state(("WANTED " + "\u2605".repeat(w)) if w else "NOT WANTED", UIStyle.RED if w else UIStyle.GREEN, w > 0)
 	chips["crew"].set_state("CO-PILOT ABOARD" if ac.get("copilot") else "SOLO", UIStyle.CYAN, Py.truthy(ac.get("copilot")))
+
+
+## The analyst's desk: every tip waiting for her, with where it came from, how old it is and what the check made of it.
+func _draw_analyst(snap: Dictionary) -> void:
+	var a: Dictionary = snap.get("analyst", {})
+	title.text = "ANALYST"
+	subtitle.text = "%d forwarded, %d false leads followed, %d real ones binned" % [int(a.get("forwarded", 0)), int(a.get("wasted", 0)), int(a.get("missed", 0))]
+	var rows: Array = a.get("desk", [])
+	var keys := []
+	var cells := []
+	var colors := {}
+	for i in rows.size():
+		var r: Dictionary = rows[i]
+		keys.append(str(r.id))
+		var verdict: String = {"good": "sound", "bad": "doubtful"}.get(str(r.checked), ("checking %d s" % int(r.verifying_s)) if int(r.verifying_s) > 0 else "unchecked")
+		cells.append([str(r.id), str(r.source), "%d s" % int(r.age), verdict, str(r.text)])
+		colors[i] = UIStyle.GREEN if r.checked == "good" else (UIStyle.RED if r.checked == "bad" else UIStyle.WHITE)
+	_set_list("analyst", keys, cells, colors, [{"title": "Tip", "min": 50}, {"title": "From", "min": 110}, {"title": "Age", "align": "right", "min": 60},
+		{"title": "Check", "min": 110}, {"title": "What", "expand": true, "ratio": 3}])
+	info.text = ("Tips wait here before dispatch sees them. Check one (45 s: right about 85% of the time), then forward it or bin it. A false lead costs $1,000; a real one binned is a load that gets through. Untouched tips go to dispatch after %d s." % int(a.get("stale_s", 150))) if rows.is_empty() else ""
+	detail.text = ""
+	var sel := list.selected_row()
+	if sel >= 0 and sel < rows.size():
+		var r: Dictionary = rows[sel]
+		detail.text = "%s: %s%s" % [str(r.id), str(r.text), ("   tail %s" % str(r.squawk)) if str(r.squawk) != "" else ""]
+
+
+func _analyst_key(k: String) -> bool:
+	var i := list.selected_row()
+	var id: String = _list_keys[i] if i >= 0 and i < _list_keys.size() else ""
+	match k:
+		"up":
+			list.move(-1)
+		"down":
+			list.move(1)
+		"v":
+			if id != "":
+				_cmd("analyst", {"do": "verify", "id": id})
+		"f":
+			if id != "":
+				_cmd("analyst", {"do": "forward", "id": id})
+		"x":
+			if id != "":
+				_cmd("analyst", {"do": "discard", "id": id})
+		_:
+			return false
+	return true
 
 
 func _draw_runner(snap: Dictionary) -> void:
