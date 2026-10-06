@@ -256,4 +256,10 @@ Second wave, larger features:
   strategic-map interaction, pause/save/settings, and onboarding/accessibility. Exported-build
   human playtesting remains required; this first HUD pass does not complete those larger programs.
 - A real-app playtest pass on every seat.
+- **Contextual actions, first slice:** the job board gets acceptance/drop availability and
+  previews from `Session.job_action`, uses `Session.command`, explains disabled actions,
+  confirms dropping, and shows persistent local feedback. Cash previews are read-only;
+  execution rechecks availability, rejects duplicate acceptance and reports invalid drops.
+  Holding Enter cannot confirm a newly armed action. This is a pilot job-board slice of #121;
+  other menus, remote action descriptors and the shared event-feed program (#120) remain open.
 - A browser (web) build, single-player.

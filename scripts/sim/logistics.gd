@@ -911,11 +911,19 @@ func unload_cash() -> String:
 
 ## The growers and the connection: cash on the strip.
 func pay_seller(cost: int) -> String:
+	var reason := seller_payment_reason(cost)
+	if reason != "":
+		return reason
+	aboard -= cost
+	_bags()
+	return ""
+
+
+## Read-only availability for a command preview; paying uses the same check.
+func seller_payment_reason(cost: int) -> String:
 	if aboard < cost:
 		return "They want $%s in cash on the strip - you have $%s aboard. Fly the money out first [SHIFT+C loads it at a stash or the club's strip]." % [
 			Py.money(cost), Py.money(aboard)]
-	aboard -= cost
-	_bags()
 	return ""
 
 

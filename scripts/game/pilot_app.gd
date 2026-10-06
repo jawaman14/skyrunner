@@ -345,6 +345,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 		var k: int = ev.physical_keycode if ev.physical_keycode else ev.keycode
 		var m := _active_menu()
 		if m != null:
+			if ev.echo and MENU_KEYS.get(k, "") == "enter":
+				get_viewport().set_input_as_handled()
+				return  # holding Enter must not confirm a newly armed action
 			if k == KEY_ESCAPE:
 				m.close()
 			elif MENU_KEYS.has(k):
