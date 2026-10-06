@@ -145,14 +145,31 @@ func test_data_table_keyboard_skips_sections() -> void:
 
 
 func test_hud_regions_never_overlap_at_any_size() -> void:
-	var s := Session.new({"seed": 4})
+	var s := Session.new({"seed": 4, "airframe": true})
 	s.update(1.0 / 30)
 	var hud := Hud.new()
 	_tree().root.add_child(hud)
 	hud.setup(s)
+	s.state.stall_warning = true
+	s.state.on_ground = false
+	s.state.fuel_lb = 10
+	s.state.ias_kts = 200
+	s.fm.controls.flaps = 1
+	s.police.case().bust_meter = 20
+	s.police.case().rival_meter = 20
+	s.autopilot.engaged = true
+	s.copilot = "ai"
+	s.pumping = true
+	s.weather = {"sky": "storm", "wind_dir": 123, "wind_kt": 18, "moon": 0.5}
+	if s.airframe != null:
+		s.airframe.fail_until = s.time + 100
+	hud.pulse = 140
+	hud.refresh()
 	for sz in [Vector2(1024, 768), Vector2(1280, 720), Vector2(1920, 1080), Vector2(2560, 1080)]:
 		hud.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		hud.size = sz
+		await _tree().process_frame
+		await _tree().process_frame
 		var names: Array = hud.zones.keys()
 		for i in names.size():
 			var a: Rect2 = hud.zones[names[i]].get_rect()
@@ -162,6 +179,56 @@ func test_hud_regions_never_overlap_at_any_size() -> void:
 				var b: Rect2 = hud.zones[names[j]].get_rect()
 				check(not a.intersects(b), "%s and %s overlap at %s" % [names[i], names[j], sz])
 	hud.free()
+	s.dispose()
+
+
+func test_hud_prioritises_active_operations_and_explains_load_limits() -> void:
+	var s := Session.new({"seed": 4})
+	s.update(1.0 / 30)
+	s.auto_kick = false
+	s.copilot = ""
+	var hud := Hud.new()
+	_tree().root.add_child(hud)
+	hud.setup(s)
+	hud.refresh()
+	check(not hud.chips.ap.visible and not hud.chips.crew.visible, "inactive AP and crew do not compete with aircraft state")
+	check(not hud.chip_groups.OPERATIONS.visible, "empty operation group disappears")
+	check(hud.chips.xpdr.visible and hud.chips.cam.visible, "aircraft state stays available")
+	s.autopilot.engaged = true
+	s.pumping = true
+	hud.pulse = 140
+	hud.refresh()
+	check(hud.chips.ap.visible and hud.chips.pump.visible and hud.chip_groups.OPERATIONS.visible, "active operations appear")
+	check(hud.chips.pulse.visible and hud.chip_groups.ALERTS.visible, "shaking is an alert")
+	s.state.on_ground = false
+	hud.refresh()
+	check(hud.tiles.fuel.sub.text.begins_with("Est."), "endurance is labelled as an estimate")
+	var item := Loadout.Item.new(99999, "Test load", "cargo", s.spec.mtow_lb * 2, 0)
+	s.loadout.add(item)
+	s.loadout.assignment[item.id] = 0
+	hud.refresh()
+	check("OVERWEIGHT" in hud.tiles.wb.text, "authoritative load limits are explained")
+	s.scanner_log.append([s.time - 12, "Patrol reported near the docks"])
+	hud.refresh()
+	check("12s ago" in hud.intel.text and "NOT CONFIRMED" in hud.intel.text, "scanner reports show age and uncertainty")
+	hud.free()
+	s.dispose()
+
+
+func test_map_reports_do_not_reveal_live_or_delayed_positions() -> void:
+	var s := Session.new({"seed": 4})
+	s.update(1.0 / 30)
+	s.time = 100
+	s.intel["reported-only"] = [80.0, 123.0, 456.0, "scanner"]
+	s.intel["delayed-only"] = [110.0, 999.0, 999.0, "spotter@HAR"]
+	var map := Minimap.new()
+	map.s = s
+	var contacts := map.known_contacts()
+	check_eq(contacts["reported-only"].x, 123.0, "reported position retained")
+	check_eq(contacts["reported-only"].age, 20.0, "report age retained")
+	check_eq(contacts["reported-only"].source, "scanner", "report source retained")
+	check(not contacts.has("delayed-only"), "delayed intel remains hidden")
+	map.free()
 	s.dispose()
 
 

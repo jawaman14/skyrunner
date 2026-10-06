@@ -18,6 +18,7 @@ var cam_mode := "chase"
 var mouse_yoke := false
 
 var chips := {}
+var chip_groups := {}
 var tiles := {}
 var zones := {}  ## name -> the anchored box of each HUD region (tests check they never overlap)
 var wanted: Label
@@ -60,7 +61,7 @@ func setup(sess: Session) -> Hud:
 	_build_status()
 	_build_flight()
 	toasts = ToastFeed.new()
-	_anchor(toasts, Vector4(0, 0.30, 0.42, 0.62), Vector4(14, 0, 0, -6))
+	_anchor(toasts, Vector4(0, 0.30, 0.34, 0.53), Vector4(14, 0, 0, -6))
 	zones["toasts"] = toasts
 	add_child(toasts)
 	intel = UIStyle.label("", 14, Color(1, 0.8, 0.5), UIStyle.mono())
@@ -68,16 +69,18 @@ func setup(sess: Session) -> Hud:
 	_anchor(intel, Vector4(0.5, 0.5, 1, 0.62), Vector4(0, 0, -14, 0))
 	add_child(intel)
 	warning_panel = _panel(Color(0.16, 0.025, 0.035, 0.92))
-	_anchor(warning_panel, Vector4(0.31, 0.18, 0.69, 0.18), Vector4(0, 0, 0, 52))
+	_anchor(warning_panel, Vector4(0.36, 0.18, 0.64, 0.18), Vector4(0, 0, 0, 96))
 	warning_panel.visible = false
 	var warning_stack := VBoxContainer.new()
 	warning_stack.add_theme_constant_override("separation", UIStyle.SPACE_XS)
 	warning_panel.add_child(warning_stack)
 	warn = UIStyle.label("", 24, UIStyle.RED)
 	warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	warning_stack.add_child(warn)
 	threat_label = UIStyle.label("", 13, UIStyle.AMBER)
 	threat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	threat_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	warning_stack.add_child(threat_label)
 	add_child(warning_panel)
 	zones["warning"] = warning_panel
@@ -106,7 +109,7 @@ func setup(sess: Session) -> Hud:
 	add_child(papi_row)
 	hints = KeyHints.new()
 	hints.alignment = FlowContainer.ALIGNMENT_CENTER
-	_anchor(hints, Vector4(0.38, 1, 0.8, 1), Vector4(0, -40, 0, -12))
+	_anchor(hints, Vector4(0.42, 1, 0.8, 1), Vector4(0, -40, 0, -12))
 	zones["hints"] = hints
 	add_child(hints)
 	minimap = Minimap.new()
@@ -143,16 +146,26 @@ func _panel(bg := Color(0.02, 0.03, 0.05, 0.62)) -> PanelContainer:
 
 
 func _build_chips() -> void:
-	var row := HFlowContainer.new()
-	row.add_theme_constant_override("h_separation", 6)
-	row.add_theme_constant_override("v_separation", 6)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_anchor(row, Vector4(0, 0, 0.36, 0), Vector4(14, 12, 0, 70))
-	zones["chips"] = row
-	for n in ["xpdr", "ap", "race", "cond", "crew", "kick", "pump", "radar", "wx", "pulse", "cam"]:
-		chips[n] = Chip.new().setup(n.to_upper())
-		row.add_child(chips[n])
-	add_child(row)
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", UIStyle.SPACE_SM)
+	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_anchor(stack, Vector4(0, 0, 0.34, 0), Vector4(14, 12, 0, 70))
+	zones["chips"] = stack
+	for group in [["AIRCRAFT", ["xpdr", "wx", "cam"]], ["OPERATIONS", ["ap", "crew", "race", "kick", "pump"]], ["ALERTS", ["cond", "radar", "pulse"]]]:
+		var section := VBoxContainer.new()
+		section.add_theme_constant_override("separation", UIStyle.SPACE_XS)
+		section.add_child(UIStyle.caption(str(group[0])))
+		var row := HFlowContainer.new()
+		row.add_theme_constant_override("h_separation", 6)
+		row.add_theme_constant_override("v_separation", 4)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		for n in group[1]:
+			chips[n] = Chip.new().setup(n.to_upper())
+			row.add_child(chips[n])
+		section.add_child(row)
+		chip_groups[group[0]] = section
+		stack.add_child(section)
+	add_child(stack)
 
 
 func _build_wanted() -> void:
@@ -192,6 +205,7 @@ func _build_status() -> void:
 	zones["status"] = v
 	status = UIStyle.label("", 15, UIStyle.CAPTION, UIStyle.mono())
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(status)
 	mission_heading = UIStyle.label("ACTIVE RUNS", 12, UIStyle.CAPTION, UIStyle.mono())
 	mission_heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -215,6 +229,7 @@ func _build_flight() -> void:
 	v.add_theme_constant_override("separation", 6)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.alignment = BoxContainer.ALIGNMENT_END
+	v.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_anchor(v, Vector4(0, 0.62, 0.38, 1), Vector4(14, 0, 0, -12))
 	zones["flight"] = v
 	crew = _panel(Color(0.02, 0.1, 0.12, 0.7))
@@ -261,6 +276,7 @@ func _build_flight() -> void:
 	tiles["fuel"].size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_child(tiles["fuel"])
 	var foot := UIStyle.label("", 12, UIStyle.CAPTION, UIStyle.mono())
+	foot.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	foot.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pv.add_child(foot)
 	tiles["wb"] = foot
@@ -296,8 +312,8 @@ func refresh() -> void:
 	var il := []
 	for m in s.scanner_log.slice(-3):
 		if s.time - m[0] < 40:
-			il.append("SCAN " + str(m[1]).substr(0, 52))
-	intel.text = "\n".join(il)
+			il.append("%ds ago  %s" % [int(maxf(0.0, s.time - float(m[0]))), str(m[1]).substr(0, 52)])
+	intel.text = "SCANNER • REPORTED, NOT CONFIRMED\n" + "\n".join(il) if not il.is_empty() else ""
 	var camp = s.narrative
 	objectives.text = ("%d - %s\n" % [camp.chapter.year, camp.chapter.title] + "\n".join(camp.objective_lines())) if camp != null else ""
 	objectives_heading.visible = objectives.text != ""
@@ -340,15 +356,25 @@ func _flight(st: FlightModel.FlightState, c: FlightModel.Controls, lo: Loadout) 
 	tiles["pwr"].set_value("%.0f%%" % (c.throttle * 100), UIStyle.WHITE, -1.0, "%.0f rpm" % st.rpm)
 	var cap := lo.mass.fuel_capacity_lb()
 	var he: Array = s.range_estimate()
-	var sub := ("%.0f km  %.0f min" % [he[1], he[0] * 60]) if not st.on_ground else "range in the air"
+	var sub := ("Est. %.0f min / %.0f km" % [he[0] * 60, he[1]]) if not st.on_ground else "Estimate available in flight"
 	var ferry := lo.ferry_fuel_lb()
 	if ferry > 0 or not lo.ferry_tanks().is_empty():
 		sub += "  +%.0f lb ferry" % ferry
 	var low: bool = st.fuel_lb < 20 and not st.on_ground
 	tiles["fuel"].set_value("%.0f" % st.fuel_lb, UIStyle.RED if low else (UIStyle.AMBER if st.fuel_lb < 0.2 * cap else UIStyle.GREEN),
 		st.fuel_lb / maxf(1.0, cap), sub)
-	tiles["wb"].text = "FLAPS %d/3  TRIM %+.2f  %.0f lb  CG %.1f%s" % [int(round(c.flaps * 3)), -c.pitch_trim, st.weight_lb,
-		st.cg_in, "  BRAKE" if c.brake > 0.5 else ""]
+	var wb: Loadout.WBResult = lo.compute(st.fuel_lb, st.on_ground)
+	var problems: Array[String] = []
+	if wb.overweight_lb > 0:
+		problems.append("OVERWEIGHT")
+	if not wb.in_envelope:
+		problems.append("CG OUTSIDE LIMITS")
+	if not wb.station_overloads.is_empty():
+		problems.append("STATION OVERLOAD")
+	var wb_text := "W&B OK" if problems.is_empty() else " / ".join(problems)
+	tiles["wb"].text = "FLAPS %d/3  TRIM %+.2f%s\n%s • %.0f lb • CG %.1f in" % [int(round(c.flaps * 3)), -c.pitch_trim,
+		"  BRAKE" if c.brake > 0.5 else "", wb_text, wb.weight_lb, wb.cg_in]
+	tiles["wb"].add_theme_color_override("font_color", UIStyle.CAPTION if problems.is_empty() else UIStyle.RED)
 
 
 func _chip_row(st: FlightModel.FlightState, c: FlightModel.Controls) -> void:
@@ -356,8 +382,10 @@ func _chip_row(st: FlightModel.FlightState, c: FlightModel.Controls) -> void:
 	chips["xpdr"].set_state(("XPDR %s %s" % [s.squawk, s.squawk_code]) if s.transponder else "XPDR OFF",
 		UIStyle.RED if emerg and s.transponder else (UIStyle.GREEN if s.transponder else UIStyle.AMBER), true)
 	chips["ap"].set_state("AP", UIStyle.CYAN, s.autopilot.engaged)
+	chips["ap"].visible = s.autopilot.engaged
 	var who: String = {"human": "CREW: CO-PILOT", "ai": "CREW: ROSA"}.get(s.copilot, "SOLO")
 	chips["crew"].set_state(who, UIStyle.CYAN, Py.truthy(s.copilot))
+	chips["crew"].visible = Py.truthy(s.copilot)
 	var cond := ""
 	var cond_col := UIStyle.AMBER
 	if s.airframe != null:
@@ -380,8 +408,8 @@ func _chip_row(st: FlightModel.FlightState, c: FlightModel.Controls) -> void:
 	chips["kick"].set_state("KICK %d" % s.kick_queue if s.kick_queue else "AUTO-KICK", UIStyle.AMBER, true)
 	chips["pump"].visible = s.pumping
 	chips["pump"].set_state("PUMP", UIStyle.CYAN, true)
-	chips["radar"].visible = s.gear.has("detector")
 	var det: String = s.police.detector() if s.gear.has("detector") else ""
+	chips["radar"].visible = det != ""
 	chips["radar"].set_state({"LOCK": "RADAR LOCK", "PAINT": "RADAR PAINT"}.get(det, "RADAR CLEAR") + _painter_text(st),
 		UIStyle.RED if det == "LOCK" else (UIStyle.AMBER if det == "PAINT" else UIStyle.GREEN), det != "")
 	chips["wx"].visible = not s.weather.is_empty()
@@ -389,9 +417,12 @@ func _chip_row(st: FlightModel.FlightState, c: FlightModel.Controls) -> void:
 		var w := s.weather
 		chips["wx"].set_state("%s %03d/%d moon %d%%" % [str(w.sky).to_upper(), int(w.wind_dir), int(w.wind_kt), int(float(w.moon) * 100)],
 			UIStyle.RED if w.sky == "storm" else UIStyle.WHITE, w.sky != "clear")
-	chips["pulse"].visible = pulse > 0.0
+	chips["pulse"].visible = pulse > 131.0
 	chips["pulse"].set_state("PULSE %.0f%s" % [pulse, " SHAKING" if pulse > 131 else ""], UIStyle.RED, true)
 	chips["cam"].set_state("%s%s" % ["YOKE:MOUSE  " if mouse_yoke else "", cam_mode.to_upper()], UIStyle.CAPTION, false)
+	for group in ["OPERATIONS", "ALERTS"]:
+		var row: HFlowContainer = chip_groups[group].get_child(1)
+		chip_groups[group].visible = row.get_children().any(func(chip): return chip.visible)
 
 
 ## The strongest painter as "HAR ↗": which site, and which way it is from the nose.

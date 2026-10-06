@@ -81,7 +81,7 @@ func open() -> void:
 	refresh()
 	# A predictable initial focus makes keyboard/controller navigation visible
 	# immediately instead of leaving focus wherever the previous screen had it.
-	if close_button != null:
+	if close_button != null and close_button.is_inside_tree():
 		close_button.grab_focus()
 
 
