@@ -17,6 +17,7 @@ const TEE_M := 450.0
 var nodes: Array = []  ## Vector2
 var adj: Array = []  ## node -> [[other, length], ...]
 var road_nodes := 0  ## nodes before the stubs
+var _network_edges := {}  ## authored road/track edges, excluding speculative T links/stubs
 
 
 func _init(roads: Array, places: Array = []) -> void:
@@ -25,7 +26,7 @@ func _init(roads: Array, places: Array = []) -> void:
 		for p in r:
 			var i := _node(Vector2(p[0], p[1]))
 			if prev >= 0 and prev != i:
-				_link(prev, i)
+				_link(prev, i, true)
 			prev = i
 	# a loose end near another road: a T junction
 	for i in nodes.size():
@@ -59,7 +60,7 @@ static func tracks(points: Array) -> RoadGraph:
 		d.sort_custom(func(a, b): return a[0] < b[0])
 		for k in mini(3, d.size()):
 			if not g._linked(i, d[k][1]):
-				g._link(i, d[k][1])
+				g._link(i, d[k][1], true)
 	g.road_nodes = g.nodes.size()
 	return g
 
@@ -80,10 +81,13 @@ func _linked(a: int, b: int) -> bool:
 	return false
 
 
-func _link(a: int, b: int) -> void:
+func _link(a: int, b: int, authored := false) -> void:
 	var d: float = nodes[a].distance_to(nodes[b])
 	adj[a].append([b, d])
 	adj[b].append([a, d])
+	if authored:
+		_network_edges[Vector2i(a, b)] = true
+		_network_edges[Vector2i(b, a)] = true
 
 
 ## Tie a place to the nearest road node; returns the new node.
@@ -112,8 +116,8 @@ func nearest(p: Vector2, roads_only := true) -> int:
 ## called as penalty(from: Vector2, to: Vector2, length: float) -> float for every edge the search
 ## considers and returns extra metres of cost for it (never negative, so the straight-line
 ## heuristic stays admissible): a hill, a checkpoint, a place that is hot.
-func path(a: int, b: int, penalty := Callable()) -> Array:
-	if a < 0 or b < 0:
+func path(a: int, b: int, penalty := Callable(), clear := Callable()) -> Array:
+	if a < 0 or b < 0 or a >= nodes.size() or b >= nodes.size():
 		return []
 	if a == b:
 		return [a]
@@ -135,6 +139,8 @@ func path(a: int, b: int, penalty := Callable()) -> Array:
 			return out
 		open.erase(cur)
 		for e in adj[cur]:
+			if clear.is_valid() and not clear.call(nodes[cur], nodes[e[0]]):
+				continue
 			var ng: float = g[cur] + e[1]
 			if penalty.is_valid():
 				ng += maxf(0.0, float(penalty.call(nodes[cur], nodes[e[0]], e[1])))
@@ -162,6 +168,35 @@ func route(from: Vector2, to: Vector2, penalty := Callable()) -> PackedVector2Ar
 	if out[out.size() - 1].distance_to(to) > 1.0:
 		out.append(to)
 	return out
+
+
+## Checked callers receive explicit failure, never an implicit straight line.
+## `clear(a,b)` validates access and graph edges against their own world data.
+## Legacy route() remains unchanged until each simulation consumer is measured.
+func checked_route(from: Vector2, to: Vector2, penalty := Callable(), clear := Callable()) -> Dictionary:
+	var failure := {"reachable": false, "points": PackedVector2Array(), "reason": "No connected travel network."}
+	if not from.is_finite() or not to.is_finite():
+		failure.reason = "Invalid route endpoints."
+		return failure
+	var a := nearest(from)
+	var b := nearest(to)
+	if a < 0 or b < 0:
+		return failure
+	if clear.is_valid() and (not clear.call(from, nodes[a]) or not clear.call(nodes[b], to)):
+		failure.reason = "An access leg is obstructed."
+		return failure
+	var allowed := func(start: Vector2, end: Vector2) -> bool:
+		return _network_edges.has(Vector2i(nodes.find(start), nodes.find(end))) and (not clear.is_valid() or clear.call(start, end))
+	var route_nodes := path(a, b, penalty, allowed)
+	if route_nodes.is_empty():
+		return failure
+	var points := PackedVector2Array([from])
+	for index in route_nodes:
+		if points[-1].distance_to(nodes[index]) > 0.01:
+			points.append(nodes[index])
+	if points[-1].distance_to(to) > 0.01:
+		points.append(to)
+	return {"reachable": true, "points": points, "reason": ""}
 
 
 ## How close the segment a-b comes to p.
