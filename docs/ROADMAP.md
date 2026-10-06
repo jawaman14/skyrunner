@@ -88,7 +88,11 @@ and real two-machine remote/voice validation remain unperformed.
    height queries. Checked routes return explicit failure, skip speculative T
    links and retain the route-penalty hook; the legacy simulation route API stays
    unchanged pending measured migration. Synthetic deck/water physics, road and
-   car tests pass. Site connectors, real bridge approaches and bidirectional
+   car tests pass. Dry lowland ribbons now follow terrain at a reachable 0.45m
+   offset; water retains 2.65m clearance with 10% graded approach fill. Railings
+   use the same indexed surface. Four road-surface tests pass, including actual
+   bidirectional walking and driving across both synthetic banks. Site
+   connectors, Costa Brava bridge approaches and bidirectional
    exported walking/driving still require validation.
 8. **Interiors:** fix existing hangars/HQs/casino; make all eight stash types
    enterable with existing logistics access, real availability and clear exits.

@@ -249,7 +249,8 @@ static func _edge_pt(s: Array, lateral: float, up: float) -> Vector3:
 
 ## The deck height at a road point: over the highest of the ground under the ribbon, and 2.2 m over the sea.
 static func deck_z(world: World, p: Vector2, side: Vector2) -> float:
-	return RoadSurface.deck_height(world, p, side)
+	var surface := world.road_surface().sample(p)
+	return float(surface.height) if surface.on_surface else RoadSurface.deck_height(world, p, side)
 
 
 ## Bridges where a road crosses water (RoadPlanner found them): piers down to the bed every 30 m, and

@@ -4,6 +4,7 @@ extends RefCounted
 ## Cached triangle bins make wheel queries independent of the total road count.
 const HALF_WIDTH := 4.5
 const BIN := 128.0
+const APPROACH_GRADE := 0.10
 var vertices := PackedVector3Array()
 var _bins := {}
 
@@ -33,10 +34,21 @@ static func samples(world: World, road: Array) -> Array:
 	for i in points.size():
 		var direction := (points[mini(i + 1, points.size() - 1)] - points[maxi(i - 1, 0)]).normalized()
 		out.append([points[i], direction, deck_height(world, points[i], Vector2(-direction.y, direction.x) * HALF_WIDTH)])
+	# Only bridge clearance propagates onto land: do not reshape hill roads.
+	var clearance := PackedFloat64Array()
+	for p in points:
+		clearance.append(2.65 if world.is_water(p.x, p.y) else 0.0)
+	for i in range(1, points.size()):
+		clearance[i] = maxf(clearance[i], clearance[i - 1] - points[i].distance_to(points[i - 1]) * APPROACH_GRADE)
+	for i in range(points.size() - 2, -1, -1):
+		clearance[i] = maxf(clearance[i], clearance[i + 1] - points[i].distance_to(points[i + 1]) * APPROACH_GRADE)
+	for i in out.size():
+		out[i][2] = maxf(float(out[i][2]), clearance[i])
 	return out
 
 static func deck_height(world: World, p: Vector2, side: Vector2) -> float:
-	return maxf(maxf(world.ground(p.x + side.x, p.y + side.y), world.ground(p.x - side.x, p.y - side.y)), maxf(world.ground(p.x, p.y), 2.2)) + 0.45
+	var ground_height := maxf(maxf(world.ground(p.x + side.x, p.y + side.y), world.ground(p.x - side.x, p.y - side.y)), world.ground(p.x, p.y))
+	return maxf(ground_height + 0.45, 2.65 if world.is_water(p.x, p.y) else 0.0)
 
 static func edge(sample: Array, lateral: float) -> Vector3:
 	var p: Vector2 = sample[0]
