@@ -50,7 +50,10 @@ var sel_unit = null
 var squad_mode := false  ## Q: the map commands our ground squads (the default desk for lieutenant and patrol)
 var sel_squad = null
 var status := ""
-var _pending: Array = []
+var outcomes: CommandPresentation
+var outcome_lbl: Label
+var feed_lbl: Label
+var selection_lbl: Label
 var _list_kind := ""
 var _list_keys: Array = []
 var upgrades: UpgradeTree  ## the controller's upgrade trees (U)
@@ -61,6 +64,7 @@ var _last_seq = null
 ## vertical: map above the desk (narrow panes, e.g. the split-screen demo).
 func setup(link_, role_: String, world_: World = null, vertical := false) -> StationApp:
 	link = link_
+	outcomes = CommandPresentation.new(link)
 	role = role_
 	world = world_ if world_ != null else World.new()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -90,7 +94,13 @@ func setup(link_, role_: String, world_: World = null, vertical := false) -> Sta
 	h.add_child(panel)
 	body = VBoxContainer.new()
 	body.add_theme_constant_override("separation", 8)
-	panel.add_child(body)
+	var desk_scroll := ScrollContainer.new()
+	desk_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	desk_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	desk_scroll.follow_focus = true
+	panel.add_child(desk_scroll)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	desk_scroll.add_child(body)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 12)
 	body.add_child(head)
@@ -163,6 +173,15 @@ func setup(link_, role_: String, world_: World = null, vertical := false) -> Sta
 	status_lbl = UIStyle.label("", 15, Color(1, 0.5, 0.4))
 	status_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_child(status_lbl)
+	outcome_lbl = UIStyle.label("", 14, UIStyle.CAPTION)
+	outcome_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(outcome_lbl)
+	selection_lbl = UIStyle.label("", 14, UIStyle.CYAN)
+	selection_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(selection_lbl)
+	feed_lbl = UIStyle.label("", 13, UIStyle.CAPTION)
+	feed_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(feed_lbl)
 	hints = KeyHints.new()
 	hints.hint_pressed.connect(func(a):
 		if a == "esc":
@@ -277,23 +296,13 @@ func _build_buttons() -> void:
 
 
 # ------------------------------------------------------------ commands
-func _cmd(name: String, args := {}) -> void:
-	var seq: int = link.send_command(name, args)
-	if link is LocalLink:
-		status = "" if link.last_result[0] else link.last_result[1]
-	else:
-		_pending.append(seq)
-		status = ""
+func _cmd(name: String, args := {}) -> int:
+	return outcomes.send(name, args)
 
 
-func _check_acks() -> void:
-	for seq in _pending.duplicate():
-		if link.acks.has(seq):
-			_pending.erase(seq)
-			var r: Array = link.acks[seq]
-			link.acks.erase(seq)
-			if not r[0]:
-				status = r[1]
+func _check_acks(dt := 0.0) -> void:
+	outcomes.poll(dt)
+	outcome_lbl.text = "\n".join(outcomes.records.slice(-4).map(CommandPresentation.text))
 
 
 # ------------------------------------------------------------ input
@@ -441,8 +450,9 @@ func open_logistics() -> void:
 		var sn = link.snapshot()
 		return sn.get("logistics", {}) if sn is Dictionary else {}
 	logistics_menu.cmd_fn = func(n: String, a: Dictionary) -> Array:
-		_cmd(n, a)
-		return [status == "", status if status != "" else "ok"]
+		return link.sess.command(role, n, a) if link is LocalLink else [false, "Remote command needs acknowledgement."]
+	logistics_menu.send_fn = _cmd
+	logistics_menu.outcome_fn = outcomes.get_record
 	add_child(logistics_menu)
 
 
@@ -907,10 +917,10 @@ func _process(delta: float) -> void:
 	map.snap = snap
 	map.sel_unit = sel_unit
 	map.sel_squad = sel_squad
+	_check_acks(delta)
 	if not (snap is Dictionary):
 		title.text = "Connecting..." if link.error == null else "Disconnected: %s" % link.error
 		return
-	_check_acks()
 	if snap.has("tutorial") and tutorial_panel == null:
 		tutorial_panel = TutorialPanel.new()
 		add_child(tutorial_panel)
@@ -939,6 +949,16 @@ func _process(delta: float) -> void:
 	if link is NetClient and not link.players.is_empty():
 		subtitle.text = "  ".join(link.players.map(func(p): return "%s (%s)" % [p.name, p.role if p.role != "" else "lobby"]))
 	status_lbl.text = status if status != "" else ("Link lost: %s" % link.error if link.error != null and not link.alive() else "")
+	feed_lbl.text = "\n".join(snap.get("event_feed", []).slice(-4).map(func(event):
+		return "%s · %s · %ds ago · %s: %s" % [str(event.severity).to_upper(), event.source, int(maxf(0.0, float(snap.time) - float(event.t))), event.certainty, event.text]))
+	selection_lbl.text = ""
+	var selected_squad = Py.first(_my_squads(snap), func(q): return q.id == sel_squad)
+	var selected_unit = Py.first(snap.get("units", []), func(u): return u.id == sel_unit)
+	var entity = selected_squad if selected_squad != null else selected_unit
+	if entity != null:
+		selection_lbl.text = "SELECTED %s · %s · %s" % [entity.id, entity.get("kind", "unit"), entity.get("state", entity.get("order", ""))]
+	elif sel_unit != null or sel_squad != null:
+		selection_lbl.text = "Selected entity is no longer available in this seat's report."
 	hints.set_hints(_hints())
 
 
@@ -948,6 +968,7 @@ func _set_list(kind: String, keys: Array, cells: Array, colors := {}, defs := []
 	list.visible = kind != "none"
 	if kind != _list_kind or keys != _list_keys:
 		var keep := list.selected_row()
+		var keep_key = _list_keys[keep] if keep >= 0 and keep < _list_keys.size() and kind == _list_kind else null
 		if kind != _list_kind:
 			list.configure(defs if not defs.is_empty() else [{"title": "", "expand": true}])
 		else:
@@ -957,7 +978,7 @@ func _set_list(kind: String, keys: Array, cells: Array, colors := {}, defs := []
 		_list_kind = kind
 		_list_keys = keys
 		if list.row_count() > 0:
-			list.select(clampi(keep, 0, list.row_count() - 1))
+			list.select(keys.find(keep_key) if keys.has(keep_key) else clampi(keep, 0, list.row_count() - 1))
 	else:
 		for i in cells.size():
 			for c in cells[i].size():

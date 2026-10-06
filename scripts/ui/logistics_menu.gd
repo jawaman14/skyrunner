@@ -12,6 +12,9 @@ signal closed
 
 var view_fn: Callable  ## () -> Dictionary: the logistics view
 var cmd_fn: Callable  ## (name, args) -> [ok, message]
+var send_fn: Callable  ## optional asynchronous transport, returns command sequence
+var outcome_fn: Callable  ## (sequence) -> CommandPresentation record
+var _orders := {}
 var pilot := false  ## the aircraft's seat: cash bags on and off
 var rows: VBoxContainer
 var trucks: VBoxContainer
@@ -107,12 +110,12 @@ func _ready() -> void:
 		var load_b := Button.new()
 		load_b.text = "Load cash bags here (C)"
 		load_b.focus_mode = Control.FOCUS_ALL
-		load_b.pressed.connect(func(): _act(cmd_fn.call("load_cash", {"amount": amount.value if amount.value > 0 else 1e12})))
+		load_b.pressed.connect(func(): _act(_command("load_cash", {"amount": amount.value if amount.value > 0 else 1e12})))
 		bags.add_child(load_b)
 		var unload_b := Button.new()
 		unload_b.text = "Unload the bags here (U)"
 		unload_b.focus_mode = Control.FOCUS_ALL
-		unload_b.pressed.connect(func(): _act(cmd_fn.call("unload_cash", {})))
+		unload_b.pressed.connect(func(): _act(_command("unload_cash", {})))
 		bags.add_child(unload_b)
 	var works := HBoxContainer.new()
 	works.add_theme_constant_override("separation", 8)
@@ -139,7 +142,7 @@ func _ready() -> void:
 func _build_works(what: String) -> void:
 	if _sites.is_empty():
 		return
-	_act(cmd_fn.call("stash_works", {"stash": _sites[from_ob.selected], "what": what}))
+	_act(_command("stash_works", {"stash": _sites[from_ob.selected], "what": what}))
 
 
 func refresh() -> void:
@@ -202,7 +205,7 @@ func refresh() -> void:
 			b.text = "Escort"
 			b.focus_mode = Control.FOCUS_ALL
 			var id: int = int(t.id)
-			b.pressed.connect(func(): _act(cmd_fn.call("escort_truck", {"job_id": id})))
+			b.pressed.connect(func(): _act(_command("escort_truck", {"job_id": id})))
 			row.add_child(b)
 		trucks.add_child(row)
 	if lv.trucks.is_empty():
@@ -222,18 +225,18 @@ func _send() -> void:
 	var to: String = _dests[to_ob.selected]
 	var r: Array
 	if what == "the armoury":
-		r = cmd_fn.call("move_armoury", {"to": to})  # all of it (the 'from' is wherever it is)
+		r = _command("move_armoury", {"to": to})  # all of it (the 'from' is wherever it is)
 	elif TIER.has(what):
 		if not to in ["family", "agency", "rival"]:
 			r = [false, "Guns move as the whole armoury - pick 'the armoury' to move it."]
 		else:
-			r = cmd_fn.call("sell_product", {"buyer": to, "good": "guns", "tier": TIER[what], "qty": amount.value if amount.value > 0 else 1e9})
+			r = _command("sell_product", {"buyer": to, "good": "guns", "tier": TIER[what], "qty": amount.value if amount.value > 0 else 1e9})
 	elif what == "cash":
-		r = cmd_fn.call("move_cash", {"from": from, "to": to, "amount": amount.value if amount.value > 0 else 1e12})
+		r = _command("move_cash", {"from": from, "to": to, "amount": amount.value if amount.value > 0 else 1e12})
 	elif to in ["family", "agency", "rival"]:
-		r = cmd_fn.call("sell_product", {"buyer": to, "good": what, "qty": amount.value if amount.value > 0 else 1e9, "from": from})
+		r = _command("sell_product", {"buyer": to, "good": what, "qty": amount.value if amount.value > 0 else 1e9, "from": from})
 	else:
-		r = cmd_fn.call("move_goods", {"from": from, "to": to, "good": what, "lb": amount.value if amount.value > 0 else 1e9})
+		r = _command("move_goods", {"from": from, "to": to, "good": what, "lb": amount.value if amount.value > 0 else 1e9})
 	_act(r)
 
 
@@ -245,12 +248,12 @@ func _all_home() -> void:
 			with_cash.append(s.id)
 	if with_cash.size() >= 2:
 		# one truck works its way round them and home
-		var r: Array = cmd_fn.call("cash_round", {"stops": with_cash, "to": Logistics.HQ, "plan": true})
+		var r: Array = _command("cash_round", {"stops": with_cash, "to": Logistics.HQ, "plan": true})
 		_act(r if not r[0] else [true, "One truck is working its way round %d stashes and home." % with_cash.size()])
 		return
 	var n := 0
 	for id in with_cash:
-		var r: Array = cmd_fn.call("move_cash", {"from": id, "to": Logistics.HQ})
+		var r: Array = _command("move_cash", {"from": id, "to": Logistics.HQ})
 		if r[0]:
 			n += 1
 	_act([true, "%d cash truck(s) heading home." % n if n > 0 else "No cash out in the stashes."])
@@ -283,7 +286,7 @@ func _round_cash() -> void:
 	if round_stops.size() < 2 or _dests.is_empty():
 		_act([false, "A round needs at least two stops."])
 		return
-	var r: Array = cmd_fn.call("cash_round", {"stops": round_stops, "to": _dests[to_ob.selected]})
+	var r: Array = _command("cash_round", {"stops": round_stops, "to": _dests[to_ob.selected]})
 	if r[0]:
 		_round_clear()
 	_act(r)
@@ -298,7 +301,7 @@ func _round_goods() -> void:
 	if what not in ["cocaine", "marijuana"]:
 		_act([false, "A delivery round carries cocaine or marijuana."])
 		return
-	var r: Array = cmd_fn.call("goods_round", {"from": _sites[from_ob.selected], "stops": round_stops, "good": what, "lb": amount.value if amount.value > 0 else 1e9})
+	var r: Array = _command("goods_round", {"from": _sites[from_ob.selected], "stops": round_stops, "good": what, "lb": amount.value if amount.value > 0 else 1e9})
 	if r[0]:
 		_round_clear()
 	_act(r)
@@ -310,6 +313,16 @@ func _act(r: Array) -> void:
 
 
 func _process(_dt: float) -> void:
+	if outcome_fn.is_valid():
+		for seq in _orders.keys():
+			var record: Dictionary = outcome_fn.call(seq)
+			if record.is_empty():
+				continue
+			status.text = CommandPresentation.text(record)
+			if record.state not in ["pending", "acknowledged"]:
+				if record.state == "refreshed" and _orders[seq] in ["cash_round", "goods_round"]:
+					_round_clear()
+				_orders.erase(seq)
 	if Engine.get_process_frames() % 30 == 0:
 		refresh()
 
@@ -325,10 +338,10 @@ func _input(ev: InputEvent) -> void:
 				close()
 			KEY_C:
 				if pilot:
-					_act(cmd_fn.call("load_cash", {"amount": amount.value if amount.value > 0 else 1e12}))
+					_act(_command("load_cash", {"amount": amount.value if amount.value > 0 else 1e12}))
 			KEY_U:
 				if pilot:
-					_act(cmd_fn.call("unload_cash", {}))
+					_act(_command("unload_cash", {}))
 			_:
 				return
 		get_viewport().set_input_as_handled()
@@ -337,3 +350,11 @@ func _input(ev: InputEvent) -> void:
 func close() -> void:
 	closed.emit()
 	queue_free()
+
+
+func _command(name: String, args: Dictionary) -> Array:
+	if send_fn.is_valid():
+		var seq: int = send_fn.call(name, args)
+		_orders[seq] = name
+		return [false, "Order #%d sent; awaiting acknowledgement and refreshed state." % seq]
+	return cmd_fn.call(name, args)
