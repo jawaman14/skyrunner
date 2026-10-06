@@ -28,7 +28,10 @@ and real two-machine remote/voice validation remain unperformed.
    export and human release evidence before integrating the stack.
 2. **Dialogue:** implementation is prepared in #186 with correlated results,
    refreshed-state gating, scrolling/wrapped choices, navigation and failure text.
-   Complete physical-controller, palette/read-aloud and display walkthroughs at
+   Synthetic mouse/controller events, long choices and layout bounds pass in both
+   palettes at all four supported sizes, including palette changes while open.
+   Actual scene removal/replacement and duplicate pending clicks are covered.
+   Complete physical-controller, read-aloud and visual display walkthroughs at
    supported resolutions, plus two-machine delayed-result validation.
 3. **Contextual actions:** extend read-only Session descriptors to purchases,
    sales, transfers, repairs, prisoners and disbanding; add remote previews;
