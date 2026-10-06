@@ -25,16 +25,28 @@ if no_bail
 	{{lawyer_name}}: The prosecutor called you a flight risk and the judge agreed. No bail. You're held until trial.
 	- All right.
 		do post_bail("custody")
+		if result != ""
+			Radio: {{result}}
+			=> END
 		=> END
 {{lawyer_name}}: Bail is {{money_s(bail)}}. Post it all and you get it back if you show up for trial. A bondsman wants ten percent - {{money_s(bond)}} - and you never see it again.
 - Post the full bail. ({{money_s(bail)}}) [if money >= bail]
 	do post_bail("cash")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> bailed
 - Get a bondsman. ({{money_s(bond)}}) [if money >= bond]
 	do post_bail("bond")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> bailed
 - Sit tight in custody.
 	do post_bail("custody")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{lawyer_name}}: Then get comfortable. The trial's in {{trial_min}} minutes.
 	=> END
 
@@ -62,21 +74,39 @@ if has_plea
 ~ options
 - Hire Arturo Vega. ($6,000) [if lawyer_tier == "public"]
 	do hire("local")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> hired
 - Hire Roy Kessler, the Brickell Avenue lawyer. ($25,000) [if lawyer_tier == "public" or lawyer_tier == "local"]
 	do hire("miami")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> hired
 - File a motion to suppress the search. ($3,000) [if not has_filed("suppress")]
 	do move("suppress")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> filed
 - Ask for discovery. ($1,500) [if not has_filed("discovery")]
 	do move("discovery")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> filed
 - Ask for more time. ($2,000) [if continuances < 2]
 	do move("continuance")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> filed
 - Take the plea. [if has_plea]
 	do plead()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> plea
 - "What about the witness?" [if witnesses > 0 and not tampered]
 	=> witness
@@ -86,6 +116,9 @@ if has_plea
 	=> deal
 - Wait for the trial. [if stage == "custody"]
 	do wait()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> END
 - That's all for now.
 	{{lawyer_name}}: [[Don't talk to anyone. Anyone.|Keep your head down.|I'll see you in court.]]
@@ -133,6 +166,9 @@ else
 {{lawyer_name}}: A cooperation agreement. You give them the organisation - the strips, the stash houses, the people. You'd do a tenth of the time. And you'd spend the rest of your life looking over your shoulder. The Family would know within a day.
 - Sign it.
 	do cooperate()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{lawyer_name}}: It's done. God help you.
 	=> END
 - Never.
@@ -148,6 +184,9 @@ Narrator: {{verdict}}: {{years}} years. {{release_min}} minutes left inside.
 	=> END
 - Do the time.
 	do wait()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> END
 - Not now.
 	=> END

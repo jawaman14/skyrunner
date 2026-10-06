@@ -306,11 +306,11 @@ func test_the_phone_and_the_dialogues() -> void:
 		link.send_command(n, a)
 		return link.last_result)
 	check(st.casino and st.cs_can_buy and st.cs_stake_price == Casino.STAKE_PRICE, "the state reads the house")
-	check(st.buy_stake() and st.cs_stake_pct == 10, "and buys through the command: %d%%" % st.cs_stake_pct)
+	check((await st.buy_stake()) and st.cs_stake_pct == 10, "and buys through the command: %d%%" % st.cs_stake_pct)
 	_stash(s)
 	st.refresh()
 	check(st.cs_has_cash and st.cs_launder_n == Casino.CAGE_CAP, "the richest stash, up to the cage's room: $%d" % st.cs_launder_n)
-	check(st.launder() and s.casino.laundered == Casino.CAGE_CAP, "chips in")
+	check((await st.launder()) and s.casino.laundered == Casino.CAGE_CAP, "chips in")
 
 
 func test_the_fixers_x_rings_the_cielo() -> void:
