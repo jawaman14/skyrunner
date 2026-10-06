@@ -7,7 +7,7 @@ Use stable IDs and states IDLE/TRAVELLING/WORKING/ARRESTED/DEAD/UNAVAILABLE. Phy
 
     func tick(dt: float, now_tick: int, speed_mps: float) -> bool:
         if state == State.TRAVELLING:
-            var step := maxf(1.0, speed_mps * dt)
+            var step := maxf(0.0, speed_mps) * maxf(0.0, dt)
             if position.distance_to(destination) <= step:
                 position = destination
                 state = State.WORKING
@@ -19,12 +19,21 @@ Use stable IDs and states IDLE/TRAVELLING/WORKING/ARRESTED/DEAD/UNAVAILABLE. Phy
 Use an atomic manifest. Validate destination/capacity before removing source cargo.
 
     func remove(kind: String, amount: int) -> bool:
+        if amount < 0:
+            return false
+        if amount == 0:
+            return true
         if int(units.get(kind, 0)) < amount:
             return false
         units[kind] -= amount
         if units[kind] <= 0:
             units.erase(kind)
         return true
+
+Zero speed or zero elapsed time must leave a travelling worker in place. Do not
+force a minimum movement per tick: that makes travel depend on the update rate.
+Reject negative cargo quantities before mutating a manifest, and treat zero as a
+successful no-op. The caller must validate both manifests before an atomic transfer.
 
 ## Intelligence
 Each IntelRecord contains key, kind, location, subject, confidence, created_tick, expires_tick and source. Police consume only sourced records.
@@ -120,3 +129,4 @@ If already inside/past the approach corridor, project onto the runway centreline
 - Stable IDs and save/load compatibility.
 - Deterministic tests with every feature.
 - Fix simulation bugs instead of tuning around them.
+
