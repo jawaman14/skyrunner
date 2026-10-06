@@ -114,7 +114,7 @@ func _act(err: String) -> void:
 
 
 func _input(ev: InputEvent) -> void:
-	if ev.is_action_pressed("ui_cancel"):
+	if ev.is_action_pressed("ui_cancel") or (ev is InputEventJoypadButton and ev.pressed and ev.button_index == JOY_BUTTON_B):
 		close()
 		get_viewport().set_input_as_handled()
 		return

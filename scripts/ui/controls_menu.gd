@@ -182,7 +182,7 @@ func _toggle_speech() -> void:
 
 func _input(ev: InputEvent) -> void:
 	var is_key: bool = ev is InputEventKey and ev.pressed and not ev.echo
-	if (is_key and ev.physical_keycode == KEY_ESCAPE) or ev.is_action_pressed("ui_cancel"):
+	if (is_key and ev.physical_keycode == KEY_ESCAPE) or ev.is_action_pressed("ui_cancel") or (ev is InputEventJoypadButton and ev.pressed and ev.button_index == JOY_BUTTON_B):
 		if waiting_key != "" or capturing != "":
 			waiting_key = ""
 			capturing = ""
