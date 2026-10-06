@@ -25,7 +25,9 @@ var susp_bar: ProgressBar
 var bust_bar: ProgressBar
 var rival_bar: ProgressBar
 var status: Label
+var mission_heading: Label
 var jobs_box: VBoxContainer
+var objectives_heading: Label
 var objectives: Label
 var intel: Label
 var toasts: ToastFeed
@@ -136,7 +138,7 @@ func _centered(l: Label, y_frac: float) -> Label:
 func _panel(bg := Color(0.02, 0.03, 0.05, 0.62)) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_theme_stylebox_override("panel", UIStyle.box(bg, 8, Color(1, 1, 1, 0.07), 1, Vector4(10, 8, 10, 8)))
+	p.add_theme_stylebox_override("panel", UIStyle.surface_box(bg))
 	return p
 
 
@@ -188,13 +190,19 @@ func _build_status() -> void:
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_anchor(v, Vector4(0.66, 0, 1, 0.55), Vector4(0, 10, -14, 0))
 	zones["status"] = v
-	status = UIStyle.label("", 17)
+	status = UIStyle.label("", 15, UIStyle.CAPTION, UIStyle.mono())
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	v.add_child(status)
+	mission_heading = UIStyle.label("ACTIVE RUNS", 12, UIStyle.CAPTION, UIStyle.mono())
+	mission_heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	v.add_child(mission_heading)
 	jobs_box = VBoxContainer.new()
 	jobs_box.add_theme_constant_override("separation", 4)
 	jobs_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.add_child(jobs_box)
+	objectives_heading = UIStyle.label("OBJECTIVES", 12, UIStyle.CAPTION, UIStyle.mono())
+	objectives_heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	v.add_child(objectives_heading)
 	objectives = UIStyle.label("", 15, UIStyle.AMBER)
 	objectives.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	objectives.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -292,6 +300,7 @@ func refresh() -> void:
 	intel.text = "\n".join(il)
 	var camp = s.narrative
 	objectives.text = ("%d - %s\n" % [camp.chapter.year, camp.chapter.title] + "\n".join(camp.objective_lines())) if camp != null else ""
+	objectives_heading.visible = objectives.text != ""
 	toasts.sync(s.messages, s.time)
 	_warnings(st, c)
 	if s.court != null and s.court.open() and s.phase in ["busted", "custody"]:
@@ -412,8 +421,9 @@ func _wanted() -> void:
 
 
 func _status(st: FlightModel.FlightState, lo: Loadout) -> void:
-	status.text = "$%s   %s%s" % [Py.money(s.money), s.spec.name, ("\nat " + World.airfield(s.location).name) if s.location else ""]
+	status.text = "%s   •   $%s%s" % [s.spec.name, Py.money(s.money), ("   •   " + World.airfield(s.location).name) if s.location else ""]
 	var jobs := s.active_jobs.slice(0, 5)
+	mission_heading.visible = not jobs.is_empty()
 	while jobs_box.get_child_count() > jobs.size():
 		var c := jobs_box.get_child(jobs_box.get_child_count() - 1)
 		jobs_box.remove_child(c)
@@ -437,7 +447,9 @@ func _status(st: FlightModel.FlightState, lo: Loadout) -> void:
 			var left := Py.count(lo.items.values(), func(i): return i.job_id == j.id)
 			extra = "\n%d bales aboard  -  boat %s" % [left, str(boat.state).replace("_", " ") if boat != null else "?"]
 		var l: Label = jobs_box.get_child(n).get_child(0)
-		l.text = "%s%s  $%s\n%.1f km  brg %03.0f%s%s" % ["HOT " if j.hot() else "", j.dest_label(), Py.money(j.payout), d, brg, tls, extra]
+		var deadline := ("  •  %d:%02d" % [int(tl / 60), int(fposmod(tl, 60))]) if tl != null else ""
+		var risk := "HOT  •  " if j.hot() else ""
+		l.text = "%s%s\n%.1f km  •  %03.0f°%s\n$%s%s" % [risk, j.dest_label(), d, brg, deadline, Py.money(j.payout), extra]
 		l.add_theme_color_override("font_color", Color(1, 0.62, 0.48) if j.hot() else UIStyle.CYAN)
 
 
