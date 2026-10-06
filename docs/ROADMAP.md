@@ -70,6 +70,12 @@ and real two-machine remote/voice validation remain unperformed.
    and a solid wall. Selection and activation now require an unobstructed ray;
    all eighteen walker tests pass, including existing desks/job boards. Shared
    placement records, developer overlay and all-entrance walkthrough remain.
+   Deterministic site data now supplies airfield parts/frames, HQ/stash frames,
+   dock sites and the hotel anchor; records cover footprints, entrances, walking
+   approaches, loading points and explicitly unverified connector candidates.
+   Ctrl+F2 displays these records, runway/threshold/overlap diagnostics and physics
+   colliders. Three focused site tests pass on Costa Brava/generated geometry;
+   candidate routing and physical correction remain ahead of integration.
 7. **Roads/bridges:** shared physical/rendered surface, checked routes and safe
    connectors. Preserve La Selva without a public road; no incidental map rebake.
    Road ribbons now share vertices with deck collision and indexed ground-vehicle

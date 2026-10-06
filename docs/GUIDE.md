@@ -198,6 +198,7 @@ Your own recordings go in `user://radio/`.
 |---|---|
 | F1 | Help (the key list) |
 | F2 | Advance the time of day |
+| Ctrl+F2 | Developer access overlay: functional footprints, entrances, approaches, loading areas, connector candidates and collision shapes |
 | F3 | Hand the aircraft to the AI (so you can sit at another desk) / take it back |
 | F4 | The multiplayer menu: games on your network, the table (mute, remove, seats, chat), voice settings |
 | F6 | Performance overlay |

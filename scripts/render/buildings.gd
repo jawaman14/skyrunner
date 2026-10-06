@@ -498,43 +498,26 @@ static func terminal(k: Kit, c: Vector3, w := 36.0, d := 14.0) -> void:
 
 ## The buildings beside one strip, in Godot coordinates, facing the runway.
 static func airfield_site(world: World, af: Airfield) -> Node3D:
-	var z := world.airfield_elev(af) + 0.12
 	var k := Kit.new("site-" + af.code)
-	# frame: origin beside the runway on its right-hand side, local -z faces the runway
-	var W := af.width / 2
-	var L := af.length / 2
-	var off := W + 38.0
-	match af.kind:
-		"hub":
-			terminal(k, Vector3(0, 0, 18), 36, 14)
-			tower(k, Vector3(34, 0, 20), 16)
-			hangar(k, Vector3(-38, 0, 14), 22, 24)
-			hangar(k, Vector3(-64, 0, 14), 22, 24, false)
-			fuel_pump(k, Vector3(14, 0, -6))
-			showroom(k, Vector3(64, 0, 14))
-		"regional":
-			terminal(k, Vector3(0, 0, 14), 20, 10)
-			tower(k, Vector3(20, 0, 14), 10)
-			hangar(k, Vector3(-26, 0, 12), 18, 20)
-			fuel_pump(k, Vector3(10, 0, -6))
-			showroom(k, Vector3(42, 0, 12))
-		"bush":
-			shed(k, Vector3(0, 0, 8), 7, 5, "wood")
-			drums(k, Vector3(7, 0, 4))
-		_:
-			shed(k, Vector3(0, 0, 8), 6, 4, "metal_rust")
-			drums(k, Vector3(6, 0, 4), 7)
+	var records := []
+	for part in SiteLayout.airfield_parts(af):
+		var c: Vector3 = part.center
+		var dims: Vector3 = part.dimensions
+		match part.kind:
+			"terminal": terminal(k, c, dims.x, dims.z)
+			"tower": tower(k, c, dims.y)
+			"hangar": hangar(k, c, dims.x, dims.z, part.with_board)
+			"pump": fuel_pump(k, c)
+			"showroom": showroom(k, c, dims.x, dims.z)
+			"shed": shed(k, c, dims.x, dims.z, "wood" if af.kind == "bush" else "metal_rust")
+			"drums": drums(k, c, 5 if af.kind == "bush" else 7)
+		records.append(SiteLayout.record(world, part.id, part.kind, SiteLayout.airfield_frame(world, af).translated_local(c), dims))
 	var node := k.finish()
 	for c in node.get_children():
 		if c is Area3D:
 			c.set_meta("field", af.code)
-	# place: along = -L * 0.3 (the classic buildings' spot), across = +off to the right
-	var along := -L * 0.3 if af.kind in ["hub", "regional"] else -L * 0.6
-	var gx := af.x + af.ux * along + af.uy * off
-	var gy := af.y + af.uy * along - af.ux * off
-	node.position = Vector3(gx, z, -gy)
-	# local -z must face the runway: the runway lies toward (-uy, +ux) from the site
-	node.rotation.y = atan2(af.uy, af.ux)
+	node.transform = SiteLayout.airfield_frame(world, af)
+	node.set_meta("site_records", records)
 	return node
 
 
@@ -560,8 +543,7 @@ static func hq(world: World, spec: Dictionary) -> Node3D:
 					_compound(k)
 	var node := k.finish()
 	var z := world.ground(spec.x, spec.y)
-	node.position = Vector3(spec.x, z, -spec.y)
-	node.rotation.y = -deg_to_rad(spec.heading)
+	node.transform = SiteLayout.hq_frame(world, spec)
 	# a foundation down to the lowest ground under the footprint
 	var low := z
 	for d in [[-14, -14], [14, -14], [14, 14], [-14, 14]]:
