@@ -14,26 +14,28 @@ var content: VBoxContainer
 var subtitle: Label
 var footer: Label
 var hints: KeyHints
+var close_button: Button
 
 
 func setup(sess: Session) -> GameMenu:
 	s = sess
 	theme = UIStyle.theme()
-	add_theme_stylebox_override("panel", UIStyle.box(Color(0.03, 0.04, 0.06, 0.94), 10, UIStyle.LINE, 1, Vector4(22, 16, 22, 14)))
+	add_theme_stylebox_override("panel", UIStyle.surface_box(Color(0.03, 0.04, 0.06, 0.97), true))
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	anchor_left = 0.06
-	anchor_right = 0.94
-	anchor_top = 0.06
-	anchor_bottom = 0.94
+	anchor_left = 0.07
+	anchor_right = 0.93
+	anchor_top = 0.07
+	anchor_bottom = 0.93
+	custom_minimum_size = Vector2(720, 480)
 	offset_left = 0
 	offset_right = 0
 	offset_top = 0
 	offset_bottom = 0
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 10)
+	v.add_theme_constant_override("separation", UIStyle.SPACE_MD)
 	add_child(v)
 	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 14)
+	head.add_theme_constant_override("separation", UIStyle.SPACE_MD)
 	v.add_child(head)
 	title = UIStyle.title("", 30)
 	head.add_child(title)
@@ -41,13 +43,19 @@ func setup(sess: Session) -> GameMenu:
 	subtitle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	subtitle.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	head.add_child(subtitle)
+	close_button = Button.new()
+	close_button.text = "Close  [Esc]"
+	close_button.tooltip_text = "Close this panel and return to the game"
+	close_button.custom_minimum_size = Vector2(112, UIStyle.TOUCH_MIN)
+	close_button.pressed.connect(close)
+	head.add_child(close_button)
 	var rule := ColorRect.new()
 	rule.color = Color(UIStyle.ACCENT.r, UIStyle.ACCENT.g, UIStyle.ACCENT.b, 0.35)
 	rule.custom_minimum_size = Vector2(0, 1)
 	v.add_child(rule)
 	content = VBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 8)
+	content.add_theme_constant_override("separation", UIStyle.SPACE_SM)
 	v.add_child(content)
 	footer = UIStyle.label("", 14, UIStyle.CAPTION)
 	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -71,6 +79,10 @@ func _build() -> void:
 func open() -> void:
 	visible = true
 	refresh()
+	# A predictable initial focus makes keyboard/controller navigation visible
+	# immediately instead of leaving focus wherever the previous screen had it.
+	if close_button != null:
+		close_button.grab_focus()
 
 
 func close() -> void:
