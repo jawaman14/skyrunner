@@ -272,3 +272,7 @@ Second wave, larger features:
   Original editable SVG sources live in `assets/props`. These are decorative surfaces,
   with existing collision and interaction points preserved. This begins the Asset Bible's
   small airfield slice; aircraft, vehicles and wider world dressing remain future passes.
+- **Period art, fuel-cache follow-on:** rural drums gain muted paint, steel hoops,
+  filler bungs and original flammable-label artwork. A pallet/crate stack sits beside
+  the existing fuel approach; drum collisions remain unchanged and the stack uses two
+  simple box colliders. These props are decorative, not stock or inventory indicators.

@@ -44,6 +44,8 @@ static func mat(key: String) -> StandardMaterial3D:
 		"red": [Color(0.75, 0.12, 0.1), 0.6, 0.0],
 		"pump_enamel": [Color(0.57, 0.28, 0.21), 0.82, 0.0],
 		"pump_cream": [Color(0.81, 0.77, 0.64), 0.88, 0.0],
+		"drum_blue": [Color(0.27, 0.39, 0.44), 0.86, 0.15],
+		"drum_sage": [Color(0.39, 0.43, 0.31), 0.88, 0.15],
 		"blue": [Color(0.12, 0.2, 0.55), 0.5, 0.2],
 		"black": [Color(0.06, 0.06, 0.07), 0.5, 0.3],
 		"water": [Color(0.2, 0.62, 0.72, 0.85), 0.05, 0.0],
@@ -435,8 +437,35 @@ static func fuel_pump(k: Kit, c: Vector3) -> void:
 
 static func drums(k: Kit, c: Vector3, n := 5) -> void:
 	for i in n:
-		k.cylinder(c + Vector3((i % 3) * 0.7, 0, (i / 3) * 0.7), 0.3, 0.9, "blue" if i % 2 else "metal_rust", 10)
+		var at := c + Vector3((i % 3) * 0.7, 0, (i / 3) * 0.7)
+		fuel_drum(k, at, i)
+	loading_pallet(k, c + Vector3(-1.25, 0, 0.7))
 	k.interact(c + Vector3(0.7, 1.0, -1.4), "load", "Fuel drums & load planner")
+
+
+## Period steel drum: original body collider, with batched hoops and bung detail.
+static func fuel_drum(k: Kit, at: Vector3, variant := 0) -> void:
+	var paint: String = ["drum_blue", "drum_sage", "metal_rust"][posmod(variant, 3)]
+	k.cylinder(at, 0.3, 0.9, paint, 10)
+	for y in [0.05, 0.30, 0.62, 0.86]:
+		k.cylinder(at + Vector3(0, y, 0), 0.307, 0.025, "metal_rust", 10, false)
+	k.cylinder(at + Vector3(0.11, 0.9, 0.06), 0.035, 0.018, "black", 8, false)
+	k.plate("res://assets/props/fuel_drum_label.svg", at + Vector3(0, 0.47, -0.287), Vector2(0.16, 0.18))
+
+
+## Small loading stack beside the drums, away from their interaction approach.
+static func loading_pallet(k: Kit, at: Vector3) -> void:
+	# One simple floor collider; the gaps and braces are visual geometry.
+	k.box(at + Vector3(0, 0.04, 0), Vector3(0.95, 0.08, 1.1), "wood")
+	for x in [-0.36, 0.0, 0.36]:
+		k.box(at + Vector3(x, 0.10, 0), Vector3(0.12, 0.12, 1.1), "wood", false)
+	for z in [-0.43, -0.21, 0.0, 0.21, 0.43]:
+		k.box(at + Vector3(0, 0.18, z), Vector3(0.95, 0.05, 0.15), "wood", false)
+	var crate := at + Vector3(0, 0.45, 0.05)
+	k.box(crate, Vector3(0.68, 0.49, 0.68), "wood")
+	for x in [-0.25, 0.25]:
+		k.box(crate + Vector3(x, 0, -0.35), Vector3(0.055, 0.49, 0.035), "metal_rust", false)
+		k.box(crate + Vector3(x, 0.26, 0), Vector3(0.055, 0.035, 0.68), "metal_rust", false)
 
 
 static func shed(k: Kit, c: Vector3, w := 7.0, d := 5.0, key := "wood") -> void:
