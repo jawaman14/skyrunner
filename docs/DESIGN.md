@@ -10,7 +10,7 @@ asymmetric **traffickers vs. law enforcement** game. It supports solo play again
 co-op crews, and team-vs-team multiplayer, and it follows a campaign that gets harder
 year by year.
 
-Status legend: **[done]** in the code now · **[planned]** planned, see *Roadmap* (the extra human roles are queued in docs/REVIEW_2026-10.md).
+Status legend: **[done]** in the code now · **[planned]** historical proposals unless present in [ROADMAP.md](ROADMAP.md). Later decisions and verified code take precedence; the October review is a dated record, not the current queue.
 
 ---
 
@@ -34,7 +34,7 @@ Status legend: **[done]** in the code now · **[planned]** planned, see *Roadmap
 | **Solo task force** | Controller | AI smuggler flights + boats | [done] |
 | **Co-op crew** | Pilot + co-pilot (+ spotter) | Police | [done] (co-pilot and spotter use the station client) |
 | **Versus** | Runner crew vs. controller (+ interceptor pilot) | Empty roles | [done]; controller and spotter use the station client; the interceptor pilot flies in a 3D seat (`RemoteSeat`) |
-| **Campaign** | Solo or co-op | Scripted threats per chapter | [done]: chapters 1–4 playable, 5–8 scripted in this doc |
+| **Campaign** | Solo or co-op | Scripted threats per chapter | [done]: four flying tutorial chapters and twelve Costa Brava story chapters; former tutorial chapters 5–8 are retired |
 
 Any seat without a human is filled by AI, so the same match can be played by 1 to 6 people.
 
@@ -125,12 +125,14 @@ than the full response, which is how the side with less information stays viable
   unless encrypted. The runner scanner intercepts plain police messages. Runner
   transmissions can be heard by DF stations.
 
-## 6. Storyline (the Palmetto Cay tutorial campaign)
+## 6. Storyline (the Costa Brava flying tutorial)
 
 **Decision (2026-10-03):** the campaign is four chapters, a tutorial that teaches one system at a time. The long game is the Costa Brava story (`Story.CHAPTERS`, DESIGN 25 and the later story sections). The former chapters 5 to 8 (The Balloon, Blue Water, The Leak, Last Run / Flip) are cut; the paragraphs below about them are the original pitch and are not planned.
 
-**Setting.** Palmetto Cay, a fictional island between the Florida Keys and the Bahamas,
-1979–1986. The tone draws on the era's documentaries and dramas about the South Florida
+**Setting (updated 2026-10-07).** Costa Brava, the game's fictional coastal region,
+1979–1982 for these four flying lessons. The twelve-chapter Costa Brava story remains
+the long game. Classic island geometry is retained only for internal regression references.
+The tone draws on the era's documentaries and dramas about the South Florida
 smuggling boom and the Miami-based task forces sent to stop it (the *Cocaine Cowboys*
 documentaries, *Miami Vice*, *American Made*, *Blow*, *Air America*, *Narcos*). All characters
 and events here are original.
@@ -142,17 +144,17 @@ Cessna 172. His sister *Rosa* runs the mail contract and is your first co-pilot.
 
 | Ch. | Year | Title | Introduces | Objectives | Status |
 |---|---|---|---|---|---|
-| 1 | 1979 | **Mail Run** | Flying, W&B, short strips | Earn $5,000 legally, land at Eagle's Nest | [done] |
+| 1 | 1979 | **Mail Run** | Flying, W&B, short strips | Earn $5,000 legally, land at Mesa del Aguila | [done] |
 | 2 | 1980 | **A Favor for Manny** | Contraband, radar floors, flying low | Deliver one hot cargo without reaching wanted ★ | [done] |
 | 3 | 1981 | **Kickers** | Co-pilot, airdrops, boat rendezvous, radio calls | Drop 4 bales to the *Lady Luck*, 3 must reach the cove | [done] |
 | 4 | 1982 | **Long Legs** | Ferry tanks, fuel planning, offshore entry, fuel caches | Fly in from the south entry point with a ferry tank and make a drop | [done] |
 
-**The task-force campaign** (law side, 1983–1986) replays the same years from Hart's desk:
+**Historical pitch, retired (not scheduled).** The task-force campaign (law side, 1983–1986) would replay the same years from Hart's desk:
 building the radar net, getting encryption budget approved, turning Callahan's spotters. In
 chapter 8 the two campaigns meet: the runner's "Flip" branch hands you Hart's desk for the
 final interdiction.
 
-**Difficulty ramp.** Each chapter raises the threat level: 1 radar site in 1979, plus
+**Historical difficulty pitch, not the current tutorial schedule.** Each chapter would raise the threat level: 1 radar site in 1979, plus
 interceptors in 1981, the aerostat and cutters in 1983, encryption and DF in 1984, informants
 in 1985. It also removes a crutch, such as a free loadmaster or a daytime-only schedule.
 
@@ -1193,7 +1195,7 @@ at every hub and regional airfield). The boss's and fixer's desks reach the same
 Saved by `StrategicSave` (owned, active, spent, auto). `tests/test_dealership.gd` has 13 tests. BALANCE entry 48 (arithmetic only: the
 balance runs build no dealership).
 
-Also in this change: the Palmetto Cay campaign is four chapters (see section 6) and the former chapters 5 to 8 are cut.
+Also in this change: the flying tutorial is four chapters (see section 6) and the former chapters 5 to 8 are cut. Its player-facing geography is now Costa Brava.
 
 
 ## 44. The Sunrise Collective: acid for grass
