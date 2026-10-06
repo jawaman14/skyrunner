@@ -9,6 +9,8 @@ extends CanvasLayer
 
 signal closed
 
+var _palette := ""
+var _invoker: WeakRef
 var panel: PanelContainer
 var status: Label
 var key_rows := {}  ## action -> the Label showing its bindings
@@ -21,6 +23,8 @@ var capturing := ""  ## an axis control waiting to be moved
 
 func _ready() -> void:
 	layer = 70
+	_palette = UIStyle.palette
+	_invoker = weakref(get_viewport().gui_get_focus_owner()) if get_viewport().gui_get_focus_owner() != null else null
 	ControlsConfig.ensure()
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -101,6 +105,7 @@ func _ready() -> void:
 		_refresh()))
 	foot.add_child(_btn("Save and close", close))
 	_refresh()
+	palette_btn.grab_focus.call_deferred()
 
 
 ## A button; the second callback (if any) is the right click.
@@ -160,7 +165,7 @@ func _tweak(c: String, what: String, dir: int) -> void:
 func _toggle_palette() -> void:
 	UIStyle.set_palette("neon" if UIStyle.palette == "safe" else "safe")
 	ControlsConfig.save_setting("palette", UIStyle.palette)
-	status.text = "Colours: %s - new screens use it now; restart for everything." % UIStyle.palette
+	status.text = "Colours: %s - open interface screens refresh." % UIStyle.palette
 	_refresh()
 
 
@@ -177,7 +182,7 @@ func _toggle_speech() -> void:
 
 func _input(ev: InputEvent) -> void:
 	var is_key: bool = ev is InputEventKey and ev.pressed and not ev.echo
-	if is_key and ev.physical_keycode == KEY_ESCAPE:
+	if (is_key and ev.physical_keycode == KEY_ESCAPE) or ev.is_action_pressed("ui_cancel"):
 		if waiting_key != "" or capturing != "":
 			waiting_key = ""
 			capturing = ""
@@ -205,11 +210,18 @@ func _input(ev: InputEvent) -> void:
 			_refresh()
 			get_viewport().set_input_as_handled()
 			return
-	if is_key:
-		get_viewport().set_input_as_handled()  # the panel is modal: no flying while it's open
+	if ev is InputEventKey and ev.echo and ev.is_action_pressed("ui_accept"):
+		get_viewport().set_input_as_handled()
+
+func _unhandled_input(_ev: InputEvent) -> void:
+	get_viewport().set_input_as_handled() # GUI controls receive navigation first.
 
 
 func _process(_dt: float) -> void:
+	if _palette != UIStyle.palette:
+		_palette = UIStyle.palette
+		get_child(0).theme = UIStyle.theme()
+		_refresh()
 	if capturing != "":
 		var b = ControlsConfig.axes.capture_poll(capturing)
 		if b != null:
@@ -224,6 +236,8 @@ func _process(_dt: float) -> void:
 
 
 func close() -> void:
+	if _invoker != null and is_instance_valid(_invoker.get_ref()):
+		_invoker.get_ref().grab_focus()
 	ControlsConfig.save_file()
 	closed.emit()
 	queue_free()

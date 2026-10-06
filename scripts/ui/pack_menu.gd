@@ -12,19 +12,23 @@ var rows: VBoxContainer
 var weight_bar: ProgressBar
 var weight_label: Label
 var status: Label
+var _palette := ""
+var _invoker: WeakRef
 const STEP := {"ammo": 30}
 
 
 func _ready() -> void:
 	layer = 70
+	_palette = UIStyle.palette
+	_invoker = weakref(get_viewport().gui_get_focus_owner()) if get_viewport().gui_get_focus_owner() != null else null
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.theme = UIStyle.theme()
 	add_child(root)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", UIStyle.box(Color(0.06, 0.02, 0.09, 0.95), 10, UIStyle.ACCENT, 2, Vector4(20, 14, 20, 14)))
-	panel.anchor_left = 0.3
-	panel.anchor_right = 0.7
+	panel.anchor_left = 0.14
+	panel.anchor_right = 0.86
 	panel.anchor_top = 0.14
 	panel.anchor_bottom = 0.86
 	root.add_child(panel)
@@ -41,14 +45,24 @@ func _ready() -> void:
 	v.add_child(weight_bar)
 	rows = VBoxContainer.new()
 	rows.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	v.add_child(rows)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(scroll)
+	scroll.add_child(rows)
 	status = UIStyle.caption("+ take from the armoury   - leave it   5 use a medkit   I or ESC close")
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(status)
+	var leave := Button.new()
+	leave.text = "Close [Esc]"
+	leave.pressed.connect(close)
+	v.add_child(leave)
 	refresh()
+	_focus_task.call_deferred()
 
 
 func refresh() -> void:
+	var owner := get_viewport().gui_get_focus_owner()
+	var selected: String = str(owner.get_meta("pack_action", "")) if owner != null else ""
 	for c in rows.get_children():
 		c.queue_free()
 	var kg := foot.weight()
@@ -74,17 +88,24 @@ func refresh() -> void:
 		h.add_child(cap)
 		var plus := Button.new()
 		plus.text = "+"
+		plus.set_meta("pack_action", item + "/take")
+		plus.accessibility_name = "Take " + title
 		plus.focus_mode = Control.FOCUS_ALL
 		plus.disabled = item == "medkit" and not near_aircraft.call()
 		plus.pressed.connect(func(): _act(foot.pack_add(item, STEP.get(item, 1))))
 		h.add_child(plus)
 		var minus := Button.new()
 		minus.text = "-"
+		minus.set_meta("pack_action", item + "/leave")
+		minus.accessibility_name = "Leave " + title
 		minus.focus_mode = Control.FOCUS_ALL
 		minus.disabled = have == 0 or item == "medkit"
 		minus.pressed.connect(func(): _act(foot.pack_drop(item, STEP.get(item, 1))))
 		h.add_child(minus)
 		rows.add_child(h)
+		for button in [plus, minus]:
+			if button.get_meta("pack_action") == selected and not button.disabled:
+				button.grab_focus()
 
 
 func _act(err: String) -> void:
@@ -93,14 +114,39 @@ func _act(err: String) -> void:
 
 
 func _input(ev: InputEvent) -> void:
+	if ev.is_action_pressed("ui_cancel"):
+		close()
+		get_viewport().set_input_as_handled()
+		return
 	if ev is InputEventKey and ev.pressed and not ev.echo:
 		if ev.physical_keycode in [KEY_ESCAPE, KEY_I]:
 			close()
 		elif ev.physical_keycode == KEY_5:
 			_act(foot.use_medkit())
+		else:
+			return # Native GUI navigation and activation run before modal fallback.
+		get_viewport().set_input_as_handled()
+	elif ev is InputEventKey and ev.echo and ev.is_action_pressed("ui_accept"):
 		get_viewport().set_input_as_handled()
 
+func _unhandled_input(_ev: InputEvent) -> void:
+	get_viewport().set_input_as_handled()
+
+func _focus_task() -> void:
+	for row in rows.get_children():
+		for child in row.get_children():
+			if child is Button and not child.disabled:
+				child.grab_focus()
+				return
+
+func _process(_dt: float) -> void:
+	if _palette != UIStyle.palette:
+		_palette = UIStyle.palette
+		get_child(0).theme = UIStyle.theme()
+		refresh()
 
 func close() -> void:
+	if _invoker != null and is_instance_valid(_invoker.get_ref()):
+		_invoker.get_ref().grab_focus()
 	closed.emit()
 	queue_free()

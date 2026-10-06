@@ -61,7 +61,11 @@ and real two-machine remote/voice validation remain unperformed.
    stable IDs; collector commitments use Cancel-first reviews. Hint controls,
    load/pack/controls/HQ/logistics buttons are focusable. Logistics has scrolling,
    a visible exit and retained site choices. Remaining preview adoption and
-   remote outcome presentation are still queued.
+   remote outcome presentation are still queued. Pack/Controls now let native
+   buttons handle keyboard navigation before the modal fallback, block held
+   Enter repeats, restore invoking focus and refresh their open palette. Pack
+   rows retain action IDs and scroll above a visible exit. Single cash-home
+   orders retain pending/refusal messages instead of reporting no cash.
 5. **Stations/maps/feed:** organize fifteen seats by task; selected-entity cards,
    acknowledged orders, grouped map layers and a shared role-filtered event feed.
    Shared persistent sequence outcomes now distinguish acknowledgement from a

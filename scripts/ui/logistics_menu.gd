@@ -261,12 +261,11 @@ func _all_home() -> void:
 		var r: Array = _command("cash_round", {"stops": with_cash, "to": Logistics.HQ, "plan": true})
 		_act(r if not r[0] else [true, "One truck is working its way round %d stashes and home." % with_cash.size()])
 		return
-	var n := 0
-	for id in with_cash:
-		var r: Array = _command("move_cash", {"from": id, "to": Logistics.HQ})
-		if r[0]:
-			n += 1
-	_act([true, "%d cash truck(s) heading home." % n if n > 0 else "No cash out in the stashes."])
+	if with_cash.is_empty():
+		_act([false, "No cash out in the stashes."])
+	else:
+		# One order: retain authoritative refusal or pending/partial feedback.
+		_act(_command("move_cash", {"from": with_cash[0], "to": Logistics.HQ}))
 
 
 func _round_text() -> String:
