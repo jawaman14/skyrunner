@@ -13,6 +13,17 @@ extends RefCounted
 ##   hq_rival the cartel's table (what the organisation knows about Los Cuervos)
 
 static var _mats := {}
+static var _plates := {}
+
+
+static func plate_material(path: String) -> StandardMaterial3D:
+	if not _plates.has(path):
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = load(path)
+		m.roughness = 0.95
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_plates[path] = m
+	return _plates[path]
 
 
 static func mat(key: String) -> StandardMaterial3D:
@@ -31,6 +42,8 @@ static func mat(key: String) -> StandardMaterial3D:
 		"window_lit": [Color(1.0, 0.85, 0.55), 0.3, 0.0],
 		"white": [Color(0.78, 0.78, 0.78), 0.6, 0.0],
 		"red": [Color(0.75, 0.12, 0.1), 0.6, 0.0],
+		"pump_enamel": [Color(0.57, 0.28, 0.21), 0.82, 0.0],
+		"pump_cream": [Color(0.81, 0.77, 0.64), 0.88, 0.0],
 		"blue": [Color(0.12, 0.2, 0.55), 0.5, 0.2],
 		"black": [Color(0.06, 0.06, 0.07), 0.5, 0.3],
 		"water": [Color(0.2, 0.62, 0.72, 0.85), 0.05, 0.0],
@@ -141,6 +154,33 @@ class Kit:
 		sb.position = at + Vector3(0, 0.7, 0)
 		sb.rotation.y = deg_to_rad(yaw)
 		root.add_child(sb)
+
+	## Decorative textured sign facing the building's front (-z), without collision.
+	func plate(path: String, at: Vector3, size: Vector2) -> void:
+		var mi := MeshInstance3D.new()
+		mi.name = "period-plate"
+		var mesh := QuadMesh.new()
+		mesh.size = size
+		mi.mesh = mesh
+		mi.material_override = Buildings.plate_material(path)
+		mi.position = at
+		mi.rotation.y = PI  # front of the building is -z
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(mi)
+
+	## Low-poly hose, merged into the existing rubber/black surface without collision.
+	func hose(points: Array[Vector3], radius := 0.035) -> void:
+		var t := _tool("black")
+		for i in points.size() - 1:
+			var axis := (points[i + 1] - points[i]).normalized()
+			var side := axis.cross(Vector3.FORWARD).normalized() * radius
+			var up := axis.cross(side).normalized() * radius
+			for j in 8:
+				var a := TAU * j / 8.0
+				var b := TAU * (j + 1) / 8.0
+				var p := side * cos(a) + up * sin(a)
+				var q := side * cos(b) + up * sin(b)
+				_quad(t, points[i] + p, points[i] + q, points[i + 1] + q, points[i + 1] + p)
 
 	## Axis-aligned box (centre, size) in the building's frame.
 	func box(c: Vector3, s: Vector3, key: String, collide := true) -> void:
@@ -362,6 +402,7 @@ static func hangar(k: Kit, c: Vector3, w := 18.0, d := 20.0, with_board := true)
 		k.box(c + Vector3(sx * (w / 2 - 0.2), 1.0, 0), Vector3(0.4, 2.0, d), "concrete_dark")
 	if with_board:
 		k.box(c + Vector3(w / 2 - 1.2, 1.5, d / 2 - 0.4), Vector3(2.0, 1.4, 0.1), "wood", false)
+		k.plate("res://assets/props/pinned_notices.svg", c + Vector3(w / 2 - 1.2, 1.5, d / 2 - 0.46), Vector2(1.86, 1.22))
 		k.interact(c + Vector3(w / 2 - 1.2, 1.0, d / 2 - 1.6), "jobs", "Job board")
 		k.box(c + Vector3(-w / 2 + 2.0, 0.6, d / 2 - 1.2), Vector3(3.0, 1.2, 1.2), "wood")  # workbench
 		k.interact(c + Vector3(-w / 2 + 2.0, 1.0, d / 2 - 2.6), "hangar", "Hangar: aircraft & gear")
@@ -377,8 +418,18 @@ static func tower(k: Kit, c: Vector3, h := 14.0) -> void:
 
 static func fuel_pump(k: Kit, c: Vector3) -> void:
 	k.box(c + Vector3(0, 0.1, 0), Vector3(3.5, 0.2, 2.5), "concrete")
-	k.box(c + Vector3(0, 0.9, 0), Vector3(0.8, 1.6, 0.6), "red")
-	k.box(c + Vector3(0, 1.8, 0), Vector3(1.0, 0.25, 0.8), "white", false)
+	k.box(c + Vector3(0, 0.9, 0), Vector3(0.8, 1.6, 0.6), "pump_enamel")
+	k.box(c + Vector3(0, 1.8, 0), Vector3(1.0, 0.25, 0.8), "pump_cream", false)
+	# Mechanical dispenser: bleached enamel, metal trim and a hanging rubber hose.
+	k.box(c + Vector3(0, 1.38, -0.315), Vector3(0.68, 0.66, 0.035), "pump_cream", false)
+	k.plate("res://assets/props/analogue_fuel_face.svg", c + Vector3(0, 1.4, -0.338), Vector2(0.56, 0.56))
+	k.box(c + Vector3(0, 0.34, -0.312), Vector3(0.72, 0.07, 0.025), "metal_rust", false)
+	k.box(c + Vector3(-0.28, 0.8, -0.312), Vector3(0.06, 0.25, 0.025), "metal_rust", false)
+	k.box(c + Vector3(0, 0.7, -0.316), Vector3(0.5, 0.16, 0.025), "pump_cream", false)
+	k.hose([c + Vector3(0.4, 1.5, -0.05), c + Vector3(0.7, 1.2, -0.05), c + Vector3(0.8, 0.45, -0.05),
+		c + Vector3(0.6, 0.32, -0.05), c + Vector3(0.46, 0.6, -0.05), c + Vector3(0.46, 1.25, -0.05)])
+	k.box(c + Vector3(0.46, 1.3, -0.08), Vector3(0.12, 0.28, 0.09), "black", false)
+	k.box(c + Vector3(0.45, 1.48, -0.08), Vector3(0.05, 0.17, 0.05), "metal", false)
 	k.interact(c + Vector3(0, 1.0, -1.4), "load", "Fuel & load planner")
 
 
@@ -396,6 +447,7 @@ static func shed(k: Kit, c: Vector3, w := 7.0, d := 5.0, key := "wood") -> void:
 	k.wall(c.x + w / 2, c.z - d / 2, c.x + w / 2, c.z + d / 2, c.y, 2.8, 0.2, key)
 	k.gable(c + Vector3(0, 2.8, 0), w, d, 1.4, "metal_rust")
 	k.box(c + Vector3(w / 2 - 1.0, 1.5, d / 2 - 0.25), Vector3(1.4, 1.0, 0.08), "wood", false)
+	k.plate("res://assets/props/pinned_notices.svg", c + Vector3(w / 2 - 1.0, 1.5, d / 2 - 0.30), Vector2(1.27, 0.87))
 	k.interact(c + Vector3(w / 2 - 1.0, 1.0, d / 2 - 1.2), "jobs", "Job board")
 
 
