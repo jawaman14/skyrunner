@@ -592,3 +592,7 @@ Use Up/Down and Enter to choose an answer, including choices beyond nine; 1–9 
 ### Reviewing purchases and services
 
 Hangar aircraft/gear purchases and repairs, and dealer vehicle purchases/sales, open a consequence review. Cancel is selected initially. Choose the action explicitly, then confirm; Escape cancels. Costs and ongoing insurance/repair charges are shown. If stock, pricing or availability changes during review, inspect the action again before committing. Accepted truck orders describe dispatch, not immediate delivery.
+
+### Stash interiors
+
+All eight stash types have an open storage interior. Walk to the workbench and use the Storage / logistics prompt to open logistics with that stash selected as the source. Stock, cash and orders remain authoritative simulation data. Burned sites show an unavailable label and reject storage access; their exit remains open. Decorative papers and furniture do not add inventory.

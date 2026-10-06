@@ -15,6 +15,7 @@ var cmd_fn: Callable  ## (name, args) -> [ok, message]
 var send_fn: Callable  ## optional asynchronous transport, returns command sequence
 var outcome_fn: Callable  ## (sequence) -> CommandPresentation record
 var _orders := {}
+var focused_stash := ""
 var pilot := false  ## the aircraft's seat: cash bags on and off
 var rows: VBoxContainer
 var trucks: VBoxContainer
@@ -145,6 +146,12 @@ func _build_works(what: String) -> void:
 	_act(_command("stash_works", {"stash": _sites[from_ob.selected], "what": what}))
 
 
+func focus_source(id: String) -> void:
+	focused_stash = id
+	if from_ob != null and _sites.has(id):
+		from_ob.select(_sites.find(id))
+		focused_stash = ""
+
 func refresh() -> void:
 	var lv: Dictionary = view_fn.call()
 	for c in rows.get_children():
@@ -193,6 +200,9 @@ func refresh() -> void:
 			to_ob.add_item("sell: " + b[1])
 		from_ob.select(_sites.find(keep_from) if _sites.has(keep_from) else 0)
 		to_ob.select(_dests.find(keep_to) if _dests.has(keep_to) else _dests.find(Logistics.HQ))
+	if not focused_stash.is_empty() and _sites.has(focused_stash):
+		from_ob.select(_sites.find(focused_stash))
+		focused_stash = ""
 	for t in lv.trucks:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
