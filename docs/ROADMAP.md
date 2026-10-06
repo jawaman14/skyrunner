@@ -15,16 +15,21 @@ The current draft stack is #178 (menu/HUD foundation), #179 (job previews),
 #180 (read-only fuel previews and feedback), #181 (airfield props), #182 (fuel
 cache props), #183 (interface/world audit). Integrate in dependency order after
 validation; do not merge automatically. #119 (patterns/Asset Bible) is independent.
-The integrated art baseline passed 909 tests. Exported Windows human walkthrough
+[Baseline reconciliation #184](https://github.com/jawaman14/skyrunner/pull/184),
+[Costa Brava map focus #185](https://github.com/jawaman14/skyrunner/pull/185), and
+[dialogue reliability/navigation #186](https://github.com/jawaman14/skyrunner/pull/186)
+are prepared as draft continuations of that stack. The current baseline passed
+915 tests across three shards (331 / 266 / 318, zero failures). Exported Windows human walkthrough
 and real two-machine remote/voice validation remain unperformed.
 
 ## Ordered implementation queue
 
-1. **Baseline consolidation:** verify the draft stack against main and exports;
-   reconcile documentation. Preserve historical reviews and desktop changes.
-2. **Dialogue:** wait for sequence-correlated host results; scroll/wrap choices;
-   support keyboard/controller selection beyond nine; block repeated activation;
-   show actual failures in every command-bearing conversation.
+1. **Baseline consolidation:** reconciliation is prepared in #184; complete
+   export and human release evidence before integrating the stack.
+2. **Dialogue:** implementation is prepared in #186 with correlated results,
+   refreshed-state gating, scrolling/wrapped choices, navigation and failure text.
+   Complete physical-controller, palette/read-aloud and display walkthroughs at
+   supported resolutions, plus two-machine delayed-result validation.
 3. **Contextual actions:** extend read-only Session descriptors to purchases,
    sales, transfers, repairs, prisoners and disbanding; add remote previews;
    revalidate execution and default destructive confirmations to Cancel.
