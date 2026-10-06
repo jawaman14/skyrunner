@@ -440,7 +440,6 @@ func _status(st: FlightModel.FlightState, lo: Loadout) -> void:
 		var d := PyMath.hypot(xy[0] - st.x, xy[1] - st.y) / 1000
 		var brg := UIStyle.bearing_to(st.x, st.y, xy[0], xy[1])
 		var tl = j.time_left(s.time)
-		var tls := "  %d:%02d left" % [int(tl / 60), int(fposmod(tl, 60))] if tl != null else ""
 		var extra := ""
 		if j.is_airdrop():
 			var boat = s.maritime.boat(j.boat_id) if j.boat_id != null else null
