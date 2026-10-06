@@ -174,14 +174,24 @@ func _update_focus() -> void:
 		var d := to.length()
 		var facing := look.dot(to.normalized())
 		var score := d - facing * 2.0
-		if facing > 0.2 and score < best:
+		if facing > 0.2 and score < best and unobstructed(a):
 			best = score
 			focus = a
 
 
 func use() -> void:
+	_update_focus() # Recheck reach and walls at activation, not just the previous frame.
 	if focus != null:
 		used.emit(focus.get_meta("action"), focus)
+
+
+func unobstructed(area: Area3D) -> bool:
+	if not is_instance_valid(area) or not is_inside_tree():
+		return false
+	var ray := PhysicsRayQueryParameters3D.create(cam.global_position, area.global_position, collision_mask, [get_rid()])
+	ray.collide_with_areas = false
+	ray.collide_with_bodies = true
+	return get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
 
 
 func toggle_torch() -> void:
