@@ -6,14 +6,14 @@ extends Node
 ##   godot -- --unlocks open                 # open world: every faction and mechanic from the start
 ##   godot -- --tutorial                     # the tutorial: lessons as you play, tips when things happen
 ##   godot -- --chapter 4                    # the story, skipping ahead to chapter 4 (1982)
-##   godot -- --mode campaign                # the tutorial campaign: Palmetto Cay, the classic island
+##   godot -- --mode campaign                # four flying lessons on Costa Brava
 ##   godot -- --mode coop                    # host: friends join as co-pilot / spotter
 ##   godot -- --mode versus                  # host: a friend runs the task-force desk
 ##   godot -- --police                       # play the task force against AI runners
 ##   godot -- --players 6                    # seats and rule layers for a table of six
 ##   godot -- --watch --graphics low         # the AI flies the career; you watch
 ##   godot -- --map city                     # Costa Brava, the city coast (the default for new games)
-##   godot -- --map 42                       # a generated island (0 = the classic one)
+##   godot -- --map 42                       # a generated island (positive seeds only)
 ##   godot -- --shot out.png --frames 90     # render N frames, save a screenshot, quit
 ##   godot --headless -- --smoke 600         # run N frames of a new game, print SMOKE OK, quit (CI)
 ##
@@ -57,8 +57,9 @@ func _ready() -> void:
 	start()
 
 
-func show_lobby() -> void:
+func show_lobby(notice := "") -> void:
 	var lobby := Lobby.new()
+	lobby.startup_notice = notice
 	add_child(lobby)
 	lobby.multiplayer_requested.connect(func(): open_mp())
 	lobby.room_requested.connect(func(opts):
@@ -84,6 +85,10 @@ func _host_extras(server) -> void:
 ## The host's waiting room: listen now, show the room, and when the host starts, build the game with the server that is already
 ## listening (its players have chosen their seats).
 func _open_room() -> void:
+	var map_error := PlayableMaps.error(int(args["map"]))
+	if map_error != "":
+		show_lobby(map_error)
+		return
 	var server := HostServer.new()
 	server.password = str(args["password"])
 	add_child(server)
@@ -176,6 +181,10 @@ func start() -> void:
 	if args["connect"] != "":
 		_join()
 		return
+	var map_error := PlayableMaps.error(int(args["map"]))
+	if map_error != "":
+		show_lobby(map_error)
+		return
 	var features = null
 	if args["players"] or args["layer"]:
 		var plan := Layers.plan_match(maxi(1, args["players"]), args["mode"] != "coop", args["layer"])
@@ -196,6 +205,11 @@ func start() -> void:
 	var mode: String = args["mode"]
 	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and features == null
 	var save := save_dir + ("campaign.json" if mode == Roles.CAMPAIGN else ("story.json" if story else "save.json"))
+	if not args["new"]:
+		var save_error := PlayableMaps.error(int(args["map"]), Session.read_save(save))
+		if save_error != "":
+			show_lobby(save_error)
+			return
 	if args["new"] and FileAccess.file_exists(save):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(save))
 	var opts := {"seed": args["seed"], "mode": mode, "ai_law_upgrades": true, "ground_war": true, "chronicle": true, "agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true, "races": true, "airframe": true, "casino": true, "dealership": true, "psychedelics": true, "fog": true}  # the AI chief shops as forfeiture comes in
@@ -205,7 +219,7 @@ func start() -> void:
 		opts["career"] = true
 	elif mode != Roles.CAMPAIGN and features == null:
 		opts["money"] = Session.OPEN_FLOAT  # open mode: everything live at once, so a float (a new game only)
-	if args["map"] >= 0:  # --map 0 = classic island, --map N = generated island N
+	if args["map"] >= 0:  # positive seeds select generated maps; zero is rejected above
 		opts["map_seed"] = args["map"]
 	elif not FileAccess.file_exists(save):
 		opts["map_seed"] = MapCity.SEED  # a new game starts on the city coast; old saves keep their island

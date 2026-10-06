@@ -59,7 +59,7 @@ keys, **F8** to rebind them, **F4** for the multiplayer menu.
 - **The story** (the default): twelve chapters, 1979 to 1988 (*Square Grouper*, *The Connection*, *Blotter*, *Cocaine
   Cowboys*, *Family Business*, *The Task Force*, *Isla Soberana*, *The House*, *The Company*, *Kingpin*, *The Hearings*, *Last Flight*). Each chapter opens part
   of the game, so you meet each system on its own. *Unlocks: Open* has all of it from the start; the old flying
-  campaign is still there as the *Tutorial* (Palmetto Cay, four chapters).
+  campaign is still there as the *Flying lessons* (Costa Brava, four chapters).
 - **A dedicated server** (`docs/SERVER.md`): run the game headless on a cloud VM (Docker, systemd, or a Google Compute Engine script) and let
   friends join as remote seats, with a password, saves, an AI pilot and a status probe.
 - **Costa Brava**, the default map: the port city of San Telmo (about 6,900 buildings), docks, an airport, a river
@@ -109,7 +109,7 @@ All flags are optional; any flag skips the lobby.
 | `--mode solo\|campaign\|coop\|versus` | game mode (co-op and versus host remote seats) |
 | `--police` | the task-force desk against AI runners, offline |
 | `--players N` / `--layer 1-5` | seats and rule layers for a table of N (5+ adds the HQs and seasons) |
-| `--map city\|N` | `city` = Costa Brava (default for new games), `0` = the classic island, `N` = generated island N |
+| `--map city\|N` | `city` = Costa Brava (default for new games), positive `N` = generated island N; `0` is retired |
 | `--graphics low\|medium\|high` | quality preset |
 | `--watch` | the pilot bot flies the career; you watch |
 | `--host` / `--port 47800` | open remote seats in solo |

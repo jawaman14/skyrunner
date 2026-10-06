@@ -1,6 +1,6 @@
 class_name Campaign
 extends RefCounted
-## Campaign "Tutorial (Palmetto Cay)": four chapters, 1979-1982.
+## Campaign "Flying lessons (Costa Brava)": four chapters, 1979-1982.
 ##
 ## Each chapter switches on one or two new systems for both sides and sets a few
 ## objectives. The complexity ramp is the point: by 1982 you're juggling ferry
@@ -100,13 +100,13 @@ static var CHAPTERS: Array = _chapters()
 static func _chapters() -> Array:
 	return [
 		Chapter.new(1, 1979, "Mail Run",
-			"Palmetto Cay, 1979. The bank owns half your Cessna and Rosa's mail contract barely\n"
+			"Costa Brava, 1979. The bank owns half your Cessna and Rosa's mail contract barely\n"
 			+ "covers the fuel. Fly charters and freight, learn to balance a load, and prove you\n"
-			+ "can get into Eagle's Nest - the mesa strip nobody else will touch.",
-			[], [], [Objective.new("earn_legal", "Earn $5,000 from legal work", 5000), Objective.new("land_EGL", "Land at Eagle's Nest")]),
+			+ "can get into Mesa del Aguila - the mesa strip nobody else will touch.",
+			[], [], [Objective.new("earn_legal", "Earn $5,000 from legal work", 5000), Objective.new("land_EGL", "Land at Mesa del Aguila")]),
 		Chapter.new(2, 1980, "A Favor for Manny",
 			"Manny Arce sells boats at Smuggler's Cove and pays cash. He needs two sacks of\n"
-			+ "'coffee' moved to the Old Quarry, quietly. Harbor and Valley radars can't see you\n"
+			+ "'coffee' moved to the Old Quarry, quietly. San Telmo and Valle Verde radars can't see you\n"
 			+ "below their clutter floor - the radar detector tells you when they're painting you.",
 			["contraband", "detector"], [], [Objective.new("hot_clean", "Deliver a hot load without ever being wanted")],
 			{"setup": Campaign._manny_job}),
@@ -120,7 +120,7 @@ static func _chapters() -> Array:
 		Chapter.new(4, 1982, "Long Legs",
 			"The loads come from the south now, farther than the tanks can carry. A bladder in\n"
 			+ "the cabin fixes that - if someone pumps it forward. The Coast Guard has a cutter at\n"
-			+ "Harbor, and people talk: every hot job you take is a chance for an informant.",
+			+ "San Telmo, and people talk: every hot job you take is a chance for an informant.",
 			["contraband", "detector", "airdrop", "copilot", "scanner", "ferry", "spotters"],
 			["interceptors", "rivals", "cutters", "informants"],
 			[Objective.new("to_cove", "Fly in from the south and get 3 bales to the cove", 3)],
