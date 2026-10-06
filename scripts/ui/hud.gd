@@ -32,6 +32,8 @@ var toasts: ToastFeed
 var crew: PanelContainer
 var crew_lbl: Label
 var warn: Label
+var warning_panel: PanelContainer
+var threat_label: Label
 var center: Label
 var hints: KeyHints
 var papi_label: Label
@@ -63,7 +65,20 @@ func setup(sess: Session) -> Hud:
 	intel.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_anchor(intel, Vector4(0.5, 0.5, 1, 0.62), Vector4(0, 0, -14, 0))
 	add_child(intel)
-	warn = _centered(UIStyle.label("", 30, UIStyle.RED), 0.22)
+	warning_panel = _panel(Color(0.16, 0.025, 0.035, 0.92))
+	_anchor(warning_panel, Vector4(0.31, 0.18, 0.69, 0.18), Vector4(0, 0, 0, 52))
+	warning_panel.visible = false
+	var warning_stack := VBoxContainer.new()
+	warning_stack.add_theme_constant_override("separation", UIStyle.SPACE_XS)
+	warning_panel.add_child(warning_stack)
+	warn = UIStyle.label("", 24, UIStyle.RED)
+	warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	warning_stack.add_child(warn)
+	threat_label = UIStyle.label("", 13, UIStyle.AMBER)
+	threat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	warning_stack.add_child(threat_label)
+	add_child(warning_panel)
+	zones["warning"] = warning_panel
 	center = _centered(UIStyle.label("", 24, UIStyle.AMBER), 0.42)
 	banner = _centered(UIStyle.title("", 72), 0.3)
 	banner_sub = _centered(UIStyle.label("", 30, UIStyle.WHITE, UIStyle.script()), 0.41)
@@ -445,18 +460,23 @@ func _crew(lo: Loadout) -> void:
 
 
 func _warnings(st: FlightModel.FlightState, c: FlightModel.Controls) -> void:
-	var warns := []
+	var critical := []
+	var caution := []
 	if st.stall_warning:
-		warns.append("STALL")
+		critical.append("STALL")
 	if s.police.bust_meter > 1:
-		warns.append("POLICE ON YOUR TAIL")
+		caution.append("POLICE ON YOUR TAIL")
 	if s.police.rival_meter > 1:
-		warns.append("RIVALS CLOSING")
+		caution.append("RIVALS CLOSING")
 	if st.fuel_lb < 20 and not st.on_ground:
-		warns.append("LOW FUEL")
+		critical.append("LOW FUEL")
 	if c.flaps > 0 and st.ias_kts > s.spec.max_flap_kts + 5:
-		warns.append("FLAP OVERSPEED")
-	warn.text = "   ".join(warns)
+		critical.append("FLAP OVERSPEED")
+	warn.text = "   ".join(critical)
+	threat_label.text = "   ".join(caution)
+	warning_panel.visible = not critical.is_empty() or not caution.is_empty()
+	warn.visible = not critical.is_empty()
+	threat_label.visible = not caution.is_empty()
 
 
 func _papi(st: FlightModel.FlightState) -> void:
