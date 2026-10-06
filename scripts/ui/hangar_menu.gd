@@ -28,9 +28,8 @@ func _build() -> void:
 	content.add_child(detail)
 	tree = UpgradeTree.new().setup("runner")
 	tree.buy.connect(func(id):
-		var err = s.buy_upgrade("runner", id)
-		if err:
-			s.say(err)
+		var result: Array = s.command(Roles.PILOT, "upgrade", {"id": id})
+		show_feedback("Upgrade fitted." if result[0] else str(result[1]), bool(result[0]))
 		refresh())
 	tree.visible = false
 	content.add_child(tree)
@@ -124,6 +123,8 @@ func _detail() -> void:
 
 
 func key(k: String) -> void:
+	if confirmation_key(k):
+		return
 	if k in ["left", "right"]:
 		page = 1 - page
 		refresh()
@@ -149,14 +150,22 @@ func key(k: String) -> void:
 			var err = null
 			match r[0]:
 				"aircraft":
-					err = s.buy_or_switch(r[1].key)
+					perform_action("buy_aircraft", {"key": r[1].key})
+					return
 				"gear":
-					err = s.buy_gear(r[1])
+					perform_action("buy_gear", {"name": r[1]})
+					return
 				"spotter":
-					err = s.hire_spotter(r[1])
+					var result: Array = s.command(Roles.PILOT, "hire_spotter", {"code": r[1]})
+					err = null if result[0] else result[1]
+					show_feedback("Spotter hired." if result[0] else str(result[1]), bool(result[0]))
 				"service":
-					var res: Array = s.command(Roles.PILOT, "stop_work" if not s.airframe.work.is_empty() else "service", {"part": "both"})
+					if s.airframe.work.is_empty():
+						perform_action("service", {"part": "both"})
+						return
+					var res: Array = s.command(Roles.PILOT, "stop_work", {})
 					err = null if res[0] else res[1]
+					show_feedback("Work stopped; completed repairs and prior charges remain." if res[0] else str(res[1]), bool(res[0]))
 				"copilot":
 					if s.copilot == "human":
 						err = "Your co-pilot is a real person - ask them."
@@ -164,5 +173,5 @@ func key(k: String) -> void:
 						s.set_copilot(null if s.copilot else "ai")
 						s.say("Co-pilot aboard." if s.copilot else "Co-pilot stays on the ground.")
 			if err:
-				s.say(err)
+				show_feedback(str(err), false)
 			refresh()

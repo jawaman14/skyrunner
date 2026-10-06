@@ -33,9 +33,13 @@ and real two-machine remote/voice validation remain unperformed.
    Actual scene removal/replacement and duplicate pending clicks are covered.
    Complete physical-controller, read-aloud and visual display walkthroughs at
    supported resolutions, plus two-machine delayed-result validation.
-3. **Contextual actions:** extend read-only Session descriptors to purchases,
-   sales, transfers, repairs, prisoners and disbanding; add remote previews;
-   revalidate execution and default destructive confirmations to Cancel.
+3. **Contextual actions:** general read-only descriptions and optional remote
+   preview requests are implemented for aircraft/gear/vehicle purchases, vehicle
+   and product sales, single cash/goods truck transfers, repairs, prisoner policy/
+   bulk actions and squad disbanding. Command execution rechecks current state.
+   Hangar/dealer reviews use the shared Cancel-first confirmation. Finish preview
+   UI adoption across remaining menus, multi-stop/armoury transfers, dialogue
+   commitment review and station clients; unsupported previews stay explicit.
 4. **Menus/settings:** finish focus, selection, scrolling, persistent feedback,
    disabled reasons and palette refresh across all menus. Hangar/dealer first,
    logistics/rackets next, then remaining screens.

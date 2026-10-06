@@ -587,3 +587,7 @@ For flags and building, see the [README](../README.md). For every system's rules
 ### Conversations
 
 Use Up/Down and Enter to choose an answer, including choices beyond nine; 1–9 remain shortcuts. Answers wrap and scroll, and Leave/Back or Escape closes the conversation. While a command is pending, further choices are blocked. Remote success waits for both the matching host acknowledgement and an updated view. If the result is unknown, inspect the current state before trying again: the game does not automatically resend the action.
+
+### Reviewing purchases and services
+
+Hangar aircraft/gear purchases and repairs, and dealer vehicle purchases/sales, open a consequence review. Cancel is selected initially. Choose the action explicitly, then confirm; Escape cancels. Costs and ongoing insurance/repair charges are shown. If stock, pricing or availability changes during review, inspect the action again before committing. Accepted truck orders describe dispatch, not immediate delivery.

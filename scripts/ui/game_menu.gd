@@ -15,6 +15,8 @@ var subtitle: Label
 var footer: Label
 var hints: KeyHints
 var close_button: Button
+var confirmation: ConfirmBox
+var _pending_action := {}
 var feedback: Label
 
 
@@ -92,6 +94,9 @@ func open() -> void:
 
 
 func close() -> void:
+	if confirmation != null and confirmation.visible:
+		confirmation.key("esc")
+	_pending_action = {}
 	visible = false
 	closed.emit()
 
@@ -138,3 +143,37 @@ static func selected(l) -> int:
 	if l is DataTable:
 		return l.selected_row()
 	return l.get_selected_items()[0] if l.is_anything_selected() else -1
+
+
+## Shared read-only review + revalidated execution for committing decisions.
+func perform_action(name: String, args := {}) -> void:
+	var action := s.describe_action(Roles.PILOT, name, args)
+	if not action.enabled:
+		show_feedback(action.disabled_reason, false)
+		return
+	if confirmation == null:
+		confirmation = ConfirmBox.new().setup("", "Confirm", "Cancel")
+		add_child(confirmation)
+		confirmation.answered.connect(_action_answered)
+	_pending_action = action.duplicate(true)
+	confirmation.msg.text = str(action.label) + "\n\n" + str(action.preview)
+	confirmation.yes_btn.text = str(action.label)
+	confirmation.ask()
+
+func _action_answered(yes: bool) -> void:
+	var action := _pending_action
+	_pending_action = {}
+	if not yes or action.is_empty():
+		return
+	var fresh := s.describe_action(Roles.PILOT, action.command, action.args)
+	if not fresh.enabled:
+		show_feedback(fresh.disabled_reason, false)
+	elif fresh.preview != action.preview or fresh.label != action.label:
+		show_feedback("State changed. Review the updated action before confirming.", false)
+	else:
+		var result: Array = s.command(Roles.PILOT, action.command, action.args)
+		show_feedback("Accepted: " + str(fresh.label) + ". " + str(fresh.preview) if result[0] else str(result[1]), bool(result[0]))
+	refresh()
+
+func confirmation_key(k: String) -> bool:
+	return confirmation.key(k) if confirmation != null and confirmation.visible else false

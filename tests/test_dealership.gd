@@ -245,10 +245,20 @@ func test_the_dealer_screen_buys_sells_and_drives() -> void:
 	m.setup(s)
 	m.browse()
 	check(m.lot_rows.size() == Dealership.CATALOGUE.size(), "the whole lot is listed")
-	m.key("enter")  # the first row: the hatch
+	m.key("enter")  # the first row: review the hatch
+	check_eq(s.dealer.owned.size(), 0, "review spends nothing")
+	m.key("right")
+	for frame in 3:
+		await Engine.get_main_loop().process_frame
+	m.key("enter")
 	check_eq(s.dealer.owned.size(), 1, "bought from the lot")
 	m.key("right")
 	m.key("s")
+	check_eq(s.dealer.owned.size(), 1, "sale review keeps the vehicle")
+	m.key("right")
+	for frame in 3:
+		await Engine.get_main_loop().process_frame
+	m.key("enter")
 	check_eq(s.dealer.owned.size(), 0, "sold from the list of yours")
 	m.key("a")
 	check(s.dealer.auto, "A hands the fleet to the AI")

@@ -232,7 +232,43 @@ func checkpoint_on(a: Vector2, b: Vector2) -> String:
 
 ## `careful` (the AI): don't send into a checkpoint - wait for the road to clear.
 ## A human gets the warning and the choice.
+func transfer_reason(from: String, to: String, what: String, amount: float) -> String:
+	if not is_finite(amount) or amount <= 0.0:
+		return "Choose a positive finite amount."
+	if what != "cash" and what not in goods():
+		return "Move what?"
+	if from == to:
+		return "It's already there."
+	if not stock.has(from) and from != HQ:
+		return "No such stash."
+	if not (stock.has(to) or to == HQ or MEETS.has(to)):
+		return "No such place."
+	for site in [from, to]:
+		var stash = sess.stash_net.get_stash(site)
+		if stash != null and stash.burned:
+			return "%s is burned." % name_of(site)
+	if what == "cash":
+		var have: float = float(sess.money) if from == HQ else float(cash.get(from, 0.0))
+		return "No cash at %s." % name_of(from) if minf(amount, have) < 1.0 else ""
+	if from == HQ:
+		return "The HQ keeps no product."
+	if to == HQ:
+		return "Product goes to a stash, not the club."
+	if MEETS.has(to):
+		if sess.trade == null:
+			return "No trade in this game."
+		var why: String = sess.trade.available(to)
+		if why != "":
+			return why
+		if not Trade.BUYERS[to].cap.has(what):
+			return "%s don't buy %s." % [Trade.BUYERS[to].name, what]
+	return "No %s at %s." % [what, name_of(from)] if minf(amount, float(stock[from][what])) < 0.5 else ""
+
+
 func send(from: String, to: String, what: String, amount: float, careful := false) -> String:
+	var reason := transfer_reason(from, to, what, amount)
+	if reason != "":
+		return reason
 	if from == to:
 		return "It's already there."
 	if not stock.has(from) and from != HQ:

@@ -126,3 +126,7 @@ v2 clients that name a role in the hello still go straight into it.
 
 From the game: the lobby's **Join** with "pick a seat" (or `--connect HOST:PORT --role pick`) opens
 the seat picker; `--role lieutenant` or `--role patrol` sits straight down at those desks.
+
+## Read-only action previews
+
+New hosts advertise `action_previews` in welcome capabilities. A link's `request_preview(name, args)` returns a sequence; `previews[sequence]` holds the read-only action descriptor when answered. Remote requests/replies use `preview_request`/`preview` and are distinct from command acknowledgements. Hosts use the requesting seat's permissions before reading action state. Older peers keep existing commands; missing capability is explicitly reported as preview unavailable. A preview is not a reservation or transaction: execution always checks current state again.

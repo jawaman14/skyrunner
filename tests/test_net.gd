@@ -188,3 +188,21 @@ func test_wire_protocol_is_python_compatible() -> void:
 		check(snap != null, "a snapshot for the v2 client")
 		check_eq(int(snap.v), Snapshot.PROTOCOL_VERSION)
 	peer.disconnect_from_host()
+
+
+func test_remote_read_only_preview_and_permission_filtering() -> void:
+	var cp := _client("Preview", Roles.COPILOT)
+	check(_pump_until(func(): return cp.latest != null))
+	check(cp.capabilities.has("action_previews"))
+	var job: Dictionary = cp.latest.board[0]
+	var money := sess.money
+	var count := sess.active_jobs.size()
+	var seq := cp.request_preview("accept_job", {"job_id": job.id})
+	check(_pump_until(func(): return cp.previews.has(seq)))
+	check(cp.previews[seq].command == "accept_job" and cp.previews[seq].has("preview"))
+	check_eq(sess.money, money)
+	check_eq(sess.active_jobs.size(), count)
+	check(not cp.acks.has(seq), "preview does not masquerade as mutation acknowledgement")
+	seq = cp.request_preview("buy_vehicle", {"id": "van"})
+	check(_pump_until(func(): return cp.previews.has(seq)))
+	check(not cp.previews[seq].enabled and cp.previews[seq].preview == "", "forbidden action reveals no business state")
