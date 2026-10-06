@@ -49,7 +49,13 @@ and real two-machine remote/voice validation remain unperformed.
    commitment review and station clients; unsupported previews stay explicit.
 4. **Menus/settings:** finish focus, selection, scrolling, persistent feedback,
    disabled reasons and palette refresh across all menus. Hangar/dealer first,
-   logistics/rackets next, then remaining screens.
+   logistics/rackets next, then remaining screens. The shared shell now focuses
+   task controls, handles real table/controller navigation, restores invoking
+   focus, and refreshes open palettes. Dealer/hangar/collector selection follows
+   stable IDs; collector commitments use Cancel-first reviews. Hint controls,
+   load/pack/controls/HQ/logistics buttons are focusable. Logistics has scrolling,
+   a visible exit and retained site choices. Remaining preview adoption and
+   remote outcome presentation are still queued.
 5. **Stations/maps/feed:** organize fifteen seats by task; selected-entity cards,
    acknowledged orders, grouped map layers and a shared role-filtered event feed.
 6. **Placement/access:** deterministic footprints, entrances, walk/loading

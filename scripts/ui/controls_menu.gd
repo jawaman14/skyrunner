@@ -107,7 +107,7 @@ func _ready() -> void:
 func _btn(text: String, cb: Callable, right := Callable()) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.focus_mode = Control.FOCUS_NONE
+	b.focus_mode = Control.FOCUS_ALL
 	b.pressed.connect(cb)
 	if right.is_valid():
 		b.button_mask = MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT
