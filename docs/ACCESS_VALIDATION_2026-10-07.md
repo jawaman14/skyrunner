@@ -1,0 +1,28 @@
+# Site access validation — 7 October 2026
+
+Source/terrain diagnostic, not an exported walkthrough. Costa Brava with
+`Terrain.natural = true` reports 12 checked walking/loading candidate pairs.
+The initial straight-leg probe checked five; nearby footprint detours add seven.
+These counts measure the shared authoring records, not all scenery or gameplay reachability.
+
+Remaining examples:
+
+- HAR hangars/pump: candidate lengths approximately 129–133m exceed the conservative 120m local connector search. An authored apron/access corridor is still needed; this does not establish physical impossibility.
+- VAL and other strips: 309–557m candidates need authored access corridors. La Selva remains deliberately without a public road; no network is regenerated.
+- Rival HQ and lock-up: vehicle grade checks fail and need physical reproduction/correction.
+- Camp/quarry/villa: no validated detour for the current building/terrain candidates.
+- Cay boathouse and Hotel Cielo: offshore/foreign locations do not acquire an imaginary Costa Brava public-road connection.
+- Harbour docks: long candidates need a shared shore/service corridor, rather than individual straight lines across shore scenery.
+
+The developer overlay now draws validated walking/loading paths and retains explicit
+failure reasons. Checks use primary functional footprints, a 0.8m walking and 2.6m
+vehicle clearance, 4m terrain/deck samples, runway polygons and mode-specific grades.
+The visibility search is deterministic and read-only; road topology, terrain,
+flight performance, payroll and economy are unchanged. Ancillary scenery, thresholds/
+steps and complete exported physical/network routes still require validation.
+
+Evidence: five SiteAccess tests and four SiteLayout regression tests, with no script
+errors. Tests cover short obstacles, footprint detours, water/deck differences,
+mode-specific grades, runway exclusion, disconnected graphs, unchanged authoring
+records and deterministic Costa Brava/generated records. Scratch probe output is
+local diagnostic data, not stored screenshot or human-release evidence.
