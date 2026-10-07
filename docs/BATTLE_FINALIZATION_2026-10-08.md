@@ -14,8 +14,10 @@ accounts. Ammo/weapon returns and casualty/arrest calculations are unchanged;
 no new random draws or combat tuning are introduced.
 
 Focused validation: ground 30 passed, foot combat 9 passed, battle save/formatter
-2 passed; zero failures and no script/parse errors. Full final-tree regression
-and smoke are recorded after completion. Existing shutdown cleanup diagnostics
+2 passed; zero failures and no script/parse errors. At code head 4707627, the final full suite passes 1,027 tests
+(369/313/345), zero failed and no script/parse errors; smoke reports SMOKE OK.
+Save/parity/export coverage is included; native hygiene/export exclusions and
+Git diff checks pass. Existing shutdown cleanup diagnostics
 remain separate. The ten-seed AI comparison belongs to #244, not a dedicated
 external-casualty balance measurement or a human battle playtest.
 

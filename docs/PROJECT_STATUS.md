@@ -93,3 +93,17 @@ records performed and unperformed checks, known diagnostics and review findings.
 Use `tools/test.sh` for a full sharded run and record its three shard totals in
 this file and the dated roadmap history. Focused PR evidence belongs in the PR
 body and roadmap. Do not replace a verified count with a source estimate.
+
+## Unmerged faction follow-ups, 8 October 2026
+
+PR #244 fixes active escort reassignment and stale police surveillance. Its code
+head 6880d41 passes 1,026 desktop tests (369/313/344), zero failed, and smoke OK.
+This is not a replacement for the merged baseline. The ten-seed war comparison
+shows material arrest/burned-stash changes and requires wider acceptance review.
+[Audit and raw-evidence link](FACTION_AI_AUDIT_2026-10-08.md).
+
+PR #245 follows with external-removal fight cleanup and correct settled reports.
+Focused ground/foot/report tests and smoke pass. At code head 4707627, full desktop
+regression passes 1,027 tests, zero failed and no script/parse errors; evidence is recorded
+in [the lifecycle report](BATTLE_FINALIZATION_2026-10-08.md). No merge or human
+acceptance claim is made. Planning PRs #241-#243 remain documentation only.

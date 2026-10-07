@@ -120,3 +120,24 @@ history test verifies 64 stored/16 presented limits. All pass. These extra tests
 were run separately, not included in the 1,021 full-suite count. Existing shutdown
 ObjectDB/resource/PagedAllocator cleanup diagnostics remain separately recorded.
 Drafts #238, #239 and #240 are pushed; merged baseline and human gates are unchanged.
+
+## Faction AI and battle lifecycle follow-ups, 8 October 2026
+
+Draft #244 preserves active truck escorts through ordinary AI planning while
+allowing emergency retreat, and expires police stakeout registrations after
+reassignment. Code 6880d41 passes 1,026 full desktop tests, zero failed, and smoke.
+Ten paired three-hour war seeds show material changes: mean organisation arrests
+19.5 to 23.5 and burned stashes 0.2 to 0.8. Keep wider balance/human review pending;
+no compensating tuning. See FACTION_AI_AUDIT_2026-10-08.md and its raw comparison.
+
+Draft #245 corrects external combatant removal: clear both engagement references,
+settle the survivor and then record accounts. Ground 30, foot 9 and report 2 focused
+tests pass; smoke is OK. Final code 4707627 passes all 1,027 desktop tests (369/313/345), zero failed
+and no script/parse errors.
+This is required follow-up for #240's reproduced stale fighting state. Human order
+ownership, existing loss/arrest authority and ammo returns remain preserved.
+
+Planning drafts #241-#243 describe remaining physical access, command feedback and
+coastal/release packages; they do not implement those features. The 92 blocked
+loading pairs, operational/custody/tactical debriefs, knowledge policy, coastal
+walkthrough/performance and real two-machine/controller/release gates remain open.
