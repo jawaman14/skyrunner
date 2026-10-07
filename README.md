@@ -16,7 +16,7 @@ exports it to Linux, Windows and macOS.
 | **Play it** | [INSTALL.md](INSTALL.md): download a build or run from source. Beta testers: [BETA.md](BETA.md) (report with F12). |
 | **Version** | 0.9.0-beta.1 |
 | **Engine** | Godot 4.7.2, GDScript only, Jolt physics |
-| **Size** | about 44,000 lines of game code, about 740 tests |
+| **Status** | [PROJECT_STATUS.md](docs/PROJECT_STATUS.md): verified, pending and deferred work |
 
 | **Dusk on the boulevard** | **A firefight at the docks** | **The city at night** |
 |---|---|---|
@@ -130,7 +130,7 @@ the network layered on top. [CLAUDE.md](CLAUDE.md) has the conventions; the shor
   [docs/DESIGN.md](docs/DESIGN.md)); new systems sit behind a static switch registered in `scripts/sim/switches.gd`,
   and a test scans the sim for global random draws and clock reads.
 - **Warnings are errors.** Give locals an explicit type whenever the value is a Variant.
-- **Tests.** `./tools/test.sh [filter]`: about 740 tests in 90 files, including parity and golden fixtures
+- **Tests and verification.** Run `./tools/test.sh [filter]`; current verified, pending and deferred status is in [PROJECT_STATUS.md](docs/PROJECT_STATUS.md)
   ([tests/fixtures/README.md](tests/fixtures/README.md)). CI runs them as three parallel shards, exports Linux,
   Windows and macOS builds and smoke-tests them ([.github/workflows/](.github/workflows/)).
 - **Layout.** `scripts/sim/` the simulation (`Session` is a chain of layers, state to commands); `scripts/bots/`
