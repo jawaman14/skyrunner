@@ -310,11 +310,13 @@ func _put(key: String, v: float) -> void:
 		progress[key] = v
 
 
-func _waive(key: String, reason: String, status := "waived") -> void:
+func _waive(key: String, reason: String, status := "waived") -> bool:
 	for o in chapter.objectives:
 		if o.key == key and progress.get(key, 0.0) < o.target and not outcomes.has(key):
 			outcomes[key] = reason
 			outcome_status[key] = status
+			return true
+	return false
 
 
 func _on_event(ev: EventBus.Event) -> void:
@@ -385,14 +387,15 @@ func tick(s) -> void:
 		_put("family_deal", maxf(progress.get("family_deal", 0.0), 1.0))
 	# no softlocks: a faction that's gone (convicted, burned, cut us loose) can't be dealt with
 	if s.family != null and s.family.gone and progress.get("family_deal", 0.0) < 1.0:
-		_waive("family_deal", "The Morettis were convicted before a deal was completed.")
-		s.say("The Commission trial took the Morettis before we could deal with them. The story moves on.")
+		if _waive("family_deal", "The Morettis were convicted before a deal was completed."):
+			s.say("The Commission trial took the Morettis before we could deal with them. The story moves on.")
 	if chapter.title == "The House" and s.casino != null:
 		var cz: Casino = s.casino
 		if cz.status == "seized" or not cz.active() or s.family.gone:
+			var newly_waived := false
 			for k in ["casino_stake", "casino_laundered", "casino_out"]:
-				_waive(k, "The house is no longer available.")
-			if cz.status != "seized":
+				newly_waived = _waive(k, "The house is no longer available.") or newly_waived
+			if newly_waived and cz.status != "seized":
 				s.say("The Family's house is out of reach: the story moves on.")
 		else:
 			_put("casino_stake", 1.0 if cz.stake > 0.0 else 0.0)
@@ -400,9 +403,11 @@ func tick(s) -> void:
 				cz.force_uprising_at = s.time + 600.0
 				s.say("Word from the capital: the General's colonels are meeting. It may be time to be somewhere else.")
 	if s.agency != null and (not s.agency.active() or s.agency.hung_out) and chapter.title == "The Company" and progress.get("agency_jobs", 0.0) < 99.0:
+		var newly_waived := false
 		for k in ["agency_jobs", "guns_to_company"]:
-			_waive(k, "The Company cut us loose before this work was completed.")
-		s.say("The Company has cut us loose. So much for friends in Washington - the story moves on.")
+			newly_waived = _waive(k, "The Company cut us loose before this work was completed.") or newly_waived
+		if newly_waived:
+			s.say("The Company has cut us loose. So much for friends in Washington - the story moves on.")
 	_put("bank", float(s.money))
 	_put("net_worth", float(s.money) + (s.trade.stock_value() if s.trade != null else 0.0)
 		+ (s.logistics.cash_out() if s.logistics != null else 0.0))
