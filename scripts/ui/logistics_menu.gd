@@ -367,11 +367,15 @@ func _command(name: String, args: Dictionary) -> Array:
 	if review_link != null and name in ActionReview.COMMANDS:
 		if is_instance_valid(review):
 			return [false, "An action review is already open."]
-		review = ActionReview.new().setup(review_link, name, args)
+		var reviewed_args := args.duplicate(true)
+		review = ActionReview.new().setup(review_link, name, reviewed_args)
 		review.finished.connect(func(approved, message):
 			review = null
 			if approved:
-				_act(_dispatch_command(name, args))
+				var result := _dispatch_command(name, reviewed_args)
+				if result[0] and name in ["cash_round", "goods_round"]:
+					round_stops.clear()
+				_act(result)
 			else:
 				_act([false, message]))
 		add_child(review)

@@ -22,7 +22,7 @@ func command(role: String, name: String, args := {}) -> Array:
 	if err:
 		return [false, err]
 	var message := "ok"
-	if logistics != null and name in ["move_cash", "move_goods", "cash_round", "goods_round", "sell_product"]:
+	if logistics != null and name in ["move_cash", "move_goods", "cash_round", "goods_round", "sell_product", "move_armoury"]:
 		message = str(logistics.last)
 	elif trade != null and name == "sell_product" and not trade.bulk_log.is_empty():
 		var sale: Array = trade.bulk_log[-1]

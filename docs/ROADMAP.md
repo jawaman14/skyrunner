@@ -25,6 +25,9 @@ continue in that order. Draft continuations #189 (documentation), #190 (menu foc
 #191 (station outcomes/feed), #192 (interaction occlusion), #193 (checked road
 surfaces) and #194 (shared site records/overlay) follow in dependency order.
 Draft #195 adds stash interiors, #196 graded bridge approaches and #197 modal input.
+Draft continuations [#198](https://github.com/jawaman14/skyrunner/pull/198) (map layers),
+[#199](https://github.com/jawaman14/skyrunner/pull/199) (HQ/outcomes) and
+[#200](https://github.com/jawaman14/skyrunner/pull/200) (remote action review) follow.
 The source baseline through #197 passed
 948 tests across three shards (313 / 316 / 319, zero failures and no script errors).
 Existing Godot shutdown resource diagnostics persist. The #193 CI run
@@ -53,7 +56,11 @@ and real two-machine remote/voice validation remain unperformed.
    bulk actions and squad disbanding. Command execution rechecks current state.
    Hangar/dealer reviews use shared Cancel-first confirmation; station and
    supported logistics reviews now request/recheck read-only host consequences.
-   Finish multi-stop/armoury transfers and dialogue commitment review, plus
+   Multi-stop cash/goods rounds and whole-armoury relocation now describe
+   ordered pickups/deliveries, limited stock, ammunition exclusion and travel obligations.
+   Commands reject stale/burned destinations before dispatch. Review callbacks
+   freeze argument copies; caller changes cannot substitute a different order.
+   Finish dialogue commitment review, plus
    remaining menu-specific actions; unsupported previews stay explicit.
 4. **Menus/settings:** finish focus, selection, scrolling, persistent feedback,
    disabled reasons and palette refresh across all menus. Hangar/dealer first,
@@ -86,8 +93,7 @@ and real two-machine remote/voice validation remain unperformed.
    logistics actions locally/remotely. Approval requests a fresh preview; changed
    consequences require another review. Removal, timeout, disconnect and seat
    changes send no mutation. Older peers explicitly label unavailable previews
-   and retain confirmed legacy operation. Multi-stop/armoury previews, dialogue
-   commitment review and the remaining seat-specific refinements remain.
+   and retain confirmed legacy operation. Dialogue commitment review and the remaining seat-specific refinements remain.
 6. **Placement/access:** deterministic footprints, entrances, walk/loading
    approaches and network connectors; diagnostic overlay and interaction occlusion.
    Through-wall interaction is reproduced with actual overlapping physics areas
