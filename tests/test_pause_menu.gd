@@ -118,6 +118,9 @@ func test_save_writes_and_lobby_asks_first() -> void:
 	app.pause_menu.confirm.key("esc")
 	check(went.is_empty() and app.pause_menu != null, "No stays put")
 	app.pause_menu.buttons.filter(func(b: Button) -> bool: return b.text.begins_with("Quit to lobby"))[0].pressed.emit()
+	app.pause_menu.confirm.key("right")
+	for i in 3:
+		await Engine.get_main_loop().process_frame
 	app.pause_menu.confirm.key("enter")
 	check_eq(went, ["lobby"], "Yes leaves to the lobby")
 	check(app.pause_menu == null and not app.paused, "the menu is gone")

@@ -37,6 +37,7 @@ var bodies := {}  ## faction -> MultiMeshInstance3D
 var heads: MultiMeshInstance3D
 var flashes: MultiMeshInstance3D
 var dead: MultiMeshInstance3D
+var worker_labels := {}  ## own-worker identity from permission-appropriate draw rows
 var vehicles := {}  ## squad id -> Node3D
 var smooth := {}  ## squad id -> [Vector2 pos, heading rad]
 var last_men := {}  ## squad id -> men (a drop leaves bodies)
@@ -310,7 +311,8 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, peo
 			psp[1] = atan2(pstep.x, pstep.y)
 		psp[0] = ptarget if pstep.length() > 400.0 else pcur + pstep * clampf(dt * 1.5, 0.0, 1.0)
 		var pp: Vector2 = psp[0]
-		var pg := Vector3(pp.x, world.ground(pp.x, pp.y), -pp.y)
+		var pg := Vector3(pp.x, world.travel_surface(pp.x, pp.y), -pp.y)
+		_worker_label(pid, pd, pg, cam)
 		if pg.distance_to(cam) > range_m:
 			_hide_vehicle(pid)
 			continue
@@ -358,6 +360,10 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, peo
 			vehicles.erase(id)
 			smooth.erase(id)
 			last_men.erase(id)
+	for id in worker_labels.keys():
+		if not seen.has(id):
+			worker_labels[id].queue_free()
+			worker_labels.erase(id)
 	fallen = fallen.filter(func(fl): return now - fl[0] < FALLEN_S)
 	if fallen.size() > 80:
 		fallen = fallen.slice(-80)
@@ -442,3 +448,22 @@ func drawn() -> int:
 	for f in bodies:
 		n += bodies[f].multimesh.instance_count
 	return n
+
+func _worker_label(id: String, row: Dictionary, at: Vector3, cam: Vector3) -> void:
+	if not row.has("name") or str(row.faction) != "org":
+		if worker_labels.has(id): worker_labels[id].visible = false
+		return
+	if not worker_labels.has(id):
+		var label := Label3D.new()
+		label.font_size = 22
+		label.outline_size = 5
+		label.pixel_size = 0.012
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		label.no_depth_test = false
+		add_child(label)
+		worker_labels[id] = label
+	var label: Label3D = worker_labels[id]
+	label.visible = at.distance_to(cam) < 45.0
+	label.position = at + Vector3(0, 2.5, 0)
+	label.text = "%s • %s\n%s • %s" % [row.name, row.get("role", "worker"), row.get("assignment", ""), row.get("travel", "")]
+	if row.get("travel", "") == "blocked": label.text += "\n" + str(row.get("blocked_reason", ""))

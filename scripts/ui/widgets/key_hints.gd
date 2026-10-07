@@ -39,13 +39,7 @@ func press(action: String) -> void:
 func _chip(key: String, text: String, action: String) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
-	row.mouse_filter = Control.MOUSE_FILTER_STOP if action != "" else Control.MOUSE_FILTER_IGNORE
-	row.tooltip_text = "click or press %s" % key if action != "" else ""
-	if action != "":
-		row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		row.gui_input.connect(func(ev):
-			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
-				hint_pressed.emit(action))
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var cap := PanelContainer.new()
 	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb := UIStyle.box(UIStyle.SURFACE_HI, 4, Color(1, 1, 1, 0.22), 1, Vector4(6, 1, 6, 2))
@@ -55,4 +49,18 @@ func _chip(key: String, text: String, action: String) -> Control:
 	cap.add_child(kl)
 	row.add_child(cap)
 	row.add_child(UIStyle.label(text, 13, UIStyle.CAPTION))
-	return row
+	if action == "":
+		return row
+	var button := Button.new()
+	button.tooltip_text = "click or press %s" % key
+	button.accessibility_name = "%s: %s" % [key, text]
+	button.custom_minimum_size = row.get_combined_minimum_size() + Vector2(12, 12)
+	button.custom_minimum_size.y = maxf(UIStyle.TOUCH_MIN, button.custom_minimum_size.y)
+	button.pressed.connect(func(): hint_pressed.emit(action))
+	button.add_child(row)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 6
+	row.offset_top = 6
+	row.offset_right = -6
+	row.offset_bottom = -6
+	return button

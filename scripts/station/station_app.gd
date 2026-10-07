@@ -27,6 +27,8 @@ var tutorial_panel: TutorialPanel = null  ## the desk's tutorial lesson (F10 ski
 var link  ## NetClient or LocalLink
 var role := ""
 var world: World
+var layer_buttons := {}
+var _palette := ""
 var map: StationMap
 var title: Label
 var subtitle: Label
@@ -50,7 +52,11 @@ var sel_unit = null
 var squad_mode := false  ## Q: the map commands our ground squads (the default desk for lieutenant and patrol)
 var sel_squad = null
 var status := ""
-var _pending: Array = []
+var review: ActionReview
+var outcomes: CommandPresentation
+var outcome_lbl: Label
+var feed_lbl: Label
+var selection_lbl: Label
 var _list_kind := ""
 var _list_keys: Array = []
 var upgrades: UpgradeTree  ## the controller's upgrade trees (U)
@@ -61,10 +67,12 @@ var _last_seq = null
 ## vertical: map above the desk (narrow panes, e.g. the split-screen demo).
 func setup(link_, role_: String, world_: World = null, vertical := false) -> StationApp:
 	link = link_
+	outcomes = CommandPresentation.new(link)
 	role = role_
 	world = world_ if world_ != null else World.new()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = UIStyle.theme()
+	_palette = UIStyle.palette
 	var bg := ColorRect.new()
 	bg.color = Color(0.035, 0.04, 0.055)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -75,22 +83,43 @@ func setup(link_, role_: String, world_: World = null, vertical := false) -> Sta
 	add_child(h)
 	map = StationMap.new().setup(world)
 	map.role = role
-	map.custom_minimum_size = Vector2(340, 340) if vertical else Vector2(640, 640)
+	map.custom_minimum_size = Vector2(300, 300)
 	map.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	# desks with wide tables (HQ, task force) get more of the screen than the co-pilot's
 	map.size_flags_stretch_ratio = 1.0 if vertical else (0.8 if role in [Roles.BOSS, Roles.CHIEF, Roles.CONTROLLER] else 1.1)
 	if role in [Roles.BOSS, Roles.CHIEF, Roles.CONTROLLER] and not vertical:
-		map.custom_minimum_size = Vector2(520, 520)
+		map.custom_minimum_size = Vector2(300, 300)
 	map.clicked.connect(_on_map_click)
-	h.add_child(map)
+	var map_column := VBoxContainer.new()
+	map_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	map_column.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	map_column.size_flags_stretch_ratio = map.size_flags_stretch_ratio
+	var layer_row := HFlowContainer.new()
+	map_column.add_child(layer_row)
+	for key in StationMap.LAYERS:
+		var button := CheckButton.new()
+		button.text = StationMap.LAYERS[key]
+		button.add_theme_font_size_override("font_size", 13)
+		button.button_pressed = true
+		button.toggled.connect(func(enabled): map.set_layer(key, enabled))
+		layer_buttons[key] = button
+		layer_row.add_child(button)
+	map_column.add_child(map)
+	h.add_child(map_column)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", UIStyle.box(Color(0.06, 0.07, 0.095), 0, UIStyle.LINE, 0, Vector4(16, 12, 16, 12)))
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(panel)
 	body = VBoxContainer.new()
 	body.add_theme_constant_override("separation", 8)
-	panel.add_child(body)
+	var desk_scroll := ScrollContainer.new()
+	desk_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	desk_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	desk_scroll.follow_focus = true
+	panel.add_child(desk_scroll)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	desk_scroll.add_child(body)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 12)
 	body.add_child(head)
@@ -163,6 +192,15 @@ func setup(link_, role_: String, world_: World = null, vertical := false) -> Sta
 	status_lbl = UIStyle.label("", 15, Color(1, 0.5, 0.4))
 	status_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_child(status_lbl)
+	outcome_lbl = UIStyle.label("", 14, UIStyle.CAPTION)
+	outcome_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(outcome_lbl)
+	selection_lbl = UIStyle.label("", 14, UIStyle.CYAN)
+	selection_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(selection_lbl)
+	feed_lbl = UIStyle.label("", 13, UIStyle.CAPTION)
+	feed_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(feed_lbl)
 	hints = KeyHints.new()
 	hints.hint_pressed.connect(func(a):
 		if a == "esc":
@@ -277,23 +315,33 @@ func _build_buttons() -> void:
 
 
 # ------------------------------------------------------------ commands
-func _cmd(name: String, args := {}) -> void:
-	var seq: int = link.send_command(name, args)
-	if link is LocalLink:
-		status = "" if link.last_result[0] else link.last_result[1]
-	else:
-		_pending.append(seq)
-		status = ""
+func _cmd(name: String, args := {}) -> int:
+	if name not in ActionReview.COMMANDS:
+		return _send_command(name, args)
+	for record in outcomes.records:
+		if record.command == name and record.args == args and record.state in ["pending", "acknowledged"]:
+			status = CommandPresentation.text(record)
+			return int(record.seq)
+	if is_instance_valid(review):
+		status = "An action review is already open."
+		return 0
+	var reviewed_args := args.duplicate(true)
+	review = ActionReview.new().setup(link, name, reviewed_args)
+	review.status_changed.connect(func(message): status = message)
+	review.finished.connect(func(approved, message):
+		review = null
+		status = message
+		if approved: _send_command(name, reviewed_args))
+	add_child(review)
+	return 0
+
+func _send_command(name: String, args := {}) -> int:
+	return outcomes.send(name, args)
 
 
-func _check_acks() -> void:
-	for seq in _pending.duplicate():
-		if link.acks.has(seq):
-			_pending.erase(seq)
-			var r: Array = link.acks[seq]
-			link.acks.erase(seq)
-			if not r[0]:
-				status = r[1]
+func _check_acks(dt := 0.0) -> void:
+	outcomes.poll(dt)
+	outcome_lbl.text = "\n".join(outcomes.records.slice(-4).map(CommandPresentation.text))
 
 
 # ------------------------------------------------------------ input
@@ -441,8 +489,10 @@ func open_logistics() -> void:
 		var sn = link.snapshot()
 		return sn.get("logistics", {}) if sn is Dictionary else {}
 	logistics_menu.cmd_fn = func(n: String, a: Dictionary) -> Array:
-		_cmd(n, a)
-		return [status == "", status if status != "" else "ok"]
+		return link.sess.command(role, n, a) if link is LocalLink else [false, "Remote command needs acknowledgement."]
+	logistics_menu.review_link = link
+	logistics_menu.send_fn = _send_command
+	logistics_menu.outcome_fn = outcomes.get_record
 	add_child(logistics_menu)
 
 
@@ -808,11 +858,11 @@ func _on_map_click(button: int, p: Vector2) -> void:
 	var near := func(items: Array):
 		return Py.min_by(items, func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
 	if button == MOUSE_BUTTON_LEFT:
-		var u = near.call(snap.get("units", []))
+		var u = near.call(map.visible_items("units"))
 		if u != null and PyMath.hypot(u.x - p.x, u.y - p.y) < 1200:
 			sel_unit = u.id
 			return
-		var t = near.call(snap.get("tracks", []))
+		var t = near.call(map.visible_items("tracks"))
 		if sel_unit != null and t != null and PyMath.hypot(t.x - p.x, t.y - p.y) < 1200:
 			_cmd("dispatch", {"unit": sel_unit, "target": t.id})
 	elif button == MOUSE_BUTTON_RIGHT and sel_unit != null:
@@ -870,6 +920,8 @@ func _squad_key(k: String, snap: Dictionary) -> bool:
 ## stash (guard it; for the police: stake it out, or raid it when it's known),
 ## an enemy squad (go after it), or anywhere else (patrol / hold the street).
 func _squad_click(button: int, p: Vector2, snap: Dictionary) -> void:
+	if not map.layers.people:
+		return # Hidden markers cannot select a squad or silently change an order.
 	var near := func(items: Array):
 		return Py.min_by(items, func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
 	if button == MOUSE_BUTTON_LEFT:
@@ -901,16 +953,19 @@ func strip_at(p: Vector2):
 
 # ------------------------------------------------------------ drawing
 func _process(delta: float) -> void:
+	if _palette != UIStyle.palette:
+		_palette = UIStyle.palette
+		theme = UIStyle.theme()
 	var dt := minf(delta, 0.1)
 	link.tick(dt)
 	var snap = link.snapshot()
 	map.snap = snap
 	map.sel_unit = sel_unit
 	map.sel_squad = sel_squad
+	_check_acks(delta)
 	if not (snap is Dictionary):
 		title.text = "Connecting..." if link.error == null else "Disconnected: %s" % link.error
 		return
-	_check_acks()
 	if snap.has("tutorial") and tutorial_panel == null:
 		tutorial_panel = TutorialPanel.new()
 		add_child(tutorial_panel)
@@ -939,6 +994,16 @@ func _process(delta: float) -> void:
 	if link is NetClient and not link.players.is_empty():
 		subtitle.text = "  ".join(link.players.map(func(p): return "%s (%s)" % [p.name, p.role if p.role != "" else "lobby"]))
 	status_lbl.text = status if status != "" else ("Link lost: %s" % link.error if link.error != null and not link.alive() else "")
+	feed_lbl.text = "\n".join(snap.get("event_feed", []).slice(-4).map(func(event):
+		return "%s · %s · %ds ago · %s: %s" % [str(event.severity).to_upper(), event.source, int(maxf(0.0, float(snap.time) - float(event.t))), event.certainty, event.text]))
+	selection_lbl.text = ""
+	var selected_squad = Py.first(_my_squads(snap), func(q): return q.id == sel_squad)
+	var selected_unit = Py.first(snap.get("units", []), func(u): return u.id == sel_unit)
+	var entity = selected_squad if selected_squad != null else selected_unit
+	if entity != null:
+		selection_lbl.text = "SELECTED %s · %s · %s" % [entity.id, entity.get("kind", "unit"), entity.get("state", entity.get("order", ""))]
+	elif sel_unit != null or sel_squad != null:
+		selection_lbl.text = "Selected entity is no longer available in this seat's report."
 	hints.set_hints(_hints())
 
 
@@ -948,6 +1013,7 @@ func _set_list(kind: String, keys: Array, cells: Array, colors := {}, defs := []
 	list.visible = kind != "none"
 	if kind != _list_kind or keys != _list_keys:
 		var keep := list.selected_row()
+		var keep_key = _list_keys[keep] if keep >= 0 and keep < _list_keys.size() and kind == _list_kind else null
 		if kind != _list_kind:
 			list.configure(defs if not defs.is_empty() else [{"title": "", "expand": true}])
 		else:
@@ -957,7 +1023,7 @@ func _set_list(kind: String, keys: Array, cells: Array, colors := {}, defs := []
 		_list_kind = kind
 		_list_keys = keys
 		if list.row_count() > 0:
-			list.select(clampi(keep, 0, list.row_count() - 1))
+			list.select(keys.find(keep_key) if keys.has(keep_key) else clampi(keep, 0, list.row_count() - 1))
 	else:
 		for i in cells.size():
 			for c in cells[i].size():

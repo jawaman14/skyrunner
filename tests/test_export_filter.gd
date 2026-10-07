@@ -91,3 +91,23 @@ func test_the_export_presets_leave_out_exactly_the_art_nothing_uses() -> void:
 				check(not ex, "%s is used by the game, so %s must ship it" % [pack, pr[0]])
 			else:
 				check(ex, "%s is not used by anything yet, so %s should leave it out" % [pack, pr[0]])
+
+func test_used_asset_notices_ship_in_every_export() -> void:
+	var notices := ["assets/fonts/OFL-KaushanScript.txt", "assets/fonts/OFL-Monoton.txt",
+		"assets/models/kenney/LICENSE.txt", "assets/models/kaykit/city/LICENSE.txt",
+		"assets/models/quaternius/downtown_city/LICENSE.txt", "assets/models/quaternius/README.txt",
+		"assets/audio/kenney_ui/LICENSE.txt", "assets/fx/kenney_particles/LICENSE.txt", "assets/props/README.md"]
+	var config := ConfigFile.new()
+	check_eq(config.load("res://export_presets.cfg"), OK)
+	for section in config.get_sections():
+		if not section.begins_with("preset.") or section.ends_with(".options"): continue
+		var include: String = config.get_value(section, "include_filter", "")
+		var exclude: String = config.get_value(section, "exclude_filter", "")
+		for notice in notices:
+			check(FileAccess.file_exists("res://" + notice), "notice exists: " + notice)
+			var included := false
+			for pattern in include.split(","):
+				if notice.match(pattern.strip_edges()): included = true
+			check(included, section + " includes " + notice)
+			for pattern in exclude.split(","):
+				check(not notice.match(pattern.strip_edges()), section + " does not exclude " + notice)

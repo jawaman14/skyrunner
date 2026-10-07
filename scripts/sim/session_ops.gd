@@ -5,23 +5,15 @@ extends SessionRules
 
 ## Returns an error string, or null on success.
 func accept_job(job: Jobs.Job):
-	if not parked or location != job.origin:
-		return "You need to be parked at the job's origin."
-	if job.hot() and not features.has("contraband"):
-		return "Not that kind of pilot. Yet."
-	var seats := spec.seat_count() - (1 if copilot else 0)
-	var pax_now := Py.count(loadout.items.values(), func(i): return i.kind == "passenger")
-	var pax_new := Py.count(job.items, func(i): return i.kind == "passenger")
-	if pax_now + pax_new > seats:
-		return "Not enough seats (%d free in a %s)." % [seats, spec.name]
+	var reason := accept_job_reason(job)
+	if reason != "":
+		return reason
 	if job.cost > 0 and logistics != null:
-		var err: String = logistics.pay_seller(job.cost)  # cash on the strip, from the bags aboard
+		var err: String = logistics.pay_seller(job.cost)
 		if err != "":
 			return err
 		say("Paid $%s in cash for the load." % Py.money(job.cost))
 	elif job.cost > 0:
-		if money < job.cost:
-			return "The load costs $%s up front." % Py.money(job.cost)
 		money -= job.cost
 		say("Paid $%s for the load." % Py.money(job.cost))
 	job.accepted_at = time
@@ -43,6 +35,68 @@ func accept_job(job: Jobs.Job):
 		_informant_roll(job)
 	bus.emit("job_accepted", time, "", ["runner"], {"job_id": job.id, "hot": job.hot()})
 	return null
+
+
+## Shared read-only gate for accepting work, used by both previews and execution.
+func accept_job_reason(job: Jobs.Job) -> String:
+	if not parked or location != job.origin:
+		return "You need to be parked at the job's origin."
+	if job.hot() and not features.has("contraband"):
+		return "Not that kind of pilot. Yet."
+	var seats := spec.seat_count() - (1 if copilot else 0)
+	var pax_now := Py.count(loadout.items.values(), func(i): return i.kind == "passenger")
+	var pax_new := Py.count(job.items, func(i): return i.kind == "passenger")
+	if pax_now + pax_new > seats:
+		return "Not enough seats (%d free in a %s)." % [seats, spec.name]
+	if job.cost > 0 and logistics != null:
+		return logistics.seller_payment_reason(job.cost)
+	elif job.cost > 0:
+		if money < job.cost:
+			return "The load costs $%s up front." % Py.money(job.cost)
+	return ""
+
+
+## General read-only action descriptions; job callers retain their original API.
+func describe_action(role: String, name: String, args := {}) -> Dictionary:
+	if name in ["accept_job", "drop_job"]:
+		var id = args.get("job_id", -1)
+		if not (id is int or id is float or (id is String and id.is_valid_float())) or not is_finite(float(id)):
+			return ActionDescriptions.unavailable(name, args, "Invalid job identifier.")
+		return job_action(role, name, int(float(id)))
+	return ActionDescriptions.build(self, role, name, args)
+
+
+## A job-board action is a description, never an execution or a second UI authority.
+func job_action(role: String, name: String, job_id: int) -> Dictionary:
+	var action := {"label": "Accept job" if name == "accept_job" else "Drop job", "enabled": false,
+		"disabled_reason": "", "confirmation_required": name == "drop_job", "command": name,
+		"args": {"job_id": job_id}, "preview": ""}
+	if name not in ["accept_job", "drop_job"] or not Roles.valid(role) or not Roles.allowed(role, name):
+		action.disabled_reason = "This role cannot perform that action."
+		return action
+	var job: Jobs.Job = find_job(job_id)
+	if job == null:
+		action.disabled_reason = "This job is no longer available."
+		return action
+	if name == "accept_job":
+		action.label = "Accept job • $%s on delivery" % Py.money(job.payout)
+		action.preview = "Up-front payment: $%s. Cargo: %.0f lb. Check load and fuel before departure." % [Py.money(job.cost), job.weight_lb()]
+		if job.hot():
+			action.preview += " Contraband: police risk."
+		if job.deadline_s:
+			action.preview += " Deadline: %d min from acceptance." % int(job.deadline_s / 60)
+		action.disabled_reason = "This job has already been accepted." if active_jobs.has(job) else accept_job_reason(job)
+	else:
+		action.preview = "Removes this job and its cargo. No delivery pay."
+		if job.cost > 0:
+			action.preview += " The up-front payment is not refunded."
+		if not active_jobs.has(job):
+			action.disabled_reason = "This job is not active."
+		elif not parked:
+			action.disabled_reason = "You need to be parked to drop a job."
+		action.label = "Drop job • no delivery pay"
+	action.enabled = action.disabled_reason == ""
+	return action
 
 
 func _informant_roll(job: Jobs.Job) -> void:

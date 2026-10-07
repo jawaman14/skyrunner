@@ -37,7 +37,33 @@ static func build(sess: Session, role: String, seq := 0) -> Dictionary:
 		snap["season"] = sess.nights.view(side)
 	if sess.tutorial != null:
 		snap["tutorial"] = sess.tutorial.view() if role == Roles.PILOT else sess.tutorial.desk_view(role)
+	snap["event_feed"] = event_feed(sess, side)
 	return snap
+
+
+## Text-only presentation of already audience-filtered facts/reports. Never send
+## raw event data, which may carry coordinates or private entity state.
+static func event_feed(sess: Session, side: String) -> Array:
+	var entries: Array = []
+	var seen := {}
+	if sess.chronicle != null:
+		for news in sess.chronicle.view(side).get("news", []):
+			_feed_add(entries, seen, float(news.t), str(news.text), "Chronicle", "reported", "info" if news.good else "warning", sess.time)
+	for event in sess.bus.log:
+		if event.audience.has(side) and not event.text.is_empty():
+			var severity := "critical" if event.kind in ["busted", "crashed", "stash_burned", "boat_seized"] else "info"
+			_feed_add(entries, seen, event.t, event.text, "EventBus", "event report", severity, sess.time)
+	entries.sort_custom(func(a, b): return a.t < b.t)
+	return entries.slice(-32)
+
+
+static func _feed_add(entries: Array, seen: Dictionary, time: float, text: String, source: String, certainty: String, severity: String, now: float) -> void:
+	var key := "%.1f:%s" % [time, text]
+	var ttl: float = {"critical": 600.0, "warning": 180.0, "info": 60.0}[severity]
+	if seen.has(key) or now - time > ttl:
+		return
+	seen[key] = true
+	entries.append({"id": key, "t": time, "text": text, "source": source, "certainty": certainty, "severity": severity, "expires": time + ttl})
 
 
 static func _xy(p: Array) -> Dictionary:

@@ -53,7 +53,7 @@ func _build() -> void:
 			["Raise car", "raise_car"], ["Raise truck", "raise_truck"]]:
 		var btn := Button.new()
 		btn.text = b[0]
-		btn.focus_mode = Control.FOCUS_NONE
+		btn.focus_mode = Control.FOCUS_ALL
 		btn.pressed.connect(key.bind(b[1]))
 		squad_buttons.add_child(btn)
 	content.add_child(squad_buttons)
@@ -67,6 +67,7 @@ func _view():
 ## it needs a snapshot every frame, not just on open() or a keypress like the
 ## rest of this menu's static panels.
 func _process(_dt: float) -> void:
+	super._process(_dt)
 	if visible and squad_mode:
 		map.snap = Snapshot.build(s, Roles.BOSS, 0)
 		if sel_squad != null and s.ground.get_squad(str(sel_squad)) == null:
@@ -80,15 +81,13 @@ func _process(_dt: float) -> void:
 func open() -> void:
 	if not intel and not squad_mode and _view() == null and s.ground != null:
 		_enter_squad_mode()
-	visible = true
-	refresh()
+	super.open()
 
 
 func close() -> void:
 	if squad_mode:
 		_leave_squad_mode()
-	visible = false
-	closed.emit()
+	super.close()
 
 
 ## Belt and braces: something elsewhere (switching to another desk menu,
@@ -169,6 +168,8 @@ func _detail() -> void:
 
 
 func key(k: String) -> void:
+	if confirmation_key(k):
+		return
 	if intel:
 		return
 	if k == "q" and s.ground != null:
@@ -258,8 +259,7 @@ func _squad_key(k: String) -> void:
 		"hold":
 			s.command(Roles.BOSS, "squad_order", {"id": sel_squad, "order": {"type": "hold"}})
 		"disband":
-			s.command(Roles.BOSS, "disband_squad", {"id": sel_squad})
-			sel_squad = null
+			perform_action("disband_squad", {"id": sel_squad}, Roles.BOSS)
 
 
 ## Click: pick one of ours. Right-click: the order that fits the spot - a

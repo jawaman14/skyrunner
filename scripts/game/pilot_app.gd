@@ -338,13 +338,23 @@ func _active_menu() -> GameMenu:
 
 
 func _unhandled_input(ev: InputEvent) -> void:
+	if controls_menu != null or pack_menu != null:
+		get_viewport().set_input_as_handled()
+		return
 	if ev is InputEventJoypadButton and ev.pressed and _active_menu() == null and not on_foot:
 		_flight_press(ev)
 		return
 	if ev is InputEventKey and ev.pressed:
 		var k: int = ev.physical_keycode if ev.physical_keycode else ev.keycode
+		if k == KEY_F2 and ev.ctrl_pressed and not ev.echo:
+			scene.toggle_access_overlay()
+			get_viewport().set_input_as_handled()
+			return
 		var m := _active_menu()
 		if m != null:
+			if ev.echo and MENU_KEYS.get(k, "") == "enter":
+				get_viewport().set_input_as_handled()
+				return  # holding Enter must not confirm a newly armed action
 			if k == KEY_ESCAPE:
 				m.close()
 			elif MENU_KEYS.has(k):
@@ -607,12 +617,17 @@ func _flight_press(ev: InputEvent) -> bool:
 
 
 ## SHIFT+H: logistics - the stashes' product and cash, the trucks, cash bags on and off.
-func toggle_logistics() -> void:
+func toggle_logistics(stash := "") -> void:
 	if logistics_menu != null and is_instance_valid(logistics_menu):
+		if not stash.is_empty():
+			logistics_menu.focus_source(stash)
+			return
 		logistics_menu.close()
 		return
 	logistics_menu = LogisticsMenu.new()
+	logistics_menu.review_link = LocalLink.new(s, Roles.PILOT, false)
 	logistics_menu.pilot = true
+	logistics_menu.focused_stash = stash
 	logistics_menu.view_fn = func() -> Dictionary: return s.logistics.view() if s.logistics != null else {}
 	logistics_menu.cmd_fn = func(n: String, a: Dictionary) -> Array: return s.command(Roles.PILOT, n, a)
 	logistics_menu.closed.connect(func(): Input.mouse_mode = Input.MOUSE_MODE_VISIBLE)
@@ -711,7 +726,7 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 
 func _input(ev: InputEvent) -> void:
 	# click to grab the mouse again while walking
-	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and not _map_open():
+	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and pack_menu == null and not _map_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -1132,6 +1147,14 @@ func _exit_car() -> void:
 
 func _on_use(action: String, area: Area3D) -> void:
 	match action:
+		"stash_logistics":
+			var id: String = area.get_meta("stash", "")
+			var found = s.stash_net.get_stash(id) if s.stash_net != null else null
+			var stash: Dictionary = found if found is Dictionary else {}
+			if not StashInterior.available(stash) or s.logistics == null:
+				s.say("This storage site is unavailable.")
+			else:
+				toggle_logistics(id)
 		"car":
 			_enter_car()
 		"jobs", "load", "hangar":
@@ -1185,7 +1208,7 @@ func _gather_input() -> ControlMapper.InputFrame:
 	var inp := ControlMapper.InputFrame.new()
 	inp.pressed = _pressed
 	_pressed = {}
-	var menu_open := _active_menu() != null or controls_menu != null or pause_menu != null
+	var menu_open := _active_menu() != null or controls_menu != null or pack_menu != null or pause_menu != null
 	if not menu_open:
 		for action in ControlsConfig.HELD:
 			if Input.is_action_pressed(ControlsConfig.action(action)):
@@ -1229,6 +1252,11 @@ func _process(delta: float) -> void:
 		radio.active = driving != null or not on_foot
 	if _frame % 30 == 1:
 		_phone_watch()
+		if scene != null and s.stash_net != null:
+			for stash in s.stash_net.stashes:
+				var node := scene.find_child("stash-" + str(stash.id), true, false) as Node3D
+				if node != null:
+					StashInterior.show_state(node, stash)
 	if _frame % 10 == 0:
 		if s.tutorial != null and tutorial_panel == null:
 			tutorial_panel = TutorialPanel.new()

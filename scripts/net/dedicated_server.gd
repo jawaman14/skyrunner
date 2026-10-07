@@ -72,6 +72,8 @@ static func parse(args: Array, env := {}) -> Dictionary:
 	c["port"] = int(c.port)
 	if int(c.port) < 0 or int(c.port) > 65535:
 		err = "port out of range"
+	if int(c.map) == 0:
+		err = PlayableMaps.CLASSIC_REMOVED
 	c["max_players"] = clampi(int(c.max_players), 1, 64)
 	return {"cfg": c, "error": err}
 
@@ -115,7 +117,12 @@ func session_options() -> Dictionary:
 ## Build the game (loading the save if there is one), listen, and be ready to step. Returns "" or why not.
 func start() -> String:
 	var save := str(cfg.save)
+	var map_error := PlayableMaps.error(int(cfg.map), Session.read_save(save))
+	if map_error != "":
+		return map_error
 	var opts := session_options()
+	if int(cfg.map) < 0 and FileAccess.file_exists(save):
+		opts.erase("map_seed")
 	opts["save_path"] = save
 	var fresh := not FileAccess.file_exists(save)
 	sess = Session.load_or_new(save, opts)

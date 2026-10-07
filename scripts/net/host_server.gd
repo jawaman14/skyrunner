@@ -287,7 +287,7 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		if role != "":
 			room.claim(pid, role)  # (a seat asked for on the way in; if it is taken they simply have none yet)
 		c.joined = true
-		c.peer.put_data(line({"t": "welcome", "role": "", "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION, "phase": "room"}))
+		c.peer.put_data(line({"t": "welcome", "capabilities": ["action_previews"], "role": "", "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION, "phase": "room"}))
 		_room_rev = -1
 		return
 	# a returning player takes back the seat held for them
@@ -303,14 +303,26 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		c.role = role
 		clients[role] = c
 	c.joined = true
-	c.peer.put_data(line({"t": "welcome", "role": c.role, "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION}))
+	c.peer.put_data(line({"t": "welcome", "capabilities": ["action_previews"], "role": c.role, "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION}))
 	_log("%s joined%s (%d here)" % [name, (" as " + c.role) if c.role != "" else " (no seat yet)", conns.filter(func(x): return x.joined).size()])
 	_seats_rev = -1  # everyone gets the new roster
 
 
 func _message(c: Conn, msg: Dictionary) -> void:
+	if sess == null and msg.get("t") == "preview_request":
+		c.peer.put_data(line({"t": "preview", "seq": int(msg.get("seq", 0)), "role": c.role, "action": ActionDescriptions.unavailable(str(msg.get("name", "")), {}, "Game not started; preview unavailable.")}))
+		return
 	if sess == null:
 		_room_message(c, msg)
+		return
+	if msg.get("t") == "preview_request":
+		var name := str(msg.get("name", "")).substr(0, 32)
+		var raw: Dictionary = msg.get("args", {}) if msg.get("args") is Dictionary else {}
+		var args := {}
+		for key in raw.keys().slice(0, 8):
+			args[str(key).substr(0, 32)] = raw[key]
+		var action: Dictionary = sess.describe_action(c.role, name, args)
+		c.peer.put_data(line({"t": "preview", "seq": int(msg.get("seq", 0)), "role": c.role, "action": action}))
 		return
 	match msg.get("t"):
 		"claim":

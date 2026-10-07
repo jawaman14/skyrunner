@@ -49,10 +49,16 @@ if ps_best_lb < 20
 	=> word
 - Let my people handle the trading. [if not ps_auto]
 	do toggle_acid_auto()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{ps_name}}: Your people, my people. Everybody's people. Right on.
 	=> talk
 - Stop the standing arrangement. [if ps_auto]
 	do toggle_acid_auto()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{ps_name}}: Back to handshakes, then.
 	=> talk
 - That's all.

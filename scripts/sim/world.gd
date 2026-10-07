@@ -23,6 +23,8 @@ var airfields: Array = AIRFIELDS
 var terrain: Terrain
 var field_elev: Dictionary
 var map: MapLayout
+var _road_surface: RoadSurface
+var _site_records: Array = []
 
 
 ## Make a map current: airfields, HQ zones, aerostat and HQ sites all follow it.
@@ -111,6 +113,24 @@ func is_water(x: float, y: float) -> bool:
 	if not map.foreign.is_empty() and y < -World.HALF:
 		return Island.height(x, y) < 0.0
 	return terrain.height(x, y) < 0.0
+
+
+func road_surface() -> RoadSurface:
+	if _road_surface == null:
+		_road_surface = RoadSurface.new(self)
+	return _road_surface
+
+
+func site_records() -> Array:
+	if _site_records.is_empty():
+		_site_records = SiteLayout.records(self)
+	return _site_records.duplicate(true)
+
+
+## Vehicle/foot access query; aircraft terrain/flight queries remain unchanged.
+func travel_surface(x: float, y: float) -> float:
+	var surface := road_surface().sample(Vector2(x, y))
+	return maxf(ground(x, y), float(surface.height)) if surface.on_surface else ground(x, y)
 
 
 func airfield_at(x: float, y: float, margin := 0.0) -> Airfield:

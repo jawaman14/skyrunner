@@ -28,9 +28,8 @@ func _build() -> void:
 	content.add_child(detail)
 	tree = UpgradeTree.new().setup("runner")
 	tree.buy.connect(func(id):
-		var err = s.buy_upgrade("runner", id)
-		if err:
-			s.say(err)
+		var result: Array = s.command(Roles.PILOT, "upgrade", {"id": id})
+		show_feedback("Upgrade fitted." if result[0] else str(result[1]), bool(result[0]))
 		refresh())
 	tree.visible = false
 	content.add_child(tree)
@@ -66,6 +65,7 @@ func refresh() -> void:
 	title.text = "HANGAR"
 	subtitle.text = "aircraft, gear & crew  -  $%s in hand" % Py.money(s.money)
 	var keep := list.selected_row()
+	var keep_id := _row_id(rows[keep]) if keep >= 0 and keep < rows.size() else ""
 	list.clear_rows()
 	rows = _rows()
 	for r in rows:
@@ -98,7 +98,8 @@ func refresh() -> void:
 				var who: String = {"human": "human (online)", "ai": "Rosa (AI)"}.get(s.copilot, "none")
 				list.add_row(["CREW", "Co-pilot: " + who, "loads 2x faster, kicks bales, pumps ferry fuel",
 					"ON" if s.copilot else "OFF"], {"cell_colors": {3: UIStyle.GREEN if s.copilot else UIStyle.CAPTION}})
-	list.select_near(keep if keep >= 0 else 0)
+	var ids: Array = rows.map(_row_id)
+	list.select_near(ids.find(keep_id) if ids.has(keep_id) else maxi(0, keep))
 	_detail()
 	var shop: bool = s.airfield != null and s.airfield.shop
 	footer.text = "" if shop else "No aircraft dealer at this strip: gear and crew only."
@@ -114,7 +115,11 @@ func _detail() -> void:
 	match rows[i][0]:
 		"aircraft":
 			var a: Aircraft.Spec = rows[i][1]
-			detail.text = "Owned aircraft switch for free; new ones are bought here." if a.key != s.aircraft_key else "You're flying this one."
+			var action := s.describe_action(Roles.PILOT, "buy_aircraft", {"key": a.key})
+			detail.text = action.preview if action.enabled else action.disabled_reason
+		"gear":
+			var action := s.describe_action(Roles.PILOT, "buy_gear", {"name": rows[i][1]})
+			detail.text = action.preview if action.enabled else action.disabled_reason
 		"copilot":
 			detail.text = "ENTER toggles the AI co-pilot. A human co-pilot joins from the lobby (station or --seat3d)."
 		"spotter":
@@ -124,9 +129,12 @@ func _detail() -> void:
 
 
 func key(k: String) -> void:
+	if confirmation_key(k):
+		return
 	if k in ["left", "right"]:
 		page = 1 - page
 		refresh()
+		focus_action()
 		return
 	if page == 1:
 		if k in ["up", "down"]:
@@ -149,14 +157,22 @@ func key(k: String) -> void:
 			var err = null
 			match r[0]:
 				"aircraft":
-					err = s.buy_or_switch(r[1].key)
+					perform_action("buy_aircraft", {"key": r[1].key})
+					return
 				"gear":
-					err = s.buy_gear(r[1])
+					perform_action("buy_gear", {"name": r[1]})
+					return
 				"spotter":
-					err = s.hire_spotter(r[1])
+					var result: Array = s.command(Roles.PILOT, "hire_spotter", {"code": r[1]})
+					err = null if result[0] else result[1]
+					show_feedback("Spotter hired." if result[0] else str(result[1]), bool(result[0]))
 				"service":
-					var res: Array = s.command(Roles.PILOT, "stop_work" if not s.airframe.work.is_empty() else "service", {"part": "both"})
+					if s.airframe.work.is_empty():
+						perform_action("service", {"part": "both"})
+						return
+					var res: Array = s.command(Roles.PILOT, "stop_work", {})
 					err = null if res[0] else res[1]
+					show_feedback("Work stopped; completed repairs and prior charges remain." if res[0] else str(res[1]), bool(res[0]))
 				"copilot":
 					if s.copilot == "human":
 						err = "Your co-pilot is a real person - ask them."
@@ -164,5 +180,9 @@ func key(k: String) -> void:
 						s.set_copilot(null if s.copilot else "ai")
 						s.say("Co-pilot aboard." if s.copilot else "Co-pilot stays on the ground.")
 			if err:
-				s.say(err)
+				show_feedback(str(err), false)
 			refresh()
+
+
+static func _row_id(row: Array) -> String:
+	return str(row[0]) + ":" + (str(row[1].key) if row[0] == "aircraft" else str(row[1]))

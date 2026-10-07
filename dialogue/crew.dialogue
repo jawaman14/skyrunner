@@ -18,25 +18,43 @@ if unpaid > 0
 ~ hall
 - Hire {{cand_line(0)}} [if has_cand(0)]
 	do take_on(0)
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> hired
 - Hire {{cand_line(1)}} [if has_cand(1)]
 	do take_on(1)
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> hired
 - Hire {{cand_line(2)}} [if has_cand(2)]
 	do take_on(2)
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> hired
 - Hire {{cand_line(3)}} [if has_cand(3)]
 	do take_on(3)
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> hired
 - Who's working for me? [if crew > 0]
 	Manny Ortega: {{roster_text()}}
 	=> hall
 - A bonus for everybody. ({{money_s(wage_bill)}}) [if crew > 0]
 	do crew_bonus()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	Manny Ortega: [[That's how you keep people.|They'll remember that.]]
 	=> hall
 - Get a lawyer for {{jailed_name()}}. ($2,000) [if jailed_name() != ""]
 	do lawyer_for_jailed()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	Manny Ortega: Good. Somebody with a lawyer keeps quiet. Somebody without one starts thinking.
 	=> hall
 - That's enough for today.

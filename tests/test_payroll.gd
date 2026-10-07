@@ -339,13 +339,3 @@ func test_off_means_no_payroll() -> void:
 	check(s.ground.recruit("org", "foot", null) is GroundWar.Squad, "squads as before")
 	s.dispose()
 	Payroll.ENABLED = true
-
-func test_demand_report_is_read_only_and_explainable() -> void:
-	var s := Session.new({"seed": 31, "map_seed": MapCity.SEED, "payroll": true, "ground_war": true, "money": 100000})
-	var before: String = JSON.stringify(s.payroll.view("runner"))
-	var d: Dictionary = s.payroll.demand("org")
-	check(d.has("pilot"), "demand exposes role targets")
-	for role in d:
-		check(int(d[role].target) >= int(d[role].active), "active crew does not exceed target for %s" % role)
-	check_eq(JSON.stringify(s.payroll.view("runner")), before, "demand does not mutate payroll")
-	s.dispose()

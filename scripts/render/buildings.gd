@@ -13,6 +13,17 @@ extends RefCounted
 ##   hq_rival the cartel's table (what the organisation knows about Los Cuervos)
 
 static var _mats := {}
+static var _plates := {}
+
+
+static func plate_material(path: String) -> StandardMaterial3D:
+	if not _plates.has(path):
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = load(path)
+		m.roughness = 0.95
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_plates[path] = m
+	return _plates[path]
 
 
 static func mat(key: String) -> StandardMaterial3D:
@@ -31,6 +42,10 @@ static func mat(key: String) -> StandardMaterial3D:
 		"window_lit": [Color(1.0, 0.85, 0.55), 0.3, 0.0],
 		"white": [Color(0.78, 0.78, 0.78), 0.6, 0.0],
 		"red": [Color(0.75, 0.12, 0.1), 0.6, 0.0],
+		"pump_enamel": [Color(0.57, 0.28, 0.21), 0.82, 0.0],
+		"pump_cream": [Color(0.81, 0.77, 0.64), 0.88, 0.0],
+		"drum_blue": [Color(0.27, 0.39, 0.44), 0.86, 0.15],
+		"drum_sage": [Color(0.39, 0.43, 0.31), 0.88, 0.15],
 		"blue": [Color(0.12, 0.2, 0.55), 0.5, 0.2],
 		"black": [Color(0.06, 0.06, 0.07), 0.5, 0.3],
 		"water": [Color(0.2, 0.62, 0.72, 0.85), 0.05, 0.0],
@@ -142,6 +157,33 @@ class Kit:
 		sb.rotation.y = deg_to_rad(yaw)
 		root.add_child(sb)
 
+	## Decorative textured sign facing the building's front (-z), without collision.
+	func plate(path: String, at: Vector3, size: Vector2) -> void:
+		var mi := MeshInstance3D.new()
+		mi.name = "period-plate"
+		var mesh := QuadMesh.new()
+		mesh.size = size
+		mi.mesh = mesh
+		mi.material_override = Buildings.plate_material(path)
+		mi.position = at
+		mi.rotation.y = PI  # front of the building is -z
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(mi)
+
+	## Low-poly hose, merged into the existing rubber/black surface without collision.
+	func hose(points: Array[Vector3], radius := 0.035) -> void:
+		var t := _tool("black")
+		for i in points.size() - 1:
+			var axis := (points[i + 1] - points[i]).normalized()
+			var side := axis.cross(Vector3.FORWARD).normalized() * radius
+			var up := axis.cross(side).normalized() * radius
+			for j in 8:
+				var a := TAU * j / 8.0
+				var b := TAU * (j + 1) / 8.0
+				var p := side * cos(a) + up * sin(a)
+				var q := side * cos(b) + up * sin(b)
+				_quad(t, points[i] + p, points[i] + q, points[i + 1] + q, points[i + 1] + p)
+
 	## Axis-aligned box (centre, size) in the building's frame.
 	func box(c: Vector3, s: Vector3, key: String, collide := true) -> void:
 		var h := s / 2
@@ -210,13 +252,17 @@ class Kit:
 		node.free()
 
 	## Gable roof over a w x d footprint, ridge along z, eaves at y0.
-	func gable(c: Vector3, w: float, d: float, rise: float, key: String, overhang := 0.6) -> void:
+	func gable(c: Vector3, w: float, d: float, rise: float, key: String, overhang := 0.6, collide := false) -> void:
 		var t := _tool(key)
 		var hw := w / 2 + overhang
 		var hd := d / 2 + overhang
 		var r := Vector3(c.x, c.y + rise, c.z)
-		_quad(t, c + Vector3(-hw, 0, -hd), c + Vector3(-hw, 0, hd), r + Vector3(0, 0, hd), r + Vector3(0, 0, -hd))
-		_quad(t, c + Vector3(hw, 0, hd), c + Vector3(hw, 0, -hd), r + Vector3(0, 0, -hd), r + Vector3(0, 0, hd))
+		var faces := PackedVector3Array()
+		var slopes := [[c + Vector3(-hw, 0, -hd), c + Vector3(-hw, 0, hd), r + Vector3(0, 0, hd), r + Vector3(0, 0, -hd)],
+			[c + Vector3(hw, 0, hd), c + Vector3(hw, 0, -hd), r + Vector3(0, 0, -hd), r + Vector3(0, 0, hd)]]
+		for slope in slopes:
+			_quad(t, slope[0], slope[1], slope[2], slope[3])
+			for index in [0, 1, 2, 0, 2, 3]: faces.append(slope[index])
 		# gable ends
 		for sz in [-1, 1]:
 			var a := c + Vector3(-hw + overhang, 0, sz * (hd - overhang))
@@ -226,6 +272,14 @@ class Kit:
 			for p in ([a, top, b] if sz < 0 else [a, b, top]):
 				t.set_normal(n)
 				t.add_vertex(p)
+				faces.append(p)
+		if collide:
+			var shape := ConcavePolygonShape3D.new()
+			shape.set_faces(faces)
+			shape.backface_collision = true
+			var collision := CollisionShape3D.new()
+			collision.shape = shape
+			body.add_child(collision)
 
 	## Half-cylinder (Quonset) roof over a hangar, axis along z.
 	func arch(c: Vector3, w: float, d: float, key: String, seg := 12) -> void:
@@ -362,6 +416,7 @@ static func hangar(k: Kit, c: Vector3, w := 18.0, d := 20.0, with_board := true)
 		k.box(c + Vector3(sx * (w / 2 - 0.2), 1.0, 0), Vector3(0.4, 2.0, d), "concrete_dark")
 	if with_board:
 		k.box(c + Vector3(w / 2 - 1.2, 1.5, d / 2 - 0.4), Vector3(2.0, 1.4, 0.1), "wood", false)
+		k.plate("res://assets/props/pinned_notices.svg", c + Vector3(w / 2 - 1.2, 1.5, d / 2 - 0.46), Vector2(1.86, 1.22))
 		k.interact(c + Vector3(w / 2 - 1.2, 1.0, d / 2 - 1.6), "jobs", "Job board")
 		k.box(c + Vector3(-w / 2 + 2.0, 0.6, d / 2 - 1.2), Vector3(3.0, 1.2, 1.2), "wood")  # workbench
 		k.interact(c + Vector3(-w / 2 + 2.0, 1.0, d / 2 - 2.6), "hangar", "Hangar: aircraft & gear")
@@ -377,15 +432,52 @@ static func tower(k: Kit, c: Vector3, h := 14.0) -> void:
 
 static func fuel_pump(k: Kit, c: Vector3) -> void:
 	k.box(c + Vector3(0, 0.1, 0), Vector3(3.5, 0.2, 2.5), "concrete")
-	k.box(c + Vector3(0, 0.9, 0), Vector3(0.8, 1.6, 0.6), "red")
-	k.box(c + Vector3(0, 1.8, 0), Vector3(1.0, 0.25, 0.8), "white", false)
+	k.box(c + Vector3(0, 0.9, 0), Vector3(0.8, 1.6, 0.6), "pump_enamel")
+	k.box(c + Vector3(0, 1.8, 0), Vector3(1.0, 0.25, 0.8), "pump_cream", false)
+	# Mechanical dispenser: bleached enamel, metal trim and a hanging rubber hose.
+	k.box(c + Vector3(0, 1.38, -0.315), Vector3(0.68, 0.66, 0.035), "pump_cream", false)
+	k.plate("res://assets/props/analogue_fuel_face.svg", c + Vector3(0, 1.4, -0.338), Vector2(0.56, 0.56))
+	k.box(c + Vector3(0, 0.34, -0.312), Vector3(0.72, 0.07, 0.025), "metal_rust", false)
+	k.box(c + Vector3(-0.28, 0.8, -0.312), Vector3(0.06, 0.25, 0.025), "metal_rust", false)
+	k.box(c + Vector3(0, 0.7, -0.316), Vector3(0.5, 0.16, 0.025), "pump_cream", false)
+	k.hose([c + Vector3(0.4, 1.5, -0.05), c + Vector3(0.7, 1.2, -0.05), c + Vector3(0.8, 0.45, -0.05),
+		c + Vector3(0.6, 0.32, -0.05), c + Vector3(0.46, 0.6, -0.05), c + Vector3(0.46, 1.25, -0.05)])
+	k.box(c + Vector3(0.46, 1.3, -0.08), Vector3(0.12, 0.28, 0.09), "black", false)
+	k.box(c + Vector3(0.45, 1.48, -0.08), Vector3(0.05, 0.17, 0.05), "metal", false)
 	k.interact(c + Vector3(0, 1.0, -1.4), "load", "Fuel & load planner")
 
 
 static func drums(k: Kit, c: Vector3, n := 5) -> void:
 	for i in n:
-		k.cylinder(c + Vector3((i % 3) * 0.7, 0, (i / 3) * 0.7), 0.3, 0.9, "blue" if i % 2 else "metal_rust", 10)
+		var at := c + Vector3((i % 3) * 0.7, 0, (i / 3) * 0.7)
+		fuel_drum(k, at, i)
+	loading_pallet(k, c + Vector3(-1.25, 0, 0.7))
 	k.interact(c + Vector3(0.7, 1.0, -1.4), "load", "Fuel drums & load planner")
+
+
+## Period steel drum: original body collider, with batched hoops and bung detail.
+static func fuel_drum(k: Kit, at: Vector3, variant := 0) -> void:
+	var paint: String = ["drum_blue", "drum_sage", "metal_rust"][posmod(variant, 3)]
+	k.cylinder(at, 0.3, 0.9, paint, 10)
+	for y in [0.05, 0.30, 0.62, 0.86]:
+		k.cylinder(at + Vector3(0, y, 0), 0.307, 0.025, "metal_rust", 10, false)
+	k.cylinder(at + Vector3(0.11, 0.9, 0.06), 0.035, 0.018, "black", 8, false)
+	k.plate("res://assets/props/fuel_drum_label.svg", at + Vector3(0, 0.47, -0.287), Vector2(0.16, 0.18))
+
+
+## Small loading stack beside the drums, away from their interaction approach.
+static func loading_pallet(k: Kit, at: Vector3) -> void:
+	# One simple floor collider; the gaps and braces are visual geometry.
+	k.box(at + Vector3(0, 0.04, 0), Vector3(0.95, 0.08, 1.1), "wood")
+	for x in [-0.36, 0.0, 0.36]:
+		k.box(at + Vector3(x, 0.10, 0), Vector3(0.12, 0.12, 1.1), "wood", false)
+	for z in [-0.43, -0.21, 0.0, 0.21, 0.43]:
+		k.box(at + Vector3(0, 0.18, z), Vector3(0.95, 0.05, 0.15), "wood", false)
+	var crate := at + Vector3(0, 0.45, 0.05)
+	k.box(crate, Vector3(0.68, 0.49, 0.68), "wood")
+	for x in [-0.25, 0.25]:
+		k.box(crate + Vector3(x, 0, -0.35), Vector3(0.055, 0.49, 0.035), "metal_rust", false)
+		k.box(crate + Vector3(x, 0.26, 0), Vector3(0.055, 0.035, 0.68), "metal_rust", false)
 
 
 static func shed(k: Kit, c: Vector3, w := 7.0, d := 5.0, key := "wood") -> void:
@@ -396,6 +488,7 @@ static func shed(k: Kit, c: Vector3, w := 7.0, d := 5.0, key := "wood") -> void:
 	k.wall(c.x + w / 2, c.z - d / 2, c.x + w / 2, c.z + d / 2, c.y, 2.8, 0.2, key)
 	k.gable(c + Vector3(0, 2.8, 0), w, d, 1.4, "metal_rust")
 	k.box(c + Vector3(w / 2 - 1.0, 1.5, d / 2 - 0.25), Vector3(1.4, 1.0, 0.08), "wood", false)
+	k.plate("res://assets/props/pinned_notices.svg", c + Vector3(w / 2 - 1.0, 1.5, d / 2 - 0.30), Vector2(1.27, 0.87))
 	k.interact(c + Vector3(w / 2 - 1.0, 1.0, d / 2 - 1.2), "jobs", "Job board")
 
 
@@ -417,43 +510,26 @@ static func terminal(k: Kit, c: Vector3, w := 36.0, d := 14.0) -> void:
 
 ## The buildings beside one strip, in Godot coordinates, facing the runway.
 static func airfield_site(world: World, af: Airfield) -> Node3D:
-	var z := world.airfield_elev(af) + 0.12
 	var k := Kit.new("site-" + af.code)
-	# frame: origin beside the runway on its right-hand side, local -z faces the runway
-	var W := af.width / 2
-	var L := af.length / 2
-	var off := W + 38.0
-	match af.kind:
-		"hub":
-			terminal(k, Vector3(0, 0, 18), 36, 14)
-			tower(k, Vector3(34, 0, 20), 16)
-			hangar(k, Vector3(-38, 0, 14), 22, 24)
-			hangar(k, Vector3(-64, 0, 14), 22, 24, false)
-			fuel_pump(k, Vector3(14, 0, -6))
-			showroom(k, Vector3(64, 0, 14))
-		"regional":
-			terminal(k, Vector3(0, 0, 14), 20, 10)
-			tower(k, Vector3(20, 0, 14), 10)
-			hangar(k, Vector3(-26, 0, 12), 18, 20)
-			fuel_pump(k, Vector3(10, 0, -6))
-			showroom(k, Vector3(42, 0, 12))
-		"bush":
-			shed(k, Vector3(0, 0, 8), 7, 5, "wood")
-			drums(k, Vector3(7, 0, 4))
-		_:
-			shed(k, Vector3(0, 0, 8), 6, 4, "metal_rust")
-			drums(k, Vector3(6, 0, 4), 7)
+	var records := []
+	for part in SiteLayout.airfield_parts(af):
+		var c: Vector3 = part.center
+		var dims: Vector3 = part.dimensions
+		match part.kind:
+			"terminal": terminal(k, c, dims.x, dims.z)
+			"tower": tower(k, c, dims.y)
+			"hangar": hangar(k, c, dims.x, dims.z, part.with_board)
+			"pump": fuel_pump(k, c)
+			"showroom": showroom(k, c, dims.x, dims.z)
+			"shed": shed(k, c, dims.x, dims.z, "wood" if af.kind == "bush" else "metal_rust")
+			"drums": drums(k, c, 5 if af.kind == "bush" else 7)
+		records.append(SiteLayout.record(world, part.id, part.kind, SiteLayout.airfield_frame(world, af).translated_local(c), dims))
 	var node := k.finish()
 	for c in node.get_children():
 		if c is Area3D:
 			c.set_meta("field", af.code)
-	# place: along = -L * 0.3 (the classic buildings' spot), across = +off to the right
-	var along := -L * 0.3 if af.kind in ["hub", "regional"] else -L * 0.6
-	var gx := af.x + af.ux * along + af.uy * off
-	var gy := af.y + af.uy * along - af.ux * off
-	node.position = Vector3(gx, z, -gy)
-	# local -z must face the runway: the runway lies toward (-uy, +ux) from the site
-	node.rotation.y = atan2(af.uy, af.ux)
+	node.transform = SiteLayout.airfield_frame(world, af)
+	node.set_meta("site_records", records)
 	return node
 
 
@@ -479,8 +555,7 @@ static func hq(world: World, spec: Dictionary) -> Node3D:
 					_compound(k)
 	var node := k.finish()
 	var z := world.ground(spec.x, spec.y)
-	node.position = Vector3(spec.x, z, -spec.y)
-	node.rotation.y = -deg_to_rad(spec.heading)
+	node.transform = SiteLayout.hq_frame(world, spec)
 	# a foundation down to the lowest ground under the footprint
 	var low := z
 	for d in [[-14, -14], [14, -14], [14, 14], [-14, 14]]:
