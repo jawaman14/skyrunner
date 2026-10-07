@@ -1,5 +1,10 @@
 # Dialogue, menus, buildings, roads and NPC review
 
+> Historical source audit, retained as written. Dialogue reliability/input and the
+> shared action-preview foundation have since advanced in #186–#188. Current
+> completion evidence and remaining work are in [ROADMAP.md](ROADMAP.md).
+> Audit screenshots and proposals do not establish current gameplay validation.
+
 Review date: 7 October 2026 (Sydney). Baseline: the integrated work following
 PRs #178–#181, plus the fuel-cache art follow-on. These are proposed changes,
 not an assertion that the entire interface/world has been playtested.

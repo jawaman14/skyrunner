@@ -18,8 +18,15 @@ validation; do not merge automatically. #119 (patterns/Asset Bible) is independe
 [Baseline reconciliation #184](https://github.com/jawaman14/skyrunner/pull/184),
 [Costa Brava map focus #185](https://github.com/jawaman14/skyrunner/pull/185), and
 [dialogue reliability/navigation #186](https://github.com/jawaman14/skyrunner/pull/186)
-are prepared as draft continuations of that stack. The current baseline passed
-915 tests across three shards (331 / 266 / 318, zero failures). Exported Windows human walkthrough
+are prepared as draft continuations of that stack.
+[Dialogue input hardening #187](https://github.com/jawaman14/skyrunner/pull/187) and
+[shared action previews #188](https://github.com/jawaman14/skyrunner/pull/188)
+continue in that order. The integrated source baseline passed
+927 tests across three shards (277 / 341 / 309, zero failures and no script errors).
+Existing Godot shutdown resource diagnostics persist. The earlier #186 CI run
+[37487390571](https://github.com/jawaman14/skyrunner/actions/runs/37487390571)
+passed shards, dedicated-server checks, exports and Linux/Windows smoke tests;
+that export evidence does not validate the later commits. Exported Windows human walkthrough
 and real two-machine remote/voice validation remain unperformed.
 
 ## Ordered implementation queue
@@ -57,6 +64,7 @@ and real two-machine remote/voice validation remain unperformed.
 10. **Period art:** validate one existing coastal reference area, then reuse
     architecture, infrastructure, workshop props, vehicles and analogue cockpits.
     Weathered 1979-1982 world; neon concentrated in nightlife and interface accents.
+    Maintain [ASSET_PROVENANCE.md](ASSET_PROVENANCE.md) with actual runtime usage.
 
 ## Completion gates
 
