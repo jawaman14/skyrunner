@@ -352,7 +352,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			return
 		var m := _active_menu()
 		if m != null:
-			if ev.echo and MENU_KEYS.get(k, "") == "enter":
+			if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k == KEY_G)):
 				get_viewport().set_input_as_handled()
 				return  # holding Enter must not confirm a newly armed action
 			if k == KEY_ESCAPE:

@@ -219,3 +219,17 @@ func test_campaign_guide_fits_supported_sizes_and_controller_back() -> void:
 			_menu = null
 			viewport.free()
 	UIStyle.set_palette(palette)
+
+
+func test_pilot_menu_dispatch_can_open_and_leave_guidance_without_calling() -> void:
+	var sess := _live()
+	Story.new().attach(sess)
+	_menu = PhoneMenu.new().setup(sess)
+	Engine.get_main_loop().root.add_child(_menu)
+	_menu.open()
+	check(_menu.list.has_focus(), "contacts remain initial task")
+	_menu.key("g")
+	check(_menu.campaign_scroll.visible, "app letter dispatch opens guide")
+	_menu.key("enter")
+	check(not _menu.campaign_scroll.visible, "focused guide button returns to contacts")
+	check(_menu.list.has_focus(), "contact focus restored")
