@@ -40,7 +40,7 @@ func _build() -> void:
 		{"title": "Load", "align": "right", "mono": true, "min": 110}, {"title": "Aboard", "expand": true, "min": 160}])
 	stations.focus_mode = Control.FOCUS_NONE
 	stations.size_flags_vertical = Control.SIZE_FILL
-	stations.custom_minimum_size = Vector2(0, 250)
+	stations.custom_minimum_size = Vector2(0, 200)
 	left.add_child(stations)
 	left.add_child(UIStyle.caption("Cargo  -  pick a station for each item"))
 	var scroll := ScrollContainer.new()
@@ -52,10 +52,15 @@ func _build() -> void:
 	items_box.add_theme_constant_override("h_separation", 12)
 	scroll.add_child(items_box)
 
+	var right_scroll := ScrollContainer.new()
+	right_scroll.custom_minimum_size.x = 400
+	right_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	h.add_child(right_scroll)
 	var right := VBoxContainer.new()
-	right.custom_minimum_size = Vector2(400, 0)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_theme_constant_override("separation", 6)
-	h.add_child(right)
+	right_scroll.add_child(right)
 	var vrow := HBoxContainer.new()
 	vrow.add_theme_constant_override("separation", 8)
 	vrow.add_child(UIStyle.caption("Weight & balance"))
@@ -114,7 +119,7 @@ func _build() -> void:
 	crew.add_child(lm)
 	right.add_child(crew)
 	chart = CGChart.new()
-	chart.custom_minimum_size = Vector2(300, 150)  # it grows into whatever the column has left
+	chart.custom_minimum_size = Vector2(300, 110)  # it grows into whatever the column has left
 	chart.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right.add_child(chart)
 	readout = UIStyle.label("", 14, UIStyle.RED)
@@ -128,6 +133,11 @@ func _items() -> Array:
 	return Py.sorted_by(s.loadout.items.values(), func(i): return float(i.job_id) * 1e7 + i.id)
 
 
+func close() -> void:
+	fuel_dragging = false
+	super.close()
+
+
 func refresh() -> void:
 	var lo: Loadout = s.loadout
 	if not fuel_dragging:
@@ -136,7 +146,7 @@ func refresh() -> void:
 	subtitle.text = "%s  -  crew loading: %d" % [s.spec.name, s.crew_count()]
 	_refresh_stations()
 	_refresh_items()
-	_refresh_fuel_and_wb()
+	_refresh_fuel_and_wb(fuel_slider.value if fuel_dragging else null)
 
 
 func _refresh_stations() -> void:
@@ -204,9 +214,11 @@ func _refresh_items() -> void:
 func _picked(iid: int, station: int) -> void:
 	if _building:
 		return
-	var err = s.place_item(iid, station)
-	if err:
-		s.say(err)
+	var result: Array = s.command(Roles.PILOT, "move_item", {"item_id": iid, "station": station})
+	if result[0]:
+		show_feedback("Cargo returned to the ramp." if station < 0 else "Cargo placement queued. Wait for loading before departure.", true)
+	else:
+		show_feedback(str(result[1]), false)
 	refresh()
 
 
@@ -214,8 +226,9 @@ func _cruise() -> Array:
 	return [float(PilotBot.CRUISE_FUEL_PPH.get(s.aircraft_key, 60)), float(PilotBot.CRUISE_KTS.get(s.aircraft_key, 110))]
 
 
-func _refresh_fuel_and_wb() -> void:
+func _refresh_fuel_and_wb(preview = null) -> void:
 	var lo: Loadout = s.loadout
+	var fuel: float = lo.fuel_lb if preview == null else float(preview)
 	var cap := lo.mass.fuel_capacity_lb()
 	fuel_slider.max_value = cap
 	if not fuel_dragging:
@@ -223,12 +236,19 @@ func _refresh_fuel_and_wb() -> void:
 	var src: Array = s.fuel_source()
 	var supply := "unlimited" if src[1] >= 1e8 else "%.0f lb in the cache" % src[1]
 	var price := "free (your cache)" if src[0] == 0 else "$%.2f/lb" % src[0]
-	fuel_lbl.text = "%.0f / %.0f lb in the wings   %s, %s" % [lo.fuel_lb, cap, price, supply]
+	fuel_lbl.text = "%.0f / %.0f lb in the wings   %s, %s" % [fuel, cap, price, supply]
+	if preview != null:
+		var extra := maxf(0.0, fuel - s.fm.fuel_lb())
+		var available := minf(extra, float(src[1]))
+		var cost := 0 if s.fuel_caches.get(s.location, 0.0) > 0 else int(Py.round_int(available * float(src[0])))
+		fuel_lbl.text += "\nPREVIEW: $%s for %.0f lb available. Release to apply." % [Py.money(cost), available]
+		if available < extra:
+			fuel_lbl.text += " Supply cannot reach this target."
 	var ferry := lo.ferry_fuel_lb()
 	if not lo.ferry_tanks().is_empty():
 		fuel_lbl.text += "\nferry tank %.0f lb (pump it forward in flight)" % ferry
 	ferry_btn.disabled = lo.ferry_tanks().is_empty()
-	var wb = lo.compute()
+	var wb = lo.compute(fuel)
 	var zfw = lo.compute(0.0)
 	chart.set_data(s.spec, Vector2(wb.cg_in, wb.weight_lb), Vector2(zfw.cg_in, zfw.weight_lb), wb.ok())
 	var details := []
@@ -241,7 +261,7 @@ func _refresh_fuel_and_wb() -> void:
 	if not lo.unassigned().is_empty():
 		details.append("%d item(s) left on the ramp" % lo.unassigned().size())
 	var cr := _cruise()
-	var hours: float = (lo.fuel_lb + ferry) / cr[0]
+	var hours: float = (fuel + ferry) / cr[0]
 	verdict.set_state("OK" if wb.ok() else "OUT OF LIMITS", UIStyle.GREEN if wb.ok() else UIStyle.RED, true)
 	var heavy: bool = wb.weight_lb > s.spec.mtow_lb
 	tiles["tow"].set_value("%.0f lb" % wb.weight_lb, UIStyle.RED if heavy else UIStyle.WHITE, wb.weight_lb / s.spec.mtow_lb,
@@ -252,7 +272,7 @@ func _refresh_fuel_and_wb() -> void:
 		"range ~%.0f km at cruise" % (hours * cr[1] * 1.852))
 	var need = _route_need()
 	if need != null:
-		var margin: float = (lo.fuel_lb + ferry - need[1]) / cr[0] * 60
+		var margin: float = (fuel + ferry - need[1]) / cr[0] * 60
 		tiles["route"].set_value("%s%.0f min" % ["SHORT " if margin < 0 else "", absf(margin)],
 			UIStyle.RED if margin < 0 else (UIStyle.AMBER if margin < 30 else UIStyle.GREEN), -1.0,
 			"%.1f km needs ~%.0f lb" % [need[0] / 1000, need[1]])
@@ -278,18 +298,27 @@ func _route_need():
 
 
 func _preview_fuel(v: float) -> void:
-	s.loadout.fuel_lb = v  # what-if while dragging; applied (and paid for) on release
-	_refresh_fuel_and_wb()
+	_refresh_fuel_and_wb(v)
 
 
 func _set_fuel(v: float) -> void:
-	s.set_fuel(v)
+	var before := s.fm.fuel_lb()
+	var funds: int = s.money
+	var result: Array = s.command(Roles.PILOT, "set_fuel", {"lb": v})
+	var actual := s.fm.fuel_lb()
+	var target := clampf(v, 10.0, s.loadout.mass.fuel_capacity_lb())
+	if not result[0]:
+		show_feedback(str(result[1]), false)
+	elif target > before + 0.5 and actual <= before + 0.5:
+		show_feedback("No fuel available here. The requested fill was not completed.", false)
+	else:
+		show_feedback("Wing fuel %.0f lb; charged $%s.%s" % [actual, Py.money(funds - s.money), " Supply limited this fill." if actual < target - 0.5 else ""], true)
 	refresh()
 
 
 func _route_fuel() -> void:
 	if s.active_jobs.is_empty():
-		s.say("Take a job first: the route decides the fuel.")
+		show_feedback("Take a job first: the route decides the fuel.", false)
 		return
 	var legs := PilotBot.mission_for(s, s.active_jobs[0], s.location)
 	_set_fuel(PilotBot.plan_fuel_lb(s, legs, 0.5))
@@ -304,15 +333,18 @@ func key(k: String) -> void:
 			sel = posmod(sel + 1, maxi(1, items.size()))
 		"left", "right":
 			if not items.is_empty():
-				s.cycle_item(items[mini(sel, items.size() - 1)].id, 1 if k == "right" else -1)
+				var result: Array = s.command(Roles.PILOT, "move_item", {"item_id": items[mini(sel, items.size() - 1)].id, "direction": 1 if k == "right" else -1})
+				show_feedback("Cargo placement updated. Wait for loading before departure." if result[0] else str(result[1]), bool(result[0]))
 		"a":
-			if not s.hire_loadmaster():
-				s.say("Loadmaster couldn't fit everything.")
+			var funds: int = s.money
+			var result: Array = s.command(Roles.PILOT, "loadmaster")
+			var charge := " Charged $%s." % Py.money(funds - s.money)
+			show_feedback(("Loadmaster replanned the cargo. Check balance and loading." if result[0] else str(result[1])) + charge, bool(result[0]))
 		"+", "-":
 			_set_fuel(s.fm.fuel_lb() + (0.1 if k == "+" else -0.1) * s.loadout.mass.fuel_capacity_lb())
 			return
 		"f":
-			var err = s.fill_ferry(10000)
-			if err:
-				s.say(err)
+			var funds: int = s.money
+			var result: Array = s.command(Roles.PILOT, "fill_ferry", {"lb": 10000})
+			show_feedback("Ferry fuel %.0f lb; charged $%s. Check weight and balance." % [s.loadout.ferry_fuel_lb(), Py.money(funds - s.money)] if result[0] else str(result[1]), bool(result[0]))
 	refresh()

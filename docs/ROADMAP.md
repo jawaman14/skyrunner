@@ -263,3 +263,7 @@ Second wave, larger features:
   Holding Enter cannot confirm a newly armed action. This is a pilot job-board slice of #121;
   other menus, remote action descriptors and the shared event-feed program (#120) remain open.
 - A browser (web) build, single-player.
+- **Load-planner feedback slice:** fuel dragging is a read-only estimate with purchase cost
+  and supply limits. Cargo, fuel, ferry-tank and loadmaster actions use the command surface
+  and retain local outcomes, including partial fills and charged-but-incomplete balancing.
+  The instrument column scrolls when constrained so feedback and shortcuts remain visible.
