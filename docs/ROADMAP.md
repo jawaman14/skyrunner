@@ -60,8 +60,9 @@ and real two-machine remote/voice validation remain unperformed.
    ordered pickups/deliveries, limited stock, ammunition exclusion and travel obligations.
    Commands reject stale/burned destinations before dispatch. Review callbacks
    freeze argument copies; caller changes cannot substitute a different order.
-   Finish dialogue commitment review, plus
-   remaining menu-specific actions; unsupported previews stay explicit.
+   Supported dialogue commitments now share Cancel-first host preview/recheck,
+   frozen arguments and removal cancellation before command dispatch. Finish
+   descriptions for other committing dialogue and remaining menu-specific actions; unsupported previews stay explicit.
 4. **Menus/settings:** finish focus, selection, scrolling, persistent feedback,
    disabled reasons and palette refresh across all menus. Hangar/dealer first,
    logistics/rackets next, then remaining screens. The shared shell now focuses

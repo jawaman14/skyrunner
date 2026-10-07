@@ -192,3 +192,39 @@ func test_long_choices_fit_palettes_sizes_and_mouse_controller_input() -> void:
 			viewport.queue_free()
 			await Engine.get_main_loop().process_frame
 	UIStyle.set_palette(original_palette)
+
+func _review_request(balloon: TalkBalloon, link, state: Talk.State, args: Dictionary, reply: Dictionary) -> void:
+	reply.result = await Talk.reviewed_result(balloon, link, "buy_vehicle", args, state)
+
+func test_dialogue_purchase_review_cancel_commit_and_removal() -> void:
+	for cause in ["cancel", "approve", "remove"]:
+		var session := Session.new({"seed": 9, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES, "dealership": true, "money": 200000})
+		var link := LocalLink.new(session, Roles.PILOT, false)
+		var state := Talk.State.new(link.snapshot, Callable())
+		var balloon := TalkBalloon.new()
+		balloon.state = state
+		Engine.get_main_loop().root.add_child(balloon)
+		var args := {"id": "van"}
+		var reply := {}
+		_review_request(balloon, link, state, args, reply)
+		check(balloon.review != null and session.dealer.owned.is_empty())
+		args.id = "box"
+		for i in 3: await Engine.get_main_loop().process_frame
+		if cause == "remove":
+			Engine.get_main_loop().root.remove_child(balloon)
+		elif cause == "cancel":
+			balloon.review.box.key("esc")
+		else:
+			balloon.review.box.key("right")
+			balloon.review.box.key("enter")
+		for i in 4: await Engine.get_main_loop().process_frame
+		check(reply.has("result"), cause + " resolves the pending dialogue")
+		if cause == "approve":
+			check(reply.result[0])
+			check_eq(session.dealer.owned.size(), 1)
+			check_eq(session.dealer.owned[0].id, "van", "confirmation executes the reviewed vehicle")
+		else:
+			check(not reply.result[0] and session.dealer.owned.is_empty())
+		balloon.free()
+		session.dispose()
+		World.use_map(0)

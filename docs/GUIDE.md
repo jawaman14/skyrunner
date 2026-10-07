@@ -612,3 +612,12 @@ Cash at later stops is an estimate until pickup; limited goods are divided in st
 Armoury relocation moves weapons, excludes ammunition and changes its location on arrival.
 Cancel leaves stock unchanged. Confirm checks current consequences again; a changed
 preview requires another review. Trucks still incur fuel costs and travel risks.
+
+### Dialogue action reviews
+
+Supported purchases, sales, transfers, repairs and job commitments made through
+conversation use the same host consequence review as menus. Escape cancels the
+review and returns its result to the conversation. Leaving or removing the
+conversation while reviewing sends no command. A confirmed command still waits
+for its correlated acknowledgement and refreshed state before success narration.
+Other conversation actions retain their existing host validation and result handling.
