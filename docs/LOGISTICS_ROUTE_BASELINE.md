@@ -46,3 +46,23 @@ access legs, 31 without nearby checked access, 9 without an authored destination
 Loading-area mapping alone is insufficient. Correct the remaining authored
 connectors, physical route validation and meeting records before migrating
 trucks. No inventory, money, route timings or balance rules changed in this audit.
+
+## Validated local detours
+
+Checked vehicle access now uses the same footprint detours as the site validator
+and selects the nearest usable authored road node, with deterministic ties.
+Both endpoint distance and actual local detour length remain bounded by 120m;
+water, grades, runways, building footprints and network edges are still checked.
+This does not create roads or enable live logistics dispatch migration.
+
+The paired 99-route audit improves from 2 to 7 reachable loading routes. The two
+HQ/docks routes retain identical lengths (1341.66m). Five newly valid routes are
+docks/shack in both directions (11740.96m), HQ/shack in both directions (11860.83m)
+and shack/Company strip (1560.32m). 92 remain blocked: 16 grade, 17 footprint,
+9 unauthored meeting, 24 disconnected network and 26 no nearby access.
+[Raw checked-route report](../sim-results/loading-access-2026-10-07.json).
+
+Payroll physical vehicle travel already consumes this API; its focused movement,
+blocking/lifecycle/save tests pass. Payroll effectiveness is not arrival-gated.
+Broader strategic paired-seed measurements and human physical walkthrough remain
+pending before integration; do not treat the route audit as an economic playtest.
