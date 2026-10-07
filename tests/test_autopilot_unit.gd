@@ -108,3 +108,35 @@ func test_off_the_course_line_it_steers_back_onto_it() -> void:
 	s.x = -600.0
 	ap.update(0.1, s, FlightModel.Controls.new())
 	check(ap.hdg_target > 0.0 and ap.hdg_target < 90.0, "west of the line: aim east of north (%.1f)" % ap.hdg_target)
+
+func test_waypoint_behind_aircraft_gets_forward_intercept() -> void:
+	var ap := Autopilot.new()
+	var state := FlightModel.FlightState.new()
+	state.x = 1000.0
+	state.y = 0.0
+	state.heading = 90.0
+	state.gs_kts = 120.0
+	state.ias_kts = 120.0
+	state.alt = 1000.0
+	state.pitch = 2.0
+	var controls := FlightModel.Controls.new()
+	ap.engage_route(state, [[0.0, 0.0], [100.0, 0.0]], 1000.0)
+	ap.update(1.0 / 30.0, state, controls)
+	check(not ap.waypoints.is_empty(), "a passed fix does not immediately orbit/finish")
+	check(float(ap.waypoints[0][0]) > state.x + 1000.0, "intercept is ahead of current course")
+	check_eq(ap._leg_from, [state.x, state.y], "course line locks at the current position")
+
+func test_forward_intercept_is_deterministic_for_qry_pnr_bearings() -> void:
+	for heading in [0.0, 90.0, 180.0, 270.0]:
+		var ap := Autopilot.new()
+		var state := FlightModel.FlightState.new()
+		state.x = 5000.0
+		state.y = -3000.0
+		state.heading = heading
+		state.gs_kts = 100.0
+		state.ias_kts = 100.0
+		state.alt = 1000.0
+		state.pitch = 2.0
+		ap.engage_route(state, [[state.x - 5000.0, state.y - 5000.0]], 1000.0)
+		ap.update(1.0 / 30.0, state, FlightModel.Controls.new())
+		check(ap.waypoints[0] is Array and is_finite(float(ap.waypoints[0][0])) and is_finite(float(ap.waypoints[0][1])), "heading %d keeps a finite forward target" % int(heading))
