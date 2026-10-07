@@ -2,8 +2,9 @@
 
 **Bush flying, smuggling and the long arm of the law, on a fictional Caribbean coast, 1979-89.**
 
-You start as a bush pilot with half a Cessna and a fuel bill. You can end up as the organisation the coast
-answers to: the crews, the stash houses, the street war, the lawyers, the Family and the Company. Or you can
+Fresh story games start as an employed pilot, immediately flying Costa Brava Air Services’ Cessna.
+Ordinary supplies lead to suspicious charters and disclosed smuggling; buying your own aircraft is a milestone.
+You can end up as the organisation the coast answers to: the crews, the stash houses, the street war, the lawyers, the Family and the Company. Or you can
 sit at the task force's desk and hunt that pilot down. Every seat is playable alone (the AI plays the rest) or
 with friends over the network.
 
@@ -24,8 +25,23 @@ exports it to Linux, Windows and macOS.
 | **Load planner** | **The boss's desk** | **Take a seat: the AI plays the rest** |
 | ![load](docs/img/ui-load.png) | ![boss](docs/img/ui-boss.png) | ![seats](docs/img/ui-seats.png) |
 
-*(More screenshots are in [docs/img/](docs/img/); they were rendered on a GPU-less machine with Godot's compatibility
+*(Historical screenshots from earlier builds. More screenshots are in [docs/img/](docs/img/); they were rendered on a GPU-less machine with Godot's compatibility
 renderer, so SSAO and volumetric fog, which need Forward+ on a real GPU, are missing.)*
+
+## Gameplay recordings
+
+Recorded from the development PR stack on a Windows desktop, 8 October 2026, at 1280×720 using Godot's compatibility renderer. These are scripted in-engine demonstrations with staged scenarios, not human playtests. Clips are silent.
+
+| Aspect | Recording preview (click to open) |
+|---|---|
+| Employed opening, employer contracts and first ownership journal | [![Watch opening](docs/media/opening.jpg)](docs/media/opening.mp4) |
+| Jobs, loading, hangar, co-pilot and organisation/police command seats | [![Watch interface tour](docs/media/interface.jpg)](docs/media/interface.mp4) |
+| Costa Brava, airborne delivery, radar/DF, logistics and markets | [![Watch coast and logistics](docs/media/coast-logistics.jpg)](docs/media/coast-logistics.mp4) |
+| Squad firefight, command maps, on-foot combat and night lighting | [![Watch turf war](docs/media/turf-war.jpg)](docs/media/turf-war.mp4) |
+| AI flight and task-force tracking in the same local simulation | [![Watch flight and police](docs/media/flight-police.jpg)](docs/media/flight-police.mp4) |
+| Contacts, vehicles, race availability, rackets and roulette | [![Watch services](docs/media/services.jpg)](docs/media/services.mp4) |
+
+Download a clip if GitHub opens its file page instead of playing it. [Capture notes and reproduction](docs/GAMEPLAY_RECORDINGS.md) identify staging, coverage and remaining checks. Local command-seat footage does not establish real network/voice acceptance.
 
 ## Quick start
 
@@ -56,13 +72,13 @@ keys, **F8** to rebind them, **F4** for the multiplayer menu.
 
 ### Run the coast
 
-- **The story** (the default): twelve chapters, 1979 to 1988 (*Square Grouper*, *The Connection*, *Blotter*, *Cocaine
+- **The story** (the default): an employed-pilot opening (two supply flights, one suspicious charter and one disclosed smuggling delivery), followed by twelve chapters, 1979 to 1988 (*Square Grouper*, *The Connection*, *Blotter*, *Cocaine
   Cowboys*, *Family Business*, *The Task Force*, *Isla Soberana*, *The House*, *The Company*, *Kingpin*, *The Hearings*, *Last Flight*). Each chapter opens part
   of the game, so you meet each system on its own. *Unlocks: Open* has all of it from the start; the old flying
   campaign is still there as the *Flying lessons* (Costa Brava, four chapters).
 - **A dedicated server** (`docs/SERVER.md`): run the game headless on a cloud VM (Docker, systemd, or a Google Compute Engine script) and let
   friends join as remote seats, with a password, saves, an AI pilot and a status probe.
-- **Costa Brava**, the default map: the port city of San Telmo (about 6,900 buildings), docks, an airport, a river
+- **Costa Brava**, the default map: the port city of San Telmo, docks, an airport, a river
   and mangrove estuary, a farm plain, a jungle range, the cove and the cays. Or a generated island (`--map N`).
 - **Logistics and trade.** Product and cash are somewhere: trucked, flown, hijacked, stopped at checkpoints. Fuel
   has a price. Dealers sell corner by corner, bulk buyers take lots, and the markets move with arrests, raids,

@@ -22,6 +22,7 @@ var debug := OS.get_environment("UI_TOUR_DEBUG") != ""
 
 
 func _initialize() -> void:
+	World.use_map(MapCity.SEED)
 	var layer := CanvasLayer.new()
 	layer.layer = 100
 	root.add_child(layer)
@@ -39,7 +40,7 @@ func _initialize() -> void:
 	cap_panel.add_child(caption)
 	layer.add_child(cap_panel)
 	shots = [
-		[5.5, _lobby, [[1.2, func(): app.players.grab_focus()], [2.0, func(): app.players.value = 6],
+		[5.5, _lobby, [[1.2, func(): app.players.get_line_edit().grab_focus()], [2.0, func(): app.players.value = 6],
 			[3.6, func(): app.go_btn.grab_focus()]]],
 		[8.0, _jobs, [[1.2, _mkey.bind("down")], [2.0, _mkey.bind("down")], [2.8, _mkey.bind("down")], [3.8, _mkey.bind("up")],
 			[4.8, _mkey.bind("up")], [5.8, _mkey.bind("enter")], [6.6, func(): app._toggle_menu("j")]]],
@@ -135,7 +136,7 @@ func _station(s: Session, role: String) -> StationApp:
 func _lobby() -> void:
 	var l := Lobby.new()
 	_swap(l)
-	_cap("The lobby: one theme everywhere, and every screen works from the keyboard")
+	_cap("Lobby and seat selection: a scripted local UI demonstration")
 
 
 func _jobs() -> void:

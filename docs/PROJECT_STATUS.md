@@ -107,3 +107,9 @@ Focused ground/foot/report tests and smoke pass. At code head 4707627, full desk
 regression passes 1,027 tests, zero failed and no script/parse errors; evidence is recorded
 in [the lifecycle report](BATTLE_FINALIZATION_2026-10-08.md). No merge or human
 acceptance claim is made. Planning PRs #241-#243 remain documentation only.
+
+## Employed opening and capture continuation, 8 October 2026
+
+Draft #250 introduces the employed opening and loan ownership; #251 corrects its first criminal destination. Combined code at `be22895` passes **1,041 CI tests** (329 / 361 / 351), hygiene, dedicated-server checks, exports and Linux/Windows/macOS smoke jobs ([run](https://github.com/jawaman14/skyrunner/actions/runs/37655944895)). Draft #252 adds a saved first-ownership journal milestone and corrected guidance; 25 focused employment/story tests pass. These are unmerged continuation evidence, not a replacement for the merged baseline above.
+
+[Gameplay recordings](GAMEPLAY_RECORDINGS.md) cover selected staged desktop scenarios and distinguish local command seats from real multiplayer. Human campaign/pacing, physical controllers, four-resolution/read-aloud acceptance and real two-machine voice/handoff remain pending.

@@ -372,3 +372,7 @@ Beyond the prototype:
 
 *(Rendered on a GPU-less box: Mesa llvmpipe with Godot's compatibility renderer under Xvfb. SSAO and
 volumetric fog need Forward+ on a real GPU.)*
+
+### Employed opening and first ownership (development stack)
+
+Fresh stories begin with immediate use of an employer Cessna, four staged deliveries leading into smuggling, and explicit loan-versus-ownership pricing. First ownership is saved in story history and reflected in guidance. Old saves keep their previous chapters. See [opening details and validation](EMPLOYED_OPENING.md) and [gameplay recordings](GAMEPLAY_RECORDINGS.md). These additions are in draft PRs #250–#252; human pacing remains unverified.

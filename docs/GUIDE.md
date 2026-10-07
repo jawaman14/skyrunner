@@ -1,5 +1,14 @@
 # The Skyrunner guide: roles, mechanics and controls
 
+## New employed career opening
+
+Fresh story games immediately put you in Costa Brava Air Services' Cessna. You may fly it, but do not own it. Open **J** for employer work: two food-supply deliveries, one suspicious sealed-case charter, then a clearly disclosed marijuana delivery. The criminal job uses an unpoliced strip with at least 400 metres of runway; pursuit and customs rules still apply. Postponing is possible, but smuggling is required to advance this story. Timed unloading must finish before delivery counts.
+
+At a dealer, the company Cessna costs a provisional **$18,000** to own. Other aircraft retain their existing prices. Finish or drop active jobs before changing aircraft. Buying an aircraft ends the employer loan, updates guidance and adds a saved **Your first aircraft** journal entry. Existing payment and fuel rules apply; employer-funded expenses are not implemented. The twelve story chapters and four flying lessons remain. Historical saves keep their existing chapter without being restarted into employment.
+
+[Recorded examples](GAMEPLAY_RECORDINGS.md) show the opening and existing command interfaces. Campaign-independent unlocks, configured automation and leader-disconnect rules remain planned rather than completed.
+
+
 One document for playing the game: who you can be, what every system does, and every key. It is written for a
 player. For *why* things work as they do, see [DESIGN.md](DESIGN.md) (the section numbers below point there); for the
 numbers behind the balance see [BALANCE.md](BALANCE.md). In the game, **F1** shows the flight and on-foot keys.

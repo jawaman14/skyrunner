@@ -194,3 +194,7 @@ Expansion issues follow completion gates. Keep issues requiring human playtests,
 physical controllers, rights decisions or two real machines explicitly unresolved
 until their evidence exists. Publishing a draft PR is not integration or proof of
 release acceptance.
+
+### Desktop gameplay media, 8 October 2026
+
+Six [recorded demonstrations](GAMEPLAY_RECORDINGS.md) now cover employment/ownership, flight/police, menus/seats, Costa Brava/logistics, turf war and services. README previews link to MP4s; a capture runner and metadata manifest support reproduction. These selected scripted scenarios do not complete human gameplay, route/access, controller or real multiplayer gates. #250–#252 remain draft gameplay additions with documented automated evidence.

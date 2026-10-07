@@ -57,3 +57,7 @@ original procedural palm geometry.
 External Godot repositories reviewed for possible future tooling are documented
 in `docs/COSTA_BRAVA_REBUILD.md`; none was imported by this batch. Candidate
 repositories are not recorded as shipped assets.
+
+## Gameplay documentation media — 8 October 2026
+
+`docs/media/*.mp4` and poster JPEGs are original in-engine captures made on the project owner’s Windows desktop from this repository’s assets; underlying asset licences remain as listed above. Videos are silent and contain no archived broadcast audio. See [capture coverage](GAMEPLAY_RECORDINGS.md) and [hash/format manifest](media/manifest.json). Documentation media is excluded from exported game builds.
