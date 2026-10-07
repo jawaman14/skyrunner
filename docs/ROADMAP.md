@@ -24,8 +24,9 @@ are prepared as draft continuations of that stack.
 continue in that order. Draft continuations #189 (documentation), #190 (menu focus),
 #191 (station outcomes/feed), #192 (interaction occlusion), #193 (checked road
 surfaces) and #194 (shared site records/overlay) follow in dependency order.
-The source baseline through #193 passed
-937 tests across three shards (321 / 308 / 308, zero failures and no script errors).
+Draft #195 adds stash interiors, #196 graded bridge approaches and #197 modal input.
+The source baseline through #197 passed
+948 tests across three shards (313 / 316 / 319, zero failures and no script errors).
 Existing Godot shutdown resource diagnostics persist. The #193 CI run
 [37546858573](https://github.com/jawaman14/skyrunner/actions/runs/37546858573)
 passed all three shards, dedicated server, exports and Linux/Windows smoke checks.
@@ -73,7 +74,10 @@ and real two-machine remote/voice validation remain unperformed.
    results without retrying. Station logistics uses this path; selection follows
    IDs and cards consume filtered snapshots. A text-only ordered/deduplicated
    EventBus/Chronicle feed retains source, age and report uncertainty, with
-   severity-based expiry. Remote preview adoption and map layer controls remain.
+   severity-based expiry. Station maps now group operations, people/logistics and intelligence with
+   keyboard-focusable toggles. Visible items consume the role-filtered snapshot
+   and preserve report metadata; hidden map markers cannot dispatch/select.
+   Remote preview adoption and the remaining seat-specific refinements remain.
 6. **Placement/access:** deterministic footprints, entrances, walk/loading
    approaches and network connectors; diagnostic overlay and interaction occlusion.
    Through-wall interaction is reproduced with actual overlapping physics areas

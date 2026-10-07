@@ -27,6 +27,8 @@ var tutorial_panel: TutorialPanel = null  ## the desk's tutorial lesson (F10 ski
 var link  ## NetClient or LocalLink
 var role := ""
 var world: World
+var layer_buttons := {}
+var _palette := ""
 var map: StationMap
 var title: Label
 var subtitle: Label
@@ -69,6 +71,7 @@ func setup(link_, role_: String, world_: World = null, vertical := false) -> Sta
 	world = world_ if world_ != null else World.new()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = UIStyle.theme()
+	_palette = UIStyle.palette
 	var bg := ColorRect.new()
 	bg.color = Color(0.035, 0.04, 0.055)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -79,15 +82,30 @@ func setup(link_, role_: String, world_: World = null, vertical := false) -> Sta
 	add_child(h)
 	map = StationMap.new().setup(world)
 	map.role = role
-	map.custom_minimum_size = Vector2(340, 340) if vertical else Vector2(640, 640)
+	map.custom_minimum_size = Vector2(300, 300)
 	map.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	# desks with wide tables (HQ, task force) get more of the screen than the co-pilot's
 	map.size_flags_stretch_ratio = 1.0 if vertical else (0.8 if role in [Roles.BOSS, Roles.CHIEF, Roles.CONTROLLER] else 1.1)
 	if role in [Roles.BOSS, Roles.CHIEF, Roles.CONTROLLER] and not vertical:
-		map.custom_minimum_size = Vector2(520, 520)
+		map.custom_minimum_size = Vector2(300, 300)
 	map.clicked.connect(_on_map_click)
-	h.add_child(map)
+	var map_column := VBoxContainer.new()
+	map_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	map_column.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	map_column.size_flags_stretch_ratio = map.size_flags_stretch_ratio
+	var layer_row := HFlowContainer.new()
+	map_column.add_child(layer_row)
+	for key in StationMap.LAYERS:
+		var button := CheckButton.new()
+		button.text = StationMap.LAYERS[key]
+		button.add_theme_font_size_override("font_size", 13)
+		button.button_pressed = true
+		button.toggled.connect(func(enabled): map.set_layer(key, enabled))
+		layer_buttons[key] = button
+		layer_row.add_child(button)
+	map_column.add_child(map)
+	h.add_child(map_column)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", UIStyle.box(Color(0.06, 0.07, 0.095), 0, UIStyle.LINE, 0, Vector4(16, 12, 16, 12)))
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -818,11 +836,11 @@ func _on_map_click(button: int, p: Vector2) -> void:
 	var near := func(items: Array):
 		return Py.min_by(items, func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
 	if button == MOUSE_BUTTON_LEFT:
-		var u = near.call(snap.get("units", []))
+		var u = near.call(map.visible_items("units"))
 		if u != null and PyMath.hypot(u.x - p.x, u.y - p.y) < 1200:
 			sel_unit = u.id
 			return
-		var t = near.call(snap.get("tracks", []))
+		var t = near.call(map.visible_items("tracks"))
 		if sel_unit != null and t != null and PyMath.hypot(t.x - p.x, t.y - p.y) < 1200:
 			_cmd("dispatch", {"unit": sel_unit, "target": t.id})
 	elif button == MOUSE_BUTTON_RIGHT and sel_unit != null:
@@ -880,6 +898,8 @@ func _squad_key(k: String, snap: Dictionary) -> bool:
 ## stash (guard it; for the police: stake it out, or raid it when it's known),
 ## an enemy squad (go after it), or anywhere else (patrol / hold the street).
 func _squad_click(button: int, p: Vector2, snap: Dictionary) -> void:
+	if not map.layers.people:
+		return # Hidden markers cannot select a squad or silently change an order.
 	var near := func(items: Array):
 		return Py.min_by(items, func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
 	if button == MOUSE_BUTTON_LEFT:
@@ -911,6 +931,9 @@ func strip_at(p: Vector2):
 
 # ------------------------------------------------------------ drawing
 func _process(delta: float) -> void:
+	if _palette != UIStyle.palette:
+		_palette = UIStyle.palette
+		theme = UIStyle.theme()
 	var dt := minf(delta, 0.1)
 	link.tick(dt)
 	var snap = link.snapshot()
