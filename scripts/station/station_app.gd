@@ -1408,6 +1408,7 @@ func _draw_squads(snap: Dictionary) -> void:
 			lines += [""] + tl
 	lines.append("")
 	lines.append(preload("res://scripts/ui/widgets/district_summary.gd").describe(g.get("districts", [])))
+	lines.append(preload("res://scripts/ui/widgets/battle_report.gd").describe(g.get("battle_reports", [])))
 	var fights: Array = g.get("fights", [])
 	if not fights.is_empty():
 		lines += ["", "SHOTS FIRED"] + fights.map(func(f): return "  %s vs %s, %.0f s" % [f.a, f.b, float(f.age)])

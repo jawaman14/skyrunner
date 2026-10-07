@@ -656,3 +656,8 @@ paths passed the primary-footprint and terrain/deck checks; orange candidates
 show their failure or remaining verification reason. Checked access legs are not
 proof of an end-to-end public-road route or complete scenery collision. Remote
 locations retain separate access requirements rather than acquiring a new road.
+
+### Recent battle accounts
+
+The HQ district overview and ground-command station show recent completed accounts for your own squads, comparing strength and ammunition and recording final morale/state. Combat losses may include wounded; strength changes can also include custody. Enemy losses and causal factors are not guessed. Up to sixteen recent own-unit accounts are displayed; older peers may not provide reports.
+

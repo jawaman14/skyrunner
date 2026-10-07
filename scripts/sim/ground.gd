@@ -161,6 +161,8 @@ class Fight:
 	var arrests := 0
 	var rounds := 0
 	var over := false
+	var reported := false
+	var starting := {}
 
 
 class Commander:
@@ -176,6 +178,7 @@ var graph: RoadGraph
 var rng: PyRandom  ## commanders' choices (seed + 61)
 var frng: PyRandom  ## firefights (seed + 67)
 var squads: Array = []
+var battle_reports: Array = []  ## Completed own-unit accounts, bounded and saved.
 var fights: Array = []
 var spent := {"recruit": 0, "upkeep": 0, "arms": 0}
 var fights_total := 0  ## firefights started (the balance tool)
@@ -848,6 +851,8 @@ func _open(a: Squad, b: Squad) -> void:
 	f.y = (a.y + b.y) / 2
 	f.t0 = sess.time
 	for q in [a, b]:
+		f.starting[q.faction] = {"people": q.men, "ammo": q.ammo, "morale": q.morale}
+	for q in [a, b]:
 		if q.tactic in ["ambush", "buy_bust"] and q.hidden:
 			f.surprise = q.faction
 			var other: Squad = b if q == a else a
@@ -976,6 +981,7 @@ func _break_off(q: Squad, f: Fight, why: String) -> void:
 	other.state = "holding"
 	f.over = true
 	fights.erase(f)
+	_record_battle(f, "Contact broken: " + why)
 	_say("both", "%s broke contact (%s)" % [q.id, why])
 
 
@@ -1034,6 +1040,7 @@ func _rout(q: Squad, f: Fight) -> void:
 		control[m][winner.faction] += 60.0 * winner.men
 	if winner.faction == "org" and q.faction == "rival" and q.men > 0 and sess.rackets != null:
 		sess.rackets.capture(q)  # some of the beaten are taken
+	_record_battle(f, "Routed: " + q.id)
 	_say("both", "%s routed %s%s" % [winner.id, q.id, (" - %d arrested" % f.arrests) if f.arrests else ""])
 
 
@@ -1064,6 +1071,7 @@ func _gone(q: Squad) -> void:
 	q.state = "gone"
 	if q.fight != null:
 		q.fight.over = true
+		_record_battle(q.fight, "Unit removed from combat")
 		fights.erase(q.fight)
 	squads.erase(q)
 	var ars = arsenal(q.faction)
@@ -1078,6 +1086,26 @@ func _end(f: Fight) -> void:
 		q.fight = null
 		if q.state == "fighting":
 			q.state = "holding"
+	_record_battle(f, "Contact ended")
+
+
+## Record each side's own accounting without copying unseen enemy state.
+func _record_battle(f: Fight, outcome: String) -> void:
+	if f.reported:
+		return
+	f.reported = true
+	for q in [f.a, f.b]:
+		battle_reports.append({"faction": q.faction, "unit": q.id,
+			"time": sess.time, "started": f.t0, "place": place_name(f.x, f.y),
+			"outcome": outcome if outcome.begins_with("Contact") else "Engagement concluded",
+			"starting_people": f.starting.get(q.faction, {}).get("people", q.men),
+			"remaining_people": q.men, "losses": f.cas.get(q.faction, 0),
+			"starting_ammo": f.starting.get(q.faction, {}).get("ammo", q.ammo),
+			"remaining_ammo": q.ammo, "morale": q.morale, "state": q.state})
+	battle_reports = battle_reports.slice(-64)
+
+func battle_history(viewer: String) -> Array:
+	return battle_reports.filter(func(row): return row.get("faction", "") == viewer).slice(-16).duplicate(true)
 
 
 # ================================================================ raids
@@ -1637,6 +1665,7 @@ func snapshot(viewer: String) -> Dictionary:
 			"a": f.a.id, "b": f.b.id, "cas": f.cas.duplicate(), "age": snappedf(sess.time - f.t0, 0.1)}),
 		"control": control.duplicate(true),
 		"districts": district_view(viewer),
+		"battle_reports": battle_history(viewer),
 		"commander": {"ai": commanders[viewer].ai, "log": commanders[viewer].log.slice(-6).map(func(l): return l[1]),
 			"cash": int(commanders.rival.cash) if viewer == "rival" else null},
 		"arrests": arrests_total, "officers_down": officers_down,

@@ -45,7 +45,7 @@ const RACKETS := ["rounds", "taken", "escaped", "ransomed", "ransom_cash", "turn
 const WAR := ["spent", "fights_total", "lost_men", "arrests_total", "officers_down", "_round_t", "_informant_t", "_org_recruit_t",
 	"_upkeep_acc"]
 const WAR_INTS := ["recruit", "upkeep", "arms", "org", "rival", "police"]
-const WAR_PLAIN := ["control", "hot_spots"]
+const WAR_PLAIN := ["control", "hot_spots", "battle_reports"]
 const SEASON := ["night", "phase", "winner", "reason", "history", "runner_log", "law_log", "cartel_bonus", "plan_hist", "disabled",
 	"forecast", "weather", "moon0", "sightings"]
 const SEASON_INTS := ["wind_kt"]

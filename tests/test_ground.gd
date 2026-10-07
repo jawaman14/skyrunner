@@ -82,6 +82,25 @@ func test_snapshot_requires_both_fight_participants_visible() -> void:
 	s.dispose()
 
 
+func test_battle_history_is_private_and_read_only() -> void:
+	var s := _war()
+	var g := s.ground
+	var a := _squad(g, "org", g.hq("org"), {"rifle": 4})
+	var b := _squad(g, "rival", a.pos() + Vector2(50, 0), {"rifle": 4})
+	g._open(a, b)
+	var f = g.fights[0]
+	a.ammo -= 12
+	g._end(f)
+	g._end(f)
+	check_eq(g.battle_reports.size(), 2, "one account per participant")
+	check_eq(g.battle_history("police").size(), 0, "uninvolved faction receives no reports")
+	var rows := g.battle_history("org")
+	check_eq(rows[0].starting_ammo - rows[0].remaining_ammo, 12, "recorded ammunition use")
+	rows[0].remaining_people = 999
+	check_eq(g.battle_history("org")[0].remaining_people, 4, "view cannot mutate history")
+	s.dispose()
+
+
 func _war(seed := 3, ai := false) -> Session:
 	var s := Session.new({"seed": seed, "map_seed": MapCity.SEED, "location": "QRY",
 		"features": Session.SANDBOX_FEATURES, "ground_war": true})

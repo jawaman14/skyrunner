@@ -93,3 +93,19 @@ Still required: correct remaining physical connectors/meeting areas, complete
 district/dashboard and order-lifecycle work, operational/battle debriefs, coastal
 art/gameplay profiling, physical-member combat migration, human pacing and release
 gates. Initial slices do not establish completion of the entire milestone.
+
+## Command clarity and completed battle accounts (2026-10-07)
+
+Draft #238 restricts HQ attack targeting to observed enemies and withholds enemy
+route plans. Draft #239 adds shared district hold/direction, owned deployment and
+upkeep, reported threats, and authoritative collection estimates. The HQ overview
+uses a scrolling surface; input/layout checks exercised four supported resolutions
+in both palettes. These checks do not replace physical controller acceptance.
+
+The following battle-history slice records completed own-unit strength, ammunition,
+morale, state and place accounts. Reports are faction filtered, capped at 64 stored
+accounts and 16 recent accounts per snapshot, and included in strategic saves with
+optional old-save fields. HQ and station displays use the same formatter. No enemy
+losses or causal explanations are inferred. Combat authority and random draws remain
+unchanged. Operational debriefs, custody-specific accounting, cover/range explanations
+and human battle-report acceptance remain work to finish.

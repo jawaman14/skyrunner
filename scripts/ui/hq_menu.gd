@@ -92,7 +92,7 @@ func _process(_dt: float) -> void:
 		map.sel_squad = sel_squad
 		_squad_detail()
 		if districts_open:
-			district_text.text = preload("res://scripts/ui/widgets/district_summary.gd").describe(map.snap.get("ground", {}).get("districts", []))
+			district_text.text = preload("res://scripts/ui/widgets/district_summary.gd").describe(map.snap.get("ground", {}).get("districts", [])) + "\n\n" + preload("res://scripts/ui/widgets/battle_report.gd").describe(map.snap.get("ground", {}).get("battle_reports", []))
 
 
 ## With no season running the orders board has nothing to show, so a solo player's desk would
@@ -131,7 +131,7 @@ func refresh() -> void:
 		subtitle.text = "Districts" if districts_open else "Squads"
 		districts_button.text = "Back to squads  [D]" if districts_open else "District overview  [D]"
 		if districts_open:
-			district_text.text = preload("res://scripts/ui/widgets/district_summary.gd").describe(s.ground.district_view("org"))
+			district_text.text = preload("res://scripts/ui/widgets/district_summary.gd").describe(s.ground.district_view("org")) + "\n\n" + preload("res://scripts/ui/widgets/battle_report.gd").describe(s.ground.battle_history("org"))
 			hints.set_hints([["UP/DOWN", "scroll", "down"], ["D", "back to squads", "d"], ["ESC", "leave the desk", "esc"]])
 			return
 		_squad_detail()
