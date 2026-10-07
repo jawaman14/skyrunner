@@ -24,6 +24,10 @@ func _build() -> void:
 	campaign_button.visible = s.story != null
 	campaign_button.pressed.connect(func():
 		campaign_scroll.visible = not campaign_scroll.visible
+		if campaign_scroll.visible:
+			campaign_button.grab_focus()
+		else:
+			list.grab_focus()
 		list.visible = not campaign_scroll.visible
 		if s.story != null:
 			campaign_text.text = s.story.journal_text()
@@ -81,9 +85,18 @@ func contacts() -> Array:
 	return out
 
 
+func open() -> void:
+	super.open()
+	if not campaign_scroll.visible:
+		list.grab_focus()
+
+
 func refresh() -> void:
 	title.text = "PHONE"
+	campaign_button.text = "Chapter guidance and history  [G]"
 	subtitle.text = "$%s in hand" % Py.money(s.money)
+	if s.story != null and campaign_scroll.visible:
+		campaign_text.text = s.story.journal_text()
 	if s.renown != null:
 		var nx: float = s.renown.next_at()
 		subtitle.text += "   -   renown: %s (%d%s)" % [s.renown.title(), int(s.renown.score), ("/%d" % int(nx)) if nx > 0.0 else ""]
@@ -119,6 +132,9 @@ func _process(delta: float) -> void:
 
 
 func key(k: String) -> void:
+	if s.story != null and (k == "g" or (k == "enter" and campaign_button.has_focus())):
+		campaign_button.pressed.emit()
+		return
 	if campaign_scroll.visible:
 		if k == "up":
 			campaign_scroll.scroll_vertical -= 48
@@ -153,6 +169,10 @@ func key(k: String) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if visible and s.story != null and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_G:
+		key("g")
+		get_viewport().set_input_as_handled()
+		return
 	if visible and campaign_scroll.visible:
 		for pair in [["ui_up", "up"], ["ui_down", "down"]]:
 			if event.is_action_pressed(pair[0], true):
