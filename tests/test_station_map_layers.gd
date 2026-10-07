@@ -36,6 +36,8 @@ func test_all_nonflying_seats_build_layer_controls_and_keep_map_within_small_win
 		check_eq(app.layer_buttons.size(), 3, role + " layer controls")
 		check(app.map.get_global_rect().end.x <= 1024.1 and app.map.get_global_rect().end.y <= 768.1, role + " map remains inside viewport")
 		app.layer_buttons.operations.grab_focus()
+		await Engine.get_main_loop().process_frame
+		check_eq(viewport.gui_get_focus_owner(), app.layer_buttons.operations, role + " layer control owns focus")
 		var event := InputEventKey.new()
 		event.keycode = KEY_ENTER
 		event.pressed = true
@@ -44,6 +46,7 @@ func test_all_nonflying_seats_build_layer_controls_and_keep_map_within_small_win
 		event.pressed = false
 		viewport.push_input(event)
 		check(not app.map.layers.operations, role + " native keyboard toggle")
+		check(app.review == null, role + " map input does not open a transaction review")
 		app.free()
 	viewport.free()
 	session.dispose()

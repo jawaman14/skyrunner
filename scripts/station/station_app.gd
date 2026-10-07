@@ -349,6 +349,12 @@ func _unhandled_key_input(ev: InputEvent) -> void:
 	if not (ev is InputEventKey and ev.pressed):
 		return
 	var k: int = ev.physical_keycode if ev.physical_keycode else ev.keycode
+	# CheckButtons commit on key release. Their press can remain unhandled;
+	# do not dispatch a desk transaction before the control receives release.
+	var focused := get_viewport().gui_get_focus_owner()
+	if k in [KEY_ENTER, KEY_KP_ENTER] and focused in layer_buttons.values():
+		get_viewport().set_input_as_handled()
+		return
 	if confirm.visible:
 		if k in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]:
 			confirm.key("esc" if k == KEY_ESCAPE else "enter")
