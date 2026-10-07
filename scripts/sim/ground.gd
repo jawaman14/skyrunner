@@ -1269,7 +1269,7 @@ func _trucks(dt: float) -> void:
 	for id in stakeouts.keys():
 		var q = get_squad(stakeouts[id])
 		var st = sess.stash_net.get_stash(id)
-		if q == null or st == null or st.burned:
+		if q == null or st == null or st.burned or q.faction != "police" or q.order.get("type", "") != "stakeout" or q.order.get("stash", "") != id:
 			stakeouts.erase(id)
 			continue
 		if q.pos().distance_to(Vector2(st.x, st.y)) < 600.0:
@@ -1414,6 +1414,11 @@ func _think_org() -> void:
 				_log("org", "%s melts away from %s" % [q.id, c.id])
 				break
 	mine = mine.filter(func(q): return q.tactic != "melt")
+	# Existing escorts remain committed while their truck is live. The retreat
+	# check above still takes priority over that commitment.
+	if sess.stash_net != null:
+		var active_jobs: Array = sess.stash_net.trucks.map(func(t): return t.job_id)
+		mine = mine.filter(func(q): return q.order.get("type", "") != "escort" or not active_jobs.has(int(q.order.get("job_id", -1))))
 	# a raid coming: ambush it on the road
 	for c in cops:
 		if c.order.get("type", "") == "raid" and c.route.size() >= 2 and not mine.is_empty():
