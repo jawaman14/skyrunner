@@ -108,3 +108,17 @@ func test_off_the_course_line_it_steers_back_onto_it() -> void:
 	s.x = -600.0
 	ap.update(0.1, s, FlightModel.Controls.new())
 	check(ap.hdg_target > 0.0 and ap.hdg_target < 90.0, "west of the line: aim east of north (%.1f)" % ap.hdg_target)
+
+func test_waypoint_behind_aircraft_gets_forward_intercept() -> void:
+	var ap := Autopilot.new()
+	var state := FlightModel.FlightState.new()
+	state.x = 1000.0
+	state.heading = 90.0
+	state.gs_kts = 120.0
+	state.ias_kts = 120.0
+	state.alt = 1000.0
+	state.pitch = 2.0
+	ap.engage_route(state, [[0.0, 0.0], [100.0, 0.0]], 1000.0)
+	ap.update(1.0 / 30.0, state, FlightModel.Controls.new())
+	check(float(ap.waypoints[0][0]) > state.x + 1000.0)
+	check_eq(ap._leg_from, [state.x, state.y])
