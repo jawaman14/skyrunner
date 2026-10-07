@@ -98,6 +98,11 @@ func test_battle_history_is_private_and_read_only() -> void:
 	check_eq(rows[0].starting_ammo - rows[0].remaining_ammo, 12, "recorded ammunition use")
 	rows[0].remaining_people = 999
 	check_eq(g.battle_history("org")[0].remaining_people, 4, "view cannot mutate history")
+	for i in 40:
+		g._open(a, b)
+		g._end(g.fights[0])
+	check_eq(g.battle_reports.size(), 64, "stored accounts are bounded")
+	check_eq(g.battle_history("org").size(), 16, "snapshot history is bounded")
 	s.dispose()
 
 

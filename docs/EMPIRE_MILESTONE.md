@@ -109,3 +109,14 @@ optional old-save fields. HQ and station displays use the same formatter. No ene
 losses or causal explanations are inferred. Combat authority and random draws remain
 unchanged. Operational debriefs, custody-specific accounting, cover/range explanations
 and human battle-report acceptance remain work to finish.
+
+### Grouped desktop validation
+
+At code head `560617f`, the full three-shard suite passes 1,021 tests (310/335/376),
+zero failures and no script/parse errors. Smoke reports SMOKE OK. Native tracked-file
+hygiene/export exclusions pass. Two subsequent focused tests verify JSON history
+restoration, missing old-save history and report limits in wording; an expanded
+history test verifies 64 stored/16 presented limits. All pass. These extra tests
+were run separately, not included in the 1,021 full-suite count. Existing shutdown
+ObjectDB/resource/PagedAllocator cleanup diagnostics remain separately recorded.
+Drafts #238, #239 and #240 are pushed; merged baseline and human gates are unchanged.
