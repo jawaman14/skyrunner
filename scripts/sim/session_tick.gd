@@ -5,6 +5,7 @@ extends SessionOps
 ## Advance one frame. `bot_controls` (from a bot) replaces the pilot's input and autopilot.
 func update(dt: float, inp: ControlMapper.InputFrame = null, bot_controls: FlightModel.Controls = null) -> void:
 	time += dt
+	phone_calls.tick(time)
 	if inp == null:
 		inp = ControlMapper.InputFrame.new()
 	if runner_active():

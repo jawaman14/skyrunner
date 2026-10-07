@@ -187,6 +187,15 @@ the Family, the General's aide, the desk (the boss's orders, and the squads when
 collectors** (the rackets), dispatch (logistics) and **a taxi** (a ride, fare up front, to the aircraft, the desk, the job board,
 the hangar or a stash house). Only the systems switched on appear.
 
+When a human-run organisation receives a Family offer, the same event rings the
+phone for 20 seconds. Open **T** on foot or **Shift+T** in the cockpit, select
+the **INCOMING** row, and press **Enter** to answer or **D** to decline the call.
+Answering opens the usual Family conversation; it does not accept or pay for
+the offer. Declining or missing the call leaves the offer available through the
+ordinary Family contact until the offer itself expires. Recent answered,
+declined and missed calls appear above the contact list. Calls and their expiry
+times survive saving/loading; unanswered calls are not recreated on load.
+
 **The car.** A parked car stands beside the aircraft. **E** at it gets you in; W / S throttle and brake, A / D steer, Space
 handbrake, **E** to get out. The road is fast; anywhere else is a crawl. In the car: **R** radio on / off, **, .** (or **[ ]**)
 tune. The radio plays real broadcasts from 1979–86 from Miami and around the Caribbean, always on the air by the sim clock.

@@ -39,9 +39,14 @@ also passed every shard and all three desktop smoke jobs. Final merged-tree
 checks passed: save 32, switches/parity/randomness 4, export filters 2,
 repository hygiene and the 1,800-frame AI smoke.
 
-Review found that `PhoneCalls` is a standalone queue used only by its unit tests;
-incoming calls are not yet connected to Session, saves, snapshots or PhoneMenu.
-Issue #83 remains incomplete. PR #223 now adds a verified macOS bundle/launch
+At the review baseline, `PhoneCalls` was a standalone queue used only by its unit tests.
+The incoming-call integration slice now connects Family offers to Session,
+save/restore, permitted runner snapshots and the shared cockpit/on-foot phone.
+Answer/decline commands revalidate expiry and offer availability. Answering
+opens the existing dialogue without accepting the offer. Source IDs suppress
+recreated calls after save/load; missed/declined history is visible. Other event
+sources and real remote/hardware evidence remain outside this first slice.
+PR #223 adds a verified macOS bundle/launch
 job and satisfies issue #176's CI gate. RoutePlanner still lacks the known-radar
 cost layer required by #87; broader crew-demand criteria in #81 remain pending.
 The earlier PR #218 summary is

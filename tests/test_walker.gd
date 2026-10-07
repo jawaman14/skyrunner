@@ -243,6 +243,34 @@ func test_the_phone_reaches_the_desk_and_the_crew_from_anywhere() -> void:
 	app.free()
 	s.dispose()
 
+func test_incoming_phone_is_the_same_queue_on_foot_and_in_the_cockpit() -> void:
+	var app := _app({"seed": 9, "map_seed": MapCity.SEED, "location": "HAR", "family": true, "humans": {Roles.BOSS: "Owner"}})
+	var s := app.s
+	s.family.offer("loan")
+	var call_id: int = s.phone_calls.pending()[0].id
+	var event := InputEventKey.new()
+	event.keycode = KEY_T
+	event.pressed = true
+	event.shift_pressed = true
+	app._unhandled_input(event)
+	var menu: PhoneMenu = app.menus.phone
+	check(menu.visible and int(menu.rows[0][3]) == call_id, "cockpit phone shows the authoritative call")
+	menu.close()
+	app._toggle_on_foot()
+	await _frames(3)
+	event.shift_pressed = false
+	app._unhandled_input(event)
+	check(menu.visible and int(menu.rows[0][3]) == call_id, "on-foot phone shows the same call")
+	menu.list.select(0)
+	menu.key("enter")
+	check(s.phone_calls.pending().is_empty(), "answer consumes that call once")
+	check(app.talk != null, "answer routes into the existing Family conversation")
+	check(not app.walker.look_enabled, "walker stops to take the call")
+	check(not s.family.offers.is_empty(), "answer has not accepted the economic offer")
+	app.free()
+	s.dispose()
+
+
 ## The phone's taxi: pick somewhere, pay the fare, and the world runs ahead while you ride; you are
 ## put down at the other end.
 func test_a_taxi_takes_you_to_the_desk() -> void:

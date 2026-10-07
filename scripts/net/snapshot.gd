@@ -23,6 +23,8 @@ static func build(sess: Session, role: String, seq := 0) -> Dictionary:
 		"role": role, "side": side}
 	if side == "runner":
 		snap.merge(_runner(sess, role), true)
+		if Roles.allowed(role, "phone_answer"):
+			snap["phone_calls"] = sess.phone_calls.pending()
 	else:
 		snap.merge(_law(sess), true)
 		if role == Roles.INTERCEPTOR:

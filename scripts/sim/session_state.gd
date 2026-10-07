@@ -70,6 +70,7 @@ const ARRIVE_MARGIN_M := 30.0  ## how far off a strip a stopped aircraft still c
 var phase := "parked"  ## parked | flying | crashed | busted
 var location = START_FIELD
 var messages: Array = []  ## [[t, text]]
+var phone_calls := PhoneCalls.new()  ## one authoritative incoming queue for all phone surfaces
 var active_jobs: Array = []
 var boards := {}
 var jsbsim_root := ""
