@@ -181,7 +181,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ditto -x -k build/Skyrunner.zip build/unpacked
+          archive=$(find build -type f -name Skyrunner.zip -print -quit)
+          test -n "$archive"
+          ditto -x -k "$archive" build/unpacked
           app=$(find build/unpacked -maxdepth 2 -type d -name '*.app' -print -quit)
           test -n "$app"
           plist="$app/Contents/Info.plist"
