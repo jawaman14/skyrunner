@@ -33,3 +33,7 @@ Unperformed: human opening walkthrough, first-purchase pacing, multi-resolution 
 ## Follow-up route review
 
 The initial criminal employer route uses HAR/VAL, both police airports. Existing customs checks give a hot arrival a 35% inspection chance before pursuit consequences. Author a suitable non-police destination for the first criminal contract and validate arrival/unloading before treating the opening as ready for human acceptance. Do not disable police rules to make the introduction succeed.
+
+Route follow-up: the first criminal contract now chooses the nearest non-police bush/shady strip with at least 400 m of runway. Costa Brava selects Finca Morales on the normal opening path. Actual arrival starts existing timed hot unloading; chapter progress waits for unloading completion. Police/customs authority remains unchanged. Focused coverage also checks representative generated seeds 1, 7 and 42. The parent’s 1,039-test suite is prior evidence; record follow-up validation separately.
+
+Follow-up validation: **7 passed, 0 failed** in 79.5 seconds, with no script/parse failures. Includes real arrival/unloading, unchanged police/customs enforcement and generated seeds 1/7/42. The full suite was not rerun on this route-only follow-up; parent full-suite evidence remains 1,039 passes. Full integration and human/export/two-machine gates remain pending.

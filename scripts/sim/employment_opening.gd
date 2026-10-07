@@ -8,7 +8,7 @@ const TITLES := ["On the payroll", "An unusual customer", "No more pretending"]
 const BRIEFINGS := [
 	"Costa Brava Air Services hired you to fly its Cessna. It belongs to the company, not you. Start with ordinary supplies between San Telmo and Valle Verde. Complete two deliveries; check fuel and loading before departure.",
 	"The charter business is struggling. A customer pays for sealed cases and asks you not to discuss the contents. This first request is suspicious, but carries no contraband flag. Complete the flight; the company is changing.",
-	"The manager finally tells you what the next load is: marijuana. This is smuggling, with police consequences. There is no legitimate-only branch of this story. You can postpone the flight, but completing it is required to continue."
+	"The manager finally tells you what the next load is: marijuana. This is smuggling, with police consequences. The customer uses an unpoliced strip, not the scheduled airport charter route. Check the destination and radar information before departure. There is no legitimate-only branch of this story. You can postpone the flight, but completing it is required to continue."
 ]
 var stage := 0
 var delivered := 0
@@ -40,6 +40,17 @@ func board(s, code: String) -> Array:
 			if field.code != code and field.kind in ["hub", "regional"]:
 				dest = field
 				break
+	if stage == 2:
+		# Teach a deliberate access choice, not a mandatory customs-airport gamble.
+		dest = null
+		var best := INF
+		for field in s.world.airfields:
+			if field.code == code or field.police or field.kind not in ["bush", "shady"] or field.length < 400:
+				continue
+			var distance: float = Jobs._dist_km(origin, field)
+			if distance < best:
+				best = distance
+				dest = field
 	if dest == null:
 		return []
 	var jid := Jobs.new_id()
