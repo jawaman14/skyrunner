@@ -82,3 +82,22 @@ func test_visibility_route_is_deterministic_and_blocked_water_stays_failed() -> 
 	world.water = true
 	access = SiteAccess.new(world, [])
 	check(not access.path(Vector2.ZERO, Vector2(16, 0)).reachable, "no water fallback")
+
+func test_geometry_invalidation_rechecks_edges_and_penalties_remain_live() -> void:
+	var world := _world()
+	var access := SiteAccess.new(world, [])
+	var graph := RoadGraph.new([[[0, 0], [16, 0]]])
+	check(access.checked_vehicle_route(graph, Vector2.ZERO, Vector2(16, 0)).reachable)
+	world.water = true
+	access.invalidate_geometry()
+	check(not access.checked_vehicle_route(graph, Vector2.ZERO, Vector2(16, 0)).reachable, "changed authoring geometry requires fresh edge checks")
+	world.water = false
+	access.invalidate_geometry()
+	var calls := {"n": 0}
+	var penalty := func(_a: Vector2, _b: Vector2, _m: float) -> float:
+		calls.n += 1
+		return 0.0
+	access.checked_vehicle_route(graph, Vector2.ZERO, Vector2(16, 0), penalty)
+	var first: int = calls.n
+	access.checked_vehicle_route(graph, Vector2.ZERO, Vector2(16, 0), penalty)
+	check(calls.n > first, "dynamic penalty hook is evaluated despite cached static geometry")
