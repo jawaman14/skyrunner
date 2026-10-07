@@ -228,6 +228,7 @@ func ship(method: String, amount: int) -> String:
 
 
 func _resolve(sh: Dictionary) -> void:
+	var delivered_lb := 0.0
 	var c = sess.police.case("runner")
 	if sh.method == "mules":
 		# the odds when they land, not when they left (a crackdown in between counts)
@@ -266,6 +267,7 @@ func _resolve(sh: Dictionary) -> void:
 				c.suspicion = minf(100.0, c.suspicion + 10.0)
 				sess.law_say("One of the mules talks: she was paid by a nightclub downtown")
 		if got > 0:
+			delivered_lb = float(sh.lb) * got / maxf(1.0, float(sh.n))
 			delivered += got
 			airport_heat = minf(100.0, airport_heat + 2.0 * got)  # the island flight gets watched
 			sess.econ.record_delivery("cocaine", "sea")
@@ -281,6 +283,7 @@ func _resolve(sh: Dictionary) -> void:
 			sess.law_say("Port of San Telmo: %d lb found under frozen shrimp in a container from Isla Soberana" % int(sh.lb))
 			last = "The container was opened at the port: %d lb gone" % int(sh.lb)
 		else:
+			delivered_lb = float(sh.lb)
 			delivered += 1
 			port_heat = minf(100.0, port_heat + 8.0)  # somebody notices the shrimp line's volume
 			var worth := int(sh.value * sess.econ.mult("cocaine", "town"))  # through the port of San Telmo, sold in town at today's street price
@@ -291,7 +294,7 @@ func _resolve(sh: Dictionary) -> void:
 				sess.money += worth
 				last = "The container cleared customs: +$%s" % Py.money(worth)
 	sess.say("THE ISLAND - " + last)
-	sess.bus.emit("island_shipment", sess.time, last, ["runner"], {"method": sh.method})
+	sess.bus.emit("island_shipment", sess.time, last, ["runner"], {"method": sh.method, "delivered_lb": delivered_lb})
 
 
 ## Logistics: island product lands in the stash at the harbour strip (Warehouse
