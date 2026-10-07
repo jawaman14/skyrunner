@@ -58,6 +58,12 @@ and real two-machine remote/voice validation remain unperformed.
    remote outcome presentation are still queued.
 5. **Stations/maps/feed:** organize fifteen seats by task; selected-entity cards,
    acknowledged orders, grouped map layers and a shared role-filtered event feed.
+   Shared persistent sequence outcomes now distinguish acknowledgement from a
+   refreshed snapshot, suppress duplicate pending orders and retain unknown
+   results without retrying. Station logistics uses this path; selection follows
+   IDs and cards consume filtered snapshots. A text-only ordered/deduplicated
+   EventBus/Chronicle feed retains source, age and report uncertainty, with
+   severity-based expiry. Remote preview adoption and map layer controls remain.
 6. **Placement/access:** deterministic footprints, entrances, walk/loading
    approaches and network connectors; diagnostic overlay and interaction occlusion.
 7. **Roads/bridges:** shared physical/rendered surface, checked routes and safe
