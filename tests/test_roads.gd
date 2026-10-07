@@ -9,6 +9,19 @@ func after_each() -> void:
 	World.use_map(0)  # the suite's default island, for whatever runs next
 
 
+func test_checked_short_routes_follow_authored_edges_without_false_tees() -> void:
+	var graph := RoadGraph.new([[[0, 0], [0, 1000], [200, 1000], [200, 0]]])
+	var result := graph.checked_route(Vector2.ZERO, Vector2(200, 0))
+	check(result.reachable)
+	check(RoadGraph.length(result.points) > 2100.0, "short trip must take the authored U, not the speculative 200m tee")
+	var disconnected := RoadGraph.new([[[0, 0], [0, 1000]], [[200, 0], [200, -1000]]])
+	var refused := disconnected.checked_route(Vector2.ZERO, Vector2(200, 0))
+	check(not refused.reachable and refused.points.is_empty() and refused.reason != "")
+	var blocked := graph.checked_route(Vector2(-30, 0), Vector2(200, 0), Callable(), func(a, _b): return a.x >= 0)
+	check(not blocked.reachable and "access" in blocked.reason)
+	check(not graph.checked_route(Vector2(NAN, 0), Vector2.ZERO).reachable)
+
+
 ## A round hill in the middle (steep: 150 m up, about 13% at its steepest), a river along y = 2000 (water
 ## 200 m wide), flat elsewhere.
 func _hill(x: float, y: float) -> float:

@@ -120,32 +120,9 @@ static func _crane(b: Dictionary) -> Node3D:
 static func _roads(world: World, roads: Array) -> MeshInstance3D:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for r in roads:
-		var pts := PackedVector2Array()
-		for k in r.size() - 1:
-			var a := Vector2(r[k][0], r[k][1])
-			var b := Vector2(r[k + 1][0], r[k + 1][1])
-			var n := int(a.distance_to(b) / 12.0) + 1
-			for q in n:
-				pts.append(a.lerp(b, float(q) / n))
-		pts.append(Vector2(r[r.size() - 1][0], r[r.size() - 1][1]))
-		var prev_l := Vector3.ZERO
-		var prev_r := Vector3.ZERO
-		for k in pts.size():
-			var dir := (pts[mini(k + 1, pts.size() - 1)] - pts[maxi(k - 1, 0)]).normalized()
-			var side := Vector2(-dir.y, dir.x) * 4.5
-			var zs := []
-			for p in [pts[k] + side, pts[k] - side, pts[k]]:
-				zs.append(world.ground(p.x, p.y))
-			var z := maxf(maxf(zs[0], zs[1]), maxf(zs[2], 2.2)) + 0.45
-			var lp := Vector3(pts[k].x + side.x, z, -(pts[k].y + side.y))
-			var rp := Vector3(pts[k].x - side.x, z, -(pts[k].y - side.y))
-			if k > 0:
-				for v in [prev_l, lp, rp, prev_l, rp, prev_r]:
-					st.set_normal(Vector3.UP)
-					st.add_vertex(v)
-			prev_l = lp
-			prev_r = rp
+	for vertex in world.road_surface().vertices:
+		st.set_normal(Vector3.UP)
+		st.add_vertex(vertex)
 	var mi := MeshInstance3D.new()
 	mi.name = "roads"
 	mi.mesh = st.commit()
@@ -156,29 +133,24 @@ static func _roads(world: World, roads: Array) -> MeshInstance3D:
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if not world.road_surface().vertices.is_empty():
+		var body := StaticBody3D.new()
+		body.name = "road-deck-collision"
+		var collider := CollisionShape3D.new()
+		collider.name = "deck-shape"
+		var shape := ConcavePolygonShape3D.new()
+		shape.backface_collision = true
+		shape.set_faces(world.road_surface().vertices)
+		collider.shape = shape
+		body.add_child(collider)
+		mi.add_child(body)
 	return mi
 
 
 ## The samples of one road, every ~12 m (the same ones _roads() drapes its ribbon on): [position, along-road
 ## direction, the ribbon's height there].
 static func _samples(world: World, r: Array) -> Array:
-	var pts := PackedVector2Array()
-	for k in r.size() - 1:
-		var a := Vector2(r[k][0], r[k][1])
-		var b := Vector2(r[k + 1][0], r[k + 1][1])
-		var n := int(a.distance_to(b) / 12.0) + 1
-		for q in n:
-			pts.append(a.lerp(b, float(q) / n))
-	pts.append(Vector2(r[r.size() - 1][0], r[r.size() - 1][1]))
-	var out := []
-	for k in pts.size():
-		var dir := (pts[mini(k + 1, pts.size() - 1)] - pts[maxi(k - 1, 0)]).normalized()
-		var side := Vector2(-dir.y, dir.x) * 4.5
-		var zs := []
-		for p in [pts[k] + side, pts[k] - side, pts[k]]:
-			zs.append(world.ground(p.x, p.y))
-		out.append([pts[k], dir, maxf(maxf(zs[0], zs[1]), maxf(zs[2], 2.2)) + 0.45])
-	return out
+	return RoadSurface.samples(world, r)
 
 
 ## A flat strip from lateral offset `lo` to `hi` (metres from the centre line) between samples k-1 and k, `up` above the ribbon.
@@ -277,8 +249,7 @@ static func _edge_pt(s: Array, lateral: float, up: float) -> Vector3:
 
 ## The deck height at a road point: over the highest of the ground under the ribbon, and 2.2 m over the sea.
 static func deck_z(world: World, p: Vector2, side: Vector2) -> float:
-	return maxf(maxf(world.ground(p.x + side.x, p.y + side.y), world.ground(p.x - side.x, p.y - side.y)),
-		maxf(world.ground(p.x, p.y), 2.2)) + 0.45
+	return RoadSurface.deck_height(world, p, side)
 
 
 ## Bridges where a road crosses water (RoadPlanner found them): piers down to the bed every 30 m, and

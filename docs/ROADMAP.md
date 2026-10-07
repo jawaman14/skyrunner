@@ -22,7 +22,7 @@ are prepared as draft continuations of that stack.
 [Dialogue input hardening #187](https://github.com/jawaman14/skyrunner/pull/187) and
 [shared action previews #188](https://github.com/jawaman14/skyrunner/pull/188)
 continue in that order. The integrated source baseline passed
-927 tests across three shards (277 / 341 / 309, zero failures and no script errors).
+937 tests across three shards (321 / 308 / 308, zero failures and no script errors).
 Existing Godot shutdown resource diagnostics persist. The earlier #186 CI run
 [37487390571](https://github.com/jawaman14/skyrunner/actions/runs/37487390571)
 passed shards, dedicated-server checks, exports and Linux/Windows smoke tests;
@@ -72,6 +72,12 @@ and real two-machine remote/voice validation remain unperformed.
    placement records, developer overlay and all-entrance walkthrough remain.
 7. **Roads/bridges:** shared physical/rendered surface, checked routes and safe
    connectors. Preserve La Selva without a public road; no incidental map rebake.
+   Road ribbons now share vertices with deck collision and indexed ground-vehicle
+   height queries. Checked routes return explicit failure, skip speculative T
+   links and retain the route-penalty hook; the legacy simulation route API stays
+   unchanged pending measured migration. Synthetic deck/water physics, road and
+   car tests pass. Site connectors, real bridge approaches and bidirectional
+   exported walking/driving still require validation.
 8. **Interiors:** fix existing hangars/HQs/casino; make all eight stash types
    enterable with existing logistics access, real availability and clear exits.
 9. **NPCs:** checked pedestrian/vehicle access, identity/task presentation and
