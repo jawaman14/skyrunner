@@ -15,6 +15,7 @@ var subtitle: Label
 var footer: Label
 var hints: KeyHints
 var close_button: Button
+var feedback: Label
 
 
 func setup(sess: Session) -> GameMenu:
@@ -57,6 +58,10 @@ func setup(sess: Session) -> GameMenu:
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", UIStyle.SPACE_SM)
 	v.add_child(content)
+	feedback = UIStyle.label("", 15, UIStyle.GREEN)
+	feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	feedback.visible = false
+	v.add_child(feedback)
 	footer = UIStyle.label("", 14, UIStyle.CAPTION)
 	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(footer)
@@ -77,6 +82,7 @@ func _build() -> void:
 
 
 func open() -> void:
+	feedback.visible = false
 	visible = true
 	refresh()
 	# A predictable initial focus makes keyboard/controller navigation visible
@@ -96,6 +102,13 @@ func refresh() -> void:
 
 func key(_k: String) -> void:
 	pass
+
+
+## A command result stays beside the action until the panel is reopened.
+func show_feedback(message: String, success: bool) -> void:
+	feedback.text = ("Done: " if success else "Not completed: ") + message
+	feedback.add_theme_color_override("font_color", UIStyle.GREEN if success else UIStyle.RED)
+	feedback.visible = true
 
 
 ## A table for a menu (see DataTable).

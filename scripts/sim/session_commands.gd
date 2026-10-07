@@ -38,11 +38,17 @@ static func _point(args: Dictionary):
 
 
 func _cmd_accept_job(role: String, a: Dictionary):
+	var action: Dictionary = job_action(role, "accept_job", int(_num(a, "job_id", -1)))
+	if not action.enabled:
+		return action.disabled_reason
 	var job := find_job(int(_num(a, "job_id", -1)))
 	return accept_job(job) if job else "No such job."
 
 
 func _cmd_drop_job(role: String, a: Dictionary):
+	var action: Dictionary = job_action(role, "drop_job", int(_num(a, "job_id", -1)))
+	if not action.enabled:
+		return action.disabled_reason
 	var job := find_job(int(_num(a, "job_id", -1)))
 	if job == null:
 		return "No such job."

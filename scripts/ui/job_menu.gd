@@ -13,6 +13,20 @@ var card_facts: Label
 var rows: Array = []  ## [kind, job] per table row, or null for a section
 var market: DataTable  ## the second page (LEFT/RIGHT): today's prices by market
 var page := 0
+var action_button: Button
+var cancel_button: Button
+var action_preview: Label
+var pending_drop := -1
+var _action_refresh := 0.0
+
+
+func _process(dt: float) -> void:
+	if not is_visible_in_tree() or page != 0:
+		return
+	_action_refresh += dt
+	if _action_refresh >= 0.25:
+		_action_refresh = 0.0
+		_show_detail()
 
 
 func _build() -> void:
@@ -42,6 +56,21 @@ func _build() -> void:
 	detail = UIStyle.label("", 15, UIStyle.DIM)
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	cv.add_child(detail)
+	action_preview = UIStyle.label("", 14, UIStyle.CAPTION)
+	action_preview.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cv.add_child(action_preview)
+	var actions := HBoxContainer.new()
+	cv.add_child(actions)
+	action_button = Button.new()
+	action_button.custom_minimum_size.y = UIStyle.TOUCH_MIN
+	action_button.pressed.connect(func(): key("enter"))
+	actions.add_child(action_button)
+	cancel_button = Button.new()
+	cancel_button.text = "Keep job [C]"
+	cancel_button.custom_minimum_size.y = UIStyle.TOUCH_MIN
+	cancel_button.pressed.connect(_cancel_drop)
+	cancel_button.visible = false
+	actions.add_child(cancel_button)
 	market = GameMenu.make_table([
 		{"title": "Good", "expand": true, "ratio": 3, "min": 200},
 		{"title": "Town", "align": "right", "mono": true, "min": 80},
@@ -128,7 +157,7 @@ func refresh() -> void:
 	for j in board:
 		_row("board", j, af, est_w)
 	if not s.active_jobs.is_empty():
-		_sep("On board  -  ENTER drops")
+		_sep("Active jobs  -  ENTER reviews dropping")
 	for j in s.active_jobs:
 		_row("active", j, af, est_w)
 	if rows.is_empty():
@@ -136,7 +165,7 @@ func refresh() -> void:
 	list.select_near(keep if keep >= 0 else 0)
 	_show_detail()
 	footer.text = ""
-	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "accept / drop", "enter"], ["LEFT/RIGHT", "market", "right"],
+	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "selected action", "enter"], ["C", "keep job", "c"], ["LEFT/RIGHT", "market", "right"],
 		["G", "sell / keep guns", ""], ["L", "load & fuel", ""], ["ESC", "close", "esc"]])
 
 
@@ -172,9 +201,22 @@ func _show_detail() -> void:
 	card_title.text = ""
 	card_facts.text = ""
 	detail.text = ""
+	action_button.disabled = true
+	action_button.text = "Select a job"
+	action_preview.text = ""
+	cancel_button.visible = false
 	if i < 0 or i >= rows.size() or rows[i] == null:
+		pending_drop = -1
 		return
 	var j: Jobs.Job = rows[i][1]
+	if pending_drop != j.id:
+		pending_drop = -1
+	var command := "accept_job" if rows[i][0] == "board" else "drop_job"
+	var action: Dictionary = s.job_action(Roles.PILOT, command, j.id)
+	action_button.disabled = not action.enabled
+	action_button.text = "Confirm drop [Enter]" if pending_drop == j.id else str(action.label) + " [Enter]"
+	action_preview.text = str(action.preview) + ("\nUnavailable: " + str(action.disabled_reason) if not action.enabled else "")
+	cancel_button.visible = pending_drop == j.id
 	card_title.text = ("HOT  " if j.hot() else "") + j.title
 	var facts := ["$%s" % Py.money(j.payout), "%.0f lb" % j.weight_lb(), "%d items" % j.items.size()]
 	if j.deadline_s:
@@ -190,14 +232,29 @@ func _show_detail() -> void:
 	detail.text = j.notes if j.notes else ("Paid per bale landed at the cove." if j.is_airdrop() else "")
 
 
+func open() -> void:
+	pending_drop = -1
+	super.open()
+
+
+func _cancel_drop() -> void:
+	if pending_drop != -1:
+		show_feedback("Kept the job. Nothing was dropped.", true)
+	pending_drop = -1
+	_show_detail()
+
+
 func key(k: String) -> void:
 	if k in ["left", "right"]:
+		pending_drop = -1
 		page = 1 - page
 		refresh()
 		return
 	if page == 1:
 		return
 	match k:
+		"c":
+			_cancel_drop()
 		"up":
 			list.move(-1)
 			_show_detail()
@@ -215,9 +272,22 @@ func key(k: String) -> void:
 			if i < 0 or rows[i] == null:
 				return
 			var job: Jobs.Job = rows[i][1]
-			if rows[i][0] == "board":
-				var err = s.accept_job(job)
-				s.say(err if err != null else "Accepted: %s. Check your load [L]!" % job.title)
-			else:
-				s.drop_job(job)
+			var command := "accept_job" if rows[i][0] == "board" else "drop_job"
+			var action: Dictionary = s.job_action(Roles.PILOT, command, job.id)
+			if not action.enabled:
+				pending_drop = -1
+				show_feedback(str(action.disabled_reason), false)
+				_show_detail()
+				return
+			if action.confirmation_required and pending_drop != job.id:
+				feedback.visible = false
+				pending_drop = job.id
+				_show_detail()
+				return
+			var result: Array = s.command(Roles.PILOT, command, action.args)
+			pending_drop = -1
+			var message := ("Accepted %s. Check load and fuel [L]." if command == "accept_job" else "Dropped %s. No delivery pay.") % job.title
+			show_feedback(message if result[0] else str(result[1]), bool(result[0]))
+			if result[0]:
+				s.say(message)
 			refresh()

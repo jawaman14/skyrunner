@@ -46,6 +46,16 @@ func test_pilot_app_flies_a_frame_and_opens_menus() -> void:
 	jm.list.select(1)
 	jm.key("enter")
 	check(not s.active_jobs.is_empty(), "job accepted from the menu")
+	var accepted: Jobs.Job = s.active_jobs[0]
+	for i in jm.rows.size():
+		if jm.rows[i] != null and jm.rows[i][0] == "active" and jm.rows[i][1] == accepted:
+			jm.list.select(i)
+			break
+	jm.key("enter")
+	var repeat_enter := T.key(KEY_ENTER)
+	repeat_enter.echo = true
+	app._unhandled_input(repeat_enter)
+	check(s.active_jobs.has(accepted), "holding Enter cannot confirm dropping a job")
 	jm.close()
 	app._toggle_menu("l")
 	var lm: LoadMenu = app.menus["l"]
