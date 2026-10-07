@@ -50,6 +50,14 @@ Draft [#250](https://github.com/jawaman14/skyrunner/pull/250), validated with 1,
 
 ## Ordered implementation queue
 
+Current PR completion pass: see [the dated per-PR disposition](PR_COMPLETION_2026-10-08.md).
+The corrective gameplay stack passes 1,050 desktop tests; #255 fixes explicit
+chapter selection, #256/#257 address reproduced network reliability gaps, and
+#258 preserves exact route choices while improving search timing. The latest
+loading audit is 13/99 reachable, 86 blocked; earlier 7/99 counts below are
+historical. Map migration and human gates remain pending. Independent main
+integration candidates #259–#263 avoid merging unfinished asset/map dependencies.
+
 The approved empire-led continuation is recorded in [EMPIRE_MILESTONE.md](EMPIRE_MILESTONE.md).
 Its first slices protect exact ground-fight intelligence, map real loading endpoints
 without changing dispatch, and share selected-squad condition/travel/cost detail.

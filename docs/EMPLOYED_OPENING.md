@@ -42,4 +42,13 @@ Latest combined CI at `be22895`: [run 37655944895](https://github.com/jawaman14/
 
 ## First-ownership presentation follow-up
 
+### Explicit chapter correction, 8 October 2026
+
+The earlier CLI skip claim missed chapter 1: it still entered the employment
+prelude. PR #255 fixes the startup entry point through shared chapter selection.
+Nine employment tests now cover chapters 1, 2 and 12, default startup and the
+existing opening/ownership/save behavior. The combined corrective gameplay
+stack at `54db9d7` passes 1,050 desktop tests and isolated startup smoke. This
+is unmerged-stack evidence; human pacing and exported walkthrough remain pending.
+
 The first successful aircraft purchase in the employed career records the aircraft and actual price in the existing saved story journal. Failed purchases and later switches add no milestone. Opening guidance changes from the loan/purchase explanation to the owned aircraft and current savings. No prices, unlocks or aircraft behavior change. Eight employment tests and seventeen legacy story tests pass (25 total), with no script/parse failures. This presentation follow-up has focused validation; the previous head’s 1,041-test CI is prior evidence, not a full run of this follow-up.
