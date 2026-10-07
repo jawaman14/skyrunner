@@ -66,7 +66,11 @@ and real two-machine remote/voice validation remain unperformed.
    buttons handle keyboard navigation before the modal fallback, block held
    Enter repeats, restore invoking focus and refresh their open palette. Pack
    rows retain action IDs and scroll above a visible exit. Single cash-home
-   orders retain pending/refusal messages instead of reporting no cash.
+   orders retain pending/refusal messages instead of reporting no cash. HQ
+   disbanding now uses the shared role-aware Cancel-first review; leaving the
+   desk cancels pending review and restores seat/focus ownership. Transfer and
+   sale/prisoner acknowledgements include their actual capped outcome, without
+   revealing an enemy cash balance.
 5. **Stations/maps/feed:** organize fifteen seats by task; selected-entity cards,
    acknowledged orders, grouped map layers and a shared role-filtered event feed.
    Shared persistent sequence outcomes now distinguish acknowledgement from a
