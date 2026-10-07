@@ -45,6 +45,38 @@ func _drive(s: Session, clear_roadblocks := true) -> void:
 			return
 
 
+func test_loading_endpoints_use_authored_areas_without_mutation() -> void:
+	var s := _sess()
+	var access := SiteAccess.new(s.world, s.world.site_records())
+	var cash_before := s.money
+	var stock_before: Dictionary = s.logistics.stock.duplicate(true)
+	for stash in s.stash_net.live():
+		var endpoint: Dictionary = s.logistics.loading_endpoint(stash.id, "", access)
+		check(endpoint.available, "stash has an authored loading point")
+		var record = Py.first(access.sites, func(r): return r.id == endpoint.site_id)
+		check(not Geometry2D.is_point_in_polygon(endpoint.point, record.footprint), "loading is outside the building footprint")
+		check(endpoint.point != Vector2(stash.x, stash.y), "loading does not use the inventory/building centre")
+	check(s.logistics.loading_endpoint(Logistics.HQ, "", access).available, "HQ has a loading area")
+	check_eq(s.money, cash_before, "endpoint lookup spends nothing")
+	check_eq(s.logistics.stock, stock_before, "endpoint lookup moves no stock")
+	check(s.stash_net.trucks.is_empty(), "endpoint lookup dispatches nothing")
+	s.dispose()
+
+
+func test_loading_endpoints_reject_unavailable_or_unauthored_meets() -> void:
+	var s := _sess()
+	var access := SiteAccess.new(s.world, s.world.site_records())
+	check(not s.logistics.loading_endpoint("missing", "", access).available, "unknown site has no fallback")
+	check(not s.logistics.loading_endpoint("family", "", access).available, "unauthored social club does not become a market-centre endpoint")
+	check(not s.logistics.loading_endpoint("agency", "", access).available, "Company meeting requires a source")
+	var stash: Dictionary = s.stash_net.live()[0]
+	var company: Dictionary = s.logistics.loading_endpoint("agency", stash.id, access)
+	check(company.available, "Company's source-specific airstrip has an authored area")
+	stash.burned = true
+	check(not s.logistics.loading_endpoint(stash.id, "", access).available, "burned stash cannot provide an available endpoint")
+	s.dispose()
+
+
 func test_a_load_lands_in_its_stash() -> void:
 	var s := _sess()
 	s.refresh_board("FRM")

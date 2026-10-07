@@ -29,3 +29,20 @@ blocked-state policy; new dispatch must reject before removing stock or money.
 The strategic live-balance tool models broader systems and is not a substitute
 for this physical endpoint audit. Human bridge/loading walkthroughs and measured
 travel balance remain pending.
+
+## Loading-area comparison, 7 October 2026
+
+The read-only `Logistics.loading_endpoint` maps HQs, live stashes and the
+Company's source-specific strip to shared authored loading points. It never
+substitutes a market/building centre for a missing meeting area. `available`
+means an authored candidate exists, not that its access or full route is valid.
+The route audit now compares both endpoint sets without changing dispatch.
+
+Same seed 12 and 99 directed pairs: legacy-centre checked routes remain 99/99
+unreachable. Loading-area routes have 2 reachable, 97 unreachable: 53 obstructed
+access legs, 31 without nearby checked access, 9 without an authored destination
+(the Family social club) and 4 without a connected travel network.
+
+Loading-area mapping alone is insufficient. Correct the remaining authored
+connectors, physical route validation and meeting records before migrating
+trucks. No inventory, money, route timings or balance rules changed in this audit.
