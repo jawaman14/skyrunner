@@ -117,10 +117,9 @@ static func diagnostics(world: World, sites: Array) -> Array:
 		var entrance: Vector3 = site.entrance
 		if site.kind != "dock" and absf(entrance.y - world.ground(entrance.x, -entrance.z)) > 0.55:
 			issues.append({"id": site.id, "reason": "Threshold needs a ramp or steps."})
-		for point in site.footprint:
-			for af in world.airfields:
-				if af.contains(point.x, point.y, 8.0):
-					issues.append({"id": site.id, "reason": "Footprint intersects runway clearance."})
+		for af in world.airfields:
+			if not Geometry2D.intersect_polygons(site.footprint, runway_footprint(af, 8.0)).is_empty():
+				issues.append({"id": site.id, "reason": "Footprint intersects runway clearance."})
 		if site.connector == null:
 			issues.append({"id": site.id, "reason": "No public road connector; remote access needs separate validation."})
 	for i in sites.size():
@@ -129,3 +128,13 @@ static func diagnostics(world: World, sites: Array) -> Array:
 				issues.append({"id": sites[i].id, "reason": "Footprint overlaps " + str(sites[j].id)})
 				issues.append({"id": sites[j].id, "reason": "Footprint overlaps " + str(sites[i].id)})
 	return issues
+
+## Full runway rectangle: intersection catches crossings and containment as well as corners.
+static func runway_footprint(af: Airfield, margin := 0.0) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	var along := Vector2(af.ux, af.uy) * (af.length / 2 + margin)
+	var across := Vector2(af.uy, -af.ux) * (af.width / 2 + margin)
+	var center := Vector2(af.x, af.y)
+	for point in [center - along - across, center + along - across, center + along + across, center - along + across]:
+		out.append(point)
+	return out

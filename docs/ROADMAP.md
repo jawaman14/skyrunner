@@ -99,7 +99,7 @@ and real two-machine remote/voice validation remain unperformed.
    approaches and network connectors; diagnostic overlay and interaction occlusion.
    Through-wall interaction is reproduced with actual overlapping physics areas
    and a solid wall. Selection and activation now require an unobstructed ray;
-   all eighteen walker tests pass, including existing desks/job boards. Shared
+   all nineteen walker tests pass, including existing desks/job boards. Shared
    all-entrance walkthrough and connector validation remain.
    Deterministic site data now supplies airfield parts/frames, HQ/stash frames,
    dock sites and the hotel anchor; records cover footprints, entrances, walking
@@ -124,7 +124,9 @@ and real two-machine remote/voice validation remain unperformed.
    All eight stash shells now have open doors, storage workbenches and clear aisles;
    the shack and boathouse have stepped access. Workbench use focuses logistics
    on the stable stash ID, rechecks burned state and leaves exits open. Focused
-   physics checks walk into and out of every type. Terrain-specific placement,
+   physics checks walk into and out of every type. Pitched stash roofs now have matching slope/end collision; aisle/exit checks
+   cover the added geometry. Runway diagnostics use full polygon intersections,
+   including crossings and containment. Terrain-specific placement,
    existing hangar/HQ/casino corrections and exported walkthroughs remain.
 9. **NPCs:** checked pedestrian/vehicle access, identity/task presentation and
    body lifecycle. Payroll/combat remain authoritative; no arrival-gated work.
@@ -153,3 +155,14 @@ and real two-machine remote/voice validation remain unperformed.
 New campaign chapters, hidden-informant gameplay, arrival-gated payroll, new
 combat mechanics, UDP prediction, multiplayer racing, additional aircraft and
 cloud deployment follow this overhaul. Ordinary city houses remain scenery.
+
+## Subsequent GitHub issue pass
+
+The owner requested review and resolution of every repository issue after this
+overhaul. The 7 October 2026 inventory contains 97 open issues (#80–#177, excluding
+PR #119). Evaluate each against verified code and this completion queue; overlapping
+master programs and already implemented work must not create duplicate systems.
+Expansion issues follow completion gates. Keep issues requiring human playtests,
+physical controllers, rights decisions or two real machines explicitly unresolved
+until their evidence exists. Publishing a draft PR is not integration or proof of
+release acceptance.
