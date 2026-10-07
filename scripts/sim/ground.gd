@@ -1577,9 +1577,12 @@ func _log(f: String, text: String) -> void:
 # ================================================================ views
 func snapshot(viewer: String) -> Dictionary:
 	var vis := visible_to(viewer)
+	# Exact fight positions and participant IDs require both participants to be
+	# observed. Public shots-fired news is a separate, coarser report.
+	var observed_fights := fights.filter(func(f): return vis.has(f.a) and vis.has(f.b))
 	return {
 		"squads": vis.map(func(q): return q.dict()),
-		"fights": fights.map(func(f): return {"id": f.id, "x": snappedf(f.x, 1.0), "y": snappedf(f.y, 1.0),
+		"fights": observed_fights.map(func(f): return {"id": f.id, "x": snappedf(f.x, 1.0), "y": snappedf(f.y, 1.0),
 			"a": f.a.id, "b": f.b.id, "cas": f.cas.duplicate(), "age": snappedf(sess.time - f.t0, 0.1)}),
 		"control": control.duplicate(true),
 		"commander": {"ai": commanders[viewer].ai, "log": commanders[viewer].log.slice(-6).map(func(l): return l[1]),
