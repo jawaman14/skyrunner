@@ -24,6 +24,10 @@ extends Node
 
 const DEFAULT_PORT := 47800
 const MAX_LINE := 1 << 20
+const MAX_LINES_PER_POLL := 64
+const MAX_PENDING_COMMANDS := 64
+const MAX_COMMAND_QUEUE := 1024
+const MAX_ACKS := 256
 const SNAPSHOT_HZ := 20.0
 const HELLO_TIMEOUT_MS := 10000
 const VOICE_FRAMES_PER_S := 40  ## a talker sends 25 a second; more than this is dropped
@@ -42,6 +46,9 @@ class Conn:
 	var v := 3
 	var joined := false
 	var t0 := 0
+	var command_high_water := 0
+	var pending_commands := {}
+	var command_acks := {}
 
 
 var tcp := TCPServer.new()
@@ -50,7 +57,7 @@ var mode := Roles.COOP
 var world_seed := 7
 var conns: Array = []
 var clients := {}  ## role -> Conn
-var inbox: Array = []  ## [role, seq, name, args]
+var inbox: Array = []  ## [role, seq, name, args, originating connection]
 var sticks := {}  ## role -> [roll, pitch, throttle]
 var sess = null  ## the Session the seats belong to (set by attach or the first pump)
 var chat_log: Array = []  ## [from, role, side, text, to]
@@ -107,15 +114,20 @@ static func line(msg: Dictionary) -> PackedByteArray:
 
 ## Pull complete lines out of a connection's buffer.
 static func read_lines(peer: StreamPeerTCP, buf: PackedByteArray) -> Array:
-	var n := peer.get_available_bytes()
+	var n := mini(peer.get_available_bytes(), maxi(0, MAX_LINE + 1 - buf.size()))
 	if n > 0:
 		var r := peer.get_partial_data(n)
 		if r[0] == OK:
 			buf.append_array(r[1])
+	return extract_lines(buf)
+
+
+## Leave an oversized frame buffered so the caller can close it before parsing.
+static func extract_lines(buf: PackedByteArray) -> Array:
 	var out := []
-	while true:
+	while out.size() < MAX_LINES_PER_POLL:
 		var i := buf.find(10)
-		if i < 0:
+		if i < 0 or i > MAX_LINE:
 			break
 		out.append(buf.slice(0, i).get_string_from_utf8())
 		var rest := buf.slice(i + 1)
@@ -363,11 +375,25 @@ func _message(c: Conn, msg: Dictionary) -> void:
 			c.peer.put_data(line({"t": "ack", "seq": int(msg.get("seq", 0)), "ok": false, "msg": "Claim a seat first."}))
 		return
 	if msg.get("t") == "cmd" and msg.get("args", {}) is Dictionary:
+		var seq := int(msg.get("seq", 0))
+		if c.command_acks.has(seq):
+			c.peer.put_data(line(c.command_acks[seq]))
+			return
+		if c.pending_commands.has(seq):
+			return
+		if seq <= c.command_high_water:
+			c.peer.put_data(line({"t": "ack", "seq": seq, "ok": false, "msg": "Expired or invalid command sequence; command not executed."}))
+			return
+		c.command_high_water = seq
+		if c.pending_commands.size() >= MAX_PENDING_COMMANDS or inbox.size() >= MAX_COMMAND_QUEUE:
+			_complete_command(c, seq, false, "Command queue full; command not executed.")
+			return
 		var args := {}
 		var raw: Dictionary = msg.get("args", {})
 		for k in raw.keys().slice(0, 8):
 			args[str(k).substr(0, 32)] = raw[k]
-		inbox.append([c.role, int(msg.get("seq", 0)), str(msg.get("name", "")).substr(0, 32), args])
+		c.pending_commands[seq] = true
+		inbox.append([c.role, seq, str(msg.get("name", "")).substr(0, 32), args, c])
 	elif msg.get("t") == "input" and c.role == Roles.PILOT:
 		var st := {}
 		for k in ["roll", "pitch", "throttle", "rudder", "brake"]:
@@ -499,6 +525,17 @@ func _send(role: String, msg: Dictionary) -> void:
 		c.peer.put_data(line(msg))
 
 
+## Deduplication is connection-scoped. Reconnects never replay pending mutations.
+func _complete_command(c: Conn, seq: int, ok: bool, message: String) -> void:
+	c.pending_commands.erase(seq)
+	var ack := {"t": "ack", "seq": seq, "ok": ok, "msg": message}
+	c.command_acks[seq] = ack
+	while c.command_acks.size() > MAX_ACKS:
+		c.command_acks.erase(c.command_acks.keys()[0])
+	if conns.has(c) and c.peer.get_status() == StreamPeerTCP.STATUS_CONNECTED:
+		c.peer.put_data(line(ack))
+
+
 # ------------------------------------------------------------ game side
 ## Apply joins/leaves and queued commands. Call from the game loop.
 func pump(sess_: Session) -> void:
@@ -511,10 +548,15 @@ func pump(sess_: Session) -> void:
 		_broadcast_seats()
 	for role in sticks:
 		sess.set_pilot_input(role, sticks[role][0], sticks[role][1], sticks[role][2])
-	for m in inbox:
+	var batch := inbox.slice(0, MAX_PENDING_COMMANDS)
+	inbox = inbox.slice(batch.size())
+	for m in batch:
+		var c: Conn = m[4]
+		if not conns.has(c) or clients.get(m[0]) != c or c.role != m[0]:
+			_complete_command(c, m[1], false, "Seat changed or disconnected; command not executed.")
+			continue
 		var r: Array = sess.command(m[0], m[2], m[3])
-		_send(m[0], {"t": "ack", "seq": m[1], "ok": r[0], "msg": r[1]})
-	inbox.clear()
+		_complete_command(c, m[1], bool(r[0]), str(r[1]))
 
 
 func publish(sess: Session, force := false) -> void:
