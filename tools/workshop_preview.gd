@@ -10,7 +10,11 @@ func _render() -> void:
 	var kit := Buildings.Kit.new("workshop-preview")
 	kit.box(Vector3(0, 0.6, 0), Vector3(3, 1.2, 1.2), "wood")
 	kit.box(Vector3(0, 1.8, 1.03), Vector3(4, 3.6, 0.1), "concrete_dark")
-	Buildings.workshop_tools(kit, Vector3.ZERO)
+	var preview_args := OS.get_cmdline_user_args()
+	if preview_args.size() > 1 and preview_args[1] == "dock":
+		Buildings.mooring_set(kit, Vector3(0, 1.2, 0))
+	else:
+		Buildings.workshop_tools(kit, Vector3.ZERO)
 	var model := kit.finish()
 	var triangles := 0
 	for child in model.get_children():

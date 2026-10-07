@@ -49,6 +49,10 @@ static func build(world: World, q: Quality) -> Node3D:
 		var x: float = p[0]
 		var y: float = p[1]
 		var n: int = p[2]
+		if n == 0:
+			var equipment := Buildings.Kit.new("coastal-mooring")
+			Buildings.mooring_set(equipment, Vector3(x + TILE_M * 0.5 - 0.5, DECK_Y + 0.25, -(y - 20)))
+			root.add_child(equipment.finish())
 		# the pier: tiles running south from the quay
 		for t in PIER_LEN:
 			var tile := ModelLib.wrapped(KIT + "structure-platform-dock", s, 0.0)

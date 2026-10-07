@@ -29,33 +29,7 @@ The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava stor
 Save expansion, the six-layer Session split, role support, switch registry and
 strategic calibration are implemented; do not restart them from older reviews.
 
-The current draft stack is #178 (menu/HUD foundation), #179 (job previews),
-#180 (read-only fuel previews and feedback), #181 (airfield props), #182 (fuel
-cache props), #183 (interface/world audit). Integrate in dependency order after
-validation; do not merge automatically. #119 (patterns/Asset Bible) is independent.
-[Baseline reconciliation #184](https://github.com/jawaman14/skyrunner/pull/184),
-[Costa Brava map focus #185](https://github.com/jawaman14/skyrunner/pull/185), and
-[dialogue reliability/navigation #186](https://github.com/jawaman14/skyrunner/pull/186)
-are prepared as draft continuations of that stack.
-[Dialogue input hardening #187](https://github.com/jawaman14/skyrunner/pull/187) and
-[shared action previews #188](https://github.com/jawaman14/skyrunner/pull/188)
-continue in that order. Draft continuations #189 (documentation), #190 (menu focus),
-#191 (station outcomes/feed), #192 (interaction occlusion), #193 (checked road
-surfaces) and #194 (shared site records/overlay) follow in dependency order.
-Draft #195 adds stash interiors, #196 graded bridge approaches and #197 modal input.
-Draft continuations [#198](https://github.com/jawaman14/skyrunner/pull/198) (map layers),
-[#199](https://github.com/jawaman14/skyrunner/pull/199) (HQ/outcomes) and
-[#200](https://github.com/jawaman14/skyrunner/pull/200) (remote action review) follow.
-The source baseline through #197 passed
-948 tests across three shards (313 / 316 / 319, zero failures and no script errors).
-Existing Godot shutdown resource diagnostics persist. The #193 CI run
-[37546858573](https://github.com/jawaman14/skyrunner/actions/runs/37546858573)
-passed all three shards, dedicated server, exports and Linux/Windows smoke checks.
-The earlier #186 CI run
-[37487390571](https://github.com/jawaman14/skyrunner/actions/runs/37487390571)
-passed shards, dedicated-server checks, exports and Linux/Windows smoke tests;
-that export evidence does not validate the later commits. Exported Windows human walkthrough
-and real two-machine remote/voice validation remain unperformed.
+Current asset continuation: #227 adds HAR workshop equipment; follow with coastal infrastructure/dock details, period vehicles, then existing-aircraft cockpit polish. See [ASSET_COVERAGE.md](ASSET_COVERAGE.md) for runtime coverage and missing work. Merged-stack descriptions are archived; remaining numbered items below distinguish implementation from pending verification.
 
 ## Ordered implementation queue
 
