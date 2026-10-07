@@ -5,6 +5,10 @@ an organisation whose money, people and territory must be protected. The career
 loop is earn, invest, expand, attract pressure, defend, recover and expand again.
 Flying remains useful; delegation is a progression reward.
 
+## Owner clarification — 8 October 2026
+
+[PLAYER_DIRECTION.md](PLAYER_DIRECTION.md) records the owner’s detailed choices: setup-driven automation with explicit worker orders, an interconnected economy, recoverable player death and permanent crew losses, optional campaign with continuing sandbox, stylised period cinema, and cooperative plus competitive organisation/rival/police play in the initial experience. These targets supersede conflicting earlier recommendations. Rival growth and precise recovery/ownership rules remain to be defined. Preserve measured delivery and compatibility gates.
+
 ## Delivery sequence
 
 1. Verify existing draft heads, dependencies and CI. Squash completed slices in
