@@ -61,10 +61,16 @@ if offer_probe != ""
 	=> END
 - Press him on it. [if offer_probe == ""]
 	do press()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{capo}}: (a long look) [[You don't trust me?|Questions. Always questions with you people.|Fine. Ask.]]
 	=> choose
 - Not today, Sal.
 	do refuse()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{capo}}: [[Suit yourself.|Your loss, my friend.|Some other time, then.]]
 	=> END
 
@@ -73,10 +79,16 @@ if offer_probe != ""
 {{capo}}: You have {{tribute_min}} minutes. It's a courtesy, the minutes.
 - Pay him. [if money >= tribute]
 	do pay()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{capo}}: [[Good. Now we're friends again.|Salud. See how easy?]]
 	=> END
 - Ask for more time. [if not stalled]
 	do stall()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{capo}}: Five minutes. Because I like you. Don't ask twice.
 	=> END
 - Tell him no.

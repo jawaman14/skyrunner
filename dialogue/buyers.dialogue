@@ -15,23 +15,41 @@ if not connected
 ~ buyers
 - Sell the Morettis {{quote_line("family", "cocaine")}} [if can_sell("family", "cocaine")]
 	do sell("family", "cocaine")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> sold
 - Sell the Morettis {{quote_line("family", "marijuana")}} [if can_sell("family", "marijuana")]
 	do sell("family", "marijuana")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> sold
 - Arm the Morettis' crews with {{quote_line("family", "guns")}} [if can_sell("family", "guns")]
 	do sell("family", "guns")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	Benny Ruiz: They'll use them on Los Cuervos. That's not our problem. Is it?
 	=> sold
 - Sell the Company {{quote_line("agency", "cocaine")}} [if can_sell("agency", "cocaine")]
 	do sell("agency", "cocaine")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	Benny Ruiz: It flies north on their planes. Somebody's corner gets flooded. Hope it's not ours.
 	=> sold
 - Send the Company {{quote_line("agency", "guns")}} for the war down south [if can_sell("agency", "guns")]
 	do sell("agency", "guns")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> sold
 - Sell Los Cuervos {{quote_line("rival", "guns")}} [if can_sell("rival", "guns")]
 	do sell("rival", "guns")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	Benny Ruiz: Money's money. Just remember which way those rifles point.
 	=> sold
 - How are the corners?

@@ -56,13 +56,46 @@ static func open(parent: Node, name: String, title: String, link) -> TalkBalloon
 	var res := resource(name)
 	if res == null:
 		return null
-	var st := State.new(func(): return link.snapshot(), func(n: String, a: Dictionary) -> Array:
-		link.send_command(n, a)
-		return link.last_result if link is LocalLink else [true, ""])
+	var st := State.new(func(): return link.snapshot(), Callable())
+	var state_ref: WeakRef = weakref(st)
+	st.cmd_fn = func(n: String, a: Dictionary) -> Array:
+		return await command_result(link, n, a, state_ref.get_ref())
 	var b := TalkBalloon.new()
 	parent.add_child(b)
 	b.start(res, title, st)
 	return b
+
+
+## Correlate this mutation with its acknowledgement. A later snapshot is a
+## separate requirement: never narrate a completed purchase from stale stock.
+static func command_result(link, name: String, args: Dictionary, state: State, timeout_ms := 15000) -> Array:
+	if not is_instance_valid(link) or not link.alive():
+		return [false, "Disconnected. No command sent."]
+	var seq: int = link.send_command(name, args)
+	var deadline := Time.get_ticks_msec() + timeout_ms
+	while true:
+		if state.cancelled:
+			return [false, "Conversation closed; result unknown."]
+		if not is_instance_valid(link) or not link.alive() or Time.get_ticks_msec() >= deadline:
+			return [false, "Result unknown. Check the current state before trying again."]
+		if link.acks.has(seq):
+			break
+		await (Engine.get_main_loop() as SceneTree).process_frame
+	var reply: Array = link.acks[seq]
+	link.acks.erase(seq)
+	if not bool(reply[0]) or link is LocalLink:
+		return reply
+	var snapshot = link.snapshot()
+	var current: Dictionary = snapshot if snapshot is Dictionary else {}
+	var acknowledged_seq := int(current.get("seq", -1))
+	while not state.cancelled:
+		if not is_instance_valid(link) or not link.alive() or Time.get_ticks_msec() >= deadline:
+			return [false, "Host accepted the command; updated state unavailable. Check before trying again."]
+		var fresh = link.snapshot()
+		if fresh is Dictionary and int(fresh.get("seq", -1)) > acknowledged_seq:
+			return reply
+		await (Engine.get_main_loop() as SceneTree).process_frame
+	return [false, "Conversation closed; result unknown."]
 
 
 ## What a conversation can see and do. Plain fields, refreshed from the
@@ -73,6 +106,8 @@ class State:
 	var capo := CAPO
 	var aide := AIDE
 	var money := 0
+	var cancelled := false
+	var pending := false
 	var result := ""  ## the last command's refusal, if any
 	# the Family
 	var family := false
@@ -396,7 +431,11 @@ class State:
 				cs_closed_note = ("The house is dark for %d minutes." % int(ceil(float(cz.closed_s) / 60.0))) if int(cz.get("closed_s", 0)) > 0 else ""
 
 	func _do(name: String, args := {}) -> bool:
-		var r: Array = cmd_fn.call(name, args)
+		pending = true
+		var r: Array = await cmd_fn.call(name, args)
+		pending = false
+		if cancelled:
+			return false
 		result = "" if r[0] else str(r[1])
 		refresh()
 		return r[0]
@@ -406,42 +445,42 @@ class State:
 
 	# the Family
 	func take() -> bool:
-		return _do("family_accept", {"id": offer_id})
+		return await _do("family_accept", {"id": offer_id})
 
 	func refuse() -> bool:
-		return _do("family_decline", {"id": offer_id})
+		return await _do("family_decline", {"id": offer_id})
 
 	func press() -> bool:
-		return _do("family_probe", {"id": offer_id})
+		return await _do("family_probe", {"id": offer_id})
 
 	func pay() -> bool:
-		return _do("pay_tribute")
+		return await _do("pay_tribute")
 
 	func stall() -> bool:
-		return _do("family_stall")
+		return await _do("family_stall")
 
 	# the island
 	func buy_passage() -> bool:
-		return _do("buy_passage")
+		return await _do("buy_passage")
 
 	func mules() -> bool:
-		return _do("island_ship", {"method": "mules", "amount": 4})
+		return await _do("island_ship", {"method": "mules", "amount": 4})
 
 	func container() -> bool:
-		return _do("island_ship", {"method": "ship", "amount": 500})
+		return await _do("island_ship", {"method": "ship", "amount": 500})
 
 	# the Sunrise Collective
 	func barter_best() -> bool:
-		return _do("acid_barter", {"stash": ps_best_id, "lb": float(ps_best_lb)})
+		return await _do("acid_barter", {"stash": ps_best_id, "lb": float(ps_best_lb)})
 
 	func barter_hundred() -> bool:
-		return _do("acid_barter", {"stash": ps_best_id, "lb": 100.0})
+		return await _do("acid_barter", {"stash": ps_best_id, "lb": 100.0})
 
 	func sell_acid() -> bool:
-		return _do("acid_sell", {"sheets": ps_acid_sheets if ps_acid_id != "" else ps_held, "stash": ps_acid_id})
+		return await _do("acid_sell", {"sheets": ps_acid_sheets if ps_acid_id != "" else ps_held, "stash": ps_acid_id})
 
 	func toggle_acid_auto() -> bool:
-		return _do("acid_auto", {"on": not ps_auto})
+		return await _do("acid_auto", {"on": not ps_auto})
 
 	# the dealership
 	func dl_price(id: String) -> int:
@@ -451,44 +490,44 @@ class State:
 		return bool(dl_cat.get(id, [0, false])[1])
 
 	func buy_vehicle(id: String) -> bool:
-		return _do("buy_vehicle", {"id": id})
+		return await _do("buy_vehicle", {"id": id})
 
 	func sell_car() -> bool:
-		return _do("sell_vehicle", {"serial": int(dl_last_car.get("serial", 0))})
+		return await _do("sell_vehicle", {"serial": int(dl_last_car.get("serial", 0))})
 
 	func sell_truck() -> bool:
-		return _do("sell_vehicle", {"serial": int(dl_last_truck.get("serial", 0))})
+		return await _do("sell_vehicle", {"serial": int(dl_last_truck.get("serial", 0))})
 
 	func toggle_fleet_auto() -> bool:
-		return _do("fleet_auto", {"on": not dl_auto})
+		return await _do("fleet_auto", {"on": not dl_auto})
 
 	# the casino
 	func buy_stake() -> bool:
-		return _do("casino", {"do": "stake"})
+		return await _do("casino", {"do": "stake"})
 
 	func collect() -> bool:
-		return _do("casino", {"do": "collect"})
+		return await _do("casino", {"do": "collect"})
 
 	func launder() -> bool:
-		return _do("casino", {"do": "launder", "stash": cs_stash_id, "amount": cs_launder_n})
+		return await _do("casino", {"do": "launder", "stash": cs_stash_id, "amount": cs_launder_n})
 
 	func pay_general() -> bool:
-		return _do("casino", {"do": "general"})
+		return await _do("casino", {"do": "general"})
 
 	func buy_out() -> bool:
-		return _do("casino", {"do": "rival"})
+		return await _do("casino", {"do": "rival"})
 
 	func evacuate() -> bool:
-		return _do("casino", {"do": "evacuate"})
+		return await _do("casino", {"do": "evacuate"})
 
 	func wiretap() -> bool:
-		return _do("casino_case", {"do": "wiretap"})
+		return await _do("casino_case", {"do": "wiretap"})
 
 	func audit() -> bool:
-		return _do("casino_case", {"do": "audit"})
+		return await _do("casino_case", {"do": "audit"})
 
 	func raid() -> bool:
-		return _do("casino_case", {"do": "raid"})
+		return await _do("casino_case", {"do": "raid"})
 
 	# the payroll
 	func has_cand(i: int) -> bool:
@@ -503,16 +542,22 @@ class State:
 			int(c.wage), c.hint]
 
 	func take_on(i: int) -> bool:
-		return i < cand.size() and _do("hire_worker", {"id": cand[i].id})
+		if i < 0 or i >= cand.size():
+			result = "Candidate is no longer available."
+			return false
+		return await _do("hire_worker", {"id": cand[i].id})
 
 	func crew_bonus() -> bool:
-		return _do("pay_bonus")
+		return await _do("pay_bonus")
 
 	func jailed_name() -> String:
 		return "" if jailed.is_empty() else "%s (%s)" % [jailed[0].name, Payroll.ROLES[jailed[0].role][2]]
 
 	func lawyer_for_jailed() -> bool:
-		return not jailed.is_empty() and _do("pay_worker_lawyer", {"id": jailed[0].id})
+		if jailed.is_empty():
+			result = "No crew member needs a lawyer."
+			return false
+		return await _do("pay_worker_lawyer", {"id": jailed[0].id})
 
 	## The whole payroll, one line each, for "Who's working for me?" - where they are and what
 	## they're doing, not just a headcount (crew.dialogue).
@@ -543,7 +588,7 @@ class State:
 		return "%d lb of %s at $%s a pound" % [n, "grass" if good == "marijuana" else "cocaine", Py.money(int(q.get("price", 0.0)))]
 
 	func sell(buyer: String, good: String) -> bool:
-		return _do("sell_product", {"buyer": buyer, "good": good, "qty": LOT[good], "tier": "rifle"})
+		return await _do("sell_product", {"buyer": buyer, "good": good, "qty": LOT[good], "tier": "rifle"})
 
 	func corners_line() -> String:
 		var parts := []
@@ -558,28 +603,28 @@ class State:
 		return filed.has(kind)
 
 	func post_bail(how: String) -> bool:
-		return _do("court_bail", {"how": how})
+		return await _do("court_bail", {"how": how})
 
 	func hire(tier: String) -> bool:
-		return _do("court_hire", {"tier": tier})
+		return await _do("court_hire", {"tier": tier})
 
 	func move(kind: String) -> bool:
-		return _do("court_motion", {"kind": kind})
+		return await _do("court_motion", {"kind": kind})
 
 	func lean_on_witness() -> bool:
-		return _do("court_tamper")
+		return await _do("court_tamper")
 
 	func pay_judge() -> bool:
-		return _do("court_bribe")
+		return await _do("court_bribe")
 
 	func plead() -> bool:
-		return _do("court_plea")
+		return await _do("court_plea")
 
 	func cooperate() -> bool:
-		return _do("court_cooperate")
+		return await _do("court_cooperate")
 
 	func appeal() -> bool:
-		return _do("court_appeal")
+		return await _do("court_appeal")
 
 	func wait() -> bool:
-		return _do("court_wait")
+		return await _do("court_wait")

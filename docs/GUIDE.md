@@ -583,3 +583,7 @@ the stash: truck it home (**Shift+H**). *Wages unpaid:* pay them, or people talk
 | Change the keys | **F8** |
 
 For flags and building, see the [README](../README.md). For every system's rules and numbers, [DESIGN.md](DESIGN.md).
+
+### Conversations
+
+Use Up/Down and Enter to choose an answer, including choices beyond nine; 1–9 remain shortcuts. Answers wrap and scroll, and Leave/Back or Escape closes the conversation. While a command is pending, further choices are blocked. Remote success waits for both the matching host acknowledgement and an updated view. If the result is unknown, inspect the current state before trying again: the game does not automatically resend the action.
