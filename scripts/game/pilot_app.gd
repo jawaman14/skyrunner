@@ -338,6 +338,9 @@ func _active_menu() -> GameMenu:
 
 
 func _unhandled_input(ev: InputEvent) -> void:
+	if controls_menu != null or pack_menu != null:
+		get_viewport().set_input_as_handled()
+		return
 	if ev is InputEventJoypadButton and ev.pressed and _active_menu() == null and not on_foot:
 		_flight_press(ev)
 		return
@@ -722,7 +725,7 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 
 func _input(ev: InputEvent) -> void:
 	# click to grab the mouse again while walking
-	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and not _map_open():
+	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and pack_menu == null and not _map_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -1204,7 +1207,7 @@ func _gather_input() -> ControlMapper.InputFrame:
 	var inp := ControlMapper.InputFrame.new()
 	inp.pressed = _pressed
 	_pressed = {}
-	var menu_open := _active_menu() != null or controls_menu != null or pause_menu != null
+	var menu_open := _active_menu() != null or controls_menu != null or pack_menu != null or pause_menu != null
 	if not menu_open:
 		for action in ControlsConfig.HELD:
 			if Input.is_action_pressed(ControlsConfig.action(action)):
