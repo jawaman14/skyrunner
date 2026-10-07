@@ -84,6 +84,12 @@ static func load_roads() -> Dictionary:
 			road.pop_back()
 			road.append([-5514.0, 5487.0])
 			road.append([-5514.0, 5508.0])
+	# An authored service spur brings the FRM shed loading yard within the
+	# checked local-access limit. It joins an existing road vertex and stops
+	# outside the shed/runway; the intentional La Selva isolation is unchanged.
+	var agency_start := [-2062.5, -2875.0]
+	if d.get("roads", []).any(func(road): return agency_start in road):
+		d.roads.append([agency_start, [-2115.0, -2795.0]])
 	return d
 
 
