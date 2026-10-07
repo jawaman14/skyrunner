@@ -177,3 +177,12 @@ Expansion issues follow completion gates. Keep issues requiring human playtests,
 physical controllers, rights decisions or two real machines explicitly unresolved
 until their evidence exists. Publishing a draft PR is not integration or proof of
 release acceptance.
+
+The first issue pass has checked #80–#90 against the current tree. #80/#82 are
+covered by the forward-intercept work in PR #210; #81 by the explainable payroll
+demand report in PR #213; #83 by the shared incoming-call queue in PR #211; #84 by
+the payroll Agent work in PR #208; #86 by the checked road/site work in PRs #205 and
+#207; #87 is the radar-aware route slice in PR #214; #88 remains a measured strip
+feasibility decision recorded in `docs/STRIPS.md`; #85 still needs a separate
+physical-contact combat migration and is intentionally open. #89 and later issues
+remain pending their own evidence or implementation slices.
