@@ -17,6 +17,10 @@ const SETTLED_S := 600.0  ## hired longer ago than this: already at the post whe
 
 var sess
 var bodies := {}  ## worker id -> Agent
+var _requested := {}
+var halted := {}  ## current route obstructed: retain the last valid position
+var blocked := {}  ## worker id -> failed physical travel reason, independent of payroll work
+var _access: SiteAccess
 var _post := {}  ## worker id -> the post key the body is at or on its way to
 
 
@@ -106,24 +110,50 @@ func update(dt: float) -> void:
 			bodies[id] = body
 			if arrived:
 				_post[id] = key
-		if _post.get(id, "") != key:
-			_post[id] = key
-			_send(body, at, graph)
-		body.update(dt, graph)
+				_requested[id] = key
+		if _requested.get(id, "") != key:
+			_requested[id] = key
+			var reason := _send(body, at, graph, str(w.outfit))
+			if reason == "":
+				_post[id] = key
+				blocked.erase(id)
+				halted.erase(id)
+			else:
+				blocked[id] = reason
+		if not halted.has(id) and not body.idle():
+			var remaining := _remaining(body, body.speed_ms() * maxf(dt, 0.0))
+			for i in remaining.size() - 1:
+				var reason := _access.segment_reason(remaining[i], remaining[i + 1], body.kind == "car") if _access != null else ""
+				if reason != "":
+					blocked[id] = reason
+					halted[id] = true
+					break
+		if not halted.has(id): body.update(dt, graph)
 	for id in bodies.keys():
 		if not alive.has(id):
 			bodies.erase(id)
 			_post.erase(id)
+			_requested.erase(id)
+			blocked.erase(id)
+			halted.erase(id)
 
 
-func _send(body: Agent, at: Vector2, graph: RoadGraph) -> void:
+func _send(body: Agent, at: Vector2, graph: RoadGraph, faction := "org") -> String:
+	if _access == null: _access = SiteAccess.new(sess.world, sess.world.site_records())
+	var driving := body.pos().distance_to(at) > WALK_M
+	var route: Dictionary
+	if driving:
+		if graph == null: return "No vehicle travel network."
+		var penalty: Callable = sess.ground._penalty(faction) if sess.ground != null and GroundWar.SMART_ROUTES else Callable()
+		route = _access.checked_vehicle_route(graph, body.pos(), at, penalty)
+	else:
+		route = _access.path(body.pos(), at)
+	if not route.reachable: return str(route.reason)
 	body.clear()
-	body.kind = "car" if body.pos().distance_to(at) > WALK_M else "foot"
+	body.kind = "car" if driving else "foot"
 	body.speed = 0.0
-	body.queue(Agent.Task.new("go", at))
-	if body.kind == "car" and graph != null:
-		body.route = graph.route(body.pos(), at)
-		body.s = 0.0
+	body.queue(Agent.Task.new("go", at, 0.0, route.points))
+	return ""
 
 
 ## Metres a worker still has to travel to his post (0: there, or no body).
@@ -140,6 +170,91 @@ func draw_list() -> Array:
 		if b == null:
 			continue
 		var moving := not b.idle()
-		out.append({"id": w.id, "x": snappedf(b.x, 0.1), "y": snappedf(b.y, 0.1), "faction": w.outfit, "moving": moving,
-			"car": moving and b.kind == "car"})
+		var row := {"id": w.id, "x": snappedf(b.x, 0.1), "y": snappedf(b.y, 0.1), "faction": w.outfit, "moving": moving,
+			"car": moving and b.kind == "car"}
+		if str(w.outfit) == "org":
+			row.merge({"name": str(w.name), "role": str(w.role), "assignment": str(w.get("assigned", "")),
+				"travel": "blocked" if blocked.has(str(w.id)) else ("travelling" if moving else "at post"),
+				"blocked_reason": str(blocked.get(str(w.id), ""))})
+		out.append(row)
 	return out
+
+## Slice only future travel; past route sections never move a worker backward.
+static func _remaining(body: Agent, metres := INF) -> PackedVector2Array:
+	var points := PackedVector2Array([body.pos()])
+	var end := minf(body.s + metres, RoadGraph.length(body.route))
+	var along := 0.0
+	for i in body.route.size() - 1:
+		along += body.route[i].distance_to(body.route[i + 1])
+		if along <= body.s: continue
+		if along >= end:
+			points.append(RoadGraph.along(body.route, end))
+			break
+		points.append(body.route[i + 1])
+	return points
+
+static func _encode(points: PackedVector2Array) -> Array:
+	var out := []
+	for point in points: out.append([point.x, point.y])
+	return out
+
+static func _decode(values: Array) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for value in values:
+		if value is Array and value.size() == 2:
+			var point := Vector2(float(value[0]), float(value[1]))
+			if point.is_finite(): out.append(point)
+	return out
+
+func capture() -> Dictionary:
+	var rows := []
+	for id in bodies:
+		var worker = sess.payroll.get_worker(str(id))
+		if worker == null or str(worker.status) not in ["free", "assigned"] or post_of(worker) == null: continue
+		var body: Agent = bodies[id]
+		var tasks := []
+		for task: Agent.Task in body.tasks:
+			tasks.append({"kind": task.kind, "x": task.at.x, "y": task.at.y, "dur": task.dur, "route": _encode(task.route)})
+		rows.append({"id": id, "kind": body.kind, "x": body.x, "y": body.y, "speed": body.speed, "route": _encode(body.route),
+			"s": body.s, "tasks": tasks, "working": body._working, "held": body._held, "carry": body._carry, "busy": body.busy_s,
+			"post": str(_post.get(id, "")), "requested": str(_requested.get(id, "")), "blocked": str(blocked.get(id, "")), "halted": halted.has(id)})
+	return {"v": 1, "bodies": rows}
+
+func restore(data: Dictionary) -> void:
+	bodies.clear()
+	_post.clear()
+	_requested.clear()
+	blocked.clear()
+	halted.clear()
+	_access = SiteAccess.new(sess.world, sess.world.site_records())
+	for row in data.get("bodies", []):
+		if not row is Dictionary: continue
+		var id := str(row.get("id", ""))
+		var worker = sess.payroll.get_worker(id)
+		if worker == null or str(worker.status) not in ["free", "assigned"] or post_of(worker) == null: continue
+		var position := Vector2(float(row.get("x", 0.0)), float(row.get("y", 0.0)))
+		if not position.is_finite(): continue
+		var kind := str(row.get("kind", "foot"))
+		var body := Agent.new(id, kind if kind in ["foot", "car"] else "foot", position.x, position.y)
+		body.speed = float(row.get("speed", 0.0))
+		body.route = _decode(row.get("route", []))
+		body.s = clampf(float(row.get("s", 0.0)), 0.0, RoadGraph.length(body.route))
+		body._working = float(row.get("working", 0.0))
+		body._held = float(row.get("held", 0.0))
+		body._carry = float(row.get("carry", 0.0))
+		body.busy_s = float(row.get("busy", 0.0))
+		for task in row.get("tasks", []):
+			body.tasks.append(Agent.Task.new(str(task.kind), Vector2(task.x, task.y), float(task.dur), _decode(task.get("route", []))))
+		bodies[id] = body
+		_post[id] = str(row.get("post", ""))
+		_requested[id] = str(row.get("requested", ""))
+		if str(row.get("blocked", "")) != "": blocked[id] = str(row.blocked)
+		if bool(row.get("halted", false)): halted[id] = true
+		if not body.idle():
+			var future := _remaining(body)
+			for i in future.size() - 1:
+				var reason := _access.segment_reason(future[i], future[i + 1], body.kind == "car")
+				if reason != "":
+					blocked[id] = "Saved travel blocked: " + reason
+					halted[id] = true
+					break

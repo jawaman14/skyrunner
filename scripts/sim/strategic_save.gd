@@ -71,6 +71,7 @@ static func capture(s: Session) -> Dictionary:
 			"aboard": l.aboard, "lost": l.lost.duplicate(true), "lost_by": l.lost_by.duplicate(true)}
 	if s.payroll != null:
 		d["payroll"] = _payroll(s)
+		d["people"] = s.payroll.people.capture()
 	if s.airframe != null:
 		d["airframe"] = {"cond": s.airframe.cond.duplicate(true), "failures": s.airframe.failures, "spent": s.airframe.spent}
 	if s.races != null:
@@ -251,6 +252,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 	if s.ground != null and d.get("war") is Dictionary:
 		_restore_war(s.ground, d.war)
 	_restore_world(s, d)
+	if s.payroll != null and d.get("people") is Dictionary:
+		s.payroll.people.restore(d.people)
 	if s.nights != null and d.get("nights") is Dictionary:
 		_restore_nights(s.nights, d.nights)
 
