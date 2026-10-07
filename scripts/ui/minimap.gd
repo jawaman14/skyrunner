@@ -400,23 +400,36 @@ func _world_marks(font: Font) -> void:
 			var lp := to_screen(bl.x, bl.y)
 			if _inside(lp, 3.0):
 				_cross(lp, Color(1, 0.9, 0.3), 2.5)
+	var known := known_contacts()
+	for uid in known:
+		var contact: Dictionary = known[uid]
+		var kp := to_screen(contact.x, contact.y)
+		if _inside(kp, 4.0):
+			var col := Color(0.8, 0.3, 1) if str(uid).begins_with("Rival") else Color(0.35, 0.55, 1)
+			var seen: bool = contact.source == "visual"
+			_diamond(kp, col if seen else Color(col, 0.55), 5.0)
+			if not seen:
+				draw_arc(kp, 8.0, 0, TAU, 12, Color(col, 0.4), 1.0)
+			if big and _inside(kp, 24.0):
+				_label(font, kp + Vector2(10, -6), "visual" if seen else "%s • %ds ago" % [contact.source, int(contact.age)], 10, col)
+
+
+## Reports keep their reported position and age; only direct sight supplies a live position.
+func known_contacts() -> Dictionary:
 	var st: FlightModel.FlightState = s.state
 	var known := {}
 	for k in s.intel:
 		var v: Array = s.intel[k]
 		if v[0] <= s.time:
-			known[k] = [v[1], v[2]]
+			known[k] = {"x": v[1], "y": v[2], "source": v[3], "age": maxf(0.0, s.time - float(v[0]))}
 	if st != null:
 		for u in s.police.units:
 			if u.state != "crashed" and PyMath.hypot3(u.x - st.x, u.y - st.y, u.z - st.alt) < PoliceSystem.SIGHT_RANGE_M:
-				known[u.id] = [u.x, u.y]
+				known[u.id] = {"x": u.x, "y": u.y, "source": "visual", "age": 0.0}
 		for c in s.maritime.boats:
 			if c.kind == "cutter" and PyMath.hypot(c.x - st.x, c.y - st.y) < 9000:
-				known[c.id] = [c.x, c.y]
-	for uid in known:
-		var kp := to_screen(known[uid][0], known[uid][1])
-		if _inside(kp, 4.0):
-			_diamond(kp, Color(0.8, 0.3, 1) if str(uid).begins_with("Rival") else Color(0.35, 0.55, 1), 5.0)
+				known[c.id] = {"x": c.x, "y": c.y, "source": "visual", "age": 0.0}
+	return known
 
 
 ## The waypoint: a pink pin with its distance; off the radar, a pink chevron on the rim; on the chart a line to it.

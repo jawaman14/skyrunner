@@ -53,6 +53,21 @@ func test_every_menu_builds_opens_takes_every_key_and_closes() -> void:
 		m.queue_free()
 
 
+func test_ground_menu_shell_has_a_clear_exit_and_initial_focus() -> void:
+	var s := _session()
+	var m := HangarMenu.new()
+	Engine.get_main_loop().root.add_child(m)
+	m.setup(s)
+	check(m.close_button != null, "shared shell has an explicit close control")
+	check_eq(m.close_button.text, "Close  [Esc]", "close control teaches the keyboard path")
+	check(m.close_button.custom_minimum_size.y >= UIStyle.TOUCH_MIN, "close target meets shared minimum height")
+	m.open()
+	check(m.close_button.has_focus(), "opening a menu establishes predictable keyboard focus")
+	m.close_button.emit_signal("pressed")
+	check(not m.visible, "the visible close control closes the menu")
+	m.queue_free()
+
+
 func test_enter_in_the_collectors_cycles_a_markets_terms() -> void:
 	var s := _session()
 	var root: Node = Engine.get_main_loop().root

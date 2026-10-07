@@ -246,5 +246,14 @@ Second wave, larger features:
   phase. Nothing of the world is left out of a save now, except what is in flight (trucks, boats, jobs).
 
 ## 3. Later
+- **UI/UX rebuild in progress:** the shared ground-menu shell has a visible Close/Esc control
+  and initial keyboard focus. The pilot HUD separates flight-critical warnings from pursuit threats,
+  groups aircraft state / active operations / alerts, and gives runs and objectives distinct headings.
+  Fuel endurance is labelled as an estimate; W&B uses the existing loadout evaluator to explain limits.
+  Scanner reports show age and uncertainty; chart contacts distinguish reports from direct visual sightings.
+  Local layout checks cover 1024x768, 1280x720, 1920x1080 and 2560x1080 with active warnings.
+  Next: contextual actions and command feedback, ground-menu content, station dashboards,
+  strategic-map interaction, pause/save/settings, and onboarding/accessibility. Exported-build
+  human playtesting remains required; this first HUD pass does not complete those larger programs.
 - A real-app playtest pass on every seat.
 - A browser (web) build, single-player.

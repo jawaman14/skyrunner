@@ -175,4 +175,5 @@ func test_the_desk_draws_and_its_keys_send_commands() -> void:
 	check(s.analyst.desk.is_empty(), "F forwards it")
 	app._process(0.016)
 	check_eq(app.list.row_count(), 0, "and the table empties")
+	check("85%" in app.info.text, "empty desk explains verification accuracy without a format error")
 	app.queue_free()
