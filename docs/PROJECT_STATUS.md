@@ -16,7 +16,7 @@ Source audit: 7 October 2026. This is a maintained evidence record, not generate
 | Tutorial | Four Costa Brava flying chapters | `docs/DESIGN.md`; preserved |
 | Story | Twelve Costa Brava chapters | `README.md`/`docs/DESIGN.md`; preserved |
 | Player map | Costa Brava | Classic geometry remains internal regression only; generated maps are optional |
-| Desktop targets | Linux, Windows and macOS export presets | export configuration; exported Windows walkthrough and macOS launch evidence remain pending |
+| Desktop targets | Linux, Windows and macOS exported and smoke-launched in CI | PR #223 CI run 37568034562; human exported-build walkthroughs remain pending |
 | Multiplayer | protocol and remote preview/ack paths implemented | real two-machine seat, action and voice session remains unperformed |
 | Human verification | controller, read-aloud, four-resolution visual walkthrough and exported Windows walkthrough pending | record evidence before release claims |
 | Asset rights | used third-party notices included; bundled radio redistribution rights unresolved | `docs/ASSET_PROVENANCE.md` and issue #175 |
@@ -33,14 +33,18 @@ Luna's interrupted full runs did not establish a pass. Review reproduced two
 failing tests on the earlier integrated tree (983 passed, 2 failed); PR #222
 fixes map Enter routing and updates fixer confirmation coverage. The corrected
 three-shard run passed all 985 tests. CI for #222 passed exports, dedicated-server
-checks and Linux/Windows smoke; the remaining CI shards were still pending when
-the desktop evidence was recorded.
+checks and Linux/Windows smoke. PR #223's complete CI run
+[37568034562](https://github.com/jawaman14/skyrunner/actions/runs/37568034562)
+also passed every shard and all three desktop smoke jobs. Final merged-tree
+checks passed: save 32, switches/parity/randomness 4, export filters 2,
+repository hygiene and the 1,800-frame AI smoke.
 
 Review found that `PhoneCalls` is a standalone queue used only by its unit tests;
 incoming calls are not yet connected to Session, saves, snapshots or PhoneMenu.
-Issue #83 remains incomplete. The workflow exports macOS but currently has no
-macOS launch job on the recorded baseline; PR #223 adds one, with execution
-evidence pending. Issue #176 remains incomplete. The earlier PR #218 summary is
+Issue #83 remains incomplete. PR #223 now adds a verified macOS bundle/launch
+job and satisfies issue #176's CI gate. RoutePlanner still lacks the known-radar
+cost layer required by #87; broader crew-demand criteria in #81 remain pending.
+The earlier PR #218 summary is
 not evidence that these gameplay and platform integrations are finished.
 
 No open PRs remained at the start of this review. Open issues still require
@@ -56,13 +60,16 @@ Implemented but requiring further evidence: complete entrance/threshold/loading
 walkthrough, terrain-specific remote access, remaining hangar/HQ/casino states,
 full NPC truck/squad migration, Costa Brava coastal art reference area,
 performance route captures, exported builds, physical controllers, read-aloud,
-macOS launch, two-machine multiplayer/voice and radio rights decision.
+human macOS walkthrough, two-machine multiplayer/voice and radio rights decision.
 
 Deferred until the overhaul gates pass: new chapters, hidden informant gameplay,
 arrival-gated payroll, new combat mechanics, UDP prediction, multiplayer racing,
 additional aircraft and cloud deployment.
 
 ## Updating
+
+The dated [post-integration verification report](VALIDATION_2026-10-07.md)
+records performed and unperformed checks, known diagnostics and review findings.
 
 Use `tools/test.sh` for a full sharded run and record its three shard totals in
 this file and the dated roadmap history. Focused PR evidence belongs in the PR
