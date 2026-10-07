@@ -75,6 +75,7 @@ static func build(world: World, q: Quality) -> Node3D:
 		if not world.map.land_use.is_empty():
 			sm.set_shader_parameter("landuse", landuse_texture(world))
 			sm.set_shader_parameter("has_landuse", 1.0)
+			sm.set_shader_parameter("painted_streets", 0.0 if world.map.map_seed == MapCity.SEED else 1.0)
 			sm.set_shader_parameter("grid_origin", MapCity.CITY_C - MapCity.CITY_R)
 		mat = sm
 	else:

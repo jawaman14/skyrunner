@@ -5,6 +5,15 @@ feature branch and draft PR. Historical progress is preserved in
 [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md); the source-backed
 findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md).
 
+
+**Costa Brava rebuild, 8 October 2026:** [#247](https://github.com/jawaman14/skyrunner/pull/247) adds the settlement/period architecture
+foundation replaces generic city generation with seven districts and physical
+local streets. Full draft regression passes 1,033 tests. Checked loading access
+is 13/99 reachable; 86 pairs still need correction. Whole-map completion, saved
+position migration, pacing and human release gates remain pending. See
+[COSTA_BRAVA_REBUILD.md](COSTA_BRAVA_REBUILD.md) for code scope, repository
+candidates, psychology research and acceptance evidence.
+
 ## Baseline and completed work
 
 **Integration update, 7 October 2026:** #119, #178–#209, and replacement
