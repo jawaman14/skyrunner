@@ -53,4 +53,22 @@ AI spending boundaries remain the #242 implementation package.
 the engagement ends. Fix final accounting without altering combat authority in a
 separate slice. Human/controller/two-machine and physical access gates remain open.
 
-Full regression, smoke and paired seed results are recorded below after completion.
+## Paired-seed findings
+
+Ten paired seeds (1-10), three simulated hours, canonical war stand-in. Baseline
+was run before edits at eecbe90; after code is 6880d41. Wrapper only retains raw
+rows and redirects output. All ten rows change. Median organisation cash changes
+$58,212 to $54,693; mean cash $55,308.50 to $55,706.60. Mean organisation arrests
+19.5 to 23.5, combat losses 5.3 to 6.3 and burned stashes 0.2 to 0.8. Police funds
+median $4,794.08 to $6,256.37. Payroll shortage rate remains zero in both runs.
+
+This is a material behavioural change, not balance-neutral presentation. Preserving
+escorts changes deployment choices; clearing stale surveillance changes subsequent
+planning. Both corrections are applied together, so the comparison cannot attribute
+effects separately. Ten seeds do not establish full calibration or human pacing.
+Keep the PR draft for wider balance/acceptance review; do not compensate through
+arbitrary speed, payout or weapon tuning. Raw paired rows and aggregates are in
+[the comparison record](../sim-results/faction-ai-balance-2026-10-08.json).
+
+Desktop smoke reports SMOKE OK; native tracked-file hygiene, export exclusions
+and Git diff checks pass. Full shard results are recorded after completion.
