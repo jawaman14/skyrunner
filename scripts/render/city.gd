@@ -526,40 +526,4 @@ static func _palms(world: World, roads: Array, q: Quality) -> MultiMeshInstance3
 ## A stash house by its kind: a barn, a shack on stilts, a dockside warehouse,
 ## a lock-up, tents under the canopy, a quarry shed, a boathouse, a villa.
 static func stash_house(world: World, st: Dictionary) -> Node3D:
-	var k := Buildings.Kit.new("stash-" + st.id)
-	match st.kind:
-		"barn":
-			k.box(Vector3(0, 3.0, 0), Vector3(12, 6, 18), "red")
-			k.gable(Vector3(0, 6.0, 0), 12, 18, 3.5, "metal_rust")
-		"shack":
-			for sx in [-1, 1]:
-				for sz in [-1, 1]:
-					k.box(Vector3(sx * 2.6, 0.9, sz * 2.0), Vector3(0.25, 1.8, 0.25), "wood")
-			k.box(Vector3(0, 3.0, 0), Vector3(6, 2.4, 5), "wood")
-			k.gable(Vector3(0, 4.2, 0), 6, 5, 1.4, "metal_rust")
-		"warehouse":
-			k.box(Vector3(0, 5.0, 0), Vector3(30, 10, 18), "metal")
-			k.box(Vector3(0, 2.2, -9.05), Vector3(6, 4.4, 0.1), "black", false)
-			k.box(Vector3(9, 8.5, -9.1), Vector3(5, 1.2, 0.1), "white", false)  # "7"
-		"lockup":
-			for i in 4:
-				k.box(Vector3(-6 + i * 4.0, 1.4, 0), Vector3(3.8, 2.8, 6), "concrete")
-				k.box(Vector3(-6 + i * 4.0, 1.2, -3.05), Vector3(3.2, 2.4, 0.08), "metal_rust", false)
-		"camp":
-			for p in [[0, 0], [7, 3], [-6, 4]]:
-				k.gable(Vector3(p[0], 0.2, p[1]), 5, 7, 2.6, "green", 0.2)
-			k.box(Vector3(2, 0.5, -6), Vector3(3, 1.0, 2), "wood")
-		"shed":
-			Buildings.shed(k, Vector3(0, 0, 0), 9, 6, "metal_rust")
-		"boathouse":
-			k.box(Vector3(0, 2.5, 0), Vector3(8, 5, 14), "wood")
-			k.gable(Vector3(0, 5.0, 0), 8, 14, 2.0, "metal_rust")
-			k.box(Vector3(0, 0.3, -12), Vector3(3, 0.6, 10), "wood")  # the jetty
-		_:
-			k.box(Vector3(0, 2.0, 0), Vector3(14, 4, 10), "stucco_pink")
-			k.gable(Vector3(0, 4.0, 0), 14, 10, 2.4, "terracotta", 0.8)
-			k.box(Vector3(0, -0.2, -9), Vector3(8, 0.4, 4), "concrete", false)
-	var n := k.finish()
-	n.transform = SiteLayout.stash_frame(world, st)
-	n.set_meta("stash", st.id)
-	return n
+	return StashInterior.build(world, st)

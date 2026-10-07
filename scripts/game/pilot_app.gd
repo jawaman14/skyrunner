@@ -614,12 +614,16 @@ func _flight_press(ev: InputEvent) -> bool:
 
 
 ## SHIFT+H: logistics - the stashes' product and cash, the trucks, cash bags on and off.
-func toggle_logistics() -> void:
+func toggle_logistics(stash := "") -> void:
 	if logistics_menu != null and is_instance_valid(logistics_menu):
+		if not stash.is_empty():
+			logistics_menu.focus_source(stash)
+			return
 		logistics_menu.close()
 		return
 	logistics_menu = LogisticsMenu.new()
 	logistics_menu.pilot = true
+	logistics_menu.focused_stash = stash
 	logistics_menu.view_fn = func() -> Dictionary: return s.logistics.view() if s.logistics != null else {}
 	logistics_menu.cmd_fn = func(n: String, a: Dictionary) -> Array: return s.command(Roles.PILOT, n, a)
 	logistics_menu.closed.connect(func(): Input.mouse_mode = Input.MOUSE_MODE_VISIBLE)
@@ -1139,6 +1143,14 @@ func _exit_car() -> void:
 
 func _on_use(action: String, area: Area3D) -> void:
 	match action:
+		"stash_logistics":
+			var id: String = area.get_meta("stash", "")
+			var found = s.stash_net.get_stash(id) if s.stash_net != null else null
+			var stash: Dictionary = found if found is Dictionary else {}
+			if not StashInterior.available(stash) or s.logistics == null:
+				s.say("This storage site is unavailable.")
+			else:
+				toggle_logistics(id)
 		"car":
 			_enter_car()
 		"jobs", "load", "hangar":
@@ -1236,6 +1248,11 @@ func _process(delta: float) -> void:
 		radio.active = driving != null or not on_foot
 	if _frame % 30 == 1:
 		_phone_watch()
+		if scene != null and s.stash_net != null:
+			for stash in s.stash_net.stashes:
+				var node := scene.find_child("stash-" + str(stash.id), true, false) as Node3D
+				if node != null:
+					StashInterior.show_state(node, stash)
 	if _frame % 10 == 0:
 		if s.tutorial != null and tutorial_panel == null:
 			tutorial_panel = TutorialPanel.new()

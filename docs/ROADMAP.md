@@ -21,9 +21,15 @@ validation; do not merge automatically. #119 (patterns/Asset Bible) is independe
 are prepared as draft continuations of that stack.
 [Dialogue input hardening #187](https://github.com/jawaman14/skyrunner/pull/187) and
 [shared action previews #188](https://github.com/jawaman14/skyrunner/pull/188)
-continue in that order. The integrated source baseline passed
+continue in that order. Draft continuations #189 (documentation), #190 (menu focus),
+#191 (station outcomes/feed), #192 (interaction occlusion), #193 (checked road
+surfaces) and #194 (shared site records/overlay) follow in dependency order.
+The source baseline through #193 passed
 937 tests across three shards (321 / 308 / 308, zero failures and no script errors).
-Existing Godot shutdown resource diagnostics persist. The earlier #186 CI run
+Existing Godot shutdown resource diagnostics persist. The #193 CI run
+[37546858573](https://github.com/jawaman14/skyrunner/actions/runs/37546858573)
+passed all three shards, dedicated server, exports and Linux/Windows smoke checks.
+The earlier #186 CI run
 [37487390571](https://github.com/jawaman14/skyrunner/actions/runs/37487390571)
 passed shards, dedicated-server checks, exports and Linux/Windows smoke tests;
 that export evidence does not validate the later commits. Exported Windows human walkthrough
@@ -69,7 +75,7 @@ and real two-machine remote/voice validation remain unperformed.
    Through-wall interaction is reproduced with actual overlapping physics areas
    and a solid wall. Selection and activation now require an unobstructed ray;
    all eighteen walker tests pass, including existing desks/job boards. Shared
-   placement records, developer overlay and all-entrance walkthrough remain.
+   all-entrance walkthrough and connector validation remain.
    Deterministic site data now supplies airfield parts/frames, HQ/stash frames,
    dock sites and the hotel anchor; records cover footprints, entrances, walking
    approaches, loading points and explicitly unverified connector candidates.
@@ -86,6 +92,11 @@ and real two-machine remote/voice validation remain unperformed.
    exported walking/driving still require validation.
 8. **Interiors:** fix existing hangars/HQs/casino; make all eight stash types
    enterable with existing logistics access, real availability and clear exits.
+   All eight stash shells now have open doors, storage workbenches and clear aisles;
+   the shack and boathouse have stepped access. Workbench use focuses logistics
+   on the stable stash ID, rechecks burned state and leaves exits open. Focused
+   physics checks walk into and out of every type. Terrain-specific placement,
+   existing hangar/HQ/casino corrections and exported walkthroughs remain.
 9. **NPCs:** checked pedestrian/vehicle access, identity/task presentation and
    body lifecycle. Payroll/combat remain authoritative; no arrival-gated work.
    Migrate truck/squad connectors separately with paired-seed measurements.
