@@ -6,7 +6,7 @@ Recorded 8 October 2026 from the owner's answers to the gameplay questionnaire. 
 
 Build an empire from nothing. Warband is the principal reference: progressively take on greater complexity, combining personal action, recruitment, trade, relationships, conquest, command and emergent stories. Schedule I contributes hands-on work, business setup and automation. Cities: Skylines contributes interconnected systems and diagnosing/managing them; decorative city design is not a gameplay priority.
 
-Avoid forcing the player into only one activity. A solo player can delegate to AI; co-op participants can specialise in the aspect they enjoy and contribute to the organisation. A mature organisation can eventually operate across all business areas. No fixed percentage of flying, management or combat is prescribed. Start employed by someone else, earning enough to buy the first aircraft; ownership is an earned milestone rather than a starting gift.
+Avoid forcing the player into only one activity. A solo player can delegate to AI; co-op participants can specialise in the aspect they enjoy and contribute to the organisation. A mature organisation can eventually operate across all business areas. No fixed percentage of flying, management or combat is prescribed. Start as a hired pilot for a legitimate aviation business, immediately flying the employer’s aircraft. The business gradually moves into smuggling, which becomes unavoidable in the main story. Earn enough to buy the first aircraft; ownership is an earned milestone rather than a starting gift. The story does not offer a permanent legitimate-only branch. This does not remove the previously approved option to progress in the sandbox without playing the campaign.
 
 ## Economy and workers
 
@@ -51,7 +51,7 @@ This supersedes any earlier recommendation to defer all competitive play. It doe
 
 Owner-selected product order:
 
-1. **Early rise from nothing:** work for an employer, understand jobs and their consequences, earn and buy the first aircraft. Establish independent progression and campaign-equivalent unlocks.
+1. **Early rise from nothing:** immediately fly a legitimate employer’s aircraft, understand jobs and their consequences, follow the business’s gradual and unavoidable main-story transition into smuggling, then earn and buy the first aircraft. Establish independent progression and campaign-equivalent unlocks.
 2. **Setup-driven automation:** basic explicit assignments, then repeatable conditional orders and multi-step task sequences; retain manual operation and existing instructions during recovery.
 3. **Faction competition:** distinct starting strengths, earned economic growth, civilian economic effects, expansion-driven diplomacy and late-game or deliberately pursued turf war.
 4. **Multiplayer teamwork:** separate co-op/competitive modes, organisation/rival/police roles, 2–16 players, leader-disconnect session halt and non-leader continuity.
@@ -62,7 +62,7 @@ Do not silently change current payroll, aircraft performance, combat authority o
 
 ## Questions still open
 
-- Employer identity, first assignments, starting transport and pay/first-aircraft price.
+- Employer identity, first assignments, the staged transition into smuggling and pay/first-aircraft price. Immediate access to the employer’s aircraft and the legitimate-business starting point are decided.
 - Situation-specific recovery costs, recovery time, inventory handling and property seizure.
 - Impound approach eligibility and consequences.
 - Automation budgets, conditional-rule syntax, task sequencing and permission limits.
