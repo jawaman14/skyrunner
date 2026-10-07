@@ -5,6 +5,8 @@
 # plead(), cooperate(), appeal(), wait().
 
 ~ start
+if campaign_chapter >= 6 and campaign_chapter > 0
+	Arturo Vega: An arrest opens a case now. Bail gets you out until trial; it does not make the charges disappear.
 if not court or not case_open
 	=> no_case
 if stage == "bail"

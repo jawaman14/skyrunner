@@ -135,6 +135,10 @@ class State:
 	var cmd_fn: Callable  ## (name, args) -> [ok, message]
 	var capo := CAPO
 	var aide := AIDE
+	var campaign_chapter := 0
+	var campaign_guidance := ""
+	var campaign_complete := false
+	var campaign_ending := ""
 	var money := 0
 	var cancelled := false
 	var pending := false
@@ -297,6 +301,10 @@ class State:
 		var snap = snap_fn.call()
 		if not (snap is Dictionary):
 			return
+		campaign_chapter = int(snap.get("campaign", {}).get("chapter", 0))
+		campaign_guidance = str(snap.get("campaign", {}).get("guidance", ""))
+		campaign_complete = bool(snap.get("campaign", {}).get("completed", false))
+		campaign_ending = str(snap.get("campaign", {}).get("ending", ""))
 		money = int(snap.get("money", 0))
 		var f: Dictionary = snap.get("family", {})
 		family = not f.is_empty()
@@ -603,6 +611,9 @@ class State:
 	# the buyers
 	const LOT := {"cocaine": 20, "marijuana": 200, "guns": 5}
 
+	func sale_lot(buyer: String, good: String) -> int:
+		return 4 if campaign_chapter == 9 and buyer == "agency" and good == "guns" else LOT[good]
+
 	func _have(good: String) -> int:
 		return {"cocaine": coke, "marijuana": weed, "guns": rifles}.get(good, 0)
 
@@ -612,13 +623,29 @@ class State:
 
 	func quote_line(buyer: String, good: String) -> String:
 		var q: Dictionary = quotes.get(buyer, {}).get(good, {})
-		var n := mini(mini(LOT[good], int(q.get("room", 0))), _have(good))
+		var n := mini(mini(sale_lot(buyer, good), int(q.get("room", 0))), _have(good))
 		if good == "guns":
 			return "%d rifles at $%s each" % [n, Py.money(int(q.get("price", 0.0)))]
 		return "%d lb of %s at $%s a pound" % [n, "grass" if good == "marijuana" else "cocaine", Py.money(int(q.get("price", 0.0)))]
 
 	func sell(buyer: String, good: String) -> bool:
-		return await _do("sell_product", {"buyer": buyer, "good": good, "qty": LOT[good], "tier": "rifle"})
+		return await _do("sell_product", {"buyer": buyer, "good": good, "qty": sale_lot(buyer, good), "tier": "rifle"})
+
+	func buyer_status() -> String:
+		var lines := []
+		for buyer in ["family", "agency", "rival"]:
+			var offers: Dictionary = quotes.get(buyer, {})
+			if offers.is_empty():
+				lines.append("%s: no offer available yet" % buyer)
+			for good in offers:
+				var q: Dictionary = offers[good]
+				var reason := str(q.get("why", ""))
+				if reason == "" and _have(good) <= 0:
+					reason = "no stock held"
+				if reason == "" and int(q.get("room", 0)) <= 0:
+					reason = "buyer has no capacity right now"
+				lines.append("%s / %s: %s" % [buyer, good, reason if reason != "" else "available; review the sale before committing"])
+		return "; ".join(lines)
 
 	func corners_line() -> String:
 		var parts := []

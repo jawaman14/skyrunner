@@ -3,6 +3,8 @@
 # Talk.State: cand_line(i), take_on(i), crew_bonus(), lawyer_for_jailed().
 
 ~ start
+if campaign_chapter <= 4 and campaign_chapter > 0
+	Manny Ortega: Hiring gets them on the payroll. Assignment gives them a job. The wages keep coming either way.
 if not payroll
 	Manny Ortega: No crew to run in this game.
 	=> END
@@ -65,5 +67,5 @@ if unpaid > 0
 if result != ""
 	Manny Ortega: {{result}}
 else
-	Manny Ortega: [[Good choice. I think.|I'll send word tonight.|Starts tomorrow.]]
+	Manny Ortega: [[Good choice. I think.|I'll send word now.|On the payroll now; check the assignment.]]
 => hall
