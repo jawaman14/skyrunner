@@ -106,6 +106,21 @@ func test_frm_service_spur_reaches_company_loading_without_crossing_sites() -> v
 	session.dispose()
 
 
+func test_checked_access_roads_do_not_migrate_legacy_routes() -> void:
+	var roads := [[[0, 0], [1000, 0]]]
+	var service := [[[0, 0], [0, 100]]]
+	var legacy := RoadGraph.new(roads, [[500, 50]])
+	var staged := RoadGraph.new(roads, [[500, 50]], service)
+	check_eq(staged.nodes, legacy.nodes, "legacy nodes/stubs stay identical")
+	check_eq(staged.adj, legacy.adj, "legacy edge order and speculative junctions stay identical")
+	check_eq(staged.route(Vector2(0,100), Vector2(1000,0)), legacy.route(Vector2(0,100), Vector2(1000,0)), "old route API retains its path")
+	var checked := staged.checked_route(Vector2(0,100), Vector2(1000,0))
+	check(checked.reachable, "checked routing uses the physical service spur")
+	check_eq(checked.points[0], Vector2(0,100))
+	check_eq(checked.points[-1], Vector2(1000,0))
+	check(checked.points.has(Vector2.ZERO), "the spur joins at the authored vertex")
+
+
 func test_checked_short_routes_follow_authored_edges_without_false_tees() -> void:
 	var graph := RoadGraph.new([[[0, 0], [0, 1000], [200, 1000], [200, 0]]])
 	var result := graph.checked_route(Vector2.ZERO, Vector2(200, 0))

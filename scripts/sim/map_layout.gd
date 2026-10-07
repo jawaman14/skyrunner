@@ -23,6 +23,7 @@ var land_use := PackedByteArray()  ## MapCity land-use class per terrain cell (e
 var bridges: Array = []  ## [{road: index into roads, from: metres, to: metres}] where a road crosses water
 var settlement_trunk_count := -1  ## rebuild post-pass may run for multiple terrain presets
 var roads: Array = []  ## polylines [[x, y], ...]
+var access_roads: Array = []  ## physical/checked service approaches; legacy dispatch is not migrated yet
 var buildings: Array = []  ## {x, y, z, w, d, h, style}
 var stashes: Array = []  ## the organisation's stash houses: {id, name, kind, x, y, strip, zone}
 var foreign: Array = []  ## strips beyond the map (Island): landable, but not the mainland's (no boards, AI or police)
