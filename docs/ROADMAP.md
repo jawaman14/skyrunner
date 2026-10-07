@@ -257,3 +257,13 @@ Second wave, larger features:
   human playtesting remains required; this first HUD pass does not complete those larger programs.
 - A real-app playtest pass on every seat.
 - A browser (web) build, single-player.
+
+## GitHub issue pass status
+
+The first open-issue pass checked #80–#90 against the integrated tree. #80/#82 are
+covered by the merged autopilot intercept slice; #81 by the payroll demand report;
+#83 by the deterministic incoming-call queue; #84 by checked payroll agents; #86 by
+checked site and road access; #87 by radar-aware route planning; and #88 by the
+measured strip results in `docs/STRIPS.md`. #85 remains open for a measured physical
+combat migration. Issues #89 onward remain pending their own implementation or
+human-evidence gates.
