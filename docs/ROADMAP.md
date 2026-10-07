@@ -39,6 +39,9 @@ The approved empire-led continuation is recorded in [EMPIRE_MILESTONE.md](EMPIRE
 Its first slices protect exact ground-fight intelligence, map real loading endpoints
 without changing dispatch, and share selected-squad condition/travel/cost detail.
 Physical connector correction remains a prerequisite to truck/squad migration.
+Draft #237 adds checked local detours: 7/99 loading routes are now reachable,
+92 remain blocked. Integrated draft regression passes 1,014 tests; ten paired
+war stand-in seeds match. This does not replace the merged baseline or human gates.
 
 1. **Baseline verification:** the overhaul stack is integrated; the latest
    verified gameplay baseline is #225 with 990 desktop tests and passing CI.

@@ -80,3 +80,16 @@ checks; human input/display/world and two-machine evidence remain pending.
 Loading-area audit: 2/99 reachable (HQ/docks in both directions), 97 blocked.
 The lookup changes no live dispatch. Destination/upkeep/order ownership additions
 are restricted to owned squads; older peers explicitly lack those details.
+
+The next draft, #237, reuses validated local building detours and selects usable
+nearby authored road nodes. Same endpoint limits and geometry checks remain.
+At code head `b51f2e0`, all 1,014 desktop tests pass (334/347/333), zero failed,
+with no script/parse errors; smoke is OK. Ten paired war seeds over three hours
+match all raw rows/aggregates against the old connector method. Loading audit
+improves to 7/99 reachable with unchanged lengths for the two previous routes.
+92 failures remain; live truck/squad migration is not enabled.
+
+Still required: correct remaining physical connectors/meeting areas, complete
+district/dashboard and order-lifecycle work, operational/battle debriefs, coastal
+art/gameplay profiling, physical-member combat migration, human pacing and release
+gates. Initial slices do not establish completion of the entire milestone.

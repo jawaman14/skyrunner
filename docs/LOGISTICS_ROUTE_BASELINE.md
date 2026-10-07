@@ -64,5 +64,8 @@ and shack/Company strip (1560.32m). 92 remain blocked: 16 grade, 17 footprint,
 
 Payroll physical vehicle travel already consumes this API; its focused movement,
 blocking/lifecycle/save tests pass. Payroll effectiveness is not arrival-gated.
-Broader strategic paired-seed measurements and human physical walkthrough remain
-pending before integration; do not treat the route audit as an economic playtest.
+Ten paired seeds over three simulated hours using the war stand-in match in every
+raw row and aggregate against the old connector method. This limited regression
+does not establish human pacing or complete strategic calibration.
+[Recorded comparison](../sim-results/connector-balance-2026-10-07.json).
+Human physical walkthrough remains pending; the route audit is not a playtest.
