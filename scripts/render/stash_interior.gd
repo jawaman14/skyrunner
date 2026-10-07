@@ -21,16 +21,16 @@ static func build(world: World, stash: Dictionary) -> Node3D:
 	elif stash.kind == "camp":
 		# Raised ridge leaves a full-height opening instead of a sealed triangle.
 		room(k, center, size.x, 2.2, size.z, "green", 2.0)
-		k.gable(Vector3(0, 2.2, 0), size.x, size.z, 0.4, "green", 0.2)
+		k.gable(Vector3(0, 2.2, 0), size.x, size.z, 0.4, "green", 0.2, true)
 		for at in [Vector3(7, 0.2, 3), Vector3(-6, 0.2, 4)]:
-			k.gable(at, 5, 7, 2.6, "green", 0.2)
+			k.gable(at, 5, 7, 2.6, "green", 0.2, true)
 	else:
 		room(k, center, size.x, size.y, size.z, spec.material, 3.0 if stash.kind == "warehouse" else 2.0)
 		if stash.kind == "warehouse":
 			k.box(Vector3(0, size.y + 0.1, 0), Vector3(size.x, 0.2, size.z), "metal_rust")
 		else:
 			var rise: float = {"barn": 3.5, "shack": 1.4, "shed": 1.4, "boathouse": 2.0, "villa": 2.4}.get(stash.kind, 1.4)
-			k.gable(center + Vector3(0, size.y, 0), size.x, size.z, rise, "terracotta" if stash.kind == "villa" else "metal_rust")
+			k.gable(center + Vector3(0, size.y, 0), size.x, size.z, rise, "terracotta" if stash.kind == "villa" else "metal_rust", 0.6, true)
 	if stash.kind == "shack":
 		for side in [-1, 1]:
 			for end in [-1, 1]:

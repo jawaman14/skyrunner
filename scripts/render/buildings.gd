@@ -252,13 +252,17 @@ class Kit:
 		node.free()
 
 	## Gable roof over a w x d footprint, ridge along z, eaves at y0.
-	func gable(c: Vector3, w: float, d: float, rise: float, key: String, overhang := 0.6) -> void:
+	func gable(c: Vector3, w: float, d: float, rise: float, key: String, overhang := 0.6, collide := false) -> void:
 		var t := _tool(key)
 		var hw := w / 2 + overhang
 		var hd := d / 2 + overhang
 		var r := Vector3(c.x, c.y + rise, c.z)
-		_quad(t, c + Vector3(-hw, 0, -hd), c + Vector3(-hw, 0, hd), r + Vector3(0, 0, hd), r + Vector3(0, 0, -hd))
-		_quad(t, c + Vector3(hw, 0, hd), c + Vector3(hw, 0, -hd), r + Vector3(0, 0, -hd), r + Vector3(0, 0, hd))
+		var faces := PackedVector3Array()
+		var slopes := [[c + Vector3(-hw, 0, -hd), c + Vector3(-hw, 0, hd), r + Vector3(0, 0, hd), r + Vector3(0, 0, -hd)],
+			[c + Vector3(hw, 0, hd), c + Vector3(hw, 0, -hd), r + Vector3(0, 0, -hd), r + Vector3(0, 0, hd)]]
+		for slope in slopes:
+			_quad(t, slope[0], slope[1], slope[2], slope[3])
+			for index in [0, 1, 2, 0, 2, 3]: faces.append(slope[index])
 		# gable ends
 		for sz in [-1, 1]:
 			var a := c + Vector3(-hw + overhang, 0, sz * (hd - overhang))
@@ -268,6 +272,14 @@ class Kit:
 			for p in ([a, top, b] if sz < 0 else [a, b, top]):
 				t.set_normal(n)
 				t.add_vertex(p)
+				faces.append(p)
+		if collide:
+			var shape := ConcavePolygonShape3D.new()
+			shape.set_faces(faces)
+			shape.backface_collision = true
+			var collision := CollisionShape3D.new()
+			collision.shape = shape
+			body.add_child(collision)
 
 	## Half-cylinder (Quonset) roof over a hangar, axis along z.
 	func arch(c: Vector3, w: float, d: float, key: String, seg := 12) -> void:

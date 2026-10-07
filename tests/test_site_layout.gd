@@ -46,3 +46,19 @@ func test_diagnostics_report_thresholds_and_runway_intrusions() -> void:
 	var overlay := AccessOverlay.make(world)
 	check(overlay.get_child_count() > 0)
 	overlay.free()
+
+func test_runway_clearance_detects_crossings_without_interior_corners() -> void:
+	World.use_map(MapCity.SEED)
+	var world := World.new()
+	var af: Airfield = world.airfields[0]
+	var center := Vector2(af.x, af.y)
+	var along := Vector2(af.ux, af.uy) * 5.0
+	var across := Vector2(af.uy, -af.ux) * (af.width + 30.0)
+	var polygon := PackedVector2Array([center - along - across, center + along - across, center + along + across, center - along + across])
+	for point in polygon:
+		check(not af.contains(point.x, point.y, 8.0), "old corner-only diagnostic misses this crossing")
+	var site := SiteLayout.record(world, "crossing", "stash", SiteLayout.frame(center, world.airfield_elev(af)), Vector3(10, 3, 10))
+	site.footprint = polygon
+	check(SiteLayout.diagnostics(world, [site]).any(func(issue): return "runway" in issue.reason))
+	site.footprint = PackedVector2Array([center - Vector2(af.length, af.length), center + Vector2(af.length, -af.length), center + Vector2(af.length, af.length), center + Vector2(-af.length, af.length)])
+	check(SiteLayout.diagnostics(world, [site]).any(func(issue): return "runway" in issue.reason), "fully enclosed runway is detected")

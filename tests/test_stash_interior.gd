@@ -65,3 +65,18 @@ func test_logistics_focus_uses_stable_stash_id() -> void:
 	menu.focus_source("a")
 	check_eq(menu._sites[menu.from_ob.selected], "a")
 	menu.free()
+
+func test_pitched_roof_collision_matches_both_visible_slopes() -> void:
+	var root := Node3D.new()
+	Engine.get_main_loop().root.add_child(root)
+	var kit := Buildings.Kit.new("roof-test")
+	kit.gable(Vector3(0, 3, 0), 8, 10, 2, "metal_rust", 0.6, true)
+	root.add_child(kit.finish())
+	for i in 3: await Engine.get_main_loop().physics_frame
+	for x in [-2.0, 2.0]:
+		var query := PhysicsRayQueryParameters3D.create(Vector3(x, 8, 0), Vector3(x, 0, 0), 1)
+		var hit := root.get_world_3d().direct_space_state.intersect_ray(query)
+		check(not hit.is_empty(), "roof blocks falling on both slopes")
+		if not hit.is_empty():
+			check_near(hit.position.y, 3 + 2 * (1.0 - absf(x) / 4.6), 0.001, "collision follows rendered pitch and overhang")
+	root.free()
