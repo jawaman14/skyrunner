@@ -61,6 +61,26 @@ func test_heap_search_preserves_linear_search_paths_with_ties_penalties_and_obst
 				check_eq(graph.path(a, b, rules[0], rules[1]), _linear_path(graph, a, b, rules[0], rules[1]), "exact node path parity")
 
 
+func test_villa_approach_reaches_loading_both_ways_without_crossing_its_walls() -> void:
+	World.use_map(MapCity.SEED)
+	var world := World.new()
+	var sites := world.site_records()
+	var villa: Dictionary = sites.filter(func(site): return site.id == "stash/villa")[0]
+	var access := SiteAccess.new(world, sites)
+	var graph := RoadGraph.new(world.map.roads)
+	var loading: Vector2 = Vector2(villa.loading.x, -villa.loading.z)
+	var south := Vector2(-5500, 5418)
+	for ends in [[south, loading], [loading, south]]:
+		var route := access.checked_vehicle_route(graph, ends[0], ends[1])
+		check(route.reachable, "villa loading area connects in both directions")
+		for i in route.points.size() - 1:
+			check_eq(access.segment_reason(route.points[i], route.points[i + 1], true), "", "all access segments clear")
+	var road: Array = world.map.roads.filter(func(line): return Vector2(line[-1][0], line[-1][1]) == Vector2(-5514, 5508))[0]
+	var padded := Geometry2D.offset_polygon(villa.footprint, RoadSurface.HALF_WIDTH)[0]
+	for i in range(road.size() - 3, road.size() - 1):
+		check(not SiteAccess._crosses(Vector2(road[i][0], road[i][1]), Vector2(road[i + 1][0], road[i + 1][1]), padded), "full road width clears villa")
+
+
 func test_checked_short_routes_follow_authored_edges_without_false_tees() -> void:
 	var graph := RoadGraph.new([[[0, 0], [0, 1000], [200, 1000], [200, 0]]])
 	var result := graph.checked_route(Vector2.ZERO, Vector2(200, 0))
