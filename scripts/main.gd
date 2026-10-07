@@ -237,8 +237,7 @@ func start() -> void:
 	elif story:
 		var st := Story.new_employed() if fresh else Story.from_dict(Session.read_save(save).get("story"))
 		st.attach(sess)
-		while st.index + 1 < args["chapter"] and not st.completed_all:  # --chapter N: skip ahead
-			st.advance()
+		st.select_chapter(int(args["chapter"]))
 	# the tutorial: asked for, or still on in this save
 	var tut = Session.read_save(save).get("tutorial")
 	if args["tutorial"] or (tut is Dictionary and bool(tut.get("on", false)) and not args["new"]):
