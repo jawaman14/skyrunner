@@ -170,7 +170,8 @@ cloud deployment follow this overhaul. Ordinary city houses remain scenery.
 
 The owner requested review and resolution of every repository issue after this
 overhaul. The 7 October 2026 inventory contains 97 open issues (#80–#177, excluding
-PR #119). Evaluate each against verified code and this completion queue; overlapping
+PR #119). Current verified/pending/deferred status is centralized in
+[PROJECT_STATUS.md](PROJECT_STATUS.md). Evaluate each against verified code and this completion queue; overlapping
 master programs and already implemented work must not create duplicate systems.
 Expansion issues follow completion gates. Keep issues requiring human playtests,
 physical controllers, rights decisions or two real machines explicitly unresolved

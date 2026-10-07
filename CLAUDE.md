@@ -7,7 +7,7 @@ docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue.
 ```bash
 GODOT=$(./tools/get_godot.sh)                 # pinned 4.7.2 into .tools/ (Linux); elsewhere use your own 4.7.2
 $GODOT --headless --import                    # after adding scripts/assets (refreshes the class cache)
-./tools/test.sh [filter]                      # the suite: ~470 tests, 7-9 min headless; TEST_TIMEOUT to raise
+./tools/test.sh [filter]                      # the suite: run the current sharded suite; the count is maintained in docs/PROJECT_STATUS.md; TEST_TIMEOUT to raise
 $GODOT --path . -- --unlocks open             # play, open mode
 $GODOT --headless --path . -- --unlocks open --watch --new --smoke 1800   # CI's headless smoke run
 $GODOT --headless --script res://scripts/balance/cli.gd -- feasibility|tactical|strategic|report [--seeds N --workers N --n N]
