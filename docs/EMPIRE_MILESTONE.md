@@ -67,3 +67,16 @@ coordinates, IDs and casualty counters are withheld. Aggregate control remains
 the existing public strategic picture, not a claim of exact current deployment.
 Two regression tests cover distant, partially observed, observed and lost contact.
 No simulation or balance calculations change. Coarse news is retained.
+
+## Initial batch validation
+
+Drafts #234 (intelligence), #235 (loading endpoints), #236 (squad detail) are
+pushed, not merged. At code head `6fa99f9`, desktop full shards pass 1,012 tests,
+0 failed (334/345/333), with no script/parse failures. Smoke reports SMOKE OK;
+native Git hygiene/diff checks pass. Existing resource/ObjectDB/PagedAllocator
+shutdown cleanup diagnostics remain. Full coverage includes save/parity/export
+checks; human input/display/world and two-machine evidence remain pending.
+
+Loading-area audit: 2/99 reachable (HQ/docks in both directions), 97 blocked.
+The lookup changes no live dispatch. Destination/upkeep/order ownership additions
+are restricted to owned squads; older peers explicitly lack those details.
