@@ -7,7 +7,7 @@ Flying remains useful; delegation is a progression reward.
 
 ## Owner clarification — 8 October 2026
 
-[PLAYER_DIRECTION.md](PLAYER_DIRECTION.md) records the owner’s detailed choices: setup-driven automation with explicit worker orders, an interconnected economy, recoverable player death and permanent crew losses, optional campaign with continuing sandbox, stylised period cinema, and cooperative plus competitive organisation/rival/police play in the initial experience. These targets supersede conflicting earlier recommendations. Rival growth and precise recovery/ownership rules remain to be defined. Preserve measured delivery and compatibility gates.
+[PLAYER_DIRECTION.md](PLAYER_DIRECTION.md) records the owner’s detailed choices: setup-driven automation with explicit worker orders, an interconnected economy, recoverable player death and permanent crew losses, optional campaign with continuing sandbox, stylised period cinema, and cooperative plus competitive organisation/rival/police play in the initial experience. These targets supersede conflicting earlier recommendations. Follow-up choices establish an employed start leading to first-aircraft purchase, economy-driven rivals with distinct starting strengths, conditional orders and task sequences, situation-dependent recovery, multiple impound approaches, and money/reputation/activity unlocks with campaign alternatives. Separate co-op and competitive modes target 2–16 players; a leader departure halts the multiplayer session, while lower-rank departures do not. Product delivery proceeds early rise, automation, faction competition, then multiplayer teamwork. Exact costs and reconnect/resume rules remain open. Preserve measured delivery and compatibility gates.
 
 ## Delivery sequence
 
