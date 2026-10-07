@@ -13,9 +13,10 @@ fixes map keyboard routing and fixer review coverage; the corrected desktop
 suite passes 985 tests (315 / 337 / 333). The draft-stack descriptions below
 are retained as implementation history, not the current merge queue.
 Use [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified and pending evidence.
-Incoming-call gameplay integration (#83), macOS launch evidence (#176), and
+Incoming-call gameplay integration (#83), radar-aware routing (#87), and
 human release gates remain open. [#223](https://github.com/jawaman14/skyrunner/pull/223)
-adds macOS bundle/launch validation and is awaiting CI evidence.
+is merged with passing macOS bundle/launch validation. The
+[dated verification report](VALIDATION_2026-10-07.md) records current evidence.
 
 The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava story stay.
 Save expansion, the six-layer Session split, role support, switch registry and
