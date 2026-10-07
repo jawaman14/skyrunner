@@ -12,7 +12,7 @@ Source audit: 7 October 2026. This is a maintained evidence record, not generate
 | Version | 0.9.0-beta.1 | `README.md`, release metadata |
 | Engine | Godot 4.7.2, GDScript, Jolt | project configuration |
 | Test files | 123 `tests/test_*.gd` files, excluding `test_case.gd` | source count on 7 October; run `./tools/test.sh` for test results |
-| Verified automated baseline | 985 passed, 0 failed across three desktop shards (315 / 337 / 333) | 7 October review and PR #222; no script/parse errors; lambda/resource cleanup diagnostics remain |
+| Verified automated baseline | 990 passed, 0 failed across three desktop shards (319 / 338 / 333) | PR #225; no script/parse errors; lambda/resource cleanup diagnostics remain |
 | Tutorial | Four Costa Brava flying chapters | `docs/DESIGN.md`; preserved |
 | Story | Twelve Costa Brava chapters | `README.md`/`docs/DESIGN.md`; preserved |
 | Player map | Costa Brava | Classic geometry remains internal regression only; generated maps are optional |
@@ -46,6 +46,19 @@ Answer/decline commands revalidate expiry and offer availability. Answering
 opens the existing dialogue without accepting the offer. Source IDs suppress
 recreated calls after save/load; missed/declined history is visible. Other event
 sources and real remote/hardware evidence remain outside this first slice.
+[#225](https://github.com/jawaman14/skyrunner/pull/225) is squash-merged. Its
+[CI run](https://github.com/jawaman14/skyrunner/actions/runs/37569523063)
+passed every test shard, dedicated-server checks, exports and Linux/Windows/macOS
+smoke jobs. Desktop save checks passed 33 tests and the 1,800-frame smoke reported
+`SMOKE OK`. The merged game/test tree matches the tested feature head.
+
+The read-only Costa Brava logistics route audit enumerates 99 directed pairs
+using current dispatch endpoints. All fail checked vehicle access: 62 obstructed
+access legs and 37 without nearby checked access. These are nominal simulation
+endpoints, not proof that physical loading areas are unusable. Fix and validate
+loading/meet connectors before switching dispatch to checked routes; replacing
+the router alone would block this entire audited set. See
+`tools/logistics_routes.gd` and `docs/LOGISTICS_ROUTE_BASELINE.md`.
 PR #223 adds a verified macOS bundle/launch
 job and satisfies issue #176's CI gate. RoutePlanner still lacks the known-radar
 cost layer required by #87; broader crew-demand criteria in #81 remain pending.
