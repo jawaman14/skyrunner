@@ -214,4 +214,5 @@ func test_company_lot_matches_story_and_epilogue_uses_runner_context() -> void:
 	var b := await _balloon(s, "buyers")
 	var seen := await _until_choice(b)
 	check(seen.any(func(l): return "1989" in l), "ending conversation is reachable")
+	b.free()
 	s.dispose()
