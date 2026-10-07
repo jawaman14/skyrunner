@@ -423,6 +423,31 @@ static func hangar(k: Kit, c: Vector3, w := 18.0, d := 20.0, with_board := true)
 	k.lamp(c + Vector3(0, w / 2 - 1.5, 2.0), 2.0, 16.0)
 
 
+## Small analogue workshop set, contained in the existing bench/back-wall envelope.
+## Scenery: no repair stock, physics bodies, lights or random stream.
+static func workshop_tools(k: Kit, bench: Vector3) -> void:
+	# Faded steel chest with three drawer seams and plain pull handles.
+	k.box(bench + Vector3(0.62, 1.42, 0.12), Vector3(0.88, 0.44, 0.42), "drum_sage", false)
+	k.box(bench + Vector3(0.62, 1.65, 0.12), Vector3(0.94, 0.045, 0.46), "metal_rust", false)
+	for row in 3:
+		k.box(bench + Vector3(0.62, 1.28 + row * 0.12, -0.095), Vector3(0.8, 0.012, 0.012), "black", false)
+		k.box(bench + Vector3(0.62, 1.32 + row * 0.12, -0.11), Vector3(0.22, 0.025, 0.025), "metal", false)
+	# Compact cast vice: base, body, two jaws and hand screw.
+	k.box(bench + Vector3(-0.72, 1.235, -0.22), Vector3(0.38, 0.07, 0.34), "metal_rust", false)
+	k.box(bench + Vector3(-0.72, 1.35, -0.22), Vector3(0.22, 0.19, 0.24), "concrete_dark", false)
+	for side in [-1, 1]:
+		k.box(bench + Vector3(-0.72 + side * 0.12, 1.47, -0.22), Vector3(0.08, 0.1, 0.28), "metal", false)
+	k.box(bench + Vector3(-0.72, 1.34, -0.43), Vector3(0.04, 0.04, 0.19), "metal", false)
+	k.box(bench + Vector3(-0.72, 1.34, -0.52), Vector3(0.26, 0.025, 0.025), "metal", false)
+	# Timber wall rack and three simple hanging open-ended spanners.
+	k.box(bench + Vector3(0, 2.03, 0.96), Vector3(2.5, 0.65, 0.07), "wood", false)
+	for i in 3:
+		var x := -0.58 + i * 0.4
+		k.box(bench + Vector3(x, 2.03, 0.905), Vector3(0.035, 0.3, 0.025), "metal", false)
+		for side in [-1, 1]:
+			k.box(bench + Vector3(x + side * 0.045, 2.19, 0.905), Vector3(0.03, 0.08, 0.025), "metal", false)
+
+
 static func tower(k: Kit, c: Vector3, h := 14.0) -> void:
 	k.box(c + Vector3(0, h / 2, 0), Vector3(4, h, 4), "concrete")
 	k.box(c + Vector3(0, h + 1.4, 0), Vector3(6.5, 2.8, 6.5), "glass", false)
@@ -518,7 +543,10 @@ static func airfield_site(world: World, af: Airfield) -> Node3D:
 		match part.kind:
 			"terminal": terminal(k, c, dims.x, dims.z)
 			"tower": tower(k, c, dims.y)
-			"hangar": hangar(k, c, dims.x, dims.z, part.with_board)
+			"hangar":
+				hangar(k, c, dims.x, dims.z, part.with_board)
+				if af.code == "HAR" and part.with_board:
+					workshop_tools(k, c + Vector3(-dims.x / 2 + 2.0, 0, dims.z / 2 - 1.2))
 			"pump": fuel_pump(k, c)
 			"showroom": showroom(k, c, dims.x, dims.z)
 			"shed": shed(k, c, dims.x, dims.z, "wood" if af.kind == "bush" else "metal_rust")
