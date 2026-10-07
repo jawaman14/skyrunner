@@ -94,6 +94,19 @@ func test_seat_change_cancels_queued_command_before_mutation() -> void:
 	check(not c.command_acks[100].ok)
 
 
+func test_release_and_reclaim_same_seat_invalidates_previous_queue() -> void:
+	var cp := _client("Reclaim", Roles.COPILOT)
+	check(_pump_until(func(): return cp.latest != null))
+	var c: HostServer.Conn = srv.clients[Roles.COPILOT]
+	srv._message(c, {"t": "cmd", "seq": 100, "name": "chat", "args": {"text": "old claim"}})
+	srv._message(c, {"t": "release"})
+	srv._message(c, {"t": "claim", "role": Roles.COPILOT})
+	check_eq(c.role, Roles.COPILOT)
+	srv.pump(sess)
+	check(not sess.messages.any(func(m): return "old claim" in str(m[1])))
+	check(not c.command_acks[100].ok, "new claim cannot revive an old command")
+
+
 func test_queue_and_ack_cache_are_bounded_and_expired_sequences_never_execute() -> void:
 	var cp := _client("Bounded", Roles.COPILOT)
 	check(_pump_until(func(): return cp.latest != null))
@@ -109,6 +122,41 @@ func test_queue_and_ack_cache_are_bounded_and_expired_sequences_never_execute() 
 	check_eq(c.command_acks.size(), HostServer.MAX_ACKS)
 	srv._message(c, {"t": "cmd", "seq": 1, "name": "chat", "args": {"text": "expired"}})
 	check(srv.inbox.is_empty(), "evicted sequence cannot execute again")
+
+
+func test_stale_pilot_input_neutralizes_without_releasing_seat() -> void:
+	sess.seats.release(Roles.PILOT)
+	var p := _client("Flight", Roles.PILOT)
+	check(_pump_until(func(): return p.latest != null))
+	var c: HostServer.Conn = srv.clients[Roles.PILOT]
+	srv._message(c, {"t": "input", "roll": 0.5, "pitch": 0.3, "throttle": 0.9})
+	check_near(sess.remote_controls().throttle, 0.9, 0.001)
+	c.input_time = Time.get_ticks_msec() - HostServer.INPUT_TIMEOUT_MS - 1
+	srv.pump(sess)
+	check_near(sess.remote_controls().throttle, 0.0, 0.001)
+	check_near(sess.remote_controls().aileron, 0.0, 0.001)
+	check(sess.seats.human(Roles.PILOT), "timeout does not assign AI")
+	srv._message(c, {"t": "input", "throttle": 0.6})
+	check_near(sess.remote_controls().throttle, 0.6, 0.001, "fresh input resumes")
+	srv._message(c, {"t": "release"})
+	check(sess.remote_stick.is_empty(), "release clears old pilot input")
+
+
+func test_stale_interceptor_input_is_neutral_and_disconnect_clears_it() -> void:
+	var p := _client("Hawk", Roles.INTERCEPTOR)
+	check(_pump_until(func(): return p.latest != null))
+	var c: HostServer.Conn = srv.clients[Roles.INTERCEPTOR]
+	srv._message(c, {"t": "input", "roll": 0.5, "pitch": 0.3, "throttle": 0.9})
+	srv.pump(sess)
+	check_near(sess.pilot_input[Roles.INTERCEPTOR][2], 0.9, 0.001)
+	c.input_time = Time.get_ticks_msec() - HostServer.INPUT_TIMEOUT_MS - 1
+	srv.pump(sess)
+	check_eq(sess.pilot_input[Roles.INTERCEPTOR], [0.0, 0.0, 0.0])
+	srv._message(c, {"t": "input", "throttle": 0.7})
+	srv.pump(sess)
+	srv._drop(c)
+	check(not srv.sticks.has(Roles.INTERCEPTOR))
+	check_eq(sess.pilot_input[Roles.INTERCEPTOR], [0.0, 0.0, 0.0])
 
 
 func test_copilot_joins_loads_and_gets_runner_snapshot() -> void:

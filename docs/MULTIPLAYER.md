@@ -129,4 +129,8 @@ the seat picker; `--role lieutenant` or `--role patrol` sits straight down at th
 
 ## Read-only action previews
 
+Remote pilot and interceptor controls expire after one second without a fresh input packet. The host neutralizes roll, pitch, throttle, rudder and brake as applicable; the seat remains human until released or disconnected. Fresh input restores control. Seat changes and disconnects clear the previous controls immediately.
+
+Command sequences are deduplicated within each TCP connection. Pending duplicates do not execute again; the last 256 completed acknowledgements can be replayed. Older sequences are refused after cache expiry. Reconnecting creates a new sequence scope and never automatically resends mutations: an unanswered command remains result unknown. The host limits complete frames to 1 MiB, processes at most 64 lines per poll and 64 commands per pump, and refuses excess command queues.
+
 New hosts advertise `action_previews` in welcome capabilities. A link's `request_preview(name, args)` returns a sequence; `previews[sequence]` holds the read-only action descriptor when answered. Remote requests/replies use `preview_request`/`preview` and are distinct from command acknowledgements. Hosts use the requesting seat's permissions before reading action state. Older peers keep existing commands; missing capability is explicitly reported as preview unavailable. A preview is not a reservation or transaction: execution always checks current state again.
