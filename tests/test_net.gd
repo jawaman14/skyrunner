@@ -46,6 +46,71 @@ func _pump_until(cond: Callable, secs := 5.0) -> bool:
 	return false
 
 
+func test_frame_limits_apply_before_complete_line_extraction() -> void:
+	var oversized := PackedByteArray()
+	oversized.resize(HostServer.MAX_LINE + 1)
+	oversized.fill(65)
+	oversized.append(10)
+	check(HostServer.extract_lines(oversized).is_empty(), "oversized complete frame is never parsed")
+	check(oversized.size() > HostServer.MAX_LINE, "caller can detect and disconnect")
+	var exact := PackedByteArray()
+	exact.resize(HostServer.MAX_LINE)
+	exact.fill(65)
+	exact.append(10)
+	check_eq(HostServer.extract_lines(exact).size(), 1, "boundary frame accepted")
+	check(exact.is_empty())
+	var many := PackedByteArray()
+	for i in HostServer.MAX_LINES_PER_POLL + 3:
+		many.append_array("{}\n".to_utf8_buffer())
+	check_eq(HostServer.extract_lines(many).size(), HostServer.MAX_LINES_PER_POLL, "per-poll work is bounded")
+	check_eq(HostServer.extract_lines(many).size(), 3, "remaining frames are preserved")
+
+
+func test_duplicate_commands_execute_once_and_replay_original_ack() -> void:
+	var cp := _client("Once", Roles.COPILOT)
+	check(_pump_until(func(): return cp.latest != null))
+	var job: Dictionary = cp.latest.board[0]
+	var seq := cp.send_command("accept_job", {"job_id": job.id})
+	cp._put({"t": "cmd", "seq": seq, "name": "accept_job", "args": {"job_id": job.id}})
+	check(_pump_until(func(): return cp.acks.has(seq)))
+	check(cp.acks[seq][0], "original acceptance succeeds")
+	var original: Array = cp.acks[seq].duplicate()
+	cp.acks.erase(seq)
+	cp._put({"t": "cmd", "seq": seq, "name": "accept_job", "args": {"job_id": job.id}})
+	check(_pump_until(func(): return cp.acks.has(seq)), "completed duplicate receives cached acknowledgement")
+	check_eq(cp.acks[seq], original, "not a second stale-job execution")
+	check_eq(sess.active_jobs.filter(func(j): return j.id == int(job.id)).size(), 1)
+
+
+func test_seat_change_cancels_queued_command_before_mutation() -> void:
+	var cp := _client("Queued", Roles.COPILOT)
+	check(_pump_until(func(): return cp.latest != null))
+	var c: HostServer.Conn = srv.clients[Roles.COPILOT]
+	srv._message(c, {"t": "cmd", "seq": 100, "name": "chat", "args": {"text": "must not execute"}})
+	check_eq(srv.inbox.size(), 1)
+	srv._message(c, {"t": "release"})
+	srv.pump(sess)
+	check(not sess.messages.any(func(m): return "must not execute" in str(m[1])))
+	check(not c.command_acks[100].ok)
+
+
+func test_queue_and_ack_cache_are_bounded_and_expired_sequences_never_execute() -> void:
+	var cp := _client("Bounded", Roles.COPILOT)
+	check(_pump_until(func(): return cp.latest != null))
+	var c: HostServer.Conn = srv.clients[Roles.COPILOT]
+	for seq in range(1, HostServer.MAX_PENDING_COMMANDS + 2):
+		srv._message(c, {"t": "cmd", "seq": seq, "name": "chat", "args": {"text": "bounded"}})
+	check_eq(srv.inbox.size(), HostServer.MAX_PENDING_COMMANDS)
+	check(not c.command_acks[HostServer.MAX_PENDING_COMMANDS + 1].ok, "overflow explicitly refused")
+	srv.pump(sess)
+	for seq in range(1000, 1000 + HostServer.MAX_ACKS + 1):
+		c.command_high_water = seq
+		srv._complete_command(c, seq, true, "cached")
+	check_eq(c.command_acks.size(), HostServer.MAX_ACKS)
+	srv._message(c, {"t": "cmd", "seq": 1, "name": "chat", "args": {"text": "expired"}})
+	check(srv.inbox.is_empty(), "evicted sequence cannot execute again")
+
+
 func test_copilot_joins_loads_and_gets_runner_snapshot() -> void:
 	var cp := _client("Rosa", "copilot")
 	check(_pump_until(func(): return cp.latest != null), "snapshot arrives")
