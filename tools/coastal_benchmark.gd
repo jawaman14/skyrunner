@@ -40,18 +40,19 @@ func _setup() -> void:
 
 func _frame() -> void:
 	var now := Time.get_ticks_usec()
-	if frame >= 60: samples.append((now - previous) / 1000.0)
+	if frame >= 360: samples.append((now - previous) / 1000.0)
 	previous = now
-	var leg := mini(frame / 120, points.size() - 2)
-	var weight := float(frame % 120) / 120.0
+	var route_frame := frame % 360
+	var leg := mini(route_frame / 120, points.size() - 2)
+	var weight := float(route_frame % 120) / 120.0
 	camera.global_position = points[leg].lerp(points[leg + 1], weight)
 	camera.look_at(camera.global_position + Vector3(0, -2, -10))
 	frame += 1
-	if frame < 360: return
+	if frame < 720: return
 	samples.sort()
 	var total := 0.0
 	for sample in samples: total += sample
-	var result := {"map": "Costa Brava", "quality": quality, "resolution": "1280x720", "hour": 14, "warmup_frames": 60, "sample_frames": samples.size(), "mean_ms": total / samples.size(), "p95_ms": samples[int(samples.size() * 0.95)], "static_memory_bytes": OS.get_static_memory_usage(), "draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)}
+	var result := {"map": "Costa Brava", "quality": quality, "resolution": "1280x720", "hour": 14, "warmup_frames": 360, "sample_frames": samples.size(), "mean_ms": total / samples.size(), "p95_ms": samples[int(samples.size() * 0.95)], "static_memory_bytes": OS.get_static_memory_usage(), "draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)}
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 1:
 		var file := FileAccess.open(args[1], FileAccess.WRITE)

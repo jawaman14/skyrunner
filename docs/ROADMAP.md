@@ -33,9 +33,10 @@ Current asset continuation: #227 adds HAR workshop equipment; follow with coasta
 
 ## Ordered implementation queue
 
-1. **Baseline consolidation:** reconciliation is prepared in #184; complete
-   export and human release evidence before integrating the stack.
-2. **Dialogue:** implementation is prepared in #186 with correlated results,
+1. **Baseline verification:** the overhaul stack is integrated; the latest
+   verified gameplay baseline is #225 with 990 desktop tests and passing CI.
+   Human release evidence remains pending; do not repeat stack integration.
+2. **Dialogue:** integrated implementation includes correlated results,
    refreshed-state gating, scrolling/wrapped choices, navigation and failure text.
    Synthetic mouse/controller events, long choices and layout bounds pass in both
    palettes at all four supported sizes, including palette changes while open.
