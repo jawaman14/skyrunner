@@ -371,6 +371,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			return
 		if ev.echo:
 			return
+		if k == KEY_F8:
+			toggle_controls()
+			get_viewport().set_input_as_handled()
+			return
 		if k == KEY_TAB:
 			_toggle_on_foot()
 			get_viewport().set_input_as_handled()
@@ -524,8 +528,6 @@ func _unhandled_input(ev: InputEvent) -> void:
 			toggle_ai_pilot()
 		elif k == KEY_F6:
 			cycle_debug_menu()
-		elif k == KEY_F8:
-			toggle_controls()
 		elif k == KEY_F9:
 			var mode := screen_filter.cycle()
 			ControlsConfig.save_setting("filter", mode)
