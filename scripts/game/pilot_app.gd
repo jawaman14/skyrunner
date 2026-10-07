@@ -102,6 +102,7 @@ var hud: Hud
 var menus := {}
 var help: Control
 var briefing: Label
+var briefing_panel: Control
 var glareshield: Control
 var ui: CanvasLayer
 var cam_mode := "chase"
@@ -224,7 +225,10 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ver.position -= Vector2(8, 4)
 	ver.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(ver)
-	briefing = _overlay("", Color(1, 0.85, 0.5))
+	briefing_panel = _help_overlay("", Color(1, 0.85, 0.5))
+	briefing = briefing_panel.get_child(0).get_child(0)
+	briefing.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	briefing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sess.say("F1 for controls. [J] to see the job board.")
 	return self
 
@@ -1266,12 +1270,14 @@ func _process(delta: float) -> void:
 	var camp = s.narrative
 	if camp != null and camp.show_briefing:
 		var ch: Campaign.Chapter = camp.chapter
-		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nPress ENTER" % [ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
-			"\n".join(camp.objective_lines())]
-		briefing.visible = true
+		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nContinue: %s" % [ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
+			"\n".join(camp.objective_lines()), ControlsConfig.describe("confirm")]
+		if not briefing_panel.visible:
+			Speech.say(briefing.text, true)
+		briefing_panel.visible = true
 		if _pressed.has("confirm"):
 			camp.show_briefing = false
-			briefing.visible = false
+			briefing_panel.visible = false
 		_pressed.clear()
 	elif not paused:
 		if _player_key != s.aircraft_key:
