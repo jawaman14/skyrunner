@@ -111,6 +111,41 @@ func test_queue_and_ack_cache_are_bounded_and_expired_sequences_never_execute() 
 	check(srv.inbox.is_empty(), "evicted sequence cannot execute again")
 
 
+func test_stale_pilot_input_neutralizes_without_releasing_seat() -> void:
+	sess.seats.release(Roles.PILOT)
+	var p := _client("Flight", Roles.PILOT)
+	check(_pump_until(func(): return p.latest != null))
+	var c: HostServer.Conn = srv.clients[Roles.PILOT]
+	srv._message(c, {"t": "input", "roll": 0.5, "pitch": 0.3, "throttle": 0.9})
+	check_near(sess.remote_controls().throttle, 0.9, 0.001)
+	c.input_time = Time.get_ticks_msec() - HostServer.INPUT_TIMEOUT_MS - 1
+	srv.pump(sess)
+	check_near(sess.remote_controls().throttle, 0.0, 0.001)
+	check_near(sess.remote_controls().aileron, 0.0, 0.001)
+	check(sess.seats.human(Roles.PILOT), "timeout does not assign AI")
+	srv._message(c, {"t": "input", "throttle": 0.6})
+	check_near(sess.remote_controls().throttle, 0.6, 0.001, "fresh input resumes")
+	srv._message(c, {"t": "release"})
+	check(sess.remote_stick.is_empty(), "release clears old pilot input")
+
+
+func test_stale_interceptor_input_is_neutral_and_disconnect_clears_it() -> void:
+	var p := _client("Hawk", Roles.INTERCEPTOR)
+	check(_pump_until(func(): return p.latest != null))
+	var c: HostServer.Conn = srv.clients[Roles.INTERCEPTOR]
+	srv._message(c, {"t": "input", "roll": 0.5, "pitch": 0.3, "throttle": 0.9})
+	srv.pump(sess)
+	check_near(sess.pilot_input[Roles.INTERCEPTOR][2], 0.9, 0.001)
+	c.input_time = Time.get_ticks_msec() - HostServer.INPUT_TIMEOUT_MS - 1
+	srv.pump(sess)
+	check_eq(sess.pilot_input[Roles.INTERCEPTOR], [0.0, 0.0, 0.0])
+	srv._message(c, {"t": "input", "throttle": 0.7})
+	srv.pump(sess)
+	srv._drop(c)
+	check(not srv.sticks.has(Roles.INTERCEPTOR))
+	check_eq(sess.pilot_input[Roles.INTERCEPTOR], [0.0, 0.0, 0.0])
+
+
 func test_copilot_joins_loads_and_gets_runner_snapshot() -> void:
 	var cp := _client("Rosa", "copilot")
 	check(_pump_until(func(): return cp.latest != null), "snapshot arrives")

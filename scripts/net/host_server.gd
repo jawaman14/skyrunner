@@ -28,6 +28,7 @@ const MAX_LINES_PER_POLL := 64
 const MAX_PENDING_COMMANDS := 64
 const MAX_COMMAND_QUEUE := 1024
 const MAX_ACKS := 256
+const INPUT_TIMEOUT_MS := 1000
 const SNAPSHOT_HZ := 20.0
 const HELLO_TIMEOUT_MS := 10000
 const VOICE_FRAMES_PER_S := 40  ## a talker sends 25 a second; more than this is dropped
@@ -49,6 +50,7 @@ class Conn:
 	var command_high_water := 0
 	var pending_commands := {}
 	var command_acks := {}
+	var input_time := -1
 
 
 var tcp := TCPServer.new()
@@ -340,6 +342,7 @@ func _message(c: Conn, msg: Dictionary) -> void:
 		"claim":
 			var role := str(msg.get("role", ""))
 			if c.role != "":
+				_clear_input(c)
 				sess.seats.release(c.role)
 				clients.erase(c.role)
 				c.role = ""
@@ -355,6 +358,7 @@ func _message(c: Conn, msg: Dictionary) -> void:
 			return
 		"release":
 			if c.role != "":
+				_clear_input(c)
 				sess.seats.release(c.role)
 				clients.erase(c.role)
 				sticks.erase(c.role)
@@ -400,12 +404,14 @@ func _message(c: Conn, msg: Dictionary) -> void:
 			var x = msg.get(k, 0.0)
 			st[k] = clampf(float(x), -1.0 if k in ["roll", "pitch", "rudder"] else 0.0, 1.0) if (x is float or x is int) else 0.0
 		sess.remote_stick = st
+		c.input_time = Time.get_ticks_msec()
 	elif msg.get("t") == "input" and c.role == Roles.INTERCEPTOR:
 		var v := []
 		for k in ["roll", "pitch", "throttle"]:  # latest stick position wins; no queueing, no acks
 			var x = msg.get(k, 0.0)
 			v.append(clampf(float(x), -1.0, 1.0) if (x is float or x is int) else 0.0)
 		sticks[c.role] = v
+		c.input_time = Time.get_ticks_msec()
 
 
 func _drop(c: Conn) -> void:
@@ -415,12 +421,25 @@ func _drop(c: Conn) -> void:
 	if sess == null and room != null and c.joined:
 		room.remove(public_id(c.token))
 	if c.joined and c.role != "" and clients.get(c.role) == c:
+		_clear_input(c)
 		clients.erase(c.role)
 		sticks.erase(c.role)
 		if sess != null:
 			sess.seats.release(c.role, true)  # held for them: the token takes it back
 		_seats_rev = -1
 	c.peer.disconnect_from_host()
+
+
+## Neutralize expired controls without changing seat ownership or issuing AI orders.
+func _clear_input(c: Conn) -> void:
+	c.input_time = -1
+	if sess == null:
+		return
+	if c.role == Roles.PILOT:
+		sess.remote_stick = {}
+	elif c.role == Roles.INTERCEPTOR:
+		sticks.erase(c.role)
+		sess.set_pilot_input(c.role, 0.0, 0.0, 0.0)
 
 
 ## A chat line: to everyone, or to one side's players (and the host, who sees
@@ -542,6 +561,9 @@ func pump(sess_: Session) -> void:
 	sess = sess_
 	sess.seats.tick(sess.time)
 	var now := Time.get_ticks_msec() / 1000.0
+	for c in conns:
+		if c.input_time >= 0 and Time.get_ticks_msec() - c.input_time > INPUT_TIMEOUT_MS:
+			_clear_input(c)
 	if sess.seats.rev != _seats_rev or now - _seats_t > 1.0:
 		_seats_rev = sess.seats.rev
 		_seats_t = now
