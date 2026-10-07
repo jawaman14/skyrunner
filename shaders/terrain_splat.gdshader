@@ -27,6 +27,7 @@ uniform sampler2D landuse : filter_linear, repeat_disable;
 uniform float has_landuse = 0.0;
 uniform vec2 grid_origin = vec2(-4600.0, -11700.0);
 uniform float block = 110.0;
+uniform float painted_streets = 1.0;
 uniform float street = 14.0;
 global uniform float rain_wet;  // 0 dry .. 1 soaked (WeatherFX)
 
@@ -84,7 +85,8 @@ void fragment() {
 		col = mix(col, forest * 0.85, lu.a * 0.7);
 		vec2 gp = mod(wxy - grid_origin, block);
 		float lot = step(street * 0.5, gp.x) * step(gp.x, block - street * 0.5) * step(street * 0.5, gp.y) * step(gp.y, block - street * 0.5);
-		vec3 town = mix(vec3(0.19, 0.19, 0.2) * (0.9 + 0.2 * g.a), vec3(0.56, 0.54, 0.50) * (0.85 + 0.25 * n.r), lot);
+		lot = mix(1.0, lot, painted_streets);
+		vec3 town = mix(vec3(0.19, 0.19, 0.2) * (0.9 + 0.2 * g.a), mix(vec3(0.56, 0.54, 0.50), vec3(0.39, 0.37, 0.31), 1.0 - painted_streets) * (0.85 + 0.25 * n.r), lot);
 		col = mix(col, town, smoothstep(0.35, 0.65, lu.r));
 	}
 	float wet = 1.0 - smoothstep(-0.2, 1.4, wpos.y);
