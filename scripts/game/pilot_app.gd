@@ -343,6 +343,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 		return
 	if ev is InputEventKey and ev.pressed:
 		var k: int = ev.physical_keycode if ev.physical_keycode else ev.keycode
+		if k == KEY_F2 and ev.ctrl_pressed and not ev.echo:
+			scene.toggle_access_overlay()
+			get_viewport().set_input_as_handled()
+			return
 		var m := _active_menu()
 		if m != null:
 			if ev.echo and MENU_KEYS.get(k, "") == "enter":

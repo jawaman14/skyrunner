@@ -560,7 +560,6 @@ static func stash_house(world: World, st: Dictionary) -> Node3D:
 			k.gable(Vector3(0, 4.0, 0), 14, 10, 2.4, "terracotta", 0.8)
 			k.box(Vector3(0, -0.2, -9), Vector3(8, 0.4, 4), "concrete", false)
 	var n := k.finish()
-	var z := world.ground(st.x, st.y)
-	n.position = Vector3(st.x, z, -st.y)
+	n.transform = SiteLayout.stash_frame(world, st)
 	n.set_meta("stash", st.id)
 	return n
