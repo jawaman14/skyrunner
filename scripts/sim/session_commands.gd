@@ -55,6 +55,26 @@ static func _point(args: Dictionary):
 	return [x, y] if x != null and y != null else null
 
 
+func _cmd_phone_answer(_role: String, args: Dictionary):
+	phone_calls.tick(time)
+	var id := int(_num(args, "id", -1))
+	var pending := phone_calls.pending()
+	var call = Py.first(pending, func(c): return int(c.id) == id)
+	if call == null:
+		return "This call is no longer ringing."
+	var source := str(call.get("source", ""))
+	if source.begins_with("family:") and (family == null or family.get_offer(source.trim_prefix("family:")) == null):
+		return "The Family offer is no longer available."
+	var result := phone_calls.answer(id)
+	return null if result.ok else str(result.reason)
+
+
+func _cmd_phone_decline(_role: String, args: Dictionary):
+	phone_calls.tick(time)
+	var result := phone_calls.decline(int(_num(args, "id", -1)))
+	return null if result.ok else "This call is no longer ringing."
+
+
 func _cmd_accept_job(role: String, a: Dictionary):
 	var action: Dictionary = job_action(role, "accept_job", int(_num(a, "job_id", -1)))
 	if not action.enabled:

@@ -11,9 +11,14 @@ signal called(action: String)
 var list: DataTable
 var rows: Array = []  ## [action, who, about]
 var fresh := {}  ## numbers added since you last rang them (PilotApp._phone_watch): marked NEW
+var _call_ids: Array = []
+var history_label: Label
 
 
 func _build() -> void:
+	history_label = UIStyle.label("", 14, UIStyle.CAPTION)
+	history_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(history_label)
 	list = GameMenu.make_table([
 		{"title": "Who", "expand": true, "ratio": 2, "min": 220},
 		{"title": "About", "expand": true, "ratio": 3, "min": 260},
@@ -59,15 +64,35 @@ func refresh() -> void:
 	if s.renown != null:
 		var nx: float = s.renown.next_at()
 		subtitle.text += "   -   renown: %s (%d%s)" % [s.renown.title(), int(s.renown.score), ("/%d" % int(nx)) if nx > 0.0 else ""]
-	var keep := list.selected_row()
+	var selected := list.selected_row()
+	var keep = _row_id(rows[selected]) if selected >= 0 and selected < rows.size() else ""
 	list.clear_rows()
-	rows = contacts()
+	rows = []
+	for call in s.phone_calls.pending():
+		rows.append([str(call.action), str(call.from), "RINGING — Enter to answer; D to decline this call", int(call.id)])
+	rows.append_array(contacts())
 	for r in rows:
-		list.add_row([("NEW  " if fresh.has(r[0]) else "") + str(r[1]), r[2]])
+		list.add_row([("INCOMING  " if r.size() > 3 else ("NEW  " if fresh.has(r[0]) else "")) + str(r[1]), r[2]])
 	if not rows.is_empty():
-		list.select_near(keep if keep >= 0 else 0)
+		var ids: Array = rows.map(_row_id)
+		list.select_near(ids.find(keep) if ids.has(keep) else 0)
+	_call_ids = s.phone_calls.pending().map(func(call): return int(call.id))
+	var recent: Array[Dictionary] = s.phone_calls.history().filter(func(call): return call.state != "pending")
+	history_label.text = "\n".join(recent.slice(-3).map(func(call): return "%s: %s — use the contact below to call back." % [str(call.state).capitalize(), str(call.from)]))
 	footer.text = "" if not rows.is_empty() else "Nobody to call yet."
-	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "call", "enter"], ["ESC", "hang up", "esc"]])
+	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "answer / call", "enter"], ["D", "decline ringing call", "d"], ["ESC", "hang up", "esc"]])
+
+
+static func _row_id(row: Array) -> String:
+	return "call:" + str(row[3]) if row.size() > 3 else "contact:" + str(row[0])
+
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if visible and s != null:
+		var ids: Array = s.phone_calls.pending().map(func(call): return int(call.id))
+		if ids != _call_ids:
+			refresh()
 
 
 func key(k: String) -> void:
@@ -81,6 +106,18 @@ func key(k: String) -> void:
 			if i < 0 or i >= rows.size():
 				return
 			var action: String = rows[i][0]
+			if rows[i].size() > 3:
+				var result: Array = s.command(Roles.PILOT, "phone_answer", {"id": rows[i][3]})
+				if not result[0]:
+					show_feedback(str(result[1]), false)
+					refresh()
+					return
 			fresh.erase(action)
 			close()
 			called.emit(action)
+		"d":
+			var i := list.selected_row()
+			if i >= 0 and i < rows.size() and rows[i].size() > 3:
+				var result: Array = s.command(Roles.PILOT, "phone_decline", {"id": rows[i][3]})
+				show_feedback("Call declined. The offer remains available through the contact." if result[0] else str(result[1]), bool(result[0]))
+				refresh()

@@ -178,7 +178,11 @@ func offer(kind := ""):
 			o.cost = 4000
 			o.text = "A lawyer on retainer: the next bust is a fine, not the aircraft ($%s)" % Py.money(o.cost)
 	offers.append(o)
-	sess.say("THE FAMILY - %s. (%s)" % [o.text, o.read])
+	if not ai:
+		sess.phone_calls.enqueue("family", "The Family", sess.time, PhoneCalls.RING_SECONDS, "family:" + str(o.id))
+		sess.say("PHONE - The Family is calling. T on foot / Shift+T in the cockpit. %s. (%s)" % [o.text, o.read])
+	else:
+		sess.say("THE FAMILY - %s. (%s)" % [o.text, o.read])
 	return o
 
 

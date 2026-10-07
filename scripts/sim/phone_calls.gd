@@ -8,12 +8,12 @@ const RING_SECONDS := 20.0
 var _next_id := 1
 var _calls: Array[Dictionary] = []
 
-func enqueue(action: String, from: String, now: float, duration := RING_SECONDS) -> Dictionary:
+func enqueue(action: String, from: String, now: float, duration := RING_SECONDS, source := "") -> Dictionary:
 	for call in _calls:
-		if call.state == "pending" and call.action == action:
+		if (source != "" and call.get("source", "") == source) or (source == "" and call.state == "pending" and call.action == action):
 			return call.duplicate(true)
 	var call := {"id": _next_id, "action": action, "from": from, "created": now,
-		"expires": now + maxf(1.0, duration), "state": "pending"}
+		"expires": now + maxf(1.0, duration), "state": "pending", "source": source}
 	_next_id += 1
 	_calls.append(call)
 	return call.duplicate(true)
@@ -29,6 +29,10 @@ func pending() -> Array[Dictionary]:
 		if call.state == "pending":
 			out.append(call.duplicate(true))
 	return out
+
+
+func history() -> Array[Dictionary]:
+	return _calls.duplicate(true)
 
 func answer(id: int) -> Dictionary:
 	return _set_state(id, "answered")
@@ -53,4 +57,7 @@ func restore(data: Dictionary) -> void:
 	_calls.clear()
 	for raw in data.get("calls", []):
 		if raw is Dictionary and raw.has("id") and raw.has("action") and raw.has("state"):
-			_calls.append(raw.duplicate(true))
+			var call: Dictionary = raw.duplicate(true)
+			call.id = int(call.id)
+			_calls.append(call)
+			_next_id = maxi(_next_id, int(call.id) + 1)

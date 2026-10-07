@@ -42,7 +42,7 @@ const COOP := "coop"  ## human runner crew vs AI law
 const VERSUS := "versus"  ## humans on both sides, AI fills gaps
 const CAMPAIGN := "campaign"  ## solo/co-op, chapter rules
 
-const _GROUND_OPS := ["accept_job", "drop_job", "move_item", "loadmaster", "set_fuel", "fill_ferry"]
+const _GROUND_OPS := ["accept_job", "drop_job", "move_item", "loadmaster", "set_fuel", "fill_ferry", "phone_answer", "phone_decline"]
 const _CREW_AIR := ["kick", "pump", "call_boat", "auto_kick"]
 
 static var PERMISSIONS := {
@@ -60,7 +60,7 @@ static var PERMISSIONS := {
 	ANALYST: ["analyst", "chat", "tutorial"],
 	UNDERCOVER: ["plant_beacon", "chat", "tutorial"],
 	MECHANIC: ["service", "stop_work", "inspect", "set_fuel", "fill_ferry", "chat", "tutorial"],
-	FIXER: ["accept_job", "drop_job", "buy_aircraft", "buy_gear", "hire_spotter", "upgrade", "service", "casino", "buy_vehicle", "sell_vehicle", "fleet_auto", "acid_barter", "acid_sell", "acid_auto", "chat", "tutorial", "rackets", "stash_works",
+	FIXER: ["phone_answer", "phone_decline", "accept_job", "drop_job", "buy_aircraft", "buy_gear", "hire_spotter", "upgrade", "service", "casino", "buy_vehicle", "sell_vehicle", "fleet_auto", "acid_barter", "acid_sell", "acid_auto", "chat", "tutorial", "rackets", "stash_works",
 		"sell_weapons", "buy_weapons", "family_accept", "family_decline", "family_probe", "family_stall", "pay_tribute", "island_ship", "buy_passage",
 		"court_bail", "court_hire", "court_motion", "court_tamper", "court_bribe", "court_plea", "court_cooperate", "court_appeal", "court_wait",
 		"hire_worker", "fire_worker", "pay_bonus", "pay_worker_lawyer", "post_lookout", "sell_product", "move_goods", "move_cash", "cash_round",
