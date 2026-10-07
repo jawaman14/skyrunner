@@ -39,7 +39,15 @@ static func stash_spec(st: Dictionary) -> Dictionary:
 		"entry": Vector3(-6 if st.kind == "lockup" else 0, spec[3], -float(spec[2]) / 2)}
 
 static func hq_frame(world: World, spec: Dictionary) -> Transform3D:
-	return frame(Vector2(spec.x, spec.y), world.ground(spec.x, spec.y), -deg_to_rad(spec.heading))
+	var at := Vector2(spec.x, spec.y)
+	var yaw := -deg_to_rad(spec.heading)
+	# Costa Brava's nightclub anchor sits on the road centre. Keep the strategic
+	# anchor and roads intact; set the physical building back into its reserved plot.
+	if world.map.map_seed == MapCity.SEED and spec.get("style", "") == "nightclub":
+		var basis := Basis(Vector3.UP, yaw)
+		var back: Vector3 = basis * Vector3(0, 0, 24)
+		at += Vector2(back.x, -back.z)
+	return frame(at, world.ground(at.x, at.y), yaw)
 
 static func stash_frame(world: World, st: Dictionary) -> Transform3D:
 	return frame(Vector2(st.x, st.y), world.ground(st.x, st.y))

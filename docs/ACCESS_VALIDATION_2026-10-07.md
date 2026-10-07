@@ -26,3 +26,13 @@ errors. Tests cover short obstacles, footprint detours, water/deck differences,
 mode-specific grades, runway exclusion, disconnected graphs, unchanged authoring
 records and deterministic Costa Brava/generated records. Scratch probe output is
 local diagnostic data, not stored screenshot or human-release evidence.
+
+## Nightclub road-anchor reproduction
+
+The payroll travel probe found its initial road node inside Club Tropicana's
+primary footprint: strategic HQ (-1500, -9700), node approximately
+(-1500, -9697.3). The physical nightclub now sits 24m back within its reserved
+plot, facing the existing street. Both Buildings and SiteLayout consume the
+corrected frame. Strategic HQ coordinates, road geometry and terrain remain
+unchanged. The road anchor has checked vehicle clearance; exported road/door
+walkthrough and ancillary prop collision still require inspection.
