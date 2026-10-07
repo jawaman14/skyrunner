@@ -76,7 +76,7 @@ func refresh() -> void:
 				var cur: bool = a.key == s.aircraft_key
 				list.add_row(["AIRCRAFT", a.name + ("  (flying)" if cur else ""),
 					"MTOW %.0f lb  -  %d seats  -  roll ~%.0f m" % [a.mtow_lb, a.seat_count(), a.ground_roll_m],
-					"OWNED" if owned else "$" + Py.money(a.price)],
+					"OWNED" if owned else ("EMPLOYER / $" if s.story != null and s.story.employment != null and s.story.employment.loaner and a.key == EmploymentOpening.AIRCRAFT else "$") + Py.money(s.aircraft_purchase_price(a.key))],
 					{"cell_colors": {3: UIStyle.GREEN if owned else UIStyle.WHITE, 1: UIStyle.AMBER if cur else Color(0.9, 0.92, 0.95)}})
 			"gear":
 				var g: Array = Session.GEAR[r[1]]

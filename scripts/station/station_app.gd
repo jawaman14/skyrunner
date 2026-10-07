@@ -1264,7 +1264,7 @@ func _draw_runner(snap: Dictionary) -> void:
 			lines.append(ac.outcome)
 	if snap.has("campaign"):
 		var c: Dictionary = snap.campaign
-		lines += ["", "CHAPTER %d  -  %d  %s" % [int(c.chapter), int(c.year), c.title]] + c.objectives
+		lines += ["", "%s  -  %d  %s" % ["EMPLOYMENT" if int(c.chapter) == 0 else "CHAPTER %d" % int(c.chapter), int(c.year), c.title]] + c.objectives
 	if role == Roles.COPILOT:
 		var ct := court_lines(snap.get("court", {}))
 		if not ct.is_empty():
