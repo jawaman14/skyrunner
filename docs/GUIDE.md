@@ -604,3 +604,11 @@ Use the map’s Operations, People / logistics and Intelligence switches to redu
 ### Reviewing station and logistics actions
 
 Supported committing actions request their consequences from the host before you confirm. Cancel is selected first. Confirmation rechecks the preview; if stock or cost changes, review the new consequences again. A preview timeout, disconnect or seat change sends no command. Older hosts show “Preview unavailable”; their existing commands remain available through explicit confirmation and host validation. After sending, acknowledgement and refreshed state appear separately in the order outcomes.
+
+### Reviewing bulk transport
+
+Cash collection and goods delivery rounds show their ordered stops before commitment.
+Cash at later stops is an estimate until pickup; limited goods are divided in stop order.
+Armoury relocation moves weapons, excludes ammunition and changes its location on arrival.
+Cancel leaves stock unchanged. Confirm checks current consequences again; a changed
+preview requires another review. Trucks still incur fuel costs and travel risks.

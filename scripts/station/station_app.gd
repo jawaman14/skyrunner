@@ -325,12 +325,13 @@ func _cmd(name: String, args := {}) -> int:
 	if is_instance_valid(review):
 		status = "An action review is already open."
 		return 0
-	review = ActionReview.new().setup(link, name, args)
+	var reviewed_args := args.duplicate(true)
+	review = ActionReview.new().setup(link, name, reviewed_args)
 	review.status_changed.connect(func(message): status = message)
 	review.finished.connect(func(approved, message):
 		review = null
 		status = message
-		if approved: _send_command(name, args))
+		if approved: _send_command(name, reviewed_args))
 	add_child(review)
 	return 0
 

@@ -2,7 +2,7 @@ class_name ActionDescriptions
 extends RefCounted
 ## Read-only command consequences. Permission checks precede every state read.
 ## Execution always recomputes this gate and retains its own handler validation.
-const SUPPORTED := ["buy_aircraft", "buy_gear", "buy_vehicle", "sell_vehicle", "sell_product", "move_cash", "move_goods", "service", "rackets", "disband_squad"]
+const SUPPORTED := ["buy_aircraft", "buy_gear", "buy_vehicle", "sell_vehicle", "sell_product", "move_cash", "move_goods", "service", "rackets", "disband_squad", "cash_round", "goods_round", "move_armoury"]
 
 static func unavailable(name: String, args: Dictionary, reason: String) -> Dictionary:
 	return {"label": name.replace("_", " ").capitalize(), "enabled": false, "disabled_reason": reason,
@@ -17,7 +17,7 @@ static func build(s, role: String, name: String, args: Dictionary) -> Dictionary
 		a.disabled_reason = "Preview unavailable for this action."
 		return a
 	args = args.duplicate(true)
-	var numeric: Array = {"sell_vehicle": ["serial"], "sell_product": ["qty"], "move_cash": ["amount"], "move_goods": ["lb"], "service": ["to"]}.get(name, [])
+	var numeric: Array = {"sell_vehicle": ["serial"], "sell_product": ["qty"], "move_cash": ["amount"], "move_goods": ["lb"], "service": ["to"], "goods_round": ["lb"]}.get(name, [])
 	for key in numeric:
 		if not args.has(key):
 			continue
@@ -143,6 +143,10 @@ static func build(s, role: String, name: String, args: Dictionary) -> Dictionary
 					a.disabled_reason = "They're in a firefight."
 		"move_cash", "move_goods":
 			_transfer(s, a, name, args)
+		"cash_round", "goods_round":
+			_round(s, a, name, args)
+		"move_armoury":
+			_armoury(s, a, args)
 		"sell_product":
 			_sale(s, a, args)
 	a.enabled = a.disabled_reason == ""
@@ -194,3 +198,102 @@ static func _sale(s, a: Dictionary, args: Dictionary) -> void:
 		a.disabled_reason = s.logistics.transfer_reason(from, buyer, good, quantity)
 		quantity = minf(quantity, float(s.logistics.stock.get(from, {}).get(good, 0.0)))
 	a.preview = "Sell up to %.1f %s to %s at $%.2f each (estimated $%s). %s" % [quantity, tier if good == "guns" else good, buyer, float(quote.price), Py.money(int(quantity * quote.price)), "Delivery and payment occur by truck; stock leaves the source now and prices may change before settlement." if s.logistics != null else "Removes stock and credits cash now."]
+
+static func _round(s, a: Dictionary, name: String, args: Dictionary) -> void:
+	if s.logistics == null:
+		a.disabled_reason = "No logistics in this game."
+		return
+	var lg: Logistics = s.logistics
+	var raw = args.get("stops", [])
+	if not raw is Array:
+		a.disabled_reason = "Stops must be a list of stash IDs."
+		return
+	var stops: Array = raw.duplicate()
+	var seen := {}
+	if stops.size() < (2 if name == "cash_round" else 1):
+		a.disabled_reason = "A round needs at least two stops." if name == "cash_round" else "A delivery round needs stops."
+		return
+	for stop in stops:
+		if not stop is String or not lg.stock.has(stop):
+			a.disabled_reason = "No such stash."
+			return
+		if seen.has(stop):
+			a.disabled_reason = "A stop is on the round twice."
+			return
+		seen[stop] = true
+		if s.stash_net.get_stash(stop).burned:
+			a.disabled_reason = "%s is burned." % lg.name_of(stop)
+			return
+	var lines: Array[String] = []
+	if name == "cash_round":
+		var to := str(args.get("to", Logistics.HQ))
+		if (to != Logistics.HQ and not lg.stock.has(to)) or stops.has(to):
+			a.disabled_reason = "It has to end somewhere else."
+			return
+		var target = s.stash_net.get_stash(to)
+		if target != null and target.burned:
+			a.disabled_reason = "%s is burned." % lg.name_of(to)
+			return
+		if args.get("plan", false):
+			stops = lg.plan_order(stops, lg.pos(to))
+		var total := 0.0
+		for stop in stops:
+			var cash: float = lg.cash.get(stop, 0.0)
+			total += cash
+			lines.append("%s: $%s currently available" % [lg.name_of(stop), Py.money(int(cash))])
+		if total < 1.0:
+			a.disabled_reason = "No cash out on the round."
+			return
+		lines.append("Estimated collection $%s to %s. %s" % [Py.money(int(total)), lg.name_of(to), "Only the first stop's cash leaves now; later cash remains until pickup and may change." if Agent.ENABLED else "Cash leaves each source now in separate trucks."])
+	else:
+		var source := str(args.get("from", ""))
+		var good := str(args.get("good", ""))
+		var each := float(args.get("lb", 1e9))
+		if not lg.stock.has(source) or stops.has(source) or s.stash_net.get_stash(source).burned:
+			a.disabled_reason = "Load from a live stash outside the delivery stops."
+			return
+		if good not in lg.goods() or each <= 0.0:
+			a.disabled_reason = "Choose a product and a positive delivery quantity."
+			return
+		var have: float = lg.stock[source].get(good, 0.0)
+		var amount := minf(each * stops.size(), have)
+		if amount < 0.5:
+			a.disabled_reason = "Nothing to deliver."
+			return
+		var remaining := amount
+		for stop in stops:
+			var delivery := minf(each, remaining)
+			lines.append("%s: %.1f %s" % [lg.name_of(stop), delivery, good])
+			remaining -= delivery
+		lines.append("%.1f %s leaves %s now; %.1f remains at source." % [amount, good, lg.name_of(source), have - amount])
+	lines.append("Delivery takes time, incurs fuel costs and remains exposed to travel risks.")
+	a.preview = "\n".join(lines)
+
+static func _armoury(s, a: Dictionary, args: Dictionary) -> void:
+	if s.logistics == null or not Arsenal.REALISM or not s.arsenals.has("org"):
+		a.disabled_reason = "No armoury in this game."
+		return
+	if not s.unlocked("guns"):
+		a.disabled_reason = "No gun dealer will talk to us yet."
+		return
+	var lg: Logistics = s.logistics
+	var source := lg.armoury_site()
+	var to := str(args.get("to", ""))
+	if to == source:
+		a.disabled_reason = "The armoury is already there."
+		return
+	if to != Logistics.HQ and not lg.stock.has(to):
+		a.disabled_reason = "Choose an armoury destination; use a weapon sale for a buyer."
+		return
+	var target = s.stash_net.get_stash(to)
+	if target != null and target.burned:
+		a.disabled_reason = "%s is burned." % lg.name_of(to)
+		return
+	var weapons := {}
+	for tier in Arsenal.ORDER:
+		var count: int = s.arsenals.org.stock.get(tier, 0)
+		if count > 0: weapons[tier] = count
+	if weapons.is_empty():
+		a.disabled_reason = "The armoury is empty."
+		return
+	a.preview = "Dispatch %s from %s to %s. Weapons leave stock now; the armoury location changes on arrival. Ammunition is not transferred by this order. Fuel costs and travel risks continue until delivery." % [Arsenal.describe(weapons), lg.name_of(source), lg.name_of(to)]

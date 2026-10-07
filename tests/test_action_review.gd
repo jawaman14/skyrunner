@@ -142,11 +142,12 @@ func test_local_logistics_review_cancel_and_capped_commit() -> void:
 	menu.review.box.key("esc")
 	check_near(session.logistics.stock[source].marijuana, 25, 0.001, "Cancel changes nothing")
 	menu._command("move_goods", args)
+	args.lb = 1.0
 	await _arm()
 	menu.review.box.key("right")
 	menu.review.box.key("enter")
 	check_near(session.logistics.stock[source].marijuana, 0, 0.001)
-	check("25" in menu.status.text and "marijuana" in menu.status.text, "actual capped outcome is visible")
+	check("25" in menu.status.text and "marijuana" in menu.status.text, "reviewed quantity survives caller argument mutation; actual capped outcome is visible")
 	menu.free()
 	session.dispose()
 	World.use_map(0)

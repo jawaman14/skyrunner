@@ -138,3 +138,46 @@ func test_product_sale_and_squad_preview_revalidate_without_hidden_data() -> voi
 	var enemy = sess.ground.of("rival")[0]
 	var forbidden := sess.describe_action(Roles.BOSS, "disband_squad", {"id": enemy.id})
 	check(not forbidden.enabled and forbidden.preview == "", "no opposing squad consequences")
+
+func test_bulk_round_previews_are_read_only_and_show_partial_distribution() -> void:
+	var ids: Array = sess.logistics.stock.keys()
+	var source: String = ids[0]
+	var stops := [ids[1], ids[2]]
+	sess.logistics.stock[source].marijuana = 25.0
+	sess.logistics.cash[stops[0]] = 100.0
+	sess.logistics.cash[stops[1]] = 200.0
+	var before := JSON.stringify(StrategicSave.capture(sess))
+	var random_before := sess.rng.get_state()
+	var goods_args := {"from": source, "stops": stops, "good": "marijuana", "lb": 20.0}
+	var goods := sess.describe_action(Roles.PILOT, "goods_round", goods_args)
+	check(goods.enabled and "20.0 marijuana" in goods.preview and "5.0 marijuana" in goods.preview)
+	check("25.0 marijuana leaves" in goods.preview)
+	var cash := sess.describe_action(Roles.PILOT, "cash_round", {"stops": stops, "to": Logistics.HQ})
+	check(cash.enabled and "$300" in cash.preview)
+	check("Only the first stop" in cash.preview if Agent.ENABLED else "separate trucks" in cash.preview)
+	check_eq(JSON.stringify(StrategicSave.capture(sess)), before)
+	check_eq(sess.rng.get_state(), random_before)
+	for bad in [[], [ids[1], ids[1]], [ids[1], "missing"], "not a list"]:
+		check(not sess.describe_action(Roles.PILOT, "cash_round", {"stops": bad}).enabled)
+	for value in [-1, INF, NAN, {}, "bad"]:
+		var invalid := goods_args.duplicate(true)
+		invalid.lb = value
+		check(not sess.command(Roles.PILOT, "goods_round", invalid)[0])
+	check(sess.stash_net.trucks.is_empty())
+	sess.stash_net.get_stash(stops[0]).burned = true
+	check(not sess.command(Roles.PILOT, "goods_round", goods_args)[0], "burned destination invalidates a previous preview")
+	check_near(sess.logistics.stock[source].marijuana, 25, 0.001)
+
+func test_armoury_preview_does_not_take_weapons_or_ammunition() -> void:
+	var dest: String = sess.logistics.stock.keys()[0]
+	var ars: Arsenal = sess.arsenals.org
+	ars.stock.rifle = 7
+	var before := JSON.stringify(StrategicSave.capture(sess))
+	var action := sess.describe_action(Roles.PILOT, "move_armoury", {"to": dest})
+	check(action.enabled and "Ammunition is not transferred" in action.preview)
+	check("location changes on arrival" in action.preview)
+	check_eq(JSON.stringify(StrategicSave.capture(sess)), before)
+	check(not sess.describe_action(Roles.CONTROLLER, "move_armoury", {"to": dest}).enabled)
+	sess.stash_net.get_stash(dest).burned = true
+	check(not sess.command(Roles.PILOT, "move_armoury", {"to": dest})[0])
+	check_eq(ars.stock.rifle, 7)
