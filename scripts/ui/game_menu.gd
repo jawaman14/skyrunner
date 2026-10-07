@@ -206,8 +206,8 @@ static func selected(l) -> int:
 
 
 ## Shared read-only review + revalidated execution for committing decisions.
-func perform_action(name: String, args := {}) -> void:
-	var action := s.describe_action(Roles.PILOT, name, args)
+func perform_action(name: String, args := {}, role := Roles.PILOT) -> void:
+	var action := s.describe_action(role, name, args)
 	if not action.enabled:
 		show_feedback(action.disabled_reason, false)
 		return
@@ -216,6 +216,7 @@ func perform_action(name: String, args := {}) -> void:
 		add_child(confirmation)
 		confirmation.answered.connect(_action_answered)
 	_pending_action = action.duplicate(true)
+	_pending_action.review_role = role
 	confirmation.msg.text = str(action.label) + "\n\n" + str(action.preview)
 	confirmation.yes_btn.text = str(action.label)
 	confirmation.ask()
@@ -225,14 +226,18 @@ func _action_answered(yes: bool) -> void:
 	_pending_action = {}
 	if not yes or action.is_empty():
 		return
-	var fresh := s.describe_action(Roles.PILOT, action.command, action.args)
+	var role: String = action.get("review_role", Roles.PILOT)
+	var fresh := s.describe_action(role, action.command, action.args)
 	if not fresh.enabled:
 		show_feedback(fresh.disabled_reason, false)
 	elif fresh.preview != action.preview or fresh.label != action.label:
 		show_feedback("State changed. Review the updated action before confirming.", false)
 	else:
-		var result: Array = s.command(Roles.PILOT, action.command, action.args)
-		show_feedback("Accepted: " + str(fresh.label) + ". " + str(fresh.preview) if result[0] else str(result[1]), bool(result[0]))
+		var result: Array = s.command(role, action.command, action.args)
+		var detail: String = str(result[1])
+		if detail in ["", "ok"]:
+			detail = str(fresh.preview)
+		show_feedback(str(fresh.label) + ". " + detail if result[0] else str(result[1]), bool(result[0]))
 	refresh()
 
 func confirmation_key(k: String) -> bool:

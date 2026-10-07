@@ -16,12 +16,26 @@ func command(role: String, name: String, args := {}) -> Array:
 		var action := describe_action(role, name, args)
 		if not action.enabled:
 			return [false, action.disabled_reason]
+	var cash_before := money
+	var prisoners_before: int = int(rackets.held) if rackets != null and name == "rackets" else 0
 	var err = call(handler, role, args)
 	if err:
 		return [false, err]
+	var message := "ok"
+	if logistics != null and name in ["move_cash", "move_goods", "cash_round", "goods_round", "sell_product"]:
+		message = str(logistics.last)
+	elif trade != null and name == "sell_product" and not trade.bulk_log.is_empty():
+		var sale: Array = trade.bulk_log[-1]
+		message = "Sold %.1f %s to %s: +$%s." % [float(sale[3]), str(sale[2]), Trade.BUYERS[str(sale[1])].name, Py.money(money - cash_before)]
+	if name == "rackets":
+		match str(args.get("what", "")):
+			"ransom": message = "Ransomed %d prisoners: credited $%s." % [prisoners_before, Py.money(money - cash_before)]
+			"turn": message = "Recruited %d soldiers; continuing payroll wages apply." % prisoners_before
+			"release": message = "Released %d prisoners." % prisoners_before
+			"policy": message = "Policy for %s: %s." % [str(args.get("market", "")), str(args.get("mode", ""))]
 	if tutorial != null:
 		tutorial.command_done(role, name)
-	return [true, "ok"]
+	return [true, message if not message.is_empty() else "ok"]
 
 
 ## A numeric command argument, or null when missing or not a number. GDScript has
