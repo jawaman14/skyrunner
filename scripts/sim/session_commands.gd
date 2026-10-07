@@ -220,7 +220,12 @@ func _autopilot_navigate() -> void:
 	var hot := carrying_hot()
 	var wps: Array
 	if hot:
-		wps = RoutePlanner.plan_route(world, [state.x, state.y], [af.x, af.y])
+		var radar_zones: Array = []
+		if police != null and police.sensors != null:
+			for site in police.sensors.sites:
+				if bool(site.active):
+					radar_zones.append({"x": site.x, "y": site.y, "radius": site.range_m})
+		wps = RoutePlanner.plan_route(world, [state.x, state.y], [af.x, af.y], 6.0, 1.5, 1500.0, radar_zones)
 		var c := police.case("runner")
 		transponder = not (c.wanted > 0 or c.tipped or c.suspicion >= AUTOPILOT_HOT_DARK_SUSPICION)
 	else:

@@ -189,3 +189,13 @@ func test_autorunner_completes_a_flight() -> void:
 	check_eq(ar.bot.outcome if ar.bot else null, "landed")
 	check(s.money > money, "paid: %s -> %s" % [money, s.money])
 	s.dispose()
+
+func test_hot_route_penalty_is_deterministic_and_optional() -> void:
+	var w := World.new()
+	var plain: Array = RoutePlanner.plan_route(w, [-12000.0, -12000.0], [12000.0, 12000.0])
+	var zones: Array = [{"x": 0.0, "y": 0.0, "radius": 9000.0}]
+	var detoured: Array = RoutePlanner.plan_route(w, [-12000.0, -12000.0], [12000.0, 12000.0], 6.0, 1.5, 1500.0, zones)
+	var replay: Array = RoutePlanner.plan_route(w, [-12000.0, -12000.0], [12000.0, 12000.0], 6.0, 1.5, 1500.0, zones)
+	check(not plain.is_empty() and not detoured.is_empty())
+	check_eq(detoured, replay, "radar penalties are deterministic")
+	check(detoured != plain, "an explicit radar zone changes only opted-in routing")
