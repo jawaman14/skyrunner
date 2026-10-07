@@ -182,6 +182,7 @@ var fights_total := 0  ## firefights started (the balance tool)
 var lost_men := {"org": 0, "rival": 0, "police": 0}  ## killed or wounded in firefights  ## what the war has cost the organisation (the desk, the balance tool)
 var commanders := {}
 var control := {}  ## market -> faction -> squad-men presence (decaying)
+var _control_trends := {}  ## presentation-only change in public influence since last tick
 var events: Array = []  ## [side ("runner" | "law" | "both"), text]
 var stakeouts := {}  ## stash id -> police squad id
 var tails := {}  ## truck job_id -> police squad id
@@ -1266,6 +1267,7 @@ func _informants(dt: float) -> void:
 
 # ================================================================ turf and money
 func _control(dt: float) -> void:
+	var before := control.duplicate(true)
 	var k := exp(-dt / CONTROL_TAU)
 	for m in control:
 		for f in control[m]:
@@ -1273,6 +1275,42 @@ func _control(dt: float) -> void:
 	for q in squads:
 		if q.state != "gone":
 			control[market_at(q.x, q.y)][q.faction] += q.men * dt / 60.0
+	for market in control:
+		_control_trends[market] = {}
+		for faction in HOSTILE:
+			var previous := _control_share(before[market], faction)
+			var current := _control_share(control[market], faction)
+			_control_trends[market][faction] = "unestablished" if previous < 0 or current < 0 else ("rising" if current - previous > 0.000001 else ("falling" if previous - current > 0.000001 else "steady"))
+
+
+static func _control_share(values: Dictionary, faction: String) -> float:
+	var total: float = values.org + values.rival + 0.5 * values.police
+	if total <= 1.0: return -1.0
+	return (0.5 * float(values.police) if faction == "police" else float(values.get(faction, 0.0))) / total
+
+
+## Public modeled influence, own deployment/cost and currently observed threats.
+## Collection details are restricted to the organisation's own command views.
+func district_view(viewer: String) -> Array:
+	var observed := visible_to(viewer)
+	var districts := []
+	for market in Economy.MARKETS:
+		var own := of(viewer).filter(func(q): return market_at(q.x, q.y) == market)
+		var upkeep := 0.0
+		var people := 0
+		for q in own:
+			people += q.men
+			upkeep += q.men * UPKEEP_MIN * (1.0 + VET_UPKEEP * q.rank()) * (0.5 if viewer == "police" else 1.0)
+		var row := {"market": market, "share": _control_share(control[market], viewer), "trend": _control_trends.get(market, {}).get(viewer, "unavailable"),
+			"own_people": people, "own_squads": own.size(), "upkeep_per_minute": upkeep,
+			"observed_enemies": observed.filter(func(q): return q.faction != viewer and market_at(q.x, q.y) == market).size()}
+		if viewer == "org" and sess.rackets != null:
+			row.policy = sess.rackets.policy.get(market, "fair")
+			row.expected_collection = sess.rackets.expected(market)
+			row.last_collection = sess.rackets.last_round.get(market, 0)
+			row.next_collection = maxf(0.0, Rackets.TRIBUTE_EVERY_S - sess.rackets._tt)
+		districts.append(row)
+	return districts
 
 
 ## Los Cuervos' share of the streets in market m (0..1), from who's out there.
@@ -1598,6 +1636,7 @@ func snapshot(viewer: String) -> Dictionary:
 		"fights": observed_fights.map(func(f): return {"id": f.id, "x": snappedf(f.x, 1.0), "y": snappedf(f.y, 1.0),
 			"a": f.a.id, "b": f.b.id, "cas": f.cas.duplicate(), "age": snappedf(sess.time - f.t0, 0.1)}),
 		"control": control.duplicate(true),
+		"districts": district_view(viewer),
 		"commander": {"ai": commanders[viewer].ai, "log": commanders[viewer].log.slice(-6).map(func(l): return l[1]),
 			"cash": int(commanders.rival.cash) if viewer == "rival" else null},
 		"arrests": arrests_total, "officers_down": officers_down,

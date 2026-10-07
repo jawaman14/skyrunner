@@ -379,6 +379,15 @@ from standing/AI orders; this does not introduce new automatic spending rules.
 Exact fight records require both participants to be observed; coarse shots-fired
 news does not grant exact enemy positions.
 
+**District overview.** At the HQ squad map press **D**, or choose District
+overview, to read all four markets. It shows modeled influence, the direction
+since the last control tick, your people/upkeep and currently observed threats.
+No sightings does not establish an empty or safe district. The collection amount
+is an estimate under the current policy, not a guaranteed payment; exactly half
+the street pays zero. Squeeze raises collections but reduces your hold and heats
+the case. Press **D** to return to the same selected squad. Remote command seats
+show the same district summaries; law seats do not receive your collection data.
+
 **Guns and arsenals.** The organisation, the task force and Los Cuervos each hold weapons (pistols, rifles, machine guns,
 RPGs) and ammunition. Gun runs bring crates in: sell them at the street price or keep them for your soldiers. Whatever the
 police seize (a busted load, a stopped truck, a raided stash, the guns off arrested men) arms their patrols. The armoury is in

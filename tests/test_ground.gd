@@ -8,6 +8,32 @@ func after_each() -> void:
 	World.use_map(0)
 
 
+func test_district_summary_uses_control_rules_and_observed_threats() -> void:
+	var s := _war()
+	s.rackets = Rackets.new(s)
+	var g := s.ground
+	var centre: Array = Economy.centre("town")
+	var at := Vector2(centre[0], centre[1])
+	_squad(g, "org", at, {"rifle": 4})
+	var enemy := _squad(g, "rival", at + Vector2(300, 0), {"rifle": 4})
+	enemy.hidden = true
+	g.control.town = {"org": 100.0, "rival": 100.0, "police": 200.0}
+	var before := g.control.duplicate(true)
+	var row: Dictionary = Py.first(g.district_view("org"), func(d): return d.market == "town")
+	check_near(row.share, g.org_share("town"), 0.000001, "uses police half-weight from existing control rules")
+	check_eq(row.own_people, 4, "reports own deployment")
+	check_eq(row.upkeep_per_minute, 8.0, "reports existing cost")
+	check_eq(row.observed_enemies, 0, "hidden enemies do not enter threat counts")
+	check_eq(row.expected_collection, s.rackets.expected("town"), "uses authoritative collection estimate")
+	check_eq(g.control, before, "view is read-only")
+	var law: Dictionary = Py.first(g.district_view("police"), func(d): return d.market == "town")
+	check(not law.has("expected_collection") and not law.has("policy"), "law receives no private collection data")
+	g._control(60)
+	row = Py.first(g.district_view("org"), func(d): return d.market == "town")
+	check_eq(row.trend, "rising", "direction follows the change in public control")
+	s.dispose()
+
+
 func test_command_detail_is_own_faction_only() -> void:
 	var s := _war()
 	var g := s.ground
