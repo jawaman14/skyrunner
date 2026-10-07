@@ -9,6 +9,28 @@ func _session() -> Session:
 	session.money = 100000
 	return session
 
+func test_hq_right_click_cannot_target_a_hidden_squad() -> void:
+	var s := _session()
+	var menu := HQMenu.new()
+	Engine.get_main_loop().root.add_child(menu)
+	menu.setup(s)
+	menu.open()
+	var own = s.ground.recruit("org", "foot", s.ground.hq("org"), false)
+	var at: Vector2 = own.pos() + Vector2(12000, 12000)
+	var enemy = s.ground.recruit("rival", "foot", at, false)
+	enemy.hidden = true
+	menu.sel_squad = own.id
+	menu._on_map_click(MOUSE_BUTTON_RIGHT, at)
+	check(own.order.get("squad", "") != enemy.id, "hidden enemy cannot be found by a click")
+	check(own.order.type != "attack", "unobserved map position produces a positional order")
+	own.x = at.x - 100
+	own.y = at.y
+	menu._on_map_click(MOUSE_BUTTON_RIGHT, at)
+	check_eq(own.order.get("squad", ""), enemy.id, "observed enemy remains targetable")
+	menu.close()
+	menu.free()
+
+
 func test_local_hq_shows_shared_squad_command_detail() -> void:
 	var s := _session()
 	var menu := HQMenu.new()

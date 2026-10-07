@@ -20,6 +20,7 @@ func test_command_detail_is_own_faction_only() -> void:
 	check(detail.player_order, "owner sees order ownership")
 	var enemy := g.squad_view(own, "police")
 	check(not enemy.has("destination"), "enemy receives no added destination detail")
+	check_eq(enemy.route, [], "sightings do not reveal an enemy route plan")
 	check(not enemy.has("upkeep_per_minute"), "enemy receives no added financial detail")
 	s.dispose()
 

@@ -274,7 +274,7 @@ func _on_map_click(button: int, p: Vector2) -> void:
 		return
 	if button != MOUSE_BUTTON_RIGHT or sel_squad == null:
 		return
-	var enemy = Py.min_by(s.ground.squads.filter(func(q): return q.faction != "org"), func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
+	var enemy = Py.min_by(s.ground.visible_to("org").filter(func(q): return q.faction != "org"), func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
 	var stash = Py.min_by(s.stash_net.stashes if s.stash_net != null else [], func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
 	var o := {}
 	if enemy != null and PyMath.hypot(enemy.x - p.x, enemy.y - p.y) < 500:

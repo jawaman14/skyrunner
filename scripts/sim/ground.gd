@@ -1582,6 +1582,9 @@ func squad_view(q: Squad, viewer: String) -> Dictionary:
 		row.player_order = q.human
 		row.upkeep_per_minute = q.men * UPKEEP_MIN * (1.0 + VET_UPKEEP * q.rank()) * (0.5 if viewer == "police" else 1.0)
 		row.destination = [snappedf(q.route[-1].x, 1.0), snappedf(q.route[-1].y, 1.0)] if q.route.size() >= 2 else []
+	else:
+		# A sighting observes a unit, not its intended route or future orders.
+		row.route = []
 	return row
 
 
