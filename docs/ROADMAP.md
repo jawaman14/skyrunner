@@ -267,3 +267,8 @@ Second wave, larger features:
   and supply limits. Cargo, fuel, ferry-tank and loadmaster actions use the command surface
   and retain local outcomes, including partial fills and charged-but-incomplete balancing.
   The instrument column scrolls when constrained so feedback and shortcuts remain visible.
+- **Period art, airfield props:** the fuel dispenser has faded enamel/cream paint,
+  an analogue meter and a low-poly hose; hangar and shed boards have pinned paper notices.
+  Original editable SVG sources live in `assets/props`. These are decorative surfaces,
+  with existing collision and interaction points preserved. This begins the Asset Bible's
+  small airfield slice; aircraft, vehicles and wider world dressing remain future passes.

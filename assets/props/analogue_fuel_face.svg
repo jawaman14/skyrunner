@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+ <rect width="256" height="256" rx="12" fill="#d4c9a6"/>
+ <rect x="12" y="12" width="232" height="232" rx="8" fill="#333a36"/>
+ <rect x="22" y="22" width="212" height="128" rx="4" fill="#e3dbbe"/>
+ <path d="M43 112 A88 88 0 0 1 213 112" fill="none" stroke="#363b35" stroke-width="3"/>
+ <path d="M46 108l12-3 M55 78l11 7 M78 51l7 12 M111 39l2 14 M145 39l-2 14 M178 51l-7 12 M201 78l-11 7 M210 108l-12-3" stroke="#363b35" stroke-width="4"/>
+ <path d="M128 122L88 67" stroke="#944c39" stroke-width="4"/>
+ <circle cx="128" cy="122" r="7" fill="#363b35"/>
+ <rect x="41" y="173" width="174" height="43" fill="#171d19"/>
+ <g fill="none" stroke="#c8c5a9" stroke-width="3"><rect x="54" y="181" width="20" height="26"/><rect x="91" y="181" width="20" height="26"/><rect x="128" y="181" width="20" height="26"/><path d="M165 181h20v26h-20v-13h20"/></g>
+ <g fill="#aaa183"><circle cx="8" cy="8" r="3"/><circle cx="248" cy="8" r="3"/><circle cx="8" cy="248" r="3"/><circle cx="248" cy="248" r="3"/></g>
+</svg>
