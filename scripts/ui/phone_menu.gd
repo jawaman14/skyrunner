@@ -26,9 +26,9 @@ func _build() -> void:
 		campaign_scroll.visible = not campaign_scroll.visible
 		if campaign_scroll.visible:
 			campaign_button.grab_focus()
-		else:
-			list.grab_focus()
 		list.visible = not campaign_scroll.visible
+		if list.visible:
+			list.grab_focus()
 		if s.story != null:
 			campaign_text.text = s.story.journal_text()
 			if campaign_scroll.visible:
