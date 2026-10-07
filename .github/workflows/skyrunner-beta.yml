@@ -1,7 +1,7 @@
 name: Skyrunner beta builds
 
 # Tests the Godot game, exports Linux / Windows / macOS builds and smoke-tests
-# the Linux and Windows ones. The builds are attached to the run as artifacts
+# all three desktop targets. The builds are attached to the run as artifacts
 # (Actions -> this run -> Artifacts). Pure GDScript: no compiler needed.
 
 on:
@@ -167,3 +167,47 @@ jobs:
           cat run.log
           grep -q "SMOKE OK" run.log
           ! grep -q "SCRIPT ERROR" run.log
+
+  smoke-macos:
+    needs: export
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: skyrunner-macos
+          path: build
+      - name: Validate exported app bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive=$(find build -type f -name Skyrunner.zip -print -quit)
+          test -n "$archive"
+          ditto -x -k "$archive" build/unpacked
+          app=$(find build/unpacked -maxdepth 2 -type d -name '*.app' -print -quit)
+          test -n "$app"
+          plist="$app/Contents/Info.plist"
+          plutil -lint "$plist"
+          executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$plist")
+          binary="$app/Contents/MacOS/$executable"
+          test -x "$binary"
+          test -d "$app/Contents/Resources"
+          if find "$app" -type d \( -name .git -o -name .godot -o -name sim-results \) | grep -q .; then
+            echo 'Development directories found in release bundle'
+            exit 1
+          fi
+          printf 'SKYRUNNER_BINARY=%s\n' "$binary" >> "$GITHUB_ENV"
+      - name: Headless run (the AI flies an open-mode game)
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$SKYRUNNER_BINARY" --headless -- --unlocks open --watch --new --smoke 1800 > run.log 2>&1
+          cat run.log
+          grep -q 'SMOKE OK' run.log
+          ! grep -Eq 'SCRIPT ERROR|Parse Error' run.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-log-macos
+          path: run.log
+          if-no-files-found: ignore
