@@ -43,7 +43,8 @@ and the original prop authorship register. The export-filter test checks inclusi
 and exclusion for each used notice; unused model packs remain excluded. This
 repairs missing notice filters and does not resolve the separate radio provenance
 limitation above. Exported-package inspection remains a release check.
-# Costa Brava original architecture — 8 October 2026
+
+## Costa Brava original architecture — 8 October 2026
 
 `scripts/render/period_architecture.gd` and `shaders/period_architecture.gdshader`
 are original project geometry/material code. Residential, shop and warehouse

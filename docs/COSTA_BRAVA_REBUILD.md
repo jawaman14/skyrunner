@@ -47,4 +47,60 @@ Use `tools/costa_review.gd -- OUTPUT_DIRECTORY` for reproducible high-quality ol
 
 ## Validation record
 
-Initial focused city/render/road/site checks: 51 passed, zero failed, including six new placement/mesh regressions. Desktop smoke: `SMOKE OK`. Full desktop regression: **1,033 passed, zero failed** across shards 352 / 363 / 318, with no script/parse errors. Export exclusions and diff whitespace checks pass. Paired balance and final performance evidence follow below once complete. Godot shutdown ObjectDB/resource/PagedAllocator cleanup diagnostics remain distinct from assertion/script failures.
+Initial focused city/render/road/site checks: 51 passed, zero failed, including six new placement/mesh regressions. Desktop smoke: `SMOKE OK`. Full desktop regression: **1,033 passed, zero failed** across shards 352 / 363 / 318, with no script/parse errors. Export exclusions and diff whitespace checks pass. Paired balance and performance evidence follow below. Godot shutdown ObjectDB/resource/PagedAllocator cleanup diagnostics remain distinct from assertion/script failures.
+
+### Paired war-seed evidence
+
+`tools/live_balance.gd -- 10 3 war 1` ran against baseline `ad45107` and changed
+code `6e27423`, using seeds 1–10 and identical three-hour stand-ins. The canonical
+aggregate outputs are preserved in
+`sim-results/costa-rebuild-balance-2026-10-08.json`. This configuration does not
+exercise the full logistics pipeline or human flying.
+
+| Measure | Before | Rebuild |
+|---|---:|---:|
+| Organisation cash median | $54,693 | $39,056 |
+| Organisation cash mean | $55,706.6 | $51,246.2 |
+| Law funds median | $6,256.37 | $5,782.83 |
+| Organisation arrests mean | 23.5 | 18.5 |
+| Burned stashes mean | 0.8 | 1.0 |
+| Organisation combat losses mean | 6.3 | 6.1 |
+| Recruitment spending mean | $4,400 | $5,050 |
+| Upkeep spending mean | $2,142.9 | $2,495.5 |
+| Payroll shortage share | 0 | 0 |
+
+This is a material outcome change and requires broader paired seeds and human
+review. No speed, payout or hazard tuning was applied. Runs overlapped other
+validation work; their 167s/272s wall times are not isolated performance evidence.
+
+### Routing performance investigation
+
+A separate sequential headless profile built each map's road graph and queried
+all 56 directed stash-to-stash legacy routes once. Baseline: 1,576 nodes,
+182.5ms graph initialization, 2.068ms mean query and 4.173ms p95. Rebuild: 1,949
+nodes, 294.0ms initialization, 4.403ms mean query and 10.119ms p95. These are small
+machine-specific samples, without the dynamic police penalty or a dense combat
+scene. The increase exceeds the 10% investigation trigger. More local streets
+increase search work; the existing A* scans its open list to pick each minimum.
+Preserve tie/order determinism while profiling/optimising that search in a
+separate tested slice before integration. Do not silently remove valid streets
+or hide the cost by increasing simulation intervals.
+
+### Render evidence and remaining performance gate
+
+Two fixed moving coastal runs per version, low preset at 1280×720, used 360 warmup
+and 360 measured frames. Baseline mean frame times were 1.921 / 2.894ms; rebuild
+2.261 / 2.390ms. P95 was 3.821 / 5.770ms before and 4.609 / 4.573ms after.
+Reversing run order showed substantial desktop variance, so no reliable frame-time
+improvement or regression is claimed. Static memory was about 266.6MB before and
+252.3MB after; final-frame draw calls were 164 versus 138. Raw results, route
+profiles, full test counts and all 99 loading-pair results are preserved in
+`sim-results/costa-rebuild-validation-2026-10-08.json`. These runs do not validate
+high-preset/dense combat performance. The measured routing cost increase remains
+an integration blocker even though the rendering sample is inconclusive.
+
+Visual review images under `docs/screenshots/costa-rebuild-2026-10-08-*` show the
+current composition and period mesh rendering. They are development evidence,
+not final art approval or proof that every location is physically usable.
+
+Implementation draft: [PR #247](https://github.com/jawaman14/skyrunner/pull/247).

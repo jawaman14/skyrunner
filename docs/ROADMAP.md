@@ -6,7 +6,7 @@ feature branch and draft PR. Historical progress is preserved in
 findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md).
 
 
-**Costa Brava rebuild, 8 October 2026:** the new settlement/period architecture
+**Costa Brava rebuild, 8 October 2026:** [#247](https://github.com/jawaman14/skyrunner/pull/247) adds the settlement/period architecture
 foundation replaces generic city generation with seven districts and physical
 local streets. Full draft regression passes 1,033 tests. Checked loading access
 is 13/99 reachable; 86 pairs still need correction. Whole-map completion, saved
