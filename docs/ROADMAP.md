@@ -13,10 +13,17 @@ fixes map keyboard routing and fixer review coverage; the corrected desktop
 suite passes 985 tests (315 / 337 / 333). The draft-stack descriptions below
 are retained as implementation history, not the current merge queue.
 Use [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified and pending evidence.
-Incoming-call gameplay integration (#83), radar-aware routing (#87), and
+[#225](https://github.com/jawaman14/skyrunner/pull/225) integrates the first
+incoming Family-call source; the new desktop baseline is 990 passing tests.
+Additional incoming-call sources/evidence (#83), radar-aware routing (#87), and
 human release gates remain open. [#223](https://github.com/jawaman14/skyrunner/pull/223)
 is merged with passing macOS bundle/launch validation. The
 [dated verification report](VALIDATION_2026-10-07.md) records current evidence.
+
+Before truck routing migrates, fix loading/meet endpoint connectors: the
+[route baseline](LOGISTICS_ROUTE_BASELINE.md) finds all 99 current endpoint pairs
+blocked by checked access. Keep this a measured slice rather than replacing the
+legacy fallback globally.
 
 The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava story stay.
 Save expansion, the six-layer Session split, role support, switch registry and
