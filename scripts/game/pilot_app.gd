@@ -1271,7 +1271,7 @@ func _process(delta: float) -> void:
 	if camp != null and camp.show_briefing:
 		var ch: Campaign.Chapter = camp.chapter
 		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nContinue: %s" % [ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
-			"\n".join(camp.objective_lines()), ControlsConfig.describe("confirm")]
+			"\n".join(camp.objective_lines()), ", ".join(PRESS_KEYS.keys().map(func(code): return OS.get_keycode_string(code)))]
 		if not briefing_panel.visible:
 			Speech.say(briefing.text, true)
 		briefing_panel.visible = true
