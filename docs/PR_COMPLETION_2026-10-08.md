@@ -73,6 +73,14 @@ a dependent draft simply to reach a completed later patch.
 
 ## Historical evidence and remaining gates
 
+Integration follow-up: #259–#263 are now squash-merged into main, and superseded
+#256/#257/#232/#233/#234 are closed with replacement links. The combined main
+tree passes 1,002 desktop tests; its explicit post-merge rerun is recorded
+separately. #260 additionally refuses queued commands across release/reclaim of
+the same seat. The local villa correction in #265 passes 1,052 stack tests and
+ten paired war seeds with identical aggregate outcomes; total loading failures
+remain 86. Earlier counts above belong to their stated code heads.
+
 The earlier #237 loading audit measured 7/99 reachable and 92 blocked. The
 current #247/#253 audit measures 13/99 reachable and 86 blocked: 17 footprint,
 one QRY shed footprint, nine missing Family meeting areas, 30 disconnected

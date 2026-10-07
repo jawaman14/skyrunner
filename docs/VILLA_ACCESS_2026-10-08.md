@@ -15,6 +15,13 @@ failure is removed, exposing upstream disconnected-network and meeting-access
 failures. This does not claim the villa is connected to every logistics site.
 Raw results: `sim-results/villa-loading-access-2026-10-08.json`.
 
-Full-stack regression, paired travel/balance evidence and exported physical
-walkthrough are pending. Do not enable truck/squad migration or close the map
-rebuild gate based on this local correction. No balance compensation is applied.
+Full stack at code head `bbf6a24`: **1,052 passed, zero failed** (338 / 361 / 353),
+with no script or parse failures. Ten paired three-hour war seeds (1–10) have
+identical canonical aggregate outcomes before/after this local correction;
+elapsed wall time is excluded. Median cash remains $39,056. The war stand-in
+does not exercise full logistics and cannot establish human pacing or physical
+usability. Raw paired evidence: `sim-results/villa-approach-balance-2026-10-08.json`.
+
+The exported physical walkthrough remains pending. Do not enable truck/squad
+migration or close the map rebuild gate based on this local correction. No
+balance compensation is applied; earlier map/AI outcome shifts remain unaccepted.
