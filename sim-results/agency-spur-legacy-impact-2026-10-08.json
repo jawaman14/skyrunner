@@ -1,0 +1,682 @@
+{
+  "date": "2026-10-08",
+  "baseline_commit": "bbf6a24337821cd7b2f771bea5e1899868336679",
+  "changed_code_commit": "b4da53d018664c173f219a88976e9183415ef428",
+  "command": "tools/live_balance.gd -- 10 3 war 1",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "canonical_aggregate_equal": false,
+  "differences": [
+    {
+      "field": ".configs.war.agency.exposure",
+      "before": 62.775,
+      "after": 61.525
+    },
+    {
+      "field": ".configs.war.agency.hangout_rate",
+      "before": 0.1,
+      "after": 0.2
+    },
+    {
+      "field": ".configs.war.agency.withheld",
+      "before": 1914.2,
+      "after": 2083.7
+    },
+    {
+      "field": ".configs.war.family.cons",
+      "before": 0.5,
+      "after": 0.4
+    },
+    {
+      "field": ".configs.war.family.respect",
+      "before": 68.1797025953787,
+      "after": 66.6309453527404
+    },
+    {
+      "field": ".configs.war.family.taxed_rate",
+      "before": 0.6,
+      "after": 0.5
+    },
+    {
+      "field": ".configs.war.family.tribute_paid.mean",
+      "before": 4700.0,
+      "after": 3100.0
+    },
+    {
+      "field": ".configs.war.family.tribute_paid.p50",
+      "before": 6000.0,
+      "after": 0.0
+    },
+    {
+      "field": ".configs.war.family.tribute_paid.p90",
+      "before": 8000.0,
+      "after": 6000.0
+    },
+    {
+      "field": ".configs.war.island.catch_rate",
+      "before": 0.0555555555555556,
+      "after": 0.0391061452513966
+    },
+    {
+      "field": ".configs.war.island.relations",
+      "before": 60.0,
+      "after": 63.0
+    },
+    {
+      "field": ".configs.war.island.shipments.mean",
+      "before": 6.0,
+      "after": 5.9
+    },
+    {
+      "field": ".configs.war.island.shipments.p50",
+      "before": 6.0,
+      "after": 5.0
+    },
+    {
+      "field": ".configs.war.island.spent",
+      "before": 590451,
+      "after": 580706
+    },
+    {
+      "field": ".configs.war.island.units_caught",
+      "before": 10,
+      "after": 7
+    },
+    {
+      "field": ".configs.war.island.units_sent",
+      "before": 180,
+      "after": 179
+    },
+    {
+      "field": ".configs.war.law_funds.mean",
+      "before": 7137.73333333343,
+      "after": 6902.90000000008
+    },
+    {
+      "field": ".configs.war.law_funds.p10",
+      "before": 4078.00000000005,
+      "after": 2641.91666666656
+    },
+    {
+      "field": ".configs.war.law_funds.p50",
+      "before": 5782.83333333378,
+      "after": 6912.66666666637
+    },
+    {
+      "field": ".configs.war.law_funds.p90",
+      "before": 10532.8333333338,
+      "after": 11240.9166666675
+    },
+    {
+      "field": ".configs.war.market.coke_hi",
+      "before": 1.79531275796828,
+      "after": 1.78746960558519
+    },
+    {
+      "field": ".configs.war.market.coke_lo",
+      "before": 0.609399480329147,
+      "after": 0.607404170776142
+    },
+    {
+      "field": ".configs.war.market.coke_lots",
+      "before": 26.1,
+      "after": 24.7
+    },
+    {
+      "field": ".configs.war.market.gun_lots",
+      "before": 28.1,
+      "after": 27.7
+    },
+    {
+      "field": ".configs.war.market.guns",
+      "before": 1.50373746924534,
+      "after": 1.51491067388861
+    },
+    {
+      "field": ".configs.war.money.mean",
+      "before": 51246.2,
+      "after": 54109.6
+    },
+    {
+      "field": ".configs.war.money.p10",
+      "before": 34022.0,
+      "after": 23736.0
+    },
+    {
+      "field": ".configs.war.money.p50",
+      "before": 39056.0,
+      "after": 38284.0
+    },
+    {
+      "field": ".configs.war.money.p90",
+      "before": 76547.0,
+      "after": 83974.0
+    },
+    {
+      "field": ".configs.war.money_min.mean",
+      "before": 10264.7,
+      "after": 10391.1
+    },
+    {
+      "field": ".configs.war.money_min.p10",
+      "before": 7465.0,
+      "after": 7705.0
+    },
+    {
+      "field": ".configs.war.money_min.p50",
+      "before": 10670.0,
+      "after": 10628.0
+    },
+    {
+      "field": ".configs.war.net_worth.mean",
+      "before": 72321.8195280169,
+      "after": 76447.5287997322
+    },
+    {
+      "field": ".configs.war.net_worth.p10",
+      "before": 50231.3938999679,
+      "after": 39925.9270227933
+    },
+    {
+      "field": ".configs.war.net_worth.p50",
+      "before": 60658.9776793629,
+      "after": 77436.9044702126
+    },
+    {
+      "field": ".configs.war.net_worth.p90",
+      "before": 103591.47902065,
+      "after": 102842.798438698
+    },
+    {
+      "field": ".configs.war.open.squads_max",
+      "before": 3.1,
+      "after": 3.2
+    },
+    {
+      "field": ".configs.war.payroll.crew",
+      "before": 23.7,
+      "after": 23.4
+    },
+    {
+      "field": ".configs.war.payroll.flips",
+      "before": 0.8,
+      "after": 0.7
+    },
+    {
+      "field": ".configs.war.payroll.lost",
+      "before": 10.9,
+      "after": 10.7
+    },
+    {
+      "field": ".configs.war.payroll.loyalty",
+      "before": 0.797066012972535,
+      "after": 0.830821073781291
+    },
+    {
+      "field": ".configs.war.payroll.paid",
+      "before": 26213.8,
+      "after": 26004.5
+    },
+    {
+      "field": ".configs.war.suspicion.mean",
+      "before": 0.0,
+      "after": 0.592
+    },
+    {
+      "field": ".configs.war.trade.bulk",
+      "before": 17.1,
+      "after": 21.3
+    },
+    {
+      "field": ".configs.war.trade.connected_min",
+      "before": 67.8,
+      "after": 70.2
+    },
+    {
+      "field": ".configs.war.trade.dealers",
+      "before": 4.7,
+      "after": 4.3
+    },
+    {
+      "field": ".configs.war.trade.earned",
+      "before": 30920.1,
+      "after": 30310.4
+    },
+    {
+      "field": ".configs.war.trade.sold_coke",
+      "before": 316.682523946667,
+      "after": 315.424088426666
+    },
+    {
+      "field": ".configs.war.trade.sold_weed",
+      "before": 1480.159952,
+      "after": 1403.020688
+    },
+    {
+      "field": ".configs.war.trade.stock_coke",
+      "before": 253.265438613333,
+      "after": 262.575746133333
+    },
+    {
+      "field": ".configs.war.trade.stock_value",
+      "before": 21075.6195280169,
+      "after": 22337.9287997322
+    },
+    {
+      "field": ".configs.war.trade.stock_weed",
+      "before": 706.676808,
+      "after": 705.384772
+    },
+    {
+      "field": ".configs.war.war.arms",
+      "before": 2016.0,
+      "after": 1512.0
+    },
+    {
+      "field": ".configs.war.war.burned",
+      "before": 1.0,
+      "after": 0.8
+    },
+    {
+      "field": ".configs.war.war.fights",
+      "before": 15.4,
+      "after": 14.5
+    },
+    {
+      "field": ".configs.war.war.org_arrested",
+      "before": 18.5,
+      "after": 14.9
+    },
+    {
+      "field": ".configs.war.war.org_lost",
+      "before": 6.1,
+      "after": 5.8
+    },
+    {
+      "field": ".configs.war.war.police_lost",
+      "before": 19.1,
+      "after": 16.5
+    },
+    {
+      "field": ".configs.war.war.police_squads",
+      "before": 7.1,
+      "after": 7.8
+    },
+    {
+      "field": ".configs.war.war.recruit",
+      "before": 5050.0,
+      "after": 4400.0
+    },
+    {
+      "field": ".configs.war.war.rival_lost",
+      "before": 5.7,
+      "after": 8.3
+    },
+    {
+      "field": ".configs.war.war.rival_squads",
+      "before": 3.3,
+      "after": 2.8
+    },
+    {
+      "field": ".configs.war.war.squads",
+      "before": 2.2,
+      "after": 2.3
+    },
+    {
+      "field": ".configs.war.war.upkeep",
+      "before": 2495.5,
+      "after": 2245.3
+    }
+  ],
+  "note": "Reuses the immediately preceding Villa baseline run: parent 1d134a4 only changed documentation after bbf6a24. Same paired seeds and stand-ins; excludes wall time. War does not exercise full logistics or human play. Overlapping regression runs are not performance evidence. No compensation tuning.",
+  "before": {
+    "configs": {
+      "war": {
+        "agency": {
+          "burned_rate": 0.0,
+          "exposure": 62.775,
+          "flights": 5.5,
+          "hangout_rate": 0.1,
+          "withheld": 1914.2
+        },
+        "family": {
+          "cons": 0.5,
+          "loans": 0.0,
+          "rat_rate": 0.0,
+          "respect": 68.1797025953787,
+          "taxed_rate": 0.6,
+          "trial_rate": 0.0,
+          "tribute_paid": {
+            "mean": 4700.0,
+            "p10": 0.0,
+            "p50": 6000.0,
+            "p90": 8000.0
+          }
+        },
+        "island": {
+          "catch_rate": 0.0555555555555556,
+          "closed_frac": 0.0,
+          "intercepts": 0.0,
+          "relations": 60.0,
+          "shipments": {
+            "mean": 6.0,
+            "p10": 4.0,
+            "p50": 6.0,
+            "p90": 7.0
+          },
+          "spent": 590451,
+          "units_caught": 10,
+          "units_sent": 180
+        },
+        "law_funds": {
+          "mean": 7137.73333333343,
+          "p10": 4078.00000000005,
+          "p50": 5782.83333333378,
+          "p90": 10532.8333333338
+        },
+        "market": {
+          "coke_hi": 1.79531275796828,
+          "coke_lo": 0.609399480329147,
+          "coke_lots": 26.1,
+          "disruption": 1.0,
+          "gun_lots": 28.1,
+          "guns": 1.50373746924534
+        },
+        "money": {
+          "mean": 51246.2,
+          "p10": 34022.0,
+          "p50": 39056.0,
+          "p90": 76547.0
+        },
+        "money_min": {
+          "mean": 10264.7,
+          "p10": 7465.0,
+          "p50": 10670.0,
+          "p90": 11327.0
+        },
+        "net_worth": {
+          "mean": 72321.8195280169,
+          "p10": 50231.3938999679,
+          "p50": 60658.9776793629,
+          "p90": 103591.47902065
+        },
+        "open": {
+          "first_squad_min": {
+            "mean": 0.166666666666667,
+            "p10": 0.166666666666667,
+            "p50": 0.166666666666667,
+            "p90": 0.166666666666667
+          },
+          "squad_rate": 1.0,
+          "squads_max": 3.1
+        },
+        "payroll": {
+          "crew": 23.7,
+          "flips": 0.8,
+          "lost": 10.9,
+          "loyalty": 0.797066012972535,
+          "paid": 26213.8,
+          "short_rate": 0.0
+        },
+        "suspicion": {
+          "mean": 0.0,
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.0
+        },
+        "trade": {
+          "bulk": 17.1,
+          "connected_min": 67.8,
+          "dealers": 4.7,
+          "earned": 30920.1,
+          "sold_coke": 316.682523946667,
+          "sold_weed": 1480.159952,
+          "stock_coke": 253.265438613333,
+          "stock_value": 21075.6195280169,
+          "stock_weed": 706.676808
+        },
+        "war": {
+          "arms": 2016.0,
+          "burned": 1.0,
+          "fights": 15.4,
+          "org_arrested": 18.5,
+          "org_lost": 6.1,
+          "police_lost": 19.1,
+          "police_squads": 7.1,
+          "recruit": 5050.0,
+          "rival_lost": 5.7,
+          "rival_squads": 3.3,
+          "squads": 2.2,
+          "upkeep": 2495.5
+        }
+      }
+    },
+    "hours": 3.0,
+    "odds": [
+      {
+        "case": "cold",
+        "mule_p": 0.1,
+        "mule_roi": 0.56,
+        "ship_p": 0.08,
+        "ship_roi": 0.58
+      },
+      {
+        "case": "law: dogs + profiling",
+        "mule_p": 0.224,
+        "mule_roi": 0.35,
+        "ship_p": 0.092,
+        "ship_roi": 0.56
+      },
+      {
+        "case": "law: everything + crackdown",
+        "mule_p": 0.403,
+        "mule_roi": 0.04,
+        "ship_p": 0.368,
+        "ship_roi": 0.08
+      },
+      {
+        "case": "ours: all perks",
+        "mule_p": 0.028,
+        "mule_roi": 0.69,
+        "ship_p": 0.04,
+        "ship_roi": 0.65
+      },
+      {
+        "case": "both: everything",
+        "mule_p": 0.113,
+        "mule_roi": 0.54,
+        "ship_p": 0.184,
+        "ship_roi": 0.4
+      }
+    ],
+    "seeds": 10,
+    "stand_ins": {
+      "law_every_s": 600.0,
+      "law_pay": 900.0,
+      "mule_max": 0.3,
+      "run_every_s": 300.0,
+      "run_pay": 1500,
+      "ship_max": 0.25
+    }
+  },
+  "after": {
+    "configs": {
+      "war": {
+        "agency": {
+          "burned_rate": 0.0,
+          "exposure": 61.525,
+          "flights": 5.5,
+          "hangout_rate": 0.2,
+          "withheld": 2083.7
+        },
+        "family": {
+          "cons": 0.4,
+          "loans": 0.0,
+          "rat_rate": 0.0,
+          "respect": 66.6309453527404,
+          "taxed_rate": 0.5,
+          "trial_rate": 0.0,
+          "tribute_paid": {
+            "mean": 3100.0,
+            "p10": 0.0,
+            "p50": 0.0,
+            "p90": 6000.0
+          }
+        },
+        "island": {
+          "catch_rate": 0.0391061452513966,
+          "closed_frac": 0.0,
+          "intercepts": 0.0,
+          "relations": 63.0,
+          "shipments": {
+            "mean": 5.9,
+            "p10": 4.0,
+            "p50": 5.0,
+            "p90": 7.0
+          },
+          "spent": 580706,
+          "units_caught": 7,
+          "units_sent": 179
+        },
+        "law_funds": {
+          "mean": 6902.90000000008,
+          "p10": 2641.91666666656,
+          "p50": 6912.66666666637,
+          "p90": 11240.9166666675
+        },
+        "market": {
+          "coke_hi": 1.78746960558519,
+          "coke_lo": 0.607404170776142,
+          "coke_lots": 24.7,
+          "disruption": 1.0,
+          "gun_lots": 27.7,
+          "guns": 1.51491067388861
+        },
+        "money": {
+          "mean": 54109.6,
+          "p10": 23736.0,
+          "p50": 38284.0,
+          "p90": 83974.0
+        },
+        "money_min": {
+          "mean": 10391.1,
+          "p10": 7705.0,
+          "p50": 10628.0,
+          "p90": 11327.0
+        },
+        "net_worth": {
+          "mean": 76447.5287997322,
+          "p10": 39925.9270227933,
+          "p50": 77436.9044702126,
+          "p90": 102842.798438698
+        },
+        "open": {
+          "first_squad_min": {
+            "mean": 0.166666666666667,
+            "p10": 0.166666666666667,
+            "p50": 0.166666666666667,
+            "p90": 0.166666666666667
+          },
+          "squad_rate": 1.0,
+          "squads_max": 3.2
+        },
+        "payroll": {
+          "crew": 23.4,
+          "flips": 0.7,
+          "lost": 10.7,
+          "loyalty": 0.830821073781291,
+          "paid": 26004.5,
+          "short_rate": 0.0
+        },
+        "suspicion": {
+          "mean": 0.592,
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.0
+        },
+        "trade": {
+          "bulk": 21.3,
+          "connected_min": 70.2,
+          "dealers": 4.3,
+          "earned": 30310.4,
+          "sold_coke": 315.424088426666,
+          "sold_weed": 1403.020688,
+          "stock_coke": 262.575746133333,
+          "stock_value": 22337.9287997322,
+          "stock_weed": 705.384772
+        },
+        "war": {
+          "arms": 1512.0,
+          "burned": 0.8,
+          "fights": 14.5,
+          "org_arrested": 14.9,
+          "org_lost": 5.8,
+          "police_lost": 16.5,
+          "police_squads": 7.8,
+          "recruit": 4400.0,
+          "rival_lost": 8.3,
+          "rival_squads": 2.8,
+          "squads": 2.3,
+          "upkeep": 2245.3
+        }
+      }
+    },
+    "hours": 3.0,
+    "odds": [
+      {
+        "case": "cold",
+        "mule_p": 0.1,
+        "mule_roi": 0.56,
+        "ship_p": 0.08,
+        "ship_roi": 0.58
+      },
+      {
+        "case": "law: dogs + profiling",
+        "mule_p": 0.224,
+        "mule_roi": 0.35,
+        "ship_p": 0.092,
+        "ship_roi": 0.56
+      },
+      {
+        "case": "law: everything + crackdown",
+        "mule_p": 0.403,
+        "mule_roi": 0.04,
+        "ship_p": 0.368,
+        "ship_roi": 0.08
+      },
+      {
+        "case": "ours: all perks",
+        "mule_p": 0.028,
+        "mule_roi": 0.69,
+        "ship_p": 0.04,
+        "ship_roi": 0.65
+      },
+      {
+        "case": "both: everything",
+        "mule_p": 0.113,
+        "mule_roi": 0.54,
+        "ship_p": 0.184,
+        "ship_roi": 0.4
+      }
+    ],
+    "seeds": 10,
+    "stand_ins": {
+      "law_every_s": 600.0,
+      "law_pay": 900.0,
+      "mule_max": 0.3,
+      "run_every_s": 300.0,
+      "run_pay": 1500,
+      "ship_max": 0.25
+    }
+  }
+}

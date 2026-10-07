@@ -1,0 +1,1638 @@
+{
+	"blocked_edges": {
+		"Access grade is too steep for a vehicle.": 118,
+		"Access intersects hq/law.": 1,
+		"Access intersects stash/barn.": 1,
+		"Access intersects stash/lockup.": 1
+	},
+	"blocked_segments": [
+		{
+			"from": [
+				937.5,
+				-11187.5
+			],
+			"metres": 42.0,
+			"reason": "Access intersects hq/law.",
+			"to": [
+				937.5,
+				-11145.5
+			]
+		},
+		{
+			"from": [
+				2000.0,
+				-9187.5
+			],
+			"metres": 112.5,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2000.0,
+				-9300.0
+			]
+		},
+		{
+			"from": [
+				1600.0,
+				-9600.8515625
+			],
+			"metres": 100.8515625,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1600.0,
+				-9500.0
+			]
+		},
+		{
+			"from": [
+				1511.69995117188,
+				-9511.7001953125
+			],
+			"metres": 44.1235656738281,
+			"reason": "Access intersects stash/lockup.",
+			"to": [
+				1480.5,
+				-9480.5
+			]
+		},
+		{
+			"from": [
+				1400.0,
+				-9400.0
+			],
+			"metres": 100.0,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1400.0,
+				-9500.0
+			]
+		},
+		{
+			"from": [
+				1105.5,
+				-9105.5
+			],
+			"metres": 7.77817440032959,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1100.0,
+				-9100.0
+			]
+		},
+		{
+			"from": [
+				1100.0,
+				-9100.0
+			],
+			"metres": 100.0,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1000.0,
+				-9100.0
+			]
+		},
+		{
+			"from": [
+				13589.7998046875,
+				-8777.2998046875
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				13597.7001953125,
+				-8750.0
+			]
+		},
+		{
+			"from": [
+				13589.7998046875,
+				-8714.7998046875
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				13597.7001953125,
+				-8687.5
+			]
+		},
+		{
+			"from": [
+				13589.7998046875,
+				-8652.2998046875
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				13597.7001953125,
+				-8625.0
+			]
+		},
+		{
+			"from": [
+				13589.7998046875,
+				-8589.7998046875
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				13597.7001953125,
+				-8562.5
+			]
+		},
+		{
+			"from": [
+				-597.700012207031,
+				-8652.2998046875
+			],
+			"metres": 28.4198837280273,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-589.799987792969,
+				-8625.0
+			]
+		},
+		{
+			"from": [
+				-410.200012207031,
+				-8527.2998046875
+			],
+			"metres": 28.4198837280273,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-402.299987792969,
+				-8500.0
+			]
+		},
+		{
+			"from": [
+				-359.399993896484,
+				-8447.2998046875
+			],
+			"metres": 36.9301223754883,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-328.100006103516,
+				-8427.7001953125
+			]
+		},
+		{
+			"from": [
+				-5589.7998046875,
+				5097.7001953125
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-5597.7001953125,
+				5125.0
+			]
+		},
+		{
+			"from": [
+				4667.0,
+				-4375.0
+			],
+			"metres": 20.5,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				4687.5,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4582.0,
+				-4375.0
+			],
+			"metres": 46.7998046875,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				4535.2001953125,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4535.2001953125,
+				-4375.0
+			],
+			"metres": 46.900390625,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				4488.2998046875,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4488.2998046875,
+				-4375.0
+			],
+			"metres": 46.89990234375,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				4441.39990234375,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4441.39990234375,
+				-4375.0
+			],
+			"metres": 46.89990234375,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				4394.5,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4394.5,
+				-4375.0
+			],
+			"metres": 46.7998046875,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				4347.7001953125,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4347.7001953125,
+				-4375.0
+			],
+			"metres": 46.900390625,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				4300.7998046875,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				5035.2001953125,
+				-3652.30004882813
+			],
+			"metres": 46.0039901733398,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				5074.2001953125,
+				-3627.89990234375
+			]
+		},
+		{
+			"from": [
+				5074.2001953125,
+				-3627.89990234375
+			],
+			"metres": 47.7183113098145,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				5121.10009765625,
+				-3619.10009765625
+			]
+		},
+		{
+			"from": [
+				5121.10009765625,
+				-3619.10009765625
+			],
+			"metres": 48.8601112365723,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				5160.2001953125,
+				-3589.80004882813
+			]
+		},
+		{
+			"from": [
+				5160.2001953125,
+				-3589.80004882813
+			],
+			"metres": 44.1232223510742,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				5191.39990234375,
+				-3558.60009765625
+			]
+		},
+		{
+			"from": [
+				5191.39990234375,
+				-3558.60009765625
+			],
+			"metres": 44.2651252746582,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				5222.7001953125,
+				-3527.30004882813
+			]
+		},
+		{
+			"from": [
+				5222.7001953125,
+				-3527.30004882813
+			],
+			"metres": 46.0039901733398,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				5261.7001953125,
+				-3502.89990234375
+			]
+		},
+		{
+			"from": [
+				-691.400024414063,
+				-3365.19995117188
+			],
+			"metres": 40.3093566894531,
+			"reason": "Access intersects stash/barn.",
+			"to": [
+				-722.700012207031,
+				-3339.80004882813
+			]
+		},
+		{
+			"from": [
+				-1277.30004882813,
+				-3125.0
+			],
+			"metres": 46.89990234375,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-1324.19995117188,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				-1324.19995117188,
+				-3125.0
+			],
+			"metres": 46.9000244140625,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-1371.09997558594,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				-1371.09997558594,
+				-3125.0
+			],
+			"metres": 46.9000244140625,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-1418.0,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				-1418.0,
+				-3125.0
+			],
+			"metres": 46.800048828125,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-1464.80004882813,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				-1464.80004882813,
+				-3125.0
+			],
+			"metres": 46.89990234375,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-1511.69995117188,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				9953.099609375,
+				-2322.30004882813
+			],
+			"metres": 36.9310531616211,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9984.400390625,
+				-2302.69995117188
+			]
+		},
+		{
+			"from": [
+				9959.0,
+				-2270.5
+			],
+			"metres": 29.706901550293,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9980.5,
+				-2250.0
+			]
+		},
+		{
+			"from": [
+				10535.2001953125,
+				-1902.30004882813
+			],
+			"metres": 28.4202194213867,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10527.2998046875,
+				-1875.0
+			]
+		},
+		{
+			"from": [
+				10777.2998046875,
+				-1375.0
+			],
+			"metres": 36.0756530761719,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10785.2001953125,
+				-1339.80004882813
+			]
+		},
+		{
+			"from": [
+				10936.5,
+				-896.5
+			],
+			"metres": 36.8421440124512,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10902.2998046875,
+				-910.200012207031
+			]
+		},
+		{
+			"from": [
+				10902.2998046875,
+				-910.200012207031
+			],
+			"metres": 28.4198837280273,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10875.0,
+				-902.299987792969
+			]
+		},
+		{
+			"from": [
+				10875.0,
+				-902.299987792969
+			],
+			"metres": 36.0758094787598,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10839.7998046875,
+				-910.200012207031
+			]
+		},
+		{
+			"from": [
+				10839.7998046875,
+				-910.200012207031
+			],
+			"metres": 28.4198837280273,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10812.5,
+				-902.299987792969
+			]
+		},
+		{
+			"from": [
+				11124.0,
+				-396.5
+			],
+			"metres": 36.8421440124512,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				11089.7998046875,
+				-410.200012207031
+			]
+		},
+		{
+			"from": [
+				11089.7998046875,
+				-410.200012207031
+			],
+			"metres": 28.4198837280273,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				11062.5,
+				-402.299987792969
+			]
+		},
+		{
+			"from": [
+				11000.0,
+				82.0
+			],
+			"metres": 29.706901550293,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10979.5,
+				103.5
+			]
+		},
+		{
+			"from": [
+				10947.2998046875,
+				78.0999984741211
+			],
+			"metres": 36.9301338195801,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10927.7001953125,
+				109.400001525879
+			]
+		},
+		{
+			"from": [
+				10895.5,
+				84.0
+			],
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10876.0,
+				105.5
+			]
+		},
+		{
+			"from": [
+				10808.599609375,
+				503.899993896484
+			],
+			"metres": 44.2647590637207,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10777.2998046875,
+				535.200012207031
+			]
+		},
+		{
+			"from": [
+				10777.2998046875,
+				535.200012207031
+			],
+			"metres": 38.6078834533691,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10750.0,
+				562.5
+			]
+		},
+		{
+			"from": [
+				10750.0,
+				562.5
+			],
+			"metres": 35.2000122070313,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10750.0,
+				527.299987792969
+			]
+		},
+		{
+			"from": [
+				10750.0,
+				562.5
+			],
+			"metres": 49.7804641723633,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10714.7998046875,
+				597.700012207031
+			]
+		},
+		{
+			"from": [
+				2652.30004882813,
+				5785.2001953125
+			],
+			"metres": 28.419849395752,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2660.19995117188,
+				5812.5
+			]
+		},
+		{
+			"from": [
+				2652.30004882813,
+				5847.7001953125
+			],
+			"metres": 28.419849395752,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2660.19995117188,
+				5875.0
+			]
+		},
+		{
+			"from": [
+				2660.19995117188,
+				5875.0
+			],
+			"metres": 36.0757827758789,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2652.30004882813,
+				5910.2001953125
+			]
+		},
+		{
+			"from": [
+				2021.5,
+				6542.0
+			],
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2041.0,
+				6563.5
+			]
+		},
+		{
+			"from": [
+				2041.0,
+				6563.5
+			],
+			"metres": 36.8421249389648,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2027.30004882813,
+				6597.7001953125
+			]
+		},
+		{
+			"from": [
+				2027.30004882813,
+				6597.7001953125
+			],
+			"metres": 28.419849395752,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2035.19995117188,
+				6625.0
+			]
+		},
+		{
+			"from": [
+				2035.19995117188,
+				6625.0
+			],
+			"metres": 36.0757827758789,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2027.30004882813,
+				6660.2001953125
+			]
+		},
+		{
+			"from": [
+				1709.0,
+				6688.5
+			],
+			"metres": 36.8421249389648,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1722.69995117188,
+				6722.7001953125
+			]
+		},
+		{
+			"from": [
+				1722.69995117188,
+				6722.7001953125
+			],
+			"metres": 28.419849395752,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1714.80004882813,
+				6750.0
+			]
+		},
+		{
+			"from": [
+				1563.5,
+				7166.0
+			],
+			"metres": 36.8419876098633,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1597.69995117188,
+				7152.2998046875
+			]
+		},
+		{
+			"from": [
+				1728.5,
+				7126.0
+			],
+			"metres": 36.8421249389648,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1714.80004882813,
+				7160.2001953125
+			]
+		},
+		{
+			"from": [
+				1714.80004882813,
+				7160.2001953125
+			],
+			"metres": 28.419849395752,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1722.69995117188,
+				7187.5
+			]
+		},
+		{
+			"from": [
+				1722.69995117188,
+				7187.5
+			],
+			"metres": 36.0757827758789,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1714.80004882813,
+				7222.7001953125
+			]
+		},
+		{
+			"from": [
+				9152.2998046875,
+				-1777.30004882813
+			],
+			"metres": 28.4202194213867,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9160.2001953125,
+				-1750.0
+			]
+		},
+		{
+			"from": [
+				9203.099609375,
+				-1697.30004882813
+			],
+			"metres": 36.9310531616211,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9234.400390625,
+				-1677.69995117188
+			]
+		},
+		{
+			"from": [
+				9209.0,
+				-1645.5
+			],
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9228.5,
+				-1624.0
+			]
+		},
+		{
+			"from": [
+				9214.7998046875,
+				-1589.80004882813
+			],
+			"metres": 28.4202194213867,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9222.7001953125,
+				-1562.5
+			]
+		},
+		{
+			"from": [
+				9214.7998046875,
+				-1527.30004882813
+			],
+			"metres": 28.4202194213867,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9222.7001953125,
+				-1500.0
+			]
+		},
+		{
+			"from": [
+				9265.599609375,
+				-1447.30004882813
+			],
+			"metres": 36.9310531616211,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9296.900390625,
+				-1427.69995117188
+			]
+		},
+		{
+			"from": [
+				9707.0,
+				-1312.5
+			],
+			"metres": 29.706901550293,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9728.5,
+				-1292.0
+			]
+		},
+		{
+			"from": [
+				9728.5,
+				-1292.0
+			],
+			"metres": 41.0123977661133,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9703.099609375,
+				-1259.80004882813
+			]
+		},
+		{
+			"from": [
+				9703.099609375,
+				-1259.80004882813
+			],
+			"metres": 36.538948059082,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9738.2998046875,
+				-1250.0
+			]
+		},
+		{
+			"from": [
+				10166.0,
+				-1188.5
+			],
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10146.5,
+				-1167.0
+			]
+		},
+		{
+			"from": [
+				10234.400390625,
+				-1072.30004882813
+			],
+			"metres": 36.9310531616211,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10203.099609375,
+				-1052.69995117188
+			]
+		},
+		{
+			"from": [
+				10228.5,
+				-1020.5
+			],
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10209.0,
+				-999.0
+			]
+		},
+		{
+			"from": [
+				10222.7001953125,
+				-964.799987792969
+			],
+			"metres": 28.4201602935791,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10214.7998046875,
+				-937.5
+			]
+		},
+		{
+			"from": [
+				9972.7001953125,
+				-714.799987792969
+			],
+			"metres": 28.4201602935791,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9964.7998046875,
+				-687.5
+			]
+		},
+		{
+			"from": [
+				9785.2001953125,
+				285.200012207031
+			],
+			"metres": 28.4201602935791,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9777.2998046875,
+				312.5
+			]
+		},
+		{
+			"from": [
+				9666.0,
+				355.5
+			],
+			"metres": 14.5,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9666.0,
+				370.0
+			]
+		},
+		{
+			"from": [
+				9716.9296875,
+				590.0
+			],
+			"metres": 6.9296875,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				9710.0,
+				590.0
+			]
+		},
+		{
+			"from": [
+				10714.7998046875,
+				597.700012207031
+			],
+			"metres": 38.6078834533691,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				10687.5,
+				625.0
+			]
+		},
+		{
+			"from": [
+				-10097.7001953125,
+				5937.5
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-10089.7998046875,
+				5964.7998046875
+			]
+		},
+		{
+			"from": [
+				-9580.099609375,
+				6440.39990234375
+			],
+			"metres": 47.4678611755371,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9605.5,
+				6480.5
+			]
+		},
+		{
+			"from": [
+				-9809.599609375,
+				6794.89990234375
+			],
+			"metres": 45.5668182373047,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9770.5,
+				6771.5
+			]
+		},
+		{
+			"from": [
+				-9770.5,
+				6771.5
+			],
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9749.0,
+				6791.0
+			]
+		},
+		{
+			"from": [
+				-9749.0,
+				6791.0
+			],
+			"metres": 36.842212677002,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9714.7998046875,
+				6777.2998046875
+			]
+		},
+		{
+			"from": [
+				-9714.7998046875,
+				6777.2998046875
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9687.5,
+				6785.2001953125
+			]
+		},
+		{
+			"from": [
+				-9687.5,
+				6785.2001953125
+			],
+			"metres": 46.7998046875,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9687.5,
+				6832.0
+			]
+		},
+		{
+			"from": [
+				-9626.0,
+				6978.5
+			],
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9604.5,
+				6959.0
+			]
+		},
+		{
+			"from": [
+				-9562.5,
+				6902.2998046875
+			],
+			"metres": 36.0758895874023,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9527.2998046875,
+				6910.2001953125
+			]
+		},
+		{
+			"from": [
+				-9464.7998046875,
+				6972.7001953125
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9437.5,
+				6964.7998046875
+			]
+		},
+		{
+			"from": [
+				-9437.5,
+				6964.7998046875
+			],
+			"metres": 41.6431083679199,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9422.900390625,
+				6925.7998046875
+			]
+		},
+		{
+			"from": [
+				-9355.5,
+				6876.0
+			],
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9334.0,
+				6895.5
+			]
+		},
+		{
+			"from": [
+				-9334.0,
+				6895.5
+			],
+			"metres": 40.1877937316895,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-9360.400390625,
+				6925.7998046875
+			]
+		},
+		{
+			"from": [
+				-8472.7001953125,
+				7937.5
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-8464.7998046875,
+				7910.2001953125
+			]
+		},
+		{
+			"from": [
+				-8464.7998046875,
+				7910.2001953125
+			],
+			"metres": 36.842212677002,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-8478.5,
+				7876.0
+			]
+		},
+		{
+			"from": [
+				-8478.5,
+				7876.0
+			],
+			"metres": 44.9115257263184,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-8433.599609375,
+				7875.0
+			]
+		},
+		{
+			"from": [
+				-8285.2001953125,
+				7964.7998046875
+			],
+			"metres": 44.1807098388672,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-8253.9599609375,
+				7996.04052734375
+			]
+		},
+		{
+			"from": [
+				-8253.9599609375,
+				7996.04052734375
+			],
+			"metres": 0.0842451453208923,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-8253.900390625,
+				7996.10009765625
+			]
+		},
+		{
+			"from": [
+				-8063.5,
+				8166.0
+			],
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-8042.0,
+				8146.5
+			]
+		},
+		{
+			"from": [
+				-8009.7998046875,
+				8171.89990234375
+			],
+			"metres": 36.5384101867676,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-8000.0,
+				8136.7001953125
+			]
+		},
+		{
+			"from": [
+				-7500.0,
+				7964.7998046875
+			],
+			"metres": 36.0758895874023,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-7464.7998046875,
+				7972.7001953125
+			]
+		},
+		{
+			"from": [
+				-7464.7998046875,
+				7972.7001953125
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-7437.5,
+				7964.7998046875
+			]
+		},
+		{
+			"from": [
+				-7312.5,
+				7910.2001953125
+			],
+			"metres": 36.0758895874023,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-7277.2998046875,
+				7902.2998046875
+			]
+		},
+		{
+			"from": [
+				-7277.2998046875,
+				7902.2998046875
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-7250.0,
+				7910.2001953125
+			]
+		},
+		{
+			"from": [
+				-7250.0,
+				8097.7001953125
+			],
+			"metres": 36.0758895874023,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-7214.7998046875,
+				8089.7998046875
+			]
+		},
+		{
+			"from": [
+				-7214.7998046875,
+				8089.7998046875
+			],
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-7187.5,
+				8097.7001953125
+			]
+		},
+		{
+			"from": [
+				-6660.2001953125,
+				8500.0
+			],
+			"metres": 40.3094749450684,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-6621.10009765625,
+				8509.7998046875
+			]
+		},
+		{
+			"from": [
+				-6621.10009765625,
+				8509.7998046875
+			],
+			"metres": 40.3099021911621,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-6589.7998046875,
+				8535.2001953125
+			]
+		},
+		{
+			"from": [
+				-6589.7998046875,
+				8535.2001953125
+			],
+			"metres": 46.003604888916,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-6550.7998046875,
+				8559.599609375
+			]
+		},
+		{
+			"from": [
+				-6550.7998046875,
+				8559.599609375
+			],
+			"metres": 46.9957542419434,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-6503.89990234375,
+				8556.599609375
+			]
+		},
+		{
+			"from": [
+				-6503.89990234375,
+				8556.599609375
+			],
+			"metres": 48.8599662780762,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-6464.7998046875,
+				8527.2998046875
+			]
+		},
+		{
+			"from": [
+				-6464.7998046875,
+				8527.2998046875
+			],
+			"metres": 38.6077537536621,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				-6437.5,
+				8500.0
+			]
+		},
+		{
+			"from": [
+				800.0,
+				-9300.0
+			],
+			"metres": 200.0,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				800.0,
+				-9100.0
+			]
+		},
+		{
+			"from": [
+				1200.0,
+				-9500.0
+			],
+			"metres": 200.0,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1200.0,
+				-9300.0
+			]
+		},
+		{
+			"from": [
+				1800.0,
+				-10100.0
+			],
+			"metres": 200.0,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2000.0,
+				-10100.0
+			]
+		},
+		{
+			"from": [
+				1800.0,
+				-9900.0
+			],
+			"metres": 200.0,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2000.0,
+				-9900.0
+			]
+		},
+		{
+			"from": [
+				1800.0,
+				-9700.0
+			],
+			"metres": 200.0,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1800.0,
+				-9500.0
+			]
+		},
+		{
+			"from": [
+				1800.0,
+				-9700.0
+			],
+			"metres": 200.0,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				2000.0,
+				-9700.0
+			]
+		},
+		{
+			"from": [
+				2000.0,
+				-9300.0
+			],
+			"metres": 40.0,
+			"reason": "Access grade is too steep for a vehicle.",
+			"to": [
+				1960.0,
+				-9300.0
+			]
+		}
+	],
+	"components": [
+		2921,
+		53,
+		2,
+		2,
+		2,
+		8,
+		4,
+		155,
+		29,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		15,
+		1,
+		1,
+		1,
+		1,
+		17,
+		2,
+		17,
+		17,
+		12,
+		1,
+		1,
+		1,
+		15,
+		1,
+		12,
+		2,
+		2,
+		13,
+		1,
+		1,
+		2,
+		1,
+		27,
+		1,
+		1,
+		1,
+		8,
+		1,
+		17,
+		4,
+		1,
+		1,
+		10,
+		4,
+		2,
+		2,
+		2,
+		4,
+		14,
+		1,
+		1,
+		11,
+		4,
+		2,
+		2,
+		11,
+		67,
+		5,
+		15,
+		1,
+		1,
+		42,
+		10,
+		1,
+		1,
+		1,
+		1,
+		5,
+		4,
+		3,
+		1,
+		3,
+		1,
+		40,
+		1,
+		1,
+		6,
+		7,
+		1,
+		2,
+		20,
+		1,
+		6,
+		1,
+		5,
+		1,
+		35,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		6,
+		2,
+		2,
+		3,
+		2,
+		1,
+		9,
+		2,
+		2,
+		3,
+		2,
+		1
+	],
+	"endpoints": [
+		{
+			"component": 0,
+			"index": 477,
+			"reason": "",
+			"site": "hq"
+		},
+		{
+			"component": 19,
+			"index": 2241,
+			"reason": "",
+			"site": "barn"
+		},
+		{
+			"component": 0,
+			"index": 3756,
+			"reason": "",
+			"site": "docks"
+		},
+		{
+			"component": 0,
+			"index": 3712,
+			"reason": "",
+			"site": "lockup"
+		},
+		{
+			"component": 52,
+			"index": 2801,
+			"reason": "",
+			"site": "camp"
+		},
+		{
+			"component": 7,
+			"index": 3008,
+			"reason": "",
+			"site": "villa"
+		},
+		{
+			"component": 68,
+			"index": 2972,
+			"reason": "",
+			"site": "quarry"
+		},
+		{
+			"component": 0,
+			"index": 1144,
+			"reason": "",
+			"site": "shack"
+		},
+		{
+			"component": 24,
+			"index": 3784,
+			"reason": "",
+			"site": "agency"
+		}
+	],
+	"map": "Costa Brava",
+	"nodes": 3785,
+	"seed": 12
+}
