@@ -233,3 +233,28 @@ func test_pilot_menu_dispatch_can_open_and_leave_guidance_without_calling() -> v
 	_menu.key("enter")
 	check(not _menu.campaign_scroll.visible, "focused guide button returns to contacts")
 	check(_menu.list.has_focus(), "contact focus restored")
+
+
+func test_chapter_entry_wraps_and_controller_can_continue() -> void:
+	var sess := _live()
+	Story.new(Story.index_of("The House")).attach(sess)
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1024, 768)
+	Engine.get_main_loop().root.add_child(viewport)
+	var app := PilotApp.new()
+	viewport.add_child(app)
+	app.setup(sess, "low")
+	for i in 3: await Engine.get_main_loop().process_frame
+	check(app.briefing_panel.visible, "entry briefing is displayed")
+	check_eq(app.briefing.autowrap_mode, TextServer.AUTOWRAP_WORD_SMART)
+	check(app.briefing_panel.get_child(0) is ScrollContainer, "long chapters scroll")
+	check(app.briefing_panel.get_global_rect().end.x <= 1024, "entry width fits")
+	check(app.briefing_panel.get_global_rect().end.y <= 768, "entry height fits")
+	var accept := InputEventJoypadButton.new()
+	accept.button_index = JOY_BUTTON_A
+	accept.pressed = true
+	viewport.push_input(accept)
+	for i in 2: await Engine.get_main_loop().process_frame
+	check(not sess.story.show_briefing, "controller accepts chapter briefing")
+	app.free()
+	viewport.free()

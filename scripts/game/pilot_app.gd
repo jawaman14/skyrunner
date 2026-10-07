@@ -729,6 +729,16 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 
 
 func _input(ev: InputEvent) -> void:
+	if s != null and s.narrative != null and s.narrative.show_briefing and ev is InputEventJoypadButton and ev.pressed:
+		if ev.button_index == JOY_BUTTON_A:
+			_pressed["confirm"] = true
+			get_viewport().set_input_as_handled()
+			return
+		if ev.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_DOWN] and briefing_panel != null:
+			var scroll: ScrollContainer = briefing_panel.get_child(0)
+			scroll.scroll_vertical += 48 if ev.button_index == JOY_BUTTON_DPAD_DOWN else -48
+			get_viewport().set_input_as_handled()
+			return
 	# click to grab the mouse again while walking
 	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and pack_menu == null and not _map_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -1271,7 +1281,7 @@ func _process(delta: float) -> void:
 	if camp != null and camp.show_briefing:
 		var ch: Campaign.Chapter = camp.chapter
 		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nContinue: %s" % [ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
-			"\n".join(camp.objective_lines()), ", ".join(PRESS_KEYS.keys().map(func(code): return OS.get_keycode_string(code)))]
+			"\n".join(camp.objective_lines()), ", ".join(PRESS_KEYS.keys().map(func(code): return OS.get_keycode_string(code))) + " / controller Accept"]
 		if not briefing_panel.visible:
 			Speech.say(briefing.text, true)
 		briefing_panel.visible = true
