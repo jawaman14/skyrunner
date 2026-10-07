@@ -5,14 +5,15 @@ baseline changes; historical counts belong in `docs/ROADMAP_HISTORY_2026-10.md`.
 It separates implemented work from evidence so a feature is not advertised as
 human-tested merely because source code exists.
 
-Source audit: 7 October 2026. This is a maintained evidence record, not generated test output.
+Source audit: 8 October 2026. This is a maintained evidence record, not generated test output.
 
 | Field | Current value | Evidence / limit |
 |---|---|---|
 | Version | 0.9.0-beta.1 | `README.md`, release metadata |
 | Engine | Godot 4.7.2, GDScript, Jolt | project configuration |
 | Test files | 123 `tests/test_*.gd` files, excluding `test_case.gd` | source count on 7 October; run `./tools/test.sh` for test results |
-| Verified automated baseline | 990 passed, 0 failed across three desktop shards (319 / 338 / 333) | PR #225; no script/parse errors; lambda/resource cleanup diagnostics remain |
+| Verified automated baseline | 1,002 passed, 0 failed across three post-merge desktop shards (321 / 339 / 342) | Main `3347007`, #259–#263; no script/parse failures; engine cleanup diagnostics remain |
+| Unmerged continuation | 1,052 passed, 0 failed (338 / 361 / 353) at villa code head `bbf6a24` | #265 stack; ten paired war seeds have identical aggregate outcomes for the local villa correction; not main or human acceptance |
 | Tutorial | Four Costa Brava flying chapters | `docs/DESIGN.md`; preserved |
 | Story | Twelve Costa Brava chapters | `README.md`/`docs/DESIGN.md`; preserved |
 | Player map | Costa Brava | Classic geometry remains internal regression only; generated maps are optional |
@@ -22,6 +23,25 @@ Source audit: 7 October 2026. This is a maintained evidence record, not generate
 | Asset rights | used third-party notices included; bundled radio redistribution rights unresolved | `docs/ASSET_PROVENANCE.md` and issue #175 |
 
 ## Feature state
+
+### Reliability integration, 8 October 2026
+
+[#254](https://github.com/jawaman14/skyrunner/pull/254) records the open-PR audit.
+[#259](https://github.com/jawaman14/skyrunner/pull/259) and
+[#260](https://github.com/jawaman14/skyrunner/pull/260) integrate bounded framing,
+command deduplication, stale-input neutralization and seat-generation checks.
+[#261](https://github.com/jawaman14/skyrunner/pull/261),
+[#262](https://github.com/jawaman14/skyrunner/pull/262) and
+[#263](https://github.com/jawaman14/skyrunner/pull/263) integrate debris expiry,
+race feedback/selection and fight privacy. Each is squash-merged separately;
+superseded originals are closed with replacement links. The exact post-merge
+tree passes 1,002 tests, isolated desktop smoke and hygiene. See the
+[integration/disposition record](PR_INTEGRATION_2026-10-08.md) for evidence and
+remaining drafts. Main's eight CI jobs pass, including exports and all three
+desktop smoke jobs. Final focused checks pass: save 33, parity 14 and export
+filters two. The save process returned a nonzero native cleanup exit after its
+tests passed; no script/parse/test failures occurred. Human and rights gates
+remain open.
 
 ### Post-merge review, 7 October 2026
 
