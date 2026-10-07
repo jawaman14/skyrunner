@@ -660,7 +660,7 @@ the task force takes the lab, a bread van is found in a ravine, Nico Cozz is gon
 **Last Flight** are the endgame the title (1979-1989) promised: the Company's war ends in a subpoena, and the goals are a cold case (`case_cold`, counted in
 consecutive minutes under 50% suspicion, the clock resetting if it rises) and money. Saves carry `v: 4` with optional objective outcomes and chapter history (a version 2 save before Blotter moves up one chapter from
 Cocaine Cowboys on). The story's balance run (`tools/live_balance.gd -- 40 16 story`, 16 hours now) at 40 seeds: Blotter takes about two hours in the stand-in's hands, 95% reach
-The Task Force, 80% reach The Hearings, 55% reach Last Flight and 40% finish (BALANCE entry 50).
+The Task Force, 80% reach The Hearings, 55% reach Last Flight and 40% finish (historical BALANCE entry 50). The 7 October paired run at forty seeds and sixteen hours matches the newer baseline exactly: 82.5% reach The Hearings, 67.5% reach Last Flight and 45% finish; see CAMPAIGN_POLISH_2026-10-07.md.
 
 **Campaign polish (7 October 2026).** Phone > Chapter guidance and history retains briefings and recorded outcomes. Successful island delivery, actual casino ownership and timely evacuation are distinct from interception or losing the house. Unavailable factions waive unfinished goals without fabricated counters. Last Flight keeps its wealth and consecutive clean-case goals; there is no compulsory finale flight. See [the dated report](CAMPAIGN_POLISH_2026-10-07.md) for performed and pending validation.
 

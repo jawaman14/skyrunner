@@ -31,6 +31,8 @@ strategic calibration are implemented; do not restart them from older reviews.
 
 Current asset continuation: #227 adds HAR workshop equipment; follow with coastal infrastructure/dock details, period vehicles, then existing-aircraft cockpit polish. See [ASSET_COVERAGE.md](ASSET_COVERAGE.md) for runtime coverage and missing work. Merged-stack descriptions are archived; remaining numbered items below distinguish implementation from pending verification.
 
+Campaign polish is implemented in draft [#229](https://github.com/jawaman14/skyrunner/pull/229), [#230](https://github.com/jawaman14/skyrunner/pull/230) and [#231](https://github.com/jawaman14/skyrunner/pull/231). [#232](https://github.com/jawaman14/skyrunner/pull/232) fixes debris expiry found during regression. The integrated draft tree passes 1,002 desktop tests; all 40 paired campaign seeds match the previous baseline. See [the validation report](CAMPAIGN_POLISH_2026-10-07.md). These PRs are not merged; human acceptance and the asset-baseline dependency remain pending.
+
 ## Ordered implementation queue
 
 1. **Baseline verification:** the overhaul stack is integrated; the latest

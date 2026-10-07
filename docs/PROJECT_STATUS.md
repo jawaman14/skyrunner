@@ -13,6 +13,7 @@ Source audit: 7 October 2026. This is a maintained evidence record, not generate
 | Engine | Godot 4.7.2, GDScript, Jolt | project configuration |
 | Test files | 123 `tests/test_*.gd` files, excluding `test_case.gd` | source count on 7 October; run `./tools/test.sh` for test results |
 | Verified automated baseline | 990 passed, 0 failed across three desktop shards (319 / 338 / 333) | PR #225; no script/parse errors; lambda/resource cleanup diagnostics remain |
+| Unmerged campaign continuation | 1,002 passed, 0 failed (330 / 339 / 333), smoke OK; forty paired story seeds identical | Draft #229–#232; [dated report](CAMPAIGN_POLISH_2026-10-07.md); not a new merged baseline |
 | Tutorial | Four Costa Brava flying chapters | `docs/DESIGN.md`; preserved |
 | Story | Twelve Costa Brava chapters | `README.md`/`docs/DESIGN.md`; preserved |
 | Player map | Costa Brava | Classic geometry remains internal regression only; generated maps are optional |
