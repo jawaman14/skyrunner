@@ -219,7 +219,8 @@ func _init(sess_, rng_: PyRandom, frng_: PyRandom) -> void:
 	if world.map.roads.is_empty():
 		graph = RoadGraph.tracks(places)
 	else:
-		graph = RoadGraph.new(world.map.roads, places)
+		var legacy_roads := world.map.roads.filter(func(road): return not road in world.map.access_roads)
+		graph = RoadGraph.new(legacy_roads, places, world.map.access_roads)
 	for f in ["org", "rival", "police"]:
 		var c := Commander.new()
 		c.faction = f

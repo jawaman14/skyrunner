@@ -84,6 +84,14 @@ static func load_roads() -> Dictionary:
 			road.pop_back()
 			road.append([-5514.0, 5487.0])
 			road.append([-5514.0, 5508.0])
+	# An authored service spur brings the FRM shed loading yard within the
+	# checked local-access limit. It joins an existing road vertex and stops
+	# outside the shed/runway; the intentional La Selva isolation is unchanged.
+	var agency_start := [-2062.5, -2875.0]
+	if d.get("roads", []).any(func(road): return agency_start in road):
+		var spur := [agency_start, [-2115.0, -2795.0]]
+		if not spur in d.roads: d.roads.append(spur)
+		d["access_roads"] = [spur]
 	return d
 
 
@@ -200,6 +208,7 @@ static func generate() -> MapLayout:
 	l.aerostat_pos = [5500.0, -13800.0]
 	var planned := load_roads()
 	l.roads = planned.get("roads", ROADS.duplicate(true))
+	l.access_roads = planned.get("access_roads", [])
 	l.bridges = planned.get("bridges", [])
 	l.stashes = STASHES.duplicate(true)
 	l.foreign = [Island.airfield()]  # Isla Soberana, over the southern horizon

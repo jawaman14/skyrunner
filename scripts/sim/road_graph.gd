@@ -24,8 +24,11 @@ var _exact_bins := {}
 var _network_edges := {}  ## authored road/track edges, excluding speculative T links/stubs
 
 
-func _init(roads: Array, places: Array = []) -> void:
+func _init(roads: Array, places: Array = [], checked_access_roads: Array = []) -> void:
 	_authored_roads = roads.duplicate(true)
+	# Physical service approaches participate in checked routing without
+	# speculative T links changing legacy dispatch before its measured migration.
+	_authored_roads.append_array(checked_access_roads.duplicate(true))
 	for r in roads:
 		var prev := -1
 		for p in r:

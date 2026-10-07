@@ -81,6 +81,46 @@ func test_villa_approach_reaches_loading_both_ways_without_crossing_its_walls() 
 		check(not SiteAccess._crosses(Vector2(road[i][0], road[i][1]), Vector2(road[i + 1][0], road[i + 1][1]), padded), "full road width clears villa")
 
 
+func test_frm_service_spur_reaches_company_loading_without_crossing_sites() -> void:
+	var session := Session.new({"seed": 12, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES, "ground_war": true, "trade": true, "payroll": true, "logistics": true})
+	var sites := session.world.site_records()
+	var access := SiteAccess.new(session.world, sites)
+	var endpoint: Dictionary = session.logistics.loading_endpoint("agency", Logistics.HQ, access)
+	check(endpoint.available, "existing Company meeting resolves to its authoritative loading area")
+	var start := Vector2(-2062.5, -2875)
+	var finish: Vector2 = endpoint.point
+	for ends in [[start, finish], [finish, start]]:
+		var route := access.checked_vehicle_route(session.ground.graph, ends[0], ends[1])
+		check(route.reachable, "FRM meeting connects in both directions")
+		for i in route.points.size() - 1:
+			check_eq(access.segment_reason(route.points[i], route.points[i + 1], true), "", "every route leg respects grade, water and physical exclusions")
+	var tip := Vector2(-2115, -2795)
+	check_eq(access.segment_reason(start, tip, true), "", "new road centre is usable")
+	for site in sites:
+		if site.kind == "dock": continue
+		for polygon in Geometry2D.offset_polygon(site.footprint, RoadSurface.HALF_WIDTH):
+			check(not SiteAccess._crosses(start, tip, polygon), "full road width clears " + str(site.id))
+	for af in session.world.airfields:
+		check(not SiteAccess._crosses(start, tip, SiteLayout.runway_footprint(af, RoadSurface.HALF_WIDTH + 8.0)), "full road width preserves runway clearance")
+	check_eq(MapCity.load_roads(), MapCity.load_roads(), "authoring is repeatable without accumulating spurs")
+	session.dispose()
+
+
+func test_checked_access_roads_do_not_migrate_legacy_routes() -> void:
+	var roads := [[[0, 0], [1000, 0]]]
+	var service := [[[0, 0], [0, 100]]]
+	var legacy := RoadGraph.new(roads, [[500, 50]])
+	var staged := RoadGraph.new(roads, [[500, 50]], service)
+	check_eq(staged.nodes, legacy.nodes, "legacy nodes/stubs stay identical")
+	check_eq(staged.adj, legacy.adj, "legacy edge order and speculative junctions stay identical")
+	check_eq(staged.route(Vector2(0,100), Vector2(1000,0)), legacy.route(Vector2(0,100), Vector2(1000,0)), "old route API retains its path")
+	var checked := staged.checked_route(Vector2(0,100), Vector2(1000,0))
+	check(checked.reachable, "checked routing uses the physical service spur")
+	check_eq(checked.points[0], Vector2(0,100))
+	check_eq(checked.points[-1], Vector2(1000,0))
+	check(checked.points.has(Vector2.ZERO), "the spur joins at the authored vertex")
+
+
 func test_checked_short_routes_follow_authored_edges_without_false_tees() -> void:
 	var graph := RoadGraph.new([[[0, 0], [0, 1000], [200, 1000], [200, 0]]])
 	var result := graph.checked_route(Vector2.ZERO, Vector2(200, 0))
