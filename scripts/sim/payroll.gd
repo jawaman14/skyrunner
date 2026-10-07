@@ -534,6 +534,17 @@ func needs(o: String) -> Dictionary:
 		n["dealer"] = sess.trade.dealers_wanted(o)
 	return n
 
+## Explainable hiring demand for roster screens and deterministic AI diagnostics.
+## This is read-only; `_think` remains the only path that hires anyone.
+func demand(o: String) -> Dictionary:
+	var out := {}
+	var targets := needs(o)
+	for role in targets:
+		var target: int = int(targets[role])
+		var have: int = of(o, role).filter(func(w): return w.status in ["free", "assigned"]).size()
+		out[role] = {"target": target, "active": have, "vacancy": maxi(0, target - have)}
+	return out
+
 
 func _think(o: String) -> void:
 	if not has_outfit(o):
@@ -602,6 +613,8 @@ func update(dt: float) -> void:
 ## A worker's current task, in a few words, for the roster: the hiring hall (Talk) and the law's
 ## jail view both read it off the Dictionary view() returns, so it only has to be worked out once.
 func doing(w: Dictionary) -> String:
+	var travel_reason: String = people.blocked.get(str(w.get("id", "")), "")
+	if travel_reason != "": return "travel blocked: " + travel_reason
 	if str(w.get("status", "")) != "assigned" or str(w.get("assigned", "")) == "":
 		return "free"
 	var a := str(w.assigned)
@@ -643,7 +656,7 @@ func view(side: String) -> Dictionary:
 	var counts := {}
 	for role in ROLES:
 		counts[role] = of("org", role).filter(func(w): return w.status in ["free", "assigned"]).size()
-	return {"counts": counts, "wage_bill": wage_bill("org"), "loyalty": snappedf(loyalty("org"), 0.01),
+	return {"counts": counts, "demand": demand("org"), "wage_bill": wage_bill("org"), "loyalty": snappedf(loyalty("org"), 0.01),
 		"payday_s": maxi(0, int(PAY_S - _pay_t)), "unpaid": int(unpaid.org), "last": last.org, "ai": ai.org,
 		"candidates": candidates.org.map(func(w): return {"id": w.id, "name": w.name, "role": w.role, "skill": w.skill,
 			"wage": w.wage, "hint": w.hint}),

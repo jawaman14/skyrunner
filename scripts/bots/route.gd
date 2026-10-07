@@ -111,7 +111,7 @@ static func _pop(heap: Array) -> Array:
 
 ## Waypoints [[x, y], ...] (excluding start, including goal).
 static func plan_route(world: World, start: Array, goal: Array, climb_weight := 6.0, height_weight := 1.5,
-		spacing_m := 1500.0) -> Array:
+		spacing_m := 1500.0, avoid_zones: Array = []) -> Array:
 	var g := _grid(world)
 	var h: PackedFloat64Array = g[0]
 	var n: int = g[1]
@@ -156,6 +156,14 @@ static func plan_route(world: World, start: Array, goal: Array, climb_weight := 
 			var hn := h[jj * n + ii]
 			var step: float = st[2]
 			var cost := step * (1.0 + climb_weight * maxf(0.0, hn - hc) / step + height_weight * (hn - hmin) / 1000.0)
+			if not avoid_zones.is_empty():
+				var mx := (i * CELL_M - half + ii * CELL_M - half) * 0.5
+				var my := (j * CELL_M - half + jj * CELL_M - half) * 0.5
+				for zone in avoid_zones:
+					var radius: float = maxf(1.0, float(zone.get("radius", 0.0)))
+					var zone_d: float = PyMath.hypot(mx - float(zone.get("x", 0.0)), my - float(zone.get("y", 0.0)))
+					if zone_d < radius:
+						cost *= 1.0 + 8.0 * (1.0 - zone_d / radius)
 			var nd := d + cost
 			if nd < dist[jj * n + ii]:
 				dist[jj * n + ii] = nd
