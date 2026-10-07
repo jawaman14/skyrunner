@@ -218,7 +218,12 @@ func test_the_hud_the_hangar_and_the_desk_show_it() -> void:
 			idx = i
 	menu.list.select(idx)
 	menu.key("enter")
-	check(not a.work.is_empty(), "ENTER starts the work")
+	check(a.work.is_empty(), "review does not start or charge work")
+	menu.key("right")
+	for frame in 3:
+		await Engine.get_main_loop().process_frame
+	menu.key("enter")
+	check(not a.work.is_empty(), "confirmed review starts the work")
 	menu.key("enter")
 	check(a.work.is_empty(), "and again stops it")
 	menu.queue_free()

@@ -27,3 +27,8 @@ static func missing(link: Object) -> Array:
 		if not props.has(p):
 			out.append(p)
 	return out
+
+
+## Optional read-only preview extension. New links expose request_preview(name,
+## args) -> sequence and previews[sequence] -> action descriptor. Hosts advertise
+## action_previews in welcome.capabilities; older peers retain command operation.

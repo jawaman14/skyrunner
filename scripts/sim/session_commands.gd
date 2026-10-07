@@ -12,6 +12,10 @@ func command(role: String, name: String, args := {}) -> Array:
 	var handler := "_cmd_" + name
 	if not has_method(handler):
 		return [false, "Unknown command %s." % name]
+	if name in ActionDescriptions.SUPPORTED:
+		var action := describe_action(role, name, args)
+		if not action.enabled:
+			return [false, action.disabled_reason]
 	var err = call(handler, role, args)
 	if err:
 		return [false, err]

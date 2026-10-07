@@ -56,6 +56,16 @@ func accept_job_reason(job: Jobs.Job) -> String:
 	return ""
 
 
+## General read-only action descriptions; job callers retain their original API.
+func describe_action(role: String, name: String, args := {}) -> Dictionary:
+	if name in ["accept_job", "drop_job"]:
+		var id = args.get("job_id", -1)
+		if not (id is int or id is float or (id is String and id.is_valid_float())) or not is_finite(float(id)):
+			return ActionDescriptions.unavailable(name, args, "Invalid job identifier.")
+		return job_action(role, name, int(float(id)))
+	return ActionDescriptions.build(self, role, name, args)
+
+
 ## A job-board action is a description, never an execution or a second UI authority.
 func job_action(role: String, name: String, job_id: int) -> Dictionary:
 	var action := {"label": "Accept job" if name == "accept_job" else "Drop job", "enabled": false,

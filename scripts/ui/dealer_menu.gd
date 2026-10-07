@@ -89,6 +89,8 @@ func refresh() -> void:
 
 
 func key(k: String) -> void:
+	if confirmation_key(k):
+		return
 	var d: Dealership = s.dealer
 	if d == null:
 		return
@@ -102,14 +104,13 @@ func key(k: String) -> void:
 		"right":
 			focus = 1
 		"a":
-			d.set_auto(not d.auto)
-			note = ""
+			var result: Array = s.command(Roles.PILOT, "fleet_auto", {"on": not d.auto})
+			show_feedback("Fleet automation updated." if result[0] else str(result[1]), bool(result[0]))
 		"enter":
 			if focus == 0:
 				var i := lot.selected_row()
 				if i >= 0 and i < lot_rows.size():
-					var r: Array = s.command(Roles.PILOT, "buy_vehicle", {"id": lot_rows[i].id})
-					note = "" if r[0] else str(r[1])
+					perform_action("buy_vehicle", {"id": lot_rows[i].id})
 			else:
 				var i := mine.selected_row()
 				if i >= 0 and i < my_rows.size():
@@ -118,6 +119,5 @@ func key(k: String) -> void:
 		"s":
 			var i := mine.selected_row()
 			if focus == 1 and i >= 0 and i < my_rows.size():
-				var r: Array = s.command(Roles.PILOT, "sell_vehicle", {"serial": my_rows[i].serial})
-				note = "" if r[0] else str(r[1])
+				perform_action("sell_vehicle", {"serial": my_rows[i].serial})
 	refresh()

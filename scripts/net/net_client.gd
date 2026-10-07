@@ -14,6 +14,9 @@ var latest = null
 var welcome = null
 var error = null
 var acks := {}
+var previews := {}
+var _preview_requests := {}
+var capabilities: Array = []
 var password := ""  ## a password-protected server's (sent in the hello)
 var token := ""  ## the host's reconnect token (from the welcome); send it again to take back a held seat
 var seats: Array = []  ## the live roster: [{role, side, who, name}]
@@ -58,6 +61,7 @@ func poll() -> void:
 		if error == null:
 			error = "Host closed the connection." if _hello_sent else "Can't connect to %s:%d" % [host, port]
 		_closed = true
+		_cancel_previews("Disconnected: preview unavailable.")
 		return
 	if not _hello_sent:
 		var hello := {"t": "hello", "v": Snapshot.PROTOCOL_VERSION, "name": name_, "role": role}
@@ -74,9 +78,11 @@ func poll() -> void:
 		match msg.get("t"):
 			"welcome":
 				welcome = msg
+				capabilities = msg.get("capabilities", []) if msg.get("capabilities", []) is Array else []
 				phase = str(msg.get("phase", "game"))
 				token = str(msg.get("token", token))
 				if str(msg.get("role", "")) != role:
+					_cancel_previews("Seat changed; request a new preview.")
 					role = str(msg.get("role", ""))
 					role_changed.emit(role)
 			"room":
@@ -90,11 +96,13 @@ func poll() -> void:
 				seats = msg.get("seats", [])
 				players = msg.get("players", [])
 			"claimed":
+				_cancel_previews("Seat changed; request a new preview.")
 				claim_error = null
 				role = str(msg.get("role", ""))
 				latest = null
 				role_changed.emit(role)
 			"claim_failed":
+				_cancel_previews("Seat claim failed; preview unavailable.")
 				claim_error = str(msg.get("msg", ""))
 			"voice":
 				voice_heard.emit(msg)
@@ -106,6 +114,11 @@ func poll() -> void:
 				close()
 			"snap":
 				latest = msg
+			"preview":
+				var seq := int(msg.get("seq", 0))
+				if _preview_requests.has(seq) and str(msg.get("role", role)) == role and msg.get("action") is Dictionary:
+					previews[seq] = msg.action
+					_preview_requests.erase(seq)
 			"ack":
 				acks[int(msg.get("seq", 0))] = [bool(msg.get("ok")), str(msg.get("msg", ""))]
 
@@ -168,6 +181,19 @@ func send_command(cmd: String, args := {}) -> int:
 	return _seq
 
 
+## Read-only request; unsupported peers remain fully usable for commands.
+func request_preview(name: String, args := {}) -> int:
+	_seq += 1
+	if not capabilities.has("action_previews"):
+		previews[_seq] = ActionDescriptions.unavailable(name, args, "Preview unavailable on this host.")
+	elif _closed or peer.get_status() != StreamPeerTCP.STATUS_CONNECTED:
+		previews[_seq] = ActionDescriptions.unavailable(name, args, "Disconnected: preview unavailable.")
+	else:
+		_preview_requests[_seq] = {"name": name, "args": args.duplicate(true)}
+		_put({"t": "preview_request", "seq": _seq, "name": name, "args": args})
+	return _seq
+
+
 ## Police pilot stick: fire-and-forget, the latest one wins.
 func send_input(roll: float, pitch: float, throttle: float, rudder := 0.0, brake := 0.0) -> void:
 	if not _closed and peer.get_status() == StreamPeerTCP.STATUS_CONNECTED:
@@ -187,6 +213,15 @@ func alive() -> bool:
 	return not _closed
 
 
+func _cancel_previews(reason: String) -> void:
+	previews.clear()
+	for seq in _preview_requests:
+		var request: Dictionary = _preview_requests[seq]
+		previews[seq] = ActionDescriptions.unavailable(request.name, request.args, reason)
+	_preview_requests.clear()
+
+
 func close() -> void:
+	_cancel_previews("Disconnected: preview unavailable.")
 	_closed = true
 	peer.disconnect_from_host()
