@@ -58,12 +58,42 @@ static func open(parent: Node, name: String, title: String, link) -> TalkBalloon
 		return null
 	var st := State.new(func(): return link.snapshot(), Callable())
 	var state_ref: WeakRef = weakref(st)
-	st.cmd_fn = func(n: String, a: Dictionary) -> Array:
-		return await command_result(link, n, a, state_ref.get_ref())
 	var b := TalkBalloon.new()
+	var balloon_ref: WeakRef = weakref(b)
+	st.cmd_fn = func(n: String, a: Dictionary) -> Array:
+		return await reviewed_result(balloon_ref.get_ref(), link, n, a, state_ref.get_ref())
 	parent.add_child(b)
 	b.start(res, title, st)
 	return b
+
+
+## Keep the reviewed arguments fixed through approval and correlated execution.
+## Closing/removing the conversation fences the pending preview without a mutation.
+static func reviewed_result(balloon: TalkBalloon, link, name: String, arguments: Dictionary, state: State) -> Array:
+	if state == null or state.cancelled or not is_instance_valid(balloon) or not balloon.is_inside_tree():
+		return [false, "Conversation closed. No command sent."]
+	if not is_instance_valid(link) or not link.alive():
+		return [false, "Disconnected. No command sent."]
+	var args := arguments.duplicate(true)
+	if name in ActionReview.COMMANDS:
+		var review := ActionReview.new().setup(link, name, args)
+		var answer := {}
+		review.finished.connect(func(approved, message):
+			answer.approved = approved
+			answer.message = message)
+		balloon.review = review
+		balloon.add_child(review)
+		while answer.is_empty():
+			if state.cancelled or not is_instance_valid(balloon) or not balloon.is_inside_tree() or not is_instance_valid(review) or not review.is_inside_tree():
+				if is_instance_valid(review): review.queue_free()
+				return [false, "Conversation closed. No command sent."]
+			await (Engine.get_main_loop() as SceneTree).process_frame
+		if is_instance_valid(balloon): balloon.review = null
+		if not answer.approved:
+			return [false, str(answer.message)]
+	if state.cancelled or not is_instance_valid(balloon) or not balloon.is_inside_tree():
+		return [false, "Conversation closed. No command sent."]
+	return await command_result(link, name, args, state)
 
 
 ## Correlate this mutation with its acknowledgement. A later snapshot is a

@@ -22,6 +22,7 @@ var selected := 0
 var busy := false
 var closed := false
 var _palette := ""
+var review: ActionReview
 var leave: Button
 var _answers: Array = []  ## the DialogueResponses offered now
 
@@ -169,6 +170,8 @@ func _exit_tree() -> void:
 
 
 func _input(ev: InputEvent) -> void:
+	if is_instance_valid(review):
+		return  # The higher confirmation owns input, including Cancel.
 	if closed or (ev is InputEventKey and ev.echo) or not ev.is_pressed():
 		return
 	if ev.is_action_pressed("ui_cancel"):
