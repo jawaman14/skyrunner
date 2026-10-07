@@ -208,9 +208,9 @@ func test_nico_talks_to_any_seat() -> void:
 		link.send_command(n, a)
 		return link.last_result)
 	check(st.psych and st.ps_best_id == id and st.ps_best_lb == 150, "the state reads the stash")
-	check(st.barter_hundred() and st.ps_held > 2.0, "trades a hundred pounds")
-	check(st.sell_acid() and st.ps_earned > 0, "sells the sheets")
-	check(st.toggle_acid_auto() and s.psych.auto, "hands the trading to the AI")
+	check((await st.barter_hundred()) and st.ps_held > 2.0, "trades a hundred pounds")
+	check((await st.sell_acid()) and st.ps_earned > 0, "sells the sheets")
+	check((await st.toggle_acid_auto()) and s.psych.auto, "hands the trading to the AI")
 
 
 func test_the_story_opens_it_in_1980_with_its_own_chapter() -> void:

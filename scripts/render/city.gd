@@ -120,32 +120,9 @@ static func _crane(b: Dictionary) -> Node3D:
 static func _roads(world: World, roads: Array) -> MeshInstance3D:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for r in roads:
-		var pts := PackedVector2Array()
-		for k in r.size() - 1:
-			var a := Vector2(r[k][0], r[k][1])
-			var b := Vector2(r[k + 1][0], r[k + 1][1])
-			var n := int(a.distance_to(b) / 12.0) + 1
-			for q in n:
-				pts.append(a.lerp(b, float(q) / n))
-		pts.append(Vector2(r[r.size() - 1][0], r[r.size() - 1][1]))
-		var prev_l := Vector3.ZERO
-		var prev_r := Vector3.ZERO
-		for k in pts.size():
-			var dir := (pts[mini(k + 1, pts.size() - 1)] - pts[maxi(k - 1, 0)]).normalized()
-			var side := Vector2(-dir.y, dir.x) * 4.5
-			var zs := []
-			for p in [pts[k] + side, pts[k] - side, pts[k]]:
-				zs.append(world.ground(p.x, p.y))
-			var z := maxf(maxf(zs[0], zs[1]), maxf(zs[2], 2.2)) + 0.45
-			var lp := Vector3(pts[k].x + side.x, z, -(pts[k].y + side.y))
-			var rp := Vector3(pts[k].x - side.x, z, -(pts[k].y - side.y))
-			if k > 0:
-				for v in [prev_l, lp, rp, prev_l, rp, prev_r]:
-					st.set_normal(Vector3.UP)
-					st.add_vertex(v)
-			prev_l = lp
-			prev_r = rp
+	for vertex in world.road_surface().vertices:
+		st.set_normal(Vector3.UP)
+		st.add_vertex(vertex)
 	var mi := MeshInstance3D.new()
 	mi.name = "roads"
 	mi.mesh = st.commit()
@@ -156,29 +133,24 @@ static func _roads(world: World, roads: Array) -> MeshInstance3D:
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if not world.road_surface().vertices.is_empty():
+		var body := StaticBody3D.new()
+		body.name = "road-deck-collision"
+		var collider := CollisionShape3D.new()
+		collider.name = "deck-shape"
+		var shape := ConcavePolygonShape3D.new()
+		shape.backface_collision = true
+		shape.set_faces(world.road_surface().vertices)
+		collider.shape = shape
+		body.add_child(collider)
+		mi.add_child(body)
 	return mi
 
 
 ## The samples of one road, every ~12 m (the same ones _roads() drapes its ribbon on): [position, along-road
 ## direction, the ribbon's height there].
 static func _samples(world: World, r: Array) -> Array:
-	var pts := PackedVector2Array()
-	for k in r.size() - 1:
-		var a := Vector2(r[k][0], r[k][1])
-		var b := Vector2(r[k + 1][0], r[k + 1][1])
-		var n := int(a.distance_to(b) / 12.0) + 1
-		for q in n:
-			pts.append(a.lerp(b, float(q) / n))
-	pts.append(Vector2(r[r.size() - 1][0], r[r.size() - 1][1]))
-	var out := []
-	for k in pts.size():
-		var dir := (pts[mini(k + 1, pts.size() - 1)] - pts[maxi(k - 1, 0)]).normalized()
-		var side := Vector2(-dir.y, dir.x) * 4.5
-		var zs := []
-		for p in [pts[k] + side, pts[k] - side, pts[k]]:
-			zs.append(world.ground(p.x, p.y))
-		out.append([pts[k], dir, maxf(maxf(zs[0], zs[1]), maxf(zs[2], 2.2)) + 0.45])
-	return out
+	return RoadSurface.samples(world, r)
 
 
 ## A flat strip from lateral offset `lo` to `hi` (metres from the centre line) between samples k-1 and k, `up` above the ribbon.
@@ -277,8 +249,8 @@ static func _edge_pt(s: Array, lateral: float, up: float) -> Vector3:
 
 ## The deck height at a road point: over the highest of the ground under the ribbon, and 2.2 m over the sea.
 static func deck_z(world: World, p: Vector2, side: Vector2) -> float:
-	return maxf(maxf(world.ground(p.x + side.x, p.y + side.y), world.ground(p.x - side.x, p.y - side.y)),
-		maxf(world.ground(p.x, p.y), 2.2)) + 0.45
+	var surface := world.road_surface().sample(p)
+	return float(surface.height) if surface.on_surface else RoadSurface.deck_height(world, p, side)
 
 
 ## Bridges where a road crosses water (RoadPlanner found them): piers down to the bed every 30 m, and
@@ -555,41 +527,4 @@ static func _palms(world: World, roads: Array, q: Quality) -> MultiMeshInstance3
 ## A stash house by its kind: a barn, a shack on stilts, a dockside warehouse,
 ## a lock-up, tents under the canopy, a quarry shed, a boathouse, a villa.
 static func stash_house(world: World, st: Dictionary) -> Node3D:
-	var k := Buildings.Kit.new("stash-" + st.id)
-	match st.kind:
-		"barn":
-			k.box(Vector3(0, 3.0, 0), Vector3(12, 6, 18), "red")
-			k.gable(Vector3(0, 6.0, 0), 12, 18, 3.5, "metal_rust")
-		"shack":
-			for sx in [-1, 1]:
-				for sz in [-1, 1]:
-					k.box(Vector3(sx * 2.6, 0.9, sz * 2.0), Vector3(0.25, 1.8, 0.25), "wood")
-			k.box(Vector3(0, 3.0, 0), Vector3(6, 2.4, 5), "wood")
-			k.gable(Vector3(0, 4.2, 0), 6, 5, 1.4, "metal_rust")
-		"warehouse":
-			k.box(Vector3(0, 5.0, 0), Vector3(30, 10, 18), "metal")
-			k.box(Vector3(0, 2.2, -9.05), Vector3(6, 4.4, 0.1), "black", false)
-			k.box(Vector3(9, 8.5, -9.1), Vector3(5, 1.2, 0.1), "white", false)  # "7"
-		"lockup":
-			for i in 4:
-				k.box(Vector3(-6 + i * 4.0, 1.4, 0), Vector3(3.8, 2.8, 6), "concrete")
-				k.box(Vector3(-6 + i * 4.0, 1.2, -3.05), Vector3(3.2, 2.4, 0.08), "metal_rust", false)
-		"camp":
-			for p in [[0, 0], [7, 3], [-6, 4]]:
-				k.gable(Vector3(p[0], 0.2, p[1]), 5, 7, 2.6, "green", 0.2)
-			k.box(Vector3(2, 0.5, -6), Vector3(3, 1.0, 2), "wood")
-		"shed":
-			Buildings.shed(k, Vector3(0, 0, 0), 9, 6, "metal_rust")
-		"boathouse":
-			k.box(Vector3(0, 2.5, 0), Vector3(8, 5, 14), "wood")
-			k.gable(Vector3(0, 5.0, 0), 8, 14, 2.0, "metal_rust")
-			k.box(Vector3(0, 0.3, -12), Vector3(3, 0.6, 10), "wood")  # the jetty
-		_:
-			k.box(Vector3(0, 2.0, 0), Vector3(14, 4, 10), "stucco_pink")
-			k.gable(Vector3(0, 4.0, 0), 14, 10, 2.4, "terracotta", 0.8)
-			k.box(Vector3(0, -0.2, -9), Vector3(8, 0.4, 4), "concrete", false)
-	var n := k.finish()
-	var z := world.ground(st.x, st.y)
-	n.position = Vector3(st.x, z, -st.y)
-	n.set_meta("stash", st.id)
-	return n
+	return StashInterior.build(world, st)

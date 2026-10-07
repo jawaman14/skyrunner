@@ -92,7 +92,7 @@ Beyond the prototype:
   the cays. Land use drives the terrain shader, the vegetation (mangroves, jungle, thorn scrub) and
   the physics: buildings are obstacles, kept out of every glide path. The HQs are Club Tropicana
   downtown (the boss's office upstairs), the customs house on the docks with a radar tower, and Los
-  Cuervos' hacienda in the foothills. `--map city`, `--map 0` (classic), `--map N` (generated), or
+  Cuervos' hacienda in the foothills. `--map city` or positive `--map N` (generated), or
   the lobby's map picker; old saves keep their island.
 - **Stash houses.** Eight of them (a farm barn, a mangrove shack, Warehouse 7 on the docks, a lock-up
   in Barrio Chino, a jungle camp, a quarry shed, a boathouse on the cays, a hillside villa). A stash
@@ -229,8 +229,7 @@ Beyond the prototype:
   The goals are measured by the systems themselves (pounds landed, dealers on corners, cash home, a deal
   with the Morettis, loads from the island). A faction that's gone before you deal with it doesn't strand
   a chapter. `--chapter N` skips ahead. *Unlocks: Open* (`--unlocks open`) has every faction and mechanic
-  from the first minute, cocaine included, and starts with a $10,000 float. The old flying campaign on the classic island is still there
-  as *Flying lessons*.
+  from the first minute, cocaine included, and starts with a $10,000 float. The four-chapter *Flying lessons* campaign also runs on Costa Brava.
 - **Logistics: product and cash are somewhere** (SHIFT+H in the aircraft, K at the boss's and
   lieutenant's desks).
   - Loads land in a stash house, and a dealer sells only what's in a stash in his own market.

@@ -9,6 +9,19 @@ func after_each() -> void:
 	World.use_map(0)  # the suite's default island, for whatever runs next
 
 
+func test_checked_short_routes_follow_authored_edges_without_false_tees() -> void:
+	var graph := RoadGraph.new([[[0, 0], [0, 1000], [200, 1000], [200, 0]]])
+	var result := graph.checked_route(Vector2.ZERO, Vector2(200, 0))
+	check(result.reachable)
+	check(RoadGraph.length(result.points) > 2100.0, "short trip must take the authored U, not the speculative 200m tee")
+	var disconnected := RoadGraph.new([[[0, 0], [0, 1000]], [[200, 0], [200, -1000]]])
+	var refused := disconnected.checked_route(Vector2.ZERO, Vector2(200, 0))
+	check(not refused.reachable and refused.points.is_empty() and refused.reason != "")
+	var blocked := graph.checked_route(Vector2(-30, 0), Vector2(200, 0), Callable(), func(a, _b): return a.x >= 0)
+	check(not blocked.reachable and "access" in blocked.reason)
+	check(not graph.checked_route(Vector2(NAN, 0), Vector2.ZERO).reachable)
+
+
 ## A round hill in the middle (steep: 150 m up, about 13% at its steepest), a river along y = 2000 (water
 ## 200 m wide), flat elsewhere.
 func _hill(x: float, y: float) -> float:
@@ -193,3 +206,23 @@ func test_no_road_crosses_a_runway() -> void:
 				check(not hit, "%s: a road runs across the strip" % af.code)
 				if hit:
 					return
+
+func test_checked_geometry_keeps_close_bends_and_real_crossing_junctions() -> void:
+	var roads := [[[0, 0], [25, 0], [25, 25], [200, 25]], [[100, -100], [100, 100]]]
+	var graph := RoadGraph.new(roads)
+	var original_nodes := graph.nodes.duplicate(true)
+	var original_adj := graph.adj.duplicate(true)
+	var checked := graph.checked_network()
+	check(checked.nodes.has(Vector2(25, 0)) and checked.nodes.has(Vector2(25, 25)), "60m legacy merging cannot cut a checked corner")
+	check(checked.nodes.has(Vector2(100, 25)), "real crossing is a junction")
+	var route := graph.checked_route(Vector2.ZERO, Vector2(100, 100))
+	check(route.reachable and route.points.has(Vector2(100, 25)))
+	check(route.points.has(Vector2(25, 0)) and route.points.has(Vector2(25, 25)))
+	check_eq(graph.nodes, original_nodes)
+	check_eq(graph.adj, original_adj, "legacy simulation topology is unchanged")
+	check_eq(checked, graph.checked_network(), "checked topology is cached")
+
+func test_checked_nearby_parallel_roads_do_not_become_connected() -> void:
+	var graph := RoadGraph.new([[[0, 0], [100, 0]], [[0, 40], [100, 40]]])
+	var result := graph.checked_route(Vector2.ZERO, Vector2(100, 40))
+	check(not result.reachable and result.points.is_empty(), "nearby endpoints cannot invent a connection")

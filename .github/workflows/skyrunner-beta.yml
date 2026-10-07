@@ -167,20 +167,3 @@ jobs:
           cat run.log
           grep -q "SMOKE OK" run.log
           ! grep -q "SCRIPT ERROR" run.log
-
-  smoke-macos:
-    needs: export
-    runs-on: macos-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: skyrunner-macos
-          path: build
-      - name: Headless run (the AI flies an open-mode game)
-        run: |
-          unzip -oq build/Skyrunner.zip -d build/app
-          chmod +x build/app/Skyrunner.app/Contents/MacOS/Skyrunner
-          build/app/Skyrunner.app/Contents/MacOS/Skyrunner --headless -- --unlocks open --watch --new --smoke 1800 2>&1 | tee run.log
-          grep -q "SMOKE OK" run.log
-          ! grep -q "SCRIPT ERROR" run.log

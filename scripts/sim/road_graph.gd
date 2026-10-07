@@ -17,15 +17,21 @@ const TEE_M := 450.0
 var nodes: Array = []  ## Vector2
 var adj: Array = []  ## node -> [[other, length], ...]
 var road_nodes := 0  ## nodes before the stubs
+var _authored_roads: Array = []
+var _checked_graph: RoadGraph
+var _merge_m := MERGE_M
+var _exact_bins := {}
+var _network_edges := {}  ## authored road/track edges, excluding speculative T links/stubs
 
 
 func _init(roads: Array, places: Array = []) -> void:
+	_authored_roads = roads.duplicate(true)
 	for r in roads:
 		var prev := -1
 		for p in r:
 			var i := _node(Vector2(p[0], p[1]))
 			if prev >= 0 and prev != i:
-				_link(prev, i)
+				_link(prev, i, true)
 			prev = i
 	# a loose end near another road: a T junction
 	for i in nodes.size():
@@ -59,15 +65,26 @@ static func tracks(points: Array) -> RoadGraph:
 		d.sort_custom(func(a, b): return a[0] < b[0])
 		for k in mini(3, d.size()):
 			if not g._linked(i, d[k][1]):
-				g._link(i, d[k][1])
+				g._link(i, d[k][1], true)
 	g.road_nodes = g.nodes.size()
 	return g
 
 
 func _node(p: Vector2) -> int:
+	if _merge_m <= 0.05:
+		var cell := Vector2i(floori(p.x / 0.05), floori(p.y / 0.05))
+		for x in range(cell.x - 1, cell.x + 2):
+			for y in range(cell.y - 1, cell.y + 2):
+				for i in _exact_bins.get(Vector2i(x, y), []):
+					if nodes[i].distance_to(p) < _merge_m: return i
+		var index := nodes.size()
+		nodes.append(p)
+		adj.append([])
+		if not _exact_bins.has(cell): _exact_bins[cell] = []
+		_exact_bins[cell].append(index)
+		return index
 	for i in nodes.size():
-		if nodes[i].distance_to(p) < MERGE_M:
-			return i
+		if nodes[i].distance_to(p) < _merge_m: return i
 	nodes.append(p)
 	adj.append([])
 	return nodes.size() - 1
@@ -80,10 +97,13 @@ func _linked(a: int, b: int) -> bool:
 	return false
 
 
-func _link(a: int, b: int) -> void:
+func _link(a: int, b: int, authored := false) -> void:
 	var d: float = nodes[a].distance_to(nodes[b])
 	adj[a].append([b, d])
 	adj[b].append([a, d])
+	if authored:
+		_network_edges[Vector2i(a, b)] = true
+		_network_edges[Vector2i(b, a)] = true
 
 
 ## Tie a place to the nearest road node; returns the new node.
@@ -112,8 +132,8 @@ func nearest(p: Vector2, roads_only := true) -> int:
 ## called as penalty(from: Vector2, to: Vector2, length: float) -> float for every edge the search
 ## considers and returns extra metres of cost for it (never negative, so the straight-line
 ## heuristic stays admissible): a hill, a checkpoint, a place that is hot.
-func path(a: int, b: int, penalty := Callable()) -> Array:
-	if a < 0 or b < 0:
+func path(a: int, b: int, penalty := Callable(), clear := Callable()) -> Array:
+	if a < 0 or b < 0 or a >= nodes.size() or b >= nodes.size():
 		return []
 	if a == b:
 		return [a]
@@ -135,6 +155,8 @@ func path(a: int, b: int, penalty := Callable()) -> Array:
 			return out
 		open.erase(cur)
 		for e in adj[cur]:
+			if clear.is_valid() and not clear.call(nodes[cur], nodes[e[0]]):
+				continue
 			var ng: float = g[cur] + e[1]
 			if penalty.is_valid():
 				ng += maxf(0.0, float(penalty.call(nodes[cur], nodes[e[0]], e[1])))
@@ -162,6 +184,39 @@ func route(from: Vector2, to: Vector2, penalty := Callable()) -> PackedVector2Ar
 	if out[out.size() - 1].distance_to(to) > 1.0:
 		out.append(to)
 	return out
+
+
+## Checked callers receive explicit failure, never an implicit straight line.
+## `clear(a,b)` validates access and graph edges against their own world data.
+## Legacy route() remains unchanged until each simulation consumer is measured.
+func checked_route(from: Vector2, to: Vector2, penalty := Callable(), clear := Callable()) -> Dictionary:
+	if not _authored_roads.is_empty():
+		return checked_network().checked_route(from, to, penalty, clear)
+	var failure := {"reachable": false, "points": PackedVector2Array(), "reason": "No connected travel network."}
+	if not from.is_finite() or not to.is_finite():
+		failure.reason = "Invalid route endpoints."
+		return failure
+	var a := nearest(from)
+	var b := nearest(to)
+	if a < 0 or b < 0:
+		return failure
+	if clear.is_valid() and (not clear.call(from, nodes[a]) or not clear.call(nodes[b], to)):
+		failure.reason = "An access leg is obstructed."
+		return failure
+	var indices := {}
+	for i in nodes.size(): indices[nodes[i]] = i
+	var allowed := func(start: Vector2, end: Vector2) -> bool:
+		return _network_edges.has(Vector2i(indices[start], indices[end])) and (not clear.is_valid() or clear.call(start, end))
+	var route_nodes := path(a, b, penalty, allowed)
+	if route_nodes.is_empty():
+		return failure
+	var points := PackedVector2Array([from])
+	for index in route_nodes:
+		if points[-1].distance_to(nodes[index]) > 0.01:
+			points.append(nodes[index])
+	if points[-1].distance_to(to) > 0.01:
+		points.append(to)
+	return {"reachable": true, "points": points, "reason": ""}
 
 
 ## How close the segment a-b comes to p.
@@ -207,3 +262,56 @@ func chokepoint(pts: PackedVector2Array, min_d := 800.0) -> Vector2:
 
 func connected(a: Vector2, b: Vector2) -> bool:
 	return not path(nearest(a, false), nearest(b, false)).is_empty()
+
+## Geometry-preserving checked topology, reusing the same A* and penalty hook.
+## Legacy nodes/routes remain untouched; only actual crossings become junctions.
+func checked_network() -> RoadGraph:
+	if _authored_roads.is_empty(): return self
+	if _checked_graph != null: return _checked_graph
+	var segments := []
+	for road in _authored_roads:
+		for i in road.size() - 1:
+			var a := Vector2(road[i][0], road[i][1])
+			var b := Vector2(road[i + 1][0], road[i + 1][1])
+			if a.distance_to(b) > 0.01:
+				segments.append({"a": a, "b": b, "points": [a, b], "bounds": Rect2(a.min(b), (b - a).abs()).grow(0.05)})
+	var bins := {}
+	var pairs := {}
+	for i in segments.size():
+		var bounds: Rect2 = segments[i].bounds
+		for x in range(floori(bounds.position.x / 256.0), floori(bounds.end.x / 256.0) + 1):
+			for y in range(floori(bounds.position.y / 256.0), floori(bounds.end.y / 256.0) + 1):
+				var cell := Vector2i(x, y)
+				for j in bins.get(cell, []): pairs[Vector2i(j, i)] = true
+				if not bins.has(cell): bins[cell] = []
+				bins[cell].append(i)
+	var ordered: Array = pairs.keys()
+	ordered.sort_custom(func(a, b): return a.x < b.x if a.x != b.x else a.y < b.y)
+	for pair in ordered:
+		var first: Dictionary = segments[pair.x]
+		var second: Dictionary = segments[pair.y]
+		if not first.bounds.intersects(second.bounds): continue
+		var crossing = Geometry2D.segment_intersects_segment(first.a, first.b, second.a, second.b)
+		if crossing != null:
+			first.points.append(crossing)
+			second.points.append(crossing)
+		else:
+			# Collinear overlap still splits at real endpoints, never a nearby T.
+			for point in [first.a, first.b]:
+				if seg_distance(second.a, second.b, point) < 0.05: second.points.append(point)
+			for point in [second.a, second.b]:
+				if seg_distance(first.a, first.b, point) < 0.05: first.points.append(point)
+	var graph := RoadGraph.new([])
+	graph._merge_m = 0.05
+	for segment in segments:
+		var start: Vector2 = segment.a
+		var points: Array = segment.points
+		points.sort_custom(func(a, b): return start.distance_squared_to(a) < start.distance_squared_to(b))
+		var previous := -1
+		for point in points:
+			var index := graph._node(point)
+			if previous >= 0 and previous != index and not graph._linked(previous, index): graph._link(previous, index, true)
+			previous = index
+	graph.road_nodes = graph.nodes.size()
+	_checked_graph = graph
+	return graph

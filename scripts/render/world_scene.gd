@@ -28,6 +28,8 @@ var time_scale := 0.0
 var night := 0.0  ## 0 day .. 1 full night, for other nodes (aircraft lights)
 var fx: WeatherFX  ## rain, lightning, cloud deck, moon phase (Session.weather)
 var ambient_base := 0.7  ## ambient energy before lightning
+var access_overlay: AccessOverlay
+var _previous_collision_debug := false
 
 
 func setup(world_: World, q: Quality) -> WorldScene:
@@ -68,6 +70,22 @@ func setup(world_: World, q: Quality) -> WorldScene:
 	add_child(aer)
 	set_hour(hour)
 	return self
+
+
+func toggle_access_overlay() -> void:
+	if access_overlay == null:
+		access_overlay = AccessOverlay.make(world)
+		add_child(access_overlay)
+		access_overlay.visible = false
+	if not access_overlay.visible:
+		_previous_collision_debug = get_tree().debug_collisions_hint
+	access_overlay.visible = not access_overlay.visible
+	get_tree().debug_collisions_hint = true if access_overlay.visible else _previous_collision_debug
+
+
+func _exit_tree() -> void:
+	if access_overlay != null and access_overlay.visible:
+		get_tree().debug_collisions_hint = _previous_collision_debug
 
 
 func _build_environment() -> void:

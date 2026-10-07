@@ -42,6 +42,53 @@ func _key(k: int, down: bool) -> void:
 	Input.parse_input_event(ev)
 
 
+func test_interaction_wall_occlusion_and_activation_recheck() -> void:
+	var root := Node3D.new()
+	_tree().root.add_child(root)
+	var w := Walker.new().setup(World.new())
+	root.add_child(w)
+	w.position = Vector3(0, 100, 0)
+	w.set_physics_process(false)
+	var area := Area3D.new()
+	area.position = Vector3(0, 101.65, -2)
+	area.collision_layer = 4
+	area.collision_mask = 0
+	area.set_meta("action", "jobs")
+	var target_shape := CollisionShape3D.new()
+	var sphere := SphereShape3D.new()
+	sphere.radius = 1.0
+	target_shape.shape = sphere
+	area.add_child(target_shape)
+	root.add_child(area)
+	var wall := StaticBody3D.new()
+	wall.position = Vector3(0, 101.65, -1)
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(2, 2, 0.2)
+	shape.shape = box
+	wall.add_child(shape)
+	root.add_child(wall)
+	await _frames(3)
+	check(w.reach.overlaps_area(area), "proximity/facing alone would allow this through-wall interaction")
+	w._update_focus()
+	check(w.focus == null, "solid wall blocks selection")
+	shape.disabled = true
+	await _frames(3)
+	w._update_focus()
+	check(w.focus == area, "open passage permits selection")
+	var uses := []
+	w.used.connect(func(action, _area): uses.append(action))
+	shape.disabled = false
+	await _frames(3)
+	w.use()
+	check(uses.is_empty(), "a wall appearing after selection blocks activation")
+	shape.disabled = true
+	await _frames(3)
+	w.use()
+	check_eq(uses, ["jobs"], "unobstructed activation succeeds once")
+	root.free()
+
+
 func _stand_before(w: Walker, area: Area3D) -> void:
 	var p := area.global_position
 	var back: Vector3 = area.get_parent().global_transform.basis.z.normalized()  # buildings face local -z
