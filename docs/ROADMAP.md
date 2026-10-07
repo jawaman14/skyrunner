@@ -42,6 +42,10 @@ Current asset continuation: #227 adds HAR workshop equipment; follow with coasta
 
 Campaign polish is implemented in draft [#229](https://github.com/jawaman14/skyrunner/pull/229), [#230](https://github.com/jawaman14/skyrunner/pull/230) and [#231](https://github.com/jawaman14/skyrunner/pull/231). [#232](https://github.com/jawaman14/skyrunner/pull/232) fixes debris expiry found during regression. The integrated draft tree passes 1,002 desktop tests; all 40 paired campaign seeds match the previous baseline. See [the validation report](CAMPAIGN_POLISH_2026-10-07.md). These PRs are not merged; human acceptance and the asset-baseline dependency remain pending.
 
+## Owner-selected product continuation — 8 October 2026
+
+See [PLAYER_DIRECTION.md](PLAYER_DIRECTION.md) and the [discussion-to-delivery audit](PLAYER_DIRECTION_DELIVERY.md). Product order is employed pilot/first aircraft, configured automation, faction competition/civilian economy, then co-op/competitive teamwork. Start flying a legitimate employer’s aircraft; smuggling becomes unavoidable in the main story. Existing foundations and reliability gates remain necessary; older queue recommendations yield to these approved choices.
+
 ## Ordered implementation queue
 
 The approved empire-led continuation is recorded in [EMPIRE_MILESTONE.md](EMPIRE_MILESTONE.md).
