@@ -27,6 +27,7 @@ func _initialize() -> void:
 	var graphics: String = a[4] if a.size() > 4 else "medium"
 	max_s = float(a[5]) if a.size() > 5 else 900.0
 	var hour := float(a[6]) if a.size() > 6 else 16.5
+	World.use_map(MapCity.SEED)
 	var st = Tactical.setup_trial(zone, law, tactic, seed)
 	s = st[0]
 	if a.size() > 7:  # weather: clear | cloud | storm (wind from the table's middle), optional moon 0..1

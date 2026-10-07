@@ -48,7 +48,7 @@ func _initialize() -> void:
 		sess.update(1.0)
 	var C := MapCity.CITY_C
 	shots = [
-		[8.0, _aerial.bind(18.4, "San Telmo at sunset: pastel deco, neon trim, palm-lined boulevards"), [],
+		[8.0, _aerial.bind(18.4, "San Telmo after dusk: period buildings and coastal roads"), [],
 			[[Vector3(C.x + 2600, 380, -(C.y - 2400)), Vector3(C.x, 0, -C.y)], [Vector3(C.x + 900, 160, -(C.y - 1100)), Vector3(C.x - 300, 10, -(C.y + 300))]]],
 		[9.0, _fight, [], null],
 		[9.0, _desk.bind(Roles.LIEUTENANT, "The lieutenant's desk: our soldiers, their guns and orders, who holds the streets - AI until someone sits down"),
@@ -141,10 +141,12 @@ func _picker() -> void:
 	var p := SeatPicker.new()
 	_swap(p)
 	p.setup(link)
-	_cap("Join mid-game: every seat the AI is playing is yours for the taking")
+	_cap("Staged local roster: available seats, not a real network session")
 
 
 func _on_foot() -> void:
+	sess.ground.arsenal("org").stock.rifle += 1  # staged demonstration equipment
+	sess.ground.arsenal("org").ammo += 120
 	var p := _pilot(17.6)
 	p.hud.visible = true
 	p._toggle_on_foot()
@@ -155,7 +157,7 @@ func _on_foot() -> void:
 		var q = _squad_at("rival", "foot", Vector2(xy[0], xy[1]) + Vector2(10, 45))
 		q.state = "holding"
 		p._sync_squads(0.1)
-	_cap("On foot with a rifle from the armoury: they shoot back")
+	_cap("Staged armoury rifle: on-foot aiming and combat feedback")
 
 
 func _shoot() -> void:
@@ -172,7 +174,7 @@ func _banner() -> void:
 	var p := _pilot(16.5)
 	p.hud.visible = true
 	p.hud.show_banner("Run complete", "+$12,400", UIStyle.PINK)
-	_cap("A run pays off")
+	_cap("Staged reward banner: an example of delivery feedback")
 
 
 func _process(dt: float) -> bool:

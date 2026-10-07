@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-08",
+  "baseline": "229d1bb80695dd420db771f603cb19f424bc4a52",
+  "renderer": "gl_compatibility",
+  "scripted": true,
+  "audio": false,
+  "clips": [
+    {
+      "file": "opening.mp4",
+      "sha256": "b907380fa8e4afb1b21503f75919a35de90a49d77eb007147853a57104f1488b",
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "15/1"
+        }
+      ],
+      "format": {
+        "duration": "29.066667",
+        "size": "436226"
+      }
+    },
+    {
+      "file": "interface.mp4",
+      "sha256": "57f98f520819fc500f5cc35d1bfc679b4f35e0fbe1f7487803cd85781083a2f7",
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "15/1"
+        }
+      ],
+      "format": {
+        "duration": "80.533333",
+        "size": "3721481"
+      }
+    },
+    {
+      "file": "coast-logistics.mp4",
+      "sha256": "ab2324ff1e791535f69c1cab7892a82ba94d3155997e6921edd367bd2236007c",
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "15/1"
+        }
+      ],
+      "format": {
+        "duration": "76.666667",
+        "size": "9585074"
+      }
+    },
+    {
+      "file": "turf-war.mp4",
+      "sha256": "717f78118d776b5129fa87964aeffccc4249d4753ec14d62be25a44479954c58",
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "15/1"
+        }
+      ],
+      "format": {
+        "duration": "63.600000",
+        "size": "3849148"
+      }
+    },
+    {
+      "file": "flight-police.mp4",
+      "sha256": "1bac8add12eb3926a5ea0de4e0edd783363cdcb16848c8e58c703e0f62ea5e59",
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "15/1"
+        }
+      ],
+      "format": {
+        "duration": "90.066667",
+        "size": "12175117"
+      }
+    },
+    {
+      "file": "services.mp4",
+      "sha256": "4f4f02ea378e6734ba283bcae73f0e087699f5ab169bd33600a341ec5cc42559",
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "15/1"
+        }
+      ],
+      "format": {
+        "duration": "35.066667",
+        "size": "521153"
+      }
+    }
+  ]
+}
