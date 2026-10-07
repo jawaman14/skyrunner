@@ -4,9 +4,11 @@ extends Node3D
 static func make(world: World) -> AccessOverlay:
 	var root := AccessOverlay.new()
 	root.name = "access-diagnostics"
-	var sites := world.site_records()
+	var sites := SiteAccess.new(world, world.site_records()).verified_records()
 	var issues := SiteLayout.diagnostics(world, sites)
 	var bad := {}
+	for site in sites:
+		if not site.connection_verified: bad[site.id] = str(site.connection_reason) + " "
 	for issue in issues:
 		bad[issue.id] = str(bad.get(issue.id, "")) + str(issue.reason) + " "
 	var mesh := ImmediateMesh.new()
@@ -26,9 +28,17 @@ static func make(world: World) -> AccessOverlay:
 		_line(mesh, loading - Vector3(0, 0, 3), loading + Vector3(0, 0, 3), Color.YELLOW)
 		if site.connector is Vector2:
 			var connector: Vector2 = site.connector
-			_line(mesh, site.approach[0], Vector3(connector.x, world.travel_surface(connector.x, connector.y) + 0.1, -connector.y), Color(1, 0.65, 0.15))
+			if site.connection_verified:
+				for key in ["walking_connector", "loading_connector"]:
+					var points: PackedVector2Array = site[key]
+					for i in points.size() - 1:
+						var a := Vector3(points[i].x, world.travel_surface(points[i].x, points[i].y) + 0.1, -points[i].y)
+						var b := Vector3(points[i + 1].x, world.travel_surface(points[i + 1].x, points[i + 1].y) + 0.1, -points[i + 1].y)
+						_line(mesh, a, b, Color.CYAN if key == "walking_connector" else Color.YELLOW)
+			else:
+				_line(mesh, site.approach[0], Vector3(connector.x, world.travel_surface(connector.x, connector.y) + 0.1, -connector.y), Color(1, 0.65, 0.15))
 		var label := Label3D.new()
-		label.text = str(site.id) + "\n" + str(bad.get(site.id, "Connector candidate: routing unverified"))
+		label.text = str(site.id) + "\n" + str(bad.get(site.id, "Access legs checked; road network/end-to-end route unverified"))
 		label.font_size = 20
 		label.pixel_size = 0.02
 		label.modulate = color

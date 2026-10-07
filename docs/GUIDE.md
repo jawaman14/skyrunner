@@ -621,3 +621,11 @@ review and returns its result to the conversation. Leaving or removing the
 conversation while reviewing sends no command. A confirmed command still waits
 for its correlated acknowledgement and refreshed state before success narration.
 Other conversation actions retain their existing host validation and result handling.
+
+### Developer access diagnostics
+
+Ctrl+F2 shows site entrances, footprints and loading areas. Cyan/yellow connector
+paths passed the primary-footprint and terrain/deck checks; orange candidates
+show their failure or remaining verification reason. Checked access legs are not
+proof of an end-to-end public-road route or complete scenery collision. Remote
+locations retain separate access requirements rather than acquiring a new road.
