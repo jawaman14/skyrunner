@@ -74,13 +74,13 @@ func refresh() -> void:
 		h.add_child(cap)
 		var plus := Button.new()
 		plus.text = "+"
-		plus.focus_mode = Control.FOCUS_NONE
+		plus.focus_mode = Control.FOCUS_ALL
 		plus.disabled = item == "medkit" and not near_aircraft.call()
 		plus.pressed.connect(func(): _act(foot.pack_add(item, STEP.get(item, 1))))
 		h.add_child(plus)
 		var minus := Button.new()
 		minus.text = "-"
-		minus.focus_mode = Control.FOCUS_NONE
+		minus.focus_mode = Control.FOCUS_ALL
 		minus.disabled = have == 0 or item == "medkit"
 		minus.pressed.connect(func(): _act(foot.pack_drop(item, STEP.get(item, 1))))
 		h.add_child(minus)

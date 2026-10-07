@@ -18,10 +18,14 @@ var close_button: Button
 var confirmation: ConfirmBox
 var _pending_action := {}
 var feedback: Label
+var _return_focus: WeakRef
+var _palette := ""
+var _feedback_success := true
 
 
 func setup(sess: Session) -> GameMenu:
 	s = sess
+	_palette = UIStyle.palette
 	theme = UIStyle.theme()
 	add_theme_stylebox_override("panel", UIStyle.surface_box(Color(0.03, 0.04, 0.06, 0.97), true))
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -84,13 +88,13 @@ func _build() -> void:
 
 
 func open() -> void:
+	if is_inside_tree():
+		var owner := get_viewport().gui_get_focus_owner()
+		_return_focus = weakref(owner) if owner != null and not is_ancestor_of(owner) else null
 	feedback.visible = false
 	visible = true
 	refresh()
-	# A predictable initial focus makes keyboard/controller navigation visible
-	# immediately instead of leaving focus wherever the previous screen had it.
-	if close_button != null and close_button.is_inside_tree():
-		close_button.grab_focus()
+	focus_action()
 
 
 func close() -> void:
@@ -98,7 +102,62 @@ func close() -> void:
 		confirmation.key("esc")
 	_pending_action = {}
 	visible = false
+	if _return_focus != null:
+		var owner: Control = _return_focus.get_ref() as Control
+		if owner != null and owner.is_inside_tree() and owner.is_visible_in_tree():
+			owner.grab_focus()
 	closed.emit()
+
+
+## Focus the first task control, retaining an explicit Close when content is empty.
+func focus_action() -> void:
+	var target := _first_focus(content)
+	if target == null:
+		target = _first_focus(hints)
+	if target == null:
+		target = close_button
+	if target != null and target.is_inside_tree():
+		target.grab_focus()
+
+
+static func _first_focus(node: Node) -> Control:
+	for child in node.get_children():
+		if child is Control and child.visible:
+			if child.focus_mode == Control.FOCUS_ALL and not (child is BaseButton and child.disabled):
+				return child
+			var nested := _first_focus(child)
+			if nested != null:
+				return nested
+	return null
+
+
+func _input(event: InputEvent) -> void:
+	if not visible or not is_inside_tree() or (confirmation != null and confirmation.visible):
+		return
+	var owner := get_viewport().gui_get_focus_owner()
+	if owner != null and not is_ancestor_of(owner):
+		return # A higher modal owns input.
+	if event.is_action_pressed("ui_cancel") or (event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_B):
+		close()
+		get_viewport().set_input_as_handled()
+		return
+	if owner == null or not content.is_ancestor_of(owner) or not (owner is DataTable or owner is ItemList):
+		return
+	for pair in [["ui_up", "up"], ["ui_down", "down"], ["ui_left", "left"], ["ui_right", "right"], ["ui_accept", "enter"]]:
+		if event.is_action_pressed(pair[0], true):
+			if not (event is InputEventKey and event.echo and pair[1] == "enter"):
+				key(pair[1])
+			get_viewport().set_input_as_handled()
+			return
+
+
+func _process(_dt: float) -> void:
+	if visible and _palette != UIStyle.palette:
+		_palette = UIStyle.palette
+		theme = UIStyle.theme()
+		title.add_theme_color_override("font_color", UIStyle.ACCENT)
+		feedback.add_theme_color_override("font_color", UIStyle.GREEN if _feedback_success else UIStyle.RED)
+		refresh()
 
 
 func refresh() -> void:
@@ -111,6 +170,7 @@ func key(_k: String) -> void:
 
 ## A command result stays beside the action until the panel is reopened.
 func show_feedback(message: String, success: bool) -> void:
+	_feedback_success = success
 	feedback.text = ("Done: " if success else "Not completed: ") + message
 	feedback.add_theme_color_override("font_color", UIStyle.GREEN if success else UIStyle.RED)
 	feedback.visible = true

@@ -46,7 +46,16 @@ func _ready() -> void:
 	root.add_child(panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)
-	panel.add_child(v)
+	var shell := VBoxContainer.new()
+	panel.add_child(shell)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	shell.add_child(scroll)
+	scroll.add_child(v)
+	var leave := Button.new()
+	leave.text = "Close [Esc]"
+	leave.pressed.connect(close)
+	shell.add_child(leave)
 	v.add_child(UIStyle.title("Logistics", 28, UIStyle.ACCENT))
 	v.add_child(UIStyle.caption("Product sells only where it sits; wages and loads are paid from the club's safe; the growers want cash on the strip."))
 	fuel_label = UIStyle.caption("")
@@ -70,12 +79,12 @@ func _ready() -> void:
 		order.add_child(c)
 	var go := Button.new()
 	go.text = "Truck it"
-	go.focus_mode = Control.FOCUS_NONE
+	go.focus_mode = Control.FOCUS_ALL
 	go.pressed.connect(_send)
 	order.add_child(go)
 	var home := Button.new()
 	home.text = "All cash home"
-	home.focus_mode = Control.FOCUS_NONE
+	home.focus_mode = Control.FOCUS_ALL
 	home.pressed.connect(_all_home)
 	order.add_child(home)
 	var rnd := HBoxContainer.new()
@@ -88,7 +97,7 @@ func _ready() -> void:
 	for spec in [["Add stop", _round_add], ["Clear", _round_clear], ["Collect cash round", _round_cash], ["Deliver round", _round_goods]]:
 		var rb := Button.new()
 		rb.text = spec[0]
-		rb.focus_mode = Control.FOCUS_NONE
+		rb.focus_mode = Control.FOCUS_ALL
 		rb.pressed.connect(spec[1])
 		rnd.add_child(rb)
 	if pilot:
@@ -97,12 +106,12 @@ func _ready() -> void:
 		v.add_child(bags)
 		var load_b := Button.new()
 		load_b.text = "Load cash bags here (C)"
-		load_b.focus_mode = Control.FOCUS_NONE
+		load_b.focus_mode = Control.FOCUS_ALL
 		load_b.pressed.connect(func(): _act(cmd_fn.call("load_cash", {"amount": amount.value if amount.value > 0 else 1e12})))
 		bags.add_child(load_b)
 		var unload_b := Button.new()
 		unload_b.text = "Unload the bags here (U)"
-		unload_b.focus_mode = Control.FOCUS_NONE
+		unload_b.focus_mode = Control.FOCUS_ALL
 		unload_b.pressed.connect(func(): _act(cmd_fn.call("unload_cash", {})))
 		bags.add_child(unload_b)
 	var works := HBoxContainer.new()
@@ -113,7 +122,7 @@ func _ready() -> void:
 		var wb := Button.new()
 		wb.text = StashWorks.WORKS[w].name
 		wb.tooltip_text = StashWorks.WORKS[w].blurb
-		wb.focus_mode = Control.FOCUS_NONE
+		wb.focus_mode = Control.FOCUS_ALL
 		wb.pressed.connect(_build_works.bind(w))
 		works.add_child(wb)
 	v.add_child(UIStyle.caption("ON THE ROAD"))
@@ -124,6 +133,7 @@ func _ready() -> void:
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(status)
 	refresh()
+	what_ob.grab_focus.call_deferred()
 
 
 func _build_works(what: String) -> void:
@@ -151,6 +161,8 @@ func refresh() -> void:
 			float(fu.ground), float(fu.avgas), int(round(float(fu.trend) * 100.0)), Py.money(int(fu.spent))]
 	rows.add_child(UIStyle.label("%-26s %-6s %9s %9s %9s %10s" % ["", "market", "coke lb", "grass lb", "acid", "cash"], 14, UIStyle.DIM, UIStyle.mono()))
 	var ids: Array = lv.sites.filter(func(s): return not s.burned).map(func(s): return s.id)
+	var keep_from: String = str(_sites[from_ob.selected]) if from_ob.selected >= 0 and from_ob.selected < _sites.size() else ""
+	var keep_to: String = str(_dests[to_ob.selected]) if to_ob.selected >= 0 and to_ob.selected < _dests.size() else Logistics.HQ
 	var rebuild: bool = ids != _sites
 	if rebuild:
 		_sites = []
@@ -176,7 +188,8 @@ func refresh() -> void:
 		for b in BUYERS:
 			_dests.append(b[0])
 			to_ob.add_item("sell: " + b[1])
-		to_ob.select(_dests.size() - 4)  # the club
+		from_ob.select(_sites.find(keep_from) if _sites.has(keep_from) else 0)
+		to_ob.select(_dests.find(keep_to) if _dests.has(keep_to) else _dests.find(Logistics.HQ))
 	for t in lv.trucks:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
@@ -187,7 +200,7 @@ func refresh() -> void:
 		if bool(lv.get("war", false)) and not t.get("escort", false):
 			var b := Button.new()
 			b.text = "Escort"
-			b.focus_mode = Control.FOCUS_NONE
+			b.focus_mode = Control.FOCUS_ALL
 			var id: int = int(t.id)
 			b.pressed.connect(func(): _act(cmd_fn.call("escort_truck", {"job_id": id})))
 			row.add_child(b)
@@ -302,8 +315,12 @@ func _process(_dt: float) -> void:
 
 
 func _input(ev: InputEvent) -> void:
+	if ev.is_action_pressed("ui_cancel"):
+		close()
+		get_viewport().set_input_as_handled()
+		return
 	if ev is InputEventKey and ev.pressed and not ev.echo:
-		match ev.physical_keycode:
+		match ev.physical_keycode if ev.physical_keycode else ev.keycode:
 			KEY_ESCAPE, KEY_H:
 				close()
 			KEY_C:
@@ -312,6 +329,8 @@ func _input(ev: InputEvent) -> void:
 			KEY_U:
 				if pilot:
 					_act(cmd_fn.call("unload_cash", {}))
+			_:
+				return
 		get_viewport().set_input_as_handled()
 
 

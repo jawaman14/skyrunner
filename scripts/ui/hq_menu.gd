@@ -53,7 +53,7 @@ func _build() -> void:
 			["Raise car", "raise_car"], ["Raise truck", "raise_truck"]]:
 		var btn := Button.new()
 		btn.text = b[0]
-		btn.focus_mode = Control.FOCUS_NONE
+		btn.focus_mode = Control.FOCUS_ALL
 		btn.pressed.connect(key.bind(b[1]))
 		squad_buttons.add_child(btn)
 	content.add_child(squad_buttons)

@@ -38,7 +38,7 @@ func _build() -> void:
 	left.add_child(UIStyle.caption("Stations"))
 	stations = GameMenu.make_table([{"title": "Station", "min": 120}, {"title": "Arm", "align": "right", "mono": true, "min": 64},
 		{"title": "Load", "align": "right", "mono": true, "min": 110}, {"title": "Aboard", "expand": true, "min": 160}])
-	stations.focus_mode = Control.FOCUS_NONE
+	stations.focus_mode = Control.FOCUS_ALL
 	stations.size_flags_vertical = Control.SIZE_FILL
 	stations.custom_minimum_size = Vector2(0, 200)
 	left.add_child(stations)
@@ -94,27 +94,27 @@ func _build() -> void:
 	for p in [["25%", 0.25], ["50%", 0.5], ["75%", 0.75], ["Full", 1.0]]:
 		var b := Button.new()
 		b.text = p[0]
-		b.focus_mode = Control.FOCUS_NONE
+		b.focus_mode = Control.FOCUS_ALL
 		var frac: float = p[1]
 		b.pressed.connect(func(): _set_fuel(s.loadout.mass.fuel_capacity_lb() * frac))
 		presets.add_child(b)
 	var rb := Button.new()
 	rb.text = "Route +30 min"
 	rb.tooltip_text = "Enough for the first job's route plus a 30-minute reserve"
-	rb.focus_mode = Control.FOCUS_NONE
+	rb.focus_mode = Control.FOCUS_ALL
 	rb.pressed.connect(_route_fuel)
 	presets.add_child(rb)
 	right.add_child(presets)
 	var crew := HBoxContainer.new()
 	ferry_btn = Button.new()
 	ferry_btn.text = "Fill ferry tank [F]"
-	ferry_btn.focus_mode = Control.FOCUS_NONE
+	ferry_btn.focus_mode = Control.FOCUS_ALL
 	ferry_btn.pressed.connect(func(): key("f"))
 	crew.add_child(ferry_btn)
 	var lm := Button.new()
 	lm.text = "Loadmaster $%d [A]" % Session.LOADMASTER_FEE
 	lm.tooltip_text = "Balances the load for you, heaviest first"
-	lm.focus_mode = Control.FOCUS_NONE
+	lm.focus_mode = Control.FOCUS_ALL
 	lm.pressed.connect(func(): key("a"))
 	crew.add_child(lm)
 	right.add_child(crew)
@@ -182,7 +182,7 @@ func _refresh_items() -> void:
 		for it in items:
 			items_box.add_child(UIStyle.label("", 14, UIStyle.WHITE, UIStyle.mono()))
 			var ob := OptionButton.new()
-			ob.focus_mode = Control.FOCUS_NONE
+			ob.focus_mode = Control.FOCUS_ALL
 			ob.fit_to_longest_item = true
 			var iid: int = it.id
 			ob.item_selected.connect(func(idx): _picked(iid, ob.get_item_id(idx)))

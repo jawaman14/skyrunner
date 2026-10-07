@@ -24,7 +24,11 @@ func _build() -> void:
 		{"title": "Price", "align": "right", "mono": true, "min": 90},
 		{"title": "What it does", "expand": true, "ratio": 4, "min": 260},
 	])
-	lot.row_activated.connect(func(_i): key("enter"))
+	lot.row_selected.connect(func(_i): focus = 0)
+	lot.focus_entered.connect(func(): focus = 0)
+	lot.row_activated.connect(func(_i):
+		focus = 0
+		key("enter"))
 	lot.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	lot.size_flags_stretch_ratio = 2.2
 	content.add_child(lot)
@@ -34,7 +38,11 @@ func _build() -> void:
 		{"title": "Resale", "align": "right", "mono": true, "min": 90},
 		{"title": "Status", "expand": true, "ratio": 4, "min": 260},
 	])
-	mine.row_activated.connect(func(_i): key("enter"))
+	mine.row_selected.connect(func(_i): focus = 1)
+	mine.focus_entered.connect(func(): focus = 1)
+	mine.row_activated.connect(func(_i):
+		focus = 1
+		key("enter"))
 	mine.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(mine)
 
@@ -66,6 +74,9 @@ func refresh() -> void:
 	var fl: Dictionary = v.fleet
 	var keep_l := lot.selected_row()
 	var keep_m := mine.selected_row()
+	var lot_id: String = str(lot_rows[keep_l].id) if keep_l >= 0 and keep_l < lot_rows.size() else ""
+	var serial: int = int(my_rows[keep_m].serial) if keep_m >= 0 and keep_m < my_rows.size() else -1
+	var active := focus
 	lot.clear_rows()
 	mine.clear_rows()
 	lot_rows = v.catalogue
@@ -80,9 +91,12 @@ func refresh() -> void:
 			status = "on the stash runs"
 		mine.add_row([str(o.name), "drive" if o.use == "drive" else "trucks", "$%s" % Py.money(int(o.resale)), status])
 	if not lot_rows.is_empty():
-		lot.select_near(keep_l if keep_l >= 0 else 0)
+		var ids: Array = lot_rows.map(func(sp): return str(sp.id))
+		lot.select_near(ids.find(lot_id) if ids.has(lot_id) else maxi(0, keep_l))
 	if not my_rows.is_empty():
-		mine.select_near(keep_m if keep_m >= 0 else 0)
+		var serials: Array = my_rows.map(func(o): return int(o.serial))
+		mine.select_near(serials.find(serial) if serials.has(serial) else maxi(0, keep_m))
+	focus = active
 	footer.text = note if note != "" else ("The trucks run at %d km/h with %d%% cover and %d%% steel (%d owned). The starter car is the one you drive until you buy another." % [
 		int(float(fl.speed) * 3.6), int(float(fl.stealth) * 100.0), int(float(fl.armour) * 100.0), int(fl.count)])
 	hints.set_hints([["UP/DOWN", "choose", "down"], ["LEFT/RIGHT", "lot or yours", "right"], ["ENTER", "buy / drive", "enter"], ["S", "sell", "s"], ["A", "AI fleet", "a"], ["ESC", "leave", "esc"]])
@@ -101,8 +115,12 @@ func key(k: String) -> void:
 			(lot if focus == 0 else mine).move(1)
 		"left":
 			focus = 0
+			if lot.is_inside_tree():
+				lot.grab_focus()
 		"right":
 			focus = 1
+			if mine.is_inside_tree():
+				mine.grab_focus()
 		"a":
 			var result: Array = s.command(Roles.PILOT, "fleet_auto", {"on": not d.auto})
 			show_feedback("Fleet automation updated." if result[0] else str(result[1]), bool(result[0]))
@@ -115,7 +133,7 @@ func key(k: String) -> void:
 				var i := mine.selected_row()
 				if i >= 0 and i < my_rows.size():
 					var r: Array = s.command(Roles.PILOT, "use_vehicle", {"serial": my_rows[i].serial})
-					note = "" if r[0] else str(r[1])
+					show_feedback("Active car updated." if r[0] else str(r[1]), bool(r[0]))
 		"s":
 			var i := mine.selected_row()
 			if focus == 1 and i >= 0 and i < my_rows.size():
