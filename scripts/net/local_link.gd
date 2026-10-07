@@ -53,3 +53,7 @@ func alive() -> bool:
 
 func close() -> void:
 	pass
+
+
+func cancel_preview(sequence: int) -> void:
+	previews.erase(sequence)

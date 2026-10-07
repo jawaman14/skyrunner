@@ -625,6 +625,7 @@ func toggle_logistics(stash := "") -> void:
 		logistics_menu.close()
 		return
 	logistics_menu = LogisticsMenu.new()
+	logistics_menu.review_link = LocalLink.new(s, Roles.PILOT, false)
 	logistics_menu.pilot = true
 	logistics_menu.focused_stash = stash
 	logistics_menu.view_fn = func() -> Dictionary: return s.logistics.view() if s.logistics != null else {}

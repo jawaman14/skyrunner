@@ -600,3 +600,7 @@ All eight stash types have an open storage interior. Walk to the workbench and u
 ### Station map layers
 
 Use the map’s Operations, People / logistics and Intelligence switches to reduce clutter. Reports keep their source, age and uncertainty; switching a layer on does not reveal additional information. Hidden markers do not select or dispatch entities. The selected-entity card and order outcomes remain on the desk.
+
+### Reviewing station and logistics actions
+
+Supported committing actions request their consequences from the host before you confirm. Cancel is selected first. Confirmation rechecks the preview; if stock or cost changes, review the new consequences again. A preview timeout, disconnect or seat change sends no command. Older hosts show “Preview unavailable”; their existing commands remain available through explicit confirmation and host validation. After sending, acknowledgement and refreshed state appear separately in the order outcomes.

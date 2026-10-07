@@ -51,9 +51,10 @@ and real two-machine remote/voice validation remain unperformed.
    preview requests are implemented for aircraft/gear/vehicle purchases, vehicle
    and product sales, single cash/goods truck transfers, repairs, prisoner policy/
    bulk actions and squad disbanding. Command execution rechecks current state.
-   Hangar/dealer reviews use the shared Cancel-first confirmation. Finish preview
-   UI adoption across remaining menus, multi-stop/armoury transfers, dialogue
-   commitment review and station clients; unsupported previews stay explicit.
+   Hangar/dealer reviews use shared Cancel-first confirmation; station and
+   supported logistics reviews now request/recheck read-only host consequences.
+   Finish multi-stop/armoury transfers and dialogue commitment review, plus
+   remaining menu-specific actions; unsupported previews stay explicit.
 4. **Menus/settings:** finish focus, selection, scrolling, persistent feedback,
    disabled reasons and palette refresh across all menus. Hangar/dealer first,
    logistics/rackets next, then remaining screens. The shared shell now focuses
@@ -81,7 +82,12 @@ and real two-machine remote/voice validation remain unperformed.
    severity-based expiry. Station maps now group operations, people/logistics and intelligence with
    keyboard-focusable toggles. Visible items consume the role-filtered snapshot
    and preserve report metadata; hidden map markers cannot dispatch/select.
-   Remote preview adoption and the remaining seat-specific refinements remain.
+   Capability-advertised previews now drive station commitments and supported
+   logistics actions locally/remotely. Approval requests a fresh preview; changed
+   consequences require another review. Removal, timeout, disconnect and seat
+   changes send no mutation. Older peers explicitly label unavailable previews
+   and retain confirmed legacy operation. Multi-stop/armoury previews, dialogue
+   commitment review and the remaining seat-specific refinements remain.
 6. **Placement/access:** deterministic footprints, entrances, walk/loading
    approaches and network connectors; diagnostic overlay and interaction occlusion.
    Through-wall interaction is reproduced with actual overlapping physics areas
