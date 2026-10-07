@@ -106,6 +106,27 @@ func test_battle_history_is_private_and_read_only() -> void:
 	s.dispose()
 
 
+func test_external_combatant_removal_releases_survivor_and_records_final_state() -> void:
+	var s := _war()
+	var g := s.ground
+	var a := _squad(g, "org", g.hq("org"), {"rifle": 4})
+	var b := _squad(g, "rival", a.pos() + Vector2(50, 0), {"rifle": 4})
+	b.human = true
+	g._open(a, b)
+	var f = g.fights[0]
+	a.men = 0
+	g._gone(a)
+	check(g.fights.is_empty(), "removed participant ends engagement")
+	check(a.fight == null and b.fight == null, "both references release ended fight")
+	check_eq(b.state, "holding", "survivor is available rather than permanently fighting")
+	check(b.human, "human order ownership survives cleanup")
+	check_eq(g.battle_history("rival")[0].state, "holding", "completed account records settled state")
+	check_eq(g.battle_history("org")[0].state, "gone", "removed unit remains gone")
+	g._end(f)
+	check_eq(g.battle_reports.size(), 2, "late cleanup does not duplicate reports")
+	s.dispose()
+
+
 func _escort_truck(s: Session, at: Vector2) -> StashNet.Truck:
 	var t := StashNet.Truck.new()
 	t.job_id = 999

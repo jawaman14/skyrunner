@@ -1070,9 +1070,9 @@ func _arrest(q: Squad, cop: Squad, n: int) -> void:
 func _gone(q: Squad) -> void:
 	q.state = "gone"
 	if q.fight != null:
-		q.fight.over = true
-		_record_battle(q.fight, "Unit removed from combat")
-		fights.erase(q.fight)
+		# External casualties (for example on-foot combat) must release both
+		# participants, just like other ended contacts, before recording accounts.
+		_end(q.fight)
 	squads.erase(q)
 	var ars = arsenal(q.faction)
 	if ars != null:
