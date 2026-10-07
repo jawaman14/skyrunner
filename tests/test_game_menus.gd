@@ -53,6 +53,44 @@ func test_every_menu_builds_opens_takes_every_key_and_closes() -> void:
 		m.queue_free()
 
 
+func test_race_refresh_preserves_course_identity() -> void:
+	var s := _session()
+	var m := RaceMenu.new()
+	Engine.get_main_loop().root.add_child(m)
+	m.setup(s)
+	m.open()
+	check(m.rows.size() > 1, "HAR has multiple courses")
+	# Simulate a previous snapshot's ordering before the next refresh.
+	m.rows.reverse()
+	m.list.select_near(0)
+	var selected_id := str(m.rows[0].id)
+	m.refresh()
+	check_eq(str(m.rows[m.list.selected_row()].id), selected_id, "selection follows the course ID rather than its old row")
+	m.queue_free()
+
+
+func test_race_refusal_remains_visible_after_refresh() -> void:
+	var s := _session()
+	s.money = 0
+	var m := RaceMenu.new()
+	Engine.get_main_loop().root.add_child(m)
+	m.setup(s)
+	m.open()
+	check(not m.rows.is_empty(), "HAR has races to review")
+	m.key("enter")
+	check(m.visible, "refused entry leaves the menu open")
+	check(m.feedback.visible, "refusal has persistent panel feedback")
+	check(m.feedback.text.begins_with("Not completed:"), "refusal is not presented as success")
+	var message := m.feedback.text
+	m.refresh()
+	check_eq(m.feedback.text, message, "refresh retains the refusal")
+	check_eq(s.money, 0, "refused entry charges nothing")
+	m.close()
+	m.open()
+	check(not m.feedback.visible, "reopening clears previous feedback")
+	m.queue_free()
+
+
 func test_ground_menu_shell_has_a_clear_exit_and_initial_focus() -> void:
 	var s := _session()
 	var m := HangarMenu.new()
