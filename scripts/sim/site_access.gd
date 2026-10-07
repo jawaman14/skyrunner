@@ -6,10 +6,25 @@ const SAMPLE_M := 4.0
 const MAX_CONNECTOR_M := 120.0
 var world: World
 var sites: Array
+var _walking_footprints: Array = []
+var _vehicle_footprints: Array = []
+var _vehicle_edges := {}  ## immutable map geometry; checkpoint penalties are never cached
 
 func _init(world_: World, sites_: Array) -> void:
 	world = world_
 	sites = sites_.duplicate(true)
+	for site in sites:
+		if site.kind == "dock": continue
+		for mode in [false, true]:
+			for polygon in Geometry2D.offset_polygon(site.footprint, 2.6 if mode else 0.8):
+				var minimum: Vector2 = polygon[0]
+				var maximum := minimum
+				for point in polygon:
+					minimum = minimum.min(point)
+					maximum = maximum.max(point)
+				var shape := {"id": str(site.id), "polygon": polygon, "bounds": Rect2(minimum, maximum - minimum).grow(0.001)}
+				if mode: _vehicle_footprints.append(shape)
+				else: _walking_footprints.append(shape)
 
 static func _crosses(from: Vector2, to: Vector2, polygon: PackedVector2Array) -> bool:
 	if Geometry2D.is_point_in_polygon(from, polygon) or Geometry2D.is_point_in_polygon(to, polygon): return true
@@ -19,11 +34,11 @@ static func _crosses(from: Vector2, to: Vector2, polygon: PackedVector2Array) ->
 
 func segment_reason(from: Vector2, to: Vector2, vehicle := false, ignore_id := "") -> String:
 	if not from.is_finite() or not to.is_finite(): return "Invalid access coordinates."
-	for site in sites:
-		if str(site.id) == ignore_id or site.kind == "dock": continue
-		var expanded := Geometry2D.offset_polygon(site.footprint, 2.6 if vehicle else 0.8)
-		for polygon in expanded:
-			if _crosses(from, to, polygon): return "Access intersects " + str(site.id) + "."
+	var bounds := Rect2(from.min(to), (to - from).abs()).grow(0.001)
+	var footprints: Array = _vehicle_footprints if vehicle else _walking_footprints
+	for shape in footprints:
+		if shape.id == ignore_id or not bounds.intersects(shape.bounds): continue
+		if _crosses(from, to, shape.polygon): return "Access intersects " + str(shape.id) + "."
 	for af in world.airfields:
 		if _crosses(from, to, SiteLayout.runway_footprint(af, 8.0)): return "Access crosses runway clearance at " + af.code + "."
 	var count := maxi(1, int(ceil(from.distance_to(to) / SAMPLE_M)))
@@ -111,8 +126,21 @@ func verified_records() -> Array:
 	return out
 
 func checked_vehicle_route(graph: RoadGraph, from: Vector2, to: Vector2, penalty := Callable()) -> Dictionary:
+	graph = graph.checked_network()
 	var start := graph.nearest(from)
 	var end := graph.nearest(to)
 	if start < 0 or end < 0 or maxf(from.distance_to(graph.nodes[start]), to.distance_to(graph.nodes[end])) > MAX_CONNECTOR_M:
 		return {"reachable": false, "points": PackedVector2Array(), "reason": "No nearby checked vehicle access."}
-	return graph.checked_route(from, to, penalty, func(a, b): return segment_reason(a, b, true) == "")
+	var clear_edges: Dictionary = _vehicle_edges
+	var clear := func(a: Vector2, b: Vector2) -> bool:
+		var key := Vector4(a.x, a.y, b.x, b.y)
+		if not clear_edges.has(key):
+			var allowed := segment_reason(a, b, true) == ""
+			clear_edges[key] = allowed
+			clear_edges[Vector4(b.x, b.y, a.x, a.y)] = allowed
+		return bool(clear_edges[key])
+	return graph.checked_route(from, to, penalty, clear)
+
+## Rebuild after an explicit authoring/geometry change; simulation hazards use penalties.
+func invalidate_geometry() -> void:
+	_vehicle_edges.clear()

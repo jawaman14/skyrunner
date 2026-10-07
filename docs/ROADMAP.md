@@ -117,7 +117,8 @@ and real two-machine remote/voice validation remain unperformed.
    connectors. Preserve La Selva without a public road; no incidental map rebake.
    Road ribbons now share vertices with deck collision and indexed ground-vehicle
    height queries. Checked routes return explicit failure, skip speculative T
-   links and retain the route-penalty hook; the legacy simulation route API stays
+   links and retain the route-penalty hook. Their cached topology now preserves
+   close authored bends and splits real crossings without changing legacy nodes; the legacy simulation route API stays
    unchanged pending measured migration. Synthetic deck/water physics, road and
    car tests pass. Dry lowland ribbons now follow terrain at a reachable 0.45m
    offset; water retains 2.65m clearance with 10% graded approach fill. Railings

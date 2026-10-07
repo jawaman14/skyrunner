@@ -40,3 +40,23 @@ walkthrough and ancillary prop collision still require inspection.
 The full street-segment probe refined the setback: a northward move cleared the
 anchor but still covered the next road leg. The correction uses an eastward
 setback and west-facing door; the adjacent full road segment now passes clearance.
+
+## Geometry-preserving checked roads
+
+The payroll migration probe found legacy 60m node merges cutting across rendered
+road bends. Checked callers now use exact authored vertices plus actual geometric
+crossings, with the existing A* and penalty hook. Nearby parallel roads do not gain
+false connections. Legacy nodes, adjacency and routes remain unchanged.
+
+Fixed probe: Tropicana road node (-1500, -9697.3) to barn street post
+(-688.5894, -3367.03), Costa Brava natural terrain. The checked/validated trip is
+15,682m versus the legacy 9,994m path. This is a substantial physical-travel change;
+truck/squad consumers remain on their legacy API until paired outcome measurement.
+Some direct-network edges still fail grades; checked A* selects a valid alternative.
+
+Local headless timing, one diagnostic sample on this desktop: topology 1,530ms
+before indexing versus 65ms after; repeated query 163ms before static-edge caching
+versus 3ms after. Cold query remains approximately 430ms including surface/static
+access work. These are diagnostic timings, not exported frame-time or memory gates.
+Static map geometry may be cached for its lifetime; explicit geometry changes must
+call `invalidate_geometry`. Checkpoint/hotspot penalties are evaluated each search.
