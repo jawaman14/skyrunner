@@ -129,3 +129,93 @@ func test_phone_input_answers_once_and_refresh_preserves_contact_identity() -> v
 	_menu.get_viewport().push_input(event)
 	check_eq(answered, ["family"], "native Enter plus held key routes the existing conversation once")
 	check(s.phone_calls.pending().is_empty())
+
+
+func test_campaign_guide_does_not_activate_hidden_contacts() -> void:
+	var sess := _live()
+	Story.new().attach(sess)
+	_menu = PhoneMenu.new().setup(sess)
+	Engine.get_main_loop().root.add_child(_menu)
+	_menu.open()
+	_menu.campaign_scroll.visible = true
+	_menu.list.visible = false
+	var actions := []
+	_menu.called.connect(func(action): actions.append(action))
+	_menu.key("enter")
+	check(actions.is_empty())
+	check(_menu.visible)
+
+
+func test_campaign_guide_opens_with_real_mouse_input_and_reads_aloud() -> void:
+	var sess := _live()
+	Story.new().attach(sess)
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1024, 768)
+	Engine.get_main_loop().root.add_child(viewport)
+	_menu = PhoneMenu.new().setup(sess)
+	viewport.add_child(_menu)
+	_menu.open()
+	for i in 3: await Engine.get_main_loop().process_frame
+	var old_enabled := Speech.enabled
+	var old_speaker: Callable = Speech.speaker
+	Speech.enabled = true
+	Speech.speaker = func(_text, _interrupt): pass
+	var position := _menu.campaign_button.global_position + _menu.campaign_button.size / 2.0
+	var motion := InputEventMouseMotion.new()
+	motion.position = position
+	viewport.push_input(motion)
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.position = position
+	ev.pressed = true
+	viewport.push_input(ev)
+	ev = ev.duplicate()
+	ev.pressed = false
+	viewport.push_input(ev)
+	await Engine.get_main_loop().process_frame
+	check(_menu.campaign_scroll.visible, "mouse opens guidance")
+	check("Square Grouper" in _menu.campaign_text.text, "chapter text shown")
+	check(not _menu.list.visible, "contacts hidden")
+	check(not Speech.spoken.is_empty(), "guidance read aloud")
+	Speech.enabled = old_enabled
+	Speech.speaker = old_speaker
+	_menu.free()
+	_menu = null
+	viewport.free()
+
+
+func test_campaign_guide_fits_supported_sizes_and_controller_back() -> void:
+	var sess := _live()
+	Story.new(Story.index_of("Last Flight")).attach(sess)
+	var palette := UIStyle.palette
+	for size in [Vector2i(1024, 768), Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1080)]:
+		for style in ["neon", "safe"]:
+			UIStyle.set_palette(style)
+			var viewport := SubViewport.new()
+			viewport.size = size
+			Engine.get_main_loop().root.add_child(viewport)
+			_menu = PhoneMenu.new().setup(sess)
+			viewport.add_child(_menu)
+			_menu.open()
+			for i in 3: await Engine.get_main_loop().process_frame
+			_menu.campaign_button.grab_focus()
+			var accept := InputEventKey.new()
+			accept.keycode = KEY_ENTER
+			accept.pressed = true
+			viewport.push_input(accept)
+			accept = accept.duplicate()
+			accept.pressed = false
+			viewport.push_input(accept)
+			for i in 3: await Engine.get_main_loop().process_frame
+			check(_menu.campaign_scroll.visible, "keyboard reaches chapter guide")
+			check(_menu.get_global_rect().end.x <= size.x, "panel width fits")
+			check(_menu.get_global_rect().end.y <= size.y, "panel height fits")
+			var back := InputEventJoypadButton.new()
+			back.button_index = JOY_BUTTON_B
+			back.pressed = true
+			viewport.push_input(back)
+			check(not _menu.visible, "controller Back closes guide")
+			_menu.free()
+			_menu = null
+			viewport.free()
+	UIStyle.set_palette(palette)

@@ -1266,7 +1266,7 @@ func _process(delta: float) -> void:
 	var camp = s.narrative
 	if camp != null and camp.show_briefing:
 		var ch: Campaign.Chapter = camp.chapter
-		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nPress ENTER" % [ch.num, ch.year, ch.title, ch.briefing,
+		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nPress ENTER" % [ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
 			"\n".join(camp.objective_lines())]
 		briefing.visible = true
 		if _pressed.has("confirm"):

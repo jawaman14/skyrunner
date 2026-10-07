@@ -118,6 +118,11 @@ static func _runner(sess: Session, role: String) -> Dictionary:
 		var ch: Campaign.Chapter = story.chapter
 		out["campaign"] = {"chapter": ch.num, "year": ch.year, "title": ch.title,
 			"objectives": story.objective_lines()}
+		if story is Story:
+			out["campaign"]["guidance"] = story.guidance()
+			out["campaign"]["completed"] = story.completed_all
+			out["campaign"]["ending"] = story.ending_summary() if story.completed_all else ""
+			out["campaign"]["history"] = story.history.duplicate(true)
 	var s: FlightModel.FlightState = sess.state
 	if s != null and sess.runner_active():
 		var he: Array = sess.range_estimate()

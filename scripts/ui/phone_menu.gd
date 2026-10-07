@@ -13,9 +13,32 @@ var rows: Array = []  ## [action, who, about]
 var fresh := {}  ## numbers added since you last rang them (PilotApp._phone_watch): marked NEW
 var _call_ids: Array = []
 var history_label: Label
+var campaign_scroll: ScrollContainer
+var campaign_text: Label
+var campaign_button: Button
 
 
 func _build() -> void:
+	campaign_button = Button.new()
+	campaign_button.text = "Chapter guidance and history"
+	campaign_button.visible = s.story != null
+	campaign_button.pressed.connect(func():
+		campaign_scroll.visible = not campaign_scroll.visible
+		list.visible = not campaign_scroll.visible
+		if s.story != null:
+			campaign_text.text = s.story.journal_text()
+			if campaign_scroll.visible:
+				Speech.say(campaign_text.text, true))
+	content.add_child(campaign_button)
+	campaign_scroll = ScrollContainer.new()
+	campaign_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	campaign_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	campaign_scroll.visible = false
+	content.add_child(campaign_scroll)
+	campaign_text = UIStyle.label("", 16)
+	campaign_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	campaign_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	campaign_scroll.add_child(campaign_text)
 	history_label = UIStyle.label("", 14, UIStyle.CAPTION)
 	history_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(history_label)
@@ -96,6 +119,12 @@ func _process(delta: float) -> void:
 
 
 func key(k: String) -> void:
+	if campaign_scroll.visible:
+		if k == "up":
+			campaign_scroll.scroll_vertical -= 48
+		elif k == "down":
+			campaign_scroll.scroll_vertical += 48
+		return
 	match k:
 		"up":
 			list.move(-1)
@@ -121,3 +150,13 @@ func key(k: String) -> void:
 				var result: Array = s.command(Roles.PILOT, "phone_decline", {"id": rows[i][3]})
 				show_feedback("Call declined. The offer remains available through the contact." if result[0] else str(result[1]), bool(result[0]))
 				refresh()
+
+
+func _input(event: InputEvent) -> void:
+	if visible and campaign_scroll.visible:
+		for pair in [["ui_up", "up"], ["ui_down", "down"]]:
+			if event.is_action_pressed(pair[0], true):
+				key(pair[1])
+				get_viewport().set_input_as_handled()
+				return
+	super._input(event)
