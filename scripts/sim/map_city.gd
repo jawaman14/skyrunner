@@ -70,7 +70,21 @@ static func load_roads() -> Dictionary:
 	if not FileAccess.file_exists(ROADS_FILE):
 		return {}
 	var d = JSON.parse_string(FileAccess.get_file_as_string(ROADS_FILE))
-	return d if d is Dictionary else {}
+	if not d is Dictionary:
+		return {}
+	# The authored villa spur ended at the building centre. Keep the trunk,
+	# terrain and bridge indices intact; take its final approach round the west
+	# wall to the existing loading yard. Match the known approach before editing.
+	for road in d.get("roads", []):
+		if road.size() < 2:
+			continue
+		var end := Vector2(road[-1][0], road[-1][1])
+		var previous := Vector2(road[-2][0], road[-2][1])
+		if end.distance_to(Vector2(-5500, 5500)) < 0.1 and previous.distance_to(Vector2(-5500, 5464.8)) < 0.1:
+			road.pop_back()
+			road.append([-5514.0, 5487.0])
+			road.append([-5514.0, 5508.0])
+	return d
 
 
 ## The generated terrain with no strips levelled (what the strips and roads are sited on).
