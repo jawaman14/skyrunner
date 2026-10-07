@@ -73,6 +73,7 @@ func test_costa_brava_nightclub_is_set_back_from_its_strategic_road_anchor() -> 
 	check(not Geometry2D.is_point_in_polygon(road_anchor, record.footprint), "road anchor no longer lies inside the building")
 	var access := SiteAccess.new(world, [record])
 	check_eq(access.segment_reason(road_anchor, road_anchor, true), "", "vehicle clearance at the road anchor")
+	check_eq(access.segment_reason(road_anchor - Vector2(0, 50), road_anchor + Vector2(0, 100), true), "", "whole adjacent north/south road stays outside the building")
 	check_eq(spec, before, "strategic coordinates and balance geometry stay unchanged")
 	var node := Buildings.hq(world, spec)
 	check_eq(node.transform, record.transform)

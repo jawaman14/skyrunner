@@ -44,9 +44,8 @@ static func hq_frame(world: World, spec: Dictionary) -> Transform3D:
 	# Costa Brava's nightclub anchor sits on the road centre. Keep the strategic
 	# anchor and roads intact; set the physical building back into its reserved plot.
 	if world.map.map_seed == MapCity.SEED and spec.get("style", "") == "nightclub":
-		var basis := Basis(Vector3.UP, yaw)
-		var back: Vector3 = basis * Vector3(0, 0, 24)
-		at += Vector2(back.x, -back.z)
+		at += Vector2(24, 0)
+		yaw = -deg_to_rad(270.0)  # front door faces the existing north/south street
 	return frame(at, world.ground(at.x, at.y), yaw)
 
 static func stash_frame(world: World, st: Dictionary) -> Transform3D:
