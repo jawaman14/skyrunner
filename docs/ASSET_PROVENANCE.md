@@ -32,3 +32,12 @@ runtime consumer and used subset before import. Import only assets actually used
 Record the fixed reference route and before/after frame time and memory separately;
 this inventory is not performance or physical-access evidence. The complete coastal
 airfield–road–stash–dock/service reference area remains unfinished.
+
+## Exported notices
+
+All three desktop export presets explicitly include the two font OFL notices,
+used model/audio/particle licences, the Quaternius acquisition/adaptation README
+and the original prop authorship register. The export-filter test checks inclusion
+and exclusion for each used notice; unused model packs remain excluded. This
+repairs missing notice filters and does not resolve the separate radio provenance
+limitation above. Exported-package inspection remains a release check.
