@@ -1185,6 +1185,11 @@ func _mechanic_key(k: String, snap: Dictionary) -> void:
 		"up", "down":
 			GameMenu.list_move(list, 1 if k == "down" else -1)
 		"enter":
+			# A freshly rebuilt DataTable can briefly report no selected row even
+			# though the mechanic desk has a deterministic first part. Treat that
+			# state as the first row so keyboard activation remains reliable.
+			if i < 0 and not _list_keys.is_empty():
+				i = 0
 			if i >= 0 and i < _list_keys.size():
 				_cmd("service", {"part": _list_keys[i]})
 		"b":

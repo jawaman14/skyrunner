@@ -236,6 +236,13 @@ func test_the_hud_the_hangar_and_the_desk_show_it() -> void:
 	check_eq(app.list.row_count(), 2, "an engine row and an airframe row")
 	app.list.select(0)
 	app._key("enter")
+	# Service actions now show the shared consequence preview before commit.
+	if app.review != null:
+		for frame in 3:
+			await Engine.get_main_loop().process_frame
+		app.review._answered(true)
+		for frame in 3:
+			await Engine.get_main_loop().process_frame
 	check(not a.work.is_empty() and a.work.parts == ["engine"], "ENTER repairs the engine")
 	app._key("s")
 	check(a.work.is_empty(), "S stops the work")
