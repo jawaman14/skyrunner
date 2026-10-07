@@ -133,7 +133,10 @@ and real two-machine remote/voice validation remain unperformed.
    physics checks walk into and out of every type. Pitched stash roofs now have matching slope/end collision; aisle/exit checks
    cover the added geometry. Runway diagnostics use full polygon intersections,
    including crossings and containment. Terrain-specific placement,
-   existing hangar/HQ/casino corrections and exported walkthroughs remain.
+   Club Tropicana was reproduced covering its worker road anchor; its shared
+   physical frame now sets it back within the reserved plot, preserving strategic
+   coordinates and roads. Other hangar/HQ/casino corrections and exported
+   walkthroughs remain.
 9. **NPCs:** checked pedestrian/vehicle access, identity/task presentation and
    body lifecycle. Payroll/combat remain authoritative; no arrival-gated work.
    Migrate truck/squad connectors separately with paired-seed measurements.

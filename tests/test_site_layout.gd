@@ -62,3 +62,19 @@ func test_runway_clearance_detects_crossings_without_interior_corners() -> void:
 	check(SiteLayout.diagnostics(world, [site]).any(func(issue): return "runway" in issue.reason))
 	site.footprint = PackedVector2Array([center - Vector2(af.length, af.length), center + Vector2(af.length, -af.length), center + Vector2(af.length, af.length), center + Vector2(-af.length, af.length)])
 	check(SiteLayout.diagnostics(world, [site]).any(func(issue): return "runway" in issue.reason), "fully enclosed runway is detected")
+
+func test_costa_brava_nightclub_is_set_back_from_its_strategic_road_anchor() -> void:
+	World.use_map(MapCity.SEED)
+	var world := World.new()
+	var spec: Dictionary = world.map.hqs.org
+	var before := spec.duplicate(true)
+	var road_anchor := Vector2(spec.x, spec.y)
+	var record: Dictionary = SiteLayout.records(world).filter(func(site): return site.id == "hq/org")[0]
+	check(not Geometry2D.is_point_in_polygon(road_anchor, record.footprint), "road anchor no longer lies inside the building")
+	var access := SiteAccess.new(world, [record])
+	check_eq(access.segment_reason(road_anchor, road_anchor, true), "", "vehicle clearance at the road anchor")
+	check_eq(access.segment_reason(road_anchor - Vector2(0, 50), road_anchor + Vector2(0, 100), true), "", "whole adjacent north/south road stays outside the building")
+	check_eq(spec, before, "strategic coordinates and balance geometry stay unchanged")
+	var node := Buildings.hq(world, spec)
+	check_eq(node.transform, record.transform)
+	node.free()
