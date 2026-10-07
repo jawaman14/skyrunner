@@ -31,6 +31,6 @@ Reliability and presentation are prerequisites within each phase. Recovery, impo
 
 ## Current PR record
 
-#249 records the decisions; it implements no mechanics. #248 improves controls and has focused input tests. #247 is a partial map foundation with balance/performance/access blockers. #241–#243 are older planning PRs; read them alongside this approved revision rather than treating them as implementations. #245's stale validation description was corrected during this review. #250 implements the first employed-opening/loan-ownership slice; its 1,039-test desktop suite and startup smoke pass, with first-criminal-route review and human pacing still required.
+#249 records the decisions; it implements no mechanics. #248 improves controls and has focused input tests. #247 is a partial map foundation with balance/performance/access blockers. #241–#243 are older planning PRs; read them alongside this approved revision rather than treating them as implementations. #245's stale validation description was corrected during this review. #250 implements the first employed-opening/loan-ownership slice; its 1,039-test desktop suite and startup smoke pass, with the first-criminal-route correction in #251. The combined head passes 1,041 CI tests plus three platform smoke jobs; human pacing remains required.
 
 Do not create empty feature PRs merely to represent every row. Create narrow implementation branches when code or concrete specifications are ready. Keep drafts and unperformed human/export/controller/two-machine gates explicit.
