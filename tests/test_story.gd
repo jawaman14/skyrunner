@@ -280,3 +280,16 @@ func test_laundering_without_ownership_does_not_buy_a_stake() -> void:
 	s.story.tick(s)
 	check_eq(s.story.progress.get("casino_stake", 0), 0)
 	s.dispose()
+
+
+func test_unavailable_family_notice_is_not_repeated_while_collecting_cash() -> void:
+	var s := _story(Story.index_of("Family Business"))
+	s.family.gone = true
+	s.money = 0
+	s.story.tick(s)
+	var count := s.messages.size()
+	s.story.tick(s)
+	check_eq(s.messages.size(), count, "waiver does not spam the event feed")
+	check_eq(s.story.progress.get("family_deal", 0), 0, "no fabricated transaction")
+	check(s.story.outcomes.has("family_deal"))
+	s.dispose()
