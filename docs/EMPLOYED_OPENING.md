@@ -26,6 +26,10 @@ CLI chapter skipping explicitly skips the opening before advancing existing numb
 
 ## Acceptance evidence
 
-Five focused employment tests cover staged command/delivery integration, duplicate events, stale work, dropped work, read-only cost previews, denied purchases without mutation, first ownership, save/reload before and after the opening, old-save chapter compatibility and returning the company aircraft. Legacy story (17) and job-action (3) tests pass. Full regression and isolated desktop smoke are in progress; record final results before integration. Existing ObjectDB/resource shutdown diagnostics are separate from script/parse failures.
+Five focused employment tests cover staged command/delivery integration, duplicate events, stale work, dropped work, read-only cost previews, denied purchases without mutation, first ownership, save/reload before and after the opening, old-save chapter compatibility and returning the company aircraft. Legacy story (17) and job-action (3) tests pass. Final desktop regression at code head `c29945c`: **1,039 passed, 0 failed** (329 / 361 / 349), with no script/parse failures. The initial run exposed a stale dedicated-server chapter expectation; the updated assertion and explicit opening skip passed in the complete rerun. Isolated startup smoke with real Enter input: **SMOKE OK**, 1,800 frames, simulation time 12.2 seconds. Native diff checks pass; export/save/parity checks are included in the suite. Existing ObjectDB/resource shutdown diagnostics are separate from script/parse failures.
 
 Unperformed: human opening walkthrough, first-purchase pacing, multi-resolution visual/controller/read-aloud acceptance, exported builds and real two-machine delivery. Keep draft.
+
+## Follow-up route review
+
+The initial criminal employer route uses HAR/VAL, both police airports. Existing customs checks give a hot arrival a 35% inspection chance before pursuit consequences. Author a suitable non-police destination for the first criminal contract and validate arrival/unloading before treating the opening as ready for human acceptance. Do not disable police rules to make the introduction succeed.

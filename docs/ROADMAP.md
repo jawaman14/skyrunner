@@ -46,7 +46,7 @@ Campaign polish is implemented in draft [#229](https://github.com/jawaman14/skyr
 
 See [PLAYER_DIRECTION.md](PLAYER_DIRECTION.md) and the [discussion-to-delivery audit](PLAYER_DIRECTION_DELIVERY.md). Product order is employed pilot/first aircraft, configured automation, faction competition/civilian economy, then co-op/competitive teamwork. Start flying a legitimate employer’s aircraft; smuggling becomes unavoidable in the main story. Existing foundations and reliability gates remain necessary; older queue recommendations yield to these approved choices.
 
-New employed-opening slice adds legitimate/suspicious/criminal employer deliveries, loaned-aircraft ownership and first-purchase validation without renumbering the twelve story chapters. See [EMPLOYED_OPENING.md](EMPLOYED_OPENING.md) for implementation limits and acceptance evidence.
+Draft [#250](https://github.com/jawaman14/skyrunner/pull/250), validated with 1,039 passing desktop tests and SMOKE OK, adds legitimate/suspicious/criminal employer deliveries, loaned-aircraft ownership and first-purchase validation without renumbering the twelve story chapters. See [EMPLOYED_OPENING.md](EMPLOYED_OPENING.md) for implementation limits and acceptance evidence.
 
 ## Ordered implementation queue
 
