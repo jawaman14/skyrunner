@@ -206,3 +206,32 @@ func test_remote_read_only_preview_and_permission_filtering() -> void:
 	seq = cp.request_preview("buy_vehicle", {"id": "van"})
 	check(_pump_until(func(): return cp.previews.has(seq)))
 	check(not cp.previews[seq].enabled and cp.previews[seq].preview == "", "forbidden action reveals no business state")
+
+func test_action_review_previews_rechecks_and_acknowledges_over_real_tcp() -> void:
+	var cp := _client("Review", Roles.COPILOT)
+	check(_pump_until(func(): return cp.latest != null))
+	var job: Dictionary = Py.first(cp.latest.board, func(j): return j.weight < 250 and not j.airdrop)
+	var outcomes := CommandPresentation.new(cp)
+	var review := ActionReview.new().setup(cp, "accept_job", {"job_id": job.id})
+	review.finished.connect(func(approved, _message):
+		if approved: outcomes.send("accept_job", {"job_id": job.id}))
+	Engine.get_main_loop().root.add_child(review)
+	var ready := func():
+		review.poll(0)
+		return review.state == "ready"
+	check(_pump_until(ready), "host preview reaches UI")
+	check(outcomes.records.is_empty() and sess.active_jobs.is_empty(), "preview is read-only")
+	for i in 3: await Engine.get_main_loop().process_frame
+	review.box.key("right")
+	review.box.key("enter")
+	var accepted := func():
+		review.poll(0)
+		return not outcomes.records.is_empty()
+	check(_pump_until(accepted), "fresh host preview approves one command")
+	var refreshed := func():
+		outcomes.poll(0)
+		return outcomes.records[0].state == "refreshed"
+	check(_pump_until(refreshed), "acknowledgement plus later snapshot")
+	check_eq(outcomes.records.size(), 1)
+	check(Py.any(sess.active_jobs, func(j): return j.id == int(job.id)), "job accepted authoritatively")
+	await Engine.get_main_loop().process_frame

@@ -52,6 +52,7 @@ var sel_unit = null
 var squad_mode := false  ## Q: the map commands our ground squads (the default desk for lieutenant and patrol)
 var sel_squad = null
 var status := ""
+var review: ActionReview
 var outcomes: CommandPresentation
 var outcome_lbl: Label
 var feed_lbl: Label
@@ -315,6 +316,25 @@ func _build_buttons() -> void:
 
 # ------------------------------------------------------------ commands
 func _cmd(name: String, args := {}) -> int:
+	if name not in ActionReview.COMMANDS:
+		return _send_command(name, args)
+	for record in outcomes.records:
+		if record.command == name and record.args == args and record.state in ["pending", "acknowledged"]:
+			status = CommandPresentation.text(record)
+			return int(record.seq)
+	if is_instance_valid(review):
+		status = "An action review is already open."
+		return 0
+	review = ActionReview.new().setup(link, name, args)
+	review.status_changed.connect(func(message): status = message)
+	review.finished.connect(func(approved, message):
+		review = null
+		status = message
+		if approved: _send_command(name, args))
+	add_child(review)
+	return 0
+
+func _send_command(name: String, args := {}) -> int:
 	return outcomes.send(name, args)
 
 
@@ -469,7 +489,8 @@ func open_logistics() -> void:
 		return sn.get("logistics", {}) if sn is Dictionary else {}
 	logistics_menu.cmd_fn = func(n: String, a: Dictionary) -> Array:
 		return link.sess.command(role, n, a) if link is LocalLink else [false, "Remote command needs acknowledgement."]
-	logistics_menu.send_fn = _cmd
+	logistics_menu.review_link = link
+	logistics_menu.send_fn = _send_command
 	logistics_menu.outcome_fn = outcomes.get_record
 	add_child(logistics_menu)
 

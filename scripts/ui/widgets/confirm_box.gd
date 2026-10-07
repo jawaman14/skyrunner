@@ -76,7 +76,7 @@ func _select(yes: bool) -> void:
 		(yes_btn if yes else no_btn).grab_focus()
 
 func _answer(yes: bool) -> void:
-	if not visible or (yes and Engine.get_process_frames() <= _armed_frame):
+	if not visible or (yes and (yes_btn.disabled or Engine.get_process_frames() <= _armed_frame)):
 		return
 	visible = false
 	var opener = _opener.get_ref() if _opener != null else null
@@ -99,6 +99,12 @@ func key(k: String) -> bool:
 
 func _input(event: InputEvent) -> void:
 	if not visible:
+		return
+	if event is InputEventJoypadButton and event.pressed:
+		var keys := {JOY_BUTTON_B: "esc", JOY_BUTTON_A: "enter", JOY_BUTTON_DPAD_LEFT: "left", JOY_BUTTON_DPAD_UP: "left", JOY_BUTTON_DPAD_RIGHT: "right", JOY_BUTTON_DPAD_DOWN: "right"}
+		if keys.has(event.button_index):
+			key(keys[event.button_index])
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:

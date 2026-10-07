@@ -15,6 +15,8 @@ var cmd_fn: Callable  ## (name, args) -> [ok, message]
 var send_fn: Callable  ## optional asynchronous transport, returns command sequence
 var outcome_fn: Callable  ## (sequence) -> CommandPresentation record
 var _orders := {}
+var review_link
+var review: ActionReview
 var focused_stash := ""
 var pilot := false  ## the aircraft's seat: cash bags on and off
 var rows: VBoxContainer
@@ -362,6 +364,21 @@ func close() -> void:
 
 
 func _command(name: String, args: Dictionary) -> Array:
+	if review_link != null and name in ActionReview.COMMANDS:
+		if is_instance_valid(review):
+			return [false, "An action review is already open."]
+		review = ActionReview.new().setup(review_link, name, args)
+		review.finished.connect(func(approved, message):
+			review = null
+			if approved:
+				_act(_dispatch_command(name, args))
+			else:
+				_act([false, message]))
+		add_child(review)
+		return [false, "Review the consequences before confirming."]
+	return _dispatch_command(name, args)
+
+func _dispatch_command(name: String, args: Dictionary) -> Array:
 	if send_fn.is_valid():
 		var seq: int = send_fn.call(name, args)
 		_orders[seq] = name

@@ -225,3 +225,8 @@ func close() -> void:
 	_cancel_previews("Disconnected: preview unavailable.")
 	_closed = true
 	peer.disconnect_from_host()
+
+
+func cancel_preview(sequence: int) -> void:
+	previews.erase(sequence)
+	_preview_requests.erase(sequence)
