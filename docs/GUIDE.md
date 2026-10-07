@@ -47,11 +47,11 @@ Run the game with no arguments and the **lobby** opens. It sets the same things 
 | Choice | What it is |
 |---|---|
 | **Solo** | You are the pilot; the AI plays every other seat. |
-| **Tutorial (Palmetto Cay)** | The original four-chapter campaign on the classic island: mail runs, a favour for Manny, airdrops, the long legs. |
+| **Flying lessons (Costa Brava)** | Four flying lessons on Costa Brava: mail runs, a favour for Manny, airdrops, the long legs. |
 | **Co-op: friends crew for you** | You host; friends take the co-pilot, spotter, boat, boss, lieutenant or fixer seats. |
 | **Versus** | Humans on both sides; the AI fills the empty seats. |
 | **Unlocks: Story / Open** | *Story* (the default): twelve chapters, 1979 to 1988, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
-| **Map** | Costa Brava, the city coast (default); the classic island; or a generated island by number. |
+| **Map** | Costa Brava, the city coast (default); or a generated island by positive seed. |
 | **Tutorial box** | Lessons that finish when you do the thing, and tips when something new happens. |
 | **Multiplayer** | Host a game with a waiting room, or look for games on your network (also **F4** in game). |
 

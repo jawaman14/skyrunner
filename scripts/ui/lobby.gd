@@ -25,9 +25,10 @@ var role_ob: OptionButton
 var name_le: LineEdit
 var plan_lbl: Label
 var go_btn: Button
+var startup_notice := ""
 var hints: KeyHints
 
-const MODES := [["Solo", "solo"], ["Tutorial (Palmetto Cay)", "campaign"], ["Co-op: friends crew for you", "coop"],
+const MODES := [["Solo", "solo"], ["Flying lessons (Costa Brava)", "campaign"], ["Co-op: friends crew for you", "coop"],
 	["Versus: friends run the task force", "versus"], ["Task-force desk vs AI runners", "police"]]
 const UNLOCKS := [["Story: Costa Brava 1979-1989", "story"], ["Open: every faction and mechanic", "open"]]
 const JOIN_ROLES := ["", "copilot", "spotter", "boat", "boss", "lieutenant", "controller", "interceptor", "cutter", "chief", "patrol"]
@@ -84,7 +85,7 @@ func _ready() -> void:
 	seed_box.value = 1
 	_row(g, "Job board seed", seed_box)
 	map_ob = OptionButton.new()
-	for m in ["Costa Brava (city coast)", "The classic island", "A generated island"]:
+	for m in ["Costa Brava (city coast)", "A generated island"]:
 		map_ob.add_item(m)
 	map_box = SpinBox.new()
 	map_box.min_value = 1
@@ -97,7 +98,7 @@ func _ready() -> void:
 	var roll := Button.new()
 	roll.text = "New island"
 	roll.pressed.connect(func():
-		map_ob.select(2)
+		map_ob.select(1)
 		map_box.value = randi_range(1, 99999))
 	mrow.add_child(roll)
 	_row(g, "Map", mrow)
@@ -165,6 +166,8 @@ func _ready() -> void:
 	addr.text_submitted.connect(func(_t): _join())
 	name_le.text_submitted.connect(func(_t): _join())
 	_plan()
+	if startup_notice != "":
+		plan_lbl.text = startup_notice
 	go_btn.grab_focus.call_deferred()
 
 
@@ -193,7 +196,7 @@ func _opts() -> Dictionary:
 	return {"mode": MODES[mode_ob.selected][1] if MODES[mode_ob.selected][1] != "police" else "solo",
 		"police": MODES[mode_ob.selected][1] == "police", "players": int(players.value) if players.value > 1 else 0,
 		"graphics": graphics_ob.get_item_text(graphics_ob.selected), "seed": int(seed_box.value), "new": new_cb.button_pressed,
-		"watch": watch_cb.button_pressed, "tutorial": tutorial_cb.button_pressed, "unlocks": UNLOCKS[unlocks_ob.selected][1], "host": host_cb.button_pressed, "map": [MapCity.SEED, 0, int(map_box.value)][map_ob.selected]}
+		"watch": watch_cb.button_pressed, "tutorial": tutorial_cb.button_pressed, "unlocks": UNLOCKS[unlocks_ob.selected][1], "host": host_cb.button_pressed, "map": [MapCity.SEED, int(map_box.value)][map_ob.selected]}
 
 
 func _go() -> void:

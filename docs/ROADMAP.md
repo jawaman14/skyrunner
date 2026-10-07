@@ -7,7 +7,7 @@ findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md)
 
 ## Baseline and completed work
 
-The four-chapter Palmetto Cay tutorial and twelve-chapter Costa Brava story stay.
+The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava story stay.
 Save expansion, the six-layer Session split, role support, switch registry and
 strategic calibration are implemented; do not restart them from older reviews.
 
@@ -51,7 +51,9 @@ and real two-machine remote/voice validation remain unperformed.
 - Real input, long/empty/stale content and pending/refused/unknown remote outcomes.
 - Both palettes; 1024x768, 1280x720, 1920x1080, 2560x1080; visible focus/read-aloud.
 - Walk/drive bridges and every functional entrance; check wall occlusion/thresholds.
-- City, classic and representative generated maps; preserve runway clearance.
+- Costa Brava and representative generated maps; preserve runway clearance.
+- The classic island is retired from player entry points. Reject classic saves
+  without rewriting them; retain geography only for frozen parity/balance tests.
 - Worker assignment, arrival, jail/death, save/load and human/AI handoff.
 - Focused and full sharded tests, parity/goldens, export filters and build smoke.
 - Fixed-route frame-time/memory comparisons; investigate regressions above 10%.
