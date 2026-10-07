@@ -21,6 +21,7 @@ var scroll: ScrollContainer
 var selected := 0
 var busy := false
 var closed := false
+var _palette := ""
 var leave: Button
 var _answers: Array = []  ## the DialogueResponses offered now
 
@@ -60,11 +61,25 @@ func _ready() -> void:
 	choices.add_theme_constant_override("separation", 4)
 	content.add_child(choices)
 	hint = UIStyle.caption("")
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(hint)
 	leave = Button.new()
 	leave.text = "Leave / Back"
 	leave.pressed.connect(_close)
 	v.add_child(leave)
+	_apply_palette()
+
+
+func _apply_palette() -> void:
+	_palette = UIStyle.palette
+	panel.get_parent().theme = UIStyle.theme()
+	panel.add_theme_stylebox_override("panel", UIStyle.box(Color(0.06, 0.02, 0.09, 0.94), 10, UIStyle.PINK, 2, Vector4(22, 14, 22, 14)))
+	who.add_theme_color_override("font_color", UIStyle.PINK)
+
+
+func _process(_dt: float) -> void:
+	if _palette != UIStyle.palette:
+		_apply_palette()
 
 
 ## Start `title` of `resource` with `state`; `finished` fires when it ends.
@@ -159,6 +174,9 @@ func _input(ev: InputEvent) -> void:
 	if ev.is_action_pressed("ui_cancel"):
 		_close()
 	elif busy:
+		# Pending UI controls must not fall through into gameplay controls.
+		if ev.is_action_pressed("ui_accept") or ev.is_action_pressed("ui_up") or ev.is_action_pressed("ui_down") or (ev is InputEventKey and ev.keycode >= KEY_1 and ev.keycode <= KEY_9):
+			get_viewport().set_input_as_handled()
 		return
 	elif ev.is_action_pressed("ui_up") or ev.is_action_pressed("ui_down"):
 		if not _answers.is_empty():
