@@ -1007,7 +1007,7 @@ func _process(delta: float) -> void:
 	var selected_unit = Py.first(snap.get("units", []), func(u): return u.id == sel_unit)
 	var entity = selected_squad if selected_squad != null else selected_unit
 	if entity != null:
-		selection_lbl.text = "SELECTED %s · %s · %s" % [entity.id, entity.get("kind", "unit"), entity.get("state", entity.get("order", ""))]
+		selection_lbl.text = preload("res://scripts/ui/widgets/squad_card.gd").describe(selected_squad) if selected_squad != null else "SELECTED %s · %s · %s" % [entity.id, entity.get("kind", "unit"), entity.get("state", entity.get("order", ""))]
 	elif sel_unit != null or sel_squad != null:
 		selection_lbl.text = "Selected entity is no longer available in this seat's report."
 	hints.set_hints(_hints())

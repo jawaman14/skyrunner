@@ -8,6 +8,22 @@ func after_each() -> void:
 	World.use_map(0)
 
 
+func test_command_detail_is_own_faction_only() -> void:
+	var s := _war()
+	var g := s.ground
+	var own := _squad(g, "org", g.hq("org"), {"rifle": 4})
+	own.route = PackedVector2Array([own.pos(), own.pos() + Vector2(200, 0)])
+	own.human = true
+	var detail := g.squad_view(own, "org")
+	check_eq(detail.destination.size(), 2, "owner sees actual final route point")
+	check_eq(detail.upkeep_per_minute, 8.0, "owner sees existing per-minute upkeep")
+	check(detail.player_order, "owner sees order ownership")
+	var enemy := g.squad_view(own, "police")
+	check(not enemy.has("destination"), "enemy receives no added destination detail")
+	check(not enemy.has("upkeep_per_minute"), "enemy receives no added financial detail")
+	s.dispose()
+
+
 func test_snapshot_hides_unobserved_fight_locations() -> void:
 	var s := _war()
 	var g := s.ground

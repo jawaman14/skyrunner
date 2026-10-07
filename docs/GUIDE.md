@@ -370,6 +370,15 @@ does not fire first and prefers arrests). Who holds the streets moves the market
 **Veterans.** Squads learn from fights they survive: Green, Blooded, Veteran, Elite, each with more fire per man, steadier
 nerve and dearer upkeep. **Field orders** on foot (Z X C V) give the nearest squad of yours a quick order.
 
+**Command detail.** Select one of your squads at the HQ map or a command seat to
+see strength, rank, weapons, ammunition, morale, order/state and per-minute upkeep.
+The destination is the final point of its current route, not a guaranteed arrival
+or checked-access promise. No active route is shown explicitly. Older remote peers
+label missing destination/cost detail unavailable. Player orders are distinguished
+from standing/AI orders; this does not introduce new automatic spending rules.
+Exact fight records require both participants to be observed; coarse shots-fired
+news does not grant exact enemy positions.
+
 **Guns and arsenals.** The organisation, the task force and Los Cuervos each hold weapons (pistols, rifles, machine guns,
 RPGs) and ammunition. Gun runs bring crates in: sell them at the street price or keep them for your soldiers. Whatever the
 police seize (a busted load, a stopped truck, a raided stash, the guns off arrested men) arms their patrols. The armoury is in

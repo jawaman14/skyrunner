@@ -1575,13 +1575,23 @@ func _log(f: String, text: String) -> void:
 
 
 # ================================================================ views
+## Extra command information belongs to the owning faction only.
+func squad_view(q: Squad, viewer: String) -> Dictionary:
+	var row := q.dict()
+	if q.faction == viewer:
+		row.player_order = q.human
+		row.upkeep_per_minute = q.men * UPKEEP_MIN * (1.0 + VET_UPKEEP * q.rank()) * (0.5 if viewer == "police" else 1.0)
+		row.destination = [snappedf(q.route[-1].x, 1.0), snappedf(q.route[-1].y, 1.0)] if q.route.size() >= 2 else []
+	return row
+
+
 func snapshot(viewer: String) -> Dictionary:
 	var vis := visible_to(viewer)
 	# Exact fight positions and participant IDs require both participants to be
 	# observed. Public shots-fired news is a separate, coarser report.
 	var observed_fights := fights.filter(func(f): return vis.has(f.a) and vis.has(f.b))
 	return {
-		"squads": vis.map(func(q): return q.dict()),
+		"squads": vis.map(func(q): return squad_view(q, viewer)),
 		"fights": observed_fights.map(func(f): return {"id": f.id, "x": snappedf(f.x, 1.0), "y": snappedf(f.y, 1.0),
 			"a": f.a.id, "b": f.b.id, "cas": f.cas.duplicate(), "age": snappedf(sess.time - f.t0, 0.1)}),
 		"control": control.duplicate(true),

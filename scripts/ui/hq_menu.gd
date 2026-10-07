@@ -45,6 +45,7 @@ func _build() -> void:
 	map.clicked.connect(_on_map_click)
 	content.add_child(map)
 	squad_label = UIStyle.label("- (click a squad)", 15, UIStyle.DIM)
+	squad_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(squad_label)
 	squad_buttons = HFlowContainer.new()
 	squad_buttons.add_theme_constant_override("h_separation", 6)
@@ -240,8 +241,7 @@ func _squad_detail() -> void:
 	if q == null:
 		squad_label.text = "- (click a squad)"
 		return
-	var doing: String = q.tactic if q.tactic != "" else str(q.order.get("type", "hold"))
-	squad_label.text = "Selected: %s (%s, %d men, %s)" % [q.id, q.kind, q.men, doing]
+	squad_label.text = preload("res://scripts/ui/widgets/squad_card.gd").describe(s.ground.squad_view(q, "org"))
 
 
 func _squad_key(k: String) -> void:

@@ -9,6 +9,25 @@ func _session() -> Session:
 	session.money = 100000
 	return session
 
+func test_local_hq_shows_shared_squad_command_detail() -> void:
+	var s := _session()
+	var menu := HQMenu.new()
+	Engine.get_main_loop().root.add_child(menu)
+	menu.setup(s)
+	menu.open()
+	var squad = s.ground.recruit("org", "foot", null, false)
+	squad.morale = 0.65
+	squad.ammo = 123
+	menu.sel_squad = squad.id
+	menu._squad_detail()
+	check("123 rounds" in menu.squad_label.text, "HQ displays ammunition")
+	check("65%" in menu.squad_label.text, "HQ displays morale")
+	check("Upkeep:" in menu.squad_label.text, "HQ displays authoritative upkeep")
+	check(menu.squad_label.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART, "command detail wraps")
+	menu.close()
+	menu.free()
+
+
 func test_disband_review_cancel_commit_and_close_restore_seat_and_focus() -> void:
 	var s := _session()
 	var viewport := SubViewport.new()

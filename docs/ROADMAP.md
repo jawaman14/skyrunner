@@ -35,6 +35,11 @@ Campaign polish is implemented in draft [#229](https://github.com/jawaman14/skyr
 
 ## Ordered implementation queue
 
+The approved empire-led continuation is recorded in [EMPIRE_MILESTONE.md](EMPIRE_MILESTONE.md).
+Its first slices protect exact ground-fight intelligence, map real loading endpoints
+without changing dispatch, and share selected-squad condition/travel/cost detail.
+Physical connector correction remains a prerequisite to truck/squad migration.
+
 1. **Baseline verification:** the overhaul stack is integrated; the latest
    verified gameplay baseline is #225 with 990 desktop tests and passing CI.
    Human release evidence remains pending; do not repeat stack integration.
