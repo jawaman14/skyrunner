@@ -66,6 +66,10 @@ and real two-machine remote/voice validation remain unperformed.
    severity-based expiry. Remote preview adoption and map layer controls remain.
 6. **Placement/access:** deterministic footprints, entrances, walk/loading
    approaches and network connectors; diagnostic overlay and interaction occlusion.
+   Through-wall interaction is reproduced with actual overlapping physics areas
+   and a solid wall. Selection and activation now require an unobstructed ray;
+   all eighteen walker tests pass, including existing desks/job boards. Shared
+   placement records, developer overlay and all-entrance walkthrough remain.
 7. **Roads/bridges:** shared physical/rendered surface, checked routes and safe
    connectors. Preserve La Selva without a public road; no incidental map rebake.
 8. **Interiors:** fix existing hangars/HQs/casino; make all eight stash types
