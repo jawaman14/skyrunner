@@ -71,4 +71,7 @@ arbitrary speed, payout or weapon tuning. Raw paired rows and aggregates are in
 [the comparison record](../sim-results/faction-ai-balance-2026-10-08.json).
 
 Desktop smoke reports SMOKE OK; native tracked-file hygiene, export exclusions
-and Git diff checks pass. Full shard results are recorded after completion.
+and Git diff checks pass. At code head 6880d41, all 1,026 desktop tests pass
+(369/313/344), zero failed and no script/parse errors. Save/parity/export coverage
+is included. Known shutdown ObjectDB/resource/PagedAllocator diagnostics persist.
+These automated passes do not clear the wider balance or human acceptance gate.
