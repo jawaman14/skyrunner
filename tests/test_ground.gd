@@ -106,6 +106,68 @@ func test_battle_history_is_private_and_read_only() -> void:
 	s.dispose()
 
 
+func _escort_truck(s: Session, at: Vector2) -> StashNet.Truck:
+	var t := StashNet.Truck.new()
+	t.job_id = 999
+	t.stash = s.stash_net.live()[0].id
+	t.x0 = at.x
+	t.y0 = at.y
+	t.x1 = at.x + 1000
+	t.y1 = at.y
+	t.dur = 10000
+	s.stash_net.trucks.append(t)
+	return t
+
+func test_ai_preserves_active_escort_and_releases_completed_job() -> void:
+	var s := _war()
+	var g := s.ground
+	var q := _squad(g, "org", g.hq("org"), {"rifle": 4}, "car")
+	var t := _escort_truck(s, q.pos())
+	g.order(q, {"type": "escort", "job_id": t.job_id})
+	s.money = 0
+	var before := q.order.duplicate(true)
+	for i in 3: g._think_org()
+	check_eq(q.order, before, "active escort is not reused for guard/ambush/decoy")
+	s.stash_net.trucks.clear()
+	g._trucks(5)
+	g._think_org()
+	check_eq(q.order.type, "guard", "completed escort returns to available planning")
+	s.dispose()
+
+func test_ai_active_escort_can_still_retreat_when_outgunned() -> void:
+	var s := _war()
+	var g := s.ground
+	var q := _squad(g, "org", g.hq("org"), {"pistol": 2}, "car")
+	var t := _escort_truck(s, q.pos())
+	_squad(g, "police", q.pos() + Vector2(100, 0), {"rifle": 12})
+	g.order(q, {"type": "escort", "job_id": t.job_id})
+	s.money = 0
+	g._think_org()
+	check_eq(q.order.type, "melt", "emergency retreat still overrides escort")
+	s.dispose()
+
+func test_ai_stale_stakeout_stops_intelligence_after_reassignment() -> void:
+	var s := _war()
+	var g := s.ground
+	var st: Dictionary = s.stash_net.live()[0]
+	var q := _squad(g, "police", Vector2(st.x, st.y), {"rifle": 4}, "car")
+	g.order(q, {"type": "stakeout", "stash": st.id})
+	g.stakeouts[st.id] = q.id
+	var before: float = st.intel
+	g._trucks(60)
+	check(st.intel > before, "current stakeout generates intelligence")
+	g.order(q, {"type": "hold"})
+	before = st.intel
+	g._trucks(60)
+	check_eq(st.intel, before, "hold order cannot retain stakeout intelligence")
+	check(not g.stakeouts.has(st.id), "stale registration no longer blocks replacement surveillance")
+	g.order(q, {"type": "stakeout", "stash": s.stash_net.live()[1].id})
+	g.stakeouts[st.id] = q.id
+	g._trucks(60)
+	check_eq(st.intel, before, "reassignment to another stash removes old intelligence")
+	s.dispose()
+
+
 func _war(seed := 3, ai := false) -> Session:
 	var s := Session.new({"seed": seed, "map_seed": MapCity.SEED, "location": "QRY",
 		"features": Session.SANDBOX_FEATURES, "ground_war": true})
