@@ -602,6 +602,8 @@ func update(dt: float) -> void:
 ## A worker's current task, in a few words, for the roster: the hiring hall (Talk) and the law's
 ## jail view both read it off the Dictionary view() returns, so it only has to be worked out once.
 func doing(w: Dictionary) -> String:
+	var travel_reason: String = people.blocked.get(str(w.get("id", "")), "")
+	if travel_reason != "": return "travel blocked: " + travel_reason
 	if str(w.get("status", "")) != "assigned" or str(w.get("assigned", "")) == "":
 		return "free"
 	var a := str(w.assigned)
