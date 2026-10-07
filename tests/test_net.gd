@@ -94,6 +94,19 @@ func test_seat_change_cancels_queued_command_before_mutation() -> void:
 	check(not c.command_acks[100].ok)
 
 
+func test_release_and_reclaim_same_seat_invalidates_previous_queue() -> void:
+	var cp := _client("Reclaim", Roles.COPILOT)
+	check(_pump_until(func(): return cp.latest != null))
+	var c: HostServer.Conn = srv.clients[Roles.COPILOT]
+	srv._message(c, {"t": "cmd", "seq": 100, "name": "chat", "args": {"text": "old claim"}})
+	srv._message(c, {"t": "release"})
+	srv._message(c, {"t": "claim", "role": Roles.COPILOT})
+	check_eq(c.role, Roles.COPILOT)
+	srv.pump(sess)
+	check(not sess.messages.any(func(m): return "old claim" in str(m[1])))
+	check(not c.command_acks[100].ok, "new claim cannot revive an old command")
+
+
 func test_queue_and_ack_cache_are_bounded_and_expired_sequences_never_execute() -> void:
 	var cp := _client("Bounded", Roles.COPILOT)
 	check(_pump_until(func(): return cp.latest != null))

@@ -51,6 +51,7 @@ class Conn:
 	var pending_commands := {}
 	var command_acks := {}
 	var input_time := -1
+	var seat_generation := 0
 
 
 var tcp := TCPServer.new()
@@ -59,7 +60,7 @@ var mode := Roles.COOP
 var world_seed := 7
 var conns: Array = []
 var clients := {}  ## role -> Conn
-var inbox: Array = []  ## [role, seq, name, args, originating connection]
+var inbox: Array = []  ## [role, seq, name, args, originating connection, seat generation]
 var sticks := {}  ## role -> [roll, pitch, throttle]
 var sess = null  ## the Session the seats belong to (set by attach or the first pump)
 var chat_log: Array = []  ## [from, role, side, text, to]
@@ -341,6 +342,7 @@ func _message(c: Conn, msg: Dictionary) -> void:
 	match msg.get("t"):
 		"claim":
 			var role := str(msg.get("role", ""))
+			c.seat_generation += 1
 			if c.role != "":
 				_clear_input(c)
 				sess.seats.release(c.role)
@@ -358,6 +360,7 @@ func _message(c: Conn, msg: Dictionary) -> void:
 			return
 		"release":
 			if c.role != "":
+				c.seat_generation += 1
 				_clear_input(c)
 				sess.seats.release(c.role)
 				clients.erase(c.role)
@@ -397,7 +400,7 @@ func _message(c: Conn, msg: Dictionary) -> void:
 		for k in raw.keys().slice(0, 8):
 			args[str(k).substr(0, 32)] = raw[k]
 		c.pending_commands[seq] = true
-		inbox.append([c.role, seq, str(msg.get("name", "")).substr(0, 32), args, c])
+		inbox.append([c.role, seq, str(msg.get("name", "")).substr(0, 32), args, c, c.seat_generation])
 	elif msg.get("t") == "input" and c.role == Roles.PILOT:
 		var st := {}
 		for k in ["roll", "pitch", "throttle", "rudder", "brake"]:
@@ -574,7 +577,7 @@ func pump(sess_: Session) -> void:
 	inbox = inbox.slice(batch.size())
 	for m in batch:
 		var c: Conn = m[4]
-		if not conns.has(c) or clients.get(m[0]) != c or c.role != m[0]:
+		if not conns.has(c) or clients.get(m[0]) != c or c.role != m[0] or c.seat_generation != m[5]:
 			_complete_command(c, m[1], false, "Seat changed or disconnected; command not executed.")
 			continue
 		var r: Array = sess.command(m[0], m[2], m[3])
