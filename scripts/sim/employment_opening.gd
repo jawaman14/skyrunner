@@ -24,8 +24,10 @@ func chapter() -> Campaign.Chapter:
 		[Campaign.Objective.new("employer_deliveries", "Complete employer deliveries", 2 if stage == 0 else 1)])
 
 func guidance(s) -> String:
-	return "J: employer job board. Deliver the assigned load to its named airfield. Fuel, cargo and police rules still apply.\nAircraft: %s. First ownership: $%s at an aircraft dealer; active jobs must be finished or dropped. Savings: $%s." % [
-		"employer-owned Cessna" if loaner else "your own aircraft", Py.money(PURCHASE_PRICE), Py.money(s.money)]
+	var ownership := "Aircraft: your own %s. Savings: $%s." % [s.spec.name, Py.money(s.money)]
+	if loaner:
+		ownership = "Aircraft: employer-owned Cessna. First ownership: $%s at an aircraft dealer; active jobs must be finished or dropped. Savings: $%s." % [Py.money(PURCHASE_PRICE), Py.money(s.money)]
+	return "J: employer job board. Deliver the assigned load to its named airfield. Fuel, cargo and police rules still apply.\n" + ownership
 
 func board(s, code: String) -> Array:
 	if not s.active_jobs.is_empty():

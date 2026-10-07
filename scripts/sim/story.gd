@@ -157,6 +157,18 @@ func guidance() -> String:
 	var names: Array = CHAPTERS[index][3].map(func(k): return NAMES.get(k, k))
 	return "NEW: %s\n\n%s" % [", ".join(names) if not names.is_empty() else "No new systems", GUIDANCE[index]]
 
+## Called only after an authoritative purchase ends the employer loan.
+func record_first_aircraft(key: String, price: int) -> void:
+	if employment == null or sess == null:
+		return
+	for entry in history:
+		if entry.get("milestone", "") == "first_aircraft":
+			return
+	history.append({"chapter": 0, "milestone": "first_aircraft", "title": "Your first aircraft",
+		"briefing": "Bought your own %s for $%s. The employer loan has ended." % [Aircraft.ROSTER[key].name, Py.money(price)],
+		"objectives": ["[x] Own an aircraft"], "time": sess.time, "status": "completed"})
+
+
 func journal_text() -> String:
 	var sections: Array = ["%s - %s\n\n%s\n\n%s\n\n%s" % ["EMPLOYMENT" if chapter.num == 0 else "CHAPTER %d" % chapter.num, chapter.title, chapter.briefing, guidance(), "\n".join(objective_lines())]]
 	for entry in history:
