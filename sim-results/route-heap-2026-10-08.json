@@ -1,0 +1,11 @@
+{
+	"heap_mean_ms": 2.26817,
+	"heap_p95_ms": 5.324,
+	"linear_mean_ms": 2.62012,
+	"linear_p95_ms": 6.184,
+	"map": "Costa Brava",
+	"nodes": 1949,
+	"note": "Paired search microbenchmark, no concurrent suite; not frame-time or gameplay balance evidence.",
+	"pairs": 100,
+	"path_mismatches": 0
+}
