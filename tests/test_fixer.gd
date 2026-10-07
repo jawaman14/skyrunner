@@ -75,10 +75,14 @@ func test_the_desk_draws_the_jobs_and_its_keys_do_the_business() -> void:
 	var taken: int = s.active_jobs.size()
 	app.list.select(0)
 	app._key("enter")
+	check_eq(s.active_jobs.size(), taken, "preview does not book a job")
+	await _confirm_review(app)
 	check_eq(s.active_jobs.size(), taken + 1, "ENTER books the highlighted job")
 	app._process(0.016)
 	var m: int = s.money
 	app._key("g")
+	check(not s.gear.has("scanner"), "preview does not buy gear")
+	await _confirm_review(app)
 	check(s.gear.has("scanner") and s.money < m, "G buys the scanner")
 	app._key("s")
 	check(s.spotters.size() == 1, "S hires a spotter here")
@@ -89,3 +93,14 @@ func test_the_desk_draws_the_jobs_and_its_keys_do_the_business() -> void:
 	if app.talk != null:
 		app.talk.queue_free()
 	app.queue_free()
+
+
+func _confirm_review(app: StationApp) -> void:
+	check(app.review != null, "committing action opens a review")
+	if app.review == null:
+		return
+	for frame in 3:
+		await Engine.get_main_loop().process_frame
+	app.review._answered(true)
+	for frame in 3:
+		await Engine.get_main_loop().process_frame
