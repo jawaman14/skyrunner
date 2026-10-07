@@ -11,8 +11,8 @@ Source audit: 7 October 2026. This is a maintained evidence record, not generate
 |---|---|---|
 | Version | 0.9.0-beta.1 | `README.md`, release metadata |
 | Engine | Godot 4.7.2, GDScript, Jolt | project configuration |
-| Test files | 100+ `tests/test_*.gd` files | count from repository; run `./tools/test.sh` for the current result |
-| Verified automated baseline | 948 tests through PR #197; later slices have focused evidence | PR #197 and subsequent PR bodies; resource shutdown diagnostics remain |
+| Test files | 123 `tests/test_*.gd` files, excluding `test_case.gd` | source count on 7 October; run `./tools/test.sh` for test results |
+| Verified automated baseline | 985 passed, 0 failed across three desktop shards (315 / 337 / 333) | 7 October review and PR #222; no script/parse errors; lambda/resource cleanup diagnostics remain |
 | Tutorial | Four Costa Brava flying chapters | `docs/DESIGN.md`; preserved |
 | Story | Twelve Costa Brava chapters | `README.md`/`docs/DESIGN.md`; preserved |
 | Player map | Costa Brava | Classic geometry remains internal regression only; generated maps are optional |
@@ -25,17 +25,22 @@ Source audit: 7 October 2026. This is a maintained evidence record, not generate
 
 ### Post-merge review, 7 October 2026
 
-The overhaul stack (#119 and #178–#209) and replacement PRs #216–#220 are
+The overhaul stack (#119 and #178–#209) and replacement PRs #216–#222 are
 merged. PR #219 restored source and test files missing from the initial
 integration. PR #220 updated the mechanic regression for explicit action review.
 Focused evidence on the repaired tree: payroll 21 passed, airframe 11 passed.
-The previous full-suite runs were interrupted without a final result; they do
-not establish a post-merge pass. A fresh full run is required before release.
+Luna's interrupted full runs did not establish a pass. Review reproduced two
+failing tests on the earlier integrated tree (983 passed, 2 failed); PR #222
+fixes map Enter routing and updates fixer confirmation coverage. The corrected
+three-shard run passed all 985 tests. CI for #222 passed exports, dedicated-server
+checks and Linux/Windows smoke; the remaining CI shards were still pending when
+the desktop evidence was recorded.
 
 Review found that `PhoneCalls` is a standalone queue used only by its unit tests;
 incoming calls are not yet connected to Session, saves, snapshots or PhoneMenu.
 Issue #83 remains incomplete. The workflow exports macOS but currently has no
-macOS launch job; issue #176 remains incomplete. The earlier PR #218 summary is
+macOS launch job on the recorded baseline; PR #223 adds one, with execution
+evidence pending. Issue #176 remains incomplete. The earlier PR #218 summary is
 not evidence that these gameplay and platform integrations are finished.
 
 No open PRs remained at the start of this review. Open issues still require

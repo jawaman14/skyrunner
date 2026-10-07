@@ -7,6 +7,16 @@ findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md)
 
 ## Baseline and completed work
 
+**Integration update, 7 October 2026:** #119, #178–#209, and replacement
+PRs #216–#220 are merged. [#222](https://github.com/jawaman14/skyrunner/pull/222)
+fixes map keyboard routing and fixer review coverage; the corrected desktop
+suite passes 985 tests (315 / 337 / 333). The draft-stack descriptions below
+are retained as implementation history, not the current merge queue.
+Use [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified and pending evidence.
+Incoming-call gameplay integration (#83), macOS launch evidence (#176), and
+human release gates remain open. [#223](https://github.com/jawaman14/skyrunner/pull/223)
+adds macOS bundle/launch validation and is awaiting CI evidence.
+
 The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava story stay.
 Save expansion, the six-layer Session split, role support, switch registry and
 strategic calibration are implemented; do not restart them from older reviews.
