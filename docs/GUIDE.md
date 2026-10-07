@@ -596,3 +596,7 @@ Hangar aircraft/gear purchases and repairs, and dealer vehicle purchases/sales, 
 ### Stash interiors
 
 All eight stash types have an open storage interior. Walk to the workbench and use the Storage / logistics prompt to open logistics with that stash selected as the source. Stock, cash and orders remain authoritative simulation data. Burned sites show an unavailable label and reject storage access; their exit remains open. Decorative papers and furniture do not add inventory.
+
+### Station map layers
+
+Use the map’s Operations, People / logistics and Intelligence switches to reduce clutter. Reports keep their source, age and uncertainty; switching a layer on does not reveal additional information. Hidden markers do not select or dispatch entities. The selected-entity card and order outcomes remain on the desk.

@@ -8,6 +8,10 @@ extends Control
 
 signal clicked(button: int, world_xy: Vector2)
 
+const LAYERS := {"operations": "Operations", "people": "People / logistics", "intelligence": "Intelligence"}
+const ITEM_LAYER := {"jobs": "operations", "units": "operations", "boats": "people", "bales": "people", "stashes": "people", "trucks": "people",
+	"intel": "intelligence", "spotters": "intelligence", "radars": "intelligence", "df": "intelligence", "jammed": "intelligence", "tips": "intelligence", "tracks": "intelligence"}
+var layers := {"operations": true, "people": true, "intelligence": true}
 var snap = null
 var role := ""
 var sel_unit = null
@@ -24,6 +28,17 @@ func setup(world_: World) -> StationMap:
 	clip_contents = true
 	return self
 
+
+func set_layer(key: String, enabled: bool) -> void:
+	if layers.has(key):
+		layers[key] = enabled
+		queue_redraw()
+
+func visible_items(key: String) -> Array:
+	if not (snap is Dictionary) or not bool(layers.get(ITEM_LAYER.get(key, "operations"), false)):
+		return []
+	var items = snap.get(key, [])
+	return items if items is Array else []
 
 func side() -> float:
 	return minf(size.x, size.y)
@@ -101,7 +116,7 @@ func _draw() -> void:
 		_text(af.x + 300, af.y + 200, af.code, Color(1, 1, 1, 0.9))
 	if not (snap is Dictionary):
 		return
-	if role in [Roles.BOSS, Roles.CHIEF]:
+	if role in [Roles.BOSS, Roles.CHIEF] and layers.operations:
 		for z in HQ.ZONE_CENTRE:
 			var c: Array = HQ.ZONE_CENTRE[z]
 			_circle(c[0], c[1], 4500, Color(0.9, 0.8, 0.3, 0.6), 2.0)
@@ -116,7 +131,7 @@ func _draw() -> void:
 			if patrol != null:
 				var c: Array = HQ.ZONE_CENTRE[patrol]
 				_circle(c[0], c[1], 5600, Color(0.4, 0.6, 1), 3.0)
-	elif snap.get("side") == "law":
+	if snap.get("side") == "law":
 		_draw_law()
 	else:
 		_draw_runner()
@@ -124,25 +139,25 @@ func _draw() -> void:
 
 
 func _draw_runner() -> void:
-	for j in snap.get("jobs", []):
+	for j in visible_items("jobs"):
 		_circle(j.x, j.y, 600, Color(0.3, 1, 0.3), 2.0)
 		_text(j.x, j.y, str(j.dest), Color(0.4, 1, 0.4))
-	for b in snap.get("boats", []):
+	for b in visible_items("boats"):
 		_arrow(b.x, b.y, b.heading, Color(0.3, 0.8, 1), 9)
 		_text(b.x, b.y, "%s %s [%d]" % [b.id, b.state, int(b.cargo)], Color(0.5, 0.85, 1))
-	for bl in snap.get("bales", []):
+	for bl in visible_items("bales"):
 		_cross(bl.x, bl.y, Color(1, 0.9, 0.3), 3)
-	for it in snap.get("intel", []):
+	for it in visible_items("intel"):
 		_cross(it.x, it.y, Color(1, 0.3, 0.3) if it.age < 10 else Color(0.6, 0.3, 0.3))
 		_text(it.x, it.y, "%s %s %.0fs" % [it.unit, it.source, it.age], Color(1, 0.5, 0.5))
-	for sp in snap.get("spotters", []):
+	for sp in visible_items("spotters"):
 		var af := World.airfield(sp.code)
 		_circle(af.x, af.y, 5000, Color(1, 1, 0.4, 0.5))
-	for sh in snap.get("stashes", []):
+	for sh in visible_items("stashes"):
 		var sc: Color = Color(0.5, 0.5, 0.5) if sh.burned else Color(0.95, 0.4, 0.75)
 		draw_rect(Rect2(w2m(sh.x, sh.y) - Vector2(5, 5), Vector2(10, 10)), sc, false, 2.0)
 		_text(sh.x, sh.y, sh.name, sc)
-	for t in snap.get("trucks", []):
+	for t in visible_items("trucks"):
 		var col: Color = TRUCK_COL.get(str(t.get("kind", "load")), TRUCK_COL.load)
 		if t.has("tx"):
 			draw_line(w2m(t.x, t.y), w2m(t.tx, t.ty), Color(col, 0.35), 1.0)
@@ -153,7 +168,7 @@ func _draw_runner() -> void:
 			# hovered: what it carries, where to, how long
 			_text(t.x, t.y, "%s -> %s, %d min%s" % [str(t.get("title", "truck")).trim_prefix("Truck: "), str(t.get("to", t.get("stash", ""))),
 				int(ceil(float(t.get("eta", 0)) / 60.0)), "  (pulled over)" if t.get("waiting", false) else ""], col)
-	var ac = snap.get("aircraft")
+	var ac = snap.get("aircraft") if layers.operations else null
 	if ac is Dictionary:
 		_arrow(ac.x, ac.y, ac.heading, Color(1, 1, 0), 16)
 
@@ -167,7 +182,7 @@ const SQUAD_COL := {"org": Color(1.0, 0.45, 0.8), "rival": Color(1.0, 0.6, 0.15)
 ## The ground war: squads as chevrons (a bar per man), our own with their
 ## routes and orders, firefights as starbursts.
 func _draw_ground() -> void:
-	var g = snap.get("ground")
+	var g = snap.get("ground") if layers.people else null
 	if not (g is Dictionary) or g.is_empty():
 		return
 	var own := "police" if snap.get("side") == "law" else "org"
@@ -210,7 +225,7 @@ var _cov_key := ""
 
 
 func _draw_coverage() -> void:
-	var active: Array = snap.get("radars", []).filter(func(r): return r.active).map(func(r): return r.code)
+	var active: Array = visible_items("radars").filter(func(r): return r.active).map(func(r): return r.code)
 	var key := "%d/%s" % [int(coverage_agl), ",".join(active)]
 	if key != _cov_key:
 		_cov_key = key
@@ -234,9 +249,9 @@ func _draw_coverage() -> void:
 
 
 func _draw_law() -> void:
-	if coverage_agl > 0:
+	if coverage_agl > 0 and layers.intelligence:
 		_draw_coverage()
-	for r in snap.get("radars", []):
+	for r in visible_items("radars"):
 		_circle(r.x, r.y, r.range, Color(1, 0.25, 0.25, 0.6) if r.active else Color(0.4, 0.2, 0.2, 0.4))
 		if r.active and r.has("beam"):
 			# the rotating beam, with a fading wake behind it like a PPI scope
@@ -245,7 +260,7 @@ func _draw_law() -> void:
 				var ak := a - deg_to_rad(4.0 * k)
 				draw_line(w2m(r.x, r.y), w2m(r.x + sin(ak) * r.range, r.y + cos(ak) * r.range),
 					Color(0.4, 1, 0.5, 0.5 - 0.08 * k), 2.0 if k == 0 else 1.0)
-	for d in snap.get("df", []):
+	for d in visible_items("df"):
 		# DF: every bearing line, and the fix's 2-sigma error ellipse
 		var fade := clampf(1.0 - float(d.age) / 120.0, 0.2, 1.0)
 		for b in d.bearings:
@@ -263,20 +278,20 @@ func _draw_law() -> void:
 				pts.append(w2m(d.fix[0] + ax * sin(th) + bx * cos(th), d.fix[1] + ax * cos(th) - bx * sin(th)))
 			draw_polyline(pts, Color(0.6, 0.85, 1, 0.9 * fade), 2.0)
 			_text(d.fix[0], d.fix[1], "DF %.0fs" % float(d.age), Color(0.7, 0.9, 1))
-	for z in snap.get("jammed", []):
+	for z in visible_items("jammed"):
 		_circle(z[0], z[1], z[2], Color(1, 0.3, 0.9, 0.85), 2.0)
 		_text(z[0], z[1], "JAMMED", Color(1, 0.45, 0.95))
-	for sh in snap.get("stashes", []):
+	for sh in visible_items("stashes"):
 		var sc: Color = Color(0.5, 0.5, 0.5) if sh.burned else Color(1, 0.55, 0.2).lerp(Color(1, 0.15, 0.1), clampf(float(sh.heat) / 60.0, 0, 1))
 		var sp := w2m(sh.x, sh.y)
 		draw_rect(Rect2(sp - Vector2(5, 5), Vector2(10, 10)), sc, false, 2.0)
 		_text(sh.x, sh.y, "%s%s" % [sh.name, " (burned)" if sh.burned else ""], sc)
-	for t in snap.get("trucks", []):
+	for t in visible_items("trucks"):
 		draw_circle(w2m(t.x, t.y), 4.0, Color(1, 0.85, 0.3))
-	for tip in snap.get("tips", []):
+	for tip in visible_items("tips"):
 		_circle(tip.x, tip.y, tip.r, Color(1, 0.8, 0.2, 0.8), 2.0)
 		_text(tip.x, tip.y, str(tip.text).substr(0, 28), Color(1, 0.85, 0.3))
-	for t in snap.get("tracks", []):
+	for t in visible_items("tracks"):
 		var c := w2m(t.x, t.y)
 		var stale: bool = t.age >= 6
 		var col := Color(1, 0.3, 0.3) if t.age < 6 else Color(0.6, 0.3, 0.3)
@@ -295,10 +310,10 @@ func _draw_law() -> void:
 			mode = (" %s A%03d" % [t.code, int(float(t.alt) / 0.3048 / 100)]) if t.get("alt") != null else " no alt"
 		var emergency: bool = t.get("code") in ["7500", "7600", "7700"]
 		_text(t.x, t.y, "%s%s %s %.0fs" % [nm, mode, t.source, t.age], Color(1, 0.2, 0.9) if emergency else Color(1, 0.5, 0.5))
-	for b in snap.get("boats", []):
+	for b in visible_items("boats"):
 		_arrow(b.x, b.y, b.heading, Color(1, 0.6, 0.2), 9)
 		_text(b.x, b.y, "go-fast %s" % b.state, Color(1, 0.7, 0.3))
-	for u in snap.get("units", []):
+	for u in visible_items("units"):
 		var col := Color(0.4, 0.7, 1) if u.id != sel_unit else Color.WHITE
 		if u.state == "crashed":
 			_cross(u.x, u.y, Color(0.5, 0.5, 0.5))
