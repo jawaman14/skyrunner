@@ -141,3 +141,7 @@ Planning drafts #241-#243 describe remaining physical access, command feedback a
 coastal/release packages; they do not implement those features. The 92 blocked
 loading pairs, operational/custody/tactical debriefs, knowledge policy, coastal
 walkthrough/performance and real two-machine/controller/release gates remain open.
+
+## Comparative gameplay reference (8 October 2026)
+
+[GAMEPLAY_INSPIRATION.md](GAMEPLAY_INSPIRATION.md) compares the Mount & Blade family, Schedule I and both Cities: Skylines games. Apply personal intervention, earned delegation, visible logistics and crew consequences within the existing sequence. New mechanics remain proposals; validate enjoyment through recorded human sessions.
