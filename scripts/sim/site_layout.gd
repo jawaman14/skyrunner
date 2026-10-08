@@ -46,10 +46,18 @@ static func hq_frame(world: World, spec: Dictionary) -> Transform3D:
 	if world.map.map_seed == MapCity.SEED and spec.get("style", "") == "nightclub":
 		at += Vector2(24, 0)
 		yaw = -deg_to_rad(270.0)  # front door faces the existing north/south street
+	if world.map.map_seed == MapCity.SEED and spec.get("style", "") == "customs" and at.distance_to(MapCity.LAW_AT) < 0.1:
+		at += Vector2(24, 0)  # clear the existing north/south customs access road
 	return frame(at, world.ground(at.x, at.y), yaw)
 
 static func stash_frame(world: World, st: Dictionary) -> Transform3D:
-	return frame(Vector2(st.x, st.y), world.ground(st.x, st.y))
+	var at := Vector2(st.x, st.y)
+	if world.map.map_seed == MapCity.SEED:
+		for anchor in MapCity.STASHES:
+			if anchor.id in ["barn", "lockup"] and st.id == anchor.id and at.distance_to(Vector2(anchor.x, anchor.y)) < 0.1:
+				at += Vector2(24, 0)  # physical setback only; stock/strategic anchors remain intact
+				break
+	return frame(at, world.ground(at.x, at.y))
 
 static func hotel_anchor() -> Dictionary:
 	var af := Island.airfield()
