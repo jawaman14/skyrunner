@@ -7,12 +7,22 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 GODOT=${GODOT:-godot}
-timeout 900 "$GODOT" --headless --import >/dev/null 2>&1
+import_out=$(mktemp)
+timeout 900 "$GODOT" --headless --import >"$import_out" 2>&1
+import_code=$?
+if [[ $import_code -ne 0 ]] || grep -qE "SCRIPT ERROR|Parse Error" "$import_out"; then
+  cat "$import_out"
+  rm -f "$import_out"
+  echo "FAILED: import did not complete cleanly"
+  [[ $import_code -eq 0 ]] && import_code=100
+  exit "$import_code"
+fi
+rm -f "$import_out"
 out=$(mktemp)
 timeout "${TEST_TIMEOUT:-900}" "$GODOT" --headless --script res://tests/run_tests.gd -- "$@" >"$out" 2>&1
 code=$?
 grep -v -E "^\s*$" "$out"
-if grep -q "SCRIPT ERROR" "$out"; then
+if grep -qE "SCRIPT ERROR|Parse Error" "$out"; then
   echo "FAILED: script errors above"
   [[ $code -eq 0 ]] && code=100
 fi
