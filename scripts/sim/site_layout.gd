@@ -8,6 +8,12 @@ const STASH := {
 	"camp": [5.0, 2.6, 7.0, 0.0, "green"], "shed": [9.0, 2.8, 6.0, 0.0, "metal_rust"],
 	"boathouse": [8.0, 5.0, 14.0, 0.0, "wood"], "villa": [14.0, 4.0, 10.0, 0.0, "stucco_pink"]}
 
+## A physical meeting yard, separate from the unchanged strategic market anchor.
+const FAMILY_AT := Vector2(-7250.0, -10399.0)
+static func family_site(world: World) -> Dictionary:
+	if world.map.map_seed != MapCity.SEED: return {}
+	return record(world, "meet/family", "meeting", frame(FAMILY_AT, world.ground(FAMILY_AT.x, FAMILY_AT.y)), Vector3(12, 3.5, 10), 0.1)
+
 static func frame(at: Vector2, height: float, yaw := 0.0) -> Transform3D:
 	return Transform3D(Basis(Vector3.UP, yaw), Vector3(at.x, height, -at.y))
 
@@ -107,6 +113,8 @@ static func record(world: World, id: String, kind: String, transform: Transform3
 
 static func records(world: World) -> Array:
 	var out := []
+	var family := family_site(world)
+	if not family.is_empty(): out.append(family)
 	for af in world.airfields:
 		for part in airfield_parts(af):
 			var transform := airfield_frame(world, af).translated_local(part.center)

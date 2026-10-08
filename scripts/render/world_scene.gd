@@ -54,6 +54,8 @@ func setup(world_: World, q: Quality) -> WorldScene:
 		add_child(Buildings.airfield_site(world, af))
 	for k in world.map.hqs:
 		add_child(Buildings.hq(world, world.map.hqs[k]))
+	var family := SiteLayout.family_site(world)
+	if not family.is_empty(): add_child(Buildings.family_meeting(family))
 	if not world.map.foreign.is_empty():
 		var isl := IslandRender.build(world, q)  # Isla Soberana, over the horizon
 		add_child(isl)

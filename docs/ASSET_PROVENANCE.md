@@ -61,4 +61,13 @@ repositories are not recorded as shipped assets.
 
 ## Gameplay documentation media — 8 October 2026
 
+### Family roadside club — 8 October 2026
+
+`Buildings.family_meeting` is original modular geometry using the project's
+existing shared materials. `assets/props/moretti_club_sign.svg` is an original
+weathered printed sign used on its front wall; no external asset was imported.
+The club uses shared site records and collision at every graphics preset.
+`docs/img/family-meeting-2026-10-08.png` is an original isolated engine preview,
+not evidence of a human physical walkthrough. See the dated Family loading report.
+
 `docs/media/*.mp4` and poster JPEGs are original in-engine captures made on the project owner’s Windows desktop from this repository’s assets; underlying asset licences remain as listed above. Videos are silent and contain no archived broadcast audio. See [capture coverage](GAMEPLAY_RECORDINGS.md) and [hash/format manifest](media/manifest.json). Documentation media is excluded from exported game builds.

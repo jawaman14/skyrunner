@@ -131,6 +131,8 @@ func loading_endpoint(site: String, from := "", access: SiteAccess = null) -> Di
 		result.site_id = "hq/org"
 	elif site == "rival":
 		result.site_id = "hq/rival"
+	elif site == "family":
+		result.site_id = "meet/family"
 	elif site == "agency":
 		if from == "" or (from != HQ and sess.stash_net.get_stash(from) == null):
 			result.reason = "The Company's meeting strip requires a valid source."
