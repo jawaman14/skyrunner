@@ -111,6 +111,7 @@
     "test_strips.gd",
     "test_style.gd",
     "test_talk.gd",
+    "test_taxi_menu.gd",
     "test_trade.gd",
     "test_tutorial.gd",
     "test_upgrades.gd",
