@@ -1,4 +1,5 @@
 extends TestCase
+var _parity_state: Dictionary = {}
 ## Seeded tactical and feasibility trials (the flight model, the pilot bot,
 ## police, boats and both RNG streams together) against the golden runs in
 ## tests/fixtures/flight_golden.json (tools/regen_flight_golden.gd). The trial
@@ -7,11 +8,11 @@ extends TestCase
 
 
 func before_each() -> void:
-	Switches.parity_off()  # the Godot-only rules off: replaying the Python game
+	_parity_state = Switches.parity_off()  # the Godot-only rules off: replaying the Python game
 
 
 func after_each() -> void:
-	Switches.parity_on()
+	Switches.restore(_parity_state)
 
 
 func _match(got: Dictionary, want: Dictionary, what: String) -> void:

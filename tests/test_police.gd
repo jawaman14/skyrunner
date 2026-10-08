@@ -1,4 +1,5 @@
 extends TestCase
+var _parity_state: Dictionary = {}
 ## Ported from tests/test_police.py
 
 var world := World.new()
@@ -174,8 +175,8 @@ func test_intersect_parallel_is_none() -> void:
 ## Python's radar (one look a second, a binary clutter floor): these are ports
 ## of, or replays against, the Python game. The Godot radar is tests/test_radar.gd.
 func before_each() -> void:
-	Switches.parity_off()  # the Godot-only rules off: replaying the Python game
+	_parity_state = Switches.parity_off()  # the Godot-only rules off: replaying the Python game
 
 
 func after_each() -> void:
-	Switches.parity_on()
+	Switches.restore(_parity_state)
