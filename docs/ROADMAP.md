@@ -7,7 +7,7 @@ findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md)
 
 ## Baseline and completed work
 
-Worker-map port #289 and startup failure cleanup #290 are squash-merged through `a3f66fb`, each after eleven exact-head checks passed. The original desktop changes remain preserved. #291 completes the read-only fixture audit with focused evidence and is pending CI; broader #97 entry-path coverage and physical/human gates remain open. Do not reschedule the integrated taxi, seat, worker-marker or failed-host fixes.
+Worker-map port #289 and startup failure cleanup #290 are squash-merged through `a3f66fb`, each after eleven exact-head checks passed. The original desktop changes remain preserved. #291 completes the read-only fixture audit and is squash-merged as `aae28fa` after eleven exact-head checks. Main-equivalent desktop acceptance passes 1,026 tests; the final status/fixture candidate passes 1,027. Issues #94 and #96 are completed. Broader #97 entry-path coverage and physical/human gates remain open. Do not reschedule the integrated taxi, seat, worker-marker, failed-host or immutable-fixture work.
 
 **Latest integrations:** #280/#281/#282/#284 are squash-merged through main `9d879ba`, each after all eight current-head CI jobs passed. Parity/seed registration (#93) and command separation (#95) are complete. Seat consolidation #285 and test lanes #286 are now squash-merged through `828ba50`, each after eleven CI jobs passed. #288 is squash-merged as `549ec05` after eleven current-head checks passed, publishing taxi coverage and the #94 acceptance matrix. Generated checkout facts and separate validation/human gates are in [PROJECT_STATUS.md](PROJECT_STATUS.md). The dated baseline/stack descriptions below remain history.
 

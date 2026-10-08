@@ -26,6 +26,7 @@ main and focused checks after retargeting. Superseded branches remain available.
 | #288 | Taxi action tests and complete #94 coverage matrix | `549ec05` |
 | #289 | Own active payroll markers in the People layer | `2456b1a` |
 | #290 | Failed direct-host server cleanup | `a3f66fb` |
+| #291 | Recursively read-only parity oracle and fixture audit | `aae28fa` |
 
 Original #256/#257/#232/#233/#234 are closed with links to their integrated
 replacements. This does not close broader multiplayer, controls, combat or
@@ -33,6 +34,8 @@ release-evidence issues. Campaign history documents from #232 remain preserved
 on its original branch and the campaign stack.
 
 ## Verification
+
+**9 October follow-up:** main `a3f66fb` has an identical tracked tree to desktop candidate `28e66cb`, which passed 1,026 tests in 863.3 seconds. The final status/fixture candidate `6c7f3ef` / identical retargeted tree `9faac70` passes 1,027 tests in 909.3 seconds; all game/test files match main `aae28fa`. Final focused checks pass: save/load 33, determinism 5 and export filters 2. Isolated desktop smoke is `SMOKE OK`; hygiene and generated-status checks pass. No script/parse failures; known shutdown resource diagnostics remain. Documentation evidence edits follow those runs. #288–#291 each passed all eleven exact-head CI jobs before separate squash merges. Human, rights, physical access and performance gates remain pending as listed in PROJECT_STATUS.md.
 
 The four newer integrations each passed all eight current-head CI jobs before squash merge. Historical #277/#278/#279/#283 are closed as superseded; their branches remain available for descendants. The wide overhaul tree passed 1,076 desktop tests with no script/parse failures. This includes unmerged physical work and is not a main-tree or human walkthrough claim. #285 and #286 are now squash-merged after all eleven current-head CI jobs passed. #288 is squash-merged as `549ec05` after all eleven current-head checks passed, publishing the remaining taxi coverage. Main post-integration desktop validation remains pending.
 
