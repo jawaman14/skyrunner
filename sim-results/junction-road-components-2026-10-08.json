@@ -1,0 +1,943 @@
+{
+	"blocked_edges": {
+		"Access grade is too steep for a vehicle.": 54
+	},
+	"blocked_segments": [
+		{
+			"from": [
+				-5589.7998046875,
+				5097.7001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.196439674058253,
+			"terrain_grade": 0.195885443567395,
+			"to": [
+				-5597.7001953125,
+				5125.0
+			]
+		},
+		{
+			"from": [
+				4582.0,
+				-4375.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.7998046875,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.248720630581759,
+			"terrain_grade": 0.244154563665957,
+			"to": [
+				4535.2001953125,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4535.2001953125,
+				-4375.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.900390625,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.462072627326867,
+			"terrain_grade": 0.460262056471764,
+			"to": [
+				4488.2998046875,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4488.2998046875,
+				-4375.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.89990234375,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.462527850658007,
+			"terrain_grade": 0.460265960769615,
+			"to": [
+				4441.39990234375,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4441.39990234375,
+				-4375.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.89990234375,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.465985757121439,
+			"terrain_grade": 0.465243940529735,
+			"to": [
+				4394.5,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4394.5,
+				-4375.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.7998046875,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.465985857816544,
+			"terrain_grade": 0.465240390634782,
+			"to": [
+				4347.7001953125,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				4347.7001953125,
+				-4375.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.900390625,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.221846629950445,
+			"terrain_grade": 0.217758432229856,
+			"to": [
+				4300.7998046875,
+				-4375.0
+			]
+		},
+		{
+			"from": [
+				5035.2001953125,
+				-3652.30004882813
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.0039901733398,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.19339299718439,
+			"terrain_grade": 0.189503019505359,
+			"to": [
+				5074.2001953125,
+				-3627.89990234375
+			]
+		},
+		{
+			"from": [
+				5074.2001953125,
+				-3627.89990234375
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 47.7183113098145,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.285762911129686,
+			"terrain_grade": 0.280929990606367,
+			"to": [
+				5121.10009765625,
+				-3619.10009765625
+			]
+		},
+		{
+			"from": [
+				5121.10009765625,
+				-3619.10009765625
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 48.8601112365723,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.50609044192758,
+			"terrain_grade": 0.506115503981494,
+			"to": [
+				5160.2001953125,
+				-3589.80004882813
+			]
+		},
+		{
+			"from": [
+				5160.2001953125,
+				-3589.80004882813
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 44.1232223510742,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.514958618981937,
+			"terrain_grade": 0.487837297484699,
+			"to": [
+				5191.39990234375,
+				-3558.60009765625
+			]
+		},
+		{
+			"from": [
+				5191.39990234375,
+				-3558.60009765625
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 44.2651252746582,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.440871313803631,
+			"terrain_grade": 0.44999132308283,
+			"to": [
+				5222.7001953125,
+				-3527.30004882813
+			]
+		},
+		{
+			"from": [
+				5222.7001953125,
+				-3527.30004882813
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.0039901733398,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.344396672459369,
+			"terrain_grade": 0.348585733665858,
+			"to": [
+				5261.7001953125,
+				-3502.89990234375
+			]
+		},
+		{
+			"from": [
+				-1277.30004882813,
+				-3125.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.89990234375,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.192794062529281,
+			"terrain_grade": 0.19017045632008,
+			"to": [
+				-1324.19995117188,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				-1324.19995117188,
+				-3125.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.9000244140625,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.193101783408989,
+			"terrain_grade": 0.190168504232127,
+			"to": [
+				-1371.09997558594,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				-1371.09997558594,
+				-3125.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.9000244140625,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.232133840355643,
+			"terrain_grade": 0.232968032607677,
+			"to": [
+				-1418.0,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				-1418.0,
+				-3125.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.800048828125,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.232131492185379,
+			"terrain_grade": 0.232966994272121,
+			"to": [
+				-1464.80004882813,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				-1464.80004882813,
+				-3125.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.89990234375,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.195769695266054,
+			"terrain_grade": 0.194752006746416,
+			"to": [
+				-1511.69995117188,
+				-3125.0
+			]
+		},
+		{
+			"from": [
+				10902.2998046875,
+				-910.200012207031
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4198837280273,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.191809657440689,
+			"terrain_grade": 0.191466777996216,
+			"to": [
+				10875.0,
+				-902.299987792969
+			]
+		},
+		{
+			"from": [
+				10839.7998046875,
+				-910.200012207031
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4198837280273,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.193298226147591,
+			"terrain_grade": 0.184610882418679,
+			"to": [
+				10812.5,
+				-902.299987792969
+			]
+		},
+		{
+			"from": [
+				11089.7998046875,
+				-410.200012207031
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4198837280273,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.204406292348318,
+			"terrain_grade": 0.204422530541235,
+			"to": [
+				11062.5,
+				-402.299987792969
+			]
+		},
+		{
+			"from": [
+				10839.7998046875,
+				472.700012207031
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 44.1235885620117,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.249379777629962,
+			"terrain_grade": 0.247581370182518,
+			"to": [
+				10808.599609375,
+				503.899993896484
+			]
+		},
+		{
+			"from": [
+				10808.599609375,
+				503.899993896484
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 44.2647590637207,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.217334093567855,
+			"terrain_grade": 0.23248955009028,
+			"to": [
+				10777.2998046875,
+				535.200012207031
+			]
+		},
+		{
+			"from": [
+				10750.0,
+				562.5
+			],
+			"grade_category": "surface_adds_steepness",
+			"metres": 35.2000122070313,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.235165874125929,
+			"terrain_grade": 0.0168695380774032,
+			"to": [
+				10750.0,
+				527.299987792969
+			]
+		},
+		{
+			"from": [
+				10750.0,
+				562.5
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 49.7804641723633,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.636120452885323,
+			"terrain_grade": 0.673405417635022,
+			"to": [
+				10714.7998046875,
+				597.700012207031
+			]
+		},
+		{
+			"from": [
+				2652.30004882813,
+				5785.2001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.419849395752,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.211084199999639,
+			"terrain_grade": 0.210948859013731,
+			"to": [
+				2660.19995117188,
+				5812.5
+			]
+		},
+		{
+			"from": [
+				2021.5,
+				6542.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.201364490906369,
+			"terrain_grade": 0.201295513410026,
+			"to": [
+				2041.0,
+				6563.5
+			]
+		},
+		{
+			"from": [
+				2027.30004882813,
+				6597.7001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.419849395752,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.210290873230455,
+			"terrain_grade": 0.21014138282579,
+			"to": [
+				2035.19995117188,
+				6625.0
+			]
+		},
+		{
+			"from": [
+				2035.19995117188,
+				6625.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 36.0757827758789,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.194727251518455,
+			"terrain_grade": 0.194597102368761,
+			"to": [
+				2027.30004882813,
+				6660.2001953125
+			]
+		},
+		{
+			"from": [
+				1728.5,
+				7126.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 36.8421249389648,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.261542999250722,
+			"terrain_grade": 0.264940825090022,
+			"to": [
+				1714.80004882813,
+				7160.2001953125
+			]
+		},
+		{
+			"from": [
+				1714.80004882813,
+				7160.2001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.419849395752,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.337005843381563,
+			"terrain_grade": 0.335480585573249,
+			"to": [
+				1722.69995117188,
+				7187.5
+			]
+		},
+		{
+			"from": [
+				1722.69995117188,
+				7187.5
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 36.0757827758789,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.267072150285066,
+			"terrain_grade": 0.263861624808138,
+			"to": [
+				1714.80004882813,
+				7222.7001953125
+			]
+		},
+		{
+			"from": [
+				9707.0,
+				-1312.5
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 29.706901550293,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.194179783523419,
+			"terrain_grade": 0.194379546878158,
+			"to": [
+				9728.5,
+				-1292.0
+			]
+		},
+		{
+			"from": [
+				10714.7998046875,
+				597.700012207031
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 38.6078834533691,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.522173288512567,
+			"terrain_grade": 0.53050398664313,
+			"to": [
+				10687.5,
+				625.0
+			]
+		},
+		{
+			"from": [
+				-9809.599609375,
+				6794.89990234375
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 45.5668182373047,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.214388852409328,
+			"terrain_grade": 0.214471463830383,
+			"to": [
+				-9770.5,
+				6771.5
+			]
+		},
+		{
+			"from": [
+				-9770.5,
+				6771.5
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.272073371734063,
+			"terrain_grade": 0.269543540980181,
+			"to": [
+				-9749.0,
+				6791.0
+			]
+		},
+		{
+			"from": [
+				-9714.7998046875,
+				6777.2998046875
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.22770746522032,
+			"terrain_grade": 0.222553456231189,
+			"to": [
+				-9687.5,
+				6785.2001953125
+			]
+		},
+		{
+			"from": [
+				-9464.7998046875,
+				6972.7001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.199168820571114,
+			"terrain_grade": 0.182517202909797,
+			"to": [
+				-9437.5,
+				6964.7998046875
+			]
+		},
+		{
+			"from": [
+				-9355.5,
+				6876.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 29.0258502960205,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.198919778186681,
+			"terrain_grade": 0.202893630890717,
+			"to": [
+				-9334.0,
+				6895.5
+			]
+		},
+		{
+			"from": [
+				-8472.7001953125,
+				7937.5
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.288376357612047,
+			"terrain_grade": 0.289288172502548,
+			"to": [
+				-8464.7998046875,
+				7910.2001953125
+			]
+		},
+		{
+			"from": [
+				-8464.7998046875,
+				7910.2001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 36.842212677002,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.208606605294741,
+			"terrain_grade": 0.204733507169091,
+			"to": [
+				-8478.5,
+				7876.0
+			]
+		},
+		{
+			"from": [
+				-8285.2001953125,
+				7964.7998046875
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 44.1807098388672,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.203108130447556,
+			"terrain_grade": 0.205604022295492,
+			"to": [
+				-8253.9599609375,
+				7996.04052734375
+			]
+		},
+		{
+			"from": [
+				-8253.9599609375,
+				7996.04052734375
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 0.0842451453208923,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.203075701987848,
+			"terrain_grade": 0.206480972464251,
+			"to": [
+				-8253.900390625,
+				7996.10009765625
+			]
+		},
+		{
+			"from": [
+				-7500.0,
+				7964.7998046875
+			],
+			"grade_category": "surface_adds_steepness",
+			"metres": 36.0758895874023,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.196487056670292,
+			"terrain_grade": 0.179251982228919,
+			"to": [
+				-7464.7998046875,
+				7972.7001953125
+			]
+		},
+		{
+			"from": [
+				-7464.7998046875,
+				7972.7001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.218505331684092,
+			"terrain_grade": 0.217919656730153,
+			"to": [
+				-7437.5,
+				7964.7998046875
+			]
+		},
+		{
+			"from": [
+				-7312.5,
+				7910.2001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 36.0758895874023,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.200796818026901,
+			"terrain_grade": 0.201076905029797,
+			"to": [
+				-7277.2998046875,
+				7902.2998046875
+			]
+		},
+		{
+			"from": [
+				-7277.2998046875,
+				7902.2998046875
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.275771100356248,
+			"terrain_grade": 0.235753195336736,
+			"to": [
+				-7250.0,
+				7910.2001953125
+			]
+		},
+		{
+			"from": [
+				-7250.0,
+				8097.7001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 36.0758895874023,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.251176668193116,
+			"terrain_grade": 0.250089929335336,
+			"to": [
+				-7214.7998046875,
+				8089.7998046875
+			]
+		},
+		{
+			"from": [
+				-7214.7998046875,
+				8089.7998046875
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 28.4199848175049,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.297769120930733,
+			"terrain_grade": 0.296675861906045,
+			"to": [
+				-7187.5,
+				8097.7001953125
+			]
+		},
+		{
+			"from": [
+				-6660.2001953125,
+				8500.0
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 40.3094749450684,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.485453516639009,
+			"terrain_grade": 0.973681169799811,
+			"to": [
+				-6621.10009765625,
+				8509.7998046875
+			]
+		},
+		{
+			"from": [
+				-6621.10009765625,
+				8509.7998046875
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 40.3099021911621,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 1.35552955630253,
+			"terrain_grade": 1.38118078521079,
+			"to": [
+				-6589.7998046875,
+				8535.2001953125
+			]
+		},
+		{
+			"from": [
+				-6589.7998046875,
+				8535.2001953125
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.003604888916,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 1.74769620684257,
+			"terrain_grade": 1.74769620684257,
+			"to": [
+				-6550.7998046875,
+				8559.599609375
+			]
+		},
+		{
+			"from": [
+				-6550.7998046875,
+				8559.599609375
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 46.9957542419434,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.64413584140273,
+			"terrain_grade": 0.588720538156833,
+			"to": [
+				-6503.89990234375,
+				8556.599609375
+			]
+		},
+		{
+			"from": [
+				-6503.89990234375,
+				8556.599609375
+			],
+			"grade_category": "terrain_already_steep",
+			"metres": 48.8599662780762,
+			"reason": "Access grade is too steep for a vehicle.",
+			"surface_grade": 0.453529979161285,
+			"terrain_grade": 0.420293306190812,
+			"to": [
+				-6464.7998046875,
+				8527.2998046875
+			]
+		}
+	],
+	"components": [
+		3094,
+		207,
+		29,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
+		17,
+		2,
+		16,
+		28,
+		1,
+		2,
+		30,
+		2,
+		1,
+		30,
+		1,
+		1,
+		10,
+		120,
+		1,
+		1,
+		1,
+		2,
+		13,
+		4,
+		41,
+		1,
+		7,
+		29,
+		1,
+		1,
+		6,
+		1,
+		5,
+		1,
+		35,
+		1,
+		1,
+		1,
+		1,
+		2,
+		2,
+		2,
+		2,
+		9,
+		2,
+		2,
+		3,
+		2
+	],
+	"endpoints": [
+		{
+			"component": 0,
+			"index": 477,
+			"reason": "",
+			"site": "hq"
+		},
+		{
+			"component": 0,
+			"index": 2240,
+			"reason": "",
+			"site": "barn"
+		},
+		{
+			"component": 0,
+			"index": 3756,
+			"reason": "",
+			"site": "docks"
+		},
+		{
+			"component": 0,
+			"index": 254,
+			"reason": "",
+			"site": "lockup"
+		},
+		{
+			"component": 29,
+			"index": 2801,
+			"reason": "",
+			"site": "camp"
+		},
+		{
+			"component": 1,
+			"index": 3008,
+			"reason": "",
+			"site": "villa"
+		},
+		{
+			"component": 30,
+			"index": 2972,
+			"reason": "",
+			"site": "quarry"
+		},
+		{
+			"component": 0,
+			"index": 1144,
+			"reason": "",
+			"site": "shack"
+		},
+		{
+			"component": 17,
+			"index": 3784,
+			"reason": "",
+			"site": "agency"
+		}
+	],
+	"grade_categories": {
+		"surface_adds_steepness": 2,
+		"terrain_already_steep": 52
+	},
+	"map": "Costa Brava",
+	"nodes": 3785,
+	"seed": 12
+}

@@ -158,13 +158,9 @@ static func _samples(world: World, r: Array) -> Array:
 static func _strip(st: SurfaceTool, s0: Array, s1: Array, lo: float, hi: float, up: float, col: Color) -> void:
 	var corners := []
 	for s in [s0, s1]:
-		var dir: Vector2 = s[1]
-		var side := Vector2(-dir.y, dir.x)
-		var p: Vector2 = s[0]
-		var z: float = s[2] + up
-		corners.append([Vector3(p.x + side.x * lo, z, -(p.y + side.y * lo)), Vector3(p.x + side.x * hi, z, -(p.y + side.y * hi))])
+		corners.append([RoadSurface.edge(s, lo) + Vector3(0,up,0), RoadSurface.edge(s, hi) + Vector3(0,up,0)])
 	for v in [corners[0][0], corners[1][0], corners[1][1], corners[0][0], corners[1][1], corners[0][1]]:
-		st.set_normal(Vector3.UP)
+		st.set_normal((corners[1][0] - corners[0][0]).cross(corners[1][1] - corners[0][0]).normalized())
 		st.set_color(col)
 		st.add_vertex(v)
 
@@ -238,14 +234,15 @@ static func _road_details(world: World, roads: Array) -> Node3D:
 
 
 static func _lerp_sample(a: Array, b: Array, t: float) -> Array:
-	return [(a[0] as Vector2).lerp(b[0], t), a[1], lerpf(a[2], b[2], t)]
+	var sample := [(a[0] as Vector2).lerp(b[0], t), a[1], lerpf(a[2], b[2], t)]
+	if a.size() >= 5 and b.size() >= 5:
+		sample.append(lerpf(a[3], b[3], t))
+		sample.append(lerpf(a[4], b[4], t))
+	return sample
 
 
 static func _edge_pt(s: Array, lateral: float, up: float) -> Vector3:
-	var dir: Vector2 = s[1]
-	var side := Vector2(-dir.y, dir.x)
-	var p: Vector2 = s[0]
-	return Vector3(p.x + side.x * lateral, s[2] + up, -(p.y + side.y * lateral))
+	return RoadSurface.edge(s, lateral) + Vector3(0,up,0)
 
 
 ## The deck height at a road point: over the highest of the ground under the ribbon, and 2.2 m over the sea.

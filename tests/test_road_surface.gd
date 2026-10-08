@@ -1,5 +1,20 @@
 extends TestCase
 
+class SlopingJunction extends World:
+	func ground(x: float, y: float) -> float: return 20.0 + 0.14 * x + 0.01 * y
+	func is_water(_x: float, _y: float) -> bool: return false
+
+func test_dry_crossing_has_no_artificial_step_on_safe_sloping_terrain() -> void:
+	var world := SlopingJunction.new()
+	world.map = MapLayout.classic()
+	world.map.roads = [[[-50.0,0.0],[50.0,0.0]],[[0.0,-50.0],[0.0,50.0]]]
+	var access := SiteAccess.new(world, [])
+	for direction in [-1,1]:
+		check_eq(access.segment_reason(Vector2(direction * -30,0),Vector2(direction * 30,0),true), "", "road crossing preserves a drivable 14% terrain grade")
+	for x in range(-12,13):
+		for y in [-3.0,0.0,3.0]:
+			check_near(world.travel_surface(x,y),world.ground(x,y)+0.45,0.001,"full width conforms to the same dry ground")
+
 class FlatWater extends World:
 	func ground(_x: float, _y: float) -> float: return 0.0
 	func height(_x: float, _y: float) -> float: return -3.0
