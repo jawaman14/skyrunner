@@ -31,7 +31,7 @@ on its original branch and the campaign stack.
 
 ## Verification
 
-The four newer integrations each passed all eight current-head CI jobs before squash merge. Historical #277/#278/#279/#283 are closed as superseded; their branches remain available for descendants. The wide overhaul tree passed 1,076 desktop tests with no script/parse failures. This includes unmerged physical work and is not a main-tree or human walkthrough claim. #285 and #286 are now squash-merged after all eleven current-head CI jobs passed. Draft #288 publishes the remaining taxi coverage. Main post-integration desktop validation remains pending.
+The four newer integrations each passed all eight current-head CI jobs before squash merge. Historical #277/#278/#279/#283 are closed as superseded; their branches remain available for descendants. The wide overhaul tree passed 1,076 desktop tests with no script/parse failures. This includes unmerged physical work and is not a main-tree or human walkthrough claim. #285 and #286 are now squash-merged after all eleven current-head CI jobs passed. #288 is squash-merged as `549ec05` after all eleven current-head checks passed, publishing the remaining taxi coverage. Main post-integration desktop validation remains pending.
 
 Post-merge desktop run at `3347007`: **1,002 passed, zero failed**
 (321 / 339 / 342). No script or parse failures. The resulting Git tree is also
