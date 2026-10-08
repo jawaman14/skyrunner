@@ -8,6 +8,37 @@ func after_each() -> void:
 	World.use_map(0)
 
 
+func test_snapshot_hides_unobserved_fight_locations() -> void:
+	var s := _war()
+	var g := s.ground
+	var remote := g.hq("org") + Vector2(12000, 12000)
+	var a := _squad(g, "rival", remote, {"rifle": 4})
+	var b := _squad(g, "police", remote + Vector2(50, 0), {"rifle": 4})
+	g._open(a, b)
+	check_eq(g.snapshot("org").fights.size(), 0, "unobserved combat exposes no exact location or IDs")
+	var observer := _squad(g, "org", remote + Vector2(100, 0), {"rifle": 4})
+	check_eq(g.snapshot("org").fights.size(), 1, "observed combat remains available")
+	observer.x += 10000
+	check_eq(g.snapshot("org").fights.size(), 0, "moving out of sight removes exact combat intelligence")
+	check_eq(g.fights.size(), 1, "presentation filtering does not alter the simulation")
+	s.dispose()
+
+
+func test_snapshot_requires_both_fight_participants_visible() -> void:
+	var s := _war()
+	var g := s.ground
+	var remote := g.hq("org") + Vector2(12000, 12000)
+	var a := _squad(g, "rival", remote, {"rifle": 4})
+	var b := _squad(g, "police", remote + Vector2(50, 0), {"rifle": 4})
+	g._open(a, b)
+	_squad(g, "org", remote - Vector2(GroundWar.SIGHT_M - 10, 0), {"rifle": 4})
+	check(g.visible_to("org").has(a), "first participant is observed")
+	check(not g.visible_to("org").has(b), "second participant is outside sight")
+	check_eq(g.snapshot("org").fights.size(), 0, "fight record cannot reveal an unobserved participant")
+	check_eq(g.snapshot("rival").fights.size(), 1, "participants still see their own nearby fight")
+	s.dispose()
+
+
 func _war(seed := 3, ai := false) -> Session:
 	var s := Session.new({"seed": seed, "map_seed": MapCity.SEED, "location": "QRY",
 		"features": Session.SANDBOX_FEATURES, "ground_war": true})

@@ -29,6 +29,7 @@ func refresh() -> void:
 	var book := int(v.get("betting", 0))
 	subtitle.text = "$%s in hand   -   $%s won in the arena   -   the book %s$%s" % [Py.money(s.money), Py.money(won), "+" if book >= 0 else "-", Py.money(absi(book))]
 	var keep := list.selected_row()
+	var keep_id := str(rows[keep].id) if keep >= 0 and keep < rows.size() else ""
 	list.clear_rows()
 	rows = v.get("courses", [])
 	for r in rows:
@@ -36,6 +37,10 @@ func refresh() -> void:
 		list.add_row([("%s (%s)" % [r.name, "car" if r.kind == "car" else "aircraft"]), "%.1f km" % (float(r.length) / 1000.0), _clock(float(r.par)), "$%s" % Py.money(int(r.fee)),
 			"$%s" % Py.money(int(r.prize)), "now" if cool <= 0.0 else "%d min" % int(ceil(cool / 60.0))])
 	if not rows.is_empty():
+		for i in rows.size():
+			if str(rows[i].id) == keep_id:
+				keep = i
+				break
 		list.select_near(keep if keep >= 0 else 0)
 	var last: Array = v.get("results", [])
 	footer.text = "No races run yet. Drive or fly through the gates in order; first takes the prize, second half, third a quarter." if last.is_empty() else "Last: %s, place %d, %s%s" % [
@@ -68,6 +73,7 @@ func key(k: String) -> void:
 				return
 			var r: Array = s.command(Roles.PILOT, "race_enter", {"id": rows[i].id, "bet": Races.BET_STEPS[bet_i], "on": on})
 			if not r[0]:
+				show_feedback(str(r[1]), false)
 				s.say(str(r[1]))
 			else:
 				close()

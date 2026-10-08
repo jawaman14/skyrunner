@@ -1,11 +1,17 @@
 # Roadmap
 
-Current continuation queue, approved 7 October 2026. Each slice is a separate
+Current continuation queue, reviewed 8 October 2026. Each slice is a separate
 feature branch and draft PR. Historical progress is preserved in
 [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md); the source-backed
 findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md).
 
 ## Baseline and completed work
+
+**Current reliability baseline, 8 October 2026:** #254 and #259–#263 are
+squash-merged; main `3347007` passes 1,002 post-merge desktop tests, smoke and
+hygiene. Superseded #232/#233/#234/#256/#257 are closed. Use the
+[per-PR integration record](PR_INTEGRATION_2026-10-08.md) for the current queue
+and remaining acceptance gates; older dated stack descriptions below are history.
 
 **Integration update, 7 October 2026:** #119, #178–#209, and replacement
 PRs #216–#220 are merged. [#222](https://github.com/jawaman14/skyrunner/pull/222)
@@ -14,7 +20,7 @@ suite passes 985 tests (315 / 337 / 333). The draft-stack descriptions below
 are retained as implementation history, not the current merge queue.
 Use [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified and pending evidence.
 [#225](https://github.com/jawaman14/skyrunner/pull/225) integrates the first
-incoming Family-call source; the new desktop baseline is 990 passing tests.
+incoming Family-call source; its dated desktop baseline was 990 passing tests.
 Additional incoming-call sources/evidence (#83), radar-aware routing (#87), and
 human release gates remain open. [#223](https://github.com/jawaman14/skyrunner/pull/223)
 is merged with passing macOS bundle/launch validation. The
@@ -29,7 +35,14 @@ The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava stor
 Save expansion, the six-layer Session split, role support, switch registry and
 strategic calibration are implemented; do not restart them from older reviews.
 
-Current asset continuation: #227 adds HAR workshop equipment; follow with coastal infrastructure/dock details, period vehicles, then existing-aircraft cockpit polish. See [ASSET_COVERAGE.md](ASSET_COVERAGE.md) for runtime coverage and missing work. Merged-stack descriptions are archived; remaining numbered items below distinguish implementation from pending verification.
+Current asset continuation: #227 adds HAR workshop equipment; #228 follows with
+coastal infrastructure and dock details, then period vehicles and existing-aircraft
+cockpit polish. See [ASSET_COVERAGE.md](ASSET_COVERAGE.md) for runtime coverage and
+missing work. Completed overhaul PRs #178–#209 and #119 remain historical records
+in [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md), rather than new work.
+Exported human walkthroughs and real two-machine remote/voice validation remain
+unperformed. Current acceptance evidence is recorded in PROJECT_STATUS.md and
+the dated per-PR integration report linked above.
 
 ## Ordered implementation queue
 
