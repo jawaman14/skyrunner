@@ -5,15 +5,15 @@ baseline changes; historical counts belong in `docs/ROADMAP_HISTORY_2026-10.md`.
 It separates implemented work from evidence so a feature is not advertised as
 human-tested merely because source code exists.
 
-Source audit: 7 October 2026. This is a maintained evidence record, not generated test output.
+Source audit: 8 October 2026. This is a maintained evidence record, not generated test output.
 
 | Field | Current value | Evidence / limit |
 |---|---|---|
 | Version | 0.9.0-beta.1 | `README.md`, release metadata |
 | Engine | Godot 4.7.2, GDScript, Jolt | project configuration |
-| Test files | 123 `tests/test_*.gd` files, excluding `test_case.gd` | source count on 7 October; run `./tools/test.sh` for test results |
-| Verified automated baseline | 990 passed, 0 failed across three desktop shards (319 / 338 / 333) | PR #225; no script/parse errors; lambda/resource cleanup diagnostics remain |
-| Unmerged campaign continuation | 1,002 passed, 0 failed (330 / 339 / 333), smoke OK; forty paired story seeds identical | Draft #229–#232; [dated report](CAMPAIGN_POLISH_2026-10-07.md); not a new merged baseline |
+| Test files in current draft tree | 129 `tests/test_*.gd` files, excluding `test_case.gd` | source count on 8 October; not the main tree count |
+| Verified automated main baseline | 1,002 passed, 0 failed (321 / 339 / 342) | Main `3347007`, #259–#263 and #266; no script/parse failures; engine cleanup diagnostics remain |
+| Unmerged vehicle continuation | 1,059 passed, 0 failed (349 / 360 / 350), smoke OK | #269; current review follow-ups recorded separately; not main or human acceptance |
 | Tutorial | Four Costa Brava flying chapters | `docs/DESIGN.md`; preserved |
 | Story | Twelve Costa Brava chapters | `README.md`/`docs/DESIGN.md`; preserved |
 | Player map | Costa Brava | Classic geometry remains internal regression only; generated maps are optional |
@@ -23,6 +23,16 @@ Source audit: 7 October 2026. This is a maintained evidence record, not generate
 | Asset rights | used third-party notices included; bundled radio redistribution rights unresolved | `docs/ASSET_PROVENANCE.md` and issue #175 |
 
 ## Feature state
+
+### Draft review — 8 October 2026
+
+All 31 initially open drafts were reviewed. Six documentation scopes are ready
+for review (#241–#243, #246, #249, #264); code drafts retain their human gates.
+Follow-ups #270–#272 fix checked connector selection, HQ district navigation and
+road construction cost. Their combined tree passed **1,062 tests, zero failed**
+(351 / 361 / 350), hygiene, and unchanged aggregates across ten paired war seeds.
+These counts describe unmerged code. See
+[the completion record](DRAFT_COMPLETION_REVIEW_2026-10-08.md) for remaining work.
 
 ### Post-merge review, 7 October 2026
 

@@ -1,0 +1,946 @@
+{
+	"config": "war",
+	"hours": 3,
+	"rows": [
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 72.25,
+				"flights": 6,
+				"hung_out": false,
+				"stings": 0,
+				"withheld": 3045
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 1,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 67.4562129467775,
+				"taxed": true
+			},
+			"island": {
+				"caught": 1,
+				"closed_frac": 0.0,
+				"delivered": 14,
+				"intercepts": 0,
+				"relations": 60.0
+			},
+			"law_funds": 6550.74999999959,
+			"market": {
+				"coke_hi": 1.37676879277632,
+				"coke_lo": 0.621308379611877,
+				"coke_lots": 23,
+				"disruption": 1.0,
+				"gun_lots": 24,
+				"guns": 1.65686692914881
+			},
+			"money": 63447,
+			"money_min": 11247,
+			"net_worth": 86399.6071651485,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 3
+			},
+			"payroll": {
+				"crew": 22,
+				"flips": 0,
+				"lost": 12,
+				"loyalty": 0.8,
+				"paid": 29897,
+				"short": false
+			},
+			"sent_units": 19,
+			"shipped": 7,
+			"spent_island": 70013,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 3,
+				"connected_min": 76.0,
+				"dealers": 4,
+				"earned": 24335,
+				"sold_coke": 222.791769599999,
+				"sold_weed": 1247.4792,
+				"stock_coke": 255.775103999999,
+				"stock_value": 22952.6071651485,
+				"stock_weed": 1031.81456
+			},
+			"tribute_paid": 13000,
+			"war": {
+				"arms": 0,
+				"burned": 1,
+				"fights": 19,
+				"org_arrested": 10,
+				"org_lost": 6,
+				"police_lost": 18,
+				"police_squads": 6,
+				"recruit": 5500,
+				"rival_lost": 7,
+				"rival_squads": 3,
+				"squads": 3,
+				"upkeep": 1937
+			}
+		},
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 44.5,
+				"flights": 5,
+				"hung_out": false,
+				"stings": 0,
+				"withheld": 5323
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 0,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 55.2247325153981,
+				"taxed": false
+			},
+			"island": {
+				"caught": 0,
+				"closed_frac": 0.0,
+				"delivered": 12,
+				"intercepts": 0,
+				"relations": 80.0
+			},
+			"law_funds": 4555.16666666663,
+			"market": {
+				"coke_hi": 1.65267067742649,
+				"coke_lo": 0.642298428054552,
+				"coke_lots": 26,
+				"disruption": 1.0,
+				"gun_lots": 26,
+				"guns": 1.50272126015633
+			},
+			"money": 34437,
+			"money_min": 11525,
+			"net_worth": 50231.3938999679,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 4
+			},
+			"payroll": {
+				"crew": 25,
+				"flips": 2,
+				"lost": 11,
+				"loyalty": 0.8532,
+				"paid": 25498,
+				"short": false
+			},
+			"sent_units": 17,
+			"shipped": 5,
+			"spent_island": 40961,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 12,
+				"connected_min": 46.0,
+				"dealers": 6,
+				"earned": 29244,
+				"sold_coke": 311.283523200001,
+				"sold_weed": 1323.5336,
+				"stock_coke": 154.803456,
+				"stock_value": 15794.3938999679,
+				"stock_weed": 896.886479999999
+			},
+			"tribute_paid": 0,
+			"war": {
+				"arms": 0,
+				"burned": 1,
+				"fights": 13,
+				"org_arrested": 9,
+				"org_lost": 4,
+				"police_lost": 18,
+				"police_squads": 8,
+				"recruit": 1500,
+				"rival_lost": 7,
+				"rival_squads": 2,
+				"squads": 2,
+				"upkeep": 3199
+			}
+		},
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 73.0,
+				"flights": 6,
+				"hung_out": false,
+				"stings": 0,
+				"withheld": 0
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 0,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 99.8,
+				"taxed": true
+			},
+			"island": {
+				"caught": 0,
+				"closed_frac": 0.0,
+				"delivered": 18,
+				"intercepts": 0,
+				"relations": 60.0
+			},
+			"law_funds": 10532.8333333338,
+			"market": {
+				"coke_hi": 1.6669185580676,
+				"coke_lo": 0.587269410086367,
+				"coke_lots": 30,
+				"disruption": 1.0,
+				"gun_lots": 27,
+				"guns": 1.65709605767685
+			},
+			"money": 76547,
+			"money_min": 11257,
+			"net_worth": 103591.47902065,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 3
+			},
+			"payroll": {
+				"crew": 23,
+				"flips": 1,
+				"lost": 11,
+				"loyalty": 0.737391304347826,
+				"paid": 27512,
+				"short": false
+			},
+			"sent_units": 23,
+			"shipped": 8,
+			"spent_island": 86658,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 30,
+				"connected_min": 58.0,
+				"dealers": 4,
+				"earned": 28661,
+				"sold_coke": 354.769398399999,
+				"sold_weed": 1411.8,
+				"stock_coke": 349.703712,
+				"stock_value": 27044.4790206496,
+				"stock_weed": 420.0
+			},
+			"tribute_paid": 7000,
+			"war": {
+				"arms": 0,
+				"burned": 1,
+				"fights": 15,
+				"org_arrested": 12,
+				"org_lost": 8,
+				"police_lost": 17,
+				"police_squads": 8,
+				"recruit": 6500,
+				"rival_lost": 2,
+				"rival_squads": 5,
+				"squads": 1,
+				"upkeep": 2420
+			}
+		},
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 48.75,
+				"flights": 6,
+				"hung_out": false,
+				"stings": 0,
+				"withheld": 0
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 2,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 49.2205110099958,
+				"taxed": true
+			},
+			"island": {
+				"caught": 1,
+				"closed_frac": 0.0,
+				"delivered": 17,
+				"intercepts": 0,
+				"relations": 50.0
+			},
+			"law_funds": 5660.83333333355,
+			"market": {
+				"coke_hi": 2.5,
+				"coke_lo": 0.503460387759114,
+				"coke_lots": 25,
+				"disruption": 1.0,
+				"gun_lots": 27,
+				"guns": 1.02968352439614
+			},
+			"money": 106127,
+			"money_min": 7465,
+			"net_worth": 125596.063209328,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 2
+			},
+			"payroll": {
+				"crew": 23,
+				"flips": 0,
+				"lost": 18,
+				"loyalty": 0.726521739130435,
+				"paid": 25423,
+				"short": false
+			},
+			"sent_units": 18,
+			"shipped": 6,
+			"spent_island": 68189,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 15,
+				"connected_min": 59.0,
+				"dealers": 4,
+				"earned": 48222,
+				"sold_coke": 448.7952,
+				"sold_weed": 1220.7024,
+				"stock_coke": 236.624934400001,
+				"stock_value": 19469.0632093284,
+				"stock_weed": 628.52832
+			},
+			"tribute_paid": 6000,
+			"war": {
+				"arms": 5040,
+				"burned": 1,
+				"fights": 14,
+				"org_arrested": 12,
+				"org_lost": 6,
+				"police_lost": 23,
+				"police_squads": 8,
+				"recruit": 5500,
+				"rival_lost": 1,
+				"rival_squads": 4,
+				"squads": 2,
+				"upkeep": 1888
+			}
+		},
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 79.0,
+				"flights": 5,
+				"hung_out": true,
+				"stings": 0,
+				"withheld": 4901
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 0,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 99.9,
+				"taxed": true
+			},
+			"island": {
+				"caught": 0,
+				"closed_frac": 0.0,
+				"delivered": 17,
+				"intercepts": 0,
+				"relations": 50.0
+			},
+			"law_funds": 5782.83333333378,
+			"market": {
+				"coke_hi": 1.42105787649529,
+				"coke_lo": 0.445401392311394,
+				"coke_lots": 26,
+				"disruption": 1.0,
+				"gun_lots": 24,
+				"guns": 1.77768606045416
+			},
+			"money": 36188,
+			"money_min": 10560,
+			"net_worth": 50698.4278862011,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 3
+			},
+			"payroll": {
+				"crew": 22,
+				"flips": 2,
+				"lost": 13,
+				"loyalty": 0.824545454545455,
+				"paid": 24485,
+				"short": false
+			},
+			"sent_units": 22,
+			"shipped": 7,
+			"spent_island": 69496,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 30,
+				"connected_min": 53.0,
+				"dealers": 3,
+				"earned": 38500,
+				"sold_coke": 522.323370666667,
+				"sold_weed": 1483.2,
+				"stock_coke": 180.176629333333,
+				"stock_value": 14510.4278862011,
+				"stock_weed": 600.0
+			},
+			"tribute_paid": 7000,
+			"war": {
+				"arms": 0,
+				"burned": 0,
+				"fights": 18,
+				"org_arrested": 38,
+				"org_lost": 10,
+				"police_lost": 23,
+				"police_squads": 8,
+				"recruit": 3000,
+				"rival_lost": 10,
+				"rival_squads": 2,
+				"squads": 2,
+				"upkeep": 2693
+			}
+		},
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 70.5,
+				"flights": 6,
+				"hung_out": false,
+				"stings": 0,
+				"withheld": 2120
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 0,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 74.5979385860509,
+				"taxed": true
+			},
+			"island": {
+				"caught": 0,
+				"closed_frac": 0.0,
+				"delivered": 9,
+				"intercepts": 0,
+				"relations": 50.0
+			},
+			"law_funds": 7063.16666666682,
+			"market": {
+				"coke_hi": 2.01979576326269,
+				"coke_lo": 0.785964286292883,
+				"coke_lots": 22,
+				"disruption": 1.0,
+				"gun_lots": 26,
+				"guns": 1.4048716752612
+			},
+			"money": 44169,
+			"money_min": 11142,
+			"net_worth": 61917.1800741948,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 4
+			},
+			"payroll": {
+				"crew": 26,
+				"flips": 0,
+				"lost": 7,
+				"loyalty": 0.842307692307692,
+				"paid": 26947,
+				"short": false
+			},
+			"sent_units": 14,
+			"shipped": 5,
+			"spent_island": 46782,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 1,
+				"connected_min": 102.0,
+				"dealers": 6,
+				"earned": 19339,
+				"sold_coke": 170.216064,
+				"sold_weed": 1258.8824,
+				"stock_coke": 188.283935999999,
+				"stock_value": 17748.1800741948,
+				"stock_weed": 641.91632
+			},
+			"tribute_paid": 6000,
+			"war": {
+				"arms": 10080,
+				"burned": 1,
+				"fights": 12,
+				"org_arrested": 25,
+				"org_lost": 4,
+				"police_lost": 10,
+				"police_squads": 8,
+				"recruit": 5500,
+				"rival_lost": 7,
+				"rival_squads": 4,
+				"squads": 2,
+				"upkeep": 2333
+			}
+		},
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 57.25,
+				"flights": 5,
+				"hung_out": false,
+				"stings": 0,
+				"withheld": 0
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 0,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 65.7166666666676,
+				"taxed": false
+			},
+			"island": {
+				"caught": 2,
+				"closed_frac": 0.0,
+				"delivered": 15,
+				"intercepts": 0,
+				"relations": 70.0
+			},
+			"law_funds": 4167.12500000017,
+			"market": {
+				"coke_hi": 1.88717165805271,
+				"coke_lo": 0.871182499123496,
+				"coke_lots": 31,
+				"disruption": 1.0,
+				"gun_lots": 36,
+				"guns": 1.60197909547454
+			},
+			"money": 39056,
+			"money_min": 7705,
+			"net_worth": 60658.9776793629,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 4
+			},
+			"payroll": {
+				"crew": 24,
+				"flips": 2,
+				"lost": 11,
+				"loyalty": 0.834166666666667,
+				"paid": 26823,
+				"short": false
+			},
+			"sent_units": 18,
+			"shipped": 6,
+			"spent_island": 62978,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 26,
+				"connected_min": 61.0,
+				"dealers": 4,
+				"earned": 38275,
+				"sold_coke": 298.081625600002,
+				"sold_weed": 2104.10224,
+				"stock_coke": 263.162112,
+				"stock_value": 21602.9776793629,
+				"stock_weed": 420.0
+			},
+			"tribute_paid": 0,
+			"war": {
+				"arms": 0,
+				"burned": 2,
+				"fights": 17,
+				"org_arrested": 22,
+				"org_lost": 5,
+				"police_lost": 22,
+				"police_squads": 8,
+				"recruit": 5000,
+				"rival_lost": 6,
+				"rival_squads": 2,
+				"squads": 2,
+				"upkeep": 2660
+			}
+		},
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 52.25,
+				"flights": 5,
+				"hung_out": false,
+				"stings": 0,
+				"withheld": 0
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 1,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 62.5337904646728,
+				"taxed": true
+			},
+			"island": {
+				"caught": 3,
+				"closed_frac": 0.0,
+				"delivered": 17,
+				"intercepts": 0,
+				"relations": 50.0
+			},
+			"law_funds": 15296.5833333334,
+			"market": {
+				"coke_hi": 1.46933643730595,
+				"coke_lo": 0.570546364669228,
+				"coke_lots": 25,
+				"disruption": 1.0,
+				"gun_lots": 30,
+				"guns": 1.46701878665146
+			},
+			"money": 39713,
+			"money_min": 11327,
+			"net_worth": 57943.3434065987,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 4
+			},
+			"payroll": {
+				"crew": 25,
+				"flips": 1,
+				"lost": 11,
+				"loyalty": 0.7764,
+				"paid": 26857,
+				"short": false
+			},
+			"sent_units": 19,
+			"shipped": 7,
+			"spent_island": 67954,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 23,
+				"connected_min": 61.0,
+				"dealers": 6,
+				"earned": 37023,
+				"sold_coke": 340.907199999999,
+				"sold_weed": 2023.6,
+				"stock_coke": 246.381590400001,
+				"stock_value": 18230.3434065987,
+				"stock_weed": 294.0
+			},
+			"tribute_paid": 8000,
+			"war": {
+				"arms": 5040,
+				"burned": 2,
+				"fights": 19,
+				"org_arrested": 21,
+				"org_lost": 8,
+				"police_lost": 21,
+				"police_squads": 8,
+				"recruit": 8000,
+				"rival_lost": 7,
+				"rival_squads": 4,
+				"squads": 4,
+				"upkeep": 3903
+			}
+		},
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 84.5,
+				"flights": 6,
+				"hung_out": false,
+				"stings": 0,
+				"withheld": 0
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 1,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 53.8025478577199,
+				"taxed": false
+			},
+			"island": {
+				"caught": 1,
+				"closed_frac": 0.0,
+				"delivered": 8,
+				"intercepts": 0,
+				"relations": 50.0
+			},
+			"law_funds": 7690.04166666657,
+			"market": {
+				"coke_hi": 2.39478696671821,
+				"coke_lo": 0.604919052392584,
+				"coke_lots": 28,
+				"disruption": 1.0,
+				"gun_lots": 31,
+				"guns": 1.56876826595936
+			},
+			"money": 38756,
+			"money_min": 9749,
+			"net_worth": 74761.5937438602,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 2
+			},
+			"payroll": {
+				"crew": 25,
+				"flips": 0,
+				"lost": 5,
+				"loyalty": 0.8184,
+				"paid": 24244,
+				"short": false
+			},
+			"sent_units": 13,
+			"shipped": 4,
+			"spent_island": 34003,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 20,
+				"connected_min": 101.0,
+				"dealers": 6,
+				"earned": 22832,
+				"sold_coke": 244.488576000001,
+				"sold_weed": 1271.88,
+				"stock_coke": 402.211424,
+				"stock_value": 36005.5937438602,
+				"stock_weed": 1013.12
+			},
+			"tribute_paid": 0,
+			"war": {
+				"arms": 0,
+				"burned": 0,
+				"fights": 13,
+				"org_arrested": 6,
+				"org_lost": 4,
+				"police_lost": 19,
+				"police_squads": 2,
+				"recruit": 5000,
+				"rival_lost": 6,
+				"rival_squads": 5,
+				"squads": 2,
+				"upkeep": 2360
+			}
+		},
+		{
+			"agency": {
+				"burned": false,
+				"exposure": 45.75,
+				"flights": 5,
+				"hung_out": false,
+				"stings": 0,
+				"withheld": 3753
+			},
+			"caught_units": 0,
+			"earned_island": 0,
+			"family": {
+				"cons": 0,
+				"gone": false,
+				"loans": 0,
+				"rat": false,
+				"respect": 53.5446259065047,
+				"taxed": false
+			},
+			"island": {
+				"caught": 2,
+				"closed_frac": 0.0,
+				"delivered": 16,
+				"intercepts": 0,
+				"relations": 80.0
+			},
+			"law_funds": 4078.00000000005,
+			"market": {
+				"coke_hi": 1.56462084957754,
+				"coke_lo": 0.461644602989976,
+				"coke_lots": 25,
+				"disruption": 1.0,
+				"gun_lots": 30,
+				"guns": 1.37068303727458
+			},
+			"money": 34022,
+			"money_min": 10670,
+			"net_worth": 51420.1291948568,
+			"open": {
+				"first_squad_min": 0.166666666666667,
+				"squad": true,
+				"squads_max": 2
+			},
+			"payroll": {
+				"crew": 22,
+				"flips": 0,
+				"lost": 10,
+				"loyalty": 0.757727272727273,
+				"paid": 24452,
+				"short": false
+			},
+			"sent_units": 17,
+			"shipped": 5,
+			"spent_island": 43417,
+			"suspicion": 0.0,
+			"trade": {
+				"bulk": 11,
+				"connected_min": 61.0,
+				"dealers": 4,
+				"earned": 22770,
+				"sold_coke": 253.168512,
+				"sold_weed": 1456.41968,
+				"stock_coke": 255.531488,
+				"stock_value": 17398.1291948568,
+				"stock_weed": 1120.5024
+			},
+			"tribute_paid": 0,
+			"war": {
+				"arms": 0,
+				"burned": 1,
+				"fights": 14,
+				"org_arrested": 30,
+				"org_lost": 6,
+				"police_lost": 20,
+				"police_squads": 7,
+				"recruit": 5000,
+				"rival_lost": 4,
+				"rival_squads": 2,
+				"squads": 2,
+				"upkeep": 1562
+			}
+		}
+	],
+	"seeds": 10,
+	"summary": {
+		"agency": {
+			"burned_rate": 0.0,
+			"exposure": 62.775,
+			"flights": 5.5,
+			"hangout_rate": 0.1,
+			"withheld": 1914.2
+		},
+		"family": {
+			"cons": 0.5,
+			"loans": 0.0,
+			"rat_rate": 0.0,
+			"respect": 68.1797025953787,
+			"taxed_rate": 0.6,
+			"trial_rate": 0.0,
+			"tribute_paid": {
+				"mean": 4700.0,
+				"p10": 0.0,
+				"p50": 6000.0,
+				"p90": 8000.0
+			}
+		},
+		"island": {
+			"catch_rate": 0.0555555555555556,
+			"closed_frac": 0.0,
+			"intercepts": 0.0,
+			"relations": 60.0,
+			"shipments": {
+				"mean": 6.0,
+				"p10": 4.0,
+				"p50": 6.0,
+				"p90": 7.0
+			},
+			"spent": 590451,
+			"units_caught": 10,
+			"units_sent": 180
+		},
+		"law_funds": {
+			"mean": 7137.73333333343,
+			"p10": 4078.00000000005,
+			"p50": 5782.83333333378,
+			"p90": 10532.8333333338
+		},
+		"market": {
+			"coke_hi": 1.79531275796828,
+			"coke_lo": 0.609399480329147,
+			"coke_lots": 26.1,
+			"disruption": 1.0,
+			"gun_lots": 28.1,
+			"guns": 1.50373746924534
+		},
+		"money": {
+			"mean": 51246.2,
+			"p10": 34022.0,
+			"p50": 39056.0,
+			"p90": 76547.0
+		},
+		"money_min": {
+			"mean": 10264.7,
+			"p10": 7465.0,
+			"p50": 10670.0,
+			"p90": 11327.0
+		},
+		"net_worth": {
+			"mean": 72321.8195280169,
+			"p10": 50231.3938999679,
+			"p50": 60658.9776793629,
+			"p90": 103591.47902065
+		},
+		"open": {
+			"first_squad_min": {
+				"mean": 0.166666666666667,
+				"p10": 0.166666666666667,
+				"p50": 0.166666666666667,
+				"p90": 0.166666666666667
+			},
+			"squad_rate": 1.0,
+			"squads_max": 3.1
+		},
+		"payroll": {
+			"crew": 23.7,
+			"flips": 0.8,
+			"lost": 10.9,
+			"loyalty": 0.797066012972535,
+			"paid": 26213.8,
+			"short_rate": 0.0
+		},
+		"suspicion": {
+			"mean": 0.0,
+			"p10": 0.0,
+			"p50": 0.0,
+			"p90": 0.0
+		},
+		"trade": {
+			"bulk": 17.1,
+			"connected_min": 67.8,
+			"dealers": 4.7,
+			"earned": 30920.1,
+			"sold_coke": 316.682523946667,
+			"sold_weed": 1480.159952,
+			"stock_coke": 253.265438613333,
+			"stock_value": 21075.6195280169,
+			"stock_weed": 706.676808
+		},
+		"war": {
+			"arms": 2016.0,
+			"burned": 1.0,
+			"fights": 15.4,
+			"org_arrested": 18.5,
+			"org_lost": 6.1,
+			"police_lost": 19.1,
+			"police_squads": 7.1,
+			"recruit": 5050.0,
+			"rival_lost": 5.7,
+			"rival_squads": 3.3,
+			"squads": 2.2,
+			"upkeep": 2495.5
+		}
+	}
+}
