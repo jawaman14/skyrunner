@@ -1,13 +1,17 @@
 # Roadmap
 
-Current continuation queue, reviewed 8 October 2026. Each slice is a separate
+Current continuation queue, reviewed 9 October 2026. Each slice is a separate
 feature branch and draft PR. Historical progress is preserved in
 [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md); the source-backed
 findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md).
 
 ## Baseline and completed work
 
-**Current reliability baseline, 8 October 2026:** #254 and #259–#263 are
+Worker-map port #289 and startup failure cleanup #290 are squash-merged through `a3f66fb`, each after eleven exact-head checks passed. The original desktop changes remain preserved. #291 completes the read-only fixture audit and is squash-merged as `aae28fa` after eleven exact-head checks. Main-equivalent desktop acceptance passes 1,026 tests; the final status/fixture candidate passes 1,027. Issues #94 and #96 are completed. Broader #97 entry-path coverage and physical/human gates remain open. Do not reschedule the integrated taxi, seat, worker-marker, failed-host or immutable-fixture work.
+
+**Latest integrations:** #280/#281/#282/#284 are squash-merged through main `9d879ba`, each after all eight current-head CI jobs passed. Parity/seed registration (#93) and command separation (#95) are complete. Seat consolidation #285 and test lanes #286 are now squash-merged through `828ba50`, each after eleven CI jobs passed. #288 is squash-merged as `549ec05` after eleven current-head checks passed, publishing taxi coverage and the #94 acceptance matrix. Generated checkout facts and separate validation/human gates are in [PROJECT_STATUS.md](PROJECT_STATUS.md). The dated baseline/stack descriptions below remain history.
+
+**Earlier reliability baseline, 8 October 2026:** #254 and #259–#263 are
 squash-merged; main `3347007` passes 1,002 post-merge desktop tests, smoke and
 hygiene. Superseded #232/#233/#234/#256/#257 are closed. Use the
 [per-PR integration record](PR_INTEGRATION_2026-10-08.md) for the current queue
@@ -27,8 +31,10 @@ is merged with passing macOS bundle/launch validation. The
 [dated verification report](VALIDATION_2026-10-07.md) records current evidence.
 
 Before truck routing migrates, fix loading/meet endpoint connectors: the
-[route baseline](LOGISTICS_ROUTE_BASELINE.md) finds all 99 current endpoint pairs
-blocked by checked access. Keep this a measured slice rather than replacing the
+[route baseline](LOGISTICS_ROUTE_BASELINE.md) originally found all 99 audited endpoint pairs
+blocked by checked access. The unmerged authored-loading/surface stack now reaches 26 of 99;
+73 remain blocked. See the loading triage in [draft #276](https://github.com/jawaman14/skyrunner/pull/276);
+that report is not integrated into main yet. Keep this a measured slice rather than replacing the
 legacy fallback globally.
 
 The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava story stay.

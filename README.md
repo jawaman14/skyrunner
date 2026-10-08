@@ -34,7 +34,7 @@ git clone https://github.com/jawaman14/skyrunner && cd skyrunner
 GODOT=$(./tools/get_godot.sh)         # pinned Godot 4.7.2 into .tools/ (or use your own 4.7 install)
 $GODOT --path .                       # the lobby: pick a mode, or host or join a game
 $GODOT --path . -- --unlocks open     # skip the lobby: everything open from the first minute
-./tools/test.sh                       # the test suite, headless (about 7 minutes)
+./tools/test.sh                       # the complete suite; CI separates logic, simulation, presentation and sockets
 ```
 
 Nothing to build: you can also just open the folder in Godot 4.7 and press play. Press **F1** in game for the
@@ -131,7 +131,7 @@ the network layered on top. [CLAUDE.md](CLAUDE.md) has the conventions; the shor
   and a test scans the sim for global random draws and clock reads.
 - **Warnings are errors.** Give locals an explicit type whenever the value is a Variant.
 - **Tests and verification.** Run `./tools/test.sh [filter]`; current verified, pending and deferred status is in [PROJECT_STATUS.md](docs/PROJECT_STATUS.md)
-  ([tests/fixtures/README.md](tests/fixtures/README.md)). CI runs them as three parallel shards, exports Linux,
+  ([tests/fixtures/README.md](tests/fixtures/README.md)). Its generated source inventory is separate from recorded passing runs and human acceptance. CI runs logic, three simulation shards, presentation and sockets, exports Linux,
   Windows and macOS builds and smoke-tests them ([.github/workflows/](.github/workflows/)).
 - **Layout.** `scripts/sim/` the simulation (`Session` is a chain of layers, state to commands); `scripts/bots/`
   the pilot bot and route planning; `scripts/balance/` the balance simulators; `scripts/game/` the 3D pilot app;

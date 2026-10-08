@@ -5,17 +5,29 @@ baseline changes; historical counts belong in `docs/ROADMAP_HISTORY_2026-10.md`.
 It separates implemented work from evidence so a feature is not advertised as
 human-tested merely because source code exists.
 
-Source audit: 8 October 2026. This is a maintained evidence record, not generated test output.
+Source audit: 9 October 2026. The source inventory is generated; validation and release evidence are maintained separately.
+
+<!-- BEGIN GENERATED PROJECT STATUS -->
+## Generated source inventory
+
+This section describes **this checkout**. Run `godot --headless --script res://tools/project_status.gd -- --write` after source changes. CI checks it after import. Passing test runs, shipped builds and human verification are separate evidence below.
+
+| Field | Source value | Meaning / source |
+|---|---|---|
+| Version | 0.9.0-beta.1 | project.godot |
+| Declared automated tests | 1027 methods in 132 test files | Compiled source inventory; this is not a test result |
+| Flying tutorial | 4 Costa Brava chapters | Campaign.CHAPTERS |
+| Main story | 12 chapters | Story.CHAPTERS; distinct from the tutorial |
+| Configured exports | Linux, Windows, macOS | Export presets; build/manual acceptance is recorded below |
+| Multiplayer protocol | 3 | Implemented wire version; real two-machine verification remains pending |
+
+<!-- END GENERATED PROJECT STATUS -->
 
 | Field | Current value | Evidence / limit |
 |---|---|---|
-| Version | 0.9.0-beta.1 | `README.md`, release metadata |
 | Engine | Godot 4.7.2, GDScript, Jolt | project configuration |
-| Test files | 123 `tests/test_*.gd` files, excluding `test_case.gd` | source count on 7 October; run `./tools/test.sh` for test results |
-| Verified automated baseline | 1,002 passed, 0 failed across three post-merge desktop shards (321 / 339 / 342) | Main `3347007`, #259–#263; no script/parse failures; engine cleanup diagnostics remain |
-| Unmerged continuation | 1,052 passed, 0 failed (338 / 361 / 353) at villa code head `bbf6a24` | #265 stack; ten paired war seeds have identical aggregate outcomes for the local villa correction; not main or human acceptance |
-| Tutorial | Four Costa Brava flying chapters | `docs/DESIGN.md`; preserved |
-| Story | Twelve Costa Brava chapters | `README.md`/`docs/DESIGN.md`; preserved |
+| Latest desktop source candidate | 1,027 passed, 0 failed in 909.3 seconds | `6c7f3ef` / identical tree `9faac70`; all game/test files match main `aae28fa`; status/tool integration remains pending; no script/parse failures |
+| Overhaul branch evidence | 1,076 passed, 0 failed at `8c08b41` in 799.7 seconds | #283 historical stack, including unmerged world work; no script/parse failures; not a main or human acceptance claim |
 | Player map | Costa Brava | Classic geometry remains internal regression only; generated maps are optional |
 | Desktop targets | Linux, Windows and macOS exported and smoke-launched in CI | PR #223 CI run 37568034562; human exported-build walkthroughs remain pending |
 | Multiplayer | protocol and remote preview/ack paths implemented | real two-machine seat, action and voice session remains unperformed |
@@ -23,6 +35,20 @@ Source audit: 8 October 2026. This is a maintained evidence record, not generate
 | Asset rights | used third-party notices included; bundled radio redistribution rights unresolved | `docs/ASSET_PROVENANCE.md` and issue #175 |
 
 ## Feature state
+
+### Issue-audit integration, 8 October 2026
+
+[#280](https://github.com/jawaman14/skyrunner/pull/280) restores exact prior parity state and hardens the seeded-generator scanner; [#281](https://github.com/jawaman14/skyrunner/pull/281) adds vegetation preset/determinism coverage. [#282](https://github.com/jawaman14/skyrunner/pull/282) deduplicates host/client voice setup and fixes waiting-room beacon lifetime. [#284](https://github.com/jawaman14/skyrunner/pull/284) moves all 105 command handlers into six stateless modules without changing their bodies or Session authority. Each was squash-merged after all eight current-head CI jobs passed. CI lane separation [#286](https://github.com/jawaman14/skyrunner/pull/286) and shared seat screen [#285](https://github.com/jawaman14/skyrunner/pull/285) are also squash-merged, each after all eleven current-head jobs passed. Main is `549ec05`; final post-integration desktop regression/smoke remain separate evidence. Issues #93 and #95 are completed; broader startup and physical/hardware gates remain open. Taxi coverage and the complete #94 action matrix are squash-merged through [#288](https://github.com/jawaman14/skyrunner/pull/288), after all eleven current-head checks passed.
+
+The older dated evidence below is historical; it does not override the generated checkout inventory or upgrade source checks into human acceptance.
+
+### Follow-up integration, 9 October 2026
+
+Own-worker map presentation [#289](https://github.com/jawaman14/skyrunner/pull/289) and occupied-port host cleanup [#290](https://github.com/jawaman14/skyrunner/pull/290) are squash-merged through `a3f66fb`, each after eleven exact-head CI jobs passed. The protected desktop checkout remains unchanged. The worker port passed permission/layer checks (2), people regressions (11) and network checks (16). Startup reproduction failed before the fix and passed afterward (1), with host-service checks (4). Read-only fixture audit [#291](https://github.com/jawaman14/skyrunner/pull/291) is squash-merged as `aae28fa` after eleven exact-head checks; its contract (1) and existing parity checks (16) pass. Issues #94 and #96 are completed on automated acceptance; broader #97 entry paths and human release gates remain open.
+
+Desktop post-integration run: **1,026 passed, zero failed in 863.3 seconds** at `28e66cb`, with an identical tracked tree to main `a3f66fb`. Final status/fixture candidate: **1,027 passed, zero failed in 909.3 seconds** at `6c7f3ef` (identical tracked tree after retargeting at `9faac70`). The latter includes all game/test files now on main `aae28fa` plus the status generator and documentation. Subsequent evidence edits change documentation only. Focused final checks pass: save/load 33, determinism 5, export filters 2; isolated Costa Brava desktop smoke prints `SMOKE OK`; hygiene and generated-status consistency pass. No script/parse errors occur. ObjectDB/resource/PagedAllocator shutdown diagnostics remain separate from functional results. Runs overlap independent balance measurements, so these durations are not gameplay frame-time benchmarks.
+
+Performed: automated desktop input/state/layout, full regression, save/load, parity/determinism, export filters, hygiene and isolated smoke. Linux/Windows/macOS exports and smoke pass in each completed PR's CI. Unperformed: human exported Windows walkthrough, physical controller/read-aloud/visual acceptance, two-machine seat/action/voice session, functional-site walk/drive acceptance and moving/dense-scene performance capture. Local Windows packaging remains unverified without matching export templates. Radio redistribution rights remain unresolved; no automated result clears those gates.
 
 ### Reliability integration, 8 October 2026
 
