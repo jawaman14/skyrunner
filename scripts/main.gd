@@ -178,7 +178,7 @@ func _leave(to: String) -> void:
 		get_tree().quit()
 		return
 	for c in get_children():
-		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient or c is VoiceChat or c is LanDiscovery.Announcer or c is MultiplayerMenu or c is RoomScreen or c is HostDesk:
+		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient or c is VoiceChat or c is LanDiscovery.Announcer or c is MultiplayerMenu or c is RoomScreen or c is SeatPicker or c is HostDesk:
 			remove_child(c)
 			c.queue_free()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -343,6 +343,7 @@ func _enter_game(link: NetClient, role: String) -> void:
 	picker.seated.connect(func(r):
 		picker.queue_free()
 		_seat(link, r), CONNECT_ONE_SHOT)
+	picker.cancelled.connect(func(): _leave("lobby"), CONNECT_ONE_SHOT)
 
 
 func _seat(link: NetClient, role: String) -> void:
