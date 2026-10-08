@@ -7,7 +7,7 @@ findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md)
 
 ## Baseline and completed work
 
-**Latest integrations:** #280/#281/#282/#284 are squash-merged through main `9d879ba`, each after all eight current-head CI jobs passed. Parity/seed registration (#93) and command separation (#95) are complete. Draft #285 consolidates seat screens; #286 adds measured test lanes. Generated checkout facts and separate validation/human gates are in [PROJECT_STATUS.md](PROJECT_STATUS.md). The dated baseline/stack descriptions below remain history.
+**Latest integrations:** #280/#281/#282/#284 are squash-merged through main `9d879ba`, each after all eight current-head CI jobs passed. Parity/seed registration (#93) and command separation (#95) are complete. Seat consolidation #285 and test lanes #286 are now squash-merged through `828ba50`, each after eleven CI jobs passed. Draft #288 publishes taxi coverage and the #94 acceptance matrix. Generated checkout facts and separate validation/human gates are in [PROJECT_STATUS.md](PROJECT_STATUS.md). The dated baseline/stack descriptions below remain history.
 
 **Earlier reliability baseline, 8 October 2026:** #254 and #259–#263 are
 squash-merged; main `3347007` passes 1,002 post-merge desktop tests, smoke and

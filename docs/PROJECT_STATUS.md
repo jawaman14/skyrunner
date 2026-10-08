@@ -15,7 +15,7 @@ This section describes **this checkout**. Run `godot --headless --script res://t
 | Field | Source value | Meaning / source |
 |---|---|---|
 | Version | 0.9.0-beta.1 | project.godot |
-| Declared automated tests | 1016 methods in 127 test files | Compiled source inventory; this is not a test result |
+| Declared automated tests | 1023 methods in 129 test files | Compiled source inventory; this is not a test result |
 | Flying tutorial | 4 Costa Brava chapters | Campaign.CHAPTERS |
 | Main story | 12 chapters | Story.CHAPTERS; distinct from the tutorial |
 | Configured exports | Linux, Windows, macOS | Export presets; build/manual acceptance is recorded below |
@@ -38,7 +38,7 @@ This section describes **this checkout**. Run `godot --headless --script res://t
 
 ### Issue-audit integration, 8 October 2026
 
-[#280](https://github.com/jawaman14/skyrunner/pull/280) restores exact prior parity state and hardens the seeded-generator scanner; [#281](https://github.com/jawaman14/skyrunner/pull/281) adds vegetation preset/determinism coverage. [#282](https://github.com/jawaman14/skyrunner/pull/282) deduplicates host/client voice setup and fixes waiting-room beacon lifetime. [#284](https://github.com/jawaman14/skyrunner/pull/284) moves all 105 command handlers into six stateless modules without changing their bodies or Session authority. Each was squash-merged after all eight current-head CI jobs passed. Main is `9d879ba`; its own post-merge regression/smoke and newer draft slices remain separate evidence. Issues #93 and #95 are completed; broader startup, coverage and physical/hardware gates remain open.
+[#280](https://github.com/jawaman14/skyrunner/pull/280) restores exact prior parity state and hardens the seeded-generator scanner; [#281](https://github.com/jawaman14/skyrunner/pull/281) adds vegetation preset/determinism coverage. [#282](https://github.com/jawaman14/skyrunner/pull/282) deduplicates host/client voice setup and fixes waiting-room beacon lifetime. [#284](https://github.com/jawaman14/skyrunner/pull/284) moves all 105 command handlers into six stateless modules without changing their bodies or Session authority. Each was squash-merged after all eight current-head CI jobs passed. CI lane separation [#286](https://github.com/jawaman14/skyrunner/pull/286) and shared seat screen [#285](https://github.com/jawaman14/skyrunner/pull/285) are also squash-merged, each after all eleven current-head jobs passed. Main is `828ba50`; final post-integration desktop regression/smoke remain separate evidence. Issues #93 and #95 are completed; broader startup and physical/hardware gates remain open. Taxi coverage and the complete #94 action matrix are published in draft [#288](https://github.com/jawaman14/skyrunner/pull/288), pending integration.
 
 The older dated evidence below is historical; it does not override the generated checkout inventory or upgrade source checks into human acceptance.
 

@@ -21,6 +21,8 @@ main and focused checks after retargeting. Superseded branches remain available.
 | #281 | Vegetation preset and deterministic resource coverage | `47d66d9` |
 | #282 | Waiting-room beacon and voice service lifetime | `3246965` |
 | #284 | Stateless dispatch of all 105 command handlers | `9d879ba` |
+| #286 | Separate complete logic/simulation/presentation/socket gates | `07e816c` |
+| #285 | Shared waiting-room/running-game seat screen | `828ba50` |
 
 Original #256/#257/#232/#233/#234 are closed with links to their integrated
 replacements. This does not close broader multiplayer, controls, combat or
@@ -29,7 +31,7 @@ on its original branch and the campaign stack.
 
 ## Verification
 
-The four newer integrations each passed all eight current-head CI jobs before squash merge. Historical #277/#278/#279/#283 are closed as superseded; their branches remain available for descendants. The wide overhaul tree passed 1,076 desktop tests with no script/parse failures. This includes unmerged physical work and is not a main-tree or human walkthrough claim. Draft #285 consolidates seat screens; #286 separates test lanes. Main post-integration desktop validation and current draft CI remain pending.
+The four newer integrations each passed all eight current-head CI jobs before squash merge. Historical #277/#278/#279/#283 are closed as superseded; their branches remain available for descendants. The wide overhaul tree passed 1,076 desktop tests with no script/parse failures. This includes unmerged physical work and is not a main-tree or human walkthrough claim. #285 and #286 are now squash-merged after all eleven current-head CI jobs passed. Draft #288 publishes the remaining taxi coverage. Main post-integration desktop validation remains pending.
 
 Post-merge desktop run at `3347007`: **1,002 passed, zero failed**
 (321 / 339 / 342). No script or parse failures. The resulting Git tree is also
