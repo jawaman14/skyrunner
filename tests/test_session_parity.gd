@@ -1,4 +1,5 @@
 extends TestCase
+var _parity_state: Dictionary = {}
 ## The ported Session, police/maritime/AI-runner world and HQ season against
 ## the Python game (tools/reference/gen_session.py -> tests/fixtures/session_ref.json).
 ## Everything here is kinematics + seeded RNG, so it should match to the bit;
@@ -11,11 +12,11 @@ const TOL := 1e-9
 func before_each() -> void:
 	if ref.is_empty():
 		ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/session_ref.json"))
-	Switches.parity_off()  # the Godot-only rules off: replaying the Python game
+	_parity_state = Switches.parity_off()  # the Godot-only rules off: replaying the Python game
 
 
 func after_each() -> void:
-	Switches.parity_on()
+	Switches.restore(_parity_state)
 
 
 func _same(got, want, what: String) -> void:
