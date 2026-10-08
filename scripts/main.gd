@@ -274,6 +274,7 @@ func start() -> void:
 		var err = server.start(args["port"], mode if mode != Roles.SOLO else Roles.COOP)
 		if err:
 			sess.say(err)
+			server.queue_free()
 			server = null
 		else:
 			sess.say("Hosting on port %d: friends join with --connect YOUR_IP:%d (--role pick to choose a seat; the AI plays every seat nobody takes)" % [server.port, server.port])

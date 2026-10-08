@@ -179,6 +179,20 @@ func draw_list() -> Array:
 		out.append(row)
 	return out
 
+## Desk markers reuse existing bodies and the payroll's current ownership/task.
+func map_list(outfit: String) -> Array:
+	var out := []
+	if not Agent.ENABLED: return out
+	for row in draw_list():
+		if str(row.faction) != outfit: continue
+		var worker = sess.payroll.get_worker(str(row.id))
+		if worker == null or not str(worker.status) in ["free", "assigned"] or post_of(worker) == null: continue
+		var marker: Dictionary = row.duplicate()
+		marker.merge({"name": str(worker.name), "role": str(worker.role), "doing": sess.payroll.doing(worker)}, true)
+		out.append(marker)
+	return out
+
+
 ## Slice only future travel; past route sections never move a worker backward.
 static func _remaining(body: Agent, metres := INF) -> PackedVector2Array:
 	var points := PackedVector2Array([body.pos()])
