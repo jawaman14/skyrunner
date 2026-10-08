@@ -9,7 +9,7 @@ continuation queue, not a claim of exported human acceptance.
 | Infrastructure | Road surfaces/bridge decks, street lamps, runway lights, tower antennas | Coastal direction signs, period utility poles, safe fences/gates and drains; no network regeneration |
 | Workshop/fuel | Pumps, drum/pallet clusters, notices, benches; HAR tool chest/vice/rack in #227 | Generator/welding kit where actually used; reference-area performance checks |
 | Docks | Kenney docks/boats/crates/barrels; original first-pier mooring equipment in coastal batch | Verify actual deck placement/collision; nets, hand trucks and usable service/loading areas |
-| Vehicles | Shared ModelLib vehicle consumers, dealership cars and squad vehicles | Period silhouette audit, starting with modern luxury SUVs; authoritative condition visuals and distant simplification |
+| Vehicles | Original period sedan/coupe/compact/wagon/utility/pickup/van/service bodies through ModelLib, with three LODs; see [vehicle batch](PERIOD_VEHICLES_2026-10-08.md) | Authoritative condition visuals, crew loading/parking presentation and human preset/export review; boats, buses and motorcycles remain separate |
 | Aircraft | Existing procedural fleet, flight HUD, cockpit glareshield | Analogue panel/radio/compass presentation from current state; no additional aircraft |
 | Vegetation | Existing trees, palms, rocks/bush scenery with distance limits | Check corridor density and distant transitions; reuse suitable assets before adding more |
 | Characters | Existing faction bodies and payroll identity/movement | Period clothing/role readability and lifecycle verification; no extra simulation bodies |
