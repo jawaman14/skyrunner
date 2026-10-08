@@ -23,6 +23,9 @@ main and focused checks after retargeting. Superseded branches remain available.
 | #284 | Stateless dispatch of all 105 command handlers | `9d879ba` |
 | #286 | Separate complete logic/simulation/presentation/socket gates | `07e816c` |
 | #285 | Shared waiting-room/running-game seat screen | `828ba50` |
+| #288 | Taxi action tests and complete #94 coverage matrix | `549ec05` |
+| #289 | Own active payroll markers in the People layer | `2456b1a` |
+| #290 | Failed direct-host server cleanup | `a3f66fb` |
 
 Original #256/#257/#232/#233/#234 are closed with links to their integrated
 replacements. This does not close broader multiplayer, controls, combat or

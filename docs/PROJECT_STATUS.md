@@ -5,7 +5,7 @@ baseline changes; historical counts belong in `docs/ROADMAP_HISTORY_2026-10.md`.
 It separates implemented work from evidence so a feature is not advertised as
 human-tested merely because source code exists.
 
-Source audit: 8 October 2026. The source inventory is generated; validation and release evidence are maintained separately.
+Source audit: 9 October 2026. The source inventory is generated; validation and release evidence are maintained separately.
 
 <!-- BEGIN GENERATED PROJECT STATUS -->
 ## Generated source inventory
@@ -15,7 +15,7 @@ This section describes **this checkout**. Run `godot --headless --script res://t
 | Field | Source value | Meaning / source |
 |---|---|---|
 | Version | 0.9.0-beta.1 | project.godot |
-| Declared automated tests | 1023 methods in 129 test files | Compiled source inventory; this is not a test result |
+| Declared automated tests | 1027 methods in 132 test files | Compiled source inventory; this is not a test result |
 | Flying tutorial | 4 Costa Brava chapters | Campaign.CHAPTERS |
 | Main story | 12 chapters | Story.CHAPTERS; distinct from the tutorial |
 | Configured exports | Linux, Windows, macOS | Export presets; build/manual acceptance is recorded below |
@@ -41,6 +41,10 @@ This section describes **this checkout**. Run `godot --headless --script res://t
 [#280](https://github.com/jawaman14/skyrunner/pull/280) restores exact prior parity state and hardens the seeded-generator scanner; [#281](https://github.com/jawaman14/skyrunner/pull/281) adds vegetation preset/determinism coverage. [#282](https://github.com/jawaman14/skyrunner/pull/282) deduplicates host/client voice setup and fixes waiting-room beacon lifetime. [#284](https://github.com/jawaman14/skyrunner/pull/284) moves all 105 command handlers into six stateless modules without changing their bodies or Session authority. Each was squash-merged after all eight current-head CI jobs passed. CI lane separation [#286](https://github.com/jawaman14/skyrunner/pull/286) and shared seat screen [#285](https://github.com/jawaman14/skyrunner/pull/285) are also squash-merged, each after all eleven current-head jobs passed. Main is `549ec05`; final post-integration desktop regression/smoke remain separate evidence. Issues #93 and #95 are completed; broader startup and physical/hardware gates remain open. Taxi coverage and the complete #94 action matrix are squash-merged through [#288](https://github.com/jawaman14/skyrunner/pull/288), after all eleven current-head checks passed.
 
 The older dated evidence below is historical; it does not override the generated checkout inventory or upgrade source checks into human acceptance.
+
+### Follow-up integration, 9 October 2026
+
+Own-worker map presentation [#289](https://github.com/jawaman14/skyrunner/pull/289) and occupied-port host cleanup [#290](https://github.com/jawaman14/skyrunner/pull/290) are squash-merged through `a3f66fb`, each after eleven exact-head CI jobs passed. The protected desktop checkout remains unchanged. The worker port passed permission/layer checks (2), people regressions (11) and network checks (16). Startup reproduction failed before the fix and passed afterward (1), with host-service checks (4). Full combined desktop validation remains in progress. Read-only fixture audit [#291](https://github.com/jawaman14/skyrunner/pull/291) passes its contract (1) and existing parity checks (16), and remains pending CI/integration. The generated inventory includes that pending dependency; it is not a main test-run claim.
 
 ### Reliability integration, 8 October 2026
 
