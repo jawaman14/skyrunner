@@ -27,6 +27,7 @@ main and focused checks after retargeting. Superseded branches remain available.
 | #289 | Own active payroll markers in the People layer | `2456b1a` |
 | #290 | Failed direct-host server cleanup | `a3f66fb` |
 | #291 | Recursively read-only parity oracle and fixture audit | `aae28fa` |
+| #287 | Generated checkout status and separate release evidence | `c7b8763` |
 
 Original #256/#257/#232/#233/#234 are closed with links to their integrated
 replacements. This does not close broader multiplayer, controls, combat or
@@ -35,9 +36,11 @@ on its original branch and the campaign stack.
 
 ## Verification
 
-**9 October follow-up:** main `a3f66fb` has an identical tracked tree to desktop candidate `28e66cb`, which passed 1,026 tests in 863.3 seconds. The final status/fixture candidate `6c7f3ef` / identical retargeted tree `9faac70` passes 1,027 tests in 909.3 seconds; all game/test files match main `aae28fa`. Final focused checks pass: save/load 33, determinism 5 and export filters 2. Isolated desktop smoke is `SMOKE OK`; hygiene and generated-status checks pass. No script/parse failures; known shutdown resource diagnostics remain. Documentation evidence edits follow those runs. #288–#291 each passed all eleven exact-head CI jobs before separate squash merges. Human, rights, physical access and performance gates remain pending as listed in PROJECT_STATUS.md.
+**9 October merged-main confirmation:** `c7b8763` passes 1,027 desktop tests, zero failures (314 / 357 / 356 in 254.6 / 163.0 / 313.1 seconds), all three processes exit zero. No script/parse failures; known shutdown cleanup diagnostics remain. The following balance record changes no game or test source.
 
-The four newer integrations each passed all eight current-head CI jobs before squash merge. Historical #277/#278/#279/#283 are closed as superseded; their branches remain available for descendants. The wide overhaul tree passed 1,076 desktop tests with no script/parse failures. This includes unmerged physical work and is not a main-tree or human walkthrough claim. #285 and #286 are now squash-merged after all eleven current-head CI jobs passed. #288 is squash-merged as `549ec05` after all eleven current-head checks passed, publishing the remaining taxi coverage. Main post-integration desktop validation remains pending.
+**9 October follow-up:** main `a3f66fb` has an identical tracked tree to desktop candidate `28e66cb`, which passed 1,026 tests in 863.3 seconds. The final status/fixture candidate `6c7f3ef` / identical retargeted tree `9faac70` passes 1,027 tests in 909.3 seconds; all game/test files match merged main `c7b8763`. Final focused checks pass: save/load 33, determinism 5 and export filters 2. Isolated desktop smoke is `SMOKE OK`; hygiene and generated-status checks pass. No script/parse failures; known shutdown resource diagnostics remain. Documentation evidence edits follow those runs. #287–#291 each passed all eleven exact-head CI jobs before separate squash merges. Human, rights, physical access and performance gates remain pending as listed in PROJECT_STATUS.md.
+
+The four newer integrations each passed all eight current-head CI jobs before squash merge. Historical #277/#278/#279/#283 are closed as superseded; their branches remain available for descendants. The wide overhaul tree passed 1,076 desktop tests with no script/parse failures. This includes unmerged physical work and is not a main-tree or human walkthrough claim. #285 and #286 are now squash-merged after all eleven current-head CI jobs passed. #288 is squash-merged as `549ec05` after all eleven current-head checks passed, publishing the remaining taxi coverage. Later desktop results are recorded in the 9 October follow-up above.
 
 Post-merge desktop run at `3347007`: **1,002 passed, zero failed**
 (321 / 339 / 342). No script or parse failures. The resulting Git tree is also
@@ -67,7 +70,7 @@ eight-job batch passed. Do not describe that installer job as a game smoke pass.
 | #236–#239 | Squad detail, checked detours, visible targeting and district summaries implemented; dependencies and peer/human acceptance pending. |
 | #240/#245 | Battle accounts and external-removal correction must integrate together; richer tactical/custody explanations remain separate future work. |
 | #241–#243 | Documentation-only physical/empire/coastal proposals, not implemented feature packages; sibling branches outside the latest gameplay ancestry. |
-| #244 | AI escort/stakeout fixes implemented; material strategic changes require broader isolated paired-seed evidence. |
+| #244 | [Forty-seed isolation](FACTION_AI_ISOLATION_2026-10-09.md) attributes changed arrests/stash losses to stakeout cleanup; active cargo escorts remain unmeasured. Draft pending real transport evidence, calibration and #240 dependency. |
 | #246 | Gameplay/network audit complete; reproduced framing/deduplication/freshness findings are now corrected on main. Real multiplayer evidence remains pending. |
 | #247 | Partial map rebuild: current 99-pair audit still 13 reachable / 86 blocked. Connections, saved positions, physical crossings and broader balance/performance gates remain. |
 | #248 | Flight controls UX scope implemented; broader binding registry is future work and physical hardware acceptance remains pending. |
