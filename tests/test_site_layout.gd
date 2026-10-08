@@ -78,3 +78,76 @@ func test_costa_brava_nightclub_is_set_back_from_its_strategic_road_anchor() -> 
 	var node := Buildings.hq(world, spec)
 	check_eq(node.transform, record.transform)
 	node.free()
+
+
+func test_functional_setbacks_clear_full_roads_and_keep_strategic_anchors() -> void:
+	World.use_map(MapCity.SEED)
+	var world := World.new()
+	var before_hqs := world.map.hqs.duplicate(true)
+	var before_stashes := world.map.stashes.duplicate(true)
+	var sites := world.site_records()
+	var access := SiteAccess.new(world, sites)
+	for id in ["hq/law", "stash/barn", "stash/lockup"]:
+		var site: Dictionary = sites.filter(func(item): return item.id == id)[0]
+		for road in world.map.roads:
+			for i in road.size() - 1:
+				for polygon in Geometry2D.offset_polygon(site.footprint, RoadSurface.HALF_WIDTH + 0.6):
+					check(not SiteAccess._crosses(Vector2(road[i][0], road[i][1]), Vector2(road[i+1][0], road[i+1][1]), polygon), id + " clears road width and roof overhang")
+		check(access.verify(site).connection_verified, id + " has checked walking/loading access")
+		check(absf(site.entrance.y - world.ground(site.entrance.x, -site.entrance.z)) < 0.55, id + " threshold remains usable")
+		var node: Node3D
+		if id == "hq/law":
+			node = Buildings.hq(world, world.map.hqs.law)
+		else:
+			var stash: Dictionary = world.map.stashes.filter(func(item): return "stash/" + str(item.id) == id)[0]
+			node = StashInterior.build(world, stash)
+		check_eq(node.transform, site.transform, id + " builder and diagnostics share placement")
+		node.free()
+	check_eq(world.map.hqs, before_hqs, "HQ strategic positions are unchanged")
+	check_eq(world.map.stashes, before_stashes, "stash strategic positions are unchanged")
+	var moved: Dictionary = before_stashes.filter(func(item): return item.id == "barn")[0].duplicate(true)
+	moved.x += 100
+	check_eq(SiteLayout.stash_frame(world, moved).origin.x, moved.x, "alternate authoring is not silently offset")
+
+
+class CurvedLand extends World:
+	# Curvature makes a translated plot's foundation depth differ. A plane's
+	# uniform height shift would cancel out and miss the old-anchor regression.
+	func ground(x: float, y: float) -> float: return 0.0002 * x * x + 0.2 * y
+
+
+func test_hq_foundation_samples_the_actual_transformed_plot() -> void:
+	World.use_map(MapCity.SEED)
+	var world := CurvedLand.new()
+	var spec := {"kind":"law", "style":"customs", "heading":180.0, "x":MapCity.LAW_AT.x, "y":MapCity.LAW_AT.y}
+	var node := Buildings.hq(world, spec)
+	var low: float = node.transform.origin.y
+	for corner in [Vector3(-14,0,-14), Vector3(14,0,-14), Vector3(14,0,14), Vector3(-14,0,14)]:
+		var at: Vector3 = node.transform * corner
+		low = minf(low, world.ground(at.x, -at.z))
+	var foundation := node.get_node("foundation/collision") as StaticBody3D
+	var shape := foundation.get_child(0) as CollisionShape3D
+	check_near(shape.position.y + (shape.shape as BoxShape3D).size.y / 2, 0.0, 0.001, "foundation reaches the rendered base")
+	check_near(shape.position.y - (shape.shape as BoxShape3D).size.y / 2, low - node.transform.origin.y - 0.5, 0.001, "foundation follows the moved/rotated plot's low corner")
+	node.free()
+
+
+func test_set_back_rendered_colliders_leave_the_former_road_crossings_clear() -> void:
+	World.use_map(MapCity.SEED)
+	var world := World.new()
+	var root := Node3D.new()
+	Engine.get_main_loop().root.add_child(root)
+	root.add_child(Buildings.hq(world, world.map.hqs.law))
+	for id in ["barn", "lockup"]:
+		var stash: Dictionary = world.map.stashes.filter(func(item): return item.id == id)[0]
+		root.add_child(StashInterior.build(world, stash))
+	for i in 3: await Engine.get_main_loop().physics_frame
+	for ends in [[Vector2(937.5,-11187.5),Vector2(937.5,-11145.5)], [Vector2(1511.7,-9511.7),Vector2(1480.5,-9480.5)], [Vector2(-691.4,-3365.2),Vector2(-722.7,-3339.8)]]:
+		var across: Vector2 = (ends[1] - ends[0]).orthogonal().normalized()
+		for t in range(9):
+			for lateral in [-RoadSurface.HALF_WIDTH, 0.0, RoadSurface.HALF_WIDTH]:
+				var p: Vector2 = ends[0].lerp(ends[1], float(t)/8.0) + across * lateral
+				var ground := world.ground(p.x, p.y)
+				var query := PhysicsRayQueryParameters3D.create(Vector3(p.x,ground+20,-p.y),Vector3(p.x,ground+0.2,-p.y),1)
+				check(root.get_world_3d().direct_space_state.intersect_ray(query).is_empty(), "rendered walls, roof and foundation clear the full road ribbon")
+	root.free()

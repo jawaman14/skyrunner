@@ -606,12 +606,13 @@ static func hq(world: World, spec: Dictionary) -> Node3D:
 				_:
 					_compound(k)
 	var node := k.finish()
-	var z := world.ground(spec.x, spec.y)
 	node.transform = SiteLayout.hq_frame(world, spec)
 	# a foundation down to the lowest ground under the footprint
+	var z := node.transform.origin.y
 	var low := z
 	for d in [[-14, -14], [14, -14], [14, 14], [-14, 14]]:
-		low = minf(low, world.ground(spec.x + d[0], spec.y + d[1]))
+		var corner: Vector3 = node.transform * Vector3(d[0], 0, d[1])
+		low = minf(low, world.ground(corner.x, -corner.z))
 	var fk := Kit.new("foundation")
 	fk.box(Vector3(0, (low - z) / 2 - 0.25, 0), Vector3(26, z - low + 0.5, 26), "concrete_dark")
 	node.add_child(fk.finish())
