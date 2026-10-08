@@ -76,10 +76,22 @@ func show_lobby(notice := "") -> void:
 func _host_extras(server) -> void:
 	if server == null:
 		return
+	_host_beacon(server)
+	for child in get_children():
+		if child is VoiceChat and child.server == server and not child.is_queued_for_deletion():
+			return
 	add_child(VoiceChat.new().attach_host(server))  # push-to-talk radio voice for the table
+
+## Available in the waiting room as well as the running game. Server ownership
+## makes cancellation close the beacon without leaving a stale lobby advert.
+func _host_beacon(server: HostServer) -> LanDiscovery.Announcer:
+	for child in server.get_children():
+		if child is LanDiscovery.Announcer and not child.is_queued_for_deletion():
+			return child
 	var ann := LanDiscovery.Announcer.new()
-	add_child(ann)
+	server.add_child(ann)
 	ann.start(func(): return {} if not server.announce else {"name": "%s's game" % server.host_name, "port": server.port, "mode": server.mode, "players": server.roster().size(), "locked": server.locked})
+	return ann
 
 
 ## The host's waiting room: listen now, show the room, and when the host starts, build the game with the server that is already
@@ -99,6 +111,7 @@ func _open_room() -> void:
 		server.queue_free()
 		show_lobby()
 		return
+	_host_beacon(server)
 	var room := RoomScreen.new()
 	add_child(room)
 	room.setup(server, null)
@@ -332,7 +345,7 @@ func _enter_game(link: NetClient, role: String) -> void:
 
 
 func _seat(link: NetClient, role: String) -> void:
-	add_child(VoiceChat.new().attach_client(link))
+	_client_voice(link)
 	if role in [Roles.INTERCEPTOR, Roles.PILOT] or (role == Roles.COPILOT and args["seat3d"]):
 		var seat := RemoteSeat.new()
 		add_child(seat)
@@ -341,6 +354,14 @@ func _seat(link: NetClient, role: String) -> void:
 		var st := StationApp.new()
 		add_child(st)
 		st.setup(link, role)
+
+func _client_voice(link: NetClient) -> VoiceChat:
+	for child in get_children():
+		if child is VoiceChat and child.link == link and not child.is_queued_for_deletion():
+			return child
+	var voice := VoiceChat.new().attach_client(link)
+	add_child(voice)
+	return voice
 
 
 ## Run a new game for a while and quit (the release smoke test in CI): the
