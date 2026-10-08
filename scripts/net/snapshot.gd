@@ -191,6 +191,7 @@ static func _runner(sess: Session, role: String) -> Dictionary:
 		out["court"] = sess.court.view("runner")
 	if sess.payroll != null:
 		out["payroll"] = sess.payroll.view("runner")
+		out["people"] = sess.payroll.people.map_list("org")
 	if sess.trade != null:
 		out["trade"] = sess.trade.view("runner")
 		if sess.logistics != null:
