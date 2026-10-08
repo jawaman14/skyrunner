@@ -203,5 +203,3 @@ static func _cmd_pay_tribute(role: String, a: Dictionary, session: Session):
 		return "No Family in this game."
 	var err := session.family.pay_tribute()
 	return err if err != "" else null
-
-

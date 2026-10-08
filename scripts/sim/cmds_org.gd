@@ -153,5 +153,3 @@ static func _cmd_rico_case(role: String, a: Dictionary, session: Session):
 		return "No Family in this game."
 	var err := session.family.rico_case()
 	return err if err != "" else null
-
-
