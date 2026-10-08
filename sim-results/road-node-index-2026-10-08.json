@@ -1,0 +1,15 @@
+{
+	"construction_mismatches": 0,
+	"construction_runs": 7,
+	"heap_mean_ms": 1.84482,
+	"heap_p95_ms": 5.405,
+	"indexed_build_mean_ms": 28.6617142857143,
+	"linear_build_mean_ms": 167.849285714286,
+	"linear_mean_ms": 2.14115,
+	"linear_p95_ms": 6.052,
+	"map": "Costa Brava",
+	"nodes": 1950,
+	"note": "Paired search microbenchmark, no concurrent suite; not frame-time or gameplay balance evidence.",
+	"pairs": 100,
+	"path_mismatches": 0
+}

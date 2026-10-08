@@ -4,6 +4,32 @@ extends TestCase
 
 const LIMIT := 8000.0  ## the synthetic map is 16 km square
 
+## Historical node scan for exact graph-construction parity, independent of A*.
+class LinearNodes extends RoadGraph:
+	func _node(p: Vector2) -> int:
+		for i in nodes.size():
+			if nodes[i].distance_to(p) < _merge_m: return i
+		nodes.append(p)
+		adj.append([])
+		return nodes.size()-1
+
+func test_spatial_node_index_preserves_complete_graph_and_first_match() -> void:
+	World.use_map(MapCity.SEED)
+	var world := World.new()
+	var places := [[120,40],[-1000,500]]
+	var indexed := RoadGraph.new(world.map.roads,places)
+	var linear := LinearNodes.new(world.map.roads,places)
+	check_eq(indexed.nodes,linear.nodes,"all node positions/indices match the historical constructor")
+	check_eq(indexed.adj,linear.adj,"all authored, T-junction and stub edges keep order and lengths")
+	check_eq(indexed._network_edges,linear._network_edges,"checked authored membership is unchanged")
+	check_eq(indexed.road_nodes,linear.road_nodes)
+	var first := RoadGraph.new([])
+	check_eq(first._node(Vector2(70,0)),0)
+	check_eq(first._node(Vector2(-20,0)),1)
+	check_eq(first._node(Vector2(20,0)),0,"earlier farther match beats nearer node in a different bin")
+	first.stub(Vector2(-500,-500))
+	check_eq(first._node(Vector2(-501,-501)),2,"later node additions retain historical stub matching")
+
 
 func after_each() -> void:
 	World.use_map(0)  # the suite's default island, for whatever runs next

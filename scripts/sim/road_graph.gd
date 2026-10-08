@@ -21,6 +21,8 @@ var _authored_roads: Array = []
 var _checked_graph: RoadGraph
 var _merge_m := MERGE_M
 var _exact_bins := {}
+var _merge_bins := {}
+var _merge_indexed := 0
 var _network_edges := {}  ## authored road/track edges, excluding speculative T links/stubs
 
 
@@ -86,11 +88,30 @@ func _node(p: Vector2) -> int:
 		if not _exact_bins.has(cell): _exact_bins[cell] = []
 		_exact_bins[cell].append(index)
 		return index
-	for i in nodes.size():
-		if nodes[i].distance_to(p) < _merge_m: return i
+	# Legacy junctions retain the first matching insertion, not the nearest
+	# point or bin traversal order. Indexing only narrows the candidate set.
+	if _merge_indexed > nodes.size():
+		_merge_indexed = 0
+		_merge_bins.clear()
+	while _merge_indexed < nodes.size():
+		_index_merge_node(_merge_indexed)
+		_merge_indexed += 1
+	var cell := Vector2i(floori(p.x / _merge_m), floori(p.y / _merge_m))
+	var best := -1
+	for x in range(cell.x - 1, cell.x + 2):
+		for y in range(cell.y - 1, cell.y + 2):
+			for i in _merge_bins.get(Vector2i(x,y), []):
+				if (best < 0 or i < best) and nodes[i].distance_to(p) < _merge_m: best = i
+	if best >= 0: return best
 	nodes.append(p)
 	adj.append([])
 	return nodes.size() - 1
+
+func _index_merge_node(index: int) -> void:
+	var p: Vector2 = nodes[index]
+	var cell := Vector2i(floori(p.x / _merge_m), floori(p.y / _merge_m))
+	if not _merge_bins.has(cell): _merge_bins[cell] = []
+	_merge_bins[cell].append(index)
 
 
 func _linked(a: int, b: int) -> bool:
