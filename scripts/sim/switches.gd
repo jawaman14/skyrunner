@@ -4,8 +4,9 @@ extends RefCounted
 ##
 ## New systems sit behind a static switch (an `ENABLED`-style `static var NAME := true`) so the parity
 ## and golden tests, which replay the Python prototype or a frozen run, can turn them off. A test that
-## needs the old behaviour calls `Switches.parity_off()` in `before_each` and `Switches.parity_on()` in
-## `after_each`, instead of listing the flags itself.
+## needs the old behaviour saves `Switches.parity_off()` in `before_each` and calls
+## `Switches.restore(saved)` in `after_each`. `parity_on()` remains a compatibility
+## helper for deliberately enabling the complete parity set.
 ##
 ## `tests/test_switches.gd` fails if a switch exists in scripts/sim or scripts/render that is named in
 ## neither PARITY nor OPT_IN below, so a new system cannot forget to register.
@@ -27,7 +28,30 @@ const OPT_IN := [
 ]
 
 
-static func parity_off() -> void:
+## Capture the caller's configuration, including switches already disabled.
+static func snapshot() -> Dictionary:
+	return {"SensorNet.REALISM": SensorNet.REALISM, "Economy.REALISM": Economy.REALISM,
+		"Arsenal.REALISM": Arsenal.REALISM, "GroundWar.ENABLED": GroundWar.ENABLED,
+		"Chronicle.ENABLED": Chronicle.ENABLED, "Agency.ENABLED": Agency.ENABLED,
+		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED}
+
+static func restore(state: Dictionary) -> void:
+	# Validate the complete snapshot before changing any switch.
+	for key in PARITY:
+		if not state.has(key) or not state[key] is bool:
+			push_error("Invalid parity snapshot: " + key)
+			return
+	SensorNet.REALISM = state["SensorNet.REALISM"]
+	Economy.REALISM = state["Economy.REALISM"]
+	Arsenal.REALISM = state["Arsenal.REALISM"]
+	GroundWar.ENABLED = state["GroundWar.ENABLED"]
+	Chronicle.ENABLED = state["Chronicle.ENABLED"]
+	Agency.ENABLED = state["Agency.ENABLED"]
+	Agent.ENABLED = state["Agent.ENABLED"]
+	Fuel.ENABLED = state["Fuel.ENABLED"]
+
+static func parity_off() -> Dictionary:
+	var previous := snapshot()
 	SensorNet.REALISM = false
 	Economy.REALISM = false
 	Arsenal.REALISM = false
@@ -36,6 +60,7 @@ static func parity_off() -> void:
 	Agency.ENABLED = false
 	Agent.ENABLED = false
 	Fuel.ENABLED = false
+	return previous
 
 
 static func parity_on() -> void:
