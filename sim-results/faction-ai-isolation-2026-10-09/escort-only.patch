@@ -1,0 +1,10 @@
+diff --git a/scripts/sim/ground.gd b/scripts/sim/ground.gd
+index f36ec4e..b187e3c 100644
+--- a/scripts/sim/ground.gd
++++ b/scripts/sim/ground.gd
+@@ -1350,0 +1351,5 @@ func _think_org() -> void:
++	# Existing escorts remain committed while their truck is live. The retreat
++	# check above still takes priority over that commitment.
++	if sess.stash_net != null:
++		var active_jobs: Array = sess.stash_net.trucks.map(func(t): return t.job_id)
++		mine = mine.filter(func(q): return q.order.get("type", "") != "escort" or not active_jobs.has(int(q.order.get("job_id", -1))))
