@@ -3,6 +3,7 @@
     "test_car_radio.gd",
     "test_casino_games.gd",
     "test_docs.gd",
+    "test_fixture_isolation.gd",
     "test_hq.gd",
     "test_rng.gd",
     "test_strategic.gd"
