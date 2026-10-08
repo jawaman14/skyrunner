@@ -1,0 +1,72 @@
+# Open PR audit — 8 October 2026
+
+Reviewed all **27 open PRs, #227–#253**: current GitHub base/head SHAs, changed-file inventories, descriptions, checks and submitted reviews; relevant code diffs, tests and planning documents; targeted desktop reproductions at `4ec3e0d` (the #253 stack). This is a source/integration audit with selected reproductions, not an exhaustive human gameplay walkthrough or approval of every changed line. No gameplay was changed or PR merged during this review.
+
+All 27 are drafts and technically mergeable against their current bases. No submitted GitHub reviews were returned. All 27 now have eight successful latest-head checks; #253 finished during this review. This does not establish approval, human acceptance or compatibility after retargeting to main. Exact SHAs and check snapshots are retained in [the audit data](../sim-results/open-pr-audit-2026-10-08.json).
+
+## Findings that require work
+
+1. **P1 — #247 remains an incomplete map foundation.** A fresh read-only `tools/logistics_routes.gd` run at #253 confirms **13/99 loading pairs reachable, 86 blocked**, and all 99 legacy-centre queries fail checked access. Failures: 17 intersect the villa footprint, one intersects the quarry shed, nine lack authored loading areas, 30 have disconnected networks and 29 lack nearby checked access. These are endpoint/query failures, not proof that every human-accessible entrance fails. Correct the actual loading/meeting approaches and connections before migrating trucks/squads; preserve deliberate remote locations and reject before goods/money leave. Do not hide failures with longer arbitrary connectors or straight-line fallback.
+2. **P1 — #247 routing performance and #244/#247 balance acceptance remain open.** #247 records sampled route mean 2.068→4.403 ms and p95 4.173→10.119 ms, with linear open-list A*. Its ten paired war seeds materially change cash/arrests/burned stashes. #244's combined AI corrections also change every sampled row. These recorded experiments have not been rerun by this audit. Measure an optimisation with stable tie-breaking, broader paired strategic evidence and moving/dense gameplay; do not compensate with speculative economic tuning.
+3. **P2 — #250's explicit chapter-one shortcut does not skip employment.** Fresh isolated desktop startup with `--new --chapter 1 --graphics low` reports chapter **0, On the payroll**. `scripts/main.gd:240` compares the underlying story index plus one, already 1, against the requested 1, so it never calls the opening skip. The documented `--chapter N` contract and employment notes promise skipping the opening. Fix explicit positive chapter selection independently of the normal fresh-start path; test 1, 2 and 12 plus legacy saves.
+4. **P1 follow-up — multiplayer hardening recorded by #246 is still unimplemented.** A loopback-backed extraction probe accepts a **1,048,577-byte** complete line and leaves a zero-byte buffer; the later `MAX_LINE` check therefore cannot reject that line. Calling the command receiver twice with sequence 7 queues two entries. This reproduces framing bypass and duplicate enqueueing, not a financial double-spend or internet exploit. Add bounds during extraction/queueing and connection-scoped command idempotence with bounded acknowledgements and reconnect semantics. The source also retains last controls without an explicit connected-but-silent freshness contract. #246 is a completed audit, not the PR that introduces these faults.
+5. **P2 — #250 is only the first employment implementation.** Loan use, four deliveries, ownership validation and saves are implemented. Employer wages/commission/expense policy, measured $18,000 purchase/four-flight pacing, campaign-independent progression and active flight-job/cargo persistence remain unfinished. The existing save system reoffers unfinished contracts rather than restoring them. #251 corrects the criminal destination; #252 fixes ownership presentation. Keep those dependencies explicit and do not advertise the broader employment/economy direction as complete.
+6. **P2 — #248 completes its navigation/calibration slice, not the whole controls overhaul.** The source still supports only flight rebinding, swaps flight-control conflicts without checking fixed cockpit actions and uses static help/hints. Walking/driving/station action registries, context-aware collision warnings and dynamic prompts remain follow-ups. Physical controllers and full visual/read-aloud acceptance are unperformed.
+7. **P2 — #240 needs #245, and neither completes full debriefs.** #245 repairs the reproduced external-removal survivor lifecycle/account bug; do not integrate #240 alone and call it complete. Own-unit strength/ammo history exists, while custody-specific records, permission-appropriate tactical facts and cross-system operational debriefs remain planned in #242.
+
+## Every open PR
+
+“Scoped implementation” means its stated narrow change exists, not that it has release acceptance. “Foundation” means further implementation is explicitly required. Planning PRs are complete documents whose proposed features remain unbuilt.
+
+| PR | Classification | What remains / next action |
+|---|---|---|
+| [#227](https://github.com/jawaman14/skyrunner/pull/227) HAR workshop | Scoped asset implementation | Actual hangar/bench access and human exported inspection; integrate before #228. Not a finished coastal area. |
+| [#228](https://github.com/jawaman14/skyrunner/pull/228) Coastal infrastructure | Scoped asset implementation | Dock/entrance/loading walkthrough, LOD and moving/dense/Vulkan profiling. Static benchmark is limited evidence. |
+| [#229](https://github.com/jawaman14/skyrunner/pull/229) Campaign outcomes | Scoped implementation | Human branch/outcome pacing; preserve actual-arrival, ownership and waiver distinctions during integration. |
+| [#230](https://github.com/jawaman14/skyrunner/pull/230) Chapter guidance | Scoped implementation | Physical controller, audible output and human display acceptance; automated four-resolution checks already exist. |
+| [#231](https://github.com/jawaman14/skyrunner/pull/231) Contact dialogue | Scoped implementation | Human dialogue/obligation/ending walkthrough; no need to repeat the nine-file rewrite. |
+| [#232](https://github.com/jawaman14/skyrunner/pull/232) Debris lifetime | Scoped bug fix | Integrate with campaign stack; preserve real timer-after-removal regression. General release gates do not mean this fix is half-written. |
+| [#233](https://github.com/jawaman14/skyrunner/pull/233) Race feedback | Scoped bug fix | Real race/input/refusal walkthrough; stable-ID selection and persistent refusal are already implemented. |
+| [#234](https://github.com/jawaman14/skyrunner/pull/234) Fight privacy | Scoped bug fix | Integration/real-peer lost-contact review; exact fight records already require both participants observed. Broader AI knowledge policy is separate. |
+| [#235](https://github.com/jawaman14/skyrunner/pull/235) Loading endpoints | Foundation | Family meeting area, connectors and remaining physical failures; live dispatch intentionally remains legacy. |
+| [#236](https://github.com/jawaman14/skyrunner/pull/236) Squad cards | Scoped implementation | Human/remote card acceptance; destinations are route endpoints, not verified arrival. #238 is required privacy continuation. |
+| [#237](https://github.com/jawaman14/skyrunner/pull/237) Access detours | Foundation | Remaining loading failures and measured live vehicle migration; latest map improves 7 reachable to 13, still not complete. |
+| [#238](https://github.com/jawaman14/skyrunner/pull/238) HQ targeting privacy | Scoped bug fix | Real input/remote privacy acceptance; observed-only targeting and hidden enemy routes are implemented. |
+| [#239](https://github.com/jawaman14/skyrunner/pull/239) District overview | Scoped implementation | Human readability/control-policy decisions; current four-region accounting already uses police half-weight. |
+| [#240](https://github.com/jawaman14/skyrunner/pull/240) Battle history | Foundation with required correction | Include #245 lifecycle repair. Custody/tactical and operational accounts remain separate future work. |
+| [#241](https://github.com/jawaman14/skyrunner/pull/241) Physical-access plan | Documentation only | Implement its connectors, Family meeting and separate truck/squad migrations. Reconcile dated 92-blocked baseline with current 86. |
+| [#242](https://github.com/jawaman14/skyrunner/pull/242) Empire-feedback plan | Documentation only | Owner empire overview, durable order lifecycle, operational debrief and richer battle accounting remain unimplemented slices. |
+| [#243](https://github.com/jawaman14/skyrunner/pull/243) Coastal/release plan | Documentation only | Complete usable corridor, people/vehicles, cockpit/effects/audio and moving/dense profiling; current recordings do not satisfy human gates. |
+| [#244](https://github.com/jawaman14/skyrunner/pull/244) AI commitments | Implemented correction, balance-dependent | Broader paired evidence, isolate correction effects, human escort/surveillance review. Earned rival economy/diplomacy and AI knowledge policy remain outside this fix. |
+| [#245](https://github.com/jawaman14/skyrunner/pull/245) Battle removal | Scoped bug fix | Required correction for #240; retain lifecycle/idempotent accounting checks and integrate with #244 balance gates. |
+| [#246](https://github.com/jawaman14/skyrunner/pull/246) Feature/network audit | Documentation only | Its network defects remain actual follow-up work; audit coverage is not multiplayer completion. |
+| [#247](https://github.com/jawaman14/skyrunner/pull/247) Costa Brava rebuild | **Partial implementation / blocked** | 86 loading failures, routing cost, balance, saved-position migration, authored composition/rural coverage and physical walkthroughs. Largest implementation blocker. |
+| [#248](https://github.com/jawaman14/skyrunner/pull/248) Controls navigation | Scoped implementation; larger UX partial | Registry/conflicts/dynamic hints and physical controller acceptance. Its CI now passes; original “full suite unperformed” text is historical local evidence. |
+| [#249](https://github.com/jawaman14/skyrunner/pull/249) Player direction | Documentation only | Owner-approved product specification, not automation/economy/recovery/multiplayer implementation. Reconcile #241–#243 before integration. |
+| [#250](https://github.com/jawaman14/skyrunner/pull/250) Employed start | **First slice / incomplete broader feature** | Fix explicit chapter-one selection; require #251 route, #252 milestone, employment economic/persistence/pacing follow-ups. Latest CI passes; old route/export warnings are stale in combined context. |
+| [#251](https://github.com/jawaman14/skyrunner/pull/251) Smuggling route | Scoped correction | Human strip/arrival/pacing acceptance; real timed unloading and generated destinations have automated coverage. |
+| [#252](https://github.com/jawaman14/skyrunner/pull/252) Ownership journal | Scoped implementation | Latest eight CI checks pass. Human ownership/old-save presentation; not another employment economy implementation. |
+| [#253](https://github.com/jawaman14/skyrunner/pull/253) Recordings/docs | Scoped media/tool implementation | Eight latest-head CI checks pass; retain staging labels. Six selected scripted clips do not establish all mechanics, human playability or network acceptance. |
+
+## Dependencies and integration
+
+The code chain is:
+
+`main → #227 → #228 → #229 → #230 → #231 → #232 → #233 → #234 → #235 → #236 → #237 → #238 → #239 → #240 → #244 → #245 → #246 → #247 → #248 → #249 → #250 → #251 → #252 → #253`
+
+#241, #242 and #243 are **siblings based on #240**. Their documents are absent from #253's ancestry because those branches have not been integrated; they were not silently implemented or lost. Apply them explicitly when reconciling plans, with #249's later owner decisions taking precedence.
+
+Do not retarget all branches to main in one operation: that expands stacked diffs and risks including unapproved parent changes. Integrate completed, accepted slices in order, retarget the next child after each squash, then recheck the narrow diff and tests. Start with #227/#228 asset acceptance, then campaign/menu/privacy/card foundations. Treat #240/#244/#245 as a related lifecycle/balance checkpoint. Stop before #247 until its concrete blockers are resolved. Later narrow #248/#250–#253 changes can be deliberately rebased onto a suitable tested baseline if independently integrating them is desired; no such extraction has been performed here.
+
+Documentation-only siblings can be reviewed independently. Completed small bug fixes should not be scheduled for implementation again merely because controller/two-machine release checks are globally outstanding. Do not treat green checks or technical mergeability as approval to merge a draft.
+
+## Evidence and limitations
+
+- Fresh desktop ground suite: **30 passed, 0 failed**, 48.1 seconds at #253; no script/parse failures.
+- Fresh read-only 99-pair access audit: **86 loading failures**; report completes without script/parse errors.
+- Fresh receiver/extractor probes reproduce duplicate queue entries and oversized complete-line bypass using an open loopback TCP connection. No mutation dispatched, goods transferred or money spent; this is not a real two-machine test.
+- Fresh isolated new-game startup reproduces `--chapter 1` yielding employment chapter 0. Player save directories and unrelated desktop checkout edits remain untouched.
+- Existing ObjectDB/resource/PagedAllocator shutdown diagnostics remain separate. This audit did not rerun the full suite, paired balance, graphics profiling or human acceptance; earlier counts remain their dated evidence.
+- Many PR descriptions still say CI/export/full-suite checks are pending after later checks passed. Update exact-head evidence and link superseding fixes, while keeping local-vs-CI and human-vs-automated distinctions. Do not erase dated historical measurements.
+
+Recommended next implementation: the chapter-selector regression is a small independent fix; then network framing/idempotence and the concrete physical connector/routing package. Continue empire feedback and period assets after physical reliability. Owner-approved automation, civilian economy, recovery/impound, earned faction growth and leader-halt multiplayer remain future implementation, not hidden completed work in the draft stack.
