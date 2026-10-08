@@ -1,0 +1,99 @@
+{
+  "mean_per_run_p95_change_percent": 3.527682508574226,
+  "exclusion_reason": "initial pairs may overlap final headless smoke; raw runs retained",
+  "memory_change_percent": 0.02459835522685694,
+  "mean_change_percent": 0.5471501519860755,
+  "scene": "render-only moving coastal camera; no dense combat",
+  "launch": "hidden native window",
+  "investigation": "pair 3 p95 +10.6%; repeat pairs 4/5 -5.1% and +5.6%; no consistent >10% regression observed",
+  "excluded_pairs": [
+    1,
+    2
+  ],
+  "after": "road-junction-surfaces implementation in this PR",
+  "renderer": "gl_compatibility",
+  "before_commit": "9319e0a",
+  "isolated_pairs": [
+    {
+      "pair": 3,
+      "before": {
+        "draw_calls": 147.0,
+        "hour": 14,
+        "map": "Costa Brava",
+        "mean_ms": 0.535672222222223,
+        "p95_ms": 0.67,
+        "quality": "low",
+        "resolution": "1280x720",
+        "sample_frames": 360,
+        "static_memory_bytes": 228844569,
+        "warmup_frames": 360
+      },
+      "after": {
+        "draw_calls": 147.0,
+        "hour": 14,
+        "map": "Costa Brava",
+        "mean_ms": 0.544872222222223,
+        "p95_ms": 0.741,
+        "quality": "low",
+        "resolution": "1280x720",
+        "sample_frames": 360,
+        "static_memory_bytes": 228900861,
+        "warmup_frames": 360
+      }
+    },
+    {
+      "pair": 4,
+      "before": {
+        "draw_calls": 147.0,
+        "hour": 14,
+        "map": "Costa Brava",
+        "mean_ms": 0.536500000000001,
+        "p95_ms": 0.706,
+        "quality": "low",
+        "resolution": "1280x720",
+        "sample_frames": 360,
+        "static_memory_bytes": 228844569,
+        "warmup_frames": 360
+      },
+      "after": {
+        "draw_calls": 147.0,
+        "hour": 14,
+        "map": "Costa Brava",
+        "mean_ms": 0.538625,
+        "p95_ms": 0.67,
+        "quality": "low",
+        "resolution": "1280x720",
+        "sample_frames": 360,
+        "static_memory_bytes": 228900861,
+        "warmup_frames": 360
+      }
+    },
+    {
+      "pair": 5,
+      "before": {
+        "draw_calls": 147.0,
+        "hour": 14,
+        "map": "Costa Brava",
+        "mean_ms": 0.540730555555556,
+        "p95_ms": 0.665,
+        "quality": "low",
+        "resolution": "1280x720",
+        "sample_frames": 360,
+        "static_memory_bytes": 228844569,
+        "warmup_frames": 360
+      },
+      "after": {
+        "draw_calls": 147.0,
+        "hour": 14,
+        "map": "Costa Brava",
+        "mean_ms": 0.538230555555556,
+        "p95_ms": 0.702,
+        "quality": "low",
+        "resolution": "1280x720",
+        "sample_frames": 360,
+        "static_memory_bytes": 228900861,
+        "warmup_frames": 360
+      }
+    }
+  ]
+}

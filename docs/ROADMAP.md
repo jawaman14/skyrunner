@@ -39,7 +39,10 @@ feature packages. Their future implementations remain below.
 2. **Physical Costa Brava access.** The authored Family club/loading area now
    improves the loading audit to 26/99 reachable, 73 blocked. See
    [the measured slice](FAMILY_LOADING_SITE_2026-10-08.md). Complete targeted road/grade
-   corrections; validate the whole road width, entrances, thresholds, loading
+   corrections. The [shared dry-road surface correction](ROAD_JUNCTION_SURFACES_2026-10-08.md)
+   reduces grade-blocked edges from 118 to 54 without changing road topology;
+   the endpoint matrix remains 26/99. Finish the remaining local faults and
+   validate the whole road width, entrances, thresholds, loading
    areas and bridge approaches. Preserve La Selva/offshore remoteness. Do not
    increase access limits or restore straight-line routing to conceal failures.
 3. **Measured travel migration.** Move trucks and squads separately after physical

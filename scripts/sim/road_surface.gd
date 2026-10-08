@@ -33,7 +33,15 @@ static func samples(world: World, road: Array) -> Array:
 	var out := []
 	for i in points.size():
 		var direction := (points[mini(i + 1, points.size() - 1)] - points[maxi(i - 1, 0)]).normalized()
-		out.append([points[i], direction, deck_height(world, points[i], Vector2(-direction.y, direction.x) * HALF_WIDTH)])
+		var side := Vector2(-direction.y, direction.x) * HALF_WIDTH
+		var left := points[i] + side
+		var right := points[i] - side
+		var left_height := world.ground(left.x,left.y) + 0.45
+		var right_height := world.ground(right.x,right.y) + 0.45
+		if world.is_water(points[i].x,points[i].y):
+			left_height = maxf(left_height,right_height)
+			right_height = left_height
+		out.append([points[i], direction, 0.0, left_height, right_height])
 	# Only bridge clearance propagates onto land: do not reshape hill roads.
 	var clearance := PackedFloat64Array()
 	for p in points:
@@ -43,7 +51,12 @@ static func samples(world: World, road: Array) -> Array:
 	for i in range(points.size() - 2, -1, -1):
 		clearance[i] = maxf(clearance[i], clearance[i + 1] - points[i].distance_to(points[i + 1]) * APPROACH_GRADE)
 	for i in out.size():
-		out[i][2] = maxf(float(out[i][2]), clearance[i])
+		# Dry roads follow the cross-slope. Flattening them to the highest side
+		# creates different raised lips where two ribbons cross on a safe hill.
+		# Bridge clearance still raises both edges above water and grades banks.
+		out[i][3] = maxf(float(out[i][3]), clearance[i])
+		out[i][4] = maxf(float(out[i][4]), clearance[i])
+		out[i][2] = (float(out[i][3]) + float(out[i][4])) * 0.5
 	return out
 
 static func deck_height(world: World, p: Vector2, side: Vector2) -> float:
@@ -54,7 +67,10 @@ static func edge(sample: Array, lateral: float) -> Vector3:
 	var p: Vector2 = sample[0]
 	var direction: Vector2 = sample[1]
 	var side := Vector2(-direction.y, direction.x) * lateral
-	return Vector3(p.x + side.x, sample[2], -(p.y + side.y))
+	var height := float(sample[2])
+	if sample.size() >= 5:
+		height = lerpf(float(sample[4]), float(sample[3]), (lateral / HALF_WIDTH + 1.0) * 0.5)
+	return Vector3(p.x + side.x, height, -(p.y + side.y))
 
 func _triangle(a: Vector3, b: Vector3, c: Vector3) -> void:
 	var index := vertices.size()

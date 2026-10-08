@@ -1,0 +1,12 @@
+{
+	"draw_calls": 147.0,
+	"hour": 14,
+	"map": "Costa Brava",
+	"mean_ms": 0.535672222222223,
+	"p95_ms": 0.67,
+	"quality": "low",
+	"resolution": "1280x720",
+	"sample_frames": 360,
+	"static_memory_bytes": 228844569,
+	"warmup_frames": 360
+}
