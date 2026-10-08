@@ -57,11 +57,17 @@ func _initialize() -> void:
 				queue.append(j)
 		sizes.append(count)
 	var endpoints := []
-	for site in ["hq", "barn", "docks", "lockup", "camp", "villa", "quarry", "shack", "agency"]:
+	var endpoint_ids: Array = [Logistics.HQ]
+	for stash in session.stash_net.live(): endpoint_ids.append(stash.id)
+	for meet in Logistics.MEETS: endpoint_ids.append(meet)
+	endpoint_ids.sort()
+	for site in endpoint_ids:
 		var endpoint: Dictionary = session.logistics.loading_endpoint(site,"hq",access)
-		if not endpoint.available: continue
+		if not endpoint.available:
+			endpoints.append({"site":site,"site_id":endpoint.site_id,"available":false,"reason":endpoint.reason,"component":-1,"index":-1})
+			continue
 		var connector := access._vehicle_connector(graph,endpoint.point)
-		endpoints.append({"site":site,"reason":connector.reason,"component":components.get(connector.index,-1),"index":connector.index})
+		endpoints.append({"site":site,"site_id":endpoint.site_id,"available":true,"point":[endpoint.point.x,endpoint.point.y],"reason":connector.reason,"component":components.get(connector.index,-1),"index":connector.index})
 	var report := {"map":"Costa Brava","seed":12,"nodes":graph.nodes.size(),"components":sizes,"blocked_edges":reasons,"grade_categories":grade_categories,"blocked_segments":blocked,"endpoints":endpoints}
 	var args := OS.get_cmdline_user_args()
 	var output := args[0] if not args.is_empty() else "res://sim-results/road-access-components.json"
