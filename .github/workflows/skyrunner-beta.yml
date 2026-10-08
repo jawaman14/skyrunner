@@ -20,17 +20,27 @@ env:
 
 jobs:
   test:
-    name: test ${{ matrix.shard }}
+    name: ${{ matrix.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        shard: ["1/3", "2/3", "3/3"]  # the suite as three parallel slices (tests/run_tests.gd, SHARD=i/n)
+        include:
+          - {lane: logic, shard: "1/1", label: "test logic"}
+          - {lane: simulation, shard: "1/3", label: "test 1/3"}
+          - {lane: simulation, shard: "2/3", label: "test 2/3"}
+          - {lane: simulation, shard: "3/3", label: "test 3/3"}
+          - {lane: presentation, shard: "1/1", label: "test presentation"}
+          - {lane: socket, shard: "1/1", label: "test socket"}
     steps:
       - uses: actions/checkout@v4
       - name: Repo hygiene
         run: bash tools/hygiene.sh
+      - uses: actions/cache@v4
+        with:
+          path: .tools/Godot_v${{ env.GODOT_VERSION }}_linux.x86_64
+          key: godot-${{ runner.os }}-x64-${{ env.GODOT_VERSION }}
       - name: Godot
         run: echo "GODOT=$(${GAME}/tools/get_godot.sh)" >> "$GITHUB_ENV"
       - name: Test suite
@@ -38,6 +48,7 @@ jobs:
         env:
           TEST_TIMEOUT: "2700"
           SHARD: ${{ matrix.shard }}
+          TEST_LANE: ${{ matrix.lane }}
         run: ./tools/test.sh
 
   server:
