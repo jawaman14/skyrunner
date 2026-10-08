@@ -110,13 +110,15 @@ func test_functional_setbacks_clear_full_roads_and_keep_strategic_anchors() -> v
 	check_eq(SiteLayout.stash_frame(world, moved).origin.x, moved.x, "alternate authoring is not silently offset")
 
 
-class SlopeLand extends World:
-	func ground(x: float, y: float) -> float: return 0.1 * x + 0.2 * y
+class CurvedLand extends World:
+	# Curvature makes a translated plot's foundation depth differ. A plane's
+	# uniform height shift would cancel out and miss the old-anchor regression.
+	func ground(x: float, y: float) -> float: return 0.0002 * x * x + 0.2 * y
 
 
 func test_hq_foundation_samples_the_actual_transformed_plot() -> void:
 	World.use_map(MapCity.SEED)
-	var world := SlopeLand.new()
+	var world := CurvedLand.new()
 	var spec := {"kind":"law", "style":"customs", "heading":180.0, "x":MapCity.LAW_AT.x, "y":MapCity.LAW_AT.y}
 	var node := Buildings.hq(world, spec)
 	var low: float = node.transform.origin.y
