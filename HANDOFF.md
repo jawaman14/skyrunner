@@ -1,6 +1,7 @@
 # Current handoff
 
 The authoritative current state is [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
+Its source inventory is generated; regenerate with `godot --headless --script res://tools/project_status.gd -- --write` after source changes. Passing runs and human gates remain separately recorded.
 Historical handoff notes below are retained for provenance and are not current
 test or feature claims.
 
