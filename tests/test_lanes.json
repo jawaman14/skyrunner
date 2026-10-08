@@ -131,6 +131,7 @@
     "test_room.gd",
     "test_room_screen.gd",
     "test_seats.gd",
+    "test_startup.gd",
     "test_station_link.gd",
     "test_voice.gd",
     "test_voice_chat.gd"
