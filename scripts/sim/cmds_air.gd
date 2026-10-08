@@ -289,5 +289,3 @@ static func _cmd_gun_mode(role: String, a: Dictionary, session: Session):
 			t.gun_mode = m
 	session.say("Gun run: %s on delivery." % ("sell them" if m == "sell" else "keep them for our soldiers"))
 	return null
-
-

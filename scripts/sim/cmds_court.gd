@@ -63,5 +63,3 @@ static func _cmd_court_charge(role: String, a: Dictionary, session: Session):
 
 static func _cmd_court_offer_plea(role: String, a: Dictionary, session: Session):
 	return session._court(func(): return session.court.offer_plea(bool(a.get("lenient", false))))
-
-

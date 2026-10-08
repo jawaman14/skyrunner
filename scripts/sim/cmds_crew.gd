@@ -64,5 +64,3 @@ static func _cmd_post_lookout(role: String, a: Dictionary, session: Session):
 
 static func _cmd_offer_worker_deal(role: String, a: Dictionary, session: Session):
 	return session._pay(func(): return session.payroll.offer_deal(str(a.get("id", ""))))
-
-
