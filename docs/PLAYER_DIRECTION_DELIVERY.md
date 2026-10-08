@@ -18,7 +18,7 @@
 | Leader leaves: halt session | Current handoff generally replaces vacant seats with AI | Define leader identity, stop authoritative simulation/mutations on departure, safe resume/reconnect and non-leader continuity; no automatic leader AI replacement. |
 | Reports/uncertainty | #234 privacy, #239 district summary, #240/#245 battle account lifecycle | Operational debriefs and attributed information; do not repeat completed cards or leak enemy state. |
 | Controls | #248 navigation/calibration/F8 | Context-aware conflicts/remapping, custom-binding prompts and physical input acceptance. |
-| Physical world | #241 plan and #247 partial rebuild | 86/99 loading pairs blocked; route cost increase, connector corrections and safe movement migration remain gates. |
+| Physical world | #241 plan and #247 partial rebuild | 73/99 loading pairs blocked after the authored Family site; route cost increase, connector corrections and safe movement migration remain gates. |
 
 ## Product order
 

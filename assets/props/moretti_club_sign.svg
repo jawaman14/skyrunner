@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="128" viewBox="0 0 512 128">
+ <rect width="512" height="128" rx="3" fill="#c3ad7c"/>
+ <rect x="9" y="9" width="494" height="110" fill="none" stroke="#4a3828" stroke-width="3"/>
+ <text x="256" y="62" text-anchor="middle" font-family="serif" font-weight="bold" font-size="39" fill="#4a3828">CIRCOLO MORETTI</text>
+ <text x="256" y="95" text-anchor="middle" font-family="serif" font-size="19" letter-spacing="4" fill="#4a3828">SOCIOS · CAFÉ · DOMINÓ</text>
+ <path d="M19 17h46M473 113h21M11 97h10M299 12h16" stroke="#ddcca2" stroke-width="4"/>
+ <path d="M64 112h13M452 19h21M11 46h5M185 10h17" stroke="#8d7956" stroke-width="2"/>
+</svg>

@@ -67,7 +67,9 @@ func test_loading_endpoints_reject_unavailable_or_unauthored_meets() -> void:
 	var s := _sess()
 	var access := SiteAccess.new(s.world, s.world.site_records())
 	check(not s.logistics.loading_endpoint("missing", "", access).available, "unknown site has no fallback")
-	check(not s.logistics.loading_endpoint("family", "", access).available, "unauthored social club does not become a market-centre endpoint")
+	var family: Dictionary = s.logistics.loading_endpoint("family", "", access)
+	check(family.available, "Costa Brava social club has an authored loading area")
+	check(family.point != s.logistics.pos("family"), "physical loading does not reuse the strategic market centre")
 	check(not s.logistics.loading_endpoint("agency", "", access).available, "Company meeting requires a source")
 	var stash: Dictionary = s.stash_net.live()[0]
 	var company: Dictionary = s.logistics.loading_endpoint("agency", stash.id, access)

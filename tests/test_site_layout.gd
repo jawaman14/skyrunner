@@ -1,4 +1,30 @@
 extends TestCase
+
+func test_family_meeting_has_clear_authored_access_and_matching_collision() -> void:
+	World.use_map(MapCity.SEED)
+	var world := World.new()
+	var site := SiteLayout.family_site(world)
+	var records := world.site_records()
+	var access := SiteAccess.new(world, records)
+	check(access.verify(site).connection_verified, "walk and loading legs reach the existing road")
+	check(SiteLayout.diagnostics(world, records).filter(func(issue): return issue.id == site.id).is_empty(), "threshold, overlaps and runway clearance")
+	var root := Node3D.new()
+	Engine.get_main_loop().root.add_child(root)
+	root.add_child(Buildings.family_meeting(site))
+	for i in 3: await Engine.get_main_loop().physics_frame
+	var outside: Vector3 = site.approach[0] + Vector3(0, 1.2, 0)
+	var inside: Vector3 = site.transform * Vector3(0, 1.3, 0)
+	var query := PhysicsRayQueryParameters3D.create(outside, inside, 1)
+	check(root.get_world_3d().direct_space_state.intersect_ray(query).is_empty(), "real collision leaves doorway and interior route open")
+	query = PhysicsRayQueryParameters3D.create(site.transform * Vector3(4,1.3,-8), site.transform * Vector3(4,1.3,0), 1)
+	check(not root.get_world_3d().direct_space_state.intersect_ray(query).is_empty(), "wall beside the doorway is solid")
+	var loading: Vector3 = site.loading
+	query = PhysicsRayQueryParameters3D.create(loading + Vector3(0, 8, 0), loading + Vector3(0, 0.2, 0), 1)
+	check(root.get_world_3d().direct_space_state.intersect_ray(query).is_empty(), "loading space has no decorative obstacle")
+	root.free()
+	World.use_map(0)
+	check(SiteLayout.family_site(World.new()).is_empty(), "classic regression geometry remains unchanged")
+
 func after_each() -> void:
 	World.use_map(0)
 

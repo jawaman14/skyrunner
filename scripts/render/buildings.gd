@@ -586,6 +586,28 @@ static func airfield_site(world: World, af: Airfield) -> Node3D:
 
 
 # ------------------------------------------------------------------ headquarters
+## Modest period roadside club. Stock remains in Logistics, never in props.
+static func family_meeting(site: Dictionary) -> Node3D:
+	var k := Kit.new("family-social-club")
+	k.box(Vector3(0, 0.05, 0), Vector3(12, 0.1, 10), "concrete")
+	k.wall(-6, -5, 6, -5, 0.1, 3.2, 0.25, "stucco_pink", 2.0)
+	k.wall(-6, 5, 6, 5, 0.1, 3.2, 0.25, "stucco_pink")
+	k.wall(-6, -5, -6, 5, 0.1, 3.2, 0.25, "stucco_pink")
+	k.wall(6, -5, 6, 5, 0.1, 3.2, 0.25, "stucco_pink")
+	k.box(Vector3(0, 3.4, 0), Vector3(12.5, 0.2, 10.5), "metal_rust")
+	k.plate("res://assets/props/moretti_club_sign.svg", Vector3(0, 2.9, -5.14), Vector2(3.2, 0.8))
+	for side in [-1, 1]:
+		k.box(Vector3(side * 3.8, 1.6, -5.14), Vector3(2.1, 1.3, 0.04), "wood", false)
+		k.box(Vector3(side * 3.8, 1.6, -5.17), Vector3(1.85, 1.05, 0.04), "glass", false)
+	# Short faded fascia and rain gutter retain the working doorway clearance.
+	k.box(Vector3(0, 3.23, -5.16), Vector3(12.5, 0.15, 0.12), "metal_rust", false)
+	# Furniture is kept clear of the door and the outside loading apron.
+	k.box(Vector3(3, 0.5, 2), Vector3(2, 1, 0.8), "wood")
+	var node := k.finish()
+	node.transform = site.transform
+	node.set_meta("site_records", [site])
+	return node
+
 static func hq(world: World, spec: Dictionary) -> Node3D:
 	var k := Kit.new("hq-" + spec.kind)
 	match spec.get("style", ""):

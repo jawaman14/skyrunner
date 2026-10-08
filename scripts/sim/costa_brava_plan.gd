@@ -15,6 +15,7 @@ const DISTRICTS := [
 ]
 
 static func reserved(p: Vector2, radius: float, layout: MapLayout) -> bool:
+	if p.distance_to(SiteLayout.FAMILY_AT) < 24.0 + radius: return true
 	for at in [MapCity.ORG_AT, MapCity.LAW_AT]:
 		if p.distance_to(at) < 100.0 + radius: return true
 	for st in layout.stashes:

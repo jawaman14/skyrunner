@@ -31,11 +31,14 @@ feature packages. Their future implementations remain below.
 ## Remaining work in dependency order
 
 1. **Accept and integrate existing slices.** Keep narrow dependencies; the first
-   asset branch is updated to current main. Use a squash commit per completed,
+   asset branch is updated to current main. Corrective scopes #245, #255, #258
+   and #270–#272 are now ready after current-head CI and desktop validation;
+   broader release gates remain distinct. Use a squash commit per completed,
    tested PR. Do not merge evidence-dependent drafts solely for green CI. The
    historical code chain and remaining per-PR gates are in the completion review.
-2. **Physical Costa Brava access.** Current loading audit: 21/99 reachable,
-   78 blocked. Author the missing Family meeting area and targeted road/grade
+2. **Physical Costa Brava access.** The authored Family club/loading area now
+   improves the loading audit to 26/99 reachable, 73 blocked. See
+   [the measured slice](FAMILY_LOADING_SITE_2026-10-08.md). Complete targeted road/grade
    corrections; validate the whole road width, entrances, thresholds, loading
    areas and bridge approaches. Preserve La Selva/offshore remoteness. Do not
    increase access limits or restore straight-line routing to conceal failures.
