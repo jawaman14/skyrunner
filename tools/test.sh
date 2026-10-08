@@ -18,6 +18,17 @@ if [[ $import_code -ne 0 ]] || grep -qE "SCRIPT ERROR|Parse Error" "$import_out"
   exit "$import_code"
 fi
 rm -f "$import_out"
+status_out=$(mktemp)
+"$GODOT" --headless --script res://tools/project_status.gd -- --check >"$status_out" 2>&1
+status_code=$?
+if [[ $status_code -ne 0 ]] || grep -qE "SCRIPT ERROR|Parse Error" "$status_out"; then
+  cat "$status_out"
+  rm -f "$status_out"
+  echo "FAILED: project status does not match this checkout"
+  [[ $status_code -eq 0 ]] && status_code=100
+  exit "$status_code"
+fi
+rm -f "$status_out"
 out=$(mktemp)
 timeout "${TEST_TIMEOUT:-900}" "$GODOT" --headless --script res://tests/run_tests.gd -- "$@" >"$out" 2>&1
 code=$?

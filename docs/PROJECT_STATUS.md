@@ -5,17 +5,29 @@ baseline changes; historical counts belong in `docs/ROADMAP_HISTORY_2026-10.md`.
 It separates implemented work from evidence so a feature is not advertised as
 human-tested merely because source code exists.
 
-Source audit: 8 October 2026. This is a maintained evidence record, not generated test output.
+Source audit: 8 October 2026. The source inventory is generated; validation and release evidence are maintained separately.
+
+<!-- BEGIN GENERATED PROJECT STATUS -->
+## Generated source inventory
+
+This section describes **this checkout**. Run `godot --headless --script res://tools/project_status.gd -- --write` after source changes. CI checks it after import. Passing test runs, shipped builds and human verification are separate evidence below.
+
+| Field | Source value | Meaning / source |
+|---|---|---|
+| Version | 0.9.0-beta.1 | project.godot |
+| Declared automated tests | 1016 methods in 127 test files | Compiled source inventory; this is not a test result |
+| Flying tutorial | 4 Costa Brava chapters | Campaign.CHAPTERS |
+| Main story | 12 chapters | Story.CHAPTERS; distinct from the tutorial |
+| Configured exports | Linux, Windows, macOS | Export presets; build/manual acceptance is recorded below |
+| Multiplayer protocol | 3 | Implemented wire version; real two-machine verification remains pending |
+
+<!-- END GENERATED PROJECT STATUS -->
 
 | Field | Current value | Evidence / limit |
 |---|---|---|
-| Version | 0.9.0-beta.1 | `README.md`, release metadata |
 | Engine | Godot 4.7.2, GDScript, Jolt | project configuration |
-| Test files | 123 `tests/test_*.gd` files, excluding `test_case.gd` | source count on 7 October; run `./tools/test.sh` for test results |
 | Verified automated baseline | 1,002 passed, 0 failed across three post-merge desktop shards (321 / 339 / 342) | Main `3347007`, #259–#263; no script/parse failures; engine cleanup diagnostics remain |
-| Unmerged continuation | 1,052 passed, 0 failed (338 / 361 / 353) at villa code head `bbf6a24` | #265 stack; ten paired war seeds have identical aggregate outcomes for the local villa correction; not main or human acceptance |
-| Tutorial | Four Costa Brava flying chapters | `docs/DESIGN.md`; preserved |
-| Story | Twelve Costa Brava chapters | `README.md`/`docs/DESIGN.md`; preserved |
+| Overhaul branch evidence | 1,076 passed, 0 failed at `8c08b41` in 799.7 seconds | #283 historical stack, including unmerged world work; no script/parse failures; not a main or human acceptance claim |
 | Player map | Costa Brava | Classic geometry remains internal regression only; generated maps are optional |
 | Desktop targets | Linux, Windows and macOS exported and smoke-launched in CI | PR #223 CI run 37568034562; human exported-build walkthroughs remain pending |
 | Multiplayer | protocol and remote preview/ack paths implemented | real two-machine seat, action and voice session remains unperformed |
@@ -23,6 +35,12 @@ Source audit: 8 October 2026. This is a maintained evidence record, not generate
 | Asset rights | used third-party notices included; bundled radio redistribution rights unresolved | `docs/ASSET_PROVENANCE.md` and issue #175 |
 
 ## Feature state
+
+### Issue-audit integration, 8 October 2026
+
+[#280](https://github.com/jawaman14/skyrunner/pull/280) restores exact prior parity state and hardens the seeded-generator scanner; [#281](https://github.com/jawaman14/skyrunner/pull/281) adds vegetation preset/determinism coverage. [#282](https://github.com/jawaman14/skyrunner/pull/282) deduplicates host/client voice setup and fixes waiting-room beacon lifetime. [#284](https://github.com/jawaman14/skyrunner/pull/284) moves all 105 command handlers into six stateless modules without changing their bodies or Session authority. Each was squash-merged after all eight current-head CI jobs passed. Main is `9d879ba`; its own post-merge regression/smoke and newer draft slices remain separate evidence. Issues #93 and #95 are completed; broader startup, coverage and physical/hardware gates remain open.
+
+The older dated evidence below is historical; it does not override the generated checkout inventory or upgrade source checks into human acceptance.
 
 ### Reliability integration, 8 October 2026
 

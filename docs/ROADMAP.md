@@ -7,7 +7,9 @@ findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md)
 
 ## Baseline and completed work
 
-**Current reliability baseline, 8 October 2026:** #254 and #259–#263 are
+**Latest integrations:** #280/#281/#282/#284 are squash-merged through main `9d879ba`, each after all eight current-head CI jobs passed. Parity/seed registration (#93) and command separation (#95) are complete. Draft #285 consolidates seat screens; #286 adds measured test lanes. Generated checkout facts and separate validation/human gates are in [PROJECT_STATUS.md](PROJECT_STATUS.md). The dated baseline/stack descriptions below remain history.
+
+**Earlier reliability baseline, 8 October 2026:** #254 and #259–#263 are
 squash-merged; main `3347007` passes 1,002 post-merge desktop tests, smoke and
 hygiene. Superseded #232/#233/#234/#256/#257 are closed. Use the
 [per-PR integration record](PR_INTEGRATION_2026-10-08.md) for the current queue
@@ -27,8 +29,10 @@ is merged with passing macOS bundle/launch validation. The
 [dated verification report](VALIDATION_2026-10-07.md) records current evidence.
 
 Before truck routing migrates, fix loading/meet endpoint connectors: the
-[route baseline](LOGISTICS_ROUTE_BASELINE.md) finds all 99 current endpoint pairs
-blocked by checked access. Keep this a measured slice rather than replacing the
+[route baseline](LOGISTICS_ROUTE_BASELINE.md) originally found all 99 audited endpoint pairs
+blocked by checked access. The unmerged authored-loading/surface stack now reaches 26 of 99;
+73 remain blocked. See the loading triage in [draft #276](https://github.com/jawaman14/skyrunner/pull/276);
+that report is not integrated into main yet. Keep this a measured slice rather than replacing the
 legacy fallback globally.
 
 The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava story stay.
