@@ -3,6 +3,7 @@
     "test_car_radio.gd",
     "test_casino_games.gd",
     "test_docs.gd",
+    "test_fixture_isolation.gd",
     "test_hq.gd",
     "test_rng.gd",
     "test_strategic.gd"
@@ -97,6 +98,7 @@
     "test_models.gd",
     "test_payroll.gd",
     "test_people.gd",
+    "test_people_map.gd",
     "test_period_props.gd",
     "test_phone_calls.gd",
     "test_playable_maps.gd",
@@ -130,6 +132,7 @@
     "test_room.gd",
     "test_room_screen.gd",
     "test_seats.gd",
+    "test_startup.gd",
     "test_station_link.gd",
     "test_voice.gd",
     "test_voice_chat.gd"
