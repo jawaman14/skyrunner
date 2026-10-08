@@ -22,6 +22,10 @@ metres and distant shadows are disabled. Tests enforce decreasing geometry,
 under 5000 near triangles and under 1500 distant triangles, exact old envelopes,
 ground-level wheels, no added collision and existing disabled-model behavior.
 
+Measured per-instance triangles are 600–672 near, 284–344 middle and 172–232
+far. These deliberately simple stylised bodies are below the Bible's ceilings;
+they do not use extra geometry merely to reach a target budget.
+
 ![Rendered vehicle contact sheet](img/period-vehicles-2026-10-08.png)
 
 ## Rendering evidence
@@ -45,6 +49,13 @@ fixture. Runtime driver/crew animation and authoritative damage presentation
 are not implemented by the static asset batch.
 
 ## Acceptance still pending
+
+Automated validation: full desktop suite **1059 passed, 0 failed** across shards
+349/360/350, with no script/parse failures. Existing model integration tests
+passed 4/4; the suite includes the two new envelope/LOD/cache tests. Isolated
+1800-frame startup reported `SMOKE OK`; hygiene and staged whitespace checks
+passed. Godot ObjectDB/resource/PagedAllocator shutdown cleanup diagnostics were
+present and recorded separately from functional results.
 
 Human driving and parking review, graphics-preset/LOD-transition review in the
 world, exported Windows inspection and moving dense-combat performance remain
