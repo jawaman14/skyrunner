@@ -54,6 +54,9 @@ func _ready() -> void:
 	panel.offset_right = -24.0
 	panel.offset_top = -560.0
 	panel.offset_bottom = -24.0
+	# pinned to the corner: when the contents need more room the handset grows left and up, never off the screen
+	panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	root.add_child(panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)
@@ -85,14 +88,21 @@ func _ready() -> void:
 	scroll.custom_minimum_size = Vector2(PHONE_W - 8.0, 250)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(scroll)
+	# the thread and, under it, the answers: one scrolling column, so eleven long answers never push the handset off
+	# the screen and the Leave button below stays in reach
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 8)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(body)
 	thread = VBoxContainer.new()
 	thread.add_theme_constant_override("separation", 6)
 	thread.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(thread)
+	body.add_child(thread)
 	scroll.get_v_scroll_bar().changed.connect(func(): scroll.scroll_vertical = int(scroll.get_v_scroll_bar().max_value))  # stay at the newest
 	choices = VBoxContainer.new()
 	choices.add_theme_constant_override("separation", 5)
-	v.add_child(choices)
+	choices.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(choices)
 	hint = UIStyle.caption("")
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(hint)
@@ -108,6 +118,7 @@ func _apply_palette() -> void:
 	_palette = UIStyle.palette
 	panel.get_parent().theme = UIStyle.theme()
 	panel.add_theme_stylebox_override("panel", UIStyle.box(Color(0.03, 0.035, 0.055, 0.97), 28, Color(1, 1, 1, 0.22), 2, Vector4(16, 14, 16, 14)))
+	who.add_theme_color_override("font_color", UIStyle.PINK)
 
 
 func _process(dt: float) -> void:
@@ -209,14 +220,17 @@ func _next(id: String) -> void:
 		var b := Button.new()
 		b.text = "%d   %s" % [i + 1, _answers[i].text]
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		b.focus_entered.connect(func(): selected = i)
+		b.focus_entered.connect(func():
+			selected = i
+			scroll.ensure_control_visible(b))
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.pressed.connect(choose.bind(i))
 		choices.add_child(b)
 	hint.text = "UP/DOWN, 1-%d reply   ESC hang up" % _answers.size() if not _answers.is_empty() else "ENTER next   ESC hang up"
 	Speech.line(line.character if line.text != "" else "", line.text, _answers.map(func(r): return str(r.text)))
 	# keep the thread's height sensible: the answers take what they need, the thread the rest
-	panel.offset_top = -(250.0 + 150.0 + 44.0 * _answers.size())
+	var room: float = panel.get_viewport().get_visible_rect().size.y - 48.0 if panel.get_viewport() != null else 700.0
+	panel.offset_top = -minf(250.0 + 150.0 + 44.0 * _answers.size(), room)
 	while thread.get_child_count() > 40:  # a long call forgets its oldest messages
 		thread.get_child(0).queue_free()
 		thread.remove_child(thread.get_child(0))
