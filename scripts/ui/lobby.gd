@@ -27,6 +27,7 @@ var plan_lbl: Label
 var go_btn: Button
 var startup_notice := ""
 var hints: KeyHints
+var scroll: ScrollContainer
 
 const MODES := [["Solo", "solo"], ["Flying lessons (Costa Brava)", "campaign"], ["Co-op: friends crew for you", "coop"],
 	["Versus: friends run the task force", "versus"], ["Task-force desk vs AI runners", "police"]]
@@ -41,9 +42,18 @@ func _ready() -> void:
 	bg.color = Color(0.035, 0.045, 0.065)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
+	var layout := VBoxContainer.new()
+	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(layout)
+	scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	layout.add_child(scroll)
 	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(center)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", UIStyle.box(Color(0.06, 0.07, 0.095, 0.97), 10, UIStyle.LINE, 1, Vector4(28, 22, 28, 20)))
 	center.add_child(panel)
@@ -162,7 +172,9 @@ func _ready() -> void:
 	hints.hint_pressed.connect(func(a):
 		if a == "fly":
 			_go())
-	v.add_child(hints)
+	var footer := CenterContainer.new()
+	layout.add_child(footer)
+	footer.add_child(hints)
 	addr.text_submitted.connect(func(_t): _join())
 	name_le.text_submitted.connect(func(_t): _join())
 	_plan()
