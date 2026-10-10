@@ -12,6 +12,124 @@ year by year.
 
 Status legend: **[done]** in the code now · **[planned]** historical proposals unless present in [ROADMAP.md](ROADMAP.md). Later decisions and verified code take precedence; the October review is a dated record, not the current queue.
 
+## 0. Where the game is heading (owner-approved direction, 8 October 2026)
+
+The owner's answers to a gameplay questionnaire (recorded by Codex in PR #249) set the target the rest of this
+document grows towards. They take precedence over conflicting older plans, including the deferrals in
+[EMPIRE_MILESTONE.md](EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
+say what exists. The delivery order is in [ROADMAP.md](ROADMAP.md).
+
+**The core experience: build an empire from nothing.** Mount & Blade: Warband is the principal reference. The
+game starts small and personal, then the player takes on more complexity: personal action, recruitment, trade,
+relationships, conquest, command and the stories that emerge from them. Schedule I adds hands-on work, setting up
+a business and automating it. Cities: Skylines adds interconnected systems that the player diagnoses and manages;
+decorative city-building is not a goal. No activity is forced: a solo player delegates to AI, co-op players
+specialise, and a mature organisation can operate across every business area. There is no prescribed ratio of
+flying to management to combat.
+
+**The start [PR #296, awaiting merge].**
+- A new story begins with the player as a hired pilot for a legitimate aviation business (Costa Brava Air
+  Services), flying the employer's aircraft straight away.
+- The business slides into smuggling, and in the main story that becomes unavoidable: there is no permanent
+  legitimate-only branch.
+- Owning an aircraft is an earned milestone, not a starting gift. The draft's first price is $18,000 for the
+  employer's Cessna, uncalibrated.
+- The sandbox (open mode) remains a way to progress without the campaign. The four flying lessons and twelve
+  story chapters stay.
+
+**Economy and workers.**
+- *Economy:* interconnected. Civilian businesses provide jobs and supplies, residents create demand, disruption
+  reduces trade, and neighbourhood prosperity changes what is on offer. The formulas are not designed yet
+  [planned].
+- *Automation:* manual operation always remains possible; automation is earned with enough workers and resources
+  and with the player's own setup.
+  - Basic explicit assignments come first [partly done: payroll assignments, §17].
+  - Then repeatable conditional orders (e.g. restock below a threshold) and configured multi-step task sequences
+    [planned].
+- *Workers:* they follow instructions. Competence never means autonomous strategic spending or expansion. When
+  delegation fails, the preferred cause is the player's poor planning.
+- *Money:* it chiefly buys convenience, and the organisation's properties visibly develop as it grows [planned].
+
+**Turf, factions and the law.**
+- *Territory:* it pays for itself in income, safer routes, recruiting, services, influence and physical occupation.
+  Control can change through presence, negotiation, economic disruption, battles and important sites; the exact
+  rules are open.
+- *Turf war:* it arrives mainly later, or early if the player goes looking for it.
+- *Rivals:* they have recognisable leaders and goals, different starting strengths, and grow through the economy.
+  There is no automatic level-matching and no unearned catch-up money.
+- *Diplomacy and combat:* diplomacy shifts as the player's expansion threatens or displaces other factions. Combat
+  can be led in person, from nearby or remotely. Experienced crew are valuable, so retreating is a real decision.
+- *The police:* response escalates. Pressure is handled by laying low, changing routes, legitimate business, legal
+  measures or sacrificing operations. Travel stays relevant; upgrades, bribes and relationships (the Company, the
+  Family) improve access and security.
+
+**Loss and recovery [planned unless noted].**
+- *The player:* death does not end the game. The player respawns or recovers in hospital, paying a
+  situation-dependent mix of time, money, carried goods and equipment.
+- *The organisation:* while the player recovers, it carries on with only the last instructions it was given; AI
+  never invents new assignments.
+- *Workers:* they can be injured or permanently killed [partly done: jail and death in §17]. After a defeat, the
+  player rebuilds with the survivors.
+- *Aircraft and vehicles:* they can be lost, impounded or (rarely) destroyed. There are several ways to recover an
+  impounded one: fees, legal or faction help, physical retrieval.
+- *Terminal outcomes:* bankruptcy and imprisonment as game-enders are configurable.
+- *Discovered risk:* some risk is learned from experience and reports, with facts kept apart from uncertainty.
+
+**World and campaign.**
+- *The map:* a compact Costa Brava, with interiors where they serve gameplay. The visual target is stylised period
+  cinema; the weathered 1979–82 look (ASSET_BIBLE.md) works within that style. Functional structures and traffic
+  come before ornament.
+- *The campaign:* playing it is optional, and finishing it leaves the sandbox running.
+- *Unlocks:* business access opens through money, reputation and demonstrated activity, with campaign missions as
+  an alternative route to the same unlocks. No essential sandbox system is gated behind the campaign only
+  [planned; today the story gates systems by chapter, §21].
+
+**Multiplayer.**
+- *Modes:* co-operative and competitive play are both part of the first full experience, as separate modes for
+  2–16 players [the lobby already allows 16].
+- *Roles:* players take organisation, rival-faction or police roles. One person owns an organisation and assigns
+  responsibilities.
+- *Leaving:* when the leader leaves, the session halts; a lower-ranked player leaving does not halt it. An absent
+  leader's authority is never handed to AI or a deputy automatically [planned; today an empty seat falls back to AI,
+  §12].
+- *Separate proposals:* multiplayer racing and the hidden informant remain separate proposals.
+
+**Product order.**
+1. The early rise: employed start, the slide into smuggling, the first aircraft.
+2. Setup-driven automation.
+3. Faction competition and the civilian economy.
+4. Multiplayer teamwork and competition.
+
+Physical reliability (access, routes), command clarity and the regression gates are prerequisites inside every
+step. Network ownership contracts are specified early, so step 4 doesn't force a rewrite, but multiplayer features
+don't jump the queue. Don't silently change payroll, aircraft performance, combat authority or balance to reach
+these goals: each mechanical change needs explicit rules, save compatibility and evidence.
+
+**What to borrow from the references** (Codex's research note, PR #249; these are hypotheses to test in play):
+
+| Reference | Borrow | Don't copy |
+|---|---|---|
+| Mount & Blade (original → Bannerlord) | Personal skill that stays useful as the player becomes a commander. A good pilot can still save a shipment in person. Each multiplayer seat does real work (pilot, dispatcher, quartermaster, ground commander). | A bigger arsenal before the current weapons' trade-offs are legible |
+| Mount & Blade: War Sails | Geography matters: aircraft, road and boat access are strategically different | Naval combat |
+| Schedule I | Do a job by hand, understand it, then delegate it and handle the exceptions. Show each worker's assignment, load, destination and blocked reason. | Repetitive handling minigames or production recipes |
+| Cities: Skylines I and II | See a problem, pull an understandable lever, watch it improve. Show the supply chain: source stock, carrier, route, loading access, destination need. Clicking a blocked order highlights the obstacle. | A municipal simulator or costly cosmetic traffic |
+
+**Playtest questions** to answer with recorded human sessions:
+- After one flown run and one delegated run, can a player explain the trade-off?
+- Can they find why a delivery is blocked using only the map?
+- Do named crew and battle reports make losses matter?
+- Do two players each have useful work during one shipment?
+- Does a setback leave an understandable way to recover?
+
+**Open questions for the owner:**
+- The employer's details, the transition's stages, the pay and the first aircraft's price.
+- Recovery costs and time, what happens to inventory, and property seizure.
+- Impound rules.
+- Automation budgets, rule syntax and permission limits.
+- What counts as a "leader" in each mode, and how reconnect, resume and abandonment work.
+- The civilian-economy and district-control formulas.
+- Tone, personal skills and favourite locations.
+
 ---
 
 ## 1. Pillars
@@ -25,6 +143,9 @@ Status legend: **[done]** in the code now · **[planned]** historical proposals 
    (see the matrix in §4). Balance comes from the pairs, not from raw stats.
 4. **Complexity arrives one year at a time.** The campaign adds one system per chapter, so
    by 1986 you juggle all of them, but you learned each one alone.
+5. **From hired pilot to empire (§0).** You start flying someone else's aircraft and earn everything after it.
+   Flying stays worth doing, delegation is a reward you set up yourself, and losses (money, crew, aircraft) are
+   real but recoverable.
 
 ## 2. Modes
 
@@ -36,7 +157,9 @@ Status legend: **[done]** in the code now · **[planned]** historical proposals 
 | **Versus** | Runner crew vs. controller (+ interceptor pilot) | Empty roles | [done]; controller and spotter use the station client; the interceptor pilot flies in a 3D seat (`RemoteSeat`) |
 | **Campaign** | Solo or co-op | Scripted threats per chapter | [done]: four flying tutorial chapters and twelve Costa Brava story chapters; former tutorial chapters 5–8 are retired |
 
-Any seat without a human is filled by AI, so the same match can be played by 1 to 6 people.
+Any seat without a human is filled by AI, so the same match can be played by one person or a full table (the lobby
+and dedicated server allow up to 16). The direction (§0) adds separate co-op and competitive modes for 2–16
+players, with organisation, rival-faction and police sides [planned].
 
 ## 3. Roles
 
@@ -162,7 +285,7 @@ in 1985. It also removes a crutch, such as a free loadmaster or a daytime-only s
 
 ```
  Pilot's game (3D, Godot 4) ─────────────┐   authoritative Session (flight + AI + rules), 60 Hz
-   └─ listen server (HostServer, TCP) ───┤   snapshots 15 Hz, filtered per role (fog of war)
+   └─ listen server (HostServer, TCP) ───┤   snapshots 20 Hz, filtered per role (fog of war)
                                          │
  Station clients (2D tactical UI) ◄──────┘   TCP, newline-delimited JSON
    co-pilot · spotter · controller           commands -> Session.command(role, name, args)
@@ -172,13 +295,28 @@ in 1985. It also removes a crutch, such as a free loadmaster or a daytime-only s
   *commands* (validated against a per-role permission table) and receive *snapshots* built
   for their side only. A controller snapshot contains radar tracks, never the true runner
   position.
-- **Why TCP + JSON now:** zero dependencies, trivial to debug, and fine at 15 Hz on a LAN or a
+- **Why TCP + JSON now:** zero dependencies, trivial to debug, and fine at 20 Hz on a LAN or a
   decent WAN. Station UIs are map views, so a 100 ms delay is invisible there.
 - **Phase 3:** a remote *pilot* (interceptor or second runner) needs UDP with client-side
   prediction of their own flight model (ENet through Godot's MultiplayerPeer), with the
   server reconciling. Snapshots already carry sequence numbers for this.
 - **Dedicated server:** `Session` has no rendering dependency, so a headless server is the same
   code minus the window (`godot --headless --script res://scripts/net/dedicated.gd`).
+- **The wire's safety contracts [done, October 2026, #259/#260]** (`host_server.gd`):
+  - *Bounded framing:* a line over 1 MiB closes the connection before it is parsed, and at most 64 lines are
+    handled per connection per poll.
+  - *Commands run at most once:* sequence numbers must rise per connection. A repeat gets the cached
+    acknowledgement (the last 256 are kept); an old or out-of-order sequence is refused unexecuted. At most 64
+    commands are pending per connection.
+  - *No stale seats:* a command queued before a seat change or disconnect is refused, not run under the new seat.
+  - *No stale sticks:* flight input not refreshed for one second is neutralised; ownership doesn't change.
+- **Read-only previews [done]:** a host advertises `action_previews` in its welcome. A client then asks
+  `preview_request` and gets the same `ActionDescriptions` result a local desk shows (consequence text, enabled or
+  disabled reason). Execution re-checks everything; a preview is never a reservation. Older hosts simply lack the
+  capability.
+- **Who may stop the game [planned, §0]:** when an organisation's leader leaves, the session halts; other players
+  leaving do not halt it. This replaces the current "empty seat becomes AI" rule for leaders only, once "leader"
+  is defined per mode.
 
 ## 8. Balance notes and tuning knobs
 
@@ -196,6 +334,9 @@ Balance target for versus: a competent crew completes about 55% of runs against 
 controller. The AI controller should land at about 70% for new players.
 
 ## 9. Roadmap
+
+*Historical: the 2025–26 phase plan. The current queue is [ROADMAP.md](ROADMAP.md) and the direction is §0;
+items below marked as later phases are not commitments.*
 
 1. **Phase 1 [done]:** single-player core. Flight-model W&B, tight strips, jobs, radar/wanted, AI police.
 2. **Phase 2 [done] (framework):** roles and permissions, command API, event bus, sensors and
@@ -636,6 +777,10 @@ AI sells whatever its dealers can't move in two hours to the best buyer.
 **Junctions.** The city shader draws a street grid every 110 m. The street furniture now puts a traffic light at every third crossing of that grid inside the urban land use, not only where the arterial roads meet, so downtown reads as a town of blocks rather than a handful of highways. That gives 26 sets of lights on Costa Brava.
 
 ## 21. The story: Costa Brava, 1979-1989, and the open mode
+
+*Direction (§0): a new story will open with the player employed by a legitimate air service, sliding into smuggling
+before chapter 1 [PR #296: four opening flights, the employer's Cessna on loan, first ownership
+recorded in the journal]. Story unlocks are to gain sandbox alternatives through money, reputation and activity.*
 
 The game had grown a dozen systems, all on from the first minute. The story (`story.gd`) opens them one chapter at a time. A new player meets the trade before the war, the war before the Family, the Family before the court, and only then the island and the Company.
 
@@ -1239,3 +1384,37 @@ and builds and runs the image. Operating it is `docs/SERVER.md`.
 
 An hour of server time takes about 100 s of one core and 140 MB. Soaking it found a bug in the AI pilot: `AutoRunner` accepted a load that did not fit even
 after the loadmaster re-planned it and then waited for the loading to finish for ever; it now puts the job back and never picks it again (`skipped`).
+
+## 46. Jobs and what they cost you
+
+Every flight starts as a job (`jobs.gd`, `Job.kind`: passenger, cargo, medical, contraband, fugitive or
+airdrop). Most come from a strip's board; other systems post their own. This table pulls together what each one
+asks of the pilot (from Codex's 8 October audit, PR #246, checked against the code).
+
+| Work | Where it comes from | What it asks / risks |
+|---|---|---|
+| Charters | Any board: 1–3 passengers, often with luggage; 30% are VIPs paying 1.4× | Seats. A VIP wants the bank under 45° and a soft landing. |
+| Cargo | Any board: mail, tools, fuel drums, generators, food, glass, lab samples | Weight, station limits and CG. Glass and samples are fragile and pay 1.3×. |
+| Medical | Boards, to bush strips | A deadline (about 0.55 min/km + 2.5 min, at least 4 min) and a fragile kit |
+| Contraband | Shady/bush boards once contraband is open (`No questions asked`) | Radar flags you, police chase, suspicion and informants (§3–5) |
+| Fugitive | Shady/bush boards | A wanted passenger: police are already looking |
+| Airdrops | Shady/bush boards with airdrops open | Bales kicked to a boat at sea; paid by bales landed (§5.3) |
+| Fuel caches | Hub/regional boards with ferry gear open | Drums to a bush strip; they stock a cache for your own runs |
+| Own stock | Trade purchases (§19), stash runs (§22) | Cash up front; the product sells at the destination |
+| Gun runs, the Company | Arsenal (§11), the Agency (§13) | Stock versus sale purpose, unlocks, political exposure |
+| Island work | Isla Soberana (§15): product, mules, defectors | Customs, weather, interception |
+
+**Grading on delivery** (`Session._grade`); the factors multiply:
+
+| Condition | Effect on pay |
+|---|---|
+| Contraband with market realism | Paid at the street price the day it lands (shown as ±%) |
+| Late (deadline passed) | ×0.4 |
+| Fragile cargo, touchdown over 400 fpm | ×0.5 (breakage) |
+| VIP, bank over 45° or touchdown over 300 fpm | ×0.7 |
+| Last touchdown under 150 fpm | ×1.1 (smooth landing bonus) |
+
+**Dropping a job** needs the aircraft parked. It unloads the job's cargo and cancels its boat, and pays nothing.
+At the job's origin it goes back on the board; anywhere else it is dumped. Accepting re-checks location, parking,
+permission, capacity and payment, but not whether the load plan is safe: the loading screen's weight and balance is
+the pilot's job (§5.1).

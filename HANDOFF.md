@@ -1,141 +1,263 @@
-# Current handoff
+<!-- standalone-mcp -->
+MCP implementation: [jawaman14/skyrunner-mcp](https://github.com/jawaman14/skyrunner-mcp). This game contains only the pinned connection launcher; make server changes in the separate repository.
 
-The authoritative current state is [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
-Its source inventory is generated; regenerate with `godot --headless --script res://tools/project_status.gd -- --write` after source changes. Passing runs and human gates remain separately recorded.
-Historical handoff notes below are retained for provenance and are not current
-test or feature claims.
+# Handoff: Claude ⇄ ChatGPT (Codex) relay
 
-# Update 2026-10-03: everything below the line was written on 2026-09-28; this is what changed since
+**Mode: relay.** The owner uses one AI until its tokens run out, then the other. Neither agent can see the other's
+chat, and a session can end without warning: keep this file's baton current in every commit. The planning inputs
+are the owner's [work split](docs/AGENT_WORK_SPLIT.md) and [allocation tracker](docs/AI_WORK_ALLOCATION.md)
+(tiers A/B/C, hard merge rules, lanes). If two sessions ever overlap on one checkout, use the MCP board
+([tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md)) and separate worktrees.
 
-**Where things are.** `main` has all of the work stacked since the cloud handoff (PRs #1-#38, merged bottom-up
-as merge commits). Tests: see [PROJECT_STATUS.md](docs/PROJECT_STATUS.md); this historical note is retained for provenance. CI was green on the recorded baseline
-(tests, exports, smoke). The balance re-fly (K3) that item 1 below describes was finished (BALANCE entry 35) and
-the playtest list's first wave was done (pause menu, runway/landing fixes, roads, autopilot routing, crew).
+`AGENTS.md` (conventions, commands, layout, lanes) is the rules file for both AIs; `CLAUDE.md` imports it. Code facts live
+in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the queue in
+`docs/ROADMAP.md`. Older handoffs: [docs/HANDOFF_HISTORY_2026-09.md](docs/HANDOFF_HISTORY_2026-09.md).
 
-**What was added** (each has a DESIGN section and a ROADMAP line; most have a BALANCE entry, newest last in `docs/BALANCE.md`):
-- Physical NPCs: `Agent` and its task queue, drivers in every stash truck, a squad is its men, the 3D world draws them,
-  road pathfinding, the payroll's people are bodies; a phone on foot; a taxi; a drivable starter car.
-- Ring roads, La Selva kept isolated on purpose, the turf war's engagement geometry, strategic saves (stashes, crew, case, court, squads).
-- Logistics: fuel for the hired fleet and multi-stop rounds. Mount and Blade-inspired systems, each behind an `ENABLED`
-  switch: renown, veteran squads + field orders (Z/X/C/V on foot), the rackets (tribute, prisoners), stash works, the arena (races).
-- A car radio with real 1979-86 recordings (`assets/radio/`; **not CC0**, see its README), and a `user://radio/` folder for your own.
-- Art: ~3,000 Kenney/KayKit/Quaternius CC0 models and 2D sprites vendored; the city is dressed with them (`CityDress`), scenery,
-  road markings, the villa and the club furnished, the city's buildings are solid (`CityDress.colliders`).
-  Still unused: the Pirate kit (docks), Quaternius downtown, the 2D packs.
+## For the owner: switching AIs
 
-**Working notes that will save you time:**
-- `skyrunner-godot/` (an untracked stray folder in the repo root) must never be `git add`ed: stage files by name.
-- Balance runs: `tools/live_balance.gd -- 200 3 [config]`; 40 seeds is noise (+-$5k), use 200+. Run variants in separate
-  `git worktree`s (never switch branches under a running job), copy `sim-results/strategic.json` (gitignored) into a worktree
-  before `cli.gd -- report` or BALANCE.md loses section 3. `live.json` keeps only mean/p10/p50/p90.
-- Screenshots work on Windows: `--headless --import` first (after switching branches too), then the console exe with
-  `--audio-driver Dummy --resolution 1280x720 --script tools/shots/pilot_shot.gd -- ...`, but call
-  `RenderingServer.force_draw(true)` before `get_image().save_png` or the PNG is flat grey.
-- Tests that load the city map must call `World.use_map(0)` afterwards (`after_each`), or `test_world`'s Python-parity checks fail.
-- CI once failed ~40 model-load checks from a cold-import timeout; a re-run passed (`tools/test.sh` now allows 900 s for the import).
-- Not checked by eye: the club's furniture layout (the club only exists on the city map), the air circuit's gates.
+Paste this into the new AI:
 
----
+> Continue the Skyrunner work (github.com/jawaman14/skyrunner). Read HANDOFF.md and follow its "Taking over"
+> checklist, then carry on from the baton's next step. If HANDOFF.md on `main` has no "baton" section, read it
+> from the branch of the newest open pull request instead.
 
-# Handoff: cloud session → local development (2026-09-28)
+The baton usually lives on the working branch until that PR is merged. Merging finished PRs promptly keeps `main`'s
+copy current.
 
-**The project lives at https://github.com/jawaman14/skyrunner (`main`).** It moved out of the AutoGPT
-fork on 2026-09-28 with full history (`git subtree split` of `games/skyrunner-godot`).
-jawaman14/AutoGPT#5 is closed, and the `claude/cargo-flight-game-2g413p` branch there is an archive:
-don't develop on it. Everything from the cloud session is committed and pushed here; nothing was left
-uncommitted, stashed or on other branches.
+If you decided anything in the old AI's chat that isn't in **Owner decisions** below, tell the new one; it will
+write it down. Nothing else is needed after a cut-off: the baton says where work stopped.
 
-Read these with this file:
-- `CLAUDE.md`: commands and conventions;
-- `docs/ROADMAP.md`: the prioritised queue;
-- `docs/DESIGN.md`: the systems.
+## The baton (overwrite this section; don't append)
 
-## Current state
-- **Beta 0.9.0-beta.1.** Pure GDScript on Godot 4.7.2: no GDExtension, no JSBSim library. The game's
-  own 6-DOF model (`scripts/sim/flight/`) reads JSBSim-format XML as data.
-- **Tests:** historical handoff count; see [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for current verified evidence.
-- **CI** (`.github/workflows/skyrunner-beta.yml`) runs on `main`, pull requests and manual dispatch:
-  - tests;
-  - exports for Linux, Windows and macOS (universal, ad-hoc signed);
-  - a headless AI-flown smoke run on Linux and Windows;
-  - an llvmpipe screenshot on Linux.
-  - Builds are the run's artifacts.
-- **Terrain:** the built-in maps' terrain is baked in `data/terrain/*.bin` (zstd). Generated islands
-  are cached in `user://terrain`.
+| | |
+|---|---|
+| **Holder** | Claude, 2026-10-10 |
+| **Task** | Combined #293 + #298 + #299 on one branch per the owner: relay mode, `AGENTS.md` canonical (`CLAUDE.md` = `@AGENTS.md`), MCP server out of the game (pinned launcher to skyrunner-mcp), owner's work split and allocation tracker imported. |
+| **Branches / PRs** | **#293** `ccr-958eacf7-ugmwgs` (this; now includes #298 and #299, which become redundant). **#297** merged (`e9fcedc`: autopilot/radar/payroll fixes). **#296** `claude/employed-pilot-opening` (employed opening; owner go-ahead pending). **#300** lobby layout + screenshot matrix (needs human look). |
+| **Next step** | Close #298 and #299 as folded into #293 (after it merges). Then P05 (reference action-preview screen, Claude), #97 entry-path tests (Codex), and trim ROADMAP.md to the lane queue. Create the gate register in PROJECT_STATUS.md before any human run. |
+| **Watch out** | Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell). The MCP board is per-machine; HANDOFF.md is what carries state between AIs. Read review comments before merging anything. |
 
-## What was in progress / next
-1. **Balance re-fly (K3).** The balance was measured with JSBSim, and the Godot model flies differently.
-   - The tactical sweep hadn't finished when the session moved, and `sim-results/tactical.json` and
-     `calibration.json` are still the JSBSim-era numbers.
-   - Steps: re-run tactical, then feasibility, then strategic, then live_balance, and write BALANCE
-     entry 35. Commands and targets are in `docs/ROADMAP.md` §1.
-   - The pilot bot fixes that led up to it are committed:
-     - the approach speed floor;
-     - holding the glide path altitude en route to hilltop strips;
-     - the go-around window;
-     - `Session.ARRIVE_MARGIN_M`;
-     - the C182/PA-28 castering mains.
-2. **The playtest feedback list** in `docs/ROADMAP.md` §2. None of it is started. The first wave:
-   - the Esc pause menu (Esc currently quits: `pilot_app.gd` about lines 309 and 377,
-     `station_app.gd` about line 319);
-   - runways and landing;
-   - throttle steps;
-   - F1 scrolling;
-   - a compass with wind;
-   - the tutorial's red squares;
-   - crew auto-hire and instant deaths;
-   - the autopilot circling, its routing, and flying differently with illegal cargo.
+## Taking over (checklist for the incoming AI)
 
-## Open bugs and known issues
-- **Windows + AMD (RX 7900 XT), Vulkan:** the CI build crashes at startup with 0xC0000374 (heap
-  corruption) after shader compilation. Seen from local testing.
-  - The log shows duplicate `VK_LAYER_AMD_switchable_graphics` layers and a missing Rockstar Social
-    Club Vulkan layer. These are implicit layers registered by other software.
-  - It runs fine with `--rendering-driver opengl3`.
-  - **Diagnosed (2026-09-29): not a game bug.** A leftover Vulkan Configurator override
-    (`VK_LAYER_LUNARG_override` in `HKCU\SOFTWARE\Khronos\Vulkan\ImplicitLayers`) forces
-    `VK_LAYER_KHRONOS_validation` into every Vulkan app. With `VK_LOADER_LAYERS_DISABLE=VK_LAYER_LUNARG_override`
-    the build runs under Vulkan (Forward+). INSTALL.md troubleshooting now covers it.
-  - Still open: an automatic fallback (`rendering/rendering_device/fallback_to_opengl3`) only helps
-    when Vulkan fails to initialise, not for this mid-run crash, so it isn't worth adding for this.
-- **DHC-6 flaps:** the aircraft balloons when its flaps are lowered at speed. The aero data is at
-  fault (it did the same under JSBSim). Documented in BETA.md.
-- **Hands off at high power,** some aircraft roll slowly left from propeller torque. That's
-  intended, and the tests allow for it.
-- **Leak messages:** headless test runs end with "RID allocations leaked at exit" errors. They're
-  harmless, and the runner's own summary line is what counts.
+1. Read the MCP collaboration board, verify your checkout, then `git fetch origin`, `git status` and
+   `git log --oneline -8`. Use your own linked worktree; never check out a branch under another active agent.
+   - If the branch has commits **newer than the baton's last checkpoint**, the previous AI was cut off after
+     committing: read those commits (messages and diff) before anything else.
+   - If the branch or PR is merged or closed, start the next step on a new branch off `main`.
+   - Uncommitted work from a cloud session is gone. On the owner's machine, check `git status` and
+     `git stash list` for leftovers; inspect them, don't discard them.
+2. Check the PR's CI (the GitHub UI, `gh pr checks`, or `github_ci_status` from `tools/mcp/`).
+3. **Re-verify, don't trust:** run the focused tests for the area you are about to touch
+   (`./tools/test.sh <filter>`). A baton describes what was true then.
+4. Read **Owner decisions** and **Open questions**.
+5. Claim the task's explicit paths on the shared board before editing. Update the baton on your own branch
+   with your task and preserve other agents' active tasks in notes; continue from your assigned next step.
 
-## Conventions the next agent must follow
-Details are in CLAUDE.md. The ones that bite:
-- **Warnings are errors.** Type any variable whose value comes from a Variant, or the script
-  silently fails to parse, which looks like a hang.
-- **Determinism.**
-  - New randomness goes on a new RNG stream.
-  - New systems go behind a static switch that the parity tests turn off.
-  - Never regenerate the Python-frozen fixtures.
-  - Regenerate the Godot golden fixtures (`tools/regen_flight_golden.gd`) only for an intended
-    flight change, and say so in the commit.
-- **Keep the repo clean.** Scratch scripts go outside it; `sim-results/strategic.json` (11 MB)
-  stays gitignored.
-- **Keep it fictional:** no real people, organisations or brands.
-- **Workflow:** a feature branch, then a PR to `main`, and the CI must be green.
+## Working rules (both AIs)
 
-## Testing
-- **Full suite:** `./tools/test.sh`, or `./tools/test.sh flight` to filter by file name.
-  - It needs bash. On Windows use Git Bash, with `GODOT` pointing at the Godot 4.7.2 console exe,
-    e.g. `export GODOT="/c/Godot/Godot_v4.7.2-stable_win64_console.exe"`.
-  - `TEST_TIMEOUT` (default 900 s) raises the limit.
-- **Smoke:** `"$GODOT" --headless --path . -- --unlocks open --watch --new --smoke 1800`, which
-  prints `SMOKE OK`.
-- **Screenshot:** `"$GODOT" --path . -- --new --shot out.png --frames 240`.
-- **Export:** Project → Export, or `--export-release Windows export/windows/Skyrunner.exe`. This
-  needs the 4.7.2 export templates.
+- **Checkpoint constantly.** After each working step: commit, push, and update the baton *in the same commit*. A
+  cut-off then loses at most one step. `WIP:` commits are fine on your own branch. If you sense your budget or
+  context running low, update the baton before anything else.
+- **Pre-push checklist** (each of these has failed CI at least once; all run in under a minute with a warm import):
+  1. `godot --headless --script res://tools/project_status.gd -- --check`. If you added or removed a test, chapter or export,
+     run it with `--write` and commit `docs/PROJECT_STATUS.md`. CI checks it *before* any test, so every lane fails at once.
+  2. `./tools/test.sh docs`: every relative link in the main docs must resolve, so don't link to a file you left out.
+  3. New scripts: commit their `.gd.uid` files (run `--import` first).
+  4. If you replayed or merged someone else's work, `git diff origin/main --stat` and look for **deletions** you didn't
+     intend (the `d91975f` failure).
+  5. **Before merging a PR, read its review comments** (and your notification queue). Codex's automated review lands
+     about two minutes after CI goes green, and #295 was merged with three valid findings unread (all fixed in #297).
+     `github_pr_merge` now refuses while a review thread has no reply.
+- **Say what is broken.** If a checkpoint leaves tests failing (mid-refactor), the baton says which ones and why.
+- **One task = one branch off `main` = one draft PR into `main`.**
+  - Stack on an unmerged branch only when the code really depends on it, and say so in the PR.
+  - After a base is squash-merged, rebase its dependents onto `main` straight away.
+  - Claude's cloud sessions may be pinned to an assigned branch name; the baton records which branch is in use.
+- **Evidence goes in the PR body:** commands run, pass/fail counts, what was not verified. No new dated
+  `docs/*_YYYY-MM-DD.md` reports. Regenerate `docs/PROJECT_STATUS.md`'s inventory block
+  (`tools/project_status.gd -- --write`) when tests, chapters or exports change.
+- **Respect the other AI's work.** Don't redo something logged as done. Don't silently revert it: if you think it is
+  wrong, add an Open question for the owner and carry on with something else.
+- **Finishing a task:** add a Log entry (newest first, at most ~12 lines: what merged or was pushed, how it was
+  verified, what was not verified, what's next). Then set the baton to the next task, or to "idle".
+- **Record the owner's decisions.** Anything the owner tells you that the other AI will need goes in Owner decisions,
+  with a date.
+- Keep your tool's co-author trailer on commits; the Log names the AI, so `git log` and this file agree.
 
-## Environment not in the repo (all regenerable)
-- The Godot binary: `./tools/get_godot.sh` fetches the Linux one into `.tools/`. On Windows, install
-  Godot 4.7.2 yourself.
-- The export templates, in `~/.local/share/godot/export_templates/4.7.2.stable/` on Linux or
-  `%APPDATA%\Godot\export_templates\4.7.2.stable\` on Windows.
-- `user://` holds saves, `terrain/` caches and `feedback/`. Nothing there is needed for development.
-- `sim-results/strategic.json` is regenerated by `cli.gd -- strategic`.
-- No environment variables beyond `GODOT` and `TEST_TIMEOUT`, and no secrets.
+## Owner decisions
+
+- **2026-10-11:** Claude and Codex may collaborate simultaneously through the same local MCP implementation.
+  Use shared file claims, persistent notes, per-checkout Godot locking and separate linked worktrees.
+
+- **2026-10-10:** Claude and ChatGPT/Codex work in relay (above). This file is how they hand over.
+- **2026-10-10:** Approved BACKLOG.md's four proposed actions (restore lost fixes, integrate the clean stacks, rebase
+  the employed opening, close duplicate/superseded/done issues).
+- **2026-10-10:** Close the documentation PRs (#241, #242, #243, #246, #249, #264, #273). Done; branches kept.
+- **2026-10-10:** Fold the documentation PRs into the game's design docs (DESIGN.md, ROADMAP.md and others) before
+  any PR clean-up. Done: see the Log.
+- **2026-10-10:** Both AIs should check the code and docs, not just add features. Codex's 4–10 Oct work was
+  reviewed by Claude (Log below).
+
+## Open questions
+
+- **[Claude → owner, 2026-10-10] Rebasing the gameplay stacks.** The docs PRs are closed. Next, rebase the
+  gameplay stacks onto `main` one at a time (the employed opening first, then logistics loading endpoints
+  #235/#237/#265/#267/#268/#274/#276)? Each becomes one clean PR into `main`.
+- **[Claude → Codex, 2026-10-10]** Review findings 1–3 (Log, 2026-10-10) are in code Codex wrote recently. If one
+  is intended behaviour, say so here before anyone "fixes" it.
+
+## Log
+
+- **2026-10-11 — Codex, CI follow-up:** Windows MCP CI passed at a73f8a4. Linux exposed a test assumption:
+  GNU timeout starts successfully and exits 127 for a missing child, while Windows raises a spawn error.
+  The regression now disables the wrapper to exercise the intended startup-error cleanup on both hosts.
+  Cancellation also tolerates a POSIX process group exiting between its state check and signal, with a
+  focused exit-race regression. Re-run Windows/Linux MCP jobs on the updated head; prior success is stale.
+
+- **2026-10-11 — Codex:** Extended #298 for the owner's simultaneous collaboration request. Added atomic
+  shared path claims with renewal/expiry, durable recipient notes/cursors, startup checkout/revision/source
+  fingerprint, unique logs, cross-process Godot locks (including introspection), and public GitHub reads
+  without credentials while writes refuse before dispatch. Added Claude/Codex startup instructions and
+  updated the old relay wording. Local Windows checks: 12 runtime methods, 7 coordination methods and
+  2 guard methods pass; Godot docs 2/2 via actual MCP. Two installed stdio clients saw the same board and
+  Claude-addressed note; public issue #97 read succeeded. Actual Claude participation/client reload and
+  fresh Linux CI are not yet verified. Primary dirty game files preserved; local connection settings
+  contain no tokens. No PR merged, GitHub write tool exercised or human release gate marked complete.
+
+### 2026-10-11 — Codex (MCP Windows integration)
+- Reproduced Windows startup failure on missing SIGHUP; fixed signal registration and process-tree cancellation/deadlines.
+- Portable Python worker removes Bash dependency from tests and refuses tests after import errors. UTF-8 logs preserve per-file counts.
+- Seven real runtime/worker/stdio tests pass, plus seven guard regression cases. Added Windows/Linux MCP checks to the beta workflow.
+- Through actual MCP calls: status current, import and docs 2/2, zero-match filter correctly FAILED, smoke 1800 SMOKE OK.
+- Full game suite and Linux runtime not run locally; CI must establish Linux evidence. Human gates unchanged.
+- Next: review #298 with #293, then rebase #298 onto main after #293 merges. Keep primary crew-map changes untouched.
+
+
+### 2026-10-11 — Codex (MCP safeguards)
+- Reject zero-test success, unknown mergeability, and empty CI job lists.
+- Added dependency-free AST regression checks: seven cases across two test methods pass.
+- Based on #293 at d276eefa; primary crew-map checkout preserved.
+- Godot import, project-status check and docs tests (2/2) passed. Full suite and MCP protocol integration unverified. No PR merged.
+- Next: complete docs/status checks, publish a draft dependent PR, then rebase after #293 merges.
+
+
+### 2026-10-10 (latest) — Claude (review findings on #295)
+- Codex's automated review of #295 posted three findings two minutes after CI went green; I merged without reading
+  them. All three were valid: (P1) the restored autopilot intercept overwrote the real waypoint, so a route behind
+  the aircraft cascaded and "arrived" kilometres from the destination; (P2) `known_radar_zones()` read live police
+  sensor state, leaking the secret aerostat to the runner's route; (P2) `demand()` dropped staffed roles whose target
+  fell to zero. Fixed in #297 with tests that fail on the old code (e.g. the aircraft ended 11,843 m off).
+- Process: the pre-push checklist now includes reading review comments before merging, and `github_pr_merge` refuses
+  while a review thread has no reply.
+
+### 2026-10-10 (later) — Claude (backlog actions)
+- **Merged:** #294 (integration of #227–#231, #235–#240, #245, #248, #258; full CI green) and #295 (restores the
+  autopilot intercept, payroll demand and radar-aware routing deleted by `d91975f`, plus `known_radar_zones()` and tests).
+  Both squash-merged after all 11 jobs passed, pinned to the verified head SHA.
+- **Opened #296:** the employed opening, replaying #250/#251/#252/#255 on `main` (they only conflicted because they
+  needed #229/#230 from #294). Focused tests and the fresh-story smoke pass; full CI pending.
+- **Closed:** the 14 source PRs of #294 and 7 docs PRs (branches kept); issues #92, #99, #102, #117, #118, #139, #158, #174.
+  #97 stays open (`_join()`/`_seat()` untested).
+- **CI failures I caused, now in the checklist:** a dead link to a dated report (#294) and a stale
+  `PROJECT_STATUS.md` count (#295). A restored test (`test_hot_route_penalty…`) had a zone the route never crossed;
+  rewritten. #245 depended on #244's tests: kept only its own.
+- **MCP server:** `github_pr_update(ready_for_review)` failed in cloud sessions (GraphQL is blocked there); fixed to use
+  the CCR route, and a guarded `github_pr_merge` was added.
+- **Not verified:** QRY/PNR circling in actual flight; human gates unchanged.
+
+### 2026-10-10 — Claude (docs PRs closed)
+- Closed #241, #242, #243, #246, #249, #264 and #273 at the owner's request. Each has a comment saying where its
+  content now lives.
+- No branches deleted: #250, #274 and #247 are based on three of them, and all three PRs are still open (checked).
+
+
+### 2026-10-10 — Claude (documentation PRs folded into the design docs)
+- **Read in full:**
+  - direction and research: #249 (PLAYER_DIRECTION, GAMEPLAY_INSPIRATION, PLAYER_DIRECTION_DELIVERY);
+  - implementation plans: #241, #242, #243;
+  - audit: #246;
+  - process records: #264 (PR_COMPLETION, EMPLOYED_OPENING) and #273 (DRAFT_COMPLETION_REVIEW).
+- **Now in `docs/`:**
+  - **DESIGN.md:** new §0, the owner-approved direction (core experience, employed start, economy and workers,
+    turf, loss and recovery, world and campaign, multiplayer, product order, what to borrow from Warband,
+    Schedule I and Cities: Skylines, playtest questions, open questions). Pillar 5. Up to 16 players. §7 now
+    documents the wire contracts (#259/#260) and previews, and the snapshot rate is corrected to 20 Hz. §9 is
+    marked historical. §21 points to the employed opening. New §46 covers jobs and their pay rules, checked
+    against `jobs.gd` and `Session._grade`.
+  - **ROADMAP.md:** "Where we are heading" (product order, with the overhaul queue as prerequisites). "Next
+    implementation packages" A–D from #241, #242, #243 and #246, with #246's already-fixed network findings marked
+    fixed. The #184–#200 "draft" wording is marked historical, and queue item 1 corrected.
+  - **EMPIRE_MILESTONE.md:** marked as superseded where §0 differs (competitive play is no longer deferred).
+  - **GUIDE.md:** §5.2 has the pay rules. **FEATURES.md / LIBRARIES.md:** the retired classic map, and the
+    missing `docs/audio/` links replaced with the `tools/sound_demo.gd` command.
+- **Left out on purpose:**
+  - #264 and #273's per-PR disposition tables and test counts: dated, superseded by `github_pr_triage`.
+  - #246's network findings 1–3: fixed on `main`.
+  - Loading-audit counts from unmerged stacks, except as a range.
+- **Verified:** `tests/test_docs.gd` 2/2 (links resolve). No code changed.
+
+
+### 2026-10-10 — Claude (review of the 4–10 Oct work, MCP server, this handoff)
+- **Verified:** `main` @ `f703a9f` plus the UID commit: full suite **1,027 passed, 0 failed, no script/parse
+  errors** (`tools/test.sh`, 1,165 s, one process, Linux, Godot 4.7.2). CI on #293's first head: all 11 jobs green.
+- **Pushed (#293, draft):**
+  - Ten missing `.gd.uid` files committed.
+  - `tools/mcp/skyrunner_mcp.py` (since moved to the separate skyrunner-mcp repo, see top): an MCP server with game tools (tests, smoke, screenshot, balance, tool scripts,
+    command/switch introspection) and GitHub tools (PR triage, CI status/logs, PRs, issues, branch cleanup).
+    Codex can call it too, from any MCP client. All 24 tools were exercised over stdio except the GitHub write
+    tools (PR create/update/close, comments, issue writes, branch deletion), which have not been run.
+  - This file and `AGENTS.md`.
+- **Review findings** (read from source; not yet fixed; a host-backlog finding was withdrawn: `read_lines` caps the buffer at `MAX_LINE + 1` and any extracted line leaves at most `MAX_LINE`, so a well-behaved client can't trip the drop):
+  1. `scripts/ui/command_presentation.gd` `poll()` calls `link.snapshot()` every frame, and `station_app.gd`
+     `_process` already builds one. On a `LocalLink` (hot-seat/AI desks) that is two full `Snapshot.build` calls
+     per frame instead of one. Pass the frame's snapshot into `poll()`.
+  2. `scripts/net/net_client.gd`: `read_lines` caps the buffer at `MAX_LINE + 1`, but only the host drops an
+     oversized frame. A client receiving a line over 1 MiB stops reading forever, silently. Mirror the host's
+     `buf.size() > MAX_LINE` check and close with an error.
+  3. The rackets "turn" preview (`action_descriptions.gd`) repeats `Rackets._recruit`'s wage formula with a
+     literal skill of 0.3; the two can drift apart. Expose one helper.
+  4. `PhoneCalls._calls` keeps every call forever and is saved; it's needed for source de-duplication. Low impact,
+     but cap the history or store only source IDs for terminal calls.
+  5. Docs:
+     - `CLAUDE.md`'s layout still said new handlers go in `session_commands.gd`; they go in `cmds_*.gd` since
+       #284 (fixed in #293).
+     - `docs/FEATURES.md:36` says `--map 0` is the classic island, but that map is retired.
+     - `docs/ROADMAP.md` calls #184–#200 "prepared as draft continuations" right after saying #178–#209 are merged,
+       and queue item 1 still points at #184.
+     - `docs/FEATURES.md` and `docs/LIBRARIES.md` link a `docs/audio/` folder that never existed.
+  7. Process: ~15 dated evidence reports in `docs/` duplicate PR bodies. The Protocol above (rule 4) stops new ones;
+     consolidating the existing ones is optional.
+- **Not verified:** human gates (exported Windows walkthrough, two-machine multiplayer/voice, controller,
+  read-aloud) are unchanged and still open.
+- **Next:** owner's answer on the PR clean-up question, then fix findings 1–2 and the doc errors in one PR.
+
+### 2026-10-04 → 2026-10-09 — Codex (reconstructed by Claude from `git log`; Codex left no handoff)
+32 commits on `main` (25 carry the Codex co-author trailer), +13.3k/−2.1k lines. Merged, in order:
+- **Overhaul stack** (#119, #178–#209 and replacements #216–#222):
+  - dialogue reliability/navigation;
+  - read-only action previews with Cancel-first confirmation (`ActionDescriptions`, `ActionReview`);
+  - menu focus and modal input;
+  - station outcomes (`CommandPresentation`), map layers and a role-filtered feed;
+  - site footprints/entrances with the Ctrl+F2 access overlay (`SiteLayout`, `SiteAccess`);
+  - interaction occlusion, checked road surfaces and graded bridges;
+  - enterable stash interiors and period props.
+- **Features and CI:** incoming Family calls on the shared phone (#225); macOS export and launch CI (#223); the
+  logistics route baseline (#226: all 99 audited truck routes fail checked access).
+- **Reliability (#259–#263):** bounded TCP framing, per-connection command de-duplication, stale remote-input
+  expiry, debris expiry, race feedback, fight-snapshot privacy.
+- **#280–#292:**
+  - parity-state restore and RNG scanner;
+  - vegetation coverage;
+  - host/voice lifecycle;
+  - **command handlers moved into six `cmds_*.gd` domain modules (#284)**;
+  - CI split into logic/simulation/presentation/socket lanes (#286);
+  - shared seat screen (#285);
+  - taxi coverage (#288);
+  - worker map layer (#289);
+  - failed-host cleanup (#290);
+  - frozen parity fixture (#291);
+  - generated `PROJECT_STATUS.md` inventory (#287);
+  - faction-AI 40-seed study (#292, docs only).
+- **Left open:** 38 PRs, mostly drafts stacked on each other (36 conflict into `main`). The largest gameplay stacks are logistics loading
+  endpoints and the employed-pilot opening. Its own records are in `docs/PR_INTEGRATION_2026-10-08.md`,
+  `docs/OPEN_PR_AUDIT_2026-10-08.md` and the other dated docs, plus each PR body.
