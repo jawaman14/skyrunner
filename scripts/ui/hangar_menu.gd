@@ -123,7 +123,8 @@ func _detail() -> void:
 		"copilot":
 			detail.text = "ENTER toggles the AI co-pilot. A human co-pilot joins from the lobby (station or --seat3d)."
 		"spotter":
-			detail.text = "A spotter radios when police aircraft or cars come near this strip."
+			var action := s.describe_action(Roles.PILOT, "hire_spotter", {"code": rows[i][1]})
+			detail.text = action.preview if action.enabled else action.disabled_reason
 		"service":
 			detail.text = "ENTER starts the work on both (it takes time, and the aircraft cannot fly meanwhile); ENTER again stops it. A hangar is quicker than a bush strip; a mechanic is quicker and cheaper than either."
 
@@ -163,9 +164,8 @@ func key(k: String) -> void:
 					perform_action("buy_gear", {"name": r[1]})
 					return
 				"spotter":
-					var result: Array = s.command(Roles.PILOT, "hire_spotter", {"code": r[1]})
-					err = null if result[0] else result[1]
-					show_feedback("Spotter hired." if result[0] else str(result[1]), bool(result[0]))
+					perform_action("hire_spotter", {"code": r[1]})
+					return
 				"service":
 					if s.airframe.work.is_empty():
 						perform_action("service", {"part": "both"})

@@ -12,6 +12,7 @@ var selected_yes := false
 var _armed_frame := 0
 var _fresh_mouse := false
 var _opener: WeakRef
+var _fitted_text := ""
 
 func setup(text: String, yes_text := "Leave", no_text := "Stay") -> ConfirmBox:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -66,9 +67,32 @@ func ask() -> void:
 	_armed_frame = Engine.get_process_frames() + 1
 	var bounds := get_viewport_rect().size if viewport != null else Vector2(1024, 768)
 	panel.custom_minimum_size.x = minf(620.0, bounds.x * 0.84)
-	scroller.custom_minimum_size.y = minf(bounds.y * 0.45, clampf(60.0 + msg.text.length() * 0.25, 80.0, 260.0))
+	_fit()
 	visible = true
 	_select(false)
+
+## Size the scroll area to the wrapped message so short texts are never clipped; only text taller than
+## 60% of the screen scrolls. The message can change while the box is open (a preview arriving).
+func _fit() -> void:
+	_fitted_text = msg.text
+	var viewport := get_viewport()
+	var bounds := get_viewport_rect().size if viewport != null else Vector2(1024, 768)
+	var width := maxf(120.0, panel.custom_minimum_size.x - 44.0 - 16.0)
+	var font := msg.get_theme_font("font")
+	var size: int = msg.get_theme_font_size("font_size")
+	var wrapped := font.get_multiline_string_size(msg.text, HORIZONTAL_ALIGNMENT_LEFT, width, size, -1, TextServer.BREAK_WORD_BOUND | TextServer.BREAK_MANDATORY | TextServer.BREAK_ADAPTIVE).y
+	scroller.custom_minimum_size.y = clampf(wrapped + 14.0, 40.0, maxf(40.0, bounds.y * 0.6))
+
+func _process(_dt: float) -> void:
+	if not visible:
+		return
+	if msg.text != _fitted_text:
+		_fit()
+	# Refine the estimate with the label's own wrapped height once it has a real width.
+	var bounds := get_viewport_rect().size
+	var want := clampf(msg.get_minimum_size().y + 6.0, 40.0, maxf(40.0, bounds.y * 0.6))
+	if absf(want - scroller.custom_minimum_size.y) > 1.0:
+		scroller.custom_minimum_size.y = want
 
 func _select(yes: bool) -> void:
 	selected_yes = yes

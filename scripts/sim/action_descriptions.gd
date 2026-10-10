@@ -2,7 +2,7 @@ class_name ActionDescriptions
 extends RefCounted
 ## Read-only command consequences. Permission checks precede every state read.
 ## Execution always recomputes this gate and retains its own handler validation.
-const SUPPORTED := ["buy_aircraft", "buy_gear", "buy_vehicle", "sell_vehicle", "sell_product", "move_cash", "move_goods", "service", "rackets", "disband_squad", "cash_round", "goods_round", "move_armoury"]
+const SUPPORTED := ["buy_aircraft", "buy_gear", "buy_vehicle", "sell_vehicle", "sell_product", "move_cash", "move_goods", "service", "rackets", "disband_squad", "cash_round", "goods_round", "move_armoury", "hire_spotter"]
 
 static func unavailable(name: String, args: Dictionary, reason: String) -> Dictionary:
 	return {"label": name.replace("_", " ").capitalize(), "enabled": false, "disabled_reason": reason,
@@ -149,6 +149,19 @@ static func build(s, role: String, name: String, args: Dictionary) -> Dictionary
 			_armoury(s, a, args)
 		"sell_product":
 			_sale(s, a, args)
+		"hire_spotter":
+			var code := str(args.get("code", s.location))
+			if not s.features.has("spotters"):
+				a.disabled_reason = "Nobody to hire yet."
+			elif not World.AIRFIELD_BY_CODE.has(code):
+				a.disabled_reason = "Unknown field."
+			else:
+				a.label = "Hire spotter at " + World.airfield(code).name
+				a.preview = "Charge $%d now. A spotter watches %s and reports police activity there; hiring is a one-off fee." % [Session.SPOTTER_FEE, World.airfield(code).name]
+				if Py.any(s.spotters, func(sp): return sp.code == code):
+					a.disabled_reason = "Already watching that strip."
+				elif s.money < Session.SPOTTER_FEE:
+					a.disabled_reason = "Need $%d." % Session.SPOTTER_FEE
 	a.enabled = a.disabled_reason == ""
 	return a
 

@@ -198,3 +198,34 @@ func test_dealer_retains_serial_after_other_vehicle_removed() -> void:
 	m.mine.row_activated.emit(m.mine.selected_row())
 	check_eq(m.focus, 1, "owned-table activation targets owned vehicles")
 	m.free()
+
+func test_hangar_spotter_hire_is_cancel_first_and_charges_once() -> void:
+	var s := _session()
+	s.money = 5000
+	var m := HangarMenu.new()
+	Engine.get_main_loop().root.add_child(m)
+	m.setup(s)
+	m.open()
+	var row := -1
+	for i in m.rows.size():
+		if m.rows[i][0] == "spotter":
+			row = i
+	if row < 0:
+		check(true, "no spotters in this game (nothing to hire)")
+		m.queue_free()
+		return
+	m.list.select_near(row)
+	m.key("enter")
+	check_eq(s.money, 5000, "opening the review charges nothing")
+	for i in 3: await Engine.get_main_loop().process_frame
+	check(not m.confirmation.selected_yes, "review opens on Cancel")
+	m.confirmation.key("enter")
+	check_eq(s.money, 5000, "Cancel charges nothing")
+	check(s.spotters.is_empty())
+	m.key("enter")
+	for i in 3: await Engine.get_main_loop().process_frame
+	m.confirmation.key("right")
+	m.confirmation.key("enter")
+	check_eq(s.money, 5000 - Session.SPOTTER_FEE, "Confirm charges the fee once")
+	check_eq(s.spotters.size(), 1)
+	m.queue_free()
