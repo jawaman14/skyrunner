@@ -104,6 +104,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-11 — Codex, CI follow-up:** Windows MCP CI passed at a73f8a4. Linux exposed a test assumption:
+  GNU timeout starts successfully and exits 127 for a missing child, while Windows raises a spawn error.
+  The regression now disables the wrapper to exercise the intended startup-error cleanup on both hosts.
+  Cancellation also tolerates a POSIX process group exiting between its state check and signal, with a
+  focused exit-race regression. Re-run Windows/Linux MCP jobs on the updated head; prior success is stale.
+
 - **2026-10-11 — Codex:** Extended #298 for the owner's simultaneous collaboration request. Added atomic
   shared path claims with renewal/expiry, durable recipient notes/cursors, startup checkout/revision/source
   fingerprint, unique logs, cross-process Godot locks (including introspection), and public GitHub reads

@@ -1168,7 +1168,10 @@ def _terminate_job(job: Job, force: bool = False) -> None:
         if result.returncode != 0 and job.running:
             job.proc.kill()
     else:
-        os.killpg(job.proc.pid, signal.SIGKILL if force else signal.SIGTERM)
+        try:
+            os.killpg(job.proc.pid, signal.SIGKILL if force else signal.SIGTERM)
+        except ProcessLookupError:
+            pass  # The selected process group exited between the running check and signal.
 
 
 def _stop_jobs() -> None:

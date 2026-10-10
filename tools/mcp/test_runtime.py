@@ -61,11 +61,21 @@ class Runtime(unittest.IsolatedAsyncioTestCase):
             lock.close()
 
     async def test_failed_spawn_releases_cache_lock(self):
-        with self.assertRaises(FileNotFoundError):
+        # Exercise create_subprocess_exec failure on both platforms. GNU timeout itself starts
+        # successfully and returns 127 for a missing child; that is a completed job, not a spawn error.
+        with patch.object(server.shutil, "which", return_value=None), self.assertRaises(FileNotFoundError):
             await server._start_job("missing", [str(Path(self.temp.name) / "missing-program")], server._summarize_plain)
         job = await server._start_job("next", [sys.executable, "-c", "pass"], server._summarize_plain)
         await server._wait(job, 10)
         self.assertEqual(job.proc.returncode, 0)
+
+    @unittest.skipIf(os.name == "nt", "POSIX process-group exit race")
+    async def test_posix_cancel_exit_race_is_harmless(self):
+        job = await server._start_job("race", [sys.executable, "-c", "import time; time.sleep(60)"],
+                                      server._summarize_plain, timeout_s=60)
+        with patch.object(server.os, "killpg", side_effect=ProcessLookupError):
+            server._terminate_job(job)
+        await server.skyrunner_job_cancel(job.id)
 
     async def test_introspection_obeys_job_guard(self):
         job = await server._start_job("fixture", [sys.executable, "-c", "import time; time.sleep(60)"],
