@@ -58,7 +58,8 @@ Older handoffs (28 Sep and 3 Oct, cloud session → local) are in
   - Ten missing `.gd.uid` files committed.
   - `tools/mcp/skyrunner_mcp.py`: an MCP server with game tools (tests, smoke, screenshot, balance, tool scripts,
     command/switch introspection) and GitHub tools (PR triage, CI status/logs, PRs, issues, branch cleanup).
-    Codex can call it too, from any MCP client.
+    Codex can call it too, from any MCP client. All 24 tools were exercised over stdio except the GitHub write
+    tools (PR create/update/close, comments, issue writes, branch deletion), which have not been run.
   - This file and `AGENTS.md`.
 - **Review findings** (read from source; not yet fixed):
   1. `scripts/ui/command_presentation.gd` `poll()` calls `link.snapshot()` every frame, and `station_app.gd`

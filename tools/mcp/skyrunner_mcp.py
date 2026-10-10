@@ -15,6 +15,7 @@ time, because concurrent imports share the .godot/ cache. Jobs end when the serv
 from __future__ import annotations
 
 import asyncio
+import atexit
 import json
 import logging
 import os
@@ -198,7 +199,9 @@ def _report(job: Job, tail_lines: int = 40) -> str:
 
 _ERROR_RE = re.compile(r"SCRIPT ERROR|Parse Error|^FAIL|FAILED:|ERROR: ", re.M)
 # Godot's known engine-shutdown diagnostics (docs/PROJECT_STATUS.md): not test failures
-_SHUTDOWN_NOISE = re.compile(r"still in use at exit|PagedAllocator|ObjectDB instances leaked|RID allocations .* leaked")
+# and headless-container noise: no speech synthesiser for text-to-speech
+_SHUTDOWN_NOISE = re.compile(r"still in use at exit|PagedAllocator|ObjectDB instances leaked|RID allocations .* leaked|"
+                             r'Parameter "synth" is null')
 
 
 def _error_lines(text: str, limit: int = 60) -> list[str]:
@@ -224,7 +227,8 @@ def _summarize_tests(text: str, code: int | None) -> dict:
     failed_files = [f"{f} ({n} failed)" for f, _, n in files if int(n) > 0]
     details = _error_lines(text)
     script_errors = text.count("SCRIPT ERROR") + text.count("Parse Error")
-    s: dict = {"files finished": len(files)}
+    ran = [f for f in files if int(f[1]) + int(f[2]) > 0]  # a filtered run still visits every file
+    s: dict = {"files with tests run": len(ran), "files visited": len(files)}
     if total:
         p, f, secs = total[-1]
         s["result"] = f"{p} passed, {f} failed in {secs} s"
@@ -864,9 +868,16 @@ async def github_issue_list(
     params = {"state": state}
     if labels:
         params["labels"] = labels
-    items = [i for i in await gh().paged("issues", limit=limit, **params) if "pull_request" not in i]
-    if query:
-        items = [i for i in items if query.lower() in i["title"].lower()]
+    # the issues endpoint mixes in pull requests, so page until `limit` real (matching) issues are collected
+    items: list = []
+    page = 1
+    while len(items) < limit:
+        batch = await gh().get("issues", per_page=100, page=page, **params)
+        items += [i for i in batch if "pull_request" not in i and (not query or query.lower() in i["title"].lower())]
+        if len(batch) < 100:
+            break
+        page += 1
+    items = items[:limit]
     if not items:
         return "No issues match."
     return f"{len(items)} issues:\n" + "\n".join(
@@ -955,7 +966,20 @@ async def github_branch_cleanup(
     return "\n".join(lines)
 
 
+def _stop_jobs() -> None:
+    """Jobs run in their own process groups (so cancel can kill Godot's children); don't orphan them on exit."""
+    for job in JOBS.values():
+        if job.running:
+            try:
+                os.killpg(job.proc.pid, signal.SIGTERM)
+            except (ProcessLookupError, PermissionError):
+                pass
+
+
 def main() -> None:
+    atexit.register(_stop_jobs)
+    for sig in (signal.SIGTERM, signal.SIGHUP):  # clients usually stop a stdio server with a signal, skipping atexit
+        signal.signal(sig, lambda *_: (_stop_jobs(), os._exit(0)))
     mcp.run("stdio")
 
 
