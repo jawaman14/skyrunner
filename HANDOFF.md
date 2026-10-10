@@ -1,53 +1,93 @@
-# Agent handoff log
+# Handoff: Claude ⇄ ChatGPT (Codex) relay
 
-This is the shared channel for every agent working on this repository (Claude Code, Codex/ChatGPT, or anyone
-else) and for the owner. Agents never talk directly; they talk here. `CLAUDE.md` (conventions) and
-`AGENTS.md` (Codex's entry point) both point to this file.
+The owner works with **one AI at a time**: Claude Code or ChatGPT/Codex runs until its tokens run out, then the
+other one takes over from wherever the first stopped. A session can be **cut off mid-task with no warning**, so
+this file is kept current *while* working, not written at the end. It is the only channel between the two AIs:
+neither can see the other's chat.
 
-- **Facts about the code** live in the code, `CLAUDE.md` and `docs/DESIGN.md`.
-- **Release evidence** lives in `docs/PROJECT_STATUS.md`.
-- **The queue** lives in `docs/ROADMAP.md`.
-- This file records **who is doing what, what changed hands, and what one agent needs the other to know.**
+`CLAUDE.md` (conventions, commands, layout) applies to both AIs; `AGENTS.md` points Codex here. Code facts live
+in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the long-term queue in
+`docs/ROADMAP.md`. Older handoffs: [docs/HANDOFF_HISTORY_2026-09.md](docs/HANDOFF_HISTORY_2026-09.md).
 
-Older handoffs (28 Sep and 3 Oct, cloud session → local) are in
-[docs/HANDOFF_HISTORY_2026-09.md](docs/HANDOFF_HISTORY_2026-09.md).
+## For the owner: switching AIs
 
-## Protocol
+Paste this into the new AI:
 
-1. **Before starting:** read the newest Log entries, the Claims table and Open questions below. Don't redo work
-   that is logged as merged. If you disagree with something another agent did, add an Open question; don't
-   silently revert it.
-2. **Claim the slice.** Add a row to Claims (agent, branch, scope) and push it with your first commit. Never edit
-   files inside someone else's claimed scope. If a claim is older than 3 days with no commits, ask in Open questions
-   before taking it over.
-3. **One slice = one branch off `main` = one PR into `main`.** Stack on another unmerged branch only when the code
-   really depends on it, and say so in the PR. After a base is squash-merged, rebase its dependents onto `main` the
-   same day. A stacked PR whose base was squash-merged conflicts with `main` and rots.
-4. **Evidence goes in the PR body:** commands run, counts, what was not verified. Don't add new dated
-   `docs/*_YYYY-MM-DD.md` reports. Update `docs/PROJECT_STATUS.md` only for release-level evidence, and regenerate
-   its inventory block (`tools/project_status.gd -- --write`) when tests/chapters/exports change.
-5. **When you stop,** prepend a Log entry (newest first, at most ~12 lines):
-   date, agent, what merged/pushed (PR numbers), what is verified and how, what is NOT verified, and what's next.
-   Remove your Claims row when its PR merges or you abandon it (say which in the Log).
-6. **Questions** for the other agent or the owner go in Open questions with your name and date. Answer under the
-   question, then move the resolved item into a Log entry.
-7. **Commit attribution:** keep your tool's co-author trailer. The Log names the agent, so `git log` and this file
-   agree.
+> Continue the Skyrunner work (github.com/jawaman14/skyrunner). Read HANDOFF.md and follow its "Taking over"
+> checklist, then carry on from the baton's next step. If HANDOFF.md on `main` has no "baton" section, read it
+> from the branch of the newest open pull request instead.
 
-## Claims (work in progress — don't touch these scopes)
+The baton usually lives on the working branch until that PR is merged. Merging finished PRs promptly keeps `main`'s
+copy current.
 
-| agent | branch / PR | scope | since |
-|---|---|---|---|
-| Claude | `ccr-958eacf7-ugmwgs` / #293 | `tools/mcp/`, `tools/mcp_introspect.gd`, `.mcp.json`, this file, `AGENTS.md`, `CLAUDE.md` layout fix | 2026-10-10 |
+If you decided anything in the old AI's chat that isn't in **Owner decisions** below, tell the new one; it will
+write it down. Nothing else is needed after a cut-off: the baton says where work stopped.
+
+## The baton (overwrite this section; don't append)
+
+| | |
+|---|---|
+| **Holder** | Claude, 2026-10-10 |
+| **Task** | Review of Codex's 4–10 Oct work; MCP server; this handoff file |
+| **Branch / PR** | `ccr-958eacf7-ugmwgs` / [#293](https://github.com/jawaman14/skyrunner/pull/293) (draft) |
+| **Last checkpoint** | MCP fixes `35ecc8b` + this relay rewrite. Full suite on main: 1,027 passed / 0 failed. CI green on `a27269a`. |
+| **State** | Done and pushed; waiting for the owner to review/merge #293. Nothing half-finished. |
+| **Next step** | Owner to answer the PR clean-up question below. Without an answer, fix review findings 1–2 and the doc errors (Log, 2026-10-10) on a new branch off `main`. |
+| **Watch out** | 36 of Codex's 38 open PRs conflict into `main` (stacked on squash-merged branches). Don't build on them without rebasing. |
+
+## Taking over (checklist for the incoming AI)
+
+1. `git fetch origin`, check out the baton's branch, then `git status` and `git log --oneline -8`.
+   - If the branch has commits **newer than the baton's last checkpoint**, the previous AI was cut off after
+     committing: read those commits (messages and diff) before anything else.
+   - If the branch or PR is merged or closed, start the next step on a new branch off `main`.
+   - Uncommitted work from a cloud session is gone. On the owner's machine, check `git status` and
+     `git stash list` for leftovers; inspect them, don't discard them.
+2. Check the PR's CI (the GitHub UI, `gh pr checks`, or `github_ci_status` from `tools/mcp/`).
+3. **Re-verify, don't trust:** run the focused tests for the area you are about to touch
+   (`./tools/test.sh <filter>`). A baton describes what was true then.
+4. Read **Owner decisions** and **Open questions**.
+5. Put yourself in the baton as holder, commit and push it, then continue from **Next step**.
+
+## Working rules (both AIs)
+
+- **Checkpoint constantly.** After each working step: commit, push, and update the baton *in the same commit*. A
+  cut-off then loses at most one step. `WIP:` commits are fine on your own branch. If you sense your budget or
+  context running low, update the baton before anything else.
+- **Say what is broken.** If a checkpoint leaves tests failing (mid-refactor), the baton says which ones and why.
+- **One task = one branch off `main` = one draft PR into `main`.**
+  - Stack on an unmerged branch only when the code really depends on it, and say so in the PR.
+  - After a base is squash-merged, rebase its dependents onto `main` straight away.
+  - Claude's cloud sessions may be pinned to an assigned branch name; the baton records which branch is in use.
+- **Evidence goes in the PR body:** commands run, pass/fail counts, what was not verified. No new dated
+  `docs/*_YYYY-MM-DD.md` reports. Regenerate `docs/PROJECT_STATUS.md`'s inventory block
+  (`tools/project_status.gd -- --write`) when tests, chapters or exports change.
+- **Respect the other AI's work.** Don't redo something logged as done. Don't silently revert it: if you think it is
+  wrong, add an Open question for the owner and carry on with something else.
+- **Finishing a task:** add a Log entry (newest first, at most ~12 lines: what merged or was pushed, how it was
+  verified, what was not verified, what's next). Then set the baton to the next task, or to "idle".
+- **Record the owner's decisions.** Anything the owner tells you that the other AI will need goes in Owner decisions,
+  with a date.
+- Keep your tool's co-author trailer on commits; the Log names the AI, so `git log` and this file agree.
+
+## Owner decisions
+
+- **2026-10-10:** Claude and ChatGPT/Codex work in relay (above). This file is how they hand over.
+- **2026-10-10:** Both AIs should check the code and docs, not just add features. Codex's 4–10 Oct work was
+  reviewed by Claude (Log below).
 
 ## Open questions
 
-- **[Claude → owner, 2026-10-10]** Codex left 38 open PRs. 36 conflict into `main`, mostly because they are stacked
-  on PR branches that were later squash-merged; only #227 and #228 merge cleanly (see `github_pr_triage`). Proposal: close the docs/plan-only PRs (#241, #242, #243, #246, #249, #264, #273),
-  then rebase the gameplay stacks onto `main` one at a time, starting with logistics loading endpoints
-  (#235/#237/#265/#267/#268/#274/#276) and the employed-pilot opening (#250–#252, #255). OK to proceed?
-- **[Claude → Codex, 2026-10-10]** Review findings below (Claude review 2026-10-10). Items 1–3 are in code you wrote
-  recently; reply here if any is intended behaviour before someone fixes it.
+- **[Claude → owner, 2026-10-10] Open PR clean-up.** Codex left 38 open PRs. 36 conflict into `main`, mostly
+  because they are stacked on PR branches that were later squash-merged; only #227 and #228 merge cleanly (see
+  `github_pr_triage`). Proposal:
+  1. Close the docs/plan-only PRs (#241, #242, #243, #246, #249, #264, #273).
+  2. Rebase the gameplay stacks onto `main` one at a time, starting with logistics loading endpoints
+     (#235/#237/#265/#267/#268/#274/#276) and the employed-pilot opening (#250–#252, #255).
+
+  OK to proceed?
+- **[Claude → Codex, 2026-10-10]** Review findings 1–3 (Log, 2026-10-10) are in code Codex wrote recently. If one
+  is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
 

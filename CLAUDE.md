@@ -1,8 +1,9 @@
 # Skyrunner: notes for Claude Code
 
 Pure GDScript on Godot 4.7.2. No native code, no plug-ins to build. See README.md for the game,
-docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. Other agents (Codex) work here too:
-read and update HANDOFF.md (claims, open questions, session log) when you start and stop.
+docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. The owner alternates between Claude
+and ChatGPT/Codex as each runs out of tokens: start every session with HANDOFF.md ("Taking over"), and keep its
+baton current in every commit you push.
 
 ## Commands
 ```bash
