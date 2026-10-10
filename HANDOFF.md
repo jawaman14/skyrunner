@@ -28,11 +28,10 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
-| **Task** | Carrying out BACKLOG.md's actions; employed opening in review |
-| **Branches / PRs** | **#296** `claude/employed-pilot-opening` (draft, CI running, subscribed): the employed opening. **#293** `ccr-958eacf7-ugmwgs`: docs, handoff, MCP server (draft; CI green earlier; just merged `main`). |
-| **Done today** | Merged #294 (14 Codex PRs) and #295 (restored fixes); closed the 14 source PRs, the 7 docs PRs, and issues #92 #99 #102 #117 #118 #139 #158 #174. |
-| **Next step** | #296 (the employed opening) is rebased and awaiting CI. **Do not merge it without the owner's go-ahead:** the owner asked only for the rebase, and it changes the default new-game experience. Once the owner says merge: `github_pr_merge` (pins the head SHA), then close #250, #251, #252, #255, and update the "awaiting merge" wording in DESIGN §0/§21 and ROADMAP. Then #293. After that: package A (rebase the road/loading-access series, #271 first). |
-| **Watch out** | Merging anything that regenerates `docs/PROJECT_STATUS.md` conflicts the next PR on the same line: merge `main` into the PR and re-run `project_status.gd -- --write`, never hand-edit. Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit` (bases of still-open #274, #247, ...). `pkill -f <script>` kills your own shell: use `pgrep Godot_v4`. |
+| **Task** | Backlog actions done; two PRs open for the owner's call |
+| **Branches / PRs** | **#296** `claude/employed-pilot-opening` (employed opening; CI running; owner asked for the rebase only, not the merge). **#297** `claude/fix-restored-review-findings` (fixes Codex's 3 review findings on the merged #295; draft, CI running). **#293** `ccr-958eacf7-ugmwgs` (docs, handoff, MCP server; draft). |
+| **Next step** | Owner: decide on #296 (merge?), #297 (merge: it fixes a real autopilot bug on `main`), #293. Then: close #250/#251/#252/#255 once #296 merges and update the "awaiting merge" wording (DESIGN §0/§21, ROADMAP). Then package A (road/loading access, #271 first). |
+| **Watch out** | `main` currently has the autopilot cascade bug (P1) until #297 merges. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell); use `pgrep Godot_v4`. Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit`. |
 
 ## Taking over (checklist for the incoming AI)
 
@@ -60,6 +59,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   3. New scripts: commit their `.gd.uid` files (run `--import` first).
   4. If you replayed or merged someone else's work, `git diff origin/main --stat` and look for **deletions** you didn't
      intend (the `d91975f` failure).
+  5. **Before merging a PR, read its review comments** (and your notification queue). Codex's automated review lands
+     about two minutes after CI goes green, and #295 was merged with three valid findings unread (all fixed in #297).
+     `github_pr_merge` now refuses while a review thread has no reply.
 - **Say what is broken.** If a checkpoint leaves tests failing (mid-refactor), the baton says which ones and why.
 - **One task = one branch off `main` = one draft PR into `main`.**
   - Stack on an unmerged branch only when the code really depends on it, and say so in the PR.
@@ -96,6 +98,15 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+### 2026-10-10 (latest) — Claude (review findings on #295)
+- Codex's automated review of #295 posted three findings two minutes after CI went green; I merged without reading
+  them. All three were valid: (P1) the restored autopilot intercept overwrote the real waypoint, so a route behind
+  the aircraft cascaded and "arrived" kilometres from the destination; (P2) `known_radar_zones()` read live police
+  sensor state, leaking the secret aerostat to the runner's route; (P2) `demand()` dropped staffed roles whose target
+  fell to zero. Fixed in #297 with tests that fail on the old code (e.g. the aircraft ended 11,843 m off).
+- Process: the pre-push checklist now includes reading review comments before merging, and `github_pr_merge` refuses
+  while a review thread has no reply.
 
 ### 2026-10-10 (later) — Claude (backlog actions)
 - **Merged:** #294 (integration of #227–#231, #235–#240, #245, #248, #258; full CI green) and #295 (restores the

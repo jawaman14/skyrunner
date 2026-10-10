@@ -856,9 +856,12 @@ async def github_pr_merge(
                                             min_length=40, max_length=40)],
     method: Annotated[Literal["squash", "merge", "rebase"], Field(description="This repo squash-merges.")] = "squash",
     title: Annotated[str | None, Field(description="Squash commit title; default: the PR title and number.")] = None,
+    reviewed_comments: Annotated[bool, Field(description="Set true only after reading every review comment listed in a "
+                                                          "previous refusal. Does not bypass any other check.")] = False,
 ) -> str:
-    """Merge a PR, but only if it is open, not a draft, mergeable, still at `expected_head_sha`, and every job of the
-    latest workflow run on that commit succeeded. Merging is hard to undo, so this refuses on any doubt and says why;
+    """Merge a PR, but only if it is open, not a draft, mergeable, still at `expected_head_sha`, every job of the
+    latest workflow run on that commit succeeded, and no review thread is waiting for a reply (bot reviews arrive
+    minutes after CI and are easy to miss). Merging is hard to undo, so this refuses on any doubt and says why;
     it never merges a PR with a pending, failed or missing CI run."""
     p = await gh().get(f"pulls/{number}")
     if p["state"] != "open":
@@ -880,6 +883,15 @@ async def github_pr_merge(
     bad = [f"{j['name']}: {j['conclusion']}" for j in jobs if j["conclusion"] not in ("success", "skipped")]
     if run["conclusion"] != "success" or bad:
         raise ToolError(f"CI is not green on {expected_head_sha[:8]} (run {run['id']}: {run['conclusion']}): {'; '.join(bad) or 'see the run'}.")
+    if not reviewed_comments:
+        comments = await gh().paged(f"pulls/{number}/comments", limit=300)
+        replied = {c["in_reply_to_id"] for c in comments if c.get("in_reply_to_id")}
+        waiting = [c for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied]
+        if waiting:
+            lines = [f"- [{c['id']}] {c['user']['login']} on {c['path']}:{c.get('line') or c.get('original_line')}: "
+                     f"{_clip(' '.join(c['body'].split()), 220)}" for c in waiting[:10]]
+            raise ToolError(f"{len(waiting)} review comment(s) on #{number} have no reply. Read them (github_pr_view), fix or "
+                            f"answer each, then merge again with reviewed_comments=true:\n" + "\n".join(lines))
     body = {"merge_method": method, "sha": expected_head_sha}
     if method == "squash":
         body["commit_title"] = title or f"{p['title']} (#{number})"
