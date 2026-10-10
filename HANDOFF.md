@@ -116,24 +116,28 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   `tests/test_strip_trials.gd` (simulation lane). Per-runway-end takeoff and landing trials for QRY/PNR/EGL (HAR as the
   control) x c172p/c182 x light/half/max, with explicit `--map` (default city) and `--terrain natural|classic` (default
   natural), filters, and JSON + markdown with commit/settings provenance written outside the repo. Takeoff passes at
-  3 km *along the runway line* inside a straight-departure corridor (90 m either side plus 12.5% of the distance, the
-  ICAO Annex 6 take-off flight path area shape); leaving the corridor first is `inconclusive` (the bot's path, not the
-  aircraft), and a crash, the bot giving up or 400 s is `fail`; 300 m above the ground is not a pass. It records the
-  ground roll, distance to 15 m, least clearance over terrain and trees, along-track distance and largest deviation.
-  **Open blocker:** PilotBot's `_safe_heading` (margin = altitude - 80 m, 75 s lookahead) turns ~40 degrees toward the
-  lowest terrain ahead whenever the aircraft is below 80 m ASL, even over flat ground, so the HAR control takeoff
-  leaves the corridor on both terrains (about 290-345 m off the line at 1.2 km); the straight-departure question
-  needs a decision (harness-held runway heading during the climb, or a bot change) before the matrix is run. Landing forces the end's final and
-  re-forces it after a go-around; an end with no clear final is reported `obstructed` with the reason, not flown.
+  3 km *along the runway line* inside a straight-departure corridor (this harness's convention: 90 m either side
+  plus 12.5% of the distance, 465 m at 3 km); leaving the corridor first is `inconclusive` (the path, not the
+  aircraft), and a crash, the bot giving up or 400 s is `fail`; 300 m above the ground is not a pass. The bot flies
+  the takeoff and keeps pitch, power and flaps, but from liftoff the harness holds the runway line with PilotBot's
+  own bank law (`StripTrials.LATERAL_MODE`, recorded in every result and the provenance): the rig measures whether the
+  aircraft can climb straight out over the terrain, not where the bot would turn. It records the ground roll,
+  distance to 15 m, least clearance over terrain and trees, along-track distance and largest deviation.
+  Landing forces the end's final and re-forces it after a go-around; an end with no clear final is reported
+  `obstructed` with the reason, not flown.
   `Feasibility`, PilotBot, the flight model, the terrain and the jobs are unchanged; trials parity still passes.
   Evidence found while planning: (1) `Feasibility.takeoff_trial` scores a post-goal glide into the ground as a pass
   (`leg_i >= 1`), so takeoff outcomes in `sim-results/feasibility.json` are noise; (2) that file was flown on the
   classic island (cli.gd never selects a map), not the city map `docs/STRIPS.md` and new games use; (3) both tools
-  ran classic terrain, while play uses the natural pass. Windows Godot 4.7.2: strip_trials 5/5, trials_parity 2/2,
-  docs 2/2, switches 6/6, status current, hygiene OK; CLI smoke on one HAR cell (natural): takeoff inconclusive (left
-  the corridor 1182 m along, 238 m left), landing pass. The full
+  ran classic terrain, while play uses the natural pass. Windows Godot 4.7.2: strip_trials 6/6, trials_parity 2/2,
+  docs 2/2, switches 6/6, status current, hygiene OK; CLI smoke HAR c172p light end 0, classic and natural: takeoff
+  pass (liftoff 223 m, 15 m at 422 m, least clearance 136 m, 3002 m along, at most 19 m off the line), landing pass. The full
   measurement matrix and a `docs/STRIPS.md` regeneration wait for independent review of the harness; job-generator
   gating is a separate decision. #88 stays open.
+  **Separate follow-up, not fixed here:** PilotBot `_safe_heading` (pilot.gd:345) uses margin = altitude - 80 m with a
+  75 s lookahead, so below 80 m ASL no heading qualifies and it turns ~40 degrees toward the lowest terrain ahead even
+  over flat ground (HAR end 0, c172p light: ~290-345 m off the runway line at 1.2 km before the hold). It likely
+  affects ordinary bot departures; a fix touches bot behaviour and the balance numbers, so it needs its own PR.
 
 - **2026-10-11 — Claude, waiting-room startup coverage (#97, assigned by Codex):** On `claude/startup-room-tests`
   from main `909efaf`, added `tests/test_startup_room.gd` (socket lane): through the real `Main._open_room` /

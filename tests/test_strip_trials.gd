@@ -8,25 +8,47 @@ func after_each() -> void:
 	StripTrials.use_map(0, false)  # the suite's default island and terrain, for whatever runs next
 
 
-func test_takeoff_stops_when_it_has_an_answer_instead_of_gliding_on() -> void:
+## The HAR control on both terrains: a flat sea-level departure, held on the runway line, reaches 3 km along it
+## inside the corridor and stops there (Feasibility.takeoff_trial runs on to 400 s and scores a later crash as a pass).
+func test_takeoff_holds_the_line_and_stops_at_3km_on_both_terrains() -> void:
+	for natural in [false, true]:
+		StripTrials.use_map(MapCity.SEED, natural)
+		var af := World.airfield("HAR")
+		var r := StripTrials.takeoff("c172p", "HAR", "light", 0)
+		var tag := "natural" if natural else "classic"
+		check_eq(r.status, "pass", "%s: %s" % [tag, r.outcome])
+		check_eq(r.stop, "3km", tag)
+		check(r.seconds < StripTrials.TAKEOFF_MAX_S * 0.5, "%s stopped at %.0f s" % [tag, r.seconds])
+		check(r.along_m >= StripTrials.TAKEOFF_GOAL_M and r.along_m < StripTrials.TAKEOFF_GOAL_M + 100.0, "%s: %.0f m along the line" % [tag, r.along_m])
+		check(r.max_cross_m < 60.0, "%s: held within %.0f m of the line" % [tag, r.max_cross_m])
+		check(r.liftoff_m != null and r.liftoff_m > 50.0 and r.liftoff_m < af.length, "%s lifted off at %s m" % [tag, r.liftoff_m])
+		check(r.to_15m_m != null and r.to_15m_m > r.liftoff_m, tag)
+		check(r.min_clear_m != null and r.min_clear_m > 15.0, "%s climb-out clearance %s m" % [tag, r.min_clear_m])
+		check_eq(r.lateral, StripTrials.LATERAL_MODE)
+
+
+## The hold uses PilotBot's own bank law: back toward the runway heading, back toward the line, and nothing to do on it.
+func test_line_hold_banks_toward_the_forced_heading_and_back_to_the_line() -> void:
 	StripTrials.use_map(MapCity.SEED, false)
-	var r := StripTrials.takeoff("c172p", "HAR", "light", 0)
-	# Feasibility.takeoff_trial runs on to 400 s and scores a later crash as a pass; this one stops at its verdict
-	check(r.seconds < StripTrials.TAKEOFF_MAX_S * 0.5, "stopped at %.0f s" % r.seconds)
-	var af := World.airfield("HAR")
-	check_eq(r.heading, af.heading)
-	check(r.liftoff_m != null and r.liftoff_m > 50.0 and r.liftoff_m < af.length, "lifted off at %s m" % r.liftoff_m)
-	check(r.to_15m_m != null and r.to_15m_m > r.liftoff_m, "15 m reached after liftoff")
-	check(r.min_clear_m != null and r.min_clear_m > 15.0, "climb-out clears the ground: %s m" % r.min_clear_m)
-	# the verdict matches the track: a pass is 3 km along the line inside the corridor, an inconclusive one left it
-	# first (on 2026-10-11 the bot's terrain-avoidance heading takes it ~40 degrees left at 60-80 m here, over flat ground)
-	check(r.status in ["pass", "inconclusive"], "%s: %s" % [r.status, r.outcome])
-	if r.status == "pass":
-		check(r.along_m >= StripTrials.TAKEOFF_GOAL_M, "3 km along the runway line: %.0f m" % r.along_m)
-		check(r.max_cross_m <= StripTrials.corridor_m(r.along_m), "inside the corridor: %.0f m off the line" % r.max_cross_m)
-	else:
-		check(r.along_m < StripTrials.TAKEOFF_GOAL_M, "stopped short of the goal: %.0f m" % r.along_m)
-		check(r.max_cross_m > StripTrials.corridor_m(r.along_m), "off the line by more than the corridor allows")
+	var s := Feasibility._session("c172p", "HAR")
+	var bot := PilotBot.new(s, [])
+	var st: FlightModel.FlightState = s.fm.state()
+	var hdg := 100.0
+	st.roll = 0.0
+	st.p_dps = 0.0
+	st.agl = 50.0
+	st.heading = hdg
+	check_near(StripTrials.hold_line_aileron(bot, st, hdg, 0.0), 0.0, 1e-6, "on the line, on the heading, wings level")
+	st.heading = hdg - 20.0
+	check(StripTrials.hold_line_aileron(bot, st, hdg, 0.0) > 0.0, "pointing left of the runway heading: bank right")
+	st.heading = hdg
+	check(StripTrials.hold_line_aileron(bot, st, hdg, 50.0) < 0.0, "50 m right of the line: bank left")
+	check(StripTrials.hold_line_aileron(bot, st, hdg, -50.0) > 0.0, "50 m left of the line: bank right")
+	st.heading = hdg - 90.0
+	check_near(StripTrials.hold_line_aileron(bot, st, hdg, 0.0), 0.04 * 15.0, 1e-6, "low: PilotBot's 15 degree bank limit")
+	st.agl = 200.0
+	check_near(StripTrials.hold_line_aileron(bot, st, hdg, 0.0), 0.7, 1e-6, "higher: the full bank limit, aileron capped")
+	s.dispose()
 
 
 ## A path that covers 3 km from the start but bends away from the runway line is not a straight departure:

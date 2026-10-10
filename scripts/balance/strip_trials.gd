@@ -9,9 +9,11 @@ extends RefCounted
 ##   takeoff: from the threshold of `end`, straight out along the runway. Pass = 3 km along the runway's line
 ##            from the start of the run, inside the straight-departure corridor, without crashing. Reaching
 ##            300 m above the ground is not a pass on its own: the climb has to clear the terrain all the way
-##            out. If the bot's terrain avoidance turns it out of the corridor first, the result is
-##            "inconclusive": the straight departure was not flown, which says nothing either way about the
-##            aircraft. Records the ground roll, the distance to 15 m, the least clearance over terrain and
+##            out. The bot flies the takeoff and keeps pitch, power and flaps for the climb, but once airborne
+##            the harness holds it on the runway line (LATERAL_MODE): this rig measures whether the aircraft
+##            can climb straight out over the terrain, not where PilotBot would choose to turn. If the path
+##            still leaves the corridor, the result is "inconclusive": the straight departure was not flown,
+##            which says nothing either way about the aircraft. Records the ground roll, the distance to 15 m, the least clearance over terrain and
 ##            trees once clear of the runway, and the largest sideways deviation.
 ##   landing: spawned on the final the bot's own planner would fly for `end` (no route planning, so #80/#82
 ##            geometry is out of it). Pass = parked on the strip. An end the planner cannot find a clear
@@ -25,12 +27,15 @@ const TAKEOFF_MAX_S := 400.0
 const LANDING_MAX_S := 600.0
 const DT := 1.0 / 30
 const CLEAR_RADIUS_M := 15.0  ## obstacle search radius under the aircraft for the climb clearance
-## The straight-departure corridor: 90 m either side of the runway line at the start of the run, widening by
-## 12.5% of the distance flown along it (465 m either side at 3 km). This is the shape of the ICAO Annex 6
-## take-off flight path area (90 m semi-width plus 0.125 D), measured here from the start of the run, which
-## is wider near the field than the rule; it allows for drift while the bot climbs, not for a turn away.
+## The straight-departure corridor, this harness's measurement convention: 90 m either side of the runway line
+## at the start of the run, widening by 12.5% of the distance flown along it (465 m either side at 3 km). It
+## allows for drift in the climb, not for a turn away.
 const CORRIDOR_HALF_M := 90.0
 const CORRIDOR_SPLAY := 0.125
+## Holding the line in the climb: heading back toward it at this many degrees per metre off it, at most the cap.
+const LINE_INTERCEPT := 0.1
+const LINE_INTERCEPT_MAX := 15.0
+const LATERAL_MODE := "harness holds the forced runway line from liftoff (climb and enroute): PilotBot's bank law toward the runway heading, turned back toward the line by the cross-track error; the bot keeps pitch, power and flaps"
 const FIELDS := ["QRY", "PNR", "EGL", "HAR"]  ## the mountain strips of #88, and the hub as a control
 const AIRCRAFT := ["c172p", "c182"]
 
@@ -89,6 +94,15 @@ class Departure:
 		return ""
 
 
+## The aileron that flies the runway line: PilotBot's own bank law (_bank_for, with its 15 degree limit below 100 m,
+## then the aileron term of _attitude) aimed at the forced heading, turned back toward the line by `cross_m`
+## (+ = right of it).
+static func hold_line_aileron(bot: PilotBot, st: FlightModel.FlightState, runway_hdg: float, cross_m: float) -> float:
+	var hdg_t := runway_hdg - clampf(cross_m * LINE_INTERCEPT, -LINE_INTERCEPT_MAX, LINE_INTERCEPT_MAX)
+	var bank_t := bot._bank_for(st, hdg_t, 15.0 if st.agl < 100 else null)
+	return clampf(0.04 * (bank_t - st.roll) - 0.012 * st.p_dps, -0.7, 0.7)
+
+
 ## Did the session end the flight (crash or arrest)?
 static func _ended(s: Session) -> bool:
 	return s.phase in ["crashed", "busted"]
@@ -133,6 +147,8 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 		if bot.phase == "done":
 			stop = "bot gave up"
 			break
+		if c != null and bot.phase in ["climb", "enroute"]:
+			c.aileron = hold_line_aileron(bot, s.state, hdg, dep.cross)
 		s.update(DT, null, c)
 		if _ended(s):
 			stop = "crash"
@@ -161,6 +177,7 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 	r.min_clear_m = min_clear
 	r.along_m = dep.along
 	r.max_cross_m = dep.max_cross
+	r.lateral = LATERAL_MODE
 	r.seconds = s.time - t0
 	s.dispose()
 	return r
