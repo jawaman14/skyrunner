@@ -102,6 +102,7 @@ var hud: Hud
 var menus := {}
 var help: Control
 var briefing: Label
+var briefing_panel: Control
 var glareshield: Control
 var ui: CanvasLayer
 var cam_mode := "chase"
@@ -224,7 +225,10 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ver.position -= Vector2(8, 4)
 	ver.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(ver)
-	briefing = _overlay("", Color(1, 0.85, 0.5))
+	briefing_panel = _help_overlay("", Color(1, 0.85, 0.5))
+	briefing = briefing_panel.get_child(0).get_child(0)
+	briefing.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	briefing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sess.say("F1 for controls. [J] to see the job board.")
 	return self
 
@@ -352,7 +356,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			return
 		var m := _active_menu()
 		if m != null:
-			if ev.echo and MENU_KEYS.get(k, "") == "enter":
+			if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k == KEY_G)):
 				get_viewport().set_input_as_handled()
 				return  # holding Enter must not confirm a newly armed action
 			if k == KEY_ESCAPE:
@@ -366,6 +370,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if ev.echo:
+			return
+		if k == KEY_F8:
+			toggle_controls()
+			get_viewport().set_input_as_handled()
 			return
 		if k == KEY_TAB:
 			_toggle_on_foot()
@@ -520,8 +528,6 @@ func _unhandled_input(ev: InputEvent) -> void:
 			toggle_ai_pilot()
 		elif k == KEY_F6:
 			cycle_debug_menu()
-		elif k == KEY_F8:
-			toggle_controls()
 		elif k == KEY_F9:
 			var mode := screen_filter.cycle()
 			ControlsConfig.save_setting("filter", mode)
@@ -725,6 +731,16 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 
 
 func _input(ev: InputEvent) -> void:
+	if s != null and s.narrative != null and s.narrative.show_briefing and ev is InputEventJoypadButton and ev.pressed:
+		if ev.button_index == JOY_BUTTON_A:
+			_pressed["confirm"] = true
+			get_viewport().set_input_as_handled()
+			return
+		if ev.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_DOWN] and briefing_panel != null:
+			var scroll: ScrollContainer = briefing_panel.get_child(0)
+			scroll.scroll_vertical += 48 if ev.button_index == JOY_BUTTON_DPAD_DOWN else -48
+			get_viewport().set_input_as_handled()
+			return
 	# click to grab the mouse again while walking
 	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and pack_menu == null and not _map_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -1266,12 +1282,14 @@ func _process(delta: float) -> void:
 	var camp = s.narrative
 	if camp != null and camp.show_briefing:
 		var ch: Campaign.Chapter = camp.chapter
-		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nPress ENTER" % [ch.num, ch.year, ch.title, ch.briefing,
-			"\n".join(camp.objective_lines())]
-		briefing.visible = true
+		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nContinue: %s" % [ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
+			"\n".join(camp.objective_lines()), ", ".join(PRESS_KEYS.keys().map(func(code): return OS.get_keycode_string(code))) + " / controller Accept"]
+		if not briefing_panel.visible:
+			Speech.say(briefing.text, true)
+		briefing_panel.visible = true
 		if _pressed.has("confirm"):
 			camp.show_briefing = false
-			briefing.visible = false
+			briefing_panel.visible = false
 		_pressed.clear()
 	elif not paused:
 		if _player_key != s.aircraft_key:

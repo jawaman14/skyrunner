@@ -9,6 +9,58 @@ func after_each() -> void:
 	World.use_map(0)  # the suite's default island, for whatever runs next
 
 
+## Historical search retained only as a parity oracle for priority-queue changes.
+func _linear_path(graph: RoadGraph, a: int, b: int, penalty: Callable, clear: Callable) -> Array:
+	var g := {a: 0.0}
+	var came := {}
+	var open := [a]
+	while not open.is_empty():
+		var cur: int = open[0]
+		var cf: float = g[cur] + graph.nodes[cur].distance_to(graph.nodes[b])
+		for o in open:
+			var f: float = g[o] + graph.nodes[o].distance_to(graph.nodes[b])
+			if f < cf:
+				cf = f
+				cur = o
+		if cur == b:
+			var out := [b]
+			while came.has(out[0]):
+				out.push_front(came[out[0]])
+			return out
+		open.erase(cur)
+		for e in graph.adj[cur]:
+			if clear.is_valid() and not clear.call(graph.nodes[cur], graph.nodes[e[0]]):
+				continue
+			var ng: float = g[cur] + e[1]
+			if penalty.is_valid():
+				ng += maxf(0.0, float(penalty.call(graph.nodes[cur], graph.nodes[e[0]], e[1])))
+			if not g.has(e[0]) or ng < g[e[0]]:
+				g[e[0]] = ng
+				came[e[0]] = cur
+				if not open.has(e[0]):
+					open.append(e[0])
+	return []
+
+
+func test_heap_search_preserves_linear_search_paths_with_ties_penalties_and_obstructions() -> void:
+	var roads := []
+	for x in 8:
+		var row := []
+		var col := []
+		for y in 8:
+			row.append([x * 500, y * 500])
+			col.append([y * 500, x * 500])
+		roads.append(row)
+		roads.append(col)
+	var graph := RoadGraph.new(roads)
+	var penalty := func(a, b, _length): return 600.0 if a.x == b.x and b.x == 1500 else 0.0
+	var clear := func(a, b): return not (a.y == b.y and a.y == 1000)
+	for a in range(0, graph.nodes.size(), 5):
+		for b in range(0, graph.nodes.size(), 7):
+			for rules in [[Callable(), Callable()], [penalty, Callable()], [penalty, clear]]:
+				check_eq(graph.path(a, b, rules[0], rules[1]), _linear_path(graph, a, b, rules[0], rules[1]), "exact node path parity")
+
+
 func test_checked_short_routes_follow_authored_edges_without_false_tees() -> void:
 	var graph := RoadGraph.new([[[0, 0], [0, 1000], [200, 1000], [200, 0]]])
 	var result := graph.checked_route(Vector2.ZERO, Vector2(200, 0))

@@ -4,6 +4,8 @@
 # Reads and acts through Talk.State: {{ps_*}} fields and barter_best(), barter_hundred(), sell_acid(), toggle_acid_auto().
 
 ~ start
+if campaign_chapter == 3 and campaign_chapter > 0
+	Nico: Before the vans and the money, this was just a few of us trying to keep the hills quiet. Ask me about the rates before we trade.
 if not psych
 	Radio: The line to the hills is dead. Nobody there yet.
 	=> END
