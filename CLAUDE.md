@@ -1,5 +1,11 @@
 # Skyrunner: notes for Claude Code
 
+**Simultaneous collaboration (owner decision, 11 October 2026):** start with the `skyrunner_collaboration_start`
+MCP tool and follow [tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md). Read the shared inbox, claim your
+files with a unique session owner, renew ownership and leave revision/test/next-step notes for Codex.
+Use separate linked worktrees; never switch, stage or discard the other agent's checkout. This supersedes
+older one-agent-at-a-time relay wording. HANDOFF.md remains the durable branch checkpoint.
+
 Pure GDScript on Godot 4.7.2. No native code, no plug-ins to build. See README.md for the game,
 docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. The owner alternates between Claude
 and ChatGPT/Codex as each runs out of tokens: start every session with HANDOFF.md ("Taking over"), and keep its

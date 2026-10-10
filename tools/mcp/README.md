@@ -12,7 +12,8 @@ The folder has a `.gdignore`, so Godot never imports it, and `tools/*` is alread
 1. Install [uv](https://docs.astral.sh/uv/) (it brings the right Python).
 2. GitHub access: set `GH_TOKEN` (or `GITHUB_TOKEN` / `SKYRUNNER_GITHUB_TOKEN`), or log in with `gh auth login`.
    A fine-grained token needs read/write **Contents**, **Pull requests**, **Issues** and read **Actions** on this
-   repository. Without a token, the Godot tools still work and the GitHub tools say what's missing.
+   repository. Without a token, Godot/collaboration tools work and public GitHub reads use anonymous access
+   (with GitHub's lower rate limit). GitHub writes refuse before sending a request; private reads need credentials.
 3. Godot: on Linux the server fetches the pinned 4.7.2 through `tools/get_godot.sh`. Elsewhere, set
    `SKYRUNNER_GODOT` (or `GODOT`) to a Godot 4.7.2 executable.
 
@@ -26,6 +27,10 @@ Optional environment: `SKYRUNNER_GITHUB_REPO=owner/name` (default: parsed from `
 (GitHub Enterprise REST base URL).
 
 ## Tools
+
+**Claude + Codex:** call `skyrunner_collaboration_start` first. Shared `read`, `claim`, `update` and `note`
+tools provide a persistent inbox and atomic path ownership across linked worktrees. See
+[COLLABORATION.md](COLLABORATION.md) for setup, limitations and Claude's checklist.
 
 **Game** (local; Godot runs are background jobs: a call waits `wait_seconds`, then returns the result or a job id)
 
@@ -61,8 +66,8 @@ Optional environment: `SKYRUNNER_GITHUB_REPO=owner/name` (default: parsed from `
 
 ## Design notes
 
-- **One Godot job at a time.** Concurrent runs share `.godot/`'s import cache, which corrupts it. A second run is
-  refused with the running job's id. Jobs live as long as the server process, and logs go to `.build/mcp/`
+- **One Godot job per checkout across all MCP clients.** A kernel lock guards the shared `.godot/` cache,
+  including introspection. A competing run is refused. Jobs live as long as the owning process, and unique logs go to `.build/mcp/`
   (gitignored).
 - **`skyrunner_run_tests` streams.** It runs `tests/run_tests.gd` directly instead of `tools/test.sh` (which
   buffers until the end), so a 15-minute run shows per-file progress. It skips `test.sh`'s project-status check;
@@ -89,6 +94,7 @@ Regression checks from the repository root:
 ```bash
 python tools/mcp/test_guards.py tools/mcp/skyrunner_mcp.py
 uv run --script tools/mcp/test_runtime.py
+python tools/mcp/test_collaboration.py
 ```
 
 The guard tests use fake GitHub responses. Runtime tests start real subprocesses, exercise cancellation,

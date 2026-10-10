@@ -1,9 +1,9 @@
 # Handoff: Claude ⇄ ChatGPT (Codex) relay
 
-The owner works with **one AI at a time**: Claude Code or ChatGPT/Codex runs until its tokens run out, then the
-other one takes over from wherever the first stopped. A session can be **cut off mid-task with no warning**, so
-this file is kept current *while* working, not written at the end. It is the only channel between the two AIs:
-neither can see the other's chat.
+The owner authorized **simultaneous Claude/Codex collaboration on 11 October 2026**. Use
+[the shared MCP board and claims](tools/mcp/COLLABORATION.md) for live coordination, separate linked
+worktrees for independent tasks, and this file for durable checkpoints. Neither agent can see the other's
+chat. A session can end without warning: keep revision, validation and next steps current while working.
 
 `CLAUDE.md` (conventions, commands, layout) applies to both AIs; `AGENTS.md` points Codex here. Code facts live
 in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the long-term queue in
@@ -28,14 +28,15 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Codex, 2026-10-11 |
-| **Task** | MCP Windows runtime fixed in #298; stdio and Godot tools verified locally |
+| **Task** | #298 now supports concurrent Claude/Codex clients: shared claims/notes/startup, per-checkout cross-process Godot guard, anonymous public GitHub reads and Windows runtime safeguards. Installed locally and verified through two MCP clients. |
 | **Branches / PRs** | **#298** `codex/mcp-safeguards` (depends on #293; MCP safeguards and portable runtime). **#296** `claude/employed-pilot-opening` (employed opening; CI running; owner asked for the rebase only, not the merge). **#297** `claude/fix-restored-review-findings` (fixes Codex's 3 review findings on the merged #295; draft, CI running). **#293** `ccr-958eacf7-ugmwgs` (docs, handoff, MCP server; draft). |
-| **Next step** | Owner: decide on #296 (merge?), #297 (merge: it fixes a real autopilot bug on `main`), #293. Then: close #250/#251/#252/#255 once #296 merges and update the "awaiting merge" wording (DESIGN §0/§21, ROADMAP). Then package A (road/loading access, #271 first). |
+| **Next step** | Reconnect actual Claude/Codex clients to load the shared MCP tools; call collaboration_start, read the board, claim disjoint paths in separate linked worktrees. Review fresh #298 CI; preserve its #293 dependency and rebase after integration. Next bounded Codex candidate: #97 startup transition tests. #297 and human release gates still require review. |
 | **Watch out** | `main` currently has the autopilot cascade bug (P1) until #297 merges. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell); use `pgrep Godot_v4`. Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit`. |
 
 ## Taking over (checklist for the incoming AI)
 
-1. `git fetch origin`, check out the baton's branch, then `git status` and `git log --oneline -8`.
+1. Read the MCP collaboration board, verify your checkout, then `git fetch origin`, `git status` and
+   `git log --oneline -8`. Use your own linked worktree; never check out a branch under another active agent.
    - If the branch has commits **newer than the baton's last checkpoint**, the previous AI was cut off after
      committing: read those commits (messages and diff) before anything else.
    - If the branch or PR is merged or closed, start the next step on a new branch off `main`.
@@ -45,7 +46,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 3. **Re-verify, don't trust:** run the focused tests for the area you are about to touch
    (`./tools/test.sh <filter>`). A baton describes what was true then.
 4. Read **Owner decisions** and **Open questions**.
-5. Put yourself in the baton as holder, commit and push it, then continue from **Next step**.
+5. Claim the task's explicit paths on the shared board before editing. Update the baton on your own branch
+   with your task and preserve other agents' active tasks in notes; continue from your assigned next step.
 
 ## Working rules (both AIs)
 
@@ -80,6 +82,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Owner decisions
 
+- **2026-10-11:** Claude and Codex may collaborate simultaneously through the same local MCP implementation.
+  Use shared file claims, persistent notes, per-checkout Godot locking and separate linked worktrees.
+
 - **2026-10-10:** Claude and ChatGPT/Codex work in relay (above). This file is how they hand over.
 - **2026-10-10:** Approved BACKLOG.md's four proposed actions (restore lost fixes, integrate the clean stacks, rebase
   the employed opening, close duplicate/superseded/done issues).
@@ -98,6 +103,16 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+- **2026-10-11 — Codex:** Extended #298 for the owner's simultaneous collaboration request. Added atomic
+  shared path claims with renewal/expiry, durable recipient notes/cursors, startup checkout/revision/source
+  fingerprint, unique logs, cross-process Godot locks (including introspection), and public GitHub reads
+  without credentials while writes refuse before dispatch. Added Claude/Codex startup instructions and
+  updated the old relay wording. Local Windows checks: 12 runtime methods, 7 coordination methods and
+  2 guard methods pass; Godot docs 2/2 via actual MCP. Two installed stdio clients saw the same board and
+  Claude-addressed note; public issue #97 read succeeded. Actual Claude participation/client reload and
+  fresh Linux CI are not yet verified. Primary dirty game files preserved; local connection settings
+  contain no tokens. No PR merged, GitHub write tool exercised or human release gate marked complete.
 
 ### 2026-10-11 — Codex (MCP Windows integration)
 - Reproduced Windows startup failure on missing SIGHUP; fixed signal registration and process-tree cancellation/deadlines.

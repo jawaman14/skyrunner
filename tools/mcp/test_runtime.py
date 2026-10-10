@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import subprocess
+import json
 import unittest
 from unittest.mock import patch
 import run_tests as worker
@@ -47,6 +49,32 @@ class Runtime(unittest.IsolatedAsyncioTestCase):
         await server._wait(job, 10)
         self.assertEqual(job.proc.returncode, 0)
         self.assertEqual(server._summarize_tests(job.text(), 0)["files with tests run"], 1)
+
+    async def test_external_cache_lock_refuses_spawn(self):
+        lock = server.ProjectLock(server.WORK / "godot-cache.lock")
+        try:
+            with self.assertRaises(server.ToolError), patch.object(server.asyncio, "create_subprocess_exec") as spawn:
+                await server._start_job("blocked", [sys.executable, "-c", "pass"], server._summarize_plain)
+            spawn.assert_not_called()
+            self.assertEqual(server.JOBS, {})
+        finally:
+            lock.close()
+
+    async def test_failed_spawn_releases_cache_lock(self):
+        with self.assertRaises(FileNotFoundError):
+            await server._start_job("missing", [str(Path(self.temp.name) / "missing-program")], server._summarize_plain)
+        job = await server._start_job("next", [sys.executable, "-c", "pass"], server._summarize_plain)
+        await server._wait(job, 10)
+        self.assertEqual(job.proc.returncode, 0)
+
+    async def test_introspection_obeys_job_guard(self):
+        job = await server._start_job("fixture", [sys.executable, "-c", "import time; time.sleep(60)"],
+                                      server._summarize_plain, timeout_s=60)
+        server._introspect_cache.clear()
+        with patch.object(server, "_git", return_value="revision"), patch.object(server, "godot", return_value=sys.executable):
+            with self.assertRaises(server.ToolError):
+                await server._introspect()
+        await server.skyrunner_job_cancel(job.id)
 
     async def test_cancel_and_single_job_limit(self):
         job = await server._start_job("fixture", [sys.executable, "-c", "import time; time.sleep(60)"],
@@ -89,6 +117,57 @@ class Runtime(unittest.IsolatedAsyncioTestCase):
                 result = await session.call_tool("skyrunner_list_tests", {"filter": "docs"})
                 self.assertFalse(result.is_error)
                 self.assertIn("test_docs.gd", result.content[0].text)
+
+    async def test_unauthenticated_github_reads_but_refuses_writes(self):
+        with patch.object(server, "_repo", return_value=("owner", "repo")), patch.object(server, "_token", return_value=""):
+            client = server.GitHub()
+        await client.client.aclose()
+        seen = []
+        def handler(request):
+            seen.append(request.method)
+            self.assertNotIn("authorization", request.headers)
+            return server.httpx.Response(200, json={"state": "open"})
+        client.client = server.httpx.AsyncClient(base_url="https://api.github.com", transport=server.httpx.MockTransport(handler))
+        try:
+            self.assertEqual((await client.get("issues/97"))["state"], "open")
+            for method in ("POST", "PATCH", "PUT", "DELETE"):
+                with self.assertRaises(server.ToolError):
+                    await client.request(method, "issues/97")
+            self.assertEqual(seen, ["GET"])
+        finally:
+            await client.client.aclose()
+
+    async def test_two_stdio_clients_share_claims_and_notes(self):
+        checkout = Path(self.temp.name) / "checkout"
+        checkout.mkdir()
+        (checkout / "project.godot").write_text("config_version=5\n", encoding="utf-8")
+        def git(*args):
+            result = subprocess.run(["git", "-c", "core.fsmonitor=false", *args], cwd=checkout, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        git("init")
+        git("add", "project.godot")
+        git("-c", "user.name=MCP Test", "-c", "user.email=mcp-test@example.invalid", "commit", "-m", "fixture")
+        params = StdioServerParameters(command=sys.executable, args=[str(SERVER)],
+                                       env={**os.environ, "SKYRUNNER_ROOT": str(checkout)})
+        async with stdio_client(params) as (r1, w1), stdio_client(params) as (r2, w2):
+            async with ClientSession(r1, w1) as codex, ClientSession(r2, w2) as claude:
+                await codex.initialize()
+                await claude.initialize()
+                claim = await codex.call_tool("skyrunner_collaboration_claim", {"owner": "codex-test", "title": "HUD", "paths": ["scripts/ui/hud.gd"]})
+                self.assertFalse(claim.is_error)
+                task = json.loads(claim.content[0].text)["task_id"]
+                conflict = await claude.call_tool("skyrunner_collaboration_claim", {"owner": "claude-test", "title": "HUD", "paths": ["scripts/ui"]})
+                self.assertTrue(conflict.is_error)
+                await codex.call_tool("skyrunner_collaboration_note", {"author": "codex-test", "recipient": "claude", "text": "Ready for review", "task_id": task})
+                inbox = await claude.call_tool("skyrunner_collaboration_read", {"recipient": "claude"})
+                self.assertIn("Ready for review", inbox.content[0].text)
+                self.assertIn("codex-test", inbox.content[0].text)
+                wrong_owner = await claude.call_tool("skyrunner_collaboration_update", {"task_id": task, "owner": "claude-test", "status": "done"})
+                self.assertTrue(wrong_owner.is_error)
+                released = await codex.call_tool("skyrunner_collaboration_update", {"task_id": task, "owner": "codex-test", "status": "review", "detail": "abc123; tests passed"})
+                self.assertFalse(released.is_error)
+                next_claim = await claude.call_tool("skyrunner_collaboration_claim", {"owner": "claude-test", "title": "Review HUD", "paths": ["scripts/ui/hud.gd"]})
+                self.assertFalse(next_claim.is_error)
 
 
 class TestWorker(unittest.TestCase):
