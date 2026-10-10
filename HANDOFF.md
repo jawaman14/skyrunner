@@ -53,6 +53,13 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 - **Checkpoint constantly.** After each working step: commit, push, and update the baton *in the same commit*. A
   cut-off then loses at most one step. `WIP:` commits are fine on your own branch. If you sense your budget or
   context running low, update the baton before anything else.
+- **Pre-push checklist** (each of these has failed CI at least once; all run in under a minute with a warm import):
+  1. `godot --headless --script res://tools/project_status.gd -- --check`. If you added or removed a test, chapter or export,
+     run it with `--write` and commit `docs/PROJECT_STATUS.md`. CI checks it *before* any test, so every lane fails at once.
+  2. `./tools/test.sh docs`: every relative link in the main docs must resolve, so don't link to a file you left out.
+  3. New scripts: commit their `.gd.uid` files (run `--import` first).
+  4. If you replayed or merged someone else's work, `git diff origin/main --stat` and look for **deletions** you didn't
+     intend (the `d91975f` failure).
 - **Say what is broken.** If a checkpoint leaves tests failing (mid-refactor), the baton says which ones and why.
 - **One task = one branch off `main` = one draft PR into `main`.**
   - Stack on an unmerged branch only when the code really depends on it, and say so in the PR.
