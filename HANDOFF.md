@@ -28,12 +28,11 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
-| **Task** | Carry out BACKLOG.md's four approved actions: (1) restore the lost #80/#81/#82/#87 fixes, (2) one integration PR for the clean stacks, (3) rebase the employed opening, (4) close duplicate, superseded and done issues |
-| **Branch / PR** | Docs on `ccr-958eacf7-ugmwgs` / #293. Each action gets its own branch off `main` (names recorded below as they are created). |
-| **Last checkpoint** | `03e4b5e` (BACKLOG.md). Combined test run of the clean stacks in progress. |
-| **State** | Starting (4). |
-| **Next step** | (4) close the issues → (1) restore branch and PR → (2) after the combined run → (3) rebase. |
-| **Watch out** | Check every rebase/merge for deletions of code already on `main` (the `d91975f` failure). |
+| **Task** | Carrying out BACKLOG.md's four approved actions |
+| **Branches / PRs** | Docs: `ccr-958eacf7-ugmwgs` / #293. Action 1: `claude/restore-lost-fixes` / **#295**. Action 2: `claude/integrate-clean-prs` / **#294**. All draft, CI pending. |
+| **Done** | (4) closed #92, #99, #102, #117, #118, #139, #158, #174 (#97 stays open). (1) PR #295 opened: restored fixes, focused tests pass. (2) PR #294 opened: 14 PRs replayed onto main; the 16-PR preview passed 1,067/0. |
+| **Next step** | When CI is green on #294 and #295: merge them (owner approved; they touch disjoint files). Then (3): create `claude/employed-pilot-opening` off the new `main` and replay #250, #251, #252, #255's code (each diff against its own base: `git diff origin/<base>...origin/<head>`). Expect conflicts in `pilot_app.gd`/`story.gd` to vanish once #229/#230 are in; skip #253's video. Then regenerate `docs/PROJECT_STATUS.md` and open a PR. |
+| **Watch out** | A local full-suite run for #295 is in `scratchpad/restore_full.log` (not pushed). Check that merges delete nothing already on `main` (the `d91975f` failure). Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit` until their PRs are rebased. After #294 merges, close PRs #227–#231, #235–#240, #245, #248, #258 with a link to it. |
 
 ## Taking over (checklist for the incoming AI)
 
