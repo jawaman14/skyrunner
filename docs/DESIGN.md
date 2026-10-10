@@ -662,7 +662,7 @@ consecutive minutes under 50% suspicion, the clock resetting if it rises) and mo
 Cocaine Cowboys on). The story's balance run (`tools/live_balance.gd -- 40 16 story`, 16 hours now) at 40 seeds: Blotter takes about two hours in the stand-in's hands, 95% reach
 The Task Force, 80% reach The Hearings, 55% reach Last Flight and 40% finish (BALANCE entry 50).
 
-**Campaign polish (7 October 2026).** Phone > Chapter guidance and history retains briefings and recorded outcomes. Successful island delivery, actual casino ownership and timely evacuation are distinct from interception or losing the house. Unavailable factions waive unfinished goals without fabricated counters. Last Flight keeps its wealth and consecutive clean-case goals; there is no compulsory finale flight. See [the dated report](CAMPAIGN_POLISH_2026-10-07.md) for performed and pending validation.
+**Campaign polish (7 October 2026).** Phone > Chapter guidance and history retains briefings and recorded outcomes. Successful island delivery, actual casino ownership and timely evacuation are distinct from interception or losing the house. Unavailable factions waive unfinished goals without fabricated counters. Last Flight keeps its wealth and consecutive clean-case goals; there is no compulsory finale flight. Validation evidence for this polish is in the pull requests that introduced it (#229, #230, #231); a human branch walkthrough is still pending.
 
 **How it works**
 - `Session.enable_system(key)` builds a system mid-game. Each system has always had its own random stream, so one that arrives in 1983 behaves as it would have from the start.
