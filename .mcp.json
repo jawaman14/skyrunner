@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "skyrunner": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--quiet",
+        "--script",
+        "tools/mcp/launch.py"
+      ]
+    }
+  }
+}

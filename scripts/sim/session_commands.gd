@@ -59,14 +59,15 @@ static func _point(args: Dictionary):
 	return [x, y] if x != null and y != null else null
 
 
-## The police radar coverage a hot leg routes around: one circle per active site, its range, as route-planner
-## avoid zones. Only what the police actually field; legal cargo never asks for it.
+## The radar coverage a hot leg routes around: the fixed airfield radars, as route-planner avoid zones. Their positions
+## and reach are public world data (Airfield.radar_km), so the runner can know them. It deliberately does not read the
+## police's live sensor state: the aerostat the controller raises, and any site the law buys, stay secret until they
+## paint you, and routing round them would show the runner where they are. Legal legs never ask for any of this.
 func known_radar_zones() -> Array:
 	var zones: Array = []
-	if police != null and police.sensors != null:
-		for site in police.sensors.sites:
-			if bool(site.active):
-				zones.append({"x": site.x, "y": site.y, "radius": site.range_m})
+	for a in world.airfields:
+		if a.radar_km > 0:
+			zones.append({"x": a.x, "y": a.y, "radius": a.radar_km * 1000.0})
 	return zones
 
 

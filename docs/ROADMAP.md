@@ -5,6 +5,103 @@ feature branch and draft PR. Historical progress is preserved in
 [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md); the source-backed
 findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md).
 
+## Where we are heading (owner direction, 8 October 2026)
+
+The approved direction is [DESIGN.md §0](DESIGN.md#0-where-the-game-is-heading-owner-approved-direction-8-october-2026):
+build an empire from nothing, Warband-style, starting as a hired pilot. Product order:
+
+1. **The early rise.** A new story opens employed by a legitimate air service, flying its Cessna. The business
+   slides into smuggling, which becomes unavoidable, and the player earns their first aircraft. Sandbox unlocks
+   come from money, reputation and activity, with the campaign as an alternative route. *Implemented as one
+   rebased PR, #296 (from Codex's #250, #251, #252 and #255; nine employment tests), awaiting merge. Needs rebasing, a
+   human pacing walkthrough and a calibrated first-aircraft price (draft: $18,000).*
+2. **Setup-driven automation.** Explicit assignments first (payroll has these), then conditional orders
+   (stock thresholds) and multi-step task sequences. Manual play always remains. Workers follow instructions;
+   AI never invents assignments.
+3. **Faction competition and the civilian economy.** Rivals with distinct starting strengths, growing through the
+   economy; expansion-driven diplomacy; civilian jobs, demand and prosperity; turf war arrives late or by choice.
+4. **Multiplayer teamwork and competition.** Separate co-op and competitive modes for 2–16 players, with
+   organisation, rival and police sides. A leader leaving halts the session.
+
+The overhaul queue below (menus, stations, access, roads, interiors, NPCs, art) and the completion gates are the
+**reliability prerequisites inside each step**, not a separate product phase. Loss and recovery (hospital,
+impound, rebuilding with survivors) supports step 1. Specify the network ownership contracts early, so step 4
+doesn't force a rewrite.
+
+## Next implementation packages (from Codex's planning PRs #241–#243 and audit #246)
+
+Each package is a series of separate branches and draft PRs off `main`, with focused tests and the evidence in the
+PR body. None is implemented beyond what the queue below records.
+
+**A. Physical access and movement (#241).** Prerequisite for automation and faction competition.
+- *Where it stands:* the recorded route baseline had all 99 audited directed logistics pairs blocked. The
+  authored loading endpoints (#235) and validated local detours (#237) are now on `main` (#294); the remaining
+  access series (#265–#276) is unmerged and reached 13–26 of 99 in its own audits. Re-run `tools/logistics_routes.gd`
+  for the current number. Failure kinds are grade, footprint, an unauthored meeting point,
+  a disconnected network, and no nearby access.
+- *Never:* raise connector limits or restore straight-line fallbacks to make the numbers pass.
+1. Reproduce HAR, Warehouse 7, HQ and dock access in the Ctrl+F2 overlay. Record site IDs, entrance and loading
+   coordinates, road node, obstruction and intended travel mode.
+2. Fix grade and footprint failures with narrow authored approach corrections, checked in both directions.
+   - Respect bridges, foundations, occlusion, runway clearance and water.
+   - Keep La Selva without a public road.
+   - Mark boat-only and foot-only destinations as such, instead of promising vehicle access everywhere.
+3. Author the Family's meeting and loading point where the club actually is (draft #274), then re-audit all 99
+   pairs with before/after lengths and reasons.
+4. Migrate logistics dispatch only for validated vehicle endpoints.
+   - Refuse unreachable orders before money or stock leaves.
+   - Persist the blocked reason and last valid position.
+   - Never duplicate cargo on reroute, save/load or cancel.
+   - Keep the legacy route API for callers not yet migrated.
+5. Migrate squads separately, after the trucks. One worker identity through truck, foot, squad, jail, away and
+   death; animation never decides arrival.
+6. Only then measure issue #85, member-level combat contact, on paired seeds against the current accounting.
+
+**B. Empire command and feedback (#242).** Builds on #236 (squad cards), #238 (visible-only targeting), #239
+(district summary), #240 and #245 (own-unit battle accounts), all now on `main` (#294); don't rebuild those.
+1. An owner-only empire overview showing:
+   - money and stock: safe cash, cash out at sites, stock;
+   - obligations: payroll and squad upkeep;
+   - crew: available, assigned and jailed.
+
+   Rows use stable IDs and open the existing previews. No single "net worth" and no promised income.
+2. A durable order lifecycle (accepted, travelling, arrived, blocked, refused, result unknown).
+   - It correlates with sequence acknowledgements; an acknowledgement and a refreshed snapshot are separate
+     evidence.
+   - It never resends after a disconnect.
+3. Operational debriefs built from recorded events (deliveries, interceptions, transfers, wages, injuries,
+   arrests, collections), ordered and de-duplicated by event ID.
+   - Missing evidence shows as "unknown".
+   - Never reconstruct a cause from today's state, and never reveal unseen police or rival decisions.
+4. Battle accounts extended with custody, retreat and observed tactical facts (range, cover, surprise), stated as
+   observations rather than causes. Combat maths unchanged.
+5. Teach the first empire decisions at the existing unlocks: how flights fund stock, wages, repairs and defence.
+   No new mechanics or payouts.
+
+**C. Coastal art, playability and release (#243).**
+1. Finish one reference corridor first: HAR, the coastal road, Warehouse 7, the harbour and services. Audit
+   foundations, doors, desks, loading and parking, waterfront edges and yard transitions before adding decoration.
+   Drafts #227/#228 are the starting point.
+2. Then:
+   - functional coastal architecture and wayfinding;
+   - period vehicles (draft #269) and readable crew identity;
+   - analogue cockpit surfaces on the existing aircraft;
+   - event feedback through effects and cleared audio: arrival, incoming fire, damage, retreat, lost contact.
+
+   Neon stays in nightlife and the interface. No unresolved radio audio (#175).
+3. Before and after each asset batch, capture a fixed moving route and a dense-squad scene at matched
+   seed, time, preset and hardware. Record mean and P95 frame time, define the memory metric, and investigate
+   regressions over 10%. The 7 October static benchmark is not enough.
+
+**D. Open review items (#246, Claude's review in HANDOFF.md).**
+- #246's network findings (command de-duplication, frame limits, stale input) are **fixed on `main`** by
+  #259/#260.
+- Still open:
+  - **AI knowledge policy:** police and rival AI read broader simulation state than a human in the same role
+    sees. Decide the intended knowledge before tuning, and before #244's escort/stakeout changes are balanced.
+  - The client-side oversized-frame stall, and the doubled per-frame snapshot on local desks (HANDOFF.md log,
+    2026-10-10).
+
 ## Baseline and completed work
 
 Faction-AI corrections now have a [forty-seed isolated evidence record](FACTION_AI_ISOLATION_2026-10-09.md). Keep #244 and #98 open: surveillance effects change, and the stand-in has no cargo trucks to measure active escorts. No balance tuning accompanies this study.
@@ -43,6 +140,9 @@ The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava stor
 Save expansion, the six-layer Session split, role support, switch registry and
 strategic calibration are implemented; do not restart them from older reviews.
 
+*Everything from #178 to #209, including the "draft continuations" #184–#200 named in the next two paragraphs,
+is merged; the wording records the state on 6–7 October.*
+
 The historical overhaul stack was #178 (menu/HUD foundation), #179 (job previews),
 #180 (read-only fuel previews and feedback), #181 (airfield props), #182 (fuel
 cache props), #183 (interface/world audit). Those PRs and #119 (patterns/Asset
@@ -73,8 +173,8 @@ and real two-machine remote/voice validation remain unperformed.
 
 ## Ordered implementation queue
 
-1. **Baseline consolidation:** reconciliation is prepared in #184; complete
-   export and human release evidence before integrating the stack.
+1. **Baseline consolidation:** the stack (#178–#209) is merged; the export and human release evidence
+   (completion gates below) is what remains.
 2. **Dialogue:** implementation is prepared in #186 with correlated results,
    refreshed-state gating, scrolling/wrapped choices, navigation and failure text.
    Synthetic mouse/controller events, long choices and layout bounds pass in both
