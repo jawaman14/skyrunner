@@ -1,4 +1,5 @@
 extends TestCase
+const Departure = StripTrials.Departure
 ## The per-runway-end strip trials of #88 (scripts/balance/strip_trials.gd): a takeoff stops when it has its
 ## answer, the forced end is the one flown, and an end with no clear final is reported, not dropped.
 
@@ -7,18 +8,63 @@ func after_each() -> void:
 	StripTrials.use_map(0, false)  # the suite's default island and terrain, for whatever runs next
 
 
-func test_takeoff_stops_at_the_3km_mark_instead_of_gliding_on() -> void:
+func test_takeoff_stops_when_it_has_an_answer_instead_of_gliding_on() -> void:
 	StripTrials.use_map(MapCity.SEED, false)
 	var r := StripTrials.takeoff("c172p", "HAR", "light", 0)
-	check_eq(r.status, "pass", str(r.outcome))
-	check_eq(r.stop, "3km")
-	# Feasibility.takeoff_trial runs on to 400 s and scores a later crash as a pass; this one stops
+	# Feasibility.takeoff_trial runs on to 400 s and scores a later crash as a pass; this one stops at its verdict
 	check(r.seconds < StripTrials.TAKEOFF_MAX_S * 0.5, "stopped at %.0f s" % r.seconds)
 	var af := World.airfield("HAR")
+	check_eq(r.heading, af.heading)
 	check(r.liftoff_m != null and r.liftoff_m > 50.0 and r.liftoff_m < af.length, "lifted off at %s m" % r.liftoff_m)
 	check(r.to_15m_m != null and r.to_15m_m > r.liftoff_m, "15 m reached after liftoff")
 	check(r.min_clear_m != null and r.min_clear_m > 15.0, "climb-out clears the ground: %s m" % r.min_clear_m)
-	check_eq(r.heading, af.heading)
+	# the verdict matches the track: a pass is 3 km along the line inside the corridor, an inconclusive one left it
+	# first (on 2026-10-11 the bot's terrain-avoidance heading takes it ~40 degrees left at 60-80 m here, over flat ground)
+	check(r.status in ["pass", "inconclusive"], "%s: %s" % [r.status, r.outcome])
+	if r.status == "pass":
+		check(r.along_m >= StripTrials.TAKEOFF_GOAL_M, "3 km along the runway line: %.0f m" % r.along_m)
+		check(r.max_cross_m <= StripTrials.corridor_m(r.along_m), "inside the corridor: %.0f m off the line" % r.max_cross_m)
+	else:
+		check(r.along_m < StripTrials.TAKEOFF_GOAL_M, "stopped short of the goal: %.0f m" % r.along_m)
+		check(r.max_cross_m > StripTrials.corridor_m(r.along_m), "off the line by more than the corridor allows")
+
+
+## A path that covers 3 km from the start but bends away from the runway line is not a straight departure:
+## it must not pass (the radial-distance test it replaces would have passed it), and it is not a failure of
+## the aircraft either.
+func test_an_off_axis_3km_path_is_inconclusive_not_a_pass() -> void:
+	var hdg := 100.0
+	var u := Vector2(sin(deg_to_rad(hdg)), cos(deg_to_rad(hdg)))
+	var right := Vector2(u.y, -u.x)
+	# 600 m down the line, then a 40 degree turn to the right, flown on until it is 3 km from the start
+	var off := Departure.new(0.0, 0.0, hdg)
+	var bent := u.rotated(-deg_to_rad(40.0))  # clockwise with x east, y north: a right turn
+	var verdict := ""
+	var radial_3km := false
+	var flown := 0.0
+	while not radial_3km:
+		var p: Vector2 = u * minf(flown, 600.0) + bent * maxf(0.0, flown - 600.0)
+		radial_3km = p.length() >= StripTrials.TAKEOFF_GOAL_M
+		var v := off.sample(p.x, p.y)
+		if verdict == "":
+			verdict = v
+		flown += 10.0
+	check(radial_3km, "the old test, 3 km from the start, would have passed this path")
+	check_eq(verdict, "left corridor", "a turn away is caught, and before any 3 km verdict")
+	check(off.along < StripTrials.TAKEOFF_GOAL_M, "never 3 km along the line: %.0f m" % off.along)
+	check(off.cross > 0.0, "the turn was to the right, and the sign says so")
+	# drift inside the corridor still passes, and the goal is the distance along the line, not from the start
+	var drift := Departure.new(0.0, 0.0, hdg)
+	verdict = ""
+	for k in range(0, 3101, 10):
+		var p: Vector2 = u * k + right * (0.1 * k)
+		verdict = drift.sample(p.x, p.y)
+		if verdict != "":
+			break
+	check_eq(verdict, "3km")
+	check_near(drift.along, StripTrials.TAKEOFF_GOAL_M, 10.0)
+	check_near(drift.max_cross, 300.0, 2.0, "300 m right at 3 km is inside the 465 m corridor")
+	check_eq(StripTrials.corridor_m(3000.0), 465.0)
 
 
 func test_landing_is_flown_to_the_forced_end() -> void:

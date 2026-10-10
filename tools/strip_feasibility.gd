@@ -71,14 +71,15 @@ func _provenance(map_seed: int, natural: bool, filters: Dictionary, n: int, seco
 		"weather": "calm and clear (Session default)", "session_seed": 11, "dt": StripTrials.DT,
 		"takeoff_goal_m": StripTrials.TAKEOFF_GOAL_M, "takeoff_max_s": StripTrials.TAKEOFF_MAX_S,
 		"landing_max_s": StripTrials.LANDING_MAX_S, "clear_radius_m": StripTrials.CLEAR_RADIUS_M,
+		"corridor_half_m": StripTrials.CORRIDOR_HALF_M, "corridor_splay": StripTrials.CORRIDOR_SPLAY,
 		"loads": Feasibility.LOADS, "filters": filters, "trials": n, "wall_seconds": seconds,
 		"run_at": Time.get_datetime_string_from_system(true)}
 
 
 func _provenance_md(p: Dictionary) -> String:
-	return "Commit `%s`%s, Godot %s, map seed %d, %s terrain, %s, session seed %d, dt %.4f s. Takeoff passes at %.0f m from the start of the run (stops at a crash, the bot giving up, or %.0f s); landing passes when parked on the strip (%.0f s limit). Loads [fuel, payload] fractions: %s. Filters: %s. %d trials, %.0f s wall clock, run %s UTC." % [
+	return "Commit `%s`%s, Godot %s, map seed %d, %s terrain, %s, session seed %d, dt %.4f s. Takeoff passes at %.0f m along the runway line from the start of the run inside a corridor %.0f m either side widening by %.3f of the distance (inconclusive if the bot leaves it; stops at a crash, the bot giving up, or %.0f s); landing passes when parked on the strip (%.0f s limit). Loads [fuel, payload] fractions: %s. Filters: %s. %d trials, %.0f s wall clock, run %s UTC." % [
 		p.commit, " (with uncommitted tracked changes)" if p.tracked_changes else "", p.godot, p.map_seed, p.terrain, p.weather,
-		p.session_seed, p.dt, p.takeoff_goal_m, p.takeoff_max_s, p.landing_max_s, JSON.stringify(p.loads),
+		p.session_seed, p.dt, p.takeoff_goal_m, p.corridor_half_m, p.corridor_splay, p.takeoff_max_s, p.landing_max_s, JSON.stringify(p.loads),
 		JSON.stringify(p.filters), p.trials, p.wall_seconds, p.run_at]
 
 

@@ -6,10 +6,13 @@ extends RefCounted
 ## keeps stepping after the bot is done, so a glide into the ground after the goal is scored as a takeoff
 ## pass. These trials measure one forced end at a time instead and stop as soon as the trial has an answer:
 ##
-##   takeoff: from the threshold of `end`, straight out along the runway. Pass = 3 km from the start of the
-##            run without crashing. Reaching 300 m above the ground is not a pass on its own: the climb has
-##            to clear the terrain all the way out. Records the ground roll, the distance to 15 m and the
-##            least clearance over terrain and trees once clear of the runway.
+##   takeoff: from the threshold of `end`, straight out along the runway. Pass = 3 km along the runway's line
+##            from the start of the run, inside the straight-departure corridor, without crashing. Reaching
+##            300 m above the ground is not a pass on its own: the climb has to clear the terrain all the way
+##            out. If the bot's terrain avoidance turns it out of the corridor first, the result is
+##            "inconclusive": the straight departure was not flown, which says nothing either way about the
+##            aircraft. Records the ground roll, the distance to 15 m, the least clearance over terrain and
+##            trees once clear of the runway, and the largest sideways deviation.
 ##   landing: spawned on the final the bot's own planner would fly for `end` (no route planning, so #80/#82
 ##            geometry is out of it). Pass = parked on the strip. An end the planner cannot find a clear
 ##            glide path to, even at its steepest, is reported "obstructed" with the reason, and not flown.
@@ -22,6 +25,12 @@ const TAKEOFF_MAX_S := 400.0
 const LANDING_MAX_S := 600.0
 const DT := 1.0 / 30
 const CLEAR_RADIUS_M := 15.0  ## obstacle search radius under the aircraft for the climb clearance
+## The straight-departure corridor: 90 m either side of the runway line at the start of the run, widening by
+## 12.5% of the distance flown along it (465 m either side at 3 km). This is the shape of the ICAO Annex 6
+## take-off flight path area (90 m semi-width plus 0.125 D), measured here from the start of the run, which
+## is wider near the field than the rule; it allows for drift while the bot climbs, not for a turn away.
+const CORRIDOR_HALF_M := 90.0
+const CORRIDOR_SPLAY := 0.125
 const FIELDS := ["QRY", "PNR", "EGL", "HAR"]  ## the mountain strips of #88, and the hub as a control
 const AIRCRAFT := ["c172p", "c182"]
 
@@ -41,6 +50,43 @@ static func _base(test: String, aircraft: String, code: String, load: String, en
 	var af := World.airfield(code)
 	return {"test": test, "aircraft": aircraft, "field": code, "load": load, "end": end,
 		"heading": end_heading(af, end), "map_seed": World.layout.map_seed, "natural": Terrain.natural}
+
+
+## Half-width of the straight-departure corridor `along_m` metres down the runway line from the start of the run.
+static func corridor_m(along_m: float) -> float:
+	return CORRIDOR_HALF_M + CORRIDOR_SPLAY * maxf(0.0, along_m)
+
+
+## Progress along a forced departure: signed along-track distance on the runway line from the start of the run,
+## signed cross-track deviation (+ = right of the line), and the verdict once there is one.
+class Departure:
+	var x0: float
+	var y0: float
+	var ux: float  ## unit vector down the runway line (x east, y north)
+	var uy: float
+	var along := 0.0
+	var cross := 0.0
+	var max_cross := 0.0  ## largest |cross| so far, m
+
+	func _init(x0_: float, y0_: float, heading_deg: float) -> void:
+		x0 = x0_
+		y0 = y0_
+		ux = sin(deg_to_rad(heading_deg))
+		uy = cos(deg_to_rad(heading_deg))
+
+	## "" while still going, "3km" on reaching the goal along the line inside the corridor, "left corridor" when
+	## the path strays outside it first (checked before the goal, so a wide 3 km arc cannot pass).
+	func sample(x: float, y: float) -> String:
+		var dx := x - x0
+		var dy := y - y0
+		along = dx * ux + dy * uy
+		cross = dx * uy - dy * ux
+		max_cross = maxf(max_cross, absf(cross))
+		if absf(cross) > StripTrials.corridor_m(along):
+			return "left corridor"
+		if along >= StripTrials.TAKEOFF_GOAL_M:
+			return "3km"
+		return ""
 
 
 ## Did the session end the flight (crash or arrest)?
@@ -74,6 +120,7 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 	bot.departure_gradient = r.required_gradient
 	bot._set_phase("takeoff")
 	var t0 := s.time
+	var dep := Departure.new(x0, y0, hdg)
 	var liftoff = null
 	var to_15m = null
 	var min_clear = null
@@ -91,23 +138,29 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 			stop = "crash"
 			break
 		var st := s.state
-		var from_start := PyMath.hypot(st.x - x0, st.y - y0)
+		var verdict := dep.sample(st.x, st.y)
 		if liftoff == null and not st.on_ground:
-			liftoff = from_start
+			liftoff = dep.along
 		if to_15m == null and st.agl >= 15.0:
-			to_15m = from_start
+			to_15m = dep.along
 		if liftoff != null and not af.contains(st.x, st.y, 4.0):
 			var clear := st.alt - s.world.obstacle_top(st.x, st.y, CLEAR_RADIUS_M)
 			min_clear = clear if min_clear == null else minf(min_clear, clear)
-		if from_start >= TAKEOFF_GOAL_M:
-			stop = "3km"
+		if verdict != "":
+			stop = verdict
 			break
-	r.status = "pass" if stop == "3km" else "fail"
+	r.status = "pass" if stop == "3km" else ("inconclusive" if stop == "left corridor" else "fail")
 	r.stop = stop
-	r.outcome = s.last_outcome if stop == "crash" else (str(bot.outcome) if stop == "bot gave up" else stop)
+	if stop == "left corridor":
+		r.outcome = "left the straight-departure corridor %.0f m along the line, %.0f m %s of it (limit %.0f m)" % [
+			dep.along, absf(dep.cross), "right" if dep.cross > 0 else "left", corridor_m(dep.along)]
+	else:
+		r.outcome = s.last_outcome if stop == "crash" else (str(bot.outcome) if stop == "bot gave up" else stop)
 	r.liftoff_m = liftoff
 	r.to_15m_m = to_15m
 	r.min_clear_m = min_clear
+	r.along_m = dep.along
+	r.max_cross_m = dep.max_cross
 	r.seconds = s.time - t0
 	s.dispose()
 	return r
@@ -264,11 +317,11 @@ static func _num(v, fmt := "%.0f") -> String:
 
 ## Markdown: one row per trial, in job order.
 static func table(results: Array) -> String:
-	var lines := ["| field | end | hdg | aircraft | load | test | result | liftoff m | 15 m at | min clear m | touchdown m | sink fpm | roll m | go-arounds | outcome |",
-		"|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+	var lines := ["| field | end | hdg | aircraft | load | test | result | liftoff m | 15 m at | min clear m | along m | max off-line m | touchdown m | sink fpm | roll m | go-arounds | outcome |",
+		"|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
 	for r in results:
-		lines.append("| %s | %d | %03.0f | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % [r.field, r.end, r.heading,
+		lines.append("| %s | %d | %03.0f | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % [r.field, r.end, r.heading,
 			r.aircraft, r.load, r.test, r.status, _num(r.get("liftoff_m")), _num(r.get("to_15m_m")), _num(r.get("min_clear_m")),
-			_num(r.get("touchdown_from_threshold_m")), _num(r.get("touchdown_fpm")), _num(r.get("roll_m")),
+			_num(r.get("along_m")), _num(r.get("max_cross_m")), _num(r.get("touchdown_from_threshold_m")), _num(r.get("touchdown_fpm")), _num(r.get("roll_m")),
 			_num(r.get("go_arounds"), "%d"), str(r.outcome).replace("|", "/")])
 	return "\n".join(lines)
