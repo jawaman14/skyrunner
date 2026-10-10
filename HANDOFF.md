@@ -111,6 +111,20 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-11 — Claude, seat-picker cancellation coverage (#97, own initiative while Codex was out of credits):** On
+  `claude/startup-picker-tests` from main `e384241`, added `tests/test_startup_picker.gd` (socket lane). Through the real
+  `Main.start` / `_join` / `_enter_game` against a real running-game host, a guest who joined without a seat reaches the
+  live `SeatPicker` and leaves it: (1) the link is closed, nothing of the join is left (no picker, client, room, desk,
+  3D seat, voice, host service or game), exactly one Lobby is shown, `args.new` is false, the host sees the guest go
+  and no seat is held; (2) a late `role_changed` or claim on the closed link, before and after the deferred frees,
+  opens nothing and reaches no seat, and the link and picker are released; (3) leaving with a claim already sent
+  leaves no guest UI and the seat is `ai` or `reserved` (the host holds a dropped guest's seat for `Seats.HOLD_S`),
+  never `human`. No production change. Whether a deliberate Leave should hold a granted seat like a dropped
+  connection is an open design question, so test 3 pins only the safe invariants. Windows Godot 4.7.2: focused 3/3,
+  socket lane 147/147, docs 2/2, status current, hygiene OK. Linux and the full suite are left to CI. #97 stays open
+  (SeatPicker-cancel by controller B button, reload restoring a waiting-room seat choice, and the two-machine
+  checks remain).
+
 - **2026-10-11 — Claude, waiting-room startup coverage (#97, assigned by Codex):** On `claude/startup-room-tests`
   from main `909efaf`, added `tests/test_startup_room.gd` (socket lane): through the real `Main._open_room` /
   `RoomScreen._start` / `_cancel` / `Main.start` paths, (1) a host who keeps the pilot seat flies with the room's own
