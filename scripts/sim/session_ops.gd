@@ -39,6 +39,9 @@ func accept_job(job: Jobs.Job):
 
 ## Shared read-only gate for accepting work, used by both previews and execution.
 func accept_job_reason(job: Jobs.Job) -> String:
+	if story != null and story.employment != null and story.employment.active():
+		if job.employer_stage != story.employment.stage or job.employer_serial <= story.employment.last_completed or job.employer_serial >= story.employment.next_serial:
+			return "Complete the current employer assignment first."
 	if not parked or location != job.origin:
 		return "You need to be parked at the job's origin."
 	if job.hot() and not features.has("contraband"):
@@ -405,18 +408,30 @@ func set_copilot(who) -> void:
 	fm.apply_loadout(loadout)
 
 
+func aircraft_purchase_price(key: String) -> int:
+	if owned.has(key):
+		return 0
+	if key == EmploymentOpening.AIRCRAFT and story != null and story.employment != null:
+		return EmploymentOpening.PURCHASE_PRICE
+	return Aircraft.ROSTER[key].price
+
+
 func buy_or_switch(key: String):
 	if not parked or not airfield or not airfield.shop:
 		return "Aircraft dealers are only at Harbor Intl and Valley Regional."
 	if not active_jobs.is_empty():
 		return "Deliver or drop your current jobs first."
 	var sp: Aircraft.Spec = Aircraft.ROSTER[key]
+	var price := aircraft_purchase_price(key)
 	if not owned.has(key):
-		if money < sp.price:
-			return "Need $%s." % Py.money(sp.price)
-		money -= sp.price
+		if money < price:
+			return "Need $%s." % Py.money(price)
+		money -= price
 		owned[key] = true
 		say("Bought a %s!" % sp.name)
+	if story != null and story.employment != null and story.employment.loaner:
+		story.employment.loaner = false
+		say("Your first aircraft is yours. The company loan has ended.")
 	_switch_aircraft(key)
 	spawn_at(location)
 	return null

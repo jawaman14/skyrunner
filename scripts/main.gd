@@ -248,7 +248,7 @@ func start() -> void:
 	if mode == Roles.CAMPAIGN:
 		Campaign.from_dict(Session.read_save(save).get("campaign")).attach(sess)
 	elif story:
-		var st := Story.from_dict(Session.read_save(save).get("story"))
+		var st := Story.new_employed() if fresh else Story.from_dict(Session.read_save(save).get("story"))
 		st.attach(sess)
 		while st.index + 1 < args["chapter"] and not st.completed_all:  # --chapter N: skip ahead
 			st.advance()
