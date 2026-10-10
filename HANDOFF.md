@@ -108,6 +108,19 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-11 — Claude, waiting-room startup coverage (#97, assigned by Codex):** On `claude/startup-room-tests`
+  from main `909efaf`, added `tests/test_startup_room.gd` (socket lane): through the real `Main._open_room` /
+  `RoomScreen._start` / `_cancel` / `Main.start` paths, (1) a host who keeps the pilot seat flies with the room's own
+  server and beacon, one voice pipeline, seat held; (2) a host closing the room leaves no network services, frees the
+  server and beacon and the port can be listened on again; (3) a room that cannot listen returns to the lobby with
+  no server, beacon or game; (4) a guest leaving the waiting room closes and releases its link and the host sees
+  them go. Note for future tests: `await process_frame` resumes before that frame's delete queue is flushed, so wait
+  more than one frame before asserting a `queue_free`d node is gone. Windows Godot 4.7.2: focused 4/4, socket lane
+  137/137, docs 2/2, project-status current, hygiene OK. No gameplay, `main.gd`, RNG, save or wire changes; Linux and
+  the full suite are left to CI. #97 stays open. Overlaps #306/#307 on the PROJECT_STATUS count and this Log: regenerate
+  the status after whichever merges last. Next (read-only, per Codex): reproduction plan for the stale `main._mp`
+  reference when `_leave` frees an open multiplayer menu without `close()`.
+
 - **2026-10-11 — Codex, CI follow-up:** Windows MCP CI passed at a73f8a4. Linux exposed a test assumption:
   GNU timeout starts successfully and exits 127 for a missing child, while Windows raises a spawn error.
   The regression now disables the wrapper to exercise the intended startup-error cleanup on both hosts.
