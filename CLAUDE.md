@@ -1,7 +1,8 @@
 # Skyrunner: notes for Claude Code
 
 Pure GDScript on Godot 4.7.2. No native code, no plug-ins to build. See README.md for the game,
-docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue.
+docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. Other agents (Codex) work here too:
+read and update HANDOFF.md (claims, open questions, session log) when you start and stop.
 
 ## Commands
 ```bash
@@ -39,9 +40,10 @@ On Windows, run the same through Git Bash or WSL, or call the Godot exe directly
 ## Layout
 - `scripts/sim/` headless simulation (Session, world, police, economy, ground war, logistics...). `Session` is a
   chain of layers, each extending the one below: `session_state` (constants, members, helpers, persistence) <
-  `session_rules` < `session_ops` < `session_tick` < `session_commands` (the `_cmd_*` handlers) < `session` (construction).
-  A layer may only call down, so a new handler goes in `session_commands.gd`, and anything it needs from a higher
-  layer is a hook declared lower;
+  `session_rules` < `session_ops` < `session_tick` < `session_commands` (`command()`: permissions, preview gate, outcome
+  messages) < `session` (construction). A layer may only call down. The `_cmd_*` handlers are static functions in six
+  domain modules, `scripts/sim/cmds_{air,crew,ground,trade,court,org}.gd`, taking the Session as an argument; a new
+  one goes in the right module, is registered in `command_domains.gd` and permitted in `roles.gd`;
   `scripts/sim/flight/` the 6-DOF flight model reading JSBSim-format XML in `data/jsbsim/`.
 - `scripts/bots/` PilotBot and route planning; `scripts/balance/` the balance simulators.
 - `scripts/game/` the 3D pilot app, walker, HUD; `scripts/station/` the 2D desks; `scripts/ui/`.

@@ -1,141 +1,119 @@
-# Current handoff
+# Agent handoff log
 
-The authoritative current state is [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
-Its source inventory is generated; regenerate with `godot --headless --script res://tools/project_status.gd -- --write` after source changes. Passing runs and human gates remain separately recorded.
-Historical handoff notes below are retained for provenance and are not current
-test or feature claims.
+This is the shared channel for every agent working on this repository (Claude Code, Codex/ChatGPT, or anyone
+else) and for the owner. Agents never talk directly; they talk here. `CLAUDE.md` (conventions) and
+`AGENTS.md` (Codex's entry point) both point to this file.
 
-# Update 2026-10-03: everything below the line was written on 2026-09-28; this is what changed since
+- **Facts about the code** live in the code, `CLAUDE.md` and `docs/DESIGN.md`.
+- **Release evidence** lives in `docs/PROJECT_STATUS.md`.
+- **The queue** lives in `docs/ROADMAP.md`.
+- This file records **who is doing what, what changed hands, and what one agent needs the other to know.**
 
-**Where things are.** `main` has all of the work stacked since the cloud handoff (PRs #1-#38, merged bottom-up
-as merge commits). Tests: see [PROJECT_STATUS.md](docs/PROJECT_STATUS.md); this historical note is retained for provenance. CI was green on the recorded baseline
-(tests, exports, smoke). The balance re-fly (K3) that item 1 below describes was finished (BALANCE entry 35) and
-the playtest list's first wave was done (pause menu, runway/landing fixes, roads, autopilot routing, crew).
+Older handoffs (28 Sep and 3 Oct, cloud session → local) are in
+[docs/HANDOFF_HISTORY_2026-09.md](docs/HANDOFF_HISTORY_2026-09.md).
 
-**What was added** (each has a DESIGN section and a ROADMAP line; most have a BALANCE entry, newest last in `docs/BALANCE.md`):
-- Physical NPCs: `Agent` and its task queue, drivers in every stash truck, a squad is its men, the 3D world draws them,
-  road pathfinding, the payroll's people are bodies; a phone on foot; a taxi; a drivable starter car.
-- Ring roads, La Selva kept isolated on purpose, the turf war's engagement geometry, strategic saves (stashes, crew, case, court, squads).
-- Logistics: fuel for the hired fleet and multi-stop rounds. Mount and Blade-inspired systems, each behind an `ENABLED`
-  switch: renown, veteran squads + field orders (Z/X/C/V on foot), the rackets (tribute, prisoners), stash works, the arena (races).
-- A car radio with real 1979-86 recordings (`assets/radio/`; **not CC0**, see its README), and a `user://radio/` folder for your own.
-- Art: ~3,000 Kenney/KayKit/Quaternius CC0 models and 2D sprites vendored; the city is dressed with them (`CityDress`), scenery,
-  road markings, the villa and the club furnished, the city's buildings are solid (`CityDress.colliders`).
-  Still unused: the Pirate kit (docks), Quaternius downtown, the 2D packs.
+## Protocol
 
-**Working notes that will save you time:**
-- `skyrunner-godot/` (an untracked stray folder in the repo root) must never be `git add`ed: stage files by name.
-- Balance runs: `tools/live_balance.gd -- 200 3 [config]`; 40 seeds is noise (+-$5k), use 200+. Run variants in separate
-  `git worktree`s (never switch branches under a running job), copy `sim-results/strategic.json` (gitignored) into a worktree
-  before `cli.gd -- report` or BALANCE.md loses section 3. `live.json` keeps only mean/p10/p50/p90.
-- Screenshots work on Windows: `--headless --import` first (after switching branches too), then the console exe with
-  `--audio-driver Dummy --resolution 1280x720 --script tools/shots/pilot_shot.gd -- ...`, but call
-  `RenderingServer.force_draw(true)` before `get_image().save_png` or the PNG is flat grey.
-- Tests that load the city map must call `World.use_map(0)` afterwards (`after_each`), or `test_world`'s Python-parity checks fail.
-- CI once failed ~40 model-load checks from a cold-import timeout; a re-run passed (`tools/test.sh` now allows 900 s for the import).
-- Not checked by eye: the club's furniture layout (the club only exists on the city map), the air circuit's gates.
+1. **Before starting:** read the newest Log entries, the Claims table and Open questions below. Don't redo work
+   that is logged as merged. If you disagree with something another agent did, add an Open question; don't
+   silently revert it.
+2. **Claim the slice.** Add a row to Claims (agent, branch, scope) and push it with your first commit. Never edit
+   files inside someone else's claimed scope. If a claim is older than 3 days with no commits, ask in Open questions
+   before taking it over.
+3. **One slice = one branch off `main` = one PR into `main`.** Stack on another unmerged branch only when the code
+   really depends on it, and say so in the PR. After a base is squash-merged, rebase its dependents onto `main` the
+   same day. A stacked PR whose base was squash-merged conflicts with `main` and rots.
+4. **Evidence goes in the PR body:** commands run, counts, what was not verified. Don't add new dated
+   `docs/*_YYYY-MM-DD.md` reports. Update `docs/PROJECT_STATUS.md` only for release-level evidence, and regenerate
+   its inventory block (`tools/project_status.gd -- --write`) when tests/chapters/exports change.
+5. **When you stop,** prepend a Log entry (newest first, at most ~12 lines):
+   date, agent, what merged/pushed (PR numbers), what is verified and how, what is NOT verified, and what's next.
+   Remove your Claims row when its PR merges or you abandon it (say which in the Log).
+6. **Questions** for the other agent or the owner go in Open questions with your name and date. Answer under the
+   question, then move the resolved item into a Log entry.
+7. **Commit attribution:** keep your tool's co-author trailer. The Log names the agent, so `git log` and this file
+   agree.
 
----
+## Claims (work in progress — don't touch these scopes)
 
-# Handoff: cloud session → local development (2026-09-28)
+| agent | branch / PR | scope | since |
+|---|---|---|---|
+| Claude | `ccr-958eacf7-ugmwgs` / #293 | `tools/mcp/`, `tools/mcp_introspect.gd`, `.mcp.json`, this file, `AGENTS.md`, `CLAUDE.md` layout fix | 2026-10-10 |
 
-**The project lives at https://github.com/jawaman14/skyrunner (`main`).** It moved out of the AutoGPT
-fork on 2026-09-28 with full history (`git subtree split` of `games/skyrunner-godot`).
-jawaman14/AutoGPT#5 is closed, and the `claude/cargo-flight-game-2g413p` branch there is an archive:
-don't develop on it. Everything from the cloud session is committed and pushed here; nothing was left
-uncommitted, stashed or on other branches.
+## Open questions
 
-Read these with this file:
-- `CLAUDE.md`: commands and conventions;
-- `docs/ROADMAP.md`: the prioritised queue;
-- `docs/DESIGN.md`: the systems.
+- **[Claude → owner, 2026-10-10]** Codex left 38 open PRs. 36 conflict into `main`, mostly because they are stacked
+  on PR branches that were later squash-merged; only #227 and #228 merge cleanly (see `github_pr_triage`). Proposal: close the docs/plan-only PRs (#241, #242, #243, #246, #249, #264, #273),
+  then rebase the gameplay stacks onto `main` one at a time, starting with logistics loading endpoints
+  (#235/#237/#265/#267/#268/#274/#276) and the employed-pilot opening (#250–#252, #255). OK to proceed?
+- **[Claude → Codex, 2026-10-10]** Review findings below (Claude review 2026-10-10). Items 1–3 are in code you wrote
+  recently; reply here if any is intended behaviour before someone fixes it.
 
-## Current state
-- **Beta 0.9.0-beta.1.** Pure GDScript on Godot 4.7.2: no GDExtension, no JSBSim library. The game's
-  own 6-DOF model (`scripts/sim/flight/`) reads JSBSim-format XML as data.
-- **Tests:** historical handoff count; see [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for current verified evidence.
-- **CI** (`.github/workflows/skyrunner-beta.yml`) runs on `main`, pull requests and manual dispatch:
-  - tests;
-  - exports for Linux, Windows and macOS (universal, ad-hoc signed);
-  - a headless AI-flown smoke run on Linux and Windows;
-  - an llvmpipe screenshot on Linux.
-  - Builds are the run's artifacts.
-- **Terrain:** the built-in maps' terrain is baked in `data/terrain/*.bin` (zstd). Generated islands
-  are cached in `user://terrain`.
+## Log
 
-## What was in progress / next
-1. **Balance re-fly (K3).** The balance was measured with JSBSim, and the Godot model flies differently.
-   - The tactical sweep hadn't finished when the session moved, and `sim-results/tactical.json` and
-     `calibration.json` are still the JSBSim-era numbers.
-   - Steps: re-run tactical, then feasibility, then strategic, then live_balance, and write BALANCE
-     entry 35. Commands and targets are in `docs/ROADMAP.md` §1.
-   - The pilot bot fixes that led up to it are committed:
-     - the approach speed floor;
-     - holding the glide path altitude en route to hilltop strips;
-     - the go-around window;
-     - `Session.ARRIVE_MARGIN_M`;
-     - the C182/PA-28 castering mains.
-2. **The playtest feedback list** in `docs/ROADMAP.md` §2. None of it is started. The first wave:
-   - the Esc pause menu (Esc currently quits: `pilot_app.gd` about lines 309 and 377,
-     `station_app.gd` about line 319);
-   - runways and landing;
-   - throttle steps;
-   - F1 scrolling;
-   - a compass with wind;
-   - the tutorial's red squares;
-   - crew auto-hire and instant deaths;
-   - the autopilot circling, its routing, and flying differently with illegal cargo.
+### 2026-10-10 — Claude (review of the 4–10 Oct work, MCP server, this handoff)
+- **Verified:** `main` @ `f703a9f` plus the UID commit: full suite **1,027 passed, 0 failed, no script/parse
+  errors** (`tools/test.sh`, 1,165 s, one process, Linux, Godot 4.7.2). CI on #293's first head: all 11 jobs green.
+- **Pushed (#293, draft):**
+  - Ten missing `.gd.uid` files committed.
+  - `tools/mcp/skyrunner_mcp.py`: an MCP server with game tools (tests, smoke, screenshot, balance, tool scripts,
+    command/switch introspection) and GitHub tools (PR triage, CI status/logs, PRs, issues, branch cleanup).
+    Codex can call it too, from any MCP client.
+  - This file and `AGENTS.md`.
+- **Review findings** (read from source; not yet fixed):
+  1. `scripts/ui/command_presentation.gd` `poll()` calls `link.snapshot()` every frame, and `station_app.gd`
+     `_process` already builds one. On a `LocalLink` (hot-seat/AI desks) that is two full `Snapshot.build` calls
+     per frame instead of one. Pass the frame's snapshot into `poll()`.
+  2. `scripts/net/net_client.gd`: `read_lines` caps the buffer at `MAX_LINE + 1`, but only the host drops an
+     oversized frame. A client receiving a line over 1 MiB stops reading forever, silently. Mirror the host's
+     `buf.size() > MAX_LINE` check and close with an error.
+  3. `scripts/net/host_server.gd` `_poll`: with at most 64 lines extracted per poll, a backlog of complete lines
+     over 1 MiB trips the oversized-frame drop on a well-behaved client. Unlikely at current rates; check
+     `extract_lines`' leftover for a newline before dropping.
+  4. The rackets "turn" preview (`action_descriptions.gd`) repeats `Rackets._recruit`'s wage formula with a
+     literal skill of 0.3; the two can drift apart. Expose one helper.
+  5. `PhoneCalls._calls` keeps every call forever and is saved; it's needed for source de-duplication. Low impact,
+     but cap the history or store only source IDs for terminal calls.
+  6. Docs:
+     - `CLAUDE.md`'s layout still said new handlers go in `session_commands.gd`; they go in `cmds_*.gd` since
+       #284 (fixed in #293).
+     - `docs/FEATURES.md:36` says `--map 0` is the classic island, but that map is retired.
+     - `docs/ROADMAP.md` calls #184–#200 "prepared as draft continuations" right after saying #178–#209 are merged,
+       and queue item 1 still points at #184.
+     - `docs/FEATURES.md` and `docs/LIBRARIES.md` link a `docs/audio/` folder that never existed.
+  7. Process: ~15 dated evidence reports in `docs/` duplicate PR bodies. The Protocol above (rule 4) stops new ones;
+     consolidating the existing ones is optional.
+- **Not verified:** human gates (exported Windows walkthrough, two-machine multiplayer/voice, controller,
+  read-aloud) are unchanged and still open.
+- **Next:** owner's answer on the PR clean-up question, then fix findings 1–2 and the doc errors in one PR.
 
-## Open bugs and known issues
-- **Windows + AMD (RX 7900 XT), Vulkan:** the CI build crashes at startup with 0xC0000374 (heap
-  corruption) after shader compilation. Seen from local testing.
-  - The log shows duplicate `VK_LAYER_AMD_switchable_graphics` layers and a missing Rockstar Social
-    Club Vulkan layer. These are implicit layers registered by other software.
-  - It runs fine with `--rendering-driver opengl3`.
-  - **Diagnosed (2026-09-29): not a game bug.** A leftover Vulkan Configurator override
-    (`VK_LAYER_LUNARG_override` in `HKCU\SOFTWARE\Khronos\Vulkan\ImplicitLayers`) forces
-    `VK_LAYER_KHRONOS_validation` into every Vulkan app. With `VK_LOADER_LAYERS_DISABLE=VK_LAYER_LUNARG_override`
-    the build runs under Vulkan (Forward+). INSTALL.md troubleshooting now covers it.
-  - Still open: an automatic fallback (`rendering/rendering_device/fallback_to_opengl3`) only helps
-    when Vulkan fails to initialise, not for this mid-run crash, so it isn't worth adding for this.
-- **DHC-6 flaps:** the aircraft balloons when its flaps are lowered at speed. The aero data is at
-  fault (it did the same under JSBSim). Documented in BETA.md.
-- **Hands off at high power,** some aircraft roll slowly left from propeller torque. That's
-  intended, and the tests allow for it.
-- **Leak messages:** headless test runs end with "RID allocations leaked at exit" errors. They're
-  harmless, and the runner's own summary line is what counts.
-
-## Conventions the next agent must follow
-Details are in CLAUDE.md. The ones that bite:
-- **Warnings are errors.** Type any variable whose value comes from a Variant, or the script
-  silently fails to parse, which looks like a hang.
-- **Determinism.**
-  - New randomness goes on a new RNG stream.
-  - New systems go behind a static switch that the parity tests turn off.
-  - Never regenerate the Python-frozen fixtures.
-  - Regenerate the Godot golden fixtures (`tools/regen_flight_golden.gd`) only for an intended
-    flight change, and say so in the commit.
-- **Keep the repo clean.** Scratch scripts go outside it; `sim-results/strategic.json` (11 MB)
-  stays gitignored.
-- **Keep it fictional:** no real people, organisations or brands.
-- **Workflow:** a feature branch, then a PR to `main`, and the CI must be green.
-
-## Testing
-- **Full suite:** `./tools/test.sh`, or `./tools/test.sh flight` to filter by file name.
-  - It needs bash. On Windows use Git Bash, with `GODOT` pointing at the Godot 4.7.2 console exe,
-    e.g. `export GODOT="/c/Godot/Godot_v4.7.2-stable_win64_console.exe"`.
-  - `TEST_TIMEOUT` (default 900 s) raises the limit.
-- **Smoke:** `"$GODOT" --headless --path . -- --unlocks open --watch --new --smoke 1800`, which
-  prints `SMOKE OK`.
-- **Screenshot:** `"$GODOT" --path . -- --new --shot out.png --frames 240`.
-- **Export:** Project → Export, or `--export-release Windows export/windows/Skyrunner.exe`. This
-  needs the 4.7.2 export templates.
-
-## Environment not in the repo (all regenerable)
-- The Godot binary: `./tools/get_godot.sh` fetches the Linux one into `.tools/`. On Windows, install
-  Godot 4.7.2 yourself.
-- The export templates, in `~/.local/share/godot/export_templates/4.7.2.stable/` on Linux or
-  `%APPDATA%\Godot\export_templates\4.7.2.stable\` on Windows.
-- `user://` holds saves, `terrain/` caches and `feedback/`. Nothing there is needed for development.
-- `sim-results/strategic.json` is regenerated by `cli.gd -- strategic`.
-- No environment variables beyond `GODOT` and `TEST_TIMEOUT`, and no secrets.
+### 2026-10-04 → 2026-10-09 — Codex (reconstructed by Claude from `git log`; Codex left no handoff)
+32 commits on `main` (25 carry the Codex co-author trailer), +13.3k/−2.1k lines. Merged, in order:
+- **Overhaul stack** (#119, #178–#209 and replacements #216–#222):
+  - dialogue reliability/navigation;
+  - read-only action previews with Cancel-first confirmation (`ActionDescriptions`, `ActionReview`);
+  - menu focus and modal input;
+  - station outcomes (`CommandPresentation`), map layers and a role-filtered feed;
+  - site footprints/entrances with the Ctrl+F2 access overlay (`SiteLayout`, `SiteAccess`);
+  - interaction occlusion, checked road surfaces and graded bridges;
+  - enterable stash interiors and period props.
+- **Features and CI:** incoming Family calls on the shared phone (#225); macOS export and launch CI (#223); the
+  logistics route baseline (#226: all 99 audited truck routes fail checked access).
+- **Reliability (#259–#263):** bounded TCP framing, per-connection command de-duplication, stale remote-input
+  expiry, debris expiry, race feedback, fight-snapshot privacy.
+- **#280–#292:**
+  - parity-state restore and RNG scanner;
+  - vegetation coverage;
+  - host/voice lifecycle;
+  - **command handlers moved into six `cmds_*.gd` domain modules (#284)**;
+  - CI split into logic/simulation/presentation/socket lanes (#286);
+  - shared seat screen (#285);
+  - taxi coverage (#288);
+  - worker map layer (#289);
+  - failed-host cleanup (#290);
+  - frozen parity fixture (#291);
+  - generated `PROJECT_STATUS.md` inventory (#287);
+  - faction-AI 40-seed study (#292, docs only).
+- **Left open:** 38 PRs, mostly drafts stacked on each other (36 conflict into `main`). The largest gameplay stacks are logistics loading
+  endpoints and the employed-pilot opening. Its own records are in `docs/PR_INTEGRATION_2026-10-08.md`,
+  `docs/OPEN_PR_AUDIT_2026-10-08.md` and the other dated docs, plus each PR body.
