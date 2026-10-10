@@ -52,6 +52,7 @@ func _check_services(server: HostServer) -> void:
 	check_eq(server.sess, _session, "services share the active session")
 	check(server.port > 0, "host listens on an assigned port")
 	check_eq(server.password, "host-only")
+	check_eq(server.host_name, "Startup host")
 
 func test_direct_host_starts_pilot_and_services() -> void:
 	_entry.args["host"] = true
@@ -87,13 +88,15 @@ func test_waiting_room_host_desk_reuses_server_and_beacon() -> void:
 	var beacon := _child(LanDiscovery.Announcer, server)
 	check(beacon != null)
 	check_eq(_count(VoiceChat), 0, "waiting room has no microphone")
-	check_eq(server.room.claim(Room.HOST, Roles.CONTROLLER), "")
+	check_eq(server.host_claim(Roles.CONTROLLER), "")
 	room.start_game.emit()
 	var desk := _child(HostDesk) as HostDesk
 	check(desk != null, "host choice opens the controller desk")
 	if desk == null: return
 	_session = desk.sess
 	check_eq(desk.role, Roles.CONTROLLER)
+	check(_session.seats.human(Roles.CONTROLLER), "host holds the selected desk")
+	check(not _session.seats.human(Roles.PILOT), "desk host releases the pilot seat")
 	check_eq(desk.server, server)
 	check_eq(_child(PilotApp), null)
 	check_eq(_child(RoomScreen), null)
