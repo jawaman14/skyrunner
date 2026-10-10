@@ -1,5 +1,11 @@
 # Current handoff
 
+## Agent work-split document import — 2026-10-11
+
+Codex imported the owner's [Google Doc](https://docs.google.com/document/d/1Gvc3qsZruv8uB6FWVj6YUqyqVabRRi9caebwn9nCdrE/edit) into [docs/AGENT_WORK_SPLIT.md](docs/AGENT_WORK_SPLIT.md), preserving the original proposal, review replies, consolidated operating decisions, templates, gate register and repository-check snapshot. Repository counts and PR statuses in that document are historical claims, not fresh verification. This import does not apply the proposed instruction-file or roadmap rewrites.
+
+Validation: converted the complete native document's one tab, including tables, lists and embedded command blocks; checked the source section coverage. Documentation-only change; game tests were not run. Next: review this draft PR and reconcile any adopted guidance with #293 before changing shared instructions. Human release gates remain outstanding.
+
 The authoritative current state is [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
 Its source inventory is generated; regenerate with `godot --headless --script res://tools/project_status.gd -- --write` after source changes. Passing runs and human gates remain separately recorded.
 Historical handoff notes below are retained for provenance and are not current
