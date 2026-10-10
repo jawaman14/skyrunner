@@ -75,6 +75,17 @@ func update(dt: float, s: FlightModel.FlightState, c: FlightModel.Controls) -> F
 		var wp: Array = waypoints[wp_i]
 		var course := PilotBot.bearing(_leg_from[0], _leg_from[1], wp[0], wp[1])
 		var ac := _along_across(s.x, s.y, wp, course)
+		# Rebuild a short forward intercept when a passed fix would otherwise orbit.
+		var course_behind := absf(Py.wrap180(course - s.heading)) > 135.0
+		if (ac[0] < -WAYPOINT_RADIUS_M or course_behind) and s.gs_kts > 20.0:
+			var h := deg_to_rad(s.heading)
+			var intercept_m := clampf(maxf(1200.0, s.gs_kts * 0.514444 * 12.0), 1200.0, 3500.0)
+			var intercept := [s.x + sin(h) * intercept_m, s.y + cos(h) * intercept_m]
+			_leg_from = [s.x, s.y]
+			wp = intercept
+			waypoints[wp_i] = intercept
+			course = s.heading
+			ac = _along_across(s.x, s.y, wp, course)
 		if ac[0] < WAYPOINT_RADIUS_M:
 			if wp_i < waypoints.size() - 1:
 				wp_i += 1

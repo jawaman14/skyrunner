@@ -76,6 +76,41 @@ func test_hot_cargo_flies_low_but_still_squawks_without_heat() -> void:
 	s.dispose()
 
 
+func test_known_radar_zones_are_the_active_police_sites() -> void:
+	var s := _sess({"trade": true})
+	var zones: Array = s.known_radar_zones()
+	var active := 0
+	for site in s.police.sensors.sites:
+		if bool(site.active):
+			active += 1
+	check(active > 0 and zones.size() == active, "one avoid zone per active radar site (%d of %d)" % [zones.size(), active])
+	for z in zones:
+		check(float(z.radius) > 0.0, "each zone has the site's range")
+	for site in s.police.sensors.sites:
+		if bool(site.active):
+			site.active = false
+			break
+	check_eq(s.known_radar_zones().size(), active - 1, "a site that is off is no longer routed around")
+	s.dispose()
+
+
+func test_a_hot_leg_is_planned_around_known_radar_and_a_legal_one_is_not() -> void:
+	var s := _sess({"trade": true})
+	_airborne(s)
+	var item := Loadout.Item.new(Jobs.new_id(), "Grass bales", "cargo", 100, 0)
+	item.hot = true
+	s.loadout.add(item)
+	s.command(Roles.PILOT, "autopilot", {})
+	s.command(Roles.PILOT, "autopilot", {})
+	var af: Airfield = s._autopilot_target()
+	var with_zones: Array = RoutePlanner.plan_route(s.world, [s.state.x, s.state.y], [af.x, af.y], 6.0, 1.5, 1500.0, s.known_radar_zones())
+	var n: int = mini(s.autopilot.waypoints.size(), with_zones.size())
+	check(n > 1, "a routed hot leg")
+	for i in n - 1:  # the last leg's altitude is overwritten by the autopilot, so compare the first x/y pairs
+		check_eq([s.autopilot.waypoints[i][0], s.autopilot.waypoints[i][1]], [with_zones[i][0], with_zones[i][1]], "hot waypoint %d is the radar-aware route" % i)
+	s.dispose()
+
+
 func test_hot_cargo_goes_dark_once_there_is_heat_on_you() -> void:
 	var s := _sess({"trade": true})
 	_airborne(s)
