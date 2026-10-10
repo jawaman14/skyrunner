@@ -111,6 +111,17 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-11 — Claude, #90 translation-import churn (assigned by Codex):** Every `--import` rewrote eight tracked
+  `docs/AI_WORK_ALLOCATION*.translation` files, dirtying every worktree: the two planning CSVs added in #293 were
+  imported by Godot's `csv_translation` importer, which writes one `.translation` per column next to the source.
+  Nothing uses them (only a Markdown link in `docs/AI_WORK_ALLOCATION.md`; the project registers no translations).
+  Fix: tracked `docs/AI_WORK_ALLOCATION.csv.import` and `docs/AI_WORK_ALLOCATION_SUMMARY.csv.import` set
+  `importer="keep"`, `.gitignore` un-ignores `docs/*.csv.import` (`*.import` is otherwise ignored repo-wide), and the
+  eight generated `.translation` files are removed. A new `docs/*.csv` is imported as a translation table again unless
+  it gets a keep sidecar like these. Windows Godot 4.7.2: import exit 0, no tracked file rewritten, sidecars untouched,
+  no `.translation` regenerated; docs 2/2, status current, hygiene OK. No `.gd`, gameplay or save change. #90 stays
+  open (unused-function cleanup remains).
+
 - **2026-10-11 — Claude, waiting-room startup coverage (#97, assigned by Codex):** On `claude/startup-room-tests`
   from main `909efaf`, added `tests/test_startup_room.gd` (socket lane): through the real `Main._open_room` /
   `RoomScreen._start` / `_cancel` / `Main.start` paths, (1) a host who keeps the pilot seat flies with the room's own
