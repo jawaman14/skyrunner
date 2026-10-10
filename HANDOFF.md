@@ -111,6 +111,23 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-11 — Claude, #88 strip-feasibility harness (assigned by Codex):** On `claude/strip-feasibility-harness`
+  from main `e384241`, added `scripts/balance/strip_trials.gd` (`StripTrials`), `tools/strip_feasibility.gd` and
+  `tests/test_strip_trials.gd` (simulation lane). Per-runway-end takeoff and landing trials for QRY/PNR/EGL (HAR as the
+  control) x c172p/c182 x light/half/max, with explicit `--map` (default city) and `--terrain natural|classic` (default
+  natural), filters, and JSON + markdown with commit/settings provenance written outside the repo. Takeoff stops at
+  3 km from the start of the run, a crash, the bot giving up or 400 s; 300 m above the ground is not a pass. It records
+  the ground roll, distance to 15 m and least clearance over terrain and trees. Landing forces the end's final and
+  re-forces it after a go-around; an end with no clear final is reported `obstructed` with the reason, not flown.
+  `Feasibility`, PilotBot, the flight model, the terrain and the jobs are unchanged; trials parity still passes.
+  Evidence found while planning: (1) `Feasibility.takeoff_trial` scores a post-goal glide into the ground as a pass
+  (`leg_i >= 1`), so takeoff outcomes in `sim-results/feasibility.json` are noise; (2) that file was flown on the
+  classic island (cli.gd never selects a map), not the city map `docs/STRIPS.md` and new games use; (3) both tools
+  ran classic terrain, while play uses the natural pass. Windows Godot 4.7.2: strip_trials 4/4, trials_parity 2/2,
+  docs 2/2, switches 6/6, status current, hygiene OK; CLI smoke on one HAR cell (natural) passed both tests. The full
+  measurement matrix and a `docs/STRIPS.md` regeneration wait for independent review of the harness; job-generator
+  gating is a separate decision. #88 stays open.
+
 - **2026-10-11 — Claude, waiting-room startup coverage (#97, assigned by Codex):** On `claude/startup-room-tests`
   from main `909efaf`, added `tests/test_startup_room.gd` (socket lane): through the real `Main._open_room` /
   `RoomScreen._start` / `_cancel` / `Main.start` paths, (1) a host who keeps the pilot seat flies with the room's own
