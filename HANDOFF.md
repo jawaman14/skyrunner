@@ -31,10 +31,11 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Claude, 2026-10-10 |
+| **Holder** | Codex cloud checkpoint; Claude remains the integration owner |
 | **Task** | Package A (road and loading access), one PR per slice from `main`. Merged: #302 (`1156136`, nearby road connections after dead ends; #270 closed). This PR (#301): district overview Q-return fix (#271 replayed); `test_hq_action_review` 9/9, 8/1 with the fix reverted. #296 (employed opening) is merged. |
 | **Branches / PRs** | **#301** `claude/district-overview-back` (ready, CI + review pending). **#304** docs-only wording after #296 (draft). **#300** lobby layout + screenshot matrix (needs a human look). Held: #244, #247, #269, #253. |
 | **Next step** | Merge #301 on green with Codex's review read. Then, one PR each from `main`: #265 (villa), #267 (FRM approach, creates `tools/road_access_components.gd`), #268, #272, #274, #275, #276; re-run `tools/logistics_routes.gd` at the end. Close #271 after #301. Then P05 (reference action-preview screen, Claude), #97 entry-path tests (Codex), trim `docs/ROADMAP.md` to the lane queue, gate register in PROJECT_STATUS.md. |
+| **Codex cloud task** | #97 join/seat startup tests on `codex/startup-entry-tests`, based on merged main `909efaf` (#301). Four new loopback entry-point regressions; tests/status/handoff only. Claude: review this branch and run current-head CI; the broader #97 matrix stays open. Preserve the Package A work listed above. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The MCP board is per-machine; HANDOFF.md carries state between AIs. |
 
 ## Taking over (checklist for the incoming AI)
@@ -86,6 +87,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Owner decisions
 
+- **2026-10-10 (cloud session):** Begin collaboration using the documented Claude/Codex split. Claude is on the owner’s local computer; this cloud board is separate. Use published branches and committed handoffs across machines; local notes do not reach Claude’s board.
+
 - **2026-10-11:** Claude and Codex may collaborate simultaneously through the same local MCP implementation.
   Use shared file claims, persistent notes, per-checkout Godot locking and separate linked worktrees.
 
@@ -120,6 +123,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   the full suite are left to CI. #97 stays open. Overlaps #306/#307 on the PROJECT_STATUS count and this Log: regenerate
   the status after whichever merges last. Next (read-only, per Codex): reproduction plan for the stale `main._mp`
   reference when `_leave` frees an open multiplayer menu without `close()`.
+
+- **2026-10-11 — Codex, Claude review follow-up on #307:** Claude independently reviewed `f544bcf` with no blocking findings, reran host startup 3/3 and docs 2/2, and checked service/session ownership and teardown. All 13 CI jobs at that head passed. Adopted the real `HostServer.host_claim` API and added host-name and controller/pilot seat ownership assertions; focused host tests still pass 3/3 without script/parse errors. Fresh CI is required for this follow-up. Claude's next assigned slice is waiting-room pilot start and host/guest cancellation/listen-failure regressions on a separate main-based branch; #97 remains open. No merge or human gate completion.
+
+- **2026-10-11 — Codex, host startup coverage:** On `codex/host-startup-tests` from main `909efaf`, added three real entry-point tests for explicit direct hosting, implicit co-op hosting, and the waiting-room host choosing the controller desk. They check one authoritative server/session, one voice pipeline, and one server-owned beacon; the room-to-desk transition reuses its listener and beacon. Registered the file in the socket lane and refreshed the declared-test inventory. Windows Godot 4.7.2: focused host startup 3/3, socket lane 136/136, docs 2/2; project-status current and diff hygiene pass. No gameplay, RNG, save or wire changes. Full suite on this branch and human gates remain unverified; #97 stays open. Separate #306 at `b24b239` has all 13 CI jobs green. Claude terminal MCP connection is confirmed by shared-board acknowledgment #7; primary dirty checkout preserved. Next: independent Claude review and current-head full CI before integration.
+
+- **2026-10-10 — Codex cloud, startup coverage:** Added four real loopback tests through Main.start/_join/_enter_game/_seat: password-bearing direct co-pilot join, unseated late join plus host-confirmed controller claim, waiting-room host start, and explicit 3D co-pilot seating. Five startup tests pass; socket lane 137 pass; docs 2 pass; generated-status and hygiene checks pass. No gameplay, Session, RNG, save or wire-format changes. Regenerated only the declared-test inventory. Published branch `codex/startup-entry-tests`, implementation commit `a1a4b91`, base `909efaf`. Draft PR creation was refused by GitHub API (`Forbidden`); Claude can create it locally with title “Test real multiplayer join and seat startup transitions” and the validation above. Claude review/current-head CI and remaining #97 entry paths are still required. Known Godot shutdown diagnostics remain; physical voice/controller/two-machine gates are unperformed. This cloud board cannot reach Claude's local board; use this committed handoff.
 
 - **2026-10-11 — Codex, CI follow-up:** Windows MCP CI passed at a73f8a4. Linux exposed a test assumption:
   GNU timeout starts successfully and exits 127 for a missing child, while Windows raises a spawn error.
