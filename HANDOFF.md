@@ -8,7 +8,7 @@
   project-status inventory current; git diff check clean. Manifest records commit, dirty state, dimensions and hashes.
 - Agent image inspection found the keyboard-hint footer clipped at 1024x768. This is an outstanding bounded UI follow-up,
   not a passed visual gate. Human input/read-aloud/controller/exported-build checks remain unperformed.
-- Full game suite and Linux rendering were not run locally; CI must establish fresh Linux rendering evidence.
+- Final clean-commit recapture produced seven PNGs, then the 2560x1080 safe capture failed allocating PNG memory. Windows reported only about 61 MB free virtual memory; process inspection also failed for memory. The prior dirty-tree run produced all eight images. Runner withheld the success manifest on failure. Fresh CI rendering is required before accepting P09. Full game suite and Linux rendering were not run locally.
 - Next: review this tooling PR; then fix lobby small-height access with focused tests and before/after captures.
   #293, #297, #298 and #299 remain separate review decisions; no merge performed. Primary crew-map changes preserved.
 
