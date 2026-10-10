@@ -28,12 +28,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
-| **Task** | Idle. The docs PRs are folded and closed; the next task is open (below). |
-| **Branch / PR** | `ccr-958eacf7-ugmwgs` / [#293](https://github.com/jawaman14/skyrunner/pull/293) (draft, waiting for the owner to merge) |
-| **Last checkpoint** | The commit that adds this baton. Full suite on main: 1,027/0; `test_docs` 2/2. |
-| **State** | Nothing half-finished. 31 Codex PRs remain open, mostly stacked and conflicting with `main` (`github_pr_triage`). |
-| **Next step** | Owner to merge #293. Then, unless the owner picks otherwise: rebase the employed-opening stack (#250 → #251 → #252 → #253 → #255) onto `main` as product step 1, or fix review findings 1–2 on a new branch off `main`. |
-| **Watch out** | Keep branches `codex/gameplay-inspiration` (#250's base), `codex/draft-completion-review` (#274's base) and `codex/gameplay-feature-audit` (#247's base) until those PRs are rebased onto `main`. |
+| **Task** | Triage every open issue (90) and open PR (31 Codex + #293): status against `main`, recommendation (owner request) |
+| **Branch / PR** | `ccr-958eacf7-ugmwgs` / [#293](https://github.com/jawaman14/skyrunner/pull/293) (draft; CI green at `5266993`) |
+| **Last checkpoint** | `5266993` (docs PRs closed). Nothing triaged yet. |
+| **State** | In progress: gathering issue and PR data. |
+| **Next step** | Write the triage to `docs/BACKLOG.md` (a living register, not a dated report) and ask the owner which actions to take. Close nothing without the owner's say-so. |
+| **Watch out** | Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review` and `codex/gameplay-feature-audit` (bases of #250, #274 and #247). |
 
 ## Taking over (checklist for the incoming AI)
 
