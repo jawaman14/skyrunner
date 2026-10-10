@@ -32,6 +32,10 @@ const CLEAR_RADIUS_M := 15.0  ## obstacle search radius under the aircraft for t
 ## allows for drift in the climb, not for a turn away.
 const CORRIDOR_HALF_M := 90.0
 const CORRIDOR_SPLAY := 0.125
+## A takeoff that reaches the goal only counts if the run was valid: airborne within the usable strip, 15 m
+## reached, and the CG never below an obstacle top once clear of the strip (the gear hangs about a metre under the
+## CG, so 0 is the least that is clear at all, not a comfortable margin).
+const MIN_CLEARANCE_M := 0.0
 ## Holding the line in the climb: heading back toward it at this many degrees per metre off it, at most the cap.
 const LINE_INTERCEPT := 0.1
 const LINE_INTERCEPT_MAX := 15.0
@@ -103,6 +107,42 @@ static func hold_line_aileron(bot: PilotBot, st: FlightModel.FlightState, runway
 	return clampf(0.04 * (bank_t - st.roll) - 0.012 * st.p_dps, -0.7, 0.7)
 
 
+## Did a takeoff that reached 3 km along the line also make a valid run? The strip's usable length is what is
+## ahead of the start of the run (the run starts 25 m in from the threshold). Returns {valid, reason}; the reason
+## lists every failed condition, and the distances stay in the result either way.
+static func takeoff_verdict(liftoff_m, to_15m_m, min_clear_m, usable_m: float) -> Dictionary:
+	var why := []
+	if liftoff_m == null:
+		why.append("never lifted off")
+	elif liftoff_m > usable_m:
+		why.append("lifted off %.0f m along, past the %.0f m of strip ahead of the start of the run" % [liftoff_m, usable_m])
+	if to_15m_m == null:
+		why.append("never reached 15 m above the ground")
+	if min_clear_m == null:
+		why.append("no airborne obstacle clearance was measured")
+	elif min_clear_m < MIN_CLEARANCE_M:
+		why.append("the CG passed %.1f m below an obstacle top" % -min_clear_m)
+	return {"valid": why.is_empty(), "reason": "; ".join(why)}
+
+
+## Touchdowns seen by a landing trial: every air-to-ground transition, so a bounce or a go-around that touches
+## first is not mistaken for the final touchdown.
+class TouchdownLog:
+	var events: Array = []  ## each [x, y, sink fpm (positive down)]
+	var _was_on_ground := false
+
+	func sample(on_ground: bool, x: float, y: float, last_touchdown_fpm: float) -> void:
+		if on_ground and not _was_on_ground:
+			events.append([x, y, absf(last_touchdown_fpm)])
+		_was_on_ground = on_ground
+
+	func first_event() -> Array:
+		return events[0] if not events.is_empty() else []
+
+	func last_event() -> Array:
+		return events[events.size() - 1] if not events.is_empty() else []
+
+
 ## Did the session end the flight (crash or arrest)?
 static func _ended(s: Session) -> bool:
 	return s.phase in ["crashed", "busted"]
@@ -165,9 +205,17 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 		if verdict != "":
 			stop = verdict
 			break
-	r.status = "pass" if stop == "3km" else ("inconclusive" if stop == "left corridor" else "fail")
+	r.status = "inconclusive" if stop == "left corridor" else "fail"
+	r.usable_m = af.length - 25.0
+	r.invalid_reason = ""
+	if stop == "3km":
+		var v := takeoff_verdict(liftoff, to_15m, min_clear, r.usable_m)
+		r.status = "pass" if v.valid else "fail"
+		r.invalid_reason = v.reason
 	r.stop = stop
-	if stop == "left corridor":
+	if stop == "3km" and r.invalid_reason != "":
+		r.outcome = "reached 3 km but the run was not valid: " + r.invalid_reason
+	elif stop == "left corridor":
 		r.outcome = "left the straight-departure corridor %.0f m along the line, %.0f m %s of it (limit %.0f m)" % [
 			dep.along, absf(dep.cross), "right" if dep.cross > 0 else "left", corridor_m(dep.along)]
 	else:
@@ -273,7 +321,7 @@ static func landing(aircraft: String, code: String, load: String, end: int) -> D
 	var t0 := s.time
 	var t: Array = af.threshold(end)
 	var h := deg_to_rad(ap.hdg)
-	var touchdown := []
+	var tdlog := TouchdownLog.new()
 	var stop := "timeout"
 	while s.time - t0 < LANDING_MAX_S:
 		if bot.approach == null and bot.phase in ["climb", "enroute"]:
@@ -290,8 +338,7 @@ static func landing(aircraft: String, code: String, load: String, end: int) -> D
 			stop = "crash"
 			break
 		var st := s.state
-		if touchdown.is_empty() and st.on_ground:
-			touchdown = [st.x, st.y, absf(s.fm.last_touchdown_fpm)]  # sink rate, positive down
+		tdlog.sample(st.on_ground, st.x, st.y, s.fm.last_touchdown_fpm)
 	var ok: bool = s.phase == "parked" and s.location == code
 	r.status = "pass" if ok else "fail"
 	r.stop = stop
@@ -300,11 +347,18 @@ static func landing(aircraft: String, code: String, load: String, end: int) -> D
 	r.touchdown_from_threshold_m = null
 	r.touchdown_fpm = null
 	r.roll_m = null
-	if not touchdown.is_empty():
-		r.touchdown_from_threshold_m = (touchdown[0] - t[0]) * sin(h) + (touchdown[1] - t[1]) * cos(h)
-		r.touchdown_fpm = touchdown[2]
+	r.first_touchdown_from_threshold_m = null
+	r.touchdown_events = tdlog.events.size()
+	if not tdlog.events.is_empty():
+		# the reported touchdown is the FINAL one (where the successful landing's roll began); the first is kept
+		# alongside it, because a go-around or a bounce can touch down earlier
+		var fin := tdlog.last_event()
+		r.touchdown_from_threshold_m = (fin[0] - t[0]) * sin(h) + (fin[1] - t[1]) * cos(h)
+		r.touchdown_fpm = fin[2]
+		var fst := tdlog.first_event()
+		r.first_touchdown_from_threshold_m = (fst[0] - t[0]) * sin(h) + (fst[1] - t[1]) * cos(h)
 		if ok:
-			r.roll_m = PyMath.hypot(s.state.x - touchdown[0], s.state.y - touchdown[1])
+			r.roll_m = PyMath.hypot(s.state.x - fin[0], s.state.y - fin[1])
 	r.seconds = s.time - t0
 	s.dispose()
 	return r
@@ -334,7 +388,7 @@ static func _num(v, fmt := "%.0f") -> String:
 
 ## Markdown: one row per trial, in job order.
 static func table(results: Array) -> String:
-	var lines := ["| field | end | hdg | aircraft | load | test | result | liftoff m | 15 m at | min clear m | along m | max off-line m | touchdown m | sink fpm | roll m | go-arounds | outcome |",
+	var lines := ["| field | end | hdg | aircraft | load | test | result | liftoff m | 15 m at | min clear m | along m | max off-line m | final touchdown m | sink fpm | roll m | go-arounds | outcome |",
 		"|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
 	for r in results:
 		lines.append("| %s | %d | %03.0f | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % [r.field, r.end, r.heading,

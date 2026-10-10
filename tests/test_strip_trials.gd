@@ -25,6 +25,42 @@ func test_takeoff_holds_the_line_and_stops_at_3km_on_both_terrains() -> void:
 		check(r.to_15m_m != null and r.to_15m_m > r.liftoff_m, tag)
 		check(r.min_clear_m != null and r.min_clear_m > 15.0, "%s climb-out clearance %s m" % [tag, r.min_clear_m])
 		check_eq(r.lateral, StripTrials.LATERAL_MODE)
+		check_eq(r.invalid_reason, "", tag)
+		check_eq(r.usable_m, af.length - 25.0)
+		check(r.liftoff_m <= r.usable_m, "%s lifted off inside the usable strip" % tag)
+
+
+## Reaching 3 km is not enough: the run has to lift off inside the strip, get 15 m up and never put the CG under an
+## obstacle top. Each failure is named, and the measured distances stay in the result.
+func test_a_takeoff_that_reaches_3km_still_needs_a_valid_run() -> void:
+	var usable := 1775.0
+	check_eq(StripTrials.takeoff_verdict(223.0, 422.0, 136.0, usable), {"valid": true, "reason": ""})
+	var late := StripTrials.takeoff_verdict(2100.0, 2300.0, 40.0, usable)
+	check(not late.valid, "lifting off after the strip is over is not a takeoff from it")
+	check("past the 1775 m of strip" in late.reason, late.reason)
+	var none := StripTrials.takeoff_verdict(null, null, 40.0, usable)
+	check(not none.valid and "never lifted off" in none.reason and "never reached 15 m" in none.reason, none.reason)
+	var low := StripTrials.takeoff_verdict(300.0, 400.0, -2.5, usable)
+	check(not low.valid and "2.5 m below an obstacle top" in low.reason, low.reason)
+	var blind := StripTrials.takeoff_verdict(300.0, 400.0, null, usable)
+	check(not blind.valid and "no airborne obstacle clearance" in blind.reason, blind.reason)
+	var both := StripTrials.takeoff_verdict(2100.0, null, -1.0, usable)
+	check_eq(both.reason.count(";"), 2, "every failed condition is listed: " + both.reason)
+	check(StripTrials.takeoff_verdict(usable, 500.0, StripTrials.MIN_CLEARANCE_M, usable).valid, "the limits themselves are valid")
+
+
+## A bounce, or a go-around that touches first, must not be reported as the final touchdown.
+func test_touchdown_log_keeps_the_first_and_the_final_touchdown() -> void:
+	var tdlog := StripTrials.TouchdownLog.new()
+	check(tdlog.first_event().is_empty() and tdlog.last_event().is_empty())
+	tdlog.sample(false, 0.0, 0.0, 0.0)
+	tdlog.sample(true, 100.0, 5.0, -300.0)  # first touchdown, a firm one
+	tdlog.sample(true, 120.0, 5.0, -300.0)  # rolling: not a new touchdown
+	tdlog.sample(false, 150.0, 5.0, -300.0)  # bounced
+	tdlog.sample(true, 220.0, 6.0, -90.0)  # final touchdown
+	check_eq(tdlog.events.size(), 2)
+	check_eq(tdlog.first_event(), [100.0, 5.0, 300.0])
+	check_eq(tdlog.last_event(), [220.0, 6.0, 90.0], "final one, sink rate positive down")
 
 
 ## The hold uses PilotBot's own bank law: back toward the runway heading, back toward the line, and nothing to do on it.
