@@ -9,6 +9,8 @@ var sites: Array
 var _walking_footprints: Array = []
 var _vehicle_footprints: Array = []
 var _vehicle_edges := {}  ## immutable map geometry; checkpoint penalties are never cached
+var _component_graph: RoadGraph
+var _components := {}
 
 func _init(world_: World, sites_: Array) -> void:
 	world = world_
@@ -127,24 +129,49 @@ func verified_records() -> Array:
 
 ## Nearest usable authored node, with deterministic ties and bounded detours.
 func _vehicle_connector(graph: RoadGraph, at: Vector2, arriving := false) -> Dictionary:
+	var failure := {"reachable": false, "points": PackedVector2Array(), "reason": "No nearby checked vehicle access.", "index": -1}
+	for candidate in _vehicle_candidates(graph, at):
+		var connector := _vehicle_leg(graph, at, candidate.index, arriving)
+		if connector.reachable: return connector
+		failure.reason = connector.reason
+	return failure
+
+func _vehicle_candidates(graph: RoadGraph, at: Vector2) -> Array:
 	var candidates := []
 	for i in graph.nodes.size():
 		var distance := at.distance_to(graph.nodes[i])
 		if distance <= MAX_CONNECTOR_M: candidates.append({"index": i, "distance": distance})
 	candidates.sort_custom(func(a, b): return a.index < b.index if a.distance == b.distance else a.distance < b.distance)
-	var failure := {"reachable": false, "points": PackedVector2Array(), "reason": "No nearby checked vehicle access.", "index": -1}
-	for candidate in candidates:
-		var point: Vector2 = graph.nodes[candidate.index]
-		var connector := path(point, at, true) if arriving else path(at, point, true)
-		if not connector.reachable:
-			failure.reason = connector.reason
-			continue
-		if RoadGraph.length(connector.points) > MAX_CONNECTOR_M:
-			failure.reason = "Access detour exceeds the local connector limit."
-			continue
-		connector.index = candidate.index
-		return connector
-	return failure
+	return candidates
+
+func _vehicle_leg(graph: RoadGraph, at: Vector2, index: int, arriving: bool) -> Dictionary:
+	var point: Vector2 = graph.nodes[index]
+	var connector := path(point, at, true) if arriving else path(at, point, true)
+	if connector.reachable and RoadGraph.length(connector.points) > MAX_CONNECTOR_M:
+		connector = {"reachable": false, "points": PackedVector2Array(), "reason": "Access detour exceeds the local connector limit."}
+	connector.index = index
+	return connector
+
+## Geometry-only connected components avoid repeated failed A* searches.
+## Dynamic penalties are still evaluated by the normal route search.
+func _vehicle_components(graph: RoadGraph, clear: Callable) -> Dictionary:
+	if _component_graph == graph and not _components.is_empty(): return _components
+	_component_graph = graph
+	_components.clear()
+	for start in graph.nodes.size():
+		if _components.has(start): continue
+		var queue := [start]
+		_components[start] = start
+		var cursor := 0
+		while cursor < queue.size():
+			var current: int = queue[cursor]
+			cursor += 1
+			for edge in graph.adj[current]:
+				var next: int = edge[0]
+				if _components.has(next) or not clear.call(graph.nodes[current], graph.nodes[next]): continue
+				_components[next] = start
+				queue.append(next)
+	return _components
 
 
 func checked_vehicle_route(graph: RoadGraph, from: Vector2, to: Vector2, penalty := Callable()) -> Dictionary:
@@ -167,7 +194,25 @@ func checked_vehicle_route(graph: RoadGraph, from: Vector2, to: Vector2, penalty
 			clear_edges[Vector4(b.x, b.y, a.x, a.y)] = allowed
 		return bool(clear_edges[key])
 	var network := graph.checked_route(graph.nodes[departure.index], graph.nodes[arrival.index], penalty, clear)
-	if not network.reachable: return network
+	if not network.reachable:
+		# Preserve existing successful choices. Only retry failed nearest-node
+		# pairs, using real edges and separately checked, <=120 m access legs.
+		var components := _vehicle_components(graph, clear)
+		var arrivals := {}
+		for start in _vehicle_candidates(graph, from):
+			var leg := _vehicle_leg(graph, from, start.index, false)
+			if not leg.reachable: continue
+			for finish in _vehicle_candidates(graph, to):
+				# A shared isolated node must not become an off-road shortcut.
+				if start.index == finish.index or components[start.index] != components[finish.index]: continue
+				if not arrivals.has(finish.index): arrivals[finish.index] = _vehicle_leg(graph, to, finish.index, true)
+				if not arrivals[finish.index].reachable: continue
+				departure = leg
+				arrival = arrivals[finish.index]
+				network = graph.checked_route(graph.nodes[start.index], graph.nodes[finish.index], penalty, clear)
+				break
+			if network.reachable: break
+		if not network.reachable: return network
 	var points: PackedVector2Array = departure.points.duplicate()
 	for leg in [network.points, arrival.points]:
 		for point in leg:
@@ -177,3 +222,5 @@ func checked_vehicle_route(graph: RoadGraph, from: Vector2, to: Vector2, penalty
 ## Rebuild after an explicit authoring/geometry change; simulation hazards use penalties.
 func invalidate_geometry() -> void:
 	_vehicle_edges.clear()
+	_components.clear()
+	_component_graph = null
