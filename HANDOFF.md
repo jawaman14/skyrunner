@@ -1,13 +1,14 @@
 <!-- standalone-mcp -->
 MCP implementation: [jawaman14/skyrunner-mcp](https://github.com/jawaman14/skyrunner-mcp). This game contains only the pinned connection launcher; make server changes in the separate repository.
 
-# Handoff: Claude ⇄ ChatGPT (Codex) relay
+# Handoff: Claude and ChatGPT (Codex)
 
-**Mode: relay.** The owner uses one AI until its tokens run out, then the other. Neither agent can see the other's
-chat, and a session can end without warning: keep this file's baton current in every commit. The planning inputs
-are the owner's [work split](docs/AGENT_WORK_SPLIT.md) and [allocation tracker](docs/AI_WORK_ALLOCATION.md)
-(tiers A/B/C, hard merge rules, lanes). If two sessions ever overlap on one checkout, use the MCP board
-([tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md)) and separate worktrees.
+**Mode: simultaneous, Claude leads** ([AGENTS.md](AGENTS.md)). Both AIs work at once on the owner's machine,
+each in its own linked worktree of the one canonical clone, coordinating through the MCP board
+([tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md)). Neither can see the other's chat, a session can end
+without warning, and the board does not leave the machine: keep this file's baton current in every commit. The
+planning inputs are the owner's [work split](docs/AGENT_WORK_SPLIT.md) and
+[allocation tracker](docs/AI_WORK_ALLOCATION.md) (tiers A/B/C, hard merge rules, lanes).
 
 `AGENTS.md` (conventions, commands, layout, lanes) is the rules file for both AIs; `CLAUDE.md` imports it. Code facts live
 in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the queue in
@@ -31,17 +32,18 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Codex cloud checkpoint; Claude remains the integration owner |
-| **Task** | Package A (road and loading access), one PR per slice from `main`. Merged: #302 (`1156136`, nearby road connections after dead ends; #270 closed). This PR (#301): district overview Q-return fix (#271 replayed); `test_hq_action_review` 9/9, 8/1 with the fix reverted. #296 (employed opening) is merged. |
-| **Branches / PRs** | **#301** `claude/district-overview-back` (ready, CI + review pending). **#304** docs-only wording after #296 (draft). **#300** lobby layout + screenshot matrix (needs a human look). Held: #244, #247, #269, #253. |
-| **Next step** | Merge #301 on green with Codex's review read. Then, one PR each from `main`: #265 (villa), #267 (FRM approach, creates `tools/road_access_components.gd`), #268, #272, #274, #275, #276; re-run `tools/logistics_routes.gd` at the end. Close #271 after #301. Then P05 (reference action-preview screen, Claude), #97 entry-path tests (Codex), trim `docs/ROADMAP.md` to the lane queue, gate register in PROJECT_STATUS.md. |
-| **Codex cloud task** | #97 join/seat startup tests on `codex/startup-entry-tests`, based on merged main `909efaf` (#301). Four new loopback entry-point regressions; tests/status/handoff only. Claude: review this branch and run current-head CI; the broader #97 matrix stays open. Preserve the Package A work listed above. |
-| **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The MCP board is per-machine; HANDOFF.md carries state between AIs. |
+| **Holder** | Claude (lead), from main `e384241`; Codex implements Tier C and reviews |
+| **Task** | This PR: AGENTS.md and this file say simultaneous mode, Claude leads, one canonical clone, short notes (owner, 11 Oct). |
+| **Branches / PRs** | Claude drafts: **#309** startup leave/rehost/join tests, **#310** planning-CSV import keep files (both 13/13 CI, reviewed by Codex, no blockers), **#311** strip-feasibility harness (head `4af1ea5`, Codex review pending), **#312** seat-picker cancel tests, **#303** P05 action-preview screen (needs a human look), **#304** docs after #296. Ready: **#305** shared connector node. Codex drafts: #300, #265, #267, #268, #272, #274, #275, #276; held: #244, #247, #253, #269. |
+| **Next step** | Owner: merge or hold #309/#310 and #305. Codex: review #311 at `4af1ea5` and #312; then take the next Tier C tasks Claude posts on the board (candidates: the rest of #97's entry paths, the CI screenshot job at four resolutions and both palettes, issue triage). Claude: integrate Package A in order (#265, #267, #268, #272, #274, #275, #276; re-run `tools/logistics_routes.gd` at the end), then P05. |
+| **Codex task** | Reviews above; Tier C tasks only as posted on the board. |
+| **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
 ## Taking over (checklist for the incoming AI)
 
 1. Read the MCP collaboration board, verify your checkout, then `git fetch origin`, `git status` and
-   `git log --oneline -8`. Use your own linked worktree; never check out a branch under another active agent.
+   `git log --oneline -8`. Use your own linked worktree of the canonical clone (AGENTS.md); never check out a
+   branch under another active agent.
    - If the branch has commits **newer than the baton's last checkpoint**, the previous AI was cut off after
      committing: read those commits (messages and diff) before anything else.
    - If the branch or PR is merged or closed, start the next step on a new branch off `main`.
@@ -89,10 +91,14 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 - **2026-10-10 (cloud session):** Begin collaboration using the documented Claude/Codex split. Claude is on the owner’s local computer; this cloud board is separate. Use published branches and committed handoffs across machines; local notes do not reach Claude’s board.
 
+- **2026-10-11 (later):** Claude Code leads: it splits the baton into tasks, keeps Tier A/B and integration, and
+  posts up to three Tier C tasks at a time to Codex; Codex implements those and reviews every Claude PR. One
+  canonical clone on this machine, short board notes (AGENTS.md). Supersedes the earlier request for Codex to lead.
+
 - **2026-10-11:** Claude and Codex may collaborate simultaneously through the same local MCP implementation.
   Use shared file claims, persistent notes, per-checkout Godot locking and separate linked worktrees.
 
-- **2026-10-10:** Claude and ChatGPT/Codex work in relay (above). This file is how they hand over.
+- **2026-10-10:** Claude and ChatGPT/Codex work in relay. Superseded by the two 2026-10-11 decisions above.
 - **2026-10-10:** Approved BACKLOG.md's four proposed actions (restore lost fixes, integrate the clean stacks, rebase
   the employed opening, close duplicate/superseded/done issues).
 - **2026-10-10:** Close the documentation PRs (#241, #242, #243, #246, #249, #264, #273). Done; branches kept.
@@ -103,6 +109,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Open questions
 
+- **[Claude → owner, 2026-10-11] A standing merge rule?** Today every merge needs your word in that agent's chat,
+  so you relay approvals between them. A rule here would end that, for example: "either AI may merge a PR that is
+  not Tier A when CI is green on its exact head and the other AI's review found no blockers".
 - **[Claude → owner, 2026-10-10] Rebasing the gameplay stacks.** The docs PRs are closed. Next, rebase the
   gameplay stacks onto `main` one at a time (the employed opening first, then logistics loading endpoints
   #235/#237/#265/#267/#268/#274/#276)? Each becomes one clean PR into `main`.
@@ -110,6 +119,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+- **2026-10-11 — Claude, collaboration docs (owner: Claude leads):** AGENTS.md and this file now say
+  simultaneous mode instead of relay, who leads, the canonical clone (the board is per clone: a second clone on
+  the same machine had its own empty board), note format, authority and one heavy Godot job at a time. Docs only;
+  `docs` tests left to CI. Next: Codex's heartbeat to a 30-60 minute fallback (Codex or owner), and the
+  skyrunner-mcp board-path override and machine-wide Godot lock (separate PR there).
 
 - **2026-10-11 — Claude, waiting-room startup coverage (#97, assigned by Codex):** On `claude/startup-room-tests`
   from main `909efaf`, added `tests/test_startup_room.gd` (socket lane): through the real `Main._open_room` /

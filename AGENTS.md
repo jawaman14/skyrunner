@@ -2,11 +2,28 @@
 
 This is the single rules file. `CLAUDE.md` only imports it, so both agents read the same text.
 
-**Working mode: relay.** The owner runs one AI until its tokens run out, then the other. Start every session with
-[HANDOFF.md](HANDOFF.md) ("Taking over") and keep its baton current in every commit you push. If two sessions
-ever overlap on one checkout, use the MCP board (`skyrunner_collaboration_start`, claims, notes; see
-[tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md)) and separate linked worktrees. Claims coordinate; they
-do not authorize anything.
+**Working mode: simultaneous, Claude Code leads** (owner, 11 October 2026). Both agents work at the same time.
+Claude Code turns the [HANDOFF.md](HANDOFF.md) baton into tasks, keeps Tier A and B (below) and posts at most three
+Tier C tasks at a time to Codex, each with a goal, base SHA, allowed files, test command and done-when. Codex
+implements those in parallel and reviews every Claude PR at its exact head; Claude reviews Codex's. Start every
+session with HANDOFF.md ("Taking over") and the board, and keep the baton current in every commit you push.
+
+**One clone, one board.** The MCP board (`skyrunner_collaboration_start`, claims, notes; see
+[tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md)) is a file in the clone's Git directory, so only linked
+worktrees of the same clone share it. On the owner's machine the canonical clone is
+`%USERPROFILE%\Documents\ChatGPT\skyrunner`: work in your own linked worktree of it (Claude in `~/.claude-worktrees/`,
+Codex in `~/.codex/worktrees/`), never in a second clone or in another agent's worktree. Codex cloud and other
+machines have no board; they use pushed branches and the committed HANDOFF.md.
+
+**Board etiquette.** One owner id per session (`claude-<session id>`, `codex-<thread id>`). A claim is the
+acknowledgement: no notes that only say "ack". Notes stay under about 600 characters, as
+`task | branch@sha | tests run (pass/total) | not run | PR | next or ask`; the detail goes in the PR body. Claims
+and notes coordinate; they never authorize. Merging, closing issues and anything published need the owner's word
+in that agent's own chat, or a standing rule under **Owner decisions** in HANDOFF.md.
+
+**Heavy jobs.** One full suite, cold import or balance run on the machine at a time: the server's Godot lock is per
+checkout, so two worktrees can still run together, and Windows has run out of commit memory doing it. Say on the
+board when you start and finish one, and reuse CI results for a SHA instead of rerunning them locally.
 
 **Lanes** ([docs/AGENT_WORK_SPLIT.md](docs/AGENT_WORK_SPLIT.md), tracker [docs/AI_WORK_ALLOCATION.md](docs/AI_WORK_ALLOCATION.md)):
 Tier A (Session layers, RNG, goldens, saves, sim and map geometry, flight, balance) is Claude Code's. Tier B
@@ -20,7 +37,7 @@ this repo only holds the pinned launcher (`tools/mcp/`, `.mcp.json`). Server cha
 in `tools/mcp/launch.py` in a reviewed commit.
 
 Pure GDScript on Godot 4.7.2. No native code, no plug-ins to build. See README.md for the game,
-docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the relay.
+docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the baton.
 
 ## Commands
 ```bash
