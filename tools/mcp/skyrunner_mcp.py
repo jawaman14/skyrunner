@@ -240,7 +240,9 @@ def _summarize_tests(text: str, code: int | None) -> dict:
     s["script/parse errors"] = script_errors
     if code is not None:
         s["exit code"] = code if code != 124 else "124 (timed out)"
-    s["ok"] = code == 0 and script_errors == 0 and bool(total) and int(total[-1][1]) == 0
+    s["ok"] = code == 0 and script_errors == 0 and bool(total) and int(total[-1][0]) > 0 and int(total[-1][1]) == 0
+    if total and int(total[-1][0]) == 0 and int(total[-1][1]) == 0:
+        details.append("No tests ran; check the filter, lane and shard before treating this as verification.")
     s["details"] = details
     return s
 
@@ -873,6 +875,8 @@ async def github_pr_merge(
                         f"checked it. Re-check CI on the new head.")
     if p.get("mergeable") is False or p.get("mergeable_state") == "dirty":
         raise ToolError(f"#{number} conflicts with {p['base']['ref']}: merge the base into the branch, resolve, and re-run CI.")
+    if p.get("mergeable") is not True:
+        raise ToolError(f"#{number} has unknown mergeability; wait for GitHub to compute it and check again.")
     runs = (await gh().get("actions/runs", head_sha=expected_head_sha, per_page=5)).get("workflow_runs", [])
     if not runs:
         raise ToolError(f"No CI run for {expected_head_sha[:8]}; won't merge unchecked code.")
@@ -880,6 +884,8 @@ async def github_pr_merge(
     if run["status"] != "completed":
         raise ToolError(f"CI run {run['id']} is still {run['status']}; wait for it to finish.")
     jobs = (await gh().get(f"actions/runs/{run['id']}/jobs", per_page=100)).get("jobs", [])
+    if not jobs:
+        raise ToolError(f"CI run {run['id']} returned no jobs; won't merge without job evidence.")
     bad = [f"{j['name']}: {j['conclusion']}" for j in jobs if j["conclusion"] not in ("success", "skipped")]
     if run["conclusion"] != "success" or bad:
         raise ToolError(f"CI is not green on {expected_head_sha[:8]} (run {run['id']}: {run['conclusion']}): {'; '.join(bad) or 'see the run'}.")

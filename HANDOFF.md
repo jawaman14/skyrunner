@@ -27,8 +27,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Claude, 2026-10-10 |
-| **Task** | Backlog actions done; two PRs open for the owner's call |
+| **Holder** | Codex, 2026-10-11 |
+| **Task** | MCP safeguards on an isolated checkout of #293; regression checks pass |
 | **Branches / PRs** | **#296** `claude/employed-pilot-opening` (employed opening; CI running; owner asked for the rebase only, not the merge). **#297** `claude/fix-restored-review-findings` (fixes Codex's 3 review findings on the merged #295; draft, CI running). **#293** `ccr-958eacf7-ugmwgs` (docs, handoff, MCP server; draft). |
 | **Next step** | Owner: decide on #296 (merge?), #297 (merge: it fixes a real autopilot bug on `main`), #293. Then: close #250/#251/#252/#255 once #296 merges and update the "awaiting merge" wording (DESIGN §0/§21, ROADMAP). Then package A (road/loading access, #271 first). |
 | **Watch out** | `main` currently has the autopilot cascade bug (P1) until #297 merges. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell); use `pgrep Godot_v4`. Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit`. |
@@ -98,6 +98,14 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+### 2026-10-11 — Codex (MCP safeguards)
+- Reject zero-test success, unknown mergeability, and empty CI job lists.
+- Added dependency-free AST regression checks: seven cases across two test methods pass.
+- Based on #293 at d276eefa; primary crew-map checkout preserved.
+- Godot import, project-status check and docs tests (2/2) passed. Full suite and MCP protocol integration unverified. No PR merged.
+- Next: complete docs/status checks, publish a draft dependent PR, then rebase after #293 merges.
+
 
 ### 2026-10-10 (latest) — Claude (review findings on #295)
 - Codex's automated review of #295 posted three findings two minutes after CI went green; I merged without reading
