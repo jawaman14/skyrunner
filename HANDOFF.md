@@ -1,15 +1,21 @@
 # Current handoff
-## Current task: P09 screenshot matrix — Codex, 2026-10-11
+## Current task: P09 screenshot matrix and lobby access — Codex, 2026-10-11
 
 - Branch: `codex/screenshot-matrix`, based on `main` at `ee7b0914ca62c933497ddbccb891e1699de0ab3e`.
 - Added a Python runner and beta CI job for eight representative lobby captures: four resolutions, neon/safe palettes.
   Existing UI capture fixtures now accept palette and exact viewport dimensions. SubViewport rendering avoids desktop window-size limits.
 - Validation: eight PNGs with exact dimensions; Godot import clean; through MCP, frontend 14/14 and docs 2/2 passed,
   project-status inventory current; git diff check clean. Manifest records commit, dirty state, dimensions and hashes.
-- Agent image inspection found the keyboard-hint footer clipped at 1024x768. This is an outstanding bounded UI follow-up,
-  not a passed visual gate. Human input/read-aloud/controller/exported-build checks remain unperformed.
+- Agent image inspection found the keyboard-hint footer clipped at 1024x768. The lobby now keeps hints in a fixed footer,
+  with a vertically scrolling card that follows keyboard focus. A new real-layout regression checks footer bounds and
+  visibility of focused first/join/Fly fields at all four matrix resolutions. MCP: lobby_layout 1/1 and docs 2/2 passed;
+  source inventory regenerated and current. The 1024x768 neon follow-up screenshot was captured and inspected: hints visible.
+  Human input/read-aloud/controller/exported-build checks remain unperformed.
 - Final clean-commit recapture produced seven PNGs, then the 2560x1080 safe capture failed allocating PNG memory. Windows reported only about 61 MB free virtual memory; process inspection also failed for memory. The prior dirty-tree run produced all eight images. Runner withheld the success manifest on failure. Fresh CI rendering is required before accepting P09. Full game suite and Linux rendering were not run locally.
-- Next: review this tooling PR; then fix lobby small-height access with focused tests and before/after captures.
+- Latest broader frontend attempt stopped before running tests with Godot alloc_static memory exhaustion; a fresh-worktree
+  import also failed on image allocations. Earlier frontend 14/14 results above precede this lobby change. Full fresh CI
+  and the complete updated screenshot matrix remain required; the focused checks used the existing imported worktree.
+- Next: review this PR and its fresh CI screenshot artifacts; complete human keyboard/controller/visual acceptance.
   #293, #297, #298 and #299 remain separate review decisions; no merge performed. Primary crew-map changes preserved.
 
 The authoritative current state is [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
