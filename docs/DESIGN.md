@@ -664,6 +664,29 @@ The Task Force, 80% reach The Hearings, 55% reach Last Flight and 40% finish (BA
 
 **Campaign polish (7 October 2026).** Phone > Chapter guidance and history retains briefings and recorded outcomes. Successful island delivery, actual casino ownership and timely evacuation are distinct from interception or losing the house. Unavailable factions waive unfinished goals without fabricated counters. Last Flight keeps its wealth and consecutive clean-case goals; there is no compulsory finale flight. Validation evidence for this polish is in the pull requests that introduced it (#229, #230, #231); a human branch walkthrough is still pending.
 
+**The employed opening [done, October 2026]** (`employment_opening.gd`). A fresh story game no longer starts
+already smuggling. It opens with a prelude, labelled EMPLOYMENT in the briefing and journal, before chapter 1:
+
+| Stage | Title | What happens |
+|---|---|---|
+| 0 | On the payroll | Two ordinary supply deliveries for Costa Brava Air Services, flown in its Cessna (`c172p`), HAR ↔ VAL |
+| 1 | An unusual customer | One request for sealed cases and no questions: suspicious, but with no contraband flag |
+| 2 | No more pretending | One disclosed marijuana delivery. The route goes to the nearest bush or shady strip with at least 400 m of runway and no police presence, not a customs airport. You may postpone it, but there is no legitimate-only branch |
+
+- *Ownership:* the aircraft is on loan, not owned (the owned fleet starts empty). Buying it costs a provisional
+  **$18,000**, which applies only on this path; every other mode and every old save keeps the roster price. The
+  hangar preview and the purchase command use the same price (`Session.aircraft_purchase_price`). Buying
+  another aircraft returns the loan, and the Cessna is not free to take back. The first purchase is recorded in the
+  story journal.
+- *Pay:* the existing cargo and contraband formulas. There is no employer commission, wage or company-funded fuel
+  yet, and the price has not been pacing-tested [open].
+- *Compatibility:* only an explicit fresh story start opts in. `Story.new` and saves from before the opening keep
+  their chapters. `--chapter N` skips the prelude first (`Story.select_chapter`). Open mode and the four flying
+  lessons are unchanged. A saved unfinished employer flight is offered again after loading rather than restored
+  in flight, because saves are written parked (see `StrategicSave`).
+- *Still open:* unlocks by money, reputation and activity as an alternative to the campaign, the employer's
+  identity and pay structure, and a human walkthrough for pacing.
+
 **How it works**
 - `Session.enable_system(key)` builds a system mid-game. Each system has always had its own random stream, so one that arrives in 1983 behaves as it would have from the start.
 - `Session.unlocked(key)` answers the finer locks: guns (gun runs, gun buys and sales), and which roles the hiring hall offers (soldiers, mules).
