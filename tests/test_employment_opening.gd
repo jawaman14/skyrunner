@@ -29,6 +29,20 @@ func _delivery(s) -> Jobs.Job:
 		s._complete_delivery(job, World.airfield(job.dest))
 	return job
 
+func test_explicit_chapter_selection_skips_only_the_opening() -> void:
+	for number in [1, 2, 12]:
+		session = _start()
+		session.story.select_chapter(number)
+		check_eq(session.story.chapter.num, number, "explicit chapter starts at requested chapter")
+		check(not session.story.employment.active(), "explicit selection skips employment")
+		check(not session.story.completed_all, "chapter twelve remains playable")
+		session.dispose()
+		session = null
+		session = _start()
+		session.story.select_chapter(0)
+		check(session.story.employment.active(), "default startup retains employment")
+
+
 func test_employed_start_and_staged_real_delivery_events() -> void:
 	session = _start()
 	check_eq(session.aircraft_key, "c172p", "immediate access to company aircraft")

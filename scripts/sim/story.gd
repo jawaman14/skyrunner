@@ -499,6 +499,15 @@ func tick(s) -> void:
 
 ## On to the next chapter (or the end): what finishing one does, and what a
 ## chapter jump (--chapter N) does.
+func select_chapter(number: int) -> void:
+	if number <= 0:
+		return
+	if employment != null and employment.active():
+		advance()
+	while index + 1 < number and not completed_all:
+		advance()
+
+
 func advance() -> void:
 	var s = sess
 	if employment != null and employment.active():
