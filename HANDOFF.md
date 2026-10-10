@@ -108,6 +108,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-11 — Codex, host startup coverage:** On `codex/host-startup-tests` from main `909efaf`, added three real entry-point tests for explicit direct hosting, implicit co-op hosting, and the waiting-room host choosing the controller desk. They check one authoritative server/session, one voice pipeline, and one server-owned beacon; the room-to-desk transition reuses its listener and beacon. Registered the file in the socket lane and refreshed the declared-test inventory. Windows Godot 4.7.2: focused host startup 3/3, socket lane 136/136, docs 2/2; project-status current and diff hygiene pass. No gameplay, RNG, save or wire changes. Full suite on this branch and human gates remain unverified; #97 stays open. Separate #306 at `b24b239` has all 13 CI jobs green. Claude terminal MCP connection is confirmed by shared-board acknowledgment #7; primary dirty checkout preserved. Next: independent Claude review and current-head full CI before integration.
+
 - **2026-10-11 — Codex, CI follow-up:** Windows MCP CI passed at a73f8a4. Linux exposed a test assumption:
   GNU timeout starts successfully and exits 127 for a missing child, while Windows raises a spawn error.
   The regression now disables the wrapper to exercise the intended startup-error cleanup on both hosts.

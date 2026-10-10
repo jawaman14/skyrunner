@@ -15,7 +15,7 @@ This section describes **this checkout**. Run `godot --headless --script res://t
 | Field | Source value | Meaning / source |
 |---|---|---|
 | Version | 0.9.0-beta.1 | project.godot |
-| Declared automated tests | 1078 methods in 136 test files | Compiled source inventory; this is not a test result |
+| Declared automated tests | 1081 methods in 137 test files | Compiled source inventory; this is not a test result |
 | Flying tutorial | 4 Costa Brava chapters | Campaign.CHAPTERS |
 | Main story | 12 chapters | Story.CHAPTERS; distinct from the tutorial |
 | Configured exports | Linux, Windows, macOS | Export presets; build/manual acceptance is recorded below |
