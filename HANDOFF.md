@@ -91,6 +91,10 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 - **2026-10-10 (cloud session):** Begin collaboration using the documented Claude/Codex split. Claude is on the owner’s local computer; this cloud board is separate. Use published branches and committed handoffs across machines; local notes do not reach Claude’s board.
 
+- **2026-10-11 (later still):** All work on Skyrunner goes through its MCP (board, Godot jobs, GitHub). Claude, as
+  lead, integrates: one merge at a time through `github_pr_merge`, after the author merges `main` in and the other
+  AI reviews the resolution (AGENTS.md, Merging).
+
 - **2026-10-11 (later):** Claude Code leads: it splits the baton into tasks, keeps Tier A/B and integration, and
   posts up to three Tier C tasks at a time to Codex; Codex implements those and reviews every Claude PR. One
   canonical clone on this machine, short board notes (AGENTS.md). Supersedes the earlier request for Codex to lead.
