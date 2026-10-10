@@ -28,12 +28,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
-| **Task** | Triage every open issue and PR (owner request) → [docs/BACKLOG.md](docs/BACKLOG.md) |
-| **Branch / PR** | `ccr-958eacf7-ugmwgs` / [#293](https://github.com/jawaman14/skyrunner/pull/293) (draft) |
-| **Last checkpoint** | The commit adding `docs/BACKLOG.md`. A combined test run of the 16 cleanly replaying PRs is in progress (scratch worktree, not pushed). |
-| **State** | Triage written; the combined-run result is still to be recorded in BACKLOG.md. Nothing has been closed or merged. |
-| **Next step** | Record the combined-run result. Then the owner approves BACKLOG.md's "Proposed actions"; the first is restoring the lost #80/#81/#82/#87 fixes from `368d171`/`bb377dd`. |
-| **Watch out** | `d91975f` silently reverted merged issue fixes: when a stack is rebased, check that nothing already on `main` disappears (`git diff` deletions). Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review` and `codex/gameplay-feature-audit`. |
+| **Task** | Carry out BACKLOG.md's four approved actions: (1) restore the lost #80/#81/#82/#87 fixes, (2) one integration PR for the clean stacks, (3) rebase the employed opening, (4) close duplicate, superseded and done issues |
+| **Branch / PR** | Docs on `ccr-958eacf7-ugmwgs` / #293. Each action gets its own branch off `main` (names recorded below as they are created). |
+| **Last checkpoint** | `03e4b5e` (BACKLOG.md). Combined test run of the clean stacks in progress. |
+| **State** | Starting (4). |
+| **Next step** | (4) close the issues → (1) restore branch and PR → (2) after the combined run → (3) rebase. |
+| **Watch out** | Check every rebase/merge for deletions of code already on `main` (the `d91975f` failure). |
 
 ## Taking over (checklist for the incoming AI)
 
@@ -73,6 +73,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 ## Owner decisions
 
 - **2026-10-10:** Claude and ChatGPT/Codex work in relay (above). This file is how they hand over.
+- **2026-10-10:** Approved BACKLOG.md's four proposed actions (restore lost fixes, integrate the clean stacks, rebase
+  the employed opening, close duplicate/superseded/done issues).
 - **2026-10-10:** Close the documentation PRs (#241, #242, #243, #246, #249, #264, #273). Done; branches kept.
 - **2026-10-10:** Fold the documentation PRs into the game's design docs (DESIGN.md, ROADMAP.md and others) before
   any PR clean-up. Done: see the Log.
