@@ -6,6 +6,8 @@
 # (a second read, for a little respect), pay(), stall().
 
 ~ start
+if campaign_chapter == 5 and campaign_chapter > 0
+	Sal Moretti: A loan is not a gift. Read the terms, and read what your man noticed. We remember the answer.
 if not family or family_gone
 	=> gone
 if tribute > 0

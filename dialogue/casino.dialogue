@@ -4,6 +4,8 @@
 # Reads and acts through Talk.State: {{cs_*}} fields and buy_stake(), collect(), launder(), pay_general(), buy_out(), evacuate().
 
 ~ start
+if campaign_chapter == 8 and campaign_chapter > 0
+	Lenny Vance: Buying the house and washing cash are separate business. Keep an eye on the street; if it turns, the launch is your way out.
 if not casino
 	Radio: No answer at the Cielo. Perhaps there is nothing to ring.
 	=> END
@@ -59,7 +61,7 @@ else
 - "How is the house doing?"
 	=> word
 - That's all.
-	{{manager}}: [[Come and see the show.|The Cielo never closes.|Mind the General's people on the way out.]]
+	{{manager}}: [[Come and see the show.|Enjoy it while the lights are on.|Mind the General's people on the way out.]]
 	=> END
 
 ~ word

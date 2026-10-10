@@ -171,8 +171,8 @@ class Kit:
 		root.add_child(mi)
 
 	## Low-poly hose, merged into the existing rubber/black surface without collision.
-	func hose(points: Array[Vector3], radius := 0.035) -> void:
-		var t := _tool("black")
+	func hose(points: Array[Vector3], radius := 0.035, key := "black") -> void:
+		var t := _tool(key)
 		for i in points.size() - 1:
 			var axis := (points[i + 1] - points[i]).normalized()
 			var side := axis.cross(Vector3.FORWARD).normalized() * radius
@@ -380,7 +380,7 @@ static func showroom(k: Kit, c: Vector3, w := 14.0, d := 9.0) -> void:
 	k.box(c + Vector3(0, 4.15, 0), Vector3(w + 0.8, 0.3, d + 0.8), "concrete_dark")  # roof
 	k.box(c + Vector3(0, 0.45, -d / 2), Vector3(w, 0.9, 0.3), "white")  # the sill
 	k.box(c + Vector3(0, 2.4, -d / 2), Vector3(w - 0.6, 2.7, 0.1), "glass")  # the show window
-	k.box(c + Vector3(0, 3.6, -d / 2 - 0.25), Vector3(w * 0.7, 0.9, 0.1), "neon", false)  # the sign board
+	k.box(c + Vector3(0, 3.6, -d / 2 - 0.25), Vector3(w * 0.7, 0.9, 0.1), "pump_cream", false)  # painted enamel sign
 	k.box(c + Vector3(w / 2 - 2.0, 0.55, d / 2 - 1.6), Vector3(2.6, 1.1, 1.0), "wood")  # the desk
 	k.prop("chairDesk", c + Vector3(w / 2 - 2.0, 0, d / 2 - 2.8), 0.0)
 	k.interact(c + Vector3(w / 2 - 2.0, 1.0, d / 2 - 3.2), "dealer", "The dealership: cars to drive, trucks for the stash runs", 2.6)
@@ -389,14 +389,14 @@ static func showroom(k: Kit, c: Vector3, w := 14.0, d := 9.0) -> void:
 	var px := c.x + w / 2 + 3.0
 	var pz := c.z - d / 2 - 2.0
 	k.box(Vector3(px, 7.0, pz), Vector3(0.5, 14.0, 0.5), "metal", false)
-	k.box(Vector3(px, 15.2, pz), Vector3(8.0, 3.0, 0.4), "neon", false)
+	k.box(Vector3(px, 15.2, pz), Vector3(8.0, 3.0, 0.4), "pump_cream", false)
 	var sign_text := Label3D.new()
 	sign_text.text = "CAR LOT"
 	sign_text.font_size = 96
 	sign_text.pixel_size = 0.014
 	sign_text.outline_size = 16
-	sign_text.modulate = Color(1, 1, 1)
-	sign_text.outline_modulate = Color(0.1, 0.0, 0.2)
+	sign_text.modulate = Color(0.22, 0.29, 0.27)
+	sign_text.outline_modulate = Color(0.81, 0.77, 0.64)
 	sign_text.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
 	sign_text.no_depth_test = false
 	sign_text.position = Vector3(px, 15.2, pz - 0.35)
@@ -421,6 +421,53 @@ static func hangar(k: Kit, c: Vector3, w := 18.0, d := 20.0, with_board := true)
 		k.box(c + Vector3(-w / 2 + 2.0, 0.6, d / 2 - 1.2), Vector3(3.0, 1.2, 1.2), "wood")  # workbench
 		k.interact(c + Vector3(-w / 2 + 2.0, 1.0, d / 2 - 2.6), "hangar", "Hangar: aircraft & gear")
 	k.lamp(c + Vector3(0, w / 2 - 1.5, 2.0), 2.0, 16.0)
+
+
+## Small analogue workshop set, contained in the existing bench/back-wall envelope.
+## Scenery: no repair stock, physics bodies, lights or random stream.
+static func workshop_tools(k: Kit, bench: Vector3) -> void:
+	# Faded steel chest with three drawer seams and plain pull handles.
+	k.box(bench + Vector3(0.62, 1.42, 0.12), Vector3(0.88, 0.44, 0.42), "drum_sage", false)
+	k.box(bench + Vector3(0.62, 1.65, 0.12), Vector3(0.94, 0.045, 0.46), "metal_rust", false)
+	for row in 3:
+		k.box(bench + Vector3(0.62, 1.28 + row * 0.12, -0.095), Vector3(0.8, 0.012, 0.012), "black", false)
+		k.box(bench + Vector3(0.62, 1.32 + row * 0.12, -0.11), Vector3(0.22, 0.025, 0.025), "metal", false)
+	# Compact cast vice: base, body, two jaws and hand screw.
+	k.box(bench + Vector3(-0.72, 1.235, -0.22), Vector3(0.38, 0.07, 0.34), "metal_rust", false)
+	k.box(bench + Vector3(-0.72, 1.35, -0.22), Vector3(0.22, 0.19, 0.24), "concrete_dark", false)
+	for side in [-1, 1]:
+		k.box(bench + Vector3(-0.72 + side * 0.12, 1.47, -0.22), Vector3(0.08, 0.1, 0.28), "metal", false)
+	k.box(bench + Vector3(-0.72, 1.34, -0.43), Vector3(0.04, 0.04, 0.19), "metal", false)
+	k.box(bench + Vector3(-0.72, 1.34, -0.52), Vector3(0.26, 0.025, 0.025), "metal", false)
+	# Timber wall rack and three simple hanging open-ended spanners.
+	k.box(bench + Vector3(0, 2.03, 0.96), Vector3(2.5, 0.65, 0.07), "wood", false)
+	for i in 3:
+		var x := -0.58 + i * 0.4
+		k.box(bench + Vector3(x, 2.03, 0.905), Vector3(0.035, 0.3, 0.025), "metal", false)
+		for side in [-1, 1]:
+			k.box(bench + Vector3(x + side * 0.045, 2.19, 0.905), Vector3(0.03, 0.08, 0.025), "metal", false)
+
+
+## Roof-mounted VHF aerial: mounted inside the existing tower footprint.
+static func vhf_aerial(k: Kit, at: Vector3) -> void:
+	k.box(at + Vector3(0, 0.05, 0), Vector3(0.5, 0.1, 0.5), "metal_rust", false)
+	k.cylinder(at + Vector3(0, 0.1, 0), 0.045, 2.2, "metal", 6, false)
+	for side in [-1, 1]:
+		k.box(at + Vector3(side * 0.35, 0.7, 0), Vector3(0.7, 0.035, 0.035), "metal", false)
+
+
+## Mooring hardware at a pier's outer edge. Simple solid bollard; rope is scenery.
+static func mooring_set(k: Kit, at: Vector3) -> void:
+	k.box(at + Vector3(0, 0.04, 0), Vector3(0.45, 0.08, 0.45), "metal_rust", false)
+	k.cylinder(at + Vector3(0, 0.08, 0), 0.12, 0.5, "metal_rust", 8)
+	k.box(at + Vector3(0, 0.52, 0), Vector3(0.42, 0.07, 0.14), "metal_rust")
+	for turn in 2:
+		var points: Array[Vector3] = []
+		for i in 13:
+			var angle := TAU * i / 12.0
+			var radius := 0.27 + turn * 0.065
+			points.append(at + Vector3(0.65 + cos(angle) * radius, 0.035, sin(angle) * radius))
+		k.hose(points, 0.022, "wood")
 
 
 static func tower(k: Kit, c: Vector3, h := 14.0) -> void:
@@ -517,8 +564,13 @@ static func airfield_site(world: World, af: Airfield) -> Node3D:
 		var dims: Vector3 = part.dimensions
 		match part.kind:
 			"terminal": terminal(k, c, dims.x, dims.z)
-			"tower": tower(k, c, dims.y)
-			"hangar": hangar(k, c, dims.x, dims.z, part.with_board)
+			"tower":
+				tower(k, c, dims.y)
+				if af.code == "HAR": vhf_aerial(k, c + Vector3(0, dims.y + 2.8, 0))
+			"hangar":
+				hangar(k, c, dims.x, dims.z, part.with_board)
+				if af.code == "HAR" and part.with_board:
+					workshop_tools(k, c + Vector3(-dims.x / 2 + 2.0, 0, dims.z / 2 - 1.2))
 			"pump": fuel_pump(k, c)
 			"showroom": showroom(k, c, dims.x, dims.z)
 			"shed": shed(k, c, dims.x, dims.z, "wood" if af.kind == "bush" else "metal_rust")

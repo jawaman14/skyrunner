@@ -100,3 +100,26 @@ func test_single_remote_cash_order_retains_pending_and_refusal_messages() -> voi
 	menu._all_home()
 	check_eq(menu.status.text, "No available truck.", "authoritative refusal is retained")
 	viewport.free()
+
+func test_controls_tabs_fit_small_window_and_axis_decrement_is_keyboard_accessible() -> void:
+	var viewport := _viewport()
+	var menu := ControlsMenu.new()
+	viewport.add_child(menu)
+	for i in 3: await Engine.get_main_loop().process_frame
+	var tabs: TabContainer = menu.panel.get_child(0).get_child(2)
+	check_eq(tabs.get_tab_count(), 3, "flight, hardware and context reference")
+	check_eq(tabs.current_tab, 0, "everyday bindings first")
+	tabs.current_tab = 1
+	for i in 2: await Engine.get_main_loop().process_frame
+	var scroll: ScrollContainer = tabs.get_child(1)
+	check(scroll.follow_focus, "keyboard focus scrolls into view")
+	check(scroll.get_child(0).size.x <= scroll.size.x + 1, "hardware fits 1024px window")
+	var actions: HBoxContainer = scroll.get_child(0).get_child(1).get_child(3)
+	var less: Button = actions.get_child(2)
+	var binding: FlightAxes.Binding = ControlsConfig.axes.bindings[FlightAxes.CONTROLS.keys()[0]]
+	var before := binding.deadzone
+	less.grab_focus()
+	_enter(viewport)
+	check_near(binding.deadzone, maxf(0.0, before - 0.02), 0.0001, "Enter decreases deadzone once")
+	binding.deadzone = before
+	viewport.free()

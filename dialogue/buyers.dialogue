@@ -3,6 +3,10 @@
 # Talk.State: can_sell(buyer, good), quote_line(buyer, good), sell(buyer, good), corners_line().
 
 ~ start
+if campaign_complete
+	=> epilogue
+if campaign_chapter == 1 and campaign_chapter > 0
+	Benny Ruiz: I find the buyers. Manny finds the people. Get grass into a stash, then put a dealer to work.
 if not trade
 	Benny Ruiz: Nothing to sell in this game.
 	=> END
@@ -52,6 +56,9 @@ if not connected
 		=> END
 	Benny Ruiz: Money's money. Just remember which way those rifles point.
 	=> sold
+- Who can we sell to right now?
+	Benny Ruiz: {{buyer_status()}}.
+	=> buyers
 - How are the corners?
 	Benny Ruiz: {{corners_line()}}.
 	=> buyers
@@ -65,3 +72,14 @@ if result != ""
 else
 	Benny Ruiz: {{trade_last}}.
 => buyers
+
+
+~ epilogue
+Benny Ruiz: 1989. You made enough to choose your next move. I remember when you came in asking whether grass would cover the fuel.
+Benny Ruiz: {{campaign_ending}}
+- Back to business.
+	Benny Ruiz: Then sit down. The coast is still here, and the phone still rings.
+	=> buyers
+- Leave it there for now.
+	Benny Ruiz: Take care of your people. They remember more than the money.
+	=> END

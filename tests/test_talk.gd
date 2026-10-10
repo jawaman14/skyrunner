@@ -199,3 +199,20 @@ func test_the_desks_and_the_cockpit_open_them() -> void:
 	check(app.talk != null, "landing on the island: the aide on the ramp")
 	app.free()
 	s.dispose()
+
+
+func test_company_lot_matches_story_and_epilogue_uses_runner_context() -> void:
+	var s := _sess()
+	Story.new(Story.index_of("The Company")).attach(s)
+	var state := Talk.State.new(func(): return LocalLink.new(s, Roles.PILOT, false).snapshot(),
+		func(n, a): return s.command(Roles.PILOT, n, a))
+	check_eq(state.sale_lot("agency", "guns"), 4)
+	s.story.completed_all = true
+	state.refresh()
+	check(state.campaign_complete)
+	check("Crew still on payroll" in state.campaign_ending)
+	var b := await _balloon(s, "buyers")
+	var seen := await _until_choice(b)
+	check(seen.any(func(l): return "1989" in l), "ending conversation is reachable")
+	b.free()
+	s.dispose()

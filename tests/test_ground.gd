@@ -8,6 +8,49 @@ func after_each() -> void:
 	World.use_map(0)
 
 
+func test_district_summary_uses_control_rules_and_observed_threats() -> void:
+	var s := _war()
+	s.rackets = Rackets.new(s)
+	var g := s.ground
+	var centre: Array = Economy.centre("town")
+	var at := Vector2(centre[0], centre[1])
+	_squad(g, "org", at, {"rifle": 4})
+	var enemy := _squad(g, "rival", at + Vector2(300, 0), {"rifle": 4})
+	enemy.hidden = true
+	g.control.town = {"org": 100.0, "rival": 100.0, "police": 200.0}
+	var before := g.control.duplicate(true)
+	var row: Dictionary = Py.first(g.district_view("org"), func(d): return d.market == "town")
+	check_near(row.share, g.org_share("town"), 0.000001, "uses police half-weight from existing control rules")
+	check_eq(row.own_people, 4, "reports own deployment")
+	check_eq(row.upkeep_per_minute, 8.0, "reports existing cost")
+	check_eq(row.observed_enemies, 0, "hidden enemies do not enter threat counts")
+	check_eq(row.expected_collection, s.rackets.expected("town"), "uses authoritative collection estimate")
+	check_eq(g.control, before, "view is read-only")
+	var law: Dictionary = Py.first(g.district_view("police"), func(d): return d.market == "town")
+	check(not law.has("expected_collection") and not law.has("policy"), "law receives no private collection data")
+	g._control(60)
+	row = Py.first(g.district_view("org"), func(d): return d.market == "town")
+	check_eq(row.trend, "rising", "direction follows the change in public control")
+	s.dispose()
+
+
+func test_command_detail_is_own_faction_only() -> void:
+	var s := _war()
+	var g := s.ground
+	var own := _squad(g, "org", g.hq("org"), {"rifle": 4})
+	own.route = PackedVector2Array([own.pos(), own.pos() + Vector2(200, 0)])
+	own.human = true
+	var detail := g.squad_view(own, "org")
+	check_eq(detail.destination.size(), 2, "owner sees actual final route point")
+	check_eq(detail.upkeep_per_minute, 8.0, "owner sees existing per-minute upkeep")
+	check(detail.player_order, "owner sees order ownership")
+	var enemy := g.squad_view(own, "police")
+	check(not enemy.has("destination"), "enemy receives no added destination detail")
+	check_eq(enemy.route, [], "sightings do not reveal an enemy route plan")
+	check(not enemy.has("upkeep_per_minute"), "enemy receives no added financial detail")
+	s.dispose()
+
+
 func test_snapshot_hides_unobserved_fight_locations() -> void:
 	var s := _war()
 	var g := s.ground
@@ -38,6 +81,50 @@ func test_snapshot_requires_both_fight_participants_visible() -> void:
 	check_eq(g.snapshot("rival").fights.size(), 1, "participants still see their own nearby fight")
 	s.dispose()
 
+
+func test_battle_history_is_private_and_read_only() -> void:
+	var s := _war()
+	var g := s.ground
+	var a := _squad(g, "org", g.hq("org"), {"rifle": 4})
+	var b := _squad(g, "rival", a.pos() + Vector2(50, 0), {"rifle": 4})
+	g._open(a, b)
+	var f = g.fights[0]
+	a.ammo -= 12
+	g._end(f)
+	g._end(f)
+	check_eq(g.battle_reports.size(), 2, "one account per participant")
+	check_eq(g.battle_history("police").size(), 0, "uninvolved faction receives no reports")
+	var rows := g.battle_history("org")
+	check_eq(rows[0].starting_ammo - rows[0].remaining_ammo, 12, "recorded ammunition use")
+	rows[0].remaining_people = 999
+	check_eq(g.battle_history("org")[0].remaining_people, 4, "view cannot mutate history")
+	for i in 40:
+		g._open(a, b)
+		g._end(g.fights[0])
+	check_eq(g.battle_reports.size(), 64, "stored accounts are bounded")
+	check_eq(g.battle_history("org").size(), 16, "snapshot history is bounded")
+	s.dispose()
+
+
+func test_external_combatant_removal_releases_survivor_and_records_final_state() -> void:
+	var s := _war()
+	var g := s.ground
+	var a := _squad(g, "org", g.hq("org"), {"rifle": 4})
+	var b := _squad(g, "rival", a.pos() + Vector2(50, 0), {"rifle": 4})
+	b.human = true
+	g._open(a, b)
+	var f = g.fights[0]
+	a.men = 0
+	g._gone(a)
+	check(g.fights.is_empty(), "removed participant ends engagement")
+	check(a.fight == null and b.fight == null, "both references release ended fight")
+	check_eq(b.state, "holding", "survivor is available rather than permanently fighting")
+	check(b.human, "human order ownership survives cleanup")
+	check_eq(g.battle_history("rival")[0].state, "holding", "completed account records settled state")
+	check_eq(g.battle_history("org")[0].state, "gone", "removed unit remains gone")
+	g._end(f)
+	check_eq(g.battle_reports.size(), 2, "late cleanup does not duplicate reports")
+	s.dispose()
 
 func _war(seed := 3, ai := false) -> Session:
 	var s := Session.new({"seed": seed, "map_seed": MapCity.SEED, "location": "QRY",
