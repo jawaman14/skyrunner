@@ -111,6 +111,45 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-11 — Claude, #88 strip-feasibility harness (assigned by Codex):** On `claude/strip-feasibility-harness`
+  from main `e384241`, added `scripts/balance/strip_trials.gd` (`StripTrials`), `tools/strip_feasibility.gd` and
+  `tests/test_strip_trials.gd` (simulation lane). Per-runway-end takeoff and landing trials for QRY/PNR/EGL (HAR as the
+  control) x c172p/c182 x light/half/max, with explicit `--map` (default city) and `--terrain natural|classic` (default
+  natural), filters, and JSON + markdown with commit/settings provenance written outside the repo. Takeoff passes at
+  3 km *along the runway line* inside a straight-departure corridor (this harness's convention: 90 m either side
+  plus 12.5% of the distance, 465 m at 3 km); leaving the corridor first is `inconclusive` (the path, not the
+  aircraft), and a crash, the bot giving up or 400 s is `fail`; 300 m above the ground is not a pass. Reaching 3 km
+  also needs a valid run (`takeoff_verdict`): airborne within the strip ahead of the start of the run (length - 25 m),
+  15 m reached, and the CG never below an obstacle top once clear of the strip (`MIN_CLEARANCE_M` = 0; the gear hangs
+  about a metre lower, so this is the least that is clear at all); otherwise it is `fail` with `invalid_reason`, and
+  the measured distances stay in the result. A landing reports the FINAL touchdown (where the successful roll began),
+  the first one alongside it, and the number of touchdowns, so a bounce or go-around is not hidden.
+  Landing rows also carry the planner's aim point (`aim_from_threshold_m`), the glide angle and approach clearance,
+  and the strip left at the aim and at the final touchdown. The planner moves the aim down the strip when the final
+  needs it (HAR end 0 aims 294 m out on classic terrain and 726 m on natural, because the natural pass raises the hill
+  under that final from about 600 m out), so a short strip's touchdown must be read with its aim and strip-left.
+  Clearance (`min_clear_m`) is the CG above the highest obstacle within 15 m, the rig's scoring convention, not proof
+  that the gear or whole airframe cleared it. The bot flies
+  the takeoff and keeps pitch, power and flaps, but from liftoff the harness holds the runway line with PilotBot's
+  own bank law (`StripTrials.LATERAL_MODE`, recorded in every result and the provenance): the rig measures whether the
+  aircraft can climb straight out over the terrain, not where the bot would turn. It records the ground roll,
+  distance to 15 m, least clearance over terrain and trees, along-track distance and largest deviation.
+  Landing forces the end's final and re-forces it after a go-around; an end with no clear final is reported
+  `obstructed` with the reason, not flown.
+  `Feasibility`, PilotBot, the flight model, the terrain and the jobs are unchanged; trials parity still passes.
+  Evidence found while planning: (1) `Feasibility.takeoff_trial` scores a post-goal glide into the ground as a pass
+  (`leg_i >= 1`), so takeoff outcomes in `sim-results/feasibility.json` are noise; (2) that file was flown on the
+  classic island (cli.gd never selects a map), not the city map `docs/STRIPS.md` and new games use; (3) both tools
+  ran classic terrain, while play uses the natural pass. Windows Godot 4.7.2: strip_trials 9/9, trials_parity 2/2,
+  docs 2/2, switches 6/6, status current, hygiene OK; CLI smoke HAR c172p light end 0, classic and natural: takeoff
+  pass (liftoff 223 m, 15 m at 422 m, least clearance 136 m, 3002 m along, at most 19 m off the line), landing pass. The full
+  measurement matrix and a `docs/STRIPS.md` regeneration wait for independent review of the harness; job-generator
+  gating is a separate decision. #88 stays open.
+  **Separate follow-up, not fixed here:** PilotBot `_safe_heading` (pilot.gd:345) uses margin = altitude - 80 m with a
+  75 s lookahead, so below 80 m ASL no heading qualifies and it turns ~40 degrees toward the lowest terrain ahead even
+  over flat ground (HAR end 0, c172p light: ~290-345 m off the runway line at 1.2 km before the hold). It likely
+  affects ordinary bot departures; a fix touches bot behaviour and the balance numbers, so it needs its own PR.
+
 - **2026-10-11 — Claude, waiting-room startup coverage (#97, assigned by Codex):** On `claude/startup-room-tests`
   from main `909efaf`, added `tests/test_startup_room.gd` (socket lane): through the real `Main._open_room` /
   `RoomScreen._start` / `_cancel` / `Main.start` paths, (1) a host who keeps the pilot seat flies with the room's own
