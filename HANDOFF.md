@@ -31,7 +31,7 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | **Task** | Carrying out BACKLOG.md's actions; employed opening in review |
 | **Branches / PRs** | **#296** `claude/employed-pilot-opening` (draft, CI running, subscribed): the employed opening. **#293** `ccr-958eacf7-ugmwgs`: docs, handoff, MCP server (draft; CI green earlier; just merged `main`). |
 | **Done today** | Merged #294 (14 Codex PRs) and #295 (restored fixes); closed the 14 source PRs, the 7 docs PRs, and issues #92 #99 #102 #117 #118 #139 #158 #174. |
-| **Next step** | When CI is green on #296: merge it (pin `expectedHeadSha`), then close #250, #251, #252, #255 pointing to it, and update DESIGN §0/§21 wording that says "awaiting merge". Then merge #293. After that: package A (rebase road/loading-access series, #271 first). |
+| **Next step** | #296 (the employed opening) is rebased and awaiting CI. **Do not merge it without the owner's go-ahead:** the owner asked only for the rebase, and it changes the default new-game experience. Once the owner says merge: `github_pr_merge` (pins the head SHA), then close #250, #251, #252, #255, and update the "awaiting merge" wording in DESIGN §0/§21 and ROADMAP. Then #293. After that: package A (rebase the road/loading-access series, #271 first). |
 | **Watch out** | Merging anything that regenerates `docs/PROJECT_STATUS.md` conflicts the next PR on the same line: merge `main` into the PR and re-run `project_status.gd -- --write`, never hand-edit. Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit` (bases of still-open #274, #247, ...). `pkill -f <script>` kills your own shell: use `pgrep Godot_v4`. |
 
 ## Taking over (checklist for the incoming AI)
