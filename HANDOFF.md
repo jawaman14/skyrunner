@@ -28,12 +28,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
-| **Task** | Triage every open issue (90) and open PR (31 Codex + #293): status against `main`, recommendation (owner request) |
-| **Branch / PR** | `ccr-958eacf7-ugmwgs` / [#293](https://github.com/jawaman14/skyrunner/pull/293) (draft; CI green at `5266993`) |
-| **Last checkpoint** | `5266993` (docs PRs closed). Nothing triaged yet. |
-| **State** | In progress: gathering issue and PR data. |
-| **Next step** | Write the triage to `docs/BACKLOG.md` (a living register, not a dated report) and ask the owner which actions to take. Close nothing without the owner's say-so. |
-| **Watch out** | Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review` and `codex/gameplay-feature-audit` (bases of #250, #274 and #247). |
+| **Task** | Triage every open issue and PR (owner request) → [docs/BACKLOG.md](docs/BACKLOG.md) |
+| **Branch / PR** | `ccr-958eacf7-ugmwgs` / [#293](https://github.com/jawaman14/skyrunner/pull/293) (draft) |
+| **Last checkpoint** | The commit adding `docs/BACKLOG.md`. A combined test run of the 16 cleanly replaying PRs is in progress (scratch worktree, not pushed). |
+| **State** | Triage written; the combined-run result is still to be recorded in BACKLOG.md. Nothing has been closed or merged. |
+| **Next step** | Record the combined-run result. Then the owner approves BACKLOG.md's "Proposed actions"; the first is restoring the lost #80/#81/#82/#87 fixes from `368d171`/`bb377dd`. |
+| **Watch out** | `d91975f` silently reverted merged issue fixes: when a stack is rebased, check that nothing already on `main` disappears (`git diff` deletions). Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review` and `codex/gameplay-feature-audit`. |
 
 ## Taking over (checklist for the incoming AI)
 
