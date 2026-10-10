@@ -1,5 +1,33 @@
 # Current handoff
-## Current task: P09 screenshot matrix and lobby access — Codex, 2026-10-11
+## Current task: existing-draft validation and review — Codex, 2026-10-11
+
+- Reviewed heads: #293 `d276eefa`, #297 `c7acd304`, #298 `caf5a440`, #299 `b694b92f`, #300 `2ba48be3`.
+  All five beta workflows completed successfully. No merge or manual release acceptance performed.
+- #300 run [38063438259](https://github.com/jawaman14/skyrunner/actions/runs/38063438259): 12 successful jobs,
+  including source screenshot matrix, exports, three platform smoke runs and six test lanes (1064 passed total).
+  Logs confirm frontend 14/14, lobby_layout 1/1 and docs 2/2. Downloaded artifact `11673469396`; all eight PNG
+  dimensions/hashes and archive digest verified, all render/import logs clean. Inspected every image: shortcut hints
+  visible in both palettes; the 720px card scrolls to retain Fly, leaving the title above the visible region.
+  Placeholder text is still truncated in join fields; these captures do not prove keyboard/controller traversal.
+- Screenshot manifest records PR merge SHA `c88cc293ebd44dcf7bbb53137a5e57c1be7a7123`, not the head SHA;
+  `source_dirty=true` without paths prevented diagnosing generated import files. This checkpoint adds changed paths
+  to the manifest and commits the new layout test's generated UID. Fresh CI is required for this checkpoint.
+- #298 run [38062398197](https://github.com/jawaman14/skyrunner/actions/runs/38062398197): 13 successful jobs.
+  Windows and Ubuntu logs each show 2 guard-test methods (7 cases) and 7 runtime/worker/stdio tests executed, OK.
+  Static review confirms rejection of zero matching tests, failed imports, unknown mergeability and empty job lists.
+  Its base is #293; preserve that dependency and rebase only after #293 lands. Real GitHub merge/write paths not run.
+- #293 preserves unresolved roadmap packages, conventions and historical handoff links. AGENTS.md explicitly points
+  to CLAUDE.md; both read locally, including warnings-as-errors. Automatic cold-cloud loading and Claude instruction
+  loading remain unverified. ROADMAP is expanded with product packages, not yet the short queue proposed by the collab
+  document; do not duplicate that cleanup while #293 is open. Its original Windows MCP defects are fixed in #298.
+- #299 accurately labels the import as a planning snapshot; old counts/test gaps are historical, not live status.
+  #297 review: waypoints are preserved, intercepts bounded per fix, radar uses public airfield data, staffed roles remain
+  in demand at zero target. No new blocking code finding; its kinematic route tests do not prove a 6-DOF flown approach.
+- Next: inspect fresh #300 provenance paths; cross-model review and owner merge decisions remain. Human exported-build,
+  controller, read-aloud, visual, bridge/entrance, multiplayer, macOS and radio-rights gates remain outstanding.
+  Primary crew-map changes preserved. Earlier task history below is retained with its original limitations.
+
+## Previous task: P09 screenshot matrix and lobby access
 
 - Branch: `codex/screenshot-matrix`, based on `main` at `ee7b0914ca62c933497ddbccb891e1699de0ab3e`.
 - Added a Python runner and beta CI job for eight representative lobby captures: four resolutions, neon/safe palettes.

@@ -74,8 +74,9 @@ def main():
                              "sha256": hashlib.sha256(image.read_bytes()).hexdigest()})
             print("CAPTURE OK", name, flush=True)
     sha = subprocess.check_output(["git", "-c", "core.fsmonitor=false", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-    dirty = bool(subprocess.check_output(["git", "-c", "core.fsmonitor=false", "status", "--porcelain"], cwd=ROOT, text=True).strip())
-    manifest = {"commit": sha, "source_dirty": dirty, "human_visual_acceptance": "not run", "captures": captures}
+    changes = subprocess.check_output(["git", "-c", "core.fsmonitor=false", "status", "--porcelain"], cwd=ROOT, text=True).splitlines()
+    manifest = {"commit": sha, "source_dirty": bool(changes), "source_changes": changes,
+                "human_visual_acceptance": "not run", "captures": captures}
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     html = "<!doctype html><meta charset=utf-8><title>Screenshot matrix</title><h1>Screenshot matrix</h1><p>Human visual acceptance: not run</p>"
     for capture in captures:

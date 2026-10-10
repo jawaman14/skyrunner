@@ -15,7 +15,8 @@ class cache. `--screen jobs`, `hangar`, `boss`, `chief` or `seats` selects anoth
 fixture for the same matrix.
 
 Output is gitignored under `.build/screenshot-matrix/`: labelled PNGs and logs, a JSON manifest
-with source commit, dirty-state marker, dimensions and image hashes, and an HTML gallery.
+with source commit (the PR merge commit in CI), dirty-state marker and changed paths,
+dimensions and image hashes, and an HTML gallery.
 CI publishes these as the `ui-screenshot-matrix` artifact. A failed render, script/parse error,
 missing PNG or wrong dimensions fails the job; stale manifests and current-case PNGs are removed
 before each run.
