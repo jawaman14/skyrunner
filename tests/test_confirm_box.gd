@@ -43,3 +43,21 @@ func test_cancel_is_default_and_held_enter_cannot_approve() -> void:
 	check(modal.panel.get_global_rect().end.x <= 1024)
 	check(modal.panel.get_global_rect().end.y <= 768)
 	viewport.queue_free()
+
+func test_message_fits_without_scrolling_and_follows_text_changes() -> void:
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1280, 720)
+	Engine.get_main_loop().root.add_child(viewport)
+	var modal := ConfirmBox.new().setup("Requesting current consequences…", "Commit", "Cancel")
+	viewport.add_child(modal)
+	modal.ask()
+	var preview := "Hire spotter at Miller's Farm
+
+Charge $400 now. A spotter watches Miller's Farm and reports police activity there; hiring is a one-off fee."
+	modal.msg.text = preview
+	for i in 4: await Engine.get_main_loop().process_frame
+	check(modal.scroller.size.y >= modal.msg.size.y, "a four-line preview is fully visible: %s vs %s" % [modal.scroller.size.y, modal.msg.size.y])
+	modal.msg.text = "Long consequence. ".repeat(400)
+	for i in 4: await Engine.get_main_loop().process_frame
+	check(modal.scroller.size.y <= 720.0 * 0.6 + 1.0, "very long text is capped and scrolls")
+	viewport.free()
