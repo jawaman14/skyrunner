@@ -39,3 +39,4 @@ run res://tools/shots/pilot_shot.gd -- high 15 "$PWD/$OUT/trucks.png" chase truc
 run res://tools/shots/pilot_shot.gd -- high 17 "$PWD/$OUT/story.png" chase story
 run res://tools/shots/pilot_shot.gd -- high 16 "$PWD/$OUT/tutorial.png" chase tutorial
 run res://tools/shots/ui_shot.gd -- desk_tutorial "$PWD/$OUT/tutorial-desk.png"
+run res://tools/shots/hangar_review_shot.gd -- "$PWD/$OUT"
