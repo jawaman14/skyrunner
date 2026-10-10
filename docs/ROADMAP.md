@@ -12,9 +12,9 @@ build an empire from nothing, Warband-style, starting as a hired pilot. Product 
 
 1. **The early rise.** A new story opens employed by a legitimate air service, flying its Cessna. The business
    slides into smuggling, which becomes unavoidable, and the player earns their first aircraft. Sandbox unlocks
-   come from money, reputation and activity, with the campaign as an alternative route. *Implemented as one
-   rebased PR, #296 (from Codex's #250, #251, #252 and #255; nine employment tests), awaiting merge. Needs rebasing, a
-   human pacing walkthrough and a calibrated first-aircraft price (draft: $18,000).*
+   come from money, reputation and activity, with the campaign as an alternative route. *Merged in #296 (from
+   Codex's #250, #251, #252 and #255; nine employment tests). Still needs a human pacing walkthrough and a
+   calibrated first-aircraft price (draft: $18,000).*
 2. **Setup-driven automation.** Explicit assignments first (payroll has these), then conditional orders
    (stock thresholds) and multi-step task sequences. Manual play always remains. Workers follow instructions;
    AI never invents assignments.

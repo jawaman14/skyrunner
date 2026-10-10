@@ -27,7 +27,7 @@ decorative city-building is not a goal. No activity is forced: a solo player del
 specialise, and a mature organisation can operate across every business area. There is no prescribed ratio of
 flying to management to combat.
 
-**The start [PR #296, awaiting merge].**
+**The start [merged in #296, October 2026].**
 - A new story begins with the player as a hired pilot for a legitimate aviation business (Costa Brava Air
   Services), flying the employer's aircraft straight away.
 - The business slides into smuggling, and in the main story that becomes unavoidable: there is no permanent
@@ -778,8 +778,8 @@ AI sells whatever its dealers can't move in two hours to the best buyer.
 
 ## 21. The story: Costa Brava, 1979-1989, and the open mode
 
-*Direction (§0): a new story will open with the player employed by a legitimate air service, sliding into smuggling
-before chapter 1 [PR #296: four opening flights, the employer's Cessna on loan, first ownership
+*Direction (§0): a new story opens with the player employed by a legitimate air service, sliding into smuggling
+before chapter 1 [merged in #296: four opening flights, the employer's Cessna on loan, first ownership
 recorded in the journal]. Story unlocks are to gain sandbox alternatives through money, reputation and activity.*
 
 The game had grown a dozen systems, all on from the first minute. The story (`story.gd`) opens them one chapter at a time. A new player meets the trade before the war, the war before the Family, the Family before the court, and only then the island and the Company.

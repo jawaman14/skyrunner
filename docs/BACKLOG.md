@@ -35,7 +35,7 @@ Updated 10 October after the integration. What landed and what remains:
 |---|---|---|
 | #294 | Integration of #227–#231, #235–#240, #245, #248, #258 | **Merged** (`fceffaa`); the fourteen source PRs are closed, their branches kept |
 | #295 | Restores the autopilot intercept, payroll demand report and radar-aware routing | **Merged** (`ee7b091`) |
-| #296 | The employed opening (rebased #250, #251, #252, #255) | Open, CI running. Step 1 of the product order |
+| #296 | The employed opening (rebased #250, #251, #252, #255) | **Merged** (`4d1e81e`); the four source PRs are closed. Step 1 of the product order |
 | #293 | Direction docs, relay handoff, MCP server, this backlog | Open (Claude) |
 | #244 | Live escorts kept, stale stakeouts cleared | **Held**: changes balance (#98); decide the AI knowledge policy first |
 | #247 | Costa Brava settlements rebuilt in period architecture | **Held**: needs visual review and a performance capture (package C) |
@@ -43,7 +43,7 @@ Updated 10 October after the integration. What landed and what remains:
 | #253 | Gameplay recordings, README and player docs | **Held**: don't add 30 MB of video to git (#91); keep the docs text, move the media to a release |
 | #265, #267, #268, #270, #271, #272, #274, #275, #276 | Road and loading-access series (villa, FRM, setbacks, connectors, junction surfaces, node index, Moretti club, diagnostics) | **Needs real rebasing** (package A). #271 (district back-navigation) is a small UI fix: rebase it first |
 
-Closed 10 October as superseded or merged: #227–#231, #235–#240, #245, #248, #258 (in #294), #250/#251/#252/#255 (into #296, once it merges),
+Closed 10 October as superseded or merged: #227–#231, #235–#240, #245, #248, #258 (in #294), #250/#251/#252/#255 (into #296),
 and the documentation PRs #241, #242, #243, #246, #249, #264, #273 (folded into `docs/`).
 
 ## Issues
@@ -116,13 +116,12 @@ step, so the open list shows what is actually next.
 1. **Restored the lost fixes** (#80/#82, #81, #87): merged as #295. The radar zones are now wired into hot autopilot legs
    (`Session.known_radar_zones`), with tests. A flown QRY/PNR check is still to do before closing #80/#82.
 2. **Integrated the clean stacks:** merged as #294 (full CI green); the fourteen source PRs are closed.
-3. **Employed opening:** rebased as #296, awaiting the owner's go-ahead to merge.
+3. **Employed opening:** rebased and merged as #296 (`4d1e81e`); #250, #251, #252 and #255 closed.
    Also merged #297 (fixes to the three review findings on #295).
 4. **Closed issues:** #92, #99, #102, #117, #118, #139, #158, #174. #97 stays open: `_join()`/`_seat()` need tests.
 
 ## Next
 
-- Merge #296 when green; then close #250, #251, #252, #255 with a pointer to it.
 - Rebase the road and loading-access series (package A), #271 first; re-run `tools/logistics_routes.gd` for the 99-pair number.
 - Decide #88 (the job board can send a load a strip can't fly out of) and the AI knowledge policy (#244, #98).
 - Add `_join()` / `_seat()` entry-path tests (#97).
