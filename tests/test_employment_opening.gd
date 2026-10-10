@@ -19,7 +19,14 @@ func _delivery(s) -> Jobs.Job:
 	var job: Jobs.Job = s.boards[s.location][0]
 	check(s.command(Roles.PILOT, "accept_job", {"job_id": job.id})[0], "employer load accepted")
 	s.spawn_at(job.dest)
-	s._complete_delivery(job, World.airfield(job.dest))
+	if job.hot():
+		var stage: int = s.story.employment.stage
+		s._arrive(World.airfield(job.dest), s.state)
+		check(not s.unloading.is_empty(), "criminal load uses actual unloading")
+		check_eq(s.story.employment.stage, stage, "landing alone is not delivery")
+		s._unload_tick(Session.UNLOAD_HOT_S + 1.0)
+	else:
+		s._complete_delivery(job, World.airfield(job.dest))
 	return job
 
 func test_employed_start_and_staged_real_delivery_events() -> void:
@@ -112,3 +119,29 @@ func test_buying_another_aircraft_does_not_make_the_company_cessna_free() -> voi
 	check(not session.owned.has("c172p"), "company aircraft was returned")
 	check_eq(session.aircraft_purchase_price("c172p"), EmploymentOpening.PURCHASE_PRICE)
 	check(not session.command(Roles.PILOT, "buy_aircraft", {"key": "c172p"})[0], "cannot reacquire for free")
+
+func test_first_smuggling_uses_suitable_strip_without_disabling_police() -> void:
+	session = _start()
+	session.story.employment.stage = 2
+	session.refresh_board("HAR")
+	var job: Jobs.Job = session.boards["HAR"][0]
+	var field := World.airfield(job.dest)
+	check(not field.police and field.kind in ["bush", "shady"])
+	check(field.length >= 400, "first criminal landing avoids the shortest strips")
+	check(job.hot() and "police consequences" in job.notes, "risk remains disclosed")
+	check(not session.police.no_customs, "customs authority is unchanged")
+	var case = session.police.case("runner")
+	case.wanted = 1
+	check(session.police.landing_check(session.state, World.airfield("HAR"), true), "wanted arrival at police airport is still refused")
+
+func test_generated_maps_have_an_unpoliced_employer_destination() -> void:
+	for seed in [1, 7, 42]:
+		var s := Session.new({"seed": 5, "map_seed": seed, "location": "HAR"})
+		Story.new_employed().attach(s)
+		s.story.employment.stage = 2
+		s.refresh_board("HAR")
+		check(not s.boards["HAR"].is_empty(), "generated %d offers a criminal destination" % seed)
+		if not s.boards["HAR"].is_empty():
+			var field := World.airfield(s.boards["HAR"][0].dest)
+			check(not field.police and field.length >= 400)
+		s.dispose()
