@@ -53,6 +53,12 @@ func test_connector_may_share_a_connected_road_node_but_not_an_isolated_one() ->
 	# The same geometry with a node that has no road edges must stay unreachable.
 	var isolated := RoadGraph.new([[[0,10],[0,20]], [[160,10],[160,20]], [[80,60],[80,60]]])
 	check(not access.checked_vehicle_route(isolated, from, to).reachable, "an isolated shared node is not a road journey")
+	# A node whose only road edge runs through a building has no usable road either (the access legs stay clear).
+	var blocked_world := _world()
+	var building := SiteLayout.record(blocked_world, "on-the-road", "stash", SiteLayout.frame(Vector2(80, 200), 0), Vector3(10, 3, 10))
+	var blocked := SiteAccess.new(blocked_world, [building])
+	var cut := RoadGraph.new([[[0,10],[0,20]], [[160,10],[160,20]], [[80,60],[80,500]]])
+	check(blocked.checked_vehicle_route(cut, from, to).reachable == false, "a shared node whose every edge is blocked is not a road journey")
 
 func test_vehicle_loading_leg_uses_checked_building_detour() -> void:
 	var world := _world()

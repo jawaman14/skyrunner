@@ -203,9 +203,9 @@ func checked_vehicle_route(graph: RoadGraph, from: Vector2, to: Vector2, penalty
 			var leg := _vehicle_leg(graph, from, start.index, false)
 			if not leg.reachable: continue
 			for finish in _vehicle_candidates(graph, to):
-				# A shared node is fine when it carries real road edges; an isolated one must not become an off-road shortcut.
+				# A shared node is fine when it has a usable road edge; an isolated or fully blocked one must not become an off-road shortcut.
 				if components[start.index] != components[finish.index]: continue
-				if start.index == finish.index and graph.adj[start.index].is_empty(): continue
+				if start.index == finish.index and not _has_clear_edge(graph, components, start.index): continue
 				if not arrivals.has(finish.index): arrivals[finish.index] = _vehicle_leg(graph, to, finish.index, true)
 				if not arrivals[finish.index].reachable: continue
 				departure = leg
@@ -219,6 +219,12 @@ func checked_vehicle_route(graph: RoadGraph, from: Vector2, to: Vector2, penalty
 		for point in leg:
 			if points[-1].distance_to(point) > 0.01: points.append(point)
 	return {"reachable": true, "points": points, "reason": ""}
+
+## A node is on a usable road only if one of its edges passed the geometry check, which puts both ends in one component.
+func _has_clear_edge(graph: RoadGraph, components: Dictionary, index: int) -> bool:
+	for edge in graph.adj[index]:
+		if components[int(edge[0])] == components[index]: return true
+	return false
 
 ## Rebuild after an explicit authoring/geometry change; simulation hazards use penalties.
 func invalidate_geometry() -> void:
