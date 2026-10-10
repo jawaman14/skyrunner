@@ -37,8 +37,7 @@ const GAMES := ["roulette", "blackjack", "craps", "baccarat", "slots"]
 
 ## Where the front-centre of the building stands, in game metres: {x, y, yaw} (yaw as Node3D.rotation.y; local -z faces the runway).
 static func site() -> Dictionary:
-	var af := Island.airfield()
-	return {"x": af.x + af.ux * ALONG + af.uy * ACROSS, "y": af.y + af.uy * ALONG - af.ux * ACROSS, "yaw": atan2(af.uy, af.ux)}
+	return SiteLayout.hotel_anchor()
 
 
 static func build(world: World) -> Node3D:

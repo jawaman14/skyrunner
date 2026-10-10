@@ -129,7 +129,7 @@ func apply_spec(sp: Dictionary) -> void:
 
 ## Put the car down at a game-frame point (x east, y north), facing `heading_deg`.
 func place(x: float, y: float, heading_deg: float) -> void:
-	global_position = Vector3(x, world.ground(x, y) + 0.4, -y)
+	global_position = Vector3(x, world.travel_surface(x, y) + 0.4, -y)
 	rotation = Vector3(0, -deg_to_rad(heading_deg), 0)
 	velocity = Vector3.ZERO
 	speed = 0.0
@@ -254,8 +254,8 @@ func _drive(throttle: float, steer: float, handbrake: bool, dt: float) -> void:
 		speed = 0.0
 	elif is_on_floor():
 		_last_dry = global_position
-	if global_position.y < world.ground(global_position.x, -global_position.z) - 5.0:
-		global_position.y = world.ground(global_position.x, -global_position.z) + 0.6
+	if global_position.y < world.travel_surface(global_position.x, -global_position.z) - 5.0:
+		global_position.y = world.travel_surface(global_position.x, -global_position.z) + 0.6
 		velocity = Vector3.ZERO
 
 
@@ -288,10 +288,10 @@ func _body_springs(dt: float) -> void:
 	var fwd := Vector2(-sin(h), -cos(h))  # in the game's ground plane, x east, z south
 	var rgt := Vector2(cos(h), -sin(h))
 	var p := Vector2(global_position.x, global_position.z)
-	var zf := world.ground(p.x + fwd.x * WHEELBASE * 0.5, -(p.y + fwd.y * WHEELBASE * 0.5))
-	var zb := world.ground(p.x - fwd.x * WHEELBASE * 0.5, -(p.y - fwd.y * WHEELBASE * 0.5))
-	var zr := world.ground(p.x + rgt.x * TRACK * 0.5, -(p.y + rgt.y * TRACK * 0.5))
-	var zl := world.ground(p.x - rgt.x * TRACK * 0.5, -(p.y - rgt.y * TRACK * 0.5))
+	var zf := world.travel_surface(p.x + fwd.x * WHEELBASE * 0.5, -(p.y + fwd.y * WHEELBASE * 0.5))
+	var zb := world.travel_surface(p.x - fwd.x * WHEELBASE * 0.5, -(p.y - fwd.y * WHEELBASE * 0.5))
+	var zr := world.travel_surface(p.x + rgt.x * TRACK * 0.5, -(p.y + rgt.y * TRACK * 0.5))
+	var zl := world.travel_surface(p.x - rgt.x * TRACK * 0.5, -(p.y - rgt.y * TRACK * 0.5))
 	var pitch_t := atan2(zf - zb, WHEELBASE) + long_g * 0.075
 	var roll_t := atan2(zr - zl, TRACK) - lat_g * 0.06  # a left turn leans the body out, to the right
 	var k := 70.0

@@ -233,3 +233,20 @@ func test_the_familys_offer_arrives_as_a_phone_notification() -> void:
 	check_eq(notify.answer("y"), "accept", "the key answers the newest card that asks")
 	check_eq(seen, ["accept"], "and says what was chosen")
 	notify.queue_free()
+
+
+func test_company_lot_matches_story_and_epilogue_uses_runner_context() -> void:
+	var s := _sess()
+	Story.new(Story.index_of("The Company")).attach(s)
+	var state := Talk.State.new(func(): return LocalLink.new(s, Roles.PILOT, false).snapshot(),
+		func(n, a): return s.command(Roles.PILOT, n, a))
+	check_eq(state.sale_lot("agency", "guns"), 4)
+	s.story.completed_all = true
+	state.refresh()
+	check(state.campaign_complete)
+	check("Crew still on payroll" in state.campaign_ending)
+	var b := await _balloon(s, "buyers")
+	var seen := await _until_choice(b)
+	check(seen.any(func(l): return "1989" in l), "ending conversation is reachable")
+	b.free()
+	s.dispose()

@@ -439,7 +439,10 @@ func throw_debris(pos: Vector3, n: int, size := 4.0) -> int:
 		b.linear_velocity = out * rng.randf_range(6.0, 14.0) * size / 4.0
 		b.angular_velocity = Vector3(rng.randf_range(-9, 9), rng.randf_range(-9, 9), rng.randf_range(-9, 9))
 		debris.append(b)
-		get_tree().create_timer(DEBRIS_S).timeout.connect(func(): if is_instance_valid(b): b.queue_free())
+		var body_ref: WeakRef = weakref(b)
+		get_tree().create_timer(DEBRIS_S).timeout.connect(func():
+			var body: RigidBody3D = body_ref.get_ref()
+			if body != null: body.queue_free())
 	return n
 
 

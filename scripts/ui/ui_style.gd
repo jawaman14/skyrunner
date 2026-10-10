@@ -33,6 +33,17 @@ const SURFACE_HI := Color(0.22, 0.11, 0.28)
 const LINE := Color(1.0, 0.45, 0.8, 0.14)
 const CAPTION := Color(0.62, 0.66, 0.72)
 
+# Shared layout tokens. UI should use these instead of inventing per-screen
+# padding values; this keeps pilot, ground and station interfaces coherent.
+const SPACE_XS := 4
+const SPACE_SM := 8
+const SPACE_MD := 12
+const SPACE_LG := 16
+const SPACE_XL := 24
+const TOUCH_MIN := 40
+const MENU_MARGIN := 48
+const PANEL_RADIUS := 8
+
 static var _mono: SystemFont
 static var _script: Font
 static var _neon: Font
@@ -103,11 +114,16 @@ static func label(text := "", size := 16, color := WHITE, font: Font = null) -> 
 	return l
 
 
+static func surface_box(color := PANEL, emphasis := false) -> StyleBoxFlat:
+	var border := Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.34) if emphasis else Color(1, 1, 1, 0.10)
+	return box(color, PANEL_RADIUS, border, 1, Vector4(SPACE_LG, SPACE_MD, SPACE_LG, SPACE_MD))
+
+
 static func panel_box(color := PANEL) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = color
-	sb.set_corner_radius_all(6)
-	sb.set_content_margin_all(12)
+	sb.set_corner_radius_all(PANEL_RADIUS)
+	sb.set_content_margin_all(SPACE_MD)
 	sb.border_color = Color(1, 1, 1, 0.08)
 	sb.set_border_width_all(1)
 	return sb

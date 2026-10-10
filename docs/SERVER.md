@@ -37,7 +37,7 @@ Every option is a flag (`--max-players 8`) or an environment variable (`SKYRUNNE
 | `--mode` | `coop` | `coop` (the runners are the players, the law is the AI), `versus` (both sides can be players), `police` (a task-force table: no pilot, AI runners) |
 | `--unlocks` | `open` | `open`: every system from the first minute, with a float of money. `story`: the Costa Brava story's chapters open them one at a time (the whole table plays one story) |
 | `--seed` | 1 | the game's seed (a new game only; a save keeps its own) |
-| `--map` | -1 | `-1` the city coast; `0` the classic island; `N` generated island N |
+| `--map` | -1 | `-1` the city coast; positive `N` generated island N; `0` is retired |
 | `--name` | `Skyrunner server` | the name in the status reply and the LAN list |
 | `--password` | none | a hello without it is refused; join as `password@host:port` |
 | `--max-players` | 16 | at most 64 |

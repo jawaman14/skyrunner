@@ -3,6 +3,10 @@
 # Talk.State: can_sell(buyer, good), quote_line(buyer, good), sell(buyer, good), corners_line().
 
 ~ start
+if campaign_complete
+	=> epilogue
+if campaign_chapter == 1 and campaign_chapter > 0
+	Benny Ruiz: I find the buyers. Manny finds the people. Get grass into a stash, then put a dealer to work.
 if not trade
 	Benny Ruiz: Nothing to sell in this game.
 	=> END
@@ -15,25 +19,46 @@ if not connected
 ~ buyers
 - Sell the Morettis {{quote_line("family", "cocaine")}} [if can_sell("family", "cocaine")]
 	do sell("family", "cocaine")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> sold
 - Sell the Morettis {{quote_line("family", "marijuana")}} [if can_sell("family", "marijuana")]
 	do sell("family", "marijuana")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> sold
 - Arm the Morettis' crews with {{quote_line("family", "guns")}} [if can_sell("family", "guns")]
 	do sell("family", "guns")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	Benny Ruiz: They'll use them on Los Cuervos. That's not our problem. Is it?
 	=> sold
 - Sell the Company {{quote_line("agency", "cocaine")}} [if can_sell("agency", "cocaine")]
 	do sell("agency", "cocaine")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	Benny Ruiz: It flies north on their planes. Somebody's corner gets flooded. Hope it's not ours.
 	=> sold
 - Send the Company {{quote_line("agency", "guns")}} for the war down south [if can_sell("agency", "guns")]
 	do sell("agency", "guns")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	=> sold
 - Sell Los Cuervos {{quote_line("rival", "guns")}} [if can_sell("rival", "guns")]
 	do sell("rival", "guns")
+	if result != ""
+		Radio: {{result}}
+		=> END
 	Benny Ruiz: Money's money. Just remember which way those rifles point.
 	=> sold
+- Who can we sell to right now?
+	Benny Ruiz: {{buyer_status()}}.
+	=> buyers
 - How are the corners?
 	Benny Ruiz: {{corners_line()}}.
 	=> buyers
@@ -47,3 +72,14 @@ if result != ""
 else
 	Benny Ruiz: {{trade_last}}.
 => buyers
+
+
+~ epilogue
+Benny Ruiz: 1989. You made enough to choose your next move. I remember when you came in asking whether grass would cover the fuel.
+Benny Ruiz: {{campaign_ending}}
+- Back to business.
+	Benny Ruiz: Then sit down. The coast is still here, and the phone still rings.
+	=> buyers
+- Leave it there for now.
+	Benny Ruiz: Take care of your people. They remember more than the money.
+	=> END

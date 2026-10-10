@@ -102,6 +102,7 @@ var hud: Hud
 var menus := {}
 var help: Control
 var briefing: Label
+var briefing_panel: Control
 var glareshield: Control
 var ui: CanvasLayer
 var cam_mode := "chase"
@@ -257,7 +258,10 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ver.position -= Vector2(8, 4)
 	ver.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(ver)
-	briefing = _overlay("", Color(1, 0.85, 0.5))
+	briefing_panel = _help_overlay("", Color(1, 0.85, 0.5))
+	briefing = briefing_panel.get_child(0).get_child(0)
+	briefing.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	briefing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sess.say("F1 for controls. [J] to see the job board.")
 	return self
 
@@ -371,13 +375,23 @@ func _active_menu() -> GameMenu:
 
 
 func _unhandled_input(ev: InputEvent) -> void:
+	if controls_menu != null or pack_menu != null:
+		get_viewport().set_input_as_handled()
+		return
 	if ev is InputEventJoypadButton and ev.pressed and _active_menu() == null and not on_foot:
 		_flight_press(ev)
 		return
 	if ev is InputEventKey and ev.pressed:
 		var k: int = ev.physical_keycode if ev.physical_keycode else ev.keycode
+		if k == KEY_F2 and ev.ctrl_pressed and not ev.echo:
+			scene.toggle_access_overlay()
+			get_viewport().set_input_as_handled()
+			return
 		var m := _active_menu()
 		if m != null:
+			if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k == KEY_G) or (m is HQMenu and k in [KEY_Q, KEY_D])):
+				get_viewport().set_input_as_handled()
+				return  # holding Enter must not confirm a newly armed action
 			if k == KEY_ESCAPE:
 				m.close()
 			elif MENU_KEYS.has(k):
@@ -389,6 +403,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if ev.echo:
+			return
+		if k == KEY_F8:
+			toggle_controls()
+			get_viewport().set_input_as_handled()
 			return
 		if k == KEY_TAB:
 			_toggle_on_foot()
@@ -543,8 +561,6 @@ func _unhandled_input(ev: InputEvent) -> void:
 			toggle_ai_pilot()
 		elif k == KEY_F6:
 			cycle_debug_menu()
-		elif k == KEY_F8:
-			toggle_controls()
 		elif k == KEY_F9:
 			var mode := screen_filter.cycle()
 			ControlsConfig.save_setting("filter", mode)
@@ -643,12 +659,17 @@ func _flight_press(ev: InputEvent) -> bool:
 
 
 ## SHIFT+H: logistics - the stashes' product and cash, the trucks, cash bags on and off.
-func toggle_logistics() -> void:
+func toggle_logistics(stash := "") -> void:
 	if logistics_menu != null and is_instance_valid(logistics_menu):
+		if not stash.is_empty():
+			logistics_menu.focus_source(stash)
+			return
 		logistics_menu.close()
 		return
 	logistics_menu = LogisticsMenu.new()
+	logistics_menu.review_link = LocalLink.new(s, Roles.PILOT, false)
 	logistics_menu.pilot = true
+	logistics_menu.focused_stash = stash
 	logistics_menu.view_fn = func() -> Dictionary: return s.logistics.view() if s.logistics != null else {}
 	logistics_menu.cmd_fn = func(n: String, a: Dictionary) -> Array: return s.command(Roles.PILOT, n, a)
 	logistics_menu.closed.connect(func(): Input.mouse_mode = Input.MOUSE_MODE_VISIBLE)
@@ -746,8 +767,18 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 
 
 func _input(ev: InputEvent) -> void:
+	if s != null and s.narrative != null and s.narrative.show_briefing and ev is InputEventJoypadButton and ev.pressed:
+		if ev.button_index == JOY_BUTTON_A:
+			_pressed["confirm"] = true
+			get_viewport().set_input_as_handled()
+			return
+		if ev.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_DOWN] and briefing_panel != null:
+			var scroll: ScrollContainer = briefing_panel.get_child(0)
+			scroll.scroll_vertical += 48 if ev.button_index == JOY_BUTTON_DPAD_DOWN else -48
+			get_viewport().set_input_as_handled()
+			return
 	# click to grab the mouse again while walking
-	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and not _map_open():
+	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and pack_menu == null and not _map_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -1173,6 +1204,14 @@ func _exit_car() -> void:
 
 func _on_use(action: String, area: Area3D) -> void:
 	match action:
+		"stash_logistics":
+			var id: String = area.get_meta("stash", "")
+			var found = s.stash_net.get_stash(id) if s.stash_net != null else null
+			var stash: Dictionary = found if found is Dictionary else {}
+			if not StashInterior.available(stash) or s.logistics == null:
+				s.say("This storage site is unavailable.")
+			else:
+				toggle_logistics(id)
 		"car":
 			_enter_car()
 		"jobs", "load", "hangar":
@@ -1226,7 +1265,7 @@ func _gather_input() -> ControlMapper.InputFrame:
 	var inp := ControlMapper.InputFrame.new()
 	inp.pressed = _pressed
 	_pressed = {}
-	var menu_open := _active_menu() != null or controls_menu != null or pause_menu != null
+	var menu_open := _active_menu() != null or controls_menu != null or pack_menu != null or pause_menu != null
 	if not menu_open:
 		for action in ControlsConfig.HELD:
 			if Input.is_action_pressed(ControlsConfig.action(action)):
@@ -1286,6 +1325,11 @@ func _process(delta: float) -> void:
 		radio.active = driving != null or not on_foot
 	if _frame % 30 == 1:
 		_phone_watch()
+		if scene != null and s.stash_net != null:
+			for stash in s.stash_net.stashes:
+				var node := scene.find_child("stash-" + str(stash.id), true, false) as Node3D
+				if node != null:
+					StashInterior.show_state(node, stash)
 	if _frame % 10 == 0:
 		if s.tutorial != null and tutorial_panel == null:
 			tutorial_panel = TutorialPanel.new()
@@ -1295,12 +1339,14 @@ func _process(delta: float) -> void:
 	var camp = s.narrative
 	if camp != null and camp.show_briefing:
 		var ch: Campaign.Chapter = camp.chapter
-		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nPress ENTER" % [ch.num, ch.year, ch.title, ch.briefing,
-			"\n".join(camp.objective_lines())]
-		briefing.visible = true
+		briefing.text = "%s  -  %d  -  %s\n\n%s\n\n%s\n\nContinue: %s" % ["EMPLOYMENT" if ch.num == 0 else "CHAPTER %d" % ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
+			"\n".join(camp.objective_lines()), ", ".join(PRESS_KEYS.keys().map(func(code): return OS.get_keycode_string(code))) + " / controller Accept"]
+		if not briefing_panel.visible:
+			Speech.say(briefing.text, true)
+		briefing_panel.visible = true
 		if _pressed.has("confirm"):
 			camp.show_briefing = false
-			briefing.visible = false
+			briefing_panel.visible = false
 		_pressed.clear()
 	elif not paused:
 		if _player_key != s.aircraft_key:

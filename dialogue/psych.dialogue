@@ -4,6 +4,8 @@
 # Reads and acts through Talk.State: {{ps_*}} fields and barter_best(), barter_hundred(), sell_acid(), toggle_acid_auto().
 
 ~ start
+if campaign_chapter == 3 and campaign_chapter > 0
+	Nico: Before the vans and the money, this was just a few of us trying to keep the hills quiet. Ask me about the rates before we trade.
 if not psych
 	Radio: The line to the hills is dead. Nobody there yet.
 	=> END
@@ -49,10 +51,16 @@ if ps_best_lb < 20
 	=> word
 - Let my people handle the trading. [if not ps_auto]
 	do toggle_acid_auto()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{ps_name}}: Your people, my people. Everybody's people. Right on.
 	=> talk
 - Stop the standing arrangement. [if ps_auto]
 	do toggle_acid_auto()
+	if result != ""
+		Radio: {{result}}
+		=> END
 	{{ps_name}}: Back to handshakes, then.
 	=> talk
 - That's all.

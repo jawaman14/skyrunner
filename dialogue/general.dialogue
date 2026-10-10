@@ -6,6 +6,8 @@
 # container().
 
 ~ start
+if campaign_chapter == 7 and campaign_chapter > 0
+	Ibarra: A flight, an airliner, a freighter. Different risks. You need something to get through, not just something to leave.
 if not island
 	Radio: Nothing but static on the island frequency.
 	=> END
@@ -43,7 +45,7 @@ else
 	if result != ""
 		{{aide}}: {{result}}
 	else
-		{{aide}}: Four good girls, very calm. They leave on the evening flight.
+		{{aide}}: Four good girls, very calm. Check dispatch for their travel status.
 	=> talk
 - Put a container on the freighter. ({{ship_pct}}% likely found)
 	do container()
@@ -68,7 +70,7 @@ elif status == "boatlift"
 else
 	{{aide}}: Quiet. The price is {{money_s(int(price))}} a pound.
 if relations < 40
-	{{aide}}: (lower) And a word of advice. There are people in Havana - in the capital - who think some of us have too many friends. Be careful whose friend you are.
+	{{aide}}: (lower) And a word of advice. There are people in the capital who think some of us have too many friends. Be careful whose friend you are.
 elif passage_min > 0
 	{{aide}}: Your passage is good for {{passage_min}} more minutes.
 => talk

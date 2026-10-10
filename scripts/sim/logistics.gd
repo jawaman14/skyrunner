@@ -122,6 +122,43 @@ func meet_pos(to: String, from: String) -> Vector2:
 	return Vector2(best.x, best.y) if best != null else pos(to)
 
 
+## Read-only physical endpoint for the checked-routing migration. A loading
+## candidate is not a verified journey; callers must still check the full route.
+## Never substitute a simulation building centre for an unauthored meeting area.
+func loading_endpoint(site: String, from := "", access: SiteAccess = null) -> Dictionary:
+	var result := {"available": false, "site_id": "", "point": null, "reason": "No authored loading area for this destination."}
+	if site == HQ:
+		result.site_id = "hq/org"
+	elif site == "rival":
+		result.site_id = "hq/rival"
+	elif site == "agency":
+		if from == "" or (from != HQ and sess.stash_net.get_stash(from) == null):
+			result.reason = "The Company's meeting strip requires a valid source."
+			return result
+		var meet := meet_pos(site, from)
+		var strip = sess.world.airfield_at(meet.x, meet.y, 1.0)
+		if strip == null: return result
+		result.site_id = "airfield/%s/shed/0" % strip.code
+		if strip.kind in ["hub", "regional"]:
+			result.site_id = "airfield/%s/hangar/2" % strip.code
+	else:
+		var stash = sess.stash_net.get_stash(site)
+		if stash == null: return result
+		if stash.burned:
+			result.reason = "The stash is unavailable."
+			return result
+		result.site_id = "stash/" + site
+	var records: Array = access.sites if access != null else sess.world.site_records()
+	for record in records:
+		if str(record.id) != str(result.site_id): continue
+		var point: Vector3 = record.loading
+		result.available = true
+		result.point = Vector2(point.x, -point.z)
+		result.reason = ""
+		return result
+	return result
+
+
 func name_of(site: String) -> String:
 	if site == HQ:
 		return str(sess.world.map.hqs.get("org", {}).get("name", "HQ"))
@@ -232,7 +269,43 @@ func checkpoint_on(a: Vector2, b: Vector2) -> String:
 
 ## `careful` (the AI): don't send into a checkpoint - wait for the road to clear.
 ## A human gets the warning and the choice.
+func transfer_reason(from: String, to: String, what: String, amount: float) -> String:
+	if not is_finite(amount) or amount <= 0.0:
+		return "Choose a positive finite amount."
+	if what != "cash" and what not in goods():
+		return "Move what?"
+	if from == to:
+		return "It's already there."
+	if not stock.has(from) and from != HQ:
+		return "No such stash."
+	if not (stock.has(to) or to == HQ or MEETS.has(to)):
+		return "No such place."
+	for site in [from, to]:
+		var stash = sess.stash_net.get_stash(site)
+		if stash != null and stash.burned:
+			return "%s is burned." % name_of(site)
+	if what == "cash":
+		var have: float = float(sess.money) if from == HQ else float(cash.get(from, 0.0))
+		return "No cash at %s." % name_of(from) if minf(amount, have) < 1.0 else ""
+	if from == HQ:
+		return "The HQ keeps no product."
+	if to == HQ:
+		return "Product goes to a stash, not the club."
+	if MEETS.has(to):
+		if sess.trade == null:
+			return "No trade in this game."
+		var why: String = sess.trade.available(to)
+		if why != "":
+			return why
+		if not Trade.BUYERS[to].cap.has(what):
+			return "%s don't buy %s." % [Trade.BUYERS[to].name, what]
+	return "No %s at %s." % [what, name_of(from)] if minf(amount, float(stock[from][what])) < 0.5 else ""
+
+
 func send(from: String, to: String, what: String, amount: float, careful := false) -> String:
+	var reason := transfer_reason(from, to, what, amount)
+	if reason != "":
+		return reason
 	if from == to:
 		return "It's already there."
 	if not stock.has(from) and from != HQ:
@@ -911,11 +984,19 @@ func unload_cash() -> String:
 
 ## The growers and the connection: cash on the strip.
 func pay_seller(cost: int) -> String:
+	var reason := seller_payment_reason(cost)
+	if reason != "":
+		return reason
+	aboard -= cost
+	_bags()
+	return ""
+
+
+## Read-only availability for a command preview; paying uses the same check.
+func seller_payment_reason(cost: int) -> String:
 	if aboard < cost:
 		return "They want $%s in cash on the strip - you have $%s aboard. Fly the money out first [SHIFT+C loads it at a stash or the club's strip]." % [
 			Py.money(cost), Py.money(aboard)]
-	aboard -= cost
-	_bags()
 	return ""
 
 

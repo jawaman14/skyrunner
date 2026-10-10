@@ -23,13 +23,15 @@ func refresh() -> void:
 	var v: Dictionary = s.rackets.view() if s.rackets != null else {}
 	subtitle.text = "$%s in hand   -   %d prisoners held   -   next round in %d min" % [Py.money(s.money), int(v.get("held", 0)), int(float(v.get("next_round", 0.0)) / 60.0)]
 	var keep := list.selected_row()
+	var keep_id: String = str(markets[keep].market) if keep >= 0 and keep < markets.size() else ""
 	list.clear_rows()
 	markets = v.get("markets", [])
 	for m in markets:
 		var share: float = float(m.share)
 		list.add_row([str(m.market).capitalize(), "-" if share < 0.0 else "%d%%" % int(share * 100.0), str(m.policy), "$%s" % Py.money(int(m.expected))])
 	if not markets.is_empty():
-		list.select_near(keep if keep >= 0 else 0)
+		var ids: Array = markets.map(func(m): return str(m.market))
+		list.select_near(ids.find(keep_id) if ids.has(keep_id) else maxi(0, keep))
 	footer.text = "Tribute so far $%s; ransoms $%s. Over half the street to be paid by it. Squeezing pays 2x and the street resents it." % [Py.money(int(v.get("collected", 0))), Py.money(int(v.get("ransom_cash", 0)))]
 	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "terms", "enter"], ["A", "ransom them", "a"], ["F", "put them on the payroll", "f"], ["G", "let them go", "g"], ["ESC", "back", "esc"]])
 
@@ -37,13 +39,12 @@ func refresh() -> void:
 func _go(what: String, extra := {}) -> void:
 	var a := {"what": what}
 	a.merge(extra)
-	var r: Array = s.command(Roles.PILOT, "rackets", a)
-	if not r[0]:
-		s.say(str(r[1]))
-	refresh()
+	perform_action("rackets", a)
 
 
 func key(k: String) -> void:
+	if confirmation_key(k):
+		return
 	match k:
 		"up":
 			list.move(-1)

@@ -2,9 +2,10 @@ class_name TalkBalloon
 extends CanvasLayer
 ## A conversation, on the phone: a handset slides up on the right with the contact's round icon and name, their lines as
 ## message bubbles on the left, your answers as pink bubbles on the right, and the answers you can still give as buttons
-## underneath (numbered; 1-9 or a click). ENTER or SPACE moves on when there is nothing to choose; ESC hangs up.
-## Drives Talk's Dialogue Manager scripts one line at a time, re-reading the game (State.refresh) before each so the
-## numbers are current. (It used to be a box across the bottom of the screen with the character's name in neon script.)
+## underneath (Up/Down and ENTER, 1-9, or a click). ENTER or SPACE moves on when there is nothing to choose; ESC or the
+## Leave button hangs up. Drives Talk's Dialogue Manager scripts one line at a time, re-reading the game (State.refresh)
+## before each so the numbers are current; while the next line is being worked out the answers are disabled and swallow
+## their keys. (It used to be a box across the bottom of the screen with the character's name in neon script.)
 
 signal finished
 
@@ -23,6 +24,12 @@ var hint: Label
 var thread: VBoxContainer
 var scroll: ScrollContainer
 var status: Label
+var selected := 0  ## the answer Up/Down has reached
+var busy := false  ## waiting for the next line: answers are disabled
+var closed := false
+var review: ActionReview  ## a confirmation over the call (Talk sets it); it owns input while it is up
+var leave: Button
+var _palette := ""
 var _avatar: Label
 var _avatar_panel: Panel
 var _answers: Array = []  ## the DialogueResponses offered now
@@ -89,9 +96,23 @@ func _ready() -> void:
 	hint = UIStyle.caption("")
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(hint)
+	leave = Button.new()
+	leave.text = "Leave / Back"
+	leave.pressed.connect(_close)
+	v.add_child(leave)
+	_apply_palette()
+
+
+## The palette can change mid-call (Settings): re-theme the handset.
+func _apply_palette() -> void:
+	_palette = UIStyle.palette
+	panel.get_parent().theme = UIStyle.theme()
+	panel.add_theme_stylebox_override("panel", UIStyle.box(Color(0.03, 0.035, 0.055, 0.97), 28, Color(1, 1, 1, 0.22), 2, Vector4(16, 14, 16, 14)))
 
 
 func _process(dt: float) -> void:
+	if _palette != UIStyle.palette:
+		_apply_palette()
 	if line == null:
 		return
 	_t += dt
@@ -157,9 +178,19 @@ func _bubble(msg: String, side := "them", name_ := "") -> Label:
 
 
 func _next(id: String) -> void:
+	if closed:
+		return
+	busy = true
+	hint.text = "Waiting for result…   ESC leave"
+	for button in choices.get_children():
+		button.disabled = true
 	if state != null:
 		state.refresh()
-	line = await Talk.manager().get_next_dialogue_line(resource, id, [state])
+	var next_line = await Talk.manager().get_next_dialogue_line(resource, id, [state])
+	if closed:
+		return
+	line = next_line
+	busy = false
 	if line == null:
 		_close()
 		return
@@ -171,27 +202,32 @@ func _next(id: String) -> void:
 		if line.text != "":
 			text = _bubble(line.text, "them" if line.character != "" else "note", line.character if line.character != _speaker else "")
 	for c in choices.get_children():
+		choices.remove_child(c)
 		c.queue_free()
 	_answers = line.responses.filter(func(r): return r.is_allowed)
 	for i in _answers.size():
 		var b := Button.new()
 		b.text = "%d   %s" % [i + 1, _answers[i].text]
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.focus_entered.connect(func(): selected = i)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.pressed.connect(choose.bind(i))
 		choices.add_child(b)
-	hint.text = "1-%d reply   ESC hang up" % _answers.size() if not _answers.is_empty() else "ENTER next   ESC hang up"
+	hint.text = "UP/DOWN, 1-%d reply   ESC hang up" % _answers.size() if not _answers.is_empty() else "ENTER next   ESC hang up"
 	Speech.line(line.character if line.text != "" else "", line.text, _answers.map(func(r): return str(r.text)))
 	# keep the thread's height sensible: the answers take what they need, the thread the rest
 	panel.offset_top = -(250.0 + 150.0 + 44.0 * _answers.size())
 	while thread.get_child_count() > 40:  # a long call forgets its oldest messages
 		thread.get_child(0).queue_free()
 		thread.remove_child(thread.get_child(0))
+	selected = 0
+	if not _answers.is_empty():
+		choices.get_child(0).grab_focus()
 
 
 ## Answer with the i-th allowed response.
 func choose(i: int) -> void:
-	if line == null or i < 0 or i >= _answers.size():
+	if closed or busy or line == null or i < 0 or i >= _answers.size():
 		return
 	var snd = get_parent().get("sound") if get_parent() != null else null
 	if snd != null:
@@ -202,27 +238,53 @@ func choose(i: int) -> void:
 
 ## Move past a line with nothing to answer.
 func advance() -> void:
-	if line == null or not _answers.is_empty():
+	if closed or busy or line == null or not _answers.is_empty():
 		return
 	await _next(line.next_id)
 
 
 func _close() -> void:
+	if closed:
+		return
+	closed = true
+	if state != null:
+		state.cancelled = true
 	line = null
 	finished.emit()
 	queue_free()
 
 
+func _exit_tree() -> void:
+	closed = true
+	if state != null:
+		state.cancelled = true
+
+
 func _input(ev: InputEvent) -> void:
-	if not (ev is InputEventKey and ev.pressed and not ev.echo):
+	if is_instance_valid(review):
+		return  # The higher confirmation owns input, including Cancel.
+	if closed or (ev is InputEventKey and ev.echo) or not ev.is_pressed():
 		return
-	var k: int = ev.keycode
-	if k in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
-		advance()
-	elif k >= KEY_1 and k <= KEY_9:
-		choose(k - KEY_1)
-	elif k == KEY_ESCAPE:
+	if ev.is_action_pressed("ui_cancel"):
 		_close()
+	elif busy:
+		# Pending UI controls must not fall through into gameplay controls.
+		if ev.is_action_pressed("ui_accept") or ev.is_action_pressed("ui_up") or ev.is_action_pressed("ui_down") or (ev is InputEventKey and ev.keycode >= KEY_1 and ev.keycode <= KEY_9):
+			get_viewport().set_input_as_handled()
+		return
+	elif ev.is_action_pressed("ui_up") or ev.is_action_pressed("ui_down"):
+		if not _answers.is_empty():
+			selected = posmod(selected + (1 if ev.is_action_pressed("ui_down") else -1), _answers.size())
+			choices.get_child(selected).grab_focus()
+	elif ev.is_action_pressed("ui_accept"):
+		if leave.has_focus():
+			_close()
+		elif _answers.is_empty():
+			advance()
+		else:
+			choose(selected)
+	elif ev is InputEventKey and ev.keycode >= KEY_1 and ev.keycode <= KEY_9:
+		choose(ev.keycode - KEY_1)
 	else:
 		return
 	get_viewport().set_input_as_handled()

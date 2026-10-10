@@ -45,7 +45,7 @@ const RACKETS := ["rounds", "taken", "escaped", "ransomed", "ransom_cash", "turn
 const WAR := ["spent", "fights_total", "lost_men", "arrests_total", "officers_down", "_round_t", "_informant_t", "_org_recruit_t",
 	"_upkeep_acc"]
 const WAR_INTS := ["recruit", "upkeep", "arms", "org", "rival", "police"]
-const WAR_PLAIN := ["control", "hot_spots"]
+const WAR_PLAIN := ["control", "hot_spots", "battle_reports"]
 const SEASON := ["night", "phase", "winner", "reason", "history", "runner_log", "law_log", "cartel_bonus", "plan_hist", "disabled",
 	"forecast", "weather", "moon0", "sightings"]
 const SEASON_INTS := ["wind_kt"]
@@ -60,6 +60,7 @@ const DIRECTOR := ["_ai_mem", "_paid_before", "ended_at"]
 
 static func capture(s: Session) -> Dictionary:
 	var d := {"v": VERSION, "time": s.time, "fuel_spent": s.fuel_spent.duplicate()}
+	d["phone_calls"] = s.phone_calls.capture()
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
@@ -71,6 +72,7 @@ static func capture(s: Session) -> Dictionary:
 			"aboard": l.aboard, "lost": l.lost.duplicate(true), "lost_by": l.lost_by.duplicate(true)}
 	if s.payroll != null:
 		d["payroll"] = _payroll(s)
+		d["people"] = s.payroll.people.capture()
 	if s.airframe != null:
 		d["airframe"] = {"cond": s.airframe.cond.duplicate(true), "failures": s.airframe.failures, "spent": s.airframe.spent}
 	if s.races != null:
@@ -190,6 +192,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 	if d.is_empty() or int(d.get("v", 0)) != VERSION:
 		return
 	s.time = float(d.get("time", 0.0))
+	s.phone_calls.restore(d.get("phone_calls", {}) if d.get("phone_calls") is Dictionary else {})
+	s.phone_calls.tick(s.time)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.stash_net != null and d.get("stashes") is Dictionary:
@@ -251,6 +255,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 	if s.ground != null and d.get("war") is Dictionary:
 		_restore_war(s.ground, d.war)
 	_restore_world(s, d)
+	if s.payroll != null and d.get("people") is Dictionary:
+		s.payroll.people.restore(d.people)
 	if s.nights != null and d.get("nights") is Dictionary:
 		_restore_nights(s.nights, d.nights)
 

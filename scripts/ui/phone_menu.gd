@@ -6,7 +6,8 @@ extends GameMenu
 ##   Contacts   ring the people who otherwise need a walk to the desk or a landing at the right strip: Manny's hiring
 ##              hall, the buyers, the lawyer, the Family, the General's aide, the Collective, the car lot, the casino,
 ##              the desk, dispatch, a taxi. Only the systems that are switched on are in the book; a new number is NEW
-##              until you ring it.
+##              until you ring it. A ringing call (PhoneCalls) sits above the book as INCOMING: ENTER answers, D
+##              declines; the phone opens on Contacts while one rings.
 ##   Messages   what the phone has buzzed with (PhoneNotify's history) and the radio and crew lines, newest first
 ##   Map        the chart, to pick a place or a waypoint
 ##   Jobs       the jobs you have taken: ENTER puts a waypoint on the one you pick
@@ -16,7 +17,8 @@ extends GameMenu
 ##
 ## Arrows move, ENTER opens, the number keys open an app straight from the home screen, ESC goes back (and from the
 ## home screen puts the phone away). Picking a contact (or Map, or Settings) puts the phone away and emits
-## `called(action)`; the pilot app does the rest, the same call the shortcut keys make.
+## `called(action)`; the pilot app does the rest, the same call the shortcut keys make. In a story, G (or the button
+## on the home screen) opens the chapter guide over the phone, read aloud.
 
 signal called(action: String)
 signal waypoint_to(world: Vector2)
@@ -44,6 +46,11 @@ var _tiles: Array = []
 var _sel := 0
 var _info: Label
 var _jobs: Array = []
+var _call_ids: Array = []  ## the ringing calls last drawn: a new one refreshes the phone
+var history_label: Label  ## Contacts: the last few calls, answered, declined or missed
+var campaign_scroll: ScrollContainer  ## the chapter guide (G, or its button on the home screen), over any app
+var campaign_text: Label
+var campaign_button: Button
 
 
 func _build() -> void:
@@ -57,9 +64,36 @@ func _build() -> void:
 	offset_right = -24.0
 	offset_top = -H - 24.0
 	offset_bottom = -24.0
+	# pinned to the corner: if the contents need more room the handset grows left and up, never off the screen
+	grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	grow_vertical = Control.GROW_DIRECTION_BEGIN
 	title.add_theme_font_size_override("font_size", 22)
 	subtitle.add_theme_font_size_override("font_size", 12)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	campaign_button = Button.new()
+	campaign_button.text = "Chapter guide  [G]"
+	campaign_button.visible = s.story != null
+	campaign_button.pressed.connect(func():
+		campaign_scroll.visible = not campaign_scroll.visible
+		_show_page()
+		if campaign_scroll.visible:
+			campaign_button.grab_focus()
+		elif list.visible:
+			list.grab_focus()
+		if s.story != null:
+			campaign_text.text = s.story.journal_text()
+			if campaign_scroll.visible:
+				Speech.say(campaign_text.text, true))
+	content.add_child(campaign_button)
+	campaign_scroll = ScrollContainer.new()
+	campaign_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	campaign_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	campaign_scroll.visible = false
+	content.add_child(campaign_scroll)
+	campaign_text = UIStyle.label("", 15)
+	campaign_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	campaign_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	campaign_scroll.add_child(campaign_text)
 	_grid = GridContainer.new()
 	_grid.columns = 3
 	_grid.add_theme_constant_override("h_separation", 14)
@@ -89,6 +123,9 @@ func _build() -> void:
 	list.row_activated.connect(func(_i): key("enter"))
 	list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(list)
+	history_label = UIStyle.label("", 13, UIStyle.CAPTION)
+	history_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(history_label)
 	_info = UIStyle.label("", 14, UIStyle.DIM)
 	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(_info)
@@ -173,9 +210,13 @@ func contacts() -> Array:
 	return out
 
 
+## The home screen, unless a call is ringing: then the phone opens on Contacts, with the call at the top.
 func open() -> void:
 	page = "home"
+	campaign_scroll.visible = false
 	super.open()
+	if not s.phone_calls.pending().is_empty():
+		open_app("contacts")
 
 
 ## Open one of the apps (or do what it does at once: Map and Settings put the phone away).
@@ -187,38 +228,63 @@ func open_app(id: String) -> void:
 			called.emit(id)
 			return
 	page = id
+	campaign_scroll.visible = false
 	if list != null:
 		list.clear_rows()
 	refresh()
 	if list != null and list.row_count() > 0:
 		list.select_near(0)
+		list.grab_focus()
 	_update_info()
+
+
+## What shows: the chapter guide over everything when it is open, else the home screen's tiles or the app's list.
+func _show_page() -> void:
+	var guide := campaign_scroll.visible
+	var home := page == "home"
+	_grid.visible = home and not guide
+	list.visible = not home and not guide
+	_info.visible = not home and not guide
+	history_label.visible = page == "contacts" and not guide and history_label.text != ""
+	campaign_button.visible = s.story != null and (home or guide)
+
+
+## A ringing call is a row of its own above the book: [action, from, what to do, call id].
+static func _row_id(row: Array) -> String:
+	return "call:" + str(row[3]) if row.size() > 3 else "contact:" + str(row[0])
 
 
 func refresh() -> void:
 	subtitle.text = "$%s   %s" % [Py.money(s.money), "|||"]
-	var home := page == "home"
-	_grid.visible = home
-	list.visible = not home
-	_info.visible = not home
-	rows = contacts()  # the book is always current (the walker's tests and the pilot app read it)
-	if home:
+	if s.story != null and campaign_scroll.visible:
+		campaign_text.text = s.story.journal_text()
+	var selected := list.selected_row()
+	var keep: String = _row_id(rows[selected]) if page == "contacts" and selected >= 0 and selected < rows.size() else ""
+	# the book is always current (the walker's tests and the pilot app read it); ringing calls come first
+	rows = []
+	for call in s.phone_calls.pending():
+		rows.append([str(call.action), str(call.from), "RINGING: Enter to answer, D to decline", int(call.id)])
+	rows.append_array(contacts())
+	_call_ids = s.phone_calls.pending().map(func(call): return int(call.id))
+	var recent: Array[Dictionary] = s.phone_calls.history().filter(func(call): return call.state != "pending")
+	history_label.text = "\n".join(recent.slice(-3).map(func(call): return "%s: %s. Call back from the book." % [str(call.state).capitalize(), str(call.from)]))
+	_show_page()
+	if page == "home":
 		title.text = "Phone"
 		_style_tiles()
 		footer.text = ""
-		hints.set_hints([["ARROWS", "choose", "right"], ["ENTER", "open", "enter"], ["1-7", "app", ""], ["ESC", "put away", "esc"]])
+		hints.set_hints([["ARROWS", "choose", "right"], ["ENTER", "open", "enter"], ["1-%d" % APPS.size(), "app", ""], ["ESC", "put away", "esc"]])
 		return
-	var keep := list.selected_row()
 	list.clear_rows()
 	footer.text = ""
 	match page:
 		"contacts":
 			title.text = "Contacts"
 			for r in rows:
-				list.add_row([("NEW  " if fresh.has(r[0]) else "") + str(r[1])])
+				list.add_row([("INCOMING  " if r.size() > 3 else ("NEW  " if fresh.has(r[0]) else "")) + str(r[1])])
 			if rows.is_empty():
 				footer.text = "Nobody to call yet."
-			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "call", "enter"], ["ESC", "back", "esc"]])
+			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "answer / call", "enter"], ["D", "decline", "d"], ["ESC", "back", "esc"]])
 		"messages":
 			title.text = "Messages"
 			for m in _messages():
@@ -246,8 +312,25 @@ func refresh() -> void:
 				footer.text = "No stations on the dial."
 			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "tune", "enter"], ["ESC", "back", "esc"]])
 	if list.row_count() > 0:
-		list.select_near(keep if keep >= 0 else 0)
+		if page == "contacts":
+			# keep the same person selected when a call starts or stops ringing above them
+			var ids: Array = rows.map(_row_id)
+			list.select_near(ids.find(keep) if ids.has(keep) else 0)
+		else:
+			list.select_near(selected if selected >= 0 else 0)
 	_update_info()
+
+
+## A call that starts ringing while the phone is out: the home screen goes to Contacts, any app redraws.
+func _process(delta: float) -> void:
+	super._process(delta)
+	if visible and s != null:
+		var ids: Array = s.phone_calls.pending().map(func(call): return int(call.id))
+		if ids != _call_ids:
+			if page == "home" and not campaign_scroll.visible and ids.size() > _call_ids.size():
+				open_app("contacts")
+			else:
+				refresh()
 
 
 func _messages() -> Array:
@@ -291,16 +374,26 @@ func _update_info() -> void:
 		_info.text = "%s%s" % [j.dest_label(), ("  -  %d:%02d left" % [int(tl / 60), int(fposmod(tl, 60))]) if tl != null else ""]
 
 
-## ESC: back to the home screen, and from there away.
+## ESC: back to the home screen, and from there away. With the chapter guide open it puts the phone away.
 func close() -> void:
-	if visible and page != "home":
+	if visible and page != "home" and not campaign_scroll.visible:
 		page = "home"
 		refresh()
 		return
+	page = "home"
 	super.close()
 
 
 func key(k: String) -> void:
+	if s.story != null and (k == "g" or (k == "enter" and campaign_button.has_focus())):
+		campaign_button.pressed.emit()
+		return
+	if campaign_scroll.visible:
+		if k == "up":
+			campaign_scroll.scroll_vertical -= 48
+		elif k == "down":
+			campaign_scroll.scroll_vertical += 48
+		return
 	if page == "home":
 		match k:
 			"left", "up":
@@ -330,6 +423,12 @@ func key(k: String) -> void:
 					if i < 0 or i >= rows.size():
 						return
 					var action: String = rows[i][0]
+					if rows[i].size() > 3:
+						var result: Array = s.command(Roles.PILOT, "phone_answer", {"id": rows[i][3]})
+						if not result[0]:
+							show_feedback(str(result[1]), false)
+							refresh()
+							return
 					fresh.erase(action)
 					page = "home"
 					super.close()
@@ -345,3 +444,23 @@ func key(k: String) -> void:
 						radio.idx = i
 						radio.power(true)
 						_info.text = radio.line()
+		"d":
+			var i := list.selected_row()
+			if page == "contacts" and i >= 0 and i < rows.size() and rows[i].size() > 3:
+				var result: Array = s.command(Roles.PILOT, "phone_decline", {"id": rows[i][3]})
+				show_feedback("Call declined. The offer stays open through the contact." if result[0] else str(result[1]), bool(result[0]))
+				refresh()
+
+
+func _input(event: InputEvent) -> void:
+	if visible and s.story != null and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_G:
+		key("g")
+		get_viewport().set_input_as_handled()
+		return
+	if visible and campaign_scroll.visible:
+		for pair in [["ui_up", "up"], ["ui_down", "down"]]:
+			if event.is_action_pressed(pair[0], true):
+				key(pair[1])
+				get_viewport().set_input_as_handled()
+				return
+	super._input(event)

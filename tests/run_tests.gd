@@ -22,6 +22,18 @@ func _run() -> void:
 		if f.begins_with("test_") and f.ends_with(".gd") and f != "test_case.gd":
 			files.append(f)
 	files.sort()
+	var lane := OS.get_environment("TEST_LANE")
+	if lane != "":
+		var groups := TestLanes.manifest()
+		var errors := TestLanes.problems(files, groups)
+		if not lane in TestLanes.NAMES:
+			errors.append("Unknown requested lane: " + lane)
+		if not errors.is_empty():
+			for error in errors: printerr("FAIL test lanes: ", error)
+			quit(101)
+			return
+		files = files.filter(func(file): return TestLanes.lane(file, groups) == lane)
+		print("TEST LANE: %s (%d files)" % [lane, files.size()])
 	# SHARD="i/n" (1-based) runs every n-th file starting at the i-th: CI runs the suite as parallel jobs
 	var shard := OS.get_environment("SHARD")
 	if shard.contains("/"):
@@ -37,6 +49,9 @@ func _run() -> void:
 	var failed := 0
 	var t0 := Time.get_ticks_msec()
 	for f in files:
+		var file_started := Time.get_ticks_msec()
+		var file_passed := passed
+		var file_failed := failed
 		var script: GDScript = load("res://tests/" + f)
 		if script == null or not script.can_instantiate():
 			printerr("FAIL %s: script failed to load (parse error above)" % f)
@@ -61,5 +76,7 @@ func _run() -> void:
 				failed += 1
 				for msg in inst.failures:
 					printerr("FAIL ", msg)
+		print("TEST FILE: %s — %d passed, %d failed in %.3f s" % [f, passed - file_passed, failed - file_failed,
+			(Time.get_ticks_msec() - file_started) / 1000.0])
 	print("%d passed, %d failed in %.1f s" % [passed, failed, (Time.get_ticks_msec() - t0) / 1000.0])
 	quit(failed)

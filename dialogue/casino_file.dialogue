@@ -2,6 +2,8 @@
 # Acts through Talk.State: wiretap(), audit(), raid().
 
 ~ start
+if campaign_chapter >= 8 and campaign_chapter > 0
+	Radio: Record the investigation outcome, not rumours from the runner's side.
 if not casino
 	Radio: There is no casino file in this game.
 	=> END
