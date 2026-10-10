@@ -3,13 +3,14 @@ MCP implementation: [jawaman14/skyrunner-mcp](https://github.com/jawaman14/skyru
 
 # Handoff: Claude ⇄ ChatGPT (Codex) relay
 
-The owner authorized **simultaneous Claude/Codex collaboration on 11 October 2026**. Use
-[the shared MCP board and claims](tools/mcp/COLLABORATION.md) for live coordination, separate linked
-worktrees for independent tasks, and this file for durable checkpoints. Neither agent can see the other's
-chat. A session can end without warning: keep revision, validation and next steps current while working.
+**Mode: relay.** The owner uses one AI until its tokens run out, then the other. Neither agent can see the other's
+chat, and a session can end without warning: keep this file's baton current in every commit. The planning inputs
+are the owner's [work split](docs/AGENT_WORK_SPLIT.md) and [allocation tracker](docs/AI_WORK_ALLOCATION.md)
+(tiers A/B/C, hard merge rules, lanes). If two sessions ever overlap on one checkout, use the MCP board
+([tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md)) and separate worktrees.
 
-`CLAUDE.md` (conventions, commands, layout) applies to both AIs; `AGENTS.md` points Codex here. Code facts live
-in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the long-term queue in
+`AGENTS.md` (conventions, commands, layout, lanes) is the rules file for both AIs; `CLAUDE.md` imports it. Code facts live
+in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the queue in
 `docs/ROADMAP.md`. Older handoffs: [docs/HANDOFF_HISTORY_2026-09.md](docs/HANDOFF_HISTORY_2026-09.md).
 
 ## For the owner: switching AIs
@@ -30,11 +31,11 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Codex, 2026-10-11 |
-| **Task** | #298 now supports concurrent Claude/Codex clients: shared claims/notes/startup, per-checkout cross-process Godot guard, anonymous public GitHub reads and Windows runtime safeguards. Installed locally and verified through two MCP clients. |
-| **Branches / PRs** | **#298** `codex/mcp-safeguards` (depends on #293; MCP safeguards and portable runtime). **#296** `claude/employed-pilot-opening` (employed opening; CI running; owner asked for the rebase only, not the merge). **#297** `claude/fix-restored-review-findings` (fixes Codex's 3 review findings on the merged #295; draft, CI running). **#293** `ccr-958eacf7-ugmwgs` (docs, handoff, MCP server; draft). |
-| **Next step** | Reconnect actual Claude/Codex clients to load the shared MCP tools; call collaboration_start, read the board, claim disjoint paths in separate linked worktrees. Review fresh #298 CI; preserve its #293 dependency and rebase after integration. Next bounded Codex candidate: #97 startup transition tests. #297 and human release gates still require review. |
-| **Watch out** | `main` currently has the autopilot cascade bug (P1) until #297 merges. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell); use `pgrep Godot_v4`. Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit`. |
+| **Holder** | Claude, 2026-10-10 |
+| **Task** | Combined #293 + #298 + #299 on one branch per the owner: relay mode, `AGENTS.md` canonical (`CLAUDE.md` = `@AGENTS.md`), MCP server out of the game (pinned launcher to skyrunner-mcp), owner's work split and allocation tracker imported. |
+| **Branches / PRs** | **#293** `ccr-958eacf7-ugmwgs` (this; now includes #298 and #299, which become redundant). **#297** `claude/fix-restored-review-findings` (autopilot/radar/payroll fixes; merge first). **#296** `claude/employed-pilot-opening` (employed opening; owner go-ahead pending). **#300** lobby layout + screenshot matrix (needs human look). |
+| **Next step** | Owner: review/merge #297, then #293; close #298 and #299 as folded in. Then P05 (reference action-preview screen, Claude), #97 entry-path tests (Codex), and trim ROADMAP.md to the lane queue. Create the gate register in PROJECT_STATUS.md before any human run. |
+| **Watch out** | `main` has the autopilot cascade bug until #297 merges. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell). The MCP board is per-machine; HANDOFF.md is what carries state between AIs. Read review comments before merging anything. |
 
 ## Taking over (checklist for the incoming AI)
 
@@ -201,7 +202,7 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   errors** (`tools/test.sh`, 1,165 s, one process, Linux, Godot 4.7.2). CI on #293's first head: all 11 jobs green.
 - **Pushed (#293, draft):**
   - Ten missing `.gd.uid` files committed.
-  - `tools/mcp/skyrunner_mcp.py`: an MCP server with game tools (tests, smoke, screenshot, balance, tool scripts,
+  - `tools/mcp/skyrunner_mcp.py` (since moved to the separate skyrunner-mcp repo, see top): an MCP server with game tools (tests, smoke, screenshot, balance, tool scripts,
     command/switch introspection) and GitHub tools (PR triage, CI status/logs, PRs, issues, branch cleanup).
     Codex can call it too, from any MCP client. All 24 tools were exercised over stdio except the GitHub write
     tools (PR create/update/close, comments, issue writes, branch deletion), which have not been run.
