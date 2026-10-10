@@ -59,6 +59,17 @@ static func _point(args: Dictionary):
 	return [x, y] if x != null and y != null else null
 
 
+## The police radar coverage a hot leg routes around: one circle per active site, its range, as route-planner
+## avoid zones. Only what the police actually field; legal cargo never asks for it.
+func known_radar_zones() -> Array:
+	var zones: Array = []
+	if police != null and police.sensors != null:
+		for site in police.sensors.sites:
+			if bool(site.active):
+				zones.append({"x": site.x, "y": site.y, "radius": site.range_m})
+	return zones
+
+
 func _autopilot_navigate() -> void:
 	var af := _autopilot_target()
 	if af == null or PyMath.hypot(af.x - state.x, af.y - state.y) < AUTOPILOT_MIN_ROUTE_M:
@@ -68,7 +79,7 @@ func _autopilot_navigate() -> void:
 	var hot := carrying_hot()
 	var wps: Array
 	if hot:
-		wps = RoutePlanner.plan_route(world, [state.x, state.y], [af.x, af.y])
+		wps = RoutePlanner.plan_route(world, [state.x, state.y], [af.x, af.y], 6.0, 1.5, 1500.0, known_radar_zones())
 		var c := police.case("runner")
 		transponder = not (c.wanted > 0 or c.tipped or c.suspicion >= AUTOPILOT_HOT_DARK_SUSPICION)
 	else:
