@@ -44,22 +44,32 @@ func _ready() -> void:
 	status = UIStyle.caption("Rebind: press the key or joypad button.  Bind axis: move the control all the way.  ESC saves and closes.")
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(status)
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	v.add_child(scroll)
-	var body := VBoxContainer.new()
-	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(body)
-
+	var tabs := TabContainer.new()
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(tabs)
+	var flight := _page(tabs, "Flight bindings")
+	var body := _page(tabs, "Flight hardware")
+	var reference := _page(tabs, "Other controls")
+	for entry in [
+		["Everywhere", "F8 Controls • F1 Help • M Map • Esc Back / pause"],
+		["Flying", "Tab Leave aircraft when parked • J Jobs • L Load • H Hangar\nN Transponder • U Autopilot • C Camera • Y Mouse yoke\nShift+T Phone: contacts and organisation services"],
+		["Walking", "WASD Move • Shift Run • Space Jump • Mouse Look\nE Interact / enter vehicle • F Torch • T Phone • I Pack\n1–4 Weapons • R Reload • H Holster • 5 Medkit\nZ Hold • X Come • C Charge • V Fall back (field orders)"],
+		["Driving", "W / S or Up / Down Accelerate / reverse • A / D or Left / Right Steer\nSpace Handbrake • E Exit • R Radio power • , / . Radio station"],
+		["Menus", "Arrows / controller direction: navigate • Enter / controller Accept: activate\nEsc / controller Back: cancel or leave • Tab: move focus\nFlight bindings below are rebindable; other shortcuts are fixed."]
+	]:
+		reference.add_child(UIStyle.label(entry[0], 18, UIStyle.CYAN))
+		var help_text := UIStyle.caption(entry[1])
+		help_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		reference.add_child(help_text)
 	body.add_child(UIStyle.label("Axes: yoke, throttle quadrant, pedals, toe brakes", 18, UIStyle.CYAN))
 	var ag := GridContainer.new()
-	ag.columns = 9
+	ag.columns = 1
 	ag.add_theme_constant_override("h_separation", 8)
 	body.add_child(ag)
 	for c in FlightAxes.CONTROLS:
 		ag.add_child(UIStyle.label(FlightAxes.LABELS[c], 15))
 		var desc := UIStyle.label("", 14, UIStyle.DIM)
-		desc.custom_minimum_size.x = 260
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		ag.add_child(desc)
 		var bar := ProgressBar.new()
 		bar.min_value = 0.0 if FlightAxes.CONTROLS[c] == "lever" else -1.0
@@ -68,26 +78,31 @@ func _ready() -> void:
 		bar.show_percentage = false
 		bar.custom_minimum_size = Vector2(120, 14)
 		ag.add_child(bar)
-		ag.add_child(_btn("Bind", func(): _capture(c)))
-		ag.add_child(_btn("Invert", func(): _tweak(c, "invert", 0)))
-		ag.add_child(_btn("Dead -/+", func(): _tweak(c, "deadzone", 1), func(): _tweak(c, "deadzone", -1)))
-		ag.add_child(_btn("Expo -/+", func(): _tweak(c, "expo", 1), func(): _tweak(c, "expo", -1)))
+		var actions := HBoxContainer.new()
+		ag.add_child(actions)
+		actions.add_child(_btn("Bind", func(): _capture(c)))
+		actions.add_child(_btn("Invert", func(): _tweak(c, "invert", 0)))
+		for setting in ["deadzone", "expo"]:
+			var field: String = setting
+			actions.add_child(_btn("%s −" % ("Deadzone" if field == "deadzone" else "Expo"), func(): _tweak(c, field, -1)))
+			actions.add_child(_btn("%s +" % ("Deadzone" if field == "deadzone" else "Expo"), func(): _tweak(c, field, 1)))
 		var tune := UIStyle.label("", 13, UIStyle.CAPTION)
 		ag.add_child(tune)
-		ag.add_child(_btn("Clear", func():
+		actions.add_child(_btn("Clear", func():
 			ControlsConfig.axes.clear(c)
 			_refresh()))
 		axis_rows[c] = {"desc": desc, "bar": bar, "tune": tune}
 
-	body.add_child(UIStyle.label("Keys and buttons", 18, UIStyle.CYAN))
+	flight.add_child(UIStyle.label("Keys and buttons", 18, UIStyle.CYAN))
 	var kg := GridContainer.new()
 	kg.columns = 3
 	kg.add_theme_constant_override("h_separation", 12)
-	body.add_child(kg)
+	flight.add_child(kg)
 	for n in ControlsConfig.names():
 		kg.add_child(UIStyle.label(ControlsConfig.LABELS[n], 15))
 		var l := UIStyle.label("", 15, UIStyle.WHITE)
-		l.custom_minimum_size.x = 320
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		kg.add_child(l)
 		kg.add_child(_btn("Rebind", func(): _rebind(n)))
 		key_rows[n] = l
@@ -108,18 +123,26 @@ func _ready() -> void:
 	palette_btn.grab_focus.call_deferred()
 
 
-## A button; the second callback (if any) is the right click.
-func _btn(text: String, cb: Callable, right := Callable()) -> Button:
+## Each tab scrolls independently and follows keyboard/controller focus.
+func _page(tabs: TabContainer, title: String) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name = title
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	tabs.add_child(scroll)
+	var body := VBoxContainer.new()
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 8)
+	scroll.add_child(body)
+	return body
+
+
+## Explicit buttons work with keyboard, mouse and controller.
+func _btn(text: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.focus_mode = Control.FOCUS_ALL
 	b.pressed.connect(cb)
-	if right.is_valid():
-		b.button_mask = MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT
-		b.gui_input.connect(func(ev):
-			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
-				right.call())
-		b.tooltip_text = "left click: more   right click: less"
 	return b
 
 

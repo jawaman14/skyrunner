@@ -9,6 +9,105 @@ func _session() -> Session:
 	session.money = 100000
 	return session
 
+func test_district_overview_real_input_and_supported_layouts() -> void:
+	var s := _session()
+	var palette := UIStyle.palette
+	for size in [Vector2i(1024, 768), Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1080)]:
+		for colours in ["neon", "safe"]:
+			UIStyle.set_palette(colours)
+			var viewport := SubViewport.new()
+			viewport.size = size
+			Engine.get_main_loop().root.add_child(viewport)
+			var menu := HQMenu.new()
+			viewport.add_child(menu)
+			menu.setup(s)
+			menu.open()
+			for i in 3: await Engine.get_main_loop().process_frame
+			var at := menu.districts_button.get_global_rect().get_center()
+			var click := InputEventMouseButton.new()
+			click.button_index = MOUSE_BUTTON_LEFT
+			click.position = at
+			click.pressed = true
+			viewport.push_input(click)
+			click.pressed = false
+			viewport.push_input(click)
+			for i in 3: await Engine.get_main_loop().process_frame
+			check(menu.districts_open, "real mouse opens district view %s/%s" % [size, colours])
+			var bounds := menu.get_global_rect()
+			var scroll_bounds := menu.district_scroll.get_global_rect()
+			check(scroll_bounds.end.x <= bounds.end.x + 1 and scroll_bounds.end.y <= bounds.end.y + 1, "scroll surface fits the menu")
+			check(menu.close_button.get_global_rect().end.y <= bounds.end.y, "exit remains in bounds")
+			var cancel := InputEventJoypadButton.new()
+			cancel.button_index = JOY_BUTTON_B
+			cancel.pressed = true
+			viewport.push_input(cancel)
+			check(not menu.visible, "controller Back exits overview")
+			viewport.free()
+	UIStyle.set_palette(palette)
+
+
+func test_district_overview_toggle_preserves_selection_and_blocks_hidden_map() -> void:
+	var s := _session()
+	var menu := HQMenu.new()
+	Engine.get_main_loop().root.add_child(menu)
+	menu.setup(s)
+	menu.open()
+	var squad = s.ground.recruit("org", "foot", null, false)
+	menu.sel_squad = squad.id
+	var before: Dictionary = squad.order.duplicate(true)
+	menu.districts_button.emit_signal("pressed")
+	check(menu.district_scroll.visible and not menu.map.visible, "overview replaces map instead of overflowing it")
+	check("DISTRICTS" in menu.district_text.text, "shows district summary")
+	menu._on_map_click(MOUSE_BUTTON_RIGHT, squad.pos() + Vector2(100, 0))
+	check_eq(squad.order, before, "hidden map cannot issue an order")
+	menu.key("d")
+	check(menu.map.visible and not menu.district_scroll.visible, "keyboard returns to map")
+	check_eq(menu.sel_squad, squad.id, "selection survives view switch")
+	menu.close()
+	menu.free()
+
+
+func test_hq_right_click_cannot_target_a_hidden_squad() -> void:
+	var s := _session()
+	var menu := HQMenu.new()
+	Engine.get_main_loop().root.add_child(menu)
+	menu.setup(s)
+	menu.open()
+	var own = s.ground.recruit("org", "foot", s.ground.hq("org"), false)
+	var at: Vector2 = own.pos() + Vector2(12000, 12000)
+	var enemy = s.ground.recruit("rival", "foot", at, false)
+	enemy.hidden = true
+	menu.sel_squad = own.id
+	menu._on_map_click(MOUSE_BUTTON_RIGHT, at)
+	check(own.order.get("squad", "") != enemy.id, "hidden enemy cannot be found by a click")
+	check(own.order.type != "attack", "unobserved map position produces a positional order")
+	own.x = at.x - 100
+	own.y = at.y
+	menu._on_map_click(MOUSE_BUTTON_RIGHT, at)
+	check_eq(own.order.get("squad", ""), enemy.id, "observed enemy remains targetable")
+	menu.close()
+	menu.free()
+
+
+func test_local_hq_shows_shared_squad_command_detail() -> void:
+	var s := _session()
+	var menu := HQMenu.new()
+	Engine.get_main_loop().root.add_child(menu)
+	menu.setup(s)
+	menu.open()
+	var squad = s.ground.recruit("org", "foot", null, false)
+	squad.morale = 0.65
+	squad.ammo = 123
+	menu.sel_squad = squad.id
+	menu._squad_detail()
+	check("123 rounds" in menu.squad_label.text, "HQ displays ammunition")
+	check("65%" in menu.squad_label.text, "HQ displays morale")
+	check("Upkeep:" in menu.squad_label.text, "HQ displays authoritative upkeep")
+	check(menu.squad_label.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART, "command detail wraps")
+	menu.close()
+	menu.free()
+
+
 func test_disband_review_cancel_commit_and_close_restore_seat_and_focus() -> void:
 	var s := _session()
 	var viewport := SubViewport.new()

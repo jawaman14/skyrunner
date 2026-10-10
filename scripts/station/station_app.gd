@@ -1007,7 +1007,7 @@ func _process(delta: float) -> void:
 	var selected_unit = Py.first(snap.get("units", []), func(u): return u.id == sel_unit)
 	var entity = selected_squad if selected_squad != null else selected_unit
 	if entity != null:
-		selection_lbl.text = "SELECTED %s · %s · %s" % [entity.id, entity.get("kind", "unit"), entity.get("state", entity.get("order", ""))]
+		selection_lbl.text = preload("res://scripts/ui/widgets/squad_card.gd").describe(selected_squad) if selected_squad != null else "SELECTED %s · %s · %s" % [entity.id, entity.get("kind", "unit"), entity.get("state", entity.get("order", ""))]
 	elif sel_unit != null or sel_squad != null:
 		selection_lbl.text = "Selected entity is no longer available in this seat's report."
 	hints.set_hints(_hints())
@@ -1407,14 +1407,8 @@ func _draw_squads(snap: Dictionary) -> void:
 		if not tl.is_empty():
 			lines += [""] + tl
 	lines.append("")
-	lines.append("STREETS (who's out there)")
-	var ctl: Dictionary = g.get("control", {})
-	for m in ctl:
-		var c: Dictionary = ctl[m]
-		var tot: float = c.org + c.rival + c.police
-		if tot > 1.0:
-			lines.append("  %-6s ours %2.0f%%   Los Cuervos %2.0f%%   police %2.0f%%" % [m,
-				100.0 * (c.police if law else c.org) / tot, 100.0 * c.rival / tot, 100.0 * (c.org if law else c.police) / tot])
+	lines.append(preload("res://scripts/ui/widgets/district_summary.gd").describe(g.get("districts", [])))
+	lines.append(preload("res://scripts/ui/widgets/battle_report.gd").describe(g.get("battle_reports", [])))
 	var fights: Array = g.get("fights", [])
 	if not fights.is_empty():
 		lines += ["", "SHOTS FIRED"] + fights.map(func(f): return "  %s vs %s, %.0f s" % [f.a, f.b, float(f.age)])

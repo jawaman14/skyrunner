@@ -4,6 +4,8 @@
 # Reads and acts through Talk.State: {{dl_*}} fields and buy_vehicle(), sell_car(), sell_truck(), toggle_fleet_auto().
 
 ~ start
+if campaign_chapter == 2 and campaign_chapter > 0
+	Marty Quintero: A vehicle is optional for this chapter. Read the price and fleet effects before buying; your people can buy automatically only if you delegate.
 if not dealer
 	Radio: Nobody answers at the dealership. It is not open yet.
 	=> END
@@ -105,7 +107,7 @@ if not dealer
 		Radio: {{result}}
 		=> END
 	=> bought
-- Ambulance Conversion. ({{money_s(dl_price("ambulance"))}}) 50 km/h, 45% cover: nobody stops an ambulance. [if dl_can("ambulance")]
+- Ambulance Conversion. ({{money_s(dl_price("ambulance"))}}) 50 km/h, 45% cover: cover reduces roadblock risk. [if dl_can("ambulance")]
 	do buy_vehicle("ambulance")
 	if result != ""
 		Radio: {{result}}
