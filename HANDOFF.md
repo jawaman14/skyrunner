@@ -33,9 +33,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
 | **Task** | Combined #293 + #298 + #299 on one branch per the owner: relay mode, `AGENTS.md` canonical (`CLAUDE.md` = `@AGENTS.md`), MCP server out of the game (pinned launcher to skyrunner-mcp), owner's work split and allocation tracker imported. |
-| **Branches / PRs** | **#293** `ccr-958eacf7-ugmwgs` (this; now includes #298 and #299, which become redundant). **#297** `claude/fix-restored-review-findings` (autopilot/radar/payroll fixes; merge first). **#296** `claude/employed-pilot-opening` (employed opening; owner go-ahead pending). **#300** lobby layout + screenshot matrix (needs human look). |
-| **Next step** | Owner: review/merge #297, then #293; close #298 and #299 as folded in. Then P05 (reference action-preview screen, Claude), #97 entry-path tests (Codex), and trim ROADMAP.md to the lane queue. Create the gate register in PROJECT_STATUS.md before any human run. |
-| **Watch out** | `main` has the autopilot cascade bug until #297 merges. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell). The MCP board is per-machine; HANDOFF.md is what carries state between AIs. Read review comments before merging anything. |
+| **Branches / PRs** | **#293** `ccr-958eacf7-ugmwgs` (this; now includes #298 and #299, which become redundant). **#297** merged (`e9fcedc`: autopilot/radar/payroll fixes). **#296** `claude/employed-pilot-opening` (employed opening; owner go-ahead pending). **#300** lobby layout + screenshot matrix (needs human look). |
+| **Next step** | Close #298 and #299 as folded into #293 (after it merges). Then P05 (reference action-preview screen, Claude), #97 entry-path tests (Codex), and trim ROADMAP.md to the lane queue. Create the gate register in PROJECT_STATUS.md before any human run. |
+| **Watch out** | Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell). The MCP board is per-machine; HANDOFF.md is what carries state between AIs. Read review comments before merging anything. |
 
 ## Taking over (checklist for the incoming AI)
 
