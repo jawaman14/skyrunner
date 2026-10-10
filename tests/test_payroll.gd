@@ -346,6 +346,25 @@ func test_demand_report_is_read_only_and_explainable() -> void:
 	var d: Dictionary = s.payroll.demand("org")
 	check(d.has("pilot"), "demand exposes role targets")
 	for role in d:
-		check(int(d[role].target) >= int(d[role].active), "active crew does not exceed target for %s" % role)
+		check_eq(int(d[role].vacancy), maxi(0, int(d[role].target) - int(d[role].active)), "vacancy is target minus active for %s" % role)
+		check_eq(int(d[role].surplus), maxi(0, int(d[role].active) - int(d[role].target)), "surplus is active minus target for %s" % role)
 	check_eq(JSON.stringify(s.payroll.view("runner")), before, "demand does not mutate payroll")
 	s.dispose()
+
+
+func test_demand_report_keeps_a_staffed_role_whose_target_fell_to_zero() -> void:
+	var s := Session.new({"seed": 31, "map_seed": MapCity.SEED, "payroll": true, "ground_war": true, "money": 100000})
+	check(s.payroll.needs("org").has("pilot"), "with cash a pilot is wanted")
+	s.payroll.workers.append({"id": "T1", "name": "Test Pilot", "outfit": "org", "role": "pilot", "skill": 0.5, "loyalty": 0.5,
+		"wage": 300, "hint": "", "status": "free", "assigned": "", "heat": 0.0, "hired_at": 0.0})
+	s.money = 1000  # below the $30,000 a pilot is worth keeping
+	check(not s.payroll.needs("org").has("pilot"), "short of cash the pilot target disappears")
+	var d: Dictionary = s.payroll.demand("org")
+	check(d.has("pilot"), "but the staffed role is still reported")
+	check_eq(int(d.pilot.target), 0, "with a zero target")
+	check_eq(int(d.pilot.active), 1, "one active")
+	check_eq(int(d.pilot.surplus), 1, "and shown as overstaffed")
+	check_eq(int(d.pilot.vacancy), 0, "with no vacancy")
+	check(not d.has("accountant"), "a role nobody wants or has is not listed")
+	s.dispose()
+
