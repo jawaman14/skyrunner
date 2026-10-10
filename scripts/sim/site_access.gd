@@ -203,8 +203,9 @@ func checked_vehicle_route(graph: RoadGraph, from: Vector2, to: Vector2, penalty
 			var leg := _vehicle_leg(graph, from, start.index, false)
 			if not leg.reachable: continue
 			for finish in _vehicle_candidates(graph, to):
-				# A shared isolated node must not become an off-road shortcut.
-				if start.index == finish.index or components[start.index] != components[finish.index]: continue
+				# A shared node is fine when it carries real road edges; an isolated one must not become an off-road shortcut.
+				if components[start.index] != components[finish.index]: continue
+				if start.index == finish.index and graph.adj[start.index].is_empty(): continue
 				if not arrivals.has(finish.index): arrivals[finish.index] = _vehicle_leg(graph, to, finish.index, true)
 				if not arrivals[finish.index].reachable: continue
 				departure = leg
