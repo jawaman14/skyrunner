@@ -29,6 +29,8 @@ var waypoints: Array = []  ## [[x, y], or [x, y, alt_m], ...] still to fly; empt
 var wp_i := 0
 var arrived := false  ## engage_route() reached its last waypoint this frame (Session says so once)
 var _leg_from := [0.0, 0.0]  ## the current leg's other end, for the course line (see update())
+var _intercept = null  ## a temporary point flown ahead of waypoint wp_i when that fix lies behind us; the route itself is never edited
+var _intercepted_wp := -1  ## the waypoint index that already had its one intercept, so a fix straight behind can't be put off for ever
 const WAYPOINT_RADIUS_M := 800.0  ## this close (along the course, not as the crow flies): the next leg
 const CROSS_TRACK_GAIN := 0.12  ## a sideways m/s to close per metre off the course line
 const CROSS_TRACK_MAX_MS := 25.0  ## capped: don't bank hard just to shave off the last few metres
@@ -56,6 +58,8 @@ func engage_route(s: FlightModel.FlightState, wps: Array, alt_m: float, elevator
 	engage(s, elevator_now)
 	waypoints = wps
 	wp_i = 0
+	_intercept = null
+	_intercepted_wp = -1
 	_leg_from = [s.x, s.y]
 	alt_target = alt_m
 
@@ -72,21 +76,31 @@ func update(dt: float, s: FlightModel.FlightState, c: FlightModel.Controls) -> F
 		# straight at a point you're passing near, recomputed each frame, is pure-pursuit guidance,
 		# and with a bank-limited turn it can settle into a stable orbit around the point instead of
 		# ever reaching it. Flying a line and closing the cross-track error doesn't have that failure.
-		var wp: Array = waypoints[wp_i]
+		var wp: Array = _intercept if _intercept != null else waypoints[wp_i]
 		var course := PilotBot.bearing(_leg_from[0], _leg_from[1], wp[0], wp[1])
 		var ac := _along_across(s.x, s.y, wp, course)
-		# Rebuild a short forward intercept when a passed fix would otherwise orbit.
-		var course_behind := absf(Py.wrap180(course - s.heading)) > 135.0
-		if (ac[0] < -WAYPOINT_RADIUS_M or course_behind) and s.gs_kts > 20.0:
+		# The fix is behind us (the course line points away from where we are heading): turning back onto it
+		# inside the capture radius is what orbits it. Fly a short way ahead first, then take the real leg. The
+		# intercept is temporary - the waypoint stays in the route - and each waypoint gets only one, so a fix
+		# straight behind is turned back to after it, not postponed for ever.
+		if _intercept == null and _intercepted_wp != wp_i and s.gs_kts > 20.0 \
+				and absf(Py.wrap180(course - s.heading)) > 135.0:
 			var h := deg_to_rad(s.heading)
 			var intercept_m := clampf(maxf(1200.0, s.gs_kts * 0.514444 * 12.0), 1200.0, 3500.0)
-			var intercept := [s.x + sin(h) * intercept_m, s.y + cos(h) * intercept_m]
+			_intercept = [s.x + sin(h) * intercept_m, s.y + cos(h) * intercept_m]
+			_intercepted_wp = wp_i
 			_leg_from = [s.x, s.y]
-			wp = intercept
-			waypoints[wp_i] = intercept
+			wp = _intercept
 			course = s.heading
 			ac = _along_across(s.x, s.y, wp, course)
-		if ac[0] < WAYPOINT_RADIUS_M:
+		if _intercept != null and ac[0] < WAYPOINT_RADIUS_M:
+			# reached the intercept: now the real waypoint, along a course line from here
+			_leg_from = _intercept
+			_intercept = null
+			wp = waypoints[wp_i]
+			course = PilotBot.bearing(_leg_from[0], _leg_from[1], wp[0], wp[1])
+			ac = _along_across(s.x, s.y, wp, course)
+		if _intercept == null and ac[0] < WAYPOINT_RADIUS_M:
 			if wp_i < waypoints.size() - 1:
 				wp_i += 1
 				_leg_from = wp
