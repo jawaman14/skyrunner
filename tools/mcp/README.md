@@ -69,8 +69,10 @@ Optional environment: `SKYRUNNER_GITHUB_REPO=owner/name` (default: parsed from `
   run `skyrunner_project_status` before a PR.
 - **Introspection asks Godot**, via `tools/mcp_introspect.gd`, instead of parsing GDScript: permissions are built
   from concatenated constants that a regex would misread. The result is cached per commit and dirty `scripts/` state.
-- **Arguments passed to Godot are allowlisted** (`[A-Za-z0-9_.,:=/+-]`), and processes are spawned without a shell
-  except for the fixed test pipeline, which quotes its inputs.
+- **Arguments passed to Godot are allowlisted** (`[A-Za-z0-9_.,:=/+-]`), and processes are spawned without a shell.
+  The portable Python test worker refuses to run tests after a failed import.
+- **Windows jobs** run without console windows; cancellation and deadlines stop the selected process tree.
+  POSIX hosts use process groups. Missing GNU timeout uses an internal deadline rather than Windows timeout.exe.
 - **Write tools are annotated** (`destructiveHint` etc.), so clients can ask before running them. Branch deletion
   defaults to a dry run, and branches of PRs closed *without* merging are only included when asked.
 
@@ -81,3 +83,15 @@ Optional environment: `SKYRUNNER_GITHUB_REPO=owner/name` (default: parsed from `
 ```bash
 npx @modelcontextprotocol/inspector uv run --quiet --script tools/mcp/skyrunner_mcp.py
 ```
+
+Regression checks from the repository root:
+
+```bash
+python tools/mcp/test_guards.py tools/mcp/skyrunner_mcp.py
+uv run --script tools/mcp/test_runtime.py
+```
+
+The guard tests use fake GitHub responses. Runtime tests start real subprocesses, exercise cancellation,
+deadlines and UTF-8 logs, verify import failures stop tests, and initialize an actual stdio MCP connection.
+They require no Godot installation and perform no GitHub writes. The beta workflow runs them on
+Windows and Linux; real Godot tests and smoke remain separate.

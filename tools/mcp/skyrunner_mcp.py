@@ -128,7 +128,7 @@ class Job:
 
     def text(self) -> str:
         try:
-            return self.log.read_text(errors="replace")
+            return self.log.read_text(encoding="utf-8", errors="replace")
         except FileNotFoundError:
             return ""
 
@@ -154,9 +154,10 @@ async def _start_job(kind: str, command: list[str], summarize, env: dict | None 
     log = WORK / f"{job_id}.log"
     full_env = {**os.environ, **(env or {})}
     handle = log.open("wb")
-    wrapped = ["timeout", "--kill-after=10", str(timeout_s), *command] if shutil.which("timeout") else command
+    wrapped = ["timeout", "--kill-after=10", str(timeout_s), *command] if os.name != "nt" and shutil.which("timeout") else command
+    platform_options = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {"start_new_session": True}
     proc = await asyncio.create_subprocess_exec(*wrapped, cwd=ROOT, env=full_env, stdout=handle,
-                                                stderr=asyncio.subprocess.STDOUT, start_new_session=True)
+                                                stderr=asyncio.subprocess.STDOUT, **platform_options)
     handle.close()
     job = Job(job_id, kind, command, log, proc, time.time(), summarize, extra=extra or {})
     JOBS[job_id] = job
@@ -165,6 +166,14 @@ async def _start_job(kind: str, command: list[str], summarize, env: dict | None 
         await proc.wait()
         job.ended = time.time()
     asyncio.create_task(_reap())
+    if wrapped is command:
+        async def _deadline() -> None:
+            try:
+                await asyncio.wait_for(asyncio.shield(proc.wait()), timeout=timeout_s)
+            except asyncio.TimeoutError:
+                job.extra["timed_out"] = True
+                _terminate_job(job, force=True)
+        asyncio.create_task(_deadline())
     return job
 
 
@@ -179,7 +188,7 @@ async def _wait(job: Job, wait_seconds: float) -> None:
 def _report(job: Job, tail_lines: int = 40) -> str:
     text = job.text()
     elapsed = (job.ended or time.time()) - job.started
-    s = job.summarize(text, job.proc.returncode)
+    s = job.summarize(text, 124 if job.extra.get("timed_out") else job.proc.returncode)
     state = "running" if job.running else ("passed" if s.get("ok") else "FAILED")
     lines = [f"## Job {job.id} — {state} ({elapsed:.0f} s)", f"`{' '.join(job.command)}`", ""]
     for k, v in s.items():
@@ -300,17 +309,17 @@ async def skyrunner_run_tests(
     """
     if filter:
         _check_args([filter])
-    g = _q(godot())
-    steps = []
+    command = [sys.executable, "-u", str(Path(__file__).with_name("run_tests.py")), godot()]
     if reimport:
-        steps.append(f"echo '== import'; {g} --headless --import 2>&1 | grep -E 'SCRIPT ERROR|Parse Error|ERROR' ; true")
-    steps.append(f"echo '== tests'; {g} --headless --script res://tests/run_tests.gd" + (f" -- {_q(filter)}" if filter else ""))
+        command.append("--reimport")
+    if filter:
+        command += ["--filter", filter]
     env = {}
     if lane:
         env["TEST_LANE"] = lane
     if shard:
         env["SHARD"] = shard
-    job = await _start_job("tests", _shell("; ".join(steps)), _summarize_tests, env=env, timeout_s=3600)
+    job = await _start_job("tests", command, _summarize_tests, env=env, timeout_s=3600)
     await _wait(job, wait_seconds)
     return _report(job, tail_lines=0 if not job.running else 10)
 
@@ -539,12 +548,12 @@ async def skyrunner_job_cancel(job_id: str) -> str:
     if not job.running:
         return f"Job {job_id} already finished (exit {job.proc.returncode})."
     try:
-        os.killpg(job.proc.pid, signal.SIGTERM)
+        _terminate_job(job)
     except ProcessLookupError:
         pass
     await _wait(job, 10)
     if job.running:
-        os.killpg(job.proc.pid, signal.SIGKILL)
+        _terminate_job(job, force=True)
         await _wait(job, 5)
     return f"Job {job_id} stopped."
 
@@ -1037,19 +1046,35 @@ async def github_branch_cleanup(
     return "\n".join(lines)
 
 
+def _terminate_job(job: Job, force: bool = False) -> None:
+    """Terminate only this job's process tree on the host platform."""
+    if not job.running:
+        return
+    if os.name == "nt":
+        # taskkill /T includes descendants; /F is required for headless processes without a window.
+        result = subprocess.run(["taskkill", "/PID", str(job.proc.pid), "/T", "/F"],
+                                capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        if result.returncode != 0 and job.running:
+            job.proc.kill()
+    else:
+        os.killpg(job.proc.pid, signal.SIGKILL if force else signal.SIGTERM)
+
+
 def _stop_jobs() -> None:
     """Jobs run in their own process groups (so cancel can kill Godot's children); don't orphan them on exit."""
     for job in JOBS.values():
         if job.running:
             try:
-                os.killpg(job.proc.pid, signal.SIGTERM)
+                _terminate_job(job)
             except (ProcessLookupError, PermissionError):
                 pass
 
 
 def main() -> None:
     atexit.register(_stop_jobs)
-    for sig in (signal.SIGTERM, signal.SIGHUP):  # clients usually stop a stdio server with a signal, skipping atexit
+    for sig in (signal.SIGTERM, getattr(signal, "SIGHUP", None)):
+        if sig is None:
+            continue
         signal.signal(sig, lambda *_: (_stop_jobs(), os._exit(0)))
     mcp.run("stdio")
 

@@ -28,8 +28,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Codex, 2026-10-11 |
-| **Task** | MCP safeguards on an isolated checkout of #293; regression checks pass |
-| **Branches / PRs** | **#296** `claude/employed-pilot-opening` (employed opening; CI running; owner asked for the rebase only, not the merge). **#297** `claude/fix-restored-review-findings` (fixes Codex's 3 review findings on the merged #295; draft, CI running). **#293** `ccr-958eacf7-ugmwgs` (docs, handoff, MCP server; draft). |
+| **Task** | MCP Windows runtime fixed in #298; stdio and Godot tools verified locally |
+| **Branches / PRs** | **#298** `codex/mcp-safeguards` (depends on #293; MCP safeguards and portable runtime). **#296** `claude/employed-pilot-opening` (employed opening; CI running; owner asked for the rebase only, not the merge). **#297** `claude/fix-restored-review-findings` (fixes Codex's 3 review findings on the merged #295; draft, CI running). **#293** `ccr-958eacf7-ugmwgs` (docs, handoff, MCP server; draft). |
 | **Next step** | Owner: decide on #296 (merge?), #297 (merge: it fixes a real autopilot bug on `main`), #293. Then: close #250/#251/#252/#255 once #296 merges and update the "awaiting merge" wording (DESIGN §0/§21, ROADMAP). Then package A (road/loading access, #271 first). |
 | **Watch out** | `main` currently has the autopilot cascade bug (P1) until #297 merges. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell); use `pgrep Godot_v4`. Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit`. |
 
@@ -98,6 +98,15 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+### 2026-10-11 — Codex (MCP Windows integration)
+- Reproduced Windows startup failure on missing SIGHUP; fixed signal registration and process-tree cancellation/deadlines.
+- Portable Python worker removes Bash dependency from tests and refuses tests after import errors. UTF-8 logs preserve per-file counts.
+- Seven real runtime/worker/stdio tests pass, plus seven guard regression cases. Added Windows/Linux MCP checks to the beta workflow.
+- Through actual MCP calls: status current, import and docs 2/2, zero-match filter correctly FAILED, smoke 1800 SMOKE OK.
+- Full game suite and Linux runtime not run locally; CI must establish Linux evidence. Human gates unchanged.
+- Next: review #298 with #293, then rebase #298 onto main after #293 merges. Keep primary crew-map changes untouched.
+
 
 ### 2026-10-11 — Codex (MCP safeguards)
 - Reject zero-test success, unknown mergeability, and empty CI job lists.
