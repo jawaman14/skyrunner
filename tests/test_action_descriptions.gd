@@ -181,3 +181,18 @@ func test_armoury_preview_does_not_take_weapons_or_ammunition() -> void:
 	sess.stash_net.get_stash(dest).burned = true
 	check(not sess.command(Roles.PILOT, "move_armoury", {"to": dest})[0])
 	check_eq(ars.stock.rifle, 7)
+
+func test_spotter_preview_states_the_fee_and_gates_execution() -> void:
+	var action := sess.describe_action(Roles.PILOT, "hire_spotter", {"code": "VAL"})
+	check(action.enabled and "$%d" % Session.SPOTTER_FEE in action.preview and "one-off" in action.preview)
+	var forbidden := sess.describe_action(Roles.CONTROLLER, "hire_spotter", {"code": "VAL"})
+	check(not forbidden.enabled and forbidden.preview == "", "no consequences leaked to the opposing side")
+	check(not sess.describe_action(Roles.PILOT, "hire_spotter", {"code": "NOPE"}).enabled, "unknown strip")
+	sess.money = Session.SPOTTER_FEE - 1
+	check(not sess.describe_action(Roles.PILOT, "hire_spotter", {"code": "VAL"}).enabled, "cannot afford")
+	check(not sess.command(Roles.PILOT, "hire_spotter", {"code": "VAL"})[0], "execution re-checks funds")
+	check(sess.spotters.is_empty() and sess.money == Session.SPOTTER_FEE - 1, "refusal changes nothing")
+	sess.money = 200000
+	check(sess.command(Roles.PILOT, "hire_spotter", {"code": "VAL"})[0])
+	check_eq(sess.money, 200000 - Session.SPOTTER_FEE)
+	check(not sess.describe_action(Roles.PILOT, "hire_spotter", {"code": "VAL"}).enabled, "already watching")

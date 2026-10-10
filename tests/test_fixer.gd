@@ -85,6 +85,8 @@ func test_the_desk_draws_the_jobs_and_its_keys_do_the_business() -> void:
 	await _confirm_review(app)
 	check(s.gear.has("scanner") and s.money < m, "G buys the scanner")
 	app._key("s")
+	check(s.spotters.is_empty(), "preview does not hire")
+	await _confirm_review(app)
 	check(s.spotters.size() == 1, "S hires a spotter here")
 	app._process(0.016)
 	check(app.info.text.contains("THE CREW") and app.info.text.contains("SPOTTERS: " + s.location), "the desk shows the crew and the spotters: %s" % app.info.text.substr(0, 200))
