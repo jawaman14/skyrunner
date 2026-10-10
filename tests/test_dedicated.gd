@@ -206,10 +206,13 @@ func test_the_ai_pilot_keeps_flying_for_a_server_hour() -> void:
 func test_a_story_server_runs_the_chapters_and_remembers_them() -> void:
 	var s := _server({"unlocks": "story", "autosave": 0.0})
 	check(s.sess.story != null, "the story is attached")
-	check_eq(s.sess.story.chapter.title, "Square Grouper", "at its first chapter")
+	check_eq(s.sess.story.chapter.title, "On the payroll", "new server begins employed")
+	check(s.sess.owned.is_empty(), "employer aircraft is usable but unowned")
 	for i in 30 * 60:
 		s.step(1.0 / 30.0)
 	check(s.sess.time > 59.0, "a minute of the story served")
+	s.sess.story.advance()  # explicit skip of the opening
+	check_eq(s.sess.story.chapter.title, "Square Grouper")
 	s.sess.story.advance()
 	s.save()
 	s.shutdown()
