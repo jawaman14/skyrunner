@@ -111,6 +111,18 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-11 — Claude, leave/reload/join coverage (#97, assigned by Codex):** On `claude/startup-leave-tests` from
+  main `e384241` (after #306, #307 and #308), added `tests/test_startup_leave.gd` (socket lane): from a direct-hosted
+  game, (1) the pause menu's reload (`leave("load")`) releases the first server and re-hosts with exactly one new
+  server, voice pipeline and beacon on a new session; (2) `leave("lobby")` leaves no server, voice, client or game,
+  opens the lobby, and the port can be listened on again after the deferred frees; (3) `_mp_join` with the F4 menu
+  open tears the host down, forgets the menu, and ends with one client link and one waiting room, no host voice. All
+  three passed on first run; no production defect found, so `main.gd` is unchanged. Windows Godot 4.7.2: focused 3/3,
+  socket lane 140/140 (before rebase onto #308), docs 2/2; Linux and the full suite are left to CI. #97 stays open:
+  the SeatPicker-cancel route, a host reload that restores the waiting-room seat choice, and the physical two-machine
+  voice/controller checks remain. The suspected stale `main._mp` reference is not a defect (a freed object compares
+  equal to null in Godot 4.7.2).
+
 - **2026-10-11 — Claude, waiting-room startup coverage (#97, assigned by Codex):** On `claude/startup-room-tests`
   from main `909efaf`, added `tests/test_startup_room.gd` (socket lane): through the real `Main._open_room` /
   `RoomScreen._start` / `_cancel` / `Main.start` paths, (1) a host who keeps the pilot seat flies with the room's own
