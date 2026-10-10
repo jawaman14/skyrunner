@@ -125,6 +125,13 @@ static func takeoff_verdict(liftoff_m, to_15m_m, min_clear_m, usable_m: float) -
 	return {"valid": why.is_empty(), "reason": "; ".join(why)}
 
 
+## Distance of the planner's aim point from the threshold of the landing end, measured along the runway heading.
+static func aim_from_threshold(af: Airfield, end: int, ap: PilotBot.Approach) -> float:
+	var t: Array = af.threshold(end)
+	var h := deg_to_rad(end_heading(af, end))
+	return (ap.aim[0] - t[0]) * sin(h) + (ap.aim[1] - t[1]) * cos(h)
+
+
 ## Touchdowns seen by a landing trial: every air-to-ground transition, so a bounce or a go-around that touches
 ## first is not mistaken for the final touchdown.
 class TouchdownLog:
@@ -300,6 +307,11 @@ static func landing(aircraft: String, code: String, load: String, end: int) -> D
 	var ap: PilotBot.Approach = plan.ap
 	r.glide_deg = ap.gamma
 	r.approach_clear_m = ap.clear_m
+	# the planner moves the aim point down the strip when the final needs it, so where it aimed is part of the
+	# result: a late aim on a short strip leaves little runway to stop in
+	r.aim_from_threshold_m = aim_from_threshold(af, end, ap)
+	r.strip_left_at_aim_m = af.length - r.aim_from_threshold_m
+	r.strip_left_at_touchdown_m = null
 	if not plan.clear:
 		r.status = "obstructed"
 		r.stop = "obstructed"
@@ -357,6 +369,7 @@ static func landing(aircraft: String, code: String, load: String, end: int) -> D
 		r.touchdown_fpm = fin[2]
 		var fst := tdlog.first_event()
 		r.first_touchdown_from_threshold_m = (fst[0] - t[0]) * sin(h) + (fst[1] - t[1]) * cos(h)
+		r.strip_left_at_touchdown_m = af.length - r.touchdown_from_threshold_m
 		if ok:
 			r.roll_m = PyMath.hypot(s.state.x - fin[0], s.state.y - fin[1])
 	r.seconds = s.time - t0
@@ -388,11 +401,12 @@ static func _num(v, fmt := "%.0f") -> String:
 
 ## Markdown: one row per trial, in job order.
 static func table(results: Array) -> String:
-	var lines := ["| field | end | hdg | aircraft | load | test | result | liftoff m | 15 m at | min clear m | along m | max off-line m | final touchdown m | sink fpm | roll m | go-arounds | outcome |",
-		"|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+	var lines := ["| field | end | hdg | aircraft | load | test | result | liftoff m | 15 m at | min clear m | along m | max off-line m | aim m | final touchdown m | strip left m | sink fpm | roll m | go-arounds | outcome |",
+		"|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
 	for r in results:
-		lines.append("| %s | %d | %03.0f | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % [r.field, r.end, r.heading,
+		lines.append("| %s | %d | %03.0f | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % [r.field, r.end, r.heading,
 			r.aircraft, r.load, r.test, r.status, _num(r.get("liftoff_m")), _num(r.get("to_15m_m")), _num(r.get("min_clear_m")),
-			_num(r.get("along_m")), _num(r.get("max_cross_m")), _num(r.get("touchdown_from_threshold_m")), _num(r.get("touchdown_fpm")), _num(r.get("roll_m")),
+			_num(r.get("along_m")), _num(r.get("max_cross_m")), _num(r.get("aim_from_threshold_m")), _num(r.get("touchdown_from_threshold_m")),
+			_num(r.get("strip_left_at_touchdown_m")), _num(r.get("touchdown_fpm")), _num(r.get("roll_m")),
 			_num(r.get("go_arounds"), "%d"), str(r.outcome).replace("|", "/")])
 	return "\n".join(lines)

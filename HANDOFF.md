@@ -123,7 +123,13 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   15 m reached, and the CG never below an obstacle top once clear of the strip (`MIN_CLEARANCE_M` = 0; the gear hangs
   about a metre lower, so this is the least that is clear at all); otherwise it is `fail` with `invalid_reason`, and
   the measured distances stay in the result. A landing reports the FINAL touchdown (where the successful roll began),
-  the first one alongside it, and the number of touchdowns, so a bounce or go-around is not hidden. The bot flies
+  the first one alongside it, and the number of touchdowns, so a bounce or go-around is not hidden.
+  Landing rows also carry the planner's aim point (`aim_from_threshold_m`), the glide angle and approach clearance,
+  and the strip left at the aim and at the final touchdown. The planner moves the aim down the strip when the final
+  needs it (HAR end 0 aims 294 m out on classic terrain and 726 m on natural, because the natural pass raises the hill
+  under that final from about 600 m out), so a short strip's touchdown must be read with its aim and strip-left.
+  Clearance (`min_clear_m`) is the CG above the highest obstacle within 15 m, the rig's scoring convention, not proof
+  that the gear or whole airframe cleared it. The bot flies
   the takeoff and keeps pitch, power and flaps, but from liftoff the harness holds the runway line with PilotBot's
   own bank law (`StripTrials.LATERAL_MODE`, recorded in every result and the provenance): the rig measures whether the
   aircraft can climb straight out over the terrain, not where the bot would turn. It records the ground roll,
@@ -134,7 +140,7 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   Evidence found while planning: (1) `Feasibility.takeoff_trial` scores a post-goal glide into the ground as a pass
   (`leg_i >= 1`), so takeoff outcomes in `sim-results/feasibility.json` are noise; (2) that file was flown on the
   classic island (cli.gd never selects a map), not the city map `docs/STRIPS.md` and new games use; (3) both tools
-  ran classic terrain, while play uses the natural pass. Windows Godot 4.7.2: strip_trials 8/8, trials_parity 2/2,
+  ran classic terrain, while play uses the natural pass. Windows Godot 4.7.2: strip_trials 9/9, trials_parity 2/2,
   docs 2/2, switches 6/6, status current, hygiene OK; CLI smoke HAR c172p light end 0, classic and natural: takeoff
   pass (liftoff 223 m, 15 m at 422 m, least clearance 136 m, 3002 m along, at most 19 m off the line), landing pass. The full
   measurement matrix and a `docs/STRIPS.md` regeneration wait for independent review of the harness; job-generator

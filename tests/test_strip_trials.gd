@@ -136,6 +136,30 @@ func test_landing_is_flown_to_the_forced_end() -> void:
 	check(r.roll_m != null and r.roll_m > 0.0)
 
 
+## The recorded aim point is the forced approach's own geometry, and the runway left is measured from it.
+func test_landing_records_the_aim_point_and_the_strip_left() -> void:
+	StripTrials.use_map(MapCity.SEED, false)
+	var af := World.airfield("HAR")
+	for end in [0, 1]:
+		var s := Feasibility._session("c172p", "VAL")
+		Feasibility.load_aircraft(s, Feasibility.LOADS["light"][0], Feasibility.LOADS["light"][1])
+		var plan := StripTrials.approach_for_end(s.world, af, end, s.fm.mass.gear_height_ft * 0.3048,
+			s.spec.est_landing_roll(s.state.weight_lb, s.world.airfield_elev(af)))
+		var ap: PilotBot.Approach = plan.ap
+		var thr: Array = af.threshold(end)
+		var want := PyMath.hypot(ap.aim[0] - thr[0], ap.aim[1] - thr[1])  # the aim lies on the runway line, so distance = along-track
+		check_near(StripTrials.aim_from_threshold(af, end, ap), want, 0.01, "end %d: aim measured along the heading" % end)
+		check(want > 0.0 and want < af.length, "end %d: aim %.0f m is on the strip" % [end, want])
+		s.dispose()
+		var r := StripTrials.landing("c172p", "HAR", "light", end)
+		check_near(r.aim_from_threshold_m, want, 0.01, "end %d: result carries the planner's aim" % end)
+		check_near(r.strip_left_at_aim_m, af.length - want, 0.01)
+		check_eq(r.glide_deg, ap.gamma)
+		if r.touchdown_from_threshold_m != null:
+			check_near(r.strip_left_at_touchdown_m, af.length - r.touchdown_from_threshold_m, 0.01)
+			check(r.touchdown_from_threshold_m >= r.aim_from_threshold_m - 100.0, "end %d: touched down near or past the aim" % end)
+
+
 func test_an_end_without_a_clear_final_is_reported_obstructed() -> void:
 	StripTrials.use_map(MapCity.SEED, false)
 	var w := World.new()
