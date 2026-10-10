@@ -34,7 +34,7 @@ Beyond the prototype:
 - **Generated islands.** `--map N` (or the lobby's island picker) grows island N: terrain, ten strips
   sited and rated for approach, and the HQs placed where each side would want them - the villa near the
   cove, the task force by the hub, the rival compound up in the hills. The classic island (`--map 0`) is retired
-  from play; its geography is kept only for the frozen parity and balance tests.
+  from play; its geography is kept as a test fixture: the frozen parity and balance tests, and about 85 `World.use_map(0)` call sites across ordinary system and UI tests, so changing it touches far more than the fixtures.
 - **The realism layer** (found and tuned by the scenario sweeps; details in
   [docs/BALANCE.md](BALANCE.md) 14-19):
   - *Weather and the moon.* A nightly forecast both HQs see (right 75% of the time). Cloud, rain and a

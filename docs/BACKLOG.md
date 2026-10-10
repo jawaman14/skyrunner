@@ -19,7 +19,7 @@ removed), **gate** (needs a human, hardware or a legal decision, not code).
 
    Minutes later, `d91975f` ("Merge complete overhaul implementation repair") deleted all of them and their tests.
    The macOS job came back with #223. The rest did not, but the roadmap's issue-pass note still lists #80, #81, #82
-   and #87 as covered. **Fixed in #295.**
+   and #87 as covered. **Fixed in #295 and corrected in #297.**
 2. **The 31 open Codex PRs are one long chain**, not separate stacks. Each was branched from the tip of the previous
    one, linked by PRs that have since been closed or superseded (#246, #249, #256/#257, #273). GitHub shows
    36 conflicts into `main`, but replaying each PR's own code commits onto `main` gives a better picture: **16 PRs
@@ -52,14 +52,14 @@ and the documentation PRs #241, #242, #243, #246, #249, #264, #273 (folded into 
 
 | # | Title | Status | Recommendation |
 |---|---|---|---|
-| 80 | Autopilot circling at QRY/PNR | **lost** (see finding 1) | Restore `368d171`'s forward intercept and test; then close |
-| 81 | Crew auto-hiring and roles | **lost** demand report; hiring by `needs()` exists | Restore the demand report; the rest belongs to product step 2 (automation) |
-| 82 | Autopilot route selection and interception | **lost** (same patch as #80) | Restore with #80. The full planner/lock design in the issue is optional |
+| 80 | Autopilot circling at QRY/PNR | **partly**: intercept restored (#295) and corrected (#297), with kinematic tests | Fly QRY/PNR with the real flight model, then close |
+| 81 | Crew auto-hiring and roles | **done** for the demand report (#295, #297: vacancy and surplus); hiring by `needs()` exists | Close; the rest belongs to product step 2 (automation) |
+| 82 | Autopilot route selection and interception | **partly** (same patch as #80, restored in #295/#297) | Close with #80 after the flown check. The full planner/lock design in the issue is optional |
 | 83 | Incoming calls | partly: Family offers ring the shared phone (#225) | Keep for other call sources; fold #125 and #132 into it |
 | 84 | Physical payroll NPCs | partly: payroll bodies and checked travel exist; work isn't arrival-gated (deferred) | Keep; close #102 as its duplicate |
 | 85 | Combat from physically present agents | not started | Keep: package A step 6, after movement migration |
 | 86 | Pathfinding: terrain, checkpoints, blocked routes | partly: penalty hook, checked routes; #258/#270/#272 drafts | Keep: package A |
-| 87 | Radar-aware hot routing | **lost** (avoid zones removed by `d91975f`) | Restore the route-planner zones and test, then wire known radar into `_autopilot_navigate` |
+| 87 | Radar-aware hot routing | **done** (#295, #297): route-planner zones, wired into hot autopilot legs from public airfield radars only | Close |
 | 88 | QRY/PNR aircraft/load feasibility | documented, not resolved: in `docs/STRIPS.md` the bot's C182 overruns QRY and PNR at light load, and the C172 can't take off from them at half load, so the job board can send a load where it can't fly out | Keep: an owner/balance decision (accept and stop offering those loads, or change the strips) |
 | 89 | Two-machine multiplayer verification | gate | Keep until a real two-machine session is recorded |
 | 90 | Housekeeping and CI hygiene | partly: `tools/hygiene.sh` enforces the stray-folder, scratch-script and export-filter checks | Narrow to the dead-code scan, or close |
@@ -116,7 +116,8 @@ step, so the open list shows what is actually next.
 1. **Restored the lost fixes** (#80/#82, #81, #87): merged as #295. The radar zones are now wired into hot autopilot legs
    (`Session.known_radar_zones`), with tests. A flown QRY/PNR check is still to do before closing #80/#82.
 2. **Integrated the clean stacks:** merged as #294 (full CI green); the fourteen source PRs are closed.
-3. **Employed opening:** rebased as #296, awaiting CI and merge.
+3. **Employed opening:** rebased as #296, awaiting the owner's go-ahead to merge.
+   Also merged #297 (fixes to the three review findings on #295).
 4. **Closed issues:** #92, #99, #102, #117, #118, #139, #158, #174. #97 stays open: `_join()`/`_seat()` need tests.
 
 ## Next

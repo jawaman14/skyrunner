@@ -207,21 +207,18 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
     Codex can call it too, from any MCP client. All 24 tools were exercised over stdio except the GitHub write
     tools (PR create/update/close, comments, issue writes, branch deletion), which have not been run.
   - This file and `AGENTS.md`.
-- **Review findings** (read from source; not yet fixed):
+- **Review findings** (read from source; not yet fixed; a host-backlog finding was withdrawn: `read_lines` caps the buffer at `MAX_LINE + 1` and any extracted line leaves at most `MAX_LINE`, so a well-behaved client can't trip the drop):
   1. `scripts/ui/command_presentation.gd` `poll()` calls `link.snapshot()` every frame, and `station_app.gd`
      `_process` already builds one. On a `LocalLink` (hot-seat/AI desks) that is two full `Snapshot.build` calls
      per frame instead of one. Pass the frame's snapshot into `poll()`.
   2. `scripts/net/net_client.gd`: `read_lines` caps the buffer at `MAX_LINE + 1`, but only the host drops an
      oversized frame. A client receiving a line over 1 MiB stops reading forever, silently. Mirror the host's
      `buf.size() > MAX_LINE` check and close with an error.
-  3. `scripts/net/host_server.gd` `_poll`: with at most 64 lines extracted per poll, a backlog of complete lines
-     over 1 MiB trips the oversized-frame drop on a well-behaved client. Unlikely at current rates; check
-     `extract_lines`' leftover for a newline before dropping.
-  4. The rackets "turn" preview (`action_descriptions.gd`) repeats `Rackets._recruit`'s wage formula with a
+  3. The rackets "turn" preview (`action_descriptions.gd`) repeats `Rackets._recruit`'s wage formula with a
      literal skill of 0.3; the two can drift apart. Expose one helper.
-  5. `PhoneCalls._calls` keeps every call forever and is saved; it's needed for source de-duplication. Low impact,
+  4. `PhoneCalls._calls` keeps every call forever and is saved; it's needed for source de-duplication. Low impact,
      but cap the history or store only source IDs for terminal calls.
-  6. Docs:
+  5. Docs:
      - `CLAUDE.md`'s layout still said new handlers go in `session_commands.gd`; they go in `cmds_*.gd` since
        #284 (fixed in #293).
      - `docs/FEATURES.md:36` says `--map 0` is the classic island, but that map is retired.
