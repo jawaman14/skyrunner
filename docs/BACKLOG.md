@@ -86,10 +86,10 @@ below.
 | 89 | Two-machine multiplayer verification | gate | Keep until a real two-machine session is recorded |
 | 90 | Housekeeping and CI hygiene | partly: `tools/hygiene.sh` enforces the stray-folder, scratch-script and export-filter checks | Narrow to the dead-code scan, or close |
 | 91 | Repository weight | not started: `.git` is 190 MB; `docs/video` tracks 41 MB of MP4 | Keep. Move videos to release assets; don't add #253's media |
-| 92 | Persist visible strategic systems | mostly done: `StrategicSave` covers Family, trade, economy and market, island, casino, dealership, Collective, Agency, chronicle, arsenals, war books, rackets, every faction's squads and the HQ season | Check that in-transit logistics rounds survive a save, then close |
-| 97 | Centralise host services | partly: #282 shared voice/beacon setup, #290 cleanup; `tests/test_host_services.gd` | Close if the owner agrees #282/#290 meet it |
+| 92 | Persist visible strategic systems | **closed 10 Oct**: `StrategicSave` covers every system the issue lists. In-transit trucks, boats and jobs are deliberately not saved: saves are written parked (documented in the file header) | Closed |
+| 97 | Centralise host services | partly, **kept open**: #282/#290 share voice and beacon setup and the failed-host path, with tests; but `_join()`, `_seat()` and the other listed entry paths have no coverage (`PROJECT_STATUS.md` agrees) | Keep: add entry-path tests for `_join()` / `_seat()`, then close |
 | 98 | Strategic balance pass | gate (evidence) | Keep; run after #244 and the AI-knowledge decision |
-| 99 | Reconcile roles and campaign docs | done: DESIGN §3 statuses are current, chapters 5–8 retired, §0 added | Close |
+| 99 | Reconcile roles and campaign docs | **closed 10 Oct** (done) | Closed |
 | 100 | Arena polish | partly: race betting exists (`races.gd`); no lap counter, no player-vs-player races, gate robustness unchecked | Keep; close #117 as its duplicate |
 | 175 | Asset and radio licensing | gate (legal) | Keep: blocks public release |
 
@@ -97,7 +97,7 @@ below.
 
 | # | Title | Status | Recommendation |
 |---|---|---|---|
-| 102 | Physical payroll agents | duplicate of #84 | Close as duplicate |
+| 102 | Physical payroll agents | **closed 10 Oct** as a duplicate of #84 | Closed |
 | 103 | Physical cargo manifests | partly: trucks carry stock; cars have no manifest | Keep (step 2/3) |
 | 104 | Police intelligence memory | not started as specified (the analyst desk and case exist) | Keep (step 3) |
 | 105 | Intel-driven checkpoints | partly: police squads set checkpoints | Keep (step 3), after #104 |
@@ -112,8 +112,8 @@ below.
 | 114 | Crew relationships | deferred (roadmap) | Keep, labelled deferred |
 | 115 | Campaign director | partly: chronicle and events | Keep, deferred |
 | 116 | Hidden informant (multiplayer) | deferred; a separate proposal per §0 | Keep, deferred |
-| 117 | Races, laps and betting | duplicate of #100 | Close as duplicate |
-| 118 | Program: #80–#117 order | superseded by the product order | Close |
+| 117 | Races, laps and betting | **closed 10 Oct** as a duplicate of #100 | Closed |
+| 118 | Program: #80–#117 order | **closed 10 Oct** (superseded) | Closed |
 
 ### UI, UX and player-satisfaction specs (#120–#174)
 
@@ -127,7 +127,7 @@ delivered part of many of them; none has been playtested.
 | Feed into package B (empire feedback) | #127 load planner, #129 job risk explanation, #163 debrief, #160 choice audit, #162 career identity | Map onto package B slices |
 | Playtest and measurement | #155 onboarding audit, #157 friction telemetry, #171 responsiveness, #172 first-hour protocol | Gates; run with the first human sessions |
 | Not started | #128 intelligence desk, #131–#134 dialogue memory, briefings and tutorial, #142, #144–#146, #148, #151–#154, #156, #159, #161, #164–#170, #173 | Keep as a wish list |
-| Programs | #139, #158, #174 | Close: superseded by the product order |
+| Programs | #139, #158, #174 | **closed 10 Oct** (superseded by the product order) |
 
 **Recommendation:** close the three program issues. Comment on the seven largely-delivered ones with what landed
 and close them, opening a narrow follow-up only where something concrete remains. Then label the rest by product
