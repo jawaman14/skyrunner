@@ -33,7 +33,8 @@ Beyond the prototype:
   kerbs and terraces but can't swim.
 - **Generated islands.** `--map N` (or the lobby's island picker) grows island N: terrain, ten strips
   sited and rated for approach, and the HQs placed where each side would want them - the villa near the
-  cove, the task force by the hub, the rival compound up in the hills. `--map 0` is the classic island.
+  cove, the task force by the hub, the rival compound up in the hills. The classic island (`--map 0`) is retired
+  from play; its geography is kept only for the frozen parity and balance tests.
 - **The realism layer** (found and tuned by the scenario sweeps; details in
   [docs/BALANCE.md](BALANCE.md) 14-19):
   - *Weather and the moon.* A nightly forecast both HQs see (right 75% of the time). Cloud, rain and a
@@ -190,7 +191,7 @@ Beyond the prototype:
   - surf, rain and thunder;
   - One radio for the cockpit (F7, `,` `.`) and the car (R, `,` `.`): real 1979-86 broadcasts; the car's dashboard shows the station and what is playing.
 
-  The UI clicks are Kenney's (CC0). Samples are in `docs/audio/`.
+  The UI clicks are Kenney's (CC0). To hear samples, render them: `godot --headless --script res://tools/sound_demo.gd -- <out dir>`.
 - **Your own controls (F8).**
   - Every flight key and gamepad button can be rebound. The remapping and button names come from Input Helper.
   - Each analogue control is bound by moving it: yoke, throttle lever, rudder pedals, left and right toe brakes. They can be on several USB devices, which are matched by name, so replugging or reordering them doesn't matter.

@@ -292,6 +292,11 @@ The **job board** at each strip lists work: passengers and cargo for money, **ho
 to a boat, **gun runs**, and fuel drums (fly them to a strip to start a cache). A job shows its pay, weight and distance and,
 for a strip, the estimated landing roll against the strip length, so a trap shows red. Hot jobs and gun runs raise **heat**.
 
+How you fly changes the pay: late is 40% of it, fragile cargo broken by a landing over 400 fpm halves it, an unhappy
+VIP (bank over 45° or a landing over 300 fpm) takes 30% off, and a touchdown under 150 fpm adds 10%. Contraband is
+paid at the street price on the day it lands. Dropping a job pays nothing; at its origin it goes back on the board.
+Details: DESIGN 46.
+
 ### 5.3 The police and the heat (DESIGN 3, 4)
 
 The task force never sees your true position. It has **radar sites** (each turns at its own rate; detection falls with range
