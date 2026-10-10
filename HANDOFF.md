@@ -32,10 +32,10 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
-| **Task** | #293 (relay mode, `AGENTS.md` canonical, standalone MCP launcher, work-split docs) and #297 are merged; #298/#299 closed as folded in. #296 (employed opening) merged `main` in and is going to `main` on green CI. |
-| **Branches / PRs** | **#296** `claude/employed-pilot-opening` (merging now). **#300** lobby layout + screenshot matrix (needs a human look at the screenshots). Held: #244, #247, #269, #253 and the road/loading series. |
-| **Next step** | Close #250, #251, #252, #255 once #296 is in; update the "awaiting merge" wording in DESIGN §0/§21 and ROADMAP. Then P05 (reference action-preview screen, Claude), #97 entry-path tests (Codex), trim `docs/ROADMAP.md` to the lane queue, and create the gate register in PROJECT_STATUS.md before any human run. Fly QRY/PNR with the real flight model to close #80/#82. |
-| **Watch out** | Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, re-run `project_status.gd -- --write`. Don't `pkill -f <name>` (kills your own shell). The MCP board is per-machine; HANDOFF.md carries state between AIs. The standalone MCP loads from `.mcp.json` only in a new session. Read review comments before merging anything. |
+| **Task** | Package A (road and loading access), one PR per slice from `main`. Merged: #302 (`1156136`, nearby road connections after dead ends; #270 closed). This PR (#301): district overview Q-return fix (#271 replayed); `test_hq_action_review` 9/9, 8/1 with the fix reverted. #296 (employed opening) is merged. |
+| **Branches / PRs** | **#301** `claude/district-overview-back` (ready, CI + review pending). **#304** docs-only wording after #296 (draft). **#300** lobby layout + screenshot matrix (needs a human look). Held: #244, #247, #269, #253. |
+| **Next step** | Merge #301 on green with Codex's review read. Then, one PR each from `main`: #265 (villa), #267 (FRM approach, creates `tools/road_access_components.gd`), #268, #272, #274, #275, #276; re-run `tools/logistics_routes.gd` at the end. Close #271 after #301. Then P05 (reference action-preview screen, Claude), #97 entry-path tests (Codex), trim `docs/ROADMAP.md` to the lane queue, gate register in PROJECT_STATUS.md. |
+| **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The MCP board is per-machine; HANDOFF.md carries state between AIs. |
 
 ## Taking over (checklist for the incoming AI)
 
