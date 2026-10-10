@@ -162,6 +162,25 @@ jobs:
           name: smoke-screenshot-linux
           path: smoke.png
 
+  screenshot-matrix:
+    name: UI captures (four resolutions, both palettes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Godot
+        run: echo "GODOT=$(${GAME}/tools/get_godot.sh)" >> "$GITHUB_ENV"
+      - name: Mesa and a virtual display
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri >/dev/null
+      - name: Capture representative lobby matrix
+        run: python3 tools/screenshot_matrix.py --godot "$GODOT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-screenshot-matrix
+          path: .build/screenshot-matrix/
+          if-no-files-found: error
+
   smoke-windows:
     needs: export
     runs-on: windows-latest

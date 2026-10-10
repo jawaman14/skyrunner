@@ -1,4 +1,16 @@
 # Current handoff
+## Current task: P09 screenshot matrix — Codex, 2026-10-11
+
+- Branch: `codex/screenshot-matrix`, based on `main` at `ee7b0914ca62c933497ddbccb891e1699de0ab3e`.
+- Added a Python runner and beta CI job for eight representative lobby captures: four resolutions, neon/safe palettes.
+  Existing UI capture fixtures now accept palette and exact viewport dimensions. SubViewport rendering avoids desktop window-size limits.
+- Validation: eight PNGs with exact dimensions; Godot import clean; through MCP, frontend 14/14 and docs 2/2 passed,
+  project-status inventory current; git diff check clean. Manifest records commit, dirty state, dimensions and hashes.
+- Agent image inspection found the keyboard-hint footer clipped at 1024x768. This is an outstanding bounded UI follow-up,
+  not a passed visual gate. Human input/read-aloud/controller/exported-build checks remain unperformed.
+- Full game suite and Linux rendering were not run locally; CI must establish fresh Linux rendering evidence.
+- Next: review this tooling PR; then fix lobby small-height access with focused tests and before/after captures.
+  #293, #297, #298 and #299 remain separate review decisions; no merge performed. Primary crew-map changes preserved.
 
 The authoritative current state is [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
 Its source inventory is generated; regenerate with `godot --headless --script res://tools/project_status.gd -- --write` after source changes. Passing runs and human gates remain separately recorded.

@@ -1,14 +1,38 @@
 extends SceneTree
-## Menu/station screenshot: godot --script res://tools/shots/ui_shot.gd -- <load|jobs|market|hangar|upgrades|boss|chief|desk|lawtree|copilot|hud|lobby|lieutenant|patrol|desk_tutorial|seats> <out.png>
+## Menu/station screenshot: godot --script res://tools/shots/ui_shot.gd -- <screen> <out.png> [neon|safe] [width] [height]
 var n := 0
 var what := "load"
 var out := ""
 var app
 var sess: Session
+var capture_viewport: Viewport
 func _init():
+	capture_viewport = root
 	var a := OS.get_cmdline_user_args()
+	if a.size() < 2:
+		push_error("Expected screen and output path")
+		quit(1)
+		return
 	what = a[0]
 	out = a[1]
+	if a.size() > 2:
+		if not UIStyle.PALETTES.has(a[2]):
+			push_error("Unknown palette: " + a[2])
+			quit(1)
+			return
+		UIStyle.set_palette(a[2])
+	if a.size() > 4:
+		var width := int(a[3])
+		var height := int(a[4])
+		if width < 320 or height < 240:
+			push_error("Invalid capture size")
+			quit(1)
+			return
+		var target := SubViewport.new()
+		target.size = Vector2i(width, height)
+		target.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		root.add_child(target)
+		capture_viewport = target  # exact layout size, independent of the desktop's window limits
 	match what:
 		"load", "jobs", "market", "hangar", "upgrades":
 			sess = Session.new({"seed": 1, "location": "FRM", "upgrades": {"runner": ["bug_sweep", "detector", "dark_paint"]}})
@@ -16,7 +40,7 @@ func _init():
 				sess.money = 9000
 			sess.update(1.0 / 30)
 			app = PilotApp.new()
-			root.add_child(app)
+			capture_viewport.add_child(app)
 			app.setup(sess, "low")
 			if what == "load":
 				var job = Py.first(sess.boards["FRM"], func(j): return not j.is_airdrop() and j.weight_lb() < 400)
@@ -52,7 +76,7 @@ func _init():
 			var role := Roles.BOSS if what == "boss" else Roles.CHIEF
 			sess.command(role, "hq", {"order": "route", "zone": "north"} if what == "boss" else {"order": "fund", "unit": "heli", "n": 2})
 			app = StationApp.new()
-			root.add_child(app)
+			capture_viewport.add_child(app)
 			app.setup(LocalLink.new(sess, role), role, sess.world)
 		"copilot", "hud":
 			# over the rendezvous with a ferry tank pumping and bales going out
@@ -83,17 +107,17 @@ func _init():
 			sess.update(1.0 / 30)
 			if what == "copilot":
 				app = StationApp.new()
-				root.add_child(app)
+				capture_viewport.add_child(app)
 				app.setup(LocalLink.new(sess, Roles.COPILOT), Roles.COPILOT, sess.world)
 			else:
 				sess.police.case("runner").wanted = 1
 				sess.police.wanted = 1
 				app = PilotApp.new()
-				root.add_child(app)
+				capture_viewport.add_child(app)
 				app.setup(sess, "low")
 		"lobby":
 			app = Lobby.new()
-			root.add_child(app)
+			capture_viewport.add_child(app)
 		"lieutenant", "patrol", "desk_tutorial":
 			# twenty minutes into a war on the city coast
 			sess = Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES,
@@ -110,7 +134,7 @@ func _init():
 			if what == "desk_tutorial":
 				Tutorial.new().attach(sess)  # the lieutenant's first lesson on the desk
 			app = StationApp.new()
-			root.add_child(app)
+			capture_viewport.add_child(app)
 			app.setup(LocalLink.new(sess, role), role, sess.world)
 			app._key("down")
 		"seats":
@@ -131,7 +155,7 @@ func _init():
 				{"from": "Hart", "text": "the desk is mine. good luck, flyboy"}]
 			root.add_child(link)
 			app = SeatPicker.new()
-			root.add_child(app)
+			capture_viewport.add_child(app)
 			app.setup(link)
 		"desk", "lawtree":
 			sess = Session.new({"seed": 9, "mode": Roles.POLICE, "humans": {Roles.CONTROLLER: "me"},
@@ -140,10 +164,13 @@ func _init():
 				sess.update(1.0 / 30)
 			sess.police.launch("heli", "HAR")
 			app = StationApp.new()
-			root.add_child(app)
+			capture_viewport.add_child(app)
 			app.setup(LocalLink.new(sess, Roles.CONTROLLER), Roles.CONTROLLER, sess.world)
 			if what == "lawtree":
 				app._key("u")
+		_:
+			push_error("Unknown screenshot screen: " + what)
+			quit(1)
 func _process(_d) -> bool:  # (MainLoop: true would quit)
 	n += 1
 	if n == 3 and what in ["boss", "chief"]:
@@ -154,7 +181,13 @@ func _process(_d) -> bool:  # (MainLoop: true would quit)
 	if what == "hud" and app is PilotApp:
 		app.set_process(n < 20)  # let the HUD settle, then hold the frame
 	if n == 30:
-		root.get_viewport().get_texture().get_image().save_png(out)
+		RenderingServer.force_draw(true)
+		var image := capture_viewport.get_texture().get_image()
+		var result := image.save_png(out)
+		if result != OK:
+			push_error("Screenshot write failed: %s" % result)
+			quit(1)
+			return false
 		print("saved ", out)
 		quit()
 	return false
