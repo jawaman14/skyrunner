@@ -84,8 +84,15 @@ func _fit() -> void:
 	scroller.custom_minimum_size.y = clampf(wrapped + 14.0, 40.0, maxf(40.0, bounds.y * 0.6))
 
 func _process(_dt: float) -> void:
-	if visible and msg.text != _fitted_text:
+	if not visible:
+		return
+	if msg.text != _fitted_text:
 		_fit()
+	# Refine the estimate with the label's own wrapped height once it has a real width.
+	var bounds := get_viewport_rect().size
+	var want := clampf(msg.get_minimum_size().y + 6.0, 40.0, maxf(40.0, bounds.y * 0.6))
+	if absf(want - scroller.custom_minimum_size.y) > 1.0:
+		scroller.custom_minimum_size.y = want
 
 func _select(yes: bool) -> void:
 	selected_yes = yes
