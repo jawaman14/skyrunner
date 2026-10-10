@@ -25,6 +25,20 @@ func test_vehicle_connector_skips_node_inside_a_building() -> void:
 		check_eq(access.segment_reason(route.points[i], route.points[i + 1], true), "", "alternate connector never crosses the building")
 	check(not access.checked_vehicle_route(graph, Vector2(-500, 0), Vector2(32, 0)).reachable, "candidate search does not expand the local access limit")
 
+func test_connector_uses_nearby_connected_road_after_dead_end() -> void:
+	var world := _world()
+	var access := SiteAccess.new(world, [])
+	var graph := RoadGraph.new([[[0,0],[0,20]], [[0,50],[500,50]], [[500,0],[500,20]]])
+	var legacy := graph.route(Vector2.ZERO, Vector2(500,0))
+	var route := access.checked_vehicle_route(graph, Vector2.ZERO, Vector2(500,0))
+	check(route.reachable, "a disconnected nearest road does not hide a usable authored road")
+	check(route.points.has(Vector2(0,50)) and route.points.has(Vector2(500,50)), "trip uses the connected public road")
+	check_eq(route, access.checked_vehicle_route(graph, Vector2.ZERO, Vector2(500,0)), "choice is deterministic")
+	check_eq(graph.route(Vector2.ZERO, Vector2(500,0)), legacy, "legacy API behavior is unchanged")
+	world.water = true
+	access.invalidate_geometry()
+	check(not access.checked_vehicle_route(graph,Vector2.ZERO,Vector2(500,0)).reachable, "fallback cannot cross unbridged water")
+
 
 func test_vehicle_loading_leg_uses_checked_building_detour() -> void:
 	var world := _world()
