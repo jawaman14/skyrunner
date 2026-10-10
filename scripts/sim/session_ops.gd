@@ -431,6 +431,7 @@ func buy_or_switch(key: String):
 		say("Bought a %s!" % sp.name)
 	if story != null and story.employment != null and story.employment.loaner:
 		story.employment.loaner = false
+		story.record_first_aircraft(key, price)
 		say("Your first aircraft is yours. The company loan has ended.")
 	_switch_aircraft(key)
 	spawn_at(location)
