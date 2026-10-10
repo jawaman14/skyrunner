@@ -1,3 +1,6 @@
+<!-- standalone-mcp -->
+MCP implementation: [jawaman14/skyrunner-mcp](https://github.com/jawaman14/skyrunner-mcp). This game contains only the pinned connection launcher; make server changes in the separate repository.
+
 # Skyrunner: notes for Claude Code
 
 **Simultaneous collaboration (owner decision, 11 October 2026):** start with the `skyrunner_collaboration_start`

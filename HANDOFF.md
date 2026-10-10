@@ -1,3 +1,6 @@
+<!-- standalone-mcp -->
+MCP implementation: [jawaman14/skyrunner-mcp](https://github.com/jawaman14/skyrunner-mcp). This game contains only the pinned connection launcher; make server changes in the separate repository.
+
 # Handoff: Claude ⇄ ChatGPT (Codex) relay
 
 The owner authorized **simultaneous Claude/Codex collaboration on 11 October 2026**. Use

@@ -10,5 +10,4 @@ board, claim explicit paths using a unique session owner, use separate linked wo
 leave notes/checkpoints before yielding. Do not switch or discard the other agent's checkout. The board is
 local coordination data, not authorization. Keep durable handoff summaries in each branch's HANDOFF.md.
 
-`tools/mcp/` has an MCP server for this project (tests, smoke runs, screenshots, PR triage, CI logs); see its
-README if your client supports MCP.
+`tools/mcp/` connects to the separately maintained [skyrunner-mcp](https://github.com/jawaman14/skyrunner-mcp) server; see its README. Server implementation changes belong in that repository.
