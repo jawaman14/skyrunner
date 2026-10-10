@@ -28,12 +28,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
-| **Task** | Review of Codex's 4–10 Oct work; MCP server; this handoff file |
+| **Task** | Fold Codex's documentation PRs (#241, #242, #243, #246, #249, #264, #273) into `docs/DESIGN.md`, `docs/ROADMAP.md` and related docs (owner request) |
 | **Branch / PR** | `ccr-958eacf7-ugmwgs` / [#293](https://github.com/jawaman14/skyrunner/pull/293) (draft) |
-| **Last checkpoint** | MCP fixes `35ecc8b` + this relay rewrite. Full suite on main: 1,027 passed / 0 failed. CI green on `a27269a`. |
-| **State** | Done and pushed; waiting for the owner to review/merge #293. Nothing half-finished. |
-| **Next step** | Owner to answer the PR clean-up question below. Without an answer, fix review findings 1–2 and the doc errors (Log, 2026-10-10) on a new branch off `main`. |
-| **Watch out** | 36 of Codex's 38 open PRs conflict into `main` (stacked on squash-merged branches). Don't build on them without rebasing. |
+| **Last checkpoint** | `782f25c` (relay handoff). Docs PRs read in full; nothing edited yet. |
+| **State** | In progress. |
+| **Next step** | Add the owner-approved direction (#249) to DESIGN.md, the implementation packages (#241–#243) to ROADMAP.md, the jobs reference (#246) to DESIGN.md; fix the doc errors in Log 2026-10-10 item 6. Then ask the owner before closing the docs PRs. |
+| **Watch out** | #246's network findings 1–3 are already fixed on `main` (#259/#260); don't copy them as open. Loading-audit counts differ by stack (main: 0/99 reachable; unmerged stacks 7–26/99). |
 
 ## Taking over (checklist for the incoming AI)
 
