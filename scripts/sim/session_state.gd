@@ -482,6 +482,9 @@ func unlocked(key: String) -> bool:
 
 
 func refresh_board(code: String) -> void:
+	if story != null and story.employment != null and story.employment.active():
+		boards[code] = story.employment.board(self, code)
+		return
 	var af := World.airfield(code)
 	if af.kind == "foreign":
 		boards[code] = island.board(af) if island != null else []
