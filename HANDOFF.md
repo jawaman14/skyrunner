@@ -28,12 +28,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
-| **Task** | Done: Codex's documentation PRs folded into the design docs. Idle until the owner answers the open question. |
-| **Branch / PR** | `ccr-958eacf7-ugmwgs` / [#293](https://github.com/jawaman14/skyrunner/pull/293) (draft) |
-| **Last checkpoint** | The commit that adds this baton. `tests/test_docs.gd` passes. Full suite on main: 1,027/0. |
-| **State** | Nothing half-finished. The docs PRs #241, #242, #243, #246, #249, #264 and #273 are still open on GitHub (their content is now in `docs/`). |
-| **Next step** | Owner: merge #293, then say whether to close the docs PRs (Open questions). Otherwise fix review findings 1–2 on a new branch off `main`. |
-| **Watch out** | The employed-opening code (#250–#255) sits on docs PR #249's branch: closing #249 must not delete that branch. Rebase the code PRs onto `main` first. |
+| **Task** | Idle. The docs PRs are folded and closed; the next task is open (below). |
+| **Branch / PR** | `ccr-958eacf7-ugmwgs` / [#293](https://github.com/jawaman14/skyrunner/pull/293) (draft, waiting for the owner to merge) |
+| **Last checkpoint** | The commit that adds this baton. Full suite on main: 1,027/0; `test_docs` 2/2. |
+| **State** | Nothing half-finished. 31 Codex PRs remain open, mostly stacked and conflicting with `main` (`github_pr_triage`). |
+| **Next step** | Owner to merge #293. Then, unless the owner picks otherwise: rebase the employed-opening stack (#250 → #251 → #252 → #253 → #255) onto `main` as product step 1, or fix review findings 1–2 on a new branch off `main`. |
+| **Watch out** | Keep branches `codex/gameplay-inspiration` (#250's base), `codex/draft-completion-review` (#274's base) and `codex/gameplay-feature-audit` (#247's base) until those PRs are rebased onto `main`. |
 
 ## Taking over (checklist for the incoming AI)
 
@@ -73,6 +73,7 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 ## Owner decisions
 
 - **2026-10-10:** Claude and ChatGPT/Codex work in relay (above). This file is how they hand over.
+- **2026-10-10:** Close the documentation PRs (#241, #242, #243, #246, #249, #264, #273). Done; branches kept.
 - **2026-10-10:** Fold the documentation PRs into the game's design docs (DESIGN.md, ROADMAP.md and others) before
   any PR clean-up. Done: see the Log.
 - **2026-10-10:** Both AIs should check the code and docs, not just add features. Codex's 4–10 Oct work was
@@ -80,19 +81,19 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Open questions
 
-- **[Claude → owner, 2026-10-10] Open PR clean-up.** Codex left 38 open PRs. 36 conflict into `main`, mostly
-  because they are stacked on PR branches that were later squash-merged; only #227 and #228 merge cleanly (see
-  `github_pr_triage`). Proposal:
-  1. Close the docs/plan-only PRs (#241, #242, #243, #246, #249, #264, #273).
-  2. Rebase the gameplay stacks onto `main` one at a time, starting with logistics loading endpoints
-     (#235/#237/#265/#267/#268/#274/#276) and the employed-pilot opening (#250–#252, #255).
-
-  OK to proceed? *(Update 2026-10-10: the docs PRs' content is now in `docs/`, so closing them loses nothing. #249's
-  branch must stay until #250's stack is rebased onto `main`.)*
+- **[Claude → owner, 2026-10-10] Rebasing the gameplay stacks.** The docs PRs are closed. Next, rebase the
+  gameplay stacks onto `main` one at a time (the employed opening first, then logistics loading endpoints
+  #235/#237/#265/#267/#268/#274/#276)? Each becomes one clean PR into `main`.
 - **[Claude → Codex, 2026-10-10]** Review findings 1–3 (Log, 2026-10-10) are in code Codex wrote recently. If one
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+### 2026-10-10 — Claude (docs PRs closed)
+- Closed #241, #242, #243, #246, #249, #264 and #273 at the owner's request. Each has a comment saying where its
+  content now lives.
+- No branches deleted: #250, #274 and #247 are based on three of them, and all three PRs are still open (checked).
+
 
 ### 2026-10-10 — Claude (documentation PRs folded into the design docs)
 - **Read in full:**
