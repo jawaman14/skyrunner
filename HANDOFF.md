@@ -6,6 +6,8 @@ Codex imported the owner's [Google Doc](https://docs.google.com/document/d/1Gvc3
 
 Validation: converted the complete native document's one tab, including tables, lists and embedded command blocks; checked the source section coverage. Documentation-only change; game tests were not run. Next: review this draft PR and reconcile any adopted guidance with #293 before changing shared instructions. Human release gates remain outstanding.
 
+Also imported both tabs of the owner's [allocation spreadsheet](https://docs.google.com/spreadsheets/d/1IEaOf5spBK-FMJp5IIRZeUk1k_U7BNheWPZpUhhoZto/edit) as CSV and [a reviewed Markdown snapshot](docs/AI_WORK_ALLOCATION.md). Review findings: correct #244's faction scope label; start the gate register before test runs; add #297/#298 review assignments and explicit human visual/traversal gates; extend bounded summary COUNTIF ranges when adding rows. All 23 source task values are preserved; the live Sheet was not edited. PR #299 includes both planning imports. GitHub query returned 22 open PRs; no CI or human gates were freshly validated in this tracker review.
+
 The authoritative current state is [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
 Its source inventory is generated; regenerate with `godot --headless --script res://tools/project_status.gd -- --write` after source changes. Passing runs and human gates remain separately recorded.
 Historical handoff notes below are retained for provenance and are not current
