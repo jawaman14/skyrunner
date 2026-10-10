@@ -828,10 +828,63 @@ async def github_pr_update(
     if patch:
         await gh().request("PATCH", f"pulls/{number}", json=patch)
     if ready_for_review:
-        p = await gh().get(f"pulls/{number}")
-        q = "mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { pullRequest { isDraft } } }"
-        await gh().request("POST", "/graphql", json={"query": q, "variables": {"id": p["node_id"]}})
+        await _mark_ready(number)
     return f"Updated #{number}" + (" and marked it ready for review." if ready_for_review else ".")
+
+
+async def _mark_ready(number: int) -> None:
+    """Draft -> ready. Claude Code cloud sessions block GraphQL and offer a REST route for this; elsewhere GraphQL is
+    the only API (REST PATCH can't change draft state), so try the REST route first and fall back."""
+    p = await gh().get(f"pulls/{number}")
+    if not p.get("draft"):
+        return
+    try:
+        await gh().request("POST", f"pulls/{number}/ccr/ready_for_review")
+        return
+    except ToolError as e:
+        if "404" not in str(e) and "405" not in str(e):  # a real error (permissions...), not "route doesn't exist here"
+            raise
+    q = "mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { pullRequest { isDraft } } }"
+    await gh().request("POST", "/graphql", json={"query": q, "variables": {"id": p["node_id"]}})
+
+
+@mcp.tool(name="github_pr_merge", annotations=GH_DESTRUCTIVE)
+async def github_pr_merge(
+    number: Annotated[int, Field(ge=1)],
+    expected_head_sha: Annotated[str, Field(description="The full head commit you checked CI on (github_ci_status). "
+                                                        "The merge is refused if the PR has moved since.",
+                                            min_length=40, max_length=40)],
+    method: Annotated[Literal["squash", "merge", "rebase"], Field(description="This repo squash-merges.")] = "squash",
+    title: Annotated[str | None, Field(description="Squash commit title; default: the PR title and number.")] = None,
+) -> str:
+    """Merge a PR, but only if it is open, not a draft, mergeable, still at `expected_head_sha`, and every job of the
+    latest workflow run on that commit succeeded. Merging is hard to undo, so this refuses on any doubt and says why;
+    it never merges a PR with a pending, failed or missing CI run."""
+    p = await gh().get(f"pulls/{number}")
+    if p["state"] != "open":
+        raise ToolError(f"#{number} is {p['state']}.")
+    if p["draft"]:
+        raise ToolError(f"#{number} is a draft. Mark it ready first (github_pr_update ready_for_review=true).")
+    if p["head"]["sha"] != expected_head_sha:
+        raise ToolError(f"#{number} is at {p['head']['sha'][:8]}, not {expected_head_sha[:8]}: it changed after you "
+                        f"checked it. Re-check CI on the new head.")
+    if p.get("mergeable") is False or p.get("mergeable_state") == "dirty":
+        raise ToolError(f"#{number} conflicts with {p['base']['ref']}: merge the base into the branch, resolve, and re-run CI.")
+    runs = (await gh().get("actions/runs", head_sha=expected_head_sha, per_page=5)).get("workflow_runs", [])
+    if not runs:
+        raise ToolError(f"No CI run for {expected_head_sha[:8]}; won't merge unchecked code.")
+    run = runs[0]
+    if run["status"] != "completed":
+        raise ToolError(f"CI run {run['id']} is still {run['status']}; wait for it to finish.")
+    jobs = (await gh().get(f"actions/runs/{run['id']}/jobs", per_page=100)).get("jobs", [])
+    bad = [f"{j['name']}: {j['conclusion']}" for j in jobs if j["conclusion"] not in ("success", "skipped")]
+    if run["conclusion"] != "success" or bad:
+        raise ToolError(f"CI is not green on {expected_head_sha[:8]} (run {run['id']}: {run['conclusion']}): {'; '.join(bad) or 'see the run'}.")
+    body = {"merge_method": method, "sha": expected_head_sha}
+    if method == "squash":
+        body["commit_title"] = title or f"{p['title']} (#{number})"
+    r = (await gh().request("PUT", f"pulls/{number}/merge", json=body)).json()
+    return f"Merged #{number} ({method}) as {r.get('sha', '?')[:8]}; CI was green on {expected_head_sha[:8]} ({len(jobs)} jobs)."
 
 
 @mcp.tool(name="github_pr_close", annotations=GH_DESTRUCTIVE)

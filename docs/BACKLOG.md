@@ -19,7 +19,7 @@ removed), **gate** (needs a human, hardware or a legal decision, not code).
 
    Minutes later, `d91975f` ("Merge complete overhaul implementation repair") deleted all of them and their tests.
    The macOS job came back with #223. The rest did not, but the roadmap's issue-pass note still lists #80, #81, #82
-   and #87 as covered. **Fix: re-apply `368d171` and `bb377dd`'s route/payroll hunks, with their tests.**
+   and #87 as covered. **Fixed in #295.**
 2. **The 31 open Codex PRs are one long chain**, not separate stacks. Each was branched from the tip of the previous
    one, linked by PRs that have since been closed or superseded (#246, #249, #256/#257, #273). GitHub shows
    36 conflicts into `main`, but replaying each PR's own code commits onto `main` gives a better picture: **16 PRs
@@ -29,44 +29,22 @@ removed), **gate** (needs a human, hardware or a legal decision, not code).
 
 ## Open pull requests
 
-Replay result: each PR's code and test changes (not its dated docs or `sim-results/` files), applied in stack order
-onto `main` with `git apply --3way`. *Clean* means it applied, not that it passes tests; see the combined test run
-below.
+Updated 10 October after the integration. What landed and what remains:
 
-| Stack | PR | What it does | Replay | Recommendation |
-|---|---|---|---|---|
-| Assets & campaign polish | #227 | HAR workshop props | clean | Merge with the stack after the combined run |
-| | #228 | Coastal props, port dress | clean | 〃 |
-| | #229 | Report actual chapter outcomes | clean | 〃 |
-| | #230 | Persistent chapter guidance on the phone | clean | 〃 |
-| | #231 | Contact dialogue and epilogue polish | clean | 〃 |
-| Empire command | #235 | Authored logistics loading endpoints (read-only) | clean | 〃 (package A step 1) |
-| | #236 | Squad condition/travel/upkeep cards | clean | 〃 (package B) |
-| | #237 | Validated local detours for vehicle access | clean | 〃 |
-| | #238 | HQ can only target observed squads | clean | 〃 (an intel-leak fix) |
-| | #239 | District control/collection summary | clean | 〃 |
-| | #240 | Own-unit battle accounts | clean | 〃 (needs #245) |
-| | #244 | Live escorts kept, stale stakeouts cleared | clean | Hold: changes balance (#98); decide the AI knowledge policy first |
-| | #245 | Release surviving squads when combatants are removed | clean | Merge with #240 |
-| Map & controls | #247 | Costa Brava settlements rebuilt in period architecture | clean | Needs visual review and a performance capture before merging (package C) |
-| | #248 | Controls navigation and hardware calibration | clean | Merge after the combined run |
-| Employed opening (product step 1) | #250 | New story starts employed; four opening flights; loaned Cessna | **conflicts** (`pilot_app.gd`, `story.gd`, handlers moved by #284) | Rebase onto `main` as one PR, with #251, #252 and #255 |
-| | #251 | First criminal run goes to an unpoliced strip | conflicts (depends on #250) | 〃 |
-| | #252 | First-ownership milestone in the journal | conflicts | 〃 |
-| | #253 | Gameplay recordings, README/player docs | clean (code) | **Don't merge the 30 MB of video into git (#91).** Keep the docs text and put the media in a GitHub release |
-| | #255 | Explicit `--chapter` skips the opening | conflicts | Fold into the #250 rebase |
-| Road search | #258 | A* heap; identical paths, ~13% faster searches | clean | Merge after the combined run |
-| Road & loading access (package A) | #265 | Villa road terminal and loading approach | conflicts | Rebase as one series after #235/#237 land; re-audit the 99 pairs |
-| | #267 | FRM service approach for Company loading | conflicts | 〃 |
-| | #268 | Clear roads through functional buildings | conflicts | 〃 |
-| | #269 | Period land vehicles with LODs | clean | Merge independently (package C), with visual review |
-| | #270 | Keep usable connections after dead ends | conflicts | Rebase with the series |
-| | #271 | District overview back-navigation, repeated seat toggles | conflicts | Small UI fix: rebase on its own, early |
-| | #272 | Spatial index for road-graph construction (167→29 ms) | conflicts (needs #258's benchmark tool) | Rebase after #258 |
-| | #274 | The Moretti club and its loading area | conflicts | Rebase with the access series |
-| | #275 | No raised lips at sloping crossings | clean | 〃 |
-| | #276 | Loading-endpoint diagnostics tool | conflicts (needs #268's tool) | 〃 |
-| Docs/tools | #293 | Direction docs, relay handoff, MCP server, UIDs (Claude) | n/a | Merge (CI green) |
+| PR | What | Status |
+|---|---|---|
+| #294 | Integration of #227–#231, #235–#240, #245, #248, #258 | **Merged** (`fceffaa`); the fourteen source PRs are closed, their branches kept |
+| #295 | Restores the autopilot intercept, payroll demand report and radar-aware routing | **Merged** (`ee7b091`) |
+| #296 | The employed opening (rebased #250, #251, #252, #255) | Open, CI running. Step 1 of the product order |
+| #293 | Direction docs, relay handoff, MCP server, this backlog | Open (Claude) |
+| #244 | Live escorts kept, stale stakeouts cleared | **Held**: changes balance (#98); decide the AI knowledge policy first |
+| #247 | Costa Brava settlements rebuilt in period architecture | **Held**: needs visual review and a performance capture (package C) |
+| #269 | Period land vehicles with LODs | **Held**: visual review (package C) |
+| #253 | Gameplay recordings, README and player docs | **Held**: don't add 30 MB of video to git (#91); keep the docs text, move the media to a release |
+| #265, #267, #268, #270, #271, #272, #274, #275, #276 | Road and loading-access series (villa, FRM, setbacks, connectors, junction surfaces, node index, Moretti club, diagnostics) | **Needs real rebasing** (package A). #271 (district back-navigation) is a small UI fix: rebase it first |
+
+Closed 10 October as superseded or merged: #227–#231, #235–#240, #245, #248, #258 (in #294), #250/#251/#252/#255 (into #296, once it merges),
+and the documentation PRs #241, #242, #243, #246, #249, #264, #273 (folded into `docs/`).
 
 ## Issues
 
@@ -133,23 +111,18 @@ delivered part of many of them; none has been playtested.
 and close them, opening a narrow follow-up only where something concrete remains. Then label the rest by product
 step, so the open list shows what is actually next.
 
-## Proposed actions (need the owner's approval)
+## Actions taken on 10 October (owner-approved)
 
-1. **Restore the lost fixes** (#80/#82, #81, #87) from `368d171`/`bb377dd` on a branch off `main`, with their tests.
-   Small, and already reviewed once.
-2. **Merge the clean stacks** (#227–#231, #235–#240, #245, #248, #258) as one integration PR, if the combined test
-   run below passes. Hold #244 (balance), #247 and #269 (visual and performance review) and #253 (video weight).
-3. **Rebase the employed opening** (#250, #251, #252, #255) onto `main` as one PR: product step 1.
-4. **Rebase the road/loading access series** (#265–#276) after step 2, re-auditing the 99 logistics pairs.
-5. **Close:**
-   - duplicates #102 and #117;
-   - programs #118, #139, #158, #174;
-   - done #99;
-   - and, once confirmed, #92 and #97.
+1. **Restored the lost fixes** (#80/#82, #81, #87): merged as #295. The radar zones are now wired into hot autopilot legs
+   (`Session.known_radar_zones`), with tests. A flown QRY/PNR check is still to do before closing #80/#82.
+2. **Integrated the clean stacks:** merged as #294 (full CI green); the fourteen source PRs are closed.
+3. **Employed opening:** rebased as #296, awaiting CI and merge.
+4. **Closed issues:** #92, #99, #102, #117, #118, #139, #158, #174. #97 stays open: `_join()`/`_seat()` need tests.
 
-   Each gets a comment saying where its content lives.
+## Next
 
-## Combined test run (step 2's candidate)
-
-The code of #227–#231, #235–#245, #247, #248 and #258, replayed onto `main` (60 files, +1,896/−229): *result
-pending; recorded below when the run finishes.*
+- Merge #296 when green; then close #250, #251, #252, #255 with a pointer to it.
+- Rebase the road and loading-access series (package A), #271 first; re-run `tools/logistics_routes.gd` for the 99-pair number.
+- Decide #88 (the job board can send a load a strip can't fly out of) and the AI knowledge policy (#244, #98).
+- Add `_join()` / `_seat()` entry-path tests (#97).
+- Fly QRY/PNR with the autopilot to confirm #80/#82, then close them.

@@ -52,7 +52,8 @@ Optional environment: `SKYRUNNER_GITHUB_REPO=owner/name` (default: parsed from `
 | `github_ci_logs` | a job log reduced to FAIL / SCRIPT ERROR / `##[error]` lines and the tail (known Godot shutdown diagnostics dropped) |
 | `github_pr_view` | description, mergeability, files, reviews, inline and conversation comments |
 | `github_pr_create` | opens a PR (draft by default); refuses if the branch isn't pushed or differs from the remote |
-| `github_pr_update` | title/body, or mark ready for review |
+| `github_pr_update` | title/body, or mark ready for review (uses the REST route cloud sessions allow; GraphQL elsewhere) |
+| `github_pr_merge` | merges only if the PR is open, ready, conflict-free, still at the head SHA you checked, and every CI job on it succeeded; refuses and says why otherwise |
 | `github_pr_comment` | comment on a PR/issue, or reply in an inline review thread |
 | `github_pr_close` | close with a required reason; optionally delete the branch |
 | `github_issue_list` / `github_issue_view` / `github_issue_write` | browse, create, comment on and close issues |

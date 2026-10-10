@@ -28,11 +28,11 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, 2026-10-10 |
-| **Task** | Carrying out BACKLOG.md's four approved actions |
-| **Branches / PRs** | Docs: `ccr-958eacf7-ugmwgs` / #293. Action 1: `claude/restore-lost-fixes` / **#295**. Action 2: `claude/integrate-clean-prs` / **#294**. All draft, CI pending. |
-| **Done** | (4) closed #92, #99, #102, #117, #118, #139, #158, #174 (#97 stays open). (1) PR #295 opened: restored fixes, focused tests pass. (2) PR #294 opened: 14 PRs replayed onto main; the 16-PR preview passed 1,067/0. |
-| **Next step** | When CI is green on #294 and #295: merge them (owner approved; they touch disjoint files). Then (3): create `claude/employed-pilot-opening` off the new `main` and replay #250, #251, #252, #255's code (each diff against its own base: `git diff origin/<base>...origin/<head>`). Expect conflicts in `pilot_app.gd`/`story.gd` to vanish once #229/#230 are in; skip #253's video. Then regenerate `docs/PROJECT_STATUS.md` and open a PR. |
-| **Watch out** | A local full-suite run for #295 is in `scratchpad/restore_full.log` (not pushed). Check that merges delete nothing already on `main` (the `d91975f` failure). Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit` until their PRs are rebased. After #294 merges, close PRs #227–#231, #235–#240, #245, #248, #258 with a link to it. |
+| **Task** | Carrying out BACKLOG.md's actions; employed opening in review |
+| **Branches / PRs** | **#296** `claude/employed-pilot-opening` (draft, CI running, subscribed): the employed opening. **#293** `ccr-958eacf7-ugmwgs`: docs, handoff, MCP server (draft; CI green earlier; just merged `main`). |
+| **Done today** | Merged #294 (14 Codex PRs) and #295 (restored fixes); closed the 14 source PRs, the 7 docs PRs, and issues #92 #99 #102 #117 #118 #139 #158 #174. |
+| **Next step** | When CI is green on #296: merge it (pin `expectedHeadSha`), then close #250, #251, #252, #255 pointing to it, and update DESIGN §0/§21 wording that says "awaiting merge". Then merge #293. After that: package A (rebase road/loading-access series, #271 first). |
+| **Watch out** | Merging anything that regenerates `docs/PROJECT_STATUS.md` conflicts the next PR on the same line: merge `main` into the PR and re-run `project_status.gd -- --write`, never hand-edit. Keep branches `codex/gameplay-inspiration`, `codex/draft-completion-review`, `codex/gameplay-feature-audit` (bases of still-open #274, #247, ...). `pkill -f <script>` kills your own shell: use `pgrep Godot_v4`. |
 
 ## Taking over (checklist for the incoming AI)
 
@@ -96,6 +96,21 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+### 2026-10-10 (later) — Claude (backlog actions)
+- **Merged:** #294 (integration of #227–#231, #235–#240, #245, #248, #258; full CI green) and #295 (restores the
+  autopilot intercept, payroll demand and radar-aware routing deleted by `d91975f`, plus `known_radar_zones()` and tests).
+  Both squash-merged after all 11 jobs passed, pinned to the verified head SHA.
+- **Opened #296:** the employed opening, replaying #250/#251/#252/#255 on `main` (they only conflicted because they
+  needed #229/#230 from #294). Focused tests and the fresh-story smoke pass; full CI pending.
+- **Closed:** the 14 source PRs of #294 and 7 docs PRs (branches kept); issues #92, #99, #102, #117, #118, #139, #158, #174.
+  #97 stays open (`_join()`/`_seat()` untested).
+- **CI failures I caused, now in the checklist:** a dead link to a dated report (#294) and a stale
+  `PROJECT_STATUS.md` count (#295). A restored test (`test_hot_route_penalty…`) had a zone the route never crossed;
+  rewritten. #245 depended on #244's tests: kept only its own.
+- **MCP server:** `github_pr_update(ready_for_review)` failed in cloud sessions (GraphQL is blocked there); fixed to use
+  the CCR route, and a guarded `github_pr_merge` was added.
+- **Not verified:** QRY/PNR circling in actual flight; human gates unchanged.
 
 ### 2026-10-10 — Claude (docs PRs closed)
 - Closed #241, #242, #243, #246, #249, #264 and #273 at the owner's request. Each has a comment saying where its

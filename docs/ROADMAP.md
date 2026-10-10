@@ -12,9 +12,8 @@ build an empire from nothing, Warband-style, starting as a hired pilot. Product 
 
 1. **The early rise.** A new story opens employed by a legitimate air service, flying its Cessna. The business
    slides into smuggling, which becomes unavoidable, and the player earns their first aircraft. Sandbox unlocks
-   come from money, reputation and activity, with the campaign as an alternative route. *Implemented in draft
-   stack #250 → #251 → #252 → #253 (recordings) → #255, which sits on docs PR #249 (9 employment tests,
-   1,050-test stack run); not on `main`. Needs rebasing, a
+   come from money, reputation and activity, with the campaign as an alternative route. *Implemented as one
+   rebased PR, #296 (from Codex's #250, #251, #252 and #255; nine employment tests), awaiting merge. Needs rebasing, a
    human pacing walkthrough and a calibrated first-aircraft price (draft: $18,000).*
 2. **Setup-driven automation.** Explicit assignments first (payroll has these), then conditional orders
    (stock thresholds) and multi-step task sequences. Manual play always remains. Workers follow instructions;
@@ -35,8 +34,10 @@ Each package is a series of separate branches and draft PRs off `main`, with foc
 PR body. None is implemented beyond what the queue below records.
 
 **A. Physical access and movement (#241).** Prerequisite for automation and faction competition.
-- *Where it stands:* `main`'s route baseline has all 99 audited directed logistics pairs blocked. Unmerged
-  stacks reach between 7 and 26 of 99. Failure kinds are grade, footprint, an unauthored meeting point,
+- *Where it stands:* the recorded route baseline had all 99 audited directed logistics pairs blocked. The
+  authored loading endpoints (#235) and validated local detours (#237) are now on `main` (#294); the remaining
+  access series (#265–#276) is unmerged and reached 13–26 of 99 in its own audits. Re-run `tools/logistics_routes.gd`
+  for the current number. Failure kinds are grade, footprint, an unauthored meeting point,
   a disconnected network, and no nearby access.
 - *Never:* raise connector limits or restore straight-line fallbacks to make the numbers pass.
 1. Reproduce HAR, Warehouse 7, HQ and dock access in the Ctrl+F2 overlay. Record site IDs, entrance and loading
@@ -56,8 +57,8 @@ PR body. None is implemented beyond what the queue below records.
    death; animation never decides arrival.
 6. Only then measure issue #85, member-level combat contact, on paired seeds against the current accounting.
 
-**B. Empire command and feedback (#242).** Builds on the drafts #236 (squad cards), #238 (visible-only
-targeting), #239 (district summary), #240 and #245 (own-unit battle accounts); don't rebuild those.
+**B. Empire command and feedback (#242).** Builds on #236 (squad cards), #238 (visible-only targeting), #239
+(district summary), #240 and #245 (own-unit battle accounts), all now on `main` (#294); don't rebuild those.
 1. An owner-only empire overview showing:
    - money and stock: safe cash, cash out at sites, stock;
    - obligations: payroll and squad upkeep;

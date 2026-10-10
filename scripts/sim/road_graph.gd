@@ -139,15 +139,15 @@ func path(a: int, b: int, penalty := Callable(), clear := Callable()) -> Array:
 		return [a]
 	var g := {a: 0.0}
 	var came := {}
-	var open := [a]
+	var open := {a: 0}
+	var serial := 1
+	var heap := []
+	_heap_push(heap, [nodes[a].distance_to(nodes[b]), 0, a, 0.0])
 	while not open.is_empty():
-		var cur: int = open[0]
-		var cf: float = g[cur] + nodes[cur].distance_to(nodes[b])
-		for o in open:
-			var f: float = g[o] + nodes[o].distance_to(nodes[b])
-			if f < cf:
-				cf = f
-				cur = o
+		var item: Array = _heap_pop(heap)
+		var cur: int = item[2]
+		if not open.has(cur) or open[cur] != item[1] or g[cur] != item[3]:
+			continue
 		if cur == b:
 			var out := [b]
 			while came.has(out[0]):
@@ -164,8 +164,45 @@ func path(a: int, b: int, penalty := Callable(), clear := Callable()) -> Array:
 				g[e[0]] = ng
 				came[e[0]] = cur
 				if not open.has(e[0]):
-					open.append(e[0])
+					open[e[0]] = serial
+					serial += 1
+				_heap_push(heap, [ng + nodes[e[0]].distance_to(nodes[b]), open[e[0]], e[0], ng])
 	return []
+
+
+## Equal costs retain the original open-list insertion order, including decreases.
+static func _heap_before(a: Array, b: Array) -> bool:
+	return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1])
+
+
+static func _heap_push(heap: Array, item: Array) -> void:
+	heap.append(item)
+	var index := heap.size() - 1
+	while index > 0:
+		var parent := (index - 1) >> 1
+		if not _heap_before(item, heap[parent]):
+			break
+		heap[index] = heap[parent]
+		index = parent
+	heap[index] = item
+
+
+static func _heap_pop(heap: Array) -> Array:
+	var first: Array = heap[0]
+	var last: Array = heap.pop_back()
+	if heap.is_empty():
+		return first
+	var index := 0
+	while index * 2 + 1 < heap.size():
+		var child := index * 2 + 1
+		if child + 1 < heap.size() and _heap_before(heap[child + 1], heap[child]):
+			child += 1
+		if not _heap_before(heap[child], last):
+			break
+		heap[index] = heap[child]
+		index = child
+	heap[index] = last
+	return first
 
 
 ## The points to drive from `from` to `to`: off-road to the nearest node, the

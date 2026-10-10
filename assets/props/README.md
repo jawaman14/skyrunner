@@ -18,3 +18,11 @@ hoops and filler bungs share batched geometry, with the original drum collider.
 The loading pallet and crate have two simple box colliders and sit beside the
 drum cluster, clear of its existing interaction approach. They are scenery,
 not inventory, fuel-stock indicators or a new interaction.
+
+The HAR workshop set is original modular geometry authored for Skyrunner in
+`Buildings.workshop_tools`: a faded three-drawer steel chest, compact hand-screw
+vice and timber rack with three spanners. It uses existing sage, timber, rust,
+metal and dark materials; no new textures, imported models or fonts. All detail
+fits on the existing 3-by-1.2-metre bench or its back wall, with no new collision,
+lights or simulation state. HAR's board-equipped hangar is the first consumer.
+`tools/workshop_preview.gd` renders the set independently for review.

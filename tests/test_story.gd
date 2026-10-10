@@ -219,7 +219,7 @@ func test_side_goals_pay_once_and_are_never_needed() -> void:
 	check_eq(t.money, n + 2000, "the side goal paid its bonus")
 	t.story.tick(t)
 	check_eq(t.money, n + 2000, "once")
-	check(t.story.objective_lines().any(func(l): return str(l).contains("optional: +$2,000")), "and the card says it is optional")
+	check(t.story.objective_lines().any(func(l): return str(l).contains("optional before chapter ends: +$2,000")), "and the card says it is optional")
 	check(m > 0, "")
 	s.dispose()
 	t.dispose()
@@ -236,4 +236,60 @@ func test_the_hearings_count_cold_minutes_in_a_row() -> void:
 	s.time += 60.0
 	s.story.tick(s)
 	check_eq(s.story.progress["case_cold"], 0.0, "a hot case starts the hour again")
+	s.dispose()
+
+
+func test_intercepted_shipments_do_not_complete_the_island() -> void:
+	var s := _story(Story.index_of("Isla Soberana"))
+	s.bus.emit("island_shipment", s.time, "caught", ["runner"], {"delivered_lb": 0.0})
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "Isla Soberana")
+	s.bus.emit("island_shipment", s.time, "partial", ["runner"], {"delivered_lb": 2.0})
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "The House")
+	s.dispose()
+
+
+func test_failed_evacuation_is_recorded_and_saved() -> void:
+	var s := _story(Story.index_of("The House"))
+	s.bus.emit("casino_out", s.time, "lost", ["runner"], {"evacuated": false})
+	check(s.story.outcomes.has("casino_out"))
+	check_eq(s.story.progress.get("casino_out", 0), 0)
+	var restored := Story.from_dict(s.story.to_dict())
+	check_eq(restored.outcomes, s.story.outcomes)
+	check(restored.objective_lines().any(func(l): return "[missed]" in l))
+	s.dispose()
+
+
+func test_chapter_history_keeps_guidance_after_advancement() -> void:
+	var s := _story()
+	s.story.advance()
+	check_eq(s.story.history.size(), 1)
+	check_eq(s.story.history[0].title, "Square Grouper")
+	var restored := Story.from_dict(s.story.to_dict())
+	check_eq(restored.history, s.story.history)
+	check("1,200" in restored.guidance())
+	check("Square Grouper" in restored.journal_text())
+	s.dispose()
+
+
+func test_laundering_without_ownership_does_not_buy_a_stake() -> void:
+	var s := _story(Story.index_of("The House"))
+	s.casino.laundered = 100.0
+	s.casino.stake = 0.0
+	s.story.tick(s)
+	check_eq(s.story.progress.get("casino_stake", 0), 0)
+	s.dispose()
+
+
+func test_unavailable_family_notice_is_not_repeated_while_collecting_cash() -> void:
+	var s := _story(Story.index_of("Family Business"))
+	s.family.gone = true
+	s.money = 0
+	s.story.tick(s)
+	var count := s.messages.size()
+	s.story.tick(s)
+	check_eq(s.messages.size(), count, "waiver does not spam the event feed")
+	check_eq(s.story.progress.get("family_deal", 0), 0, "no fabricated transaction")
+	check(s.story.outcomes.has("family_deal"))
 	s.dispose()
