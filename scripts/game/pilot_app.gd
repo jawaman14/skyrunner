@@ -34,7 +34,7 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
             toe brakes (several devices) with invert, deadzone and expo; the colour-safe palette
 View     C cycle camera (chase / cockpit / tower)    M big map    P pause   F2 time of day
 Seats    F3 hand the aircraft to the AI (take another seat from a station) / take it back
-Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)
+Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)   CTRL+F5 skip to the next story chapter (solo, for testing)
 Table    F4 multiplayer menu: games on your network, who is at the table (mute, remove), chat, voice settings
 Voice    hold ` to talk on your side's net (a radio: range, hills, static), SHIFT + ` to the whole table (hosting or joined)
 Radio    F7 radio on / off, , and . tune (in the aircraft); in the car R, , and . : real 1979-86 broadcasts, the same dial
@@ -385,6 +385,11 @@ func _unhandled_input(ev: InputEvent) -> void:
 		var k: int = ev.physical_keycode if ev.physical_keycode else ev.keycode
 		if k == KEY_F2 and ev.ctrl_pressed and not ev.echo:
 			scene.toggle_access_overlay()
+			get_viewport().set_input_as_handled()
+			return
+		if k == KEY_F5 and ev.ctrl_pressed and not ev.echo and s.story != null and server == null:  # debug: solo only, never at a shared table
+			s.story.debug_skip_chapter()
+			s.say("Debug: skipped to chapter %d." % s.story.chapter.num)
 			get_viewport().set_input_as_handled()
 			return
 		var m := _active_menu()
