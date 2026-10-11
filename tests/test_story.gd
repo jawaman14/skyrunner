@@ -293,3 +293,23 @@ func test_unavailable_family_notice_is_not_repeated_while_collecting_cash() -> v
 	check_eq(s.story.progress.get("family_deal", 0), 0, "no fabricated transaction")
 	check(s.story.outcomes.has("family_deal"))
 	s.dispose()
+
+
+## The debug skip (Ctrl+F5) moves to the next chapter each time, leaves the employed opening first, and finishes the story at the end.
+func test_debug_skip_walks_through_the_chapters_to_the_end() -> void:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "career": true, "save_path": "user://test_debug_skip.json"})
+	var st := Story.new_employed()
+	st.attach(s)
+	var last := 0
+	var steps := 0
+	while not st.completed_all and steps < 40:
+		st.debug_skip_chapter()
+		steps += 1
+		if not st.completed_all:
+			check(st.chapter.num >= last, "never goes backwards: %d after %d" % [st.chapter.num, last])
+			last = st.chapter.num
+	check(st.completed_all, "and the last skip finishes the story")
+	check(last >= Story.CHAPTERS.size() - 1, "having passed through the chapters (reached %d)" % last)
+	s.dispose()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://test_debug_skip.json"))
+

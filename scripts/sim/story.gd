@@ -508,6 +508,17 @@ func select_chapter(number: int) -> void:
 		advance()
 
 
+## Debug (Ctrl+F5 in the pilot app): skip to the next chapter, as --chapter N does at the start, so a chapter can be tested without playing the ones before it.
+## From the employed opening the first skip leaves the opening; at the last chapter it finishes the story.
+func debug_skip_chapter() -> void:
+	if completed_all:
+		return
+	if employment != null and employment.active():
+		advance()
+		return
+	advance()
+
+
 func advance() -> void:
 	var s = sess
 	if employment != null and employment.active():
