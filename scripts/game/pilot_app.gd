@@ -524,7 +524,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			if not r[0]:
 				s.say(r[1])
 		elif CREW_KEYS.has(k):
-			var r: Array = s.command(Roles.PILOT, CREW_KEYS[k], {})
+			var args := {}
+			if k == KEY_U and waypoint != null:
+				args["waypoint"] = [waypoint.x, waypoint.y]  # U flies to the waypoint set on the chart
+			var r: Array = s.command(Roles.PILOT, CREW_KEYS[k], args)
 			if not r[0]:
 				s.say(r[1])
 		elif k == KEY_7:

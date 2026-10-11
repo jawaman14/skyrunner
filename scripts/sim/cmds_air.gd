@@ -122,8 +122,12 @@ static func _cmd_autopilot(role: String, a: Dictionary, session: Session):
 	if not session.autopilot.engaged:
 		if session.state == null or session.state.on_ground:
 			return "Autopilot needs to be airborne."
-		session._autopilot_hold()
 		session.autopilot.min_ias_kts = session.spec.approach_kts * 1.05
+		var wp = a.get("waypoint", null)
+		if wp is Array and wp.size() >= 2:
+			session._autopilot_navigate([float(wp[0]), float(wp[1])])  # a waypoint is set: U flies there, U again is off
+			return null
+		session._autopilot_hold()
 		session.say("Autopilot ON: holding %s ft, heading %s. U again to route to an airfield." % [Py.f(session.autopilot.alt_target / Session.FT, 0), Py.f(session.state.heading, 0)])
 	elif session.autopilot.waypoints.is_empty():
 		session._autopilot_navigate()

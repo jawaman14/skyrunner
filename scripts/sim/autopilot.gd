@@ -31,6 +31,8 @@ var arrived := false  ## engage_route() reached its last waypoint this frame (Se
 var _leg_from := [0.0, 0.0]  ## the current leg's other end, for the course line (see update())
 var _intercept = null  ## a temporary point flown ahead of waypoint wp_i when that fix lies behind us; the route itself is never edited
 var _intercepted_wp := -1  ## the waypoint index that already had its one intercept, so a fix straight behind can't be put off for ever
+const MAX_BANK_DEG := 18.0  ## the bank limit of the lateral law below
+var to_point := false  ## the route is the player's own waypoint, not an airfield: Session says so on arrival
 const WAYPOINT_RADIUS_M := 800.0  ## this close (along the course, not as the crow flies): the next leg
 const CROSS_TRACK_GAIN := 0.12  ## a sideways m/s to close per metre off the course line
 const CROSS_TRACK_MAX_MS := 25.0  ## capped: don't bank hard just to shave off the last few metres
@@ -83,8 +85,12 @@ func update(dt: float, s: FlightModel.FlightState, c: FlightModel.Controls) -> F
 		# inside the capture radius is what orbits it. Fly a short way ahead first, then take the real leg. The
 		# intercept is temporary - the waypoint stays in the route - and each waypoint gets only one, so a fix
 		# straight behind is turned back to after it, not postponed for ever.
+		# Only a fix close enough that the turn itself would swing past it needs the fly-ahead; a far one behind is turned
+		# towards directly (a bank-limited 180) instead of flying straight on first.
+		var to_wp: float = PyMath.hypot(wp[0] - s.x, wp[1] - s.y)
+		var turn_r: float = pow(s.gs_kts * 0.514444, 2.0) / (9.81 * tan(deg_to_rad(MAX_BANK_DEG)))  ## m: radius of a turn at the bank limit
 		if _intercept == null and _intercepted_wp != wp_i and s.gs_kts > 20.0 \
-				and absf(Py.wrap180(course - s.heading)) > 135.0:
+				and absf(Py.wrap180(course - s.heading)) > 135.0 and to_wp < 4.0 * turn_r:
 			var h := deg_to_rad(s.heading)
 			var intercept_m := clampf(maxf(1200.0, s.gs_kts * 0.514444 * 12.0), 1200.0, 3500.0)
 			_intercept = [s.x + sin(h) * intercept_m, s.y + cos(h) * intercept_m]
@@ -120,7 +126,7 @@ func update(dt: float, s: FlightModel.FlightState, c: FlightModel.Controls) -> F
 			var v_lat := Py.clamp(-across * CROSS_TRACK_GAIN, -CROSS_TRACK_MAX_MS, CROSS_TRACK_MAX_MS)
 			hdg_target = course + Py.degrees(asin(Py.clamp(v_lat / gs, -0.7, 0.7)))
 	# lateral
-	var bank_t := Py.clamp(Py.wrap180(hdg_target - s.heading) * 1.2, -18.0, 18.0)
+	var bank_t := Py.clamp(Py.wrap180(hdg_target - s.heading) * 1.2, -MAX_BANK_DEG, MAX_BANK_DEG)
 	c.aileron = Py.clamp(0.04 * (bank_t - s.roll) - 0.012 * s.p_dps, -0.6, 0.6)
 	c.rudder = 0.0
 	# vertical

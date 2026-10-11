@@ -275,3 +275,67 @@ func test_engaged_just_after_lift_off_climbs_to_clear_the_ground_ahead() -> void
 	check(s.phase != "crashed" and not s.state.on_ground, "still flying 30 s later")
 	check(s.state.alt > 60.0, "and has climbed: %s" % s.state.alt)
 	s.dispose()
+
+
+## A far fix behind used to be flown away from for 1.2-3.5 km before the turn back; now it is a plain bank-limited 180.
+func test_a_far_fix_behind_is_turned_to_directly() -> void:
+	var s := _sess({"features": []})
+	_airborne(s, 70.0)
+	var x0: float = s.state.x
+	var y0: float = s.state.y
+	var hdg: float = deg_to_rad(250.0)
+	var far := [x0 + sin(hdg) * 15000.0, y0 + cos(hdg) * 15000.0]
+	s.autopilot.engage_route(s.state, [far], s.state.alt, s.fm.controls.elevator)
+	var ahead_max := 0.0
+	for i in 150 * 30:
+		var inp := ControlMapper.InputFrame.new()
+		inp.throttle_axis = 0.8
+		s.update(1.0 / 30, inp, null)
+		ahead_max = maxf(ahead_max, (s.state.x - x0) * sin(deg_to_rad(70.0)) + (s.state.y - y0) * cos(deg_to_rad(70.0)))
+	var bearing_now: float = PilotBot.bearing(s.state.x, s.state.y, far[0], far[1])
+	check(absf(Py.wrap180(bearing_now - s.state.heading)) < 25.0, "after the turn it points at the fix: heading %s, bearing %s" % [s.state.heading, bearing_now])
+	check(ahead_max < 2600.0, "it never flew on away from it for long: max %s m ahead" % ahead_max)
+	check(PyMath.hypot(far[0] - s.state.x, far[1] - s.state.y) < 15000.0 - 3000.0, "and is closing on it")
+	s.dispose()
+
+
+## With a waypoint set, U flies there (it used to hold course and ignore it); U again is off.
+func test_u_with_a_waypoint_flies_to_it_and_then_holds() -> void:
+	var s := _sess({"features": []})
+	_airborne(s, 70.0)
+	var wp := [s.state.x + 6000.0, s.state.y + 2500.0]
+	var r: Array = s.command(Roles.PILOT, "autopilot", {"waypoint": wp})
+	check(r[0] and s.autopilot.engaged, "engaged")
+	check(not s.autopilot.waypoints.is_empty() and s.autopilot.to_point, "routing to the waypoint, not holding course")
+	var arrived_msg := false
+	for i in 220 * 30:
+		var inp := ControlMapper.InputFrame.new()
+		inp.throttle_axis = 0.8
+		s.update(1.0 / 30, inp, null)
+		if not arrived_msg and not s.messages.is_empty() and "over your waypoint" in str(s.messages.back()[1]):
+			arrived_msg = true
+	check(arrived_msg, "it announced the arrival over the waypoint")
+	check(s.autopilot.engaged and s.autopilot.waypoints.is_empty(), "and then holds course and altitude")
+	check(PyMath.hypot(wp[0] - s.state.x, wp[1] - s.state.y) < 9000.0 and s.phase != "crashed", "still flying near it")
+	s.dispose()
+
+
+func test_u_again_while_routing_to_a_waypoint_switches_it_off() -> void:
+	var s := _sess({"features": []})
+	_airborne(s, 70.0)
+	var wp := [s.state.x + 6000.0, s.state.y + 2500.0]
+	s.command(Roles.PILOT, "autopilot", {"waypoint": wp})
+	_fly(s, 5.0)
+	check(s.autopilot.engaged and not s.autopilot.waypoints.is_empty(), "still routing")
+	s.command(Roles.PILOT, "autopilot", {"waypoint": wp})
+	check(not s.autopilot.engaged, "U again switches it off")
+	s.dispose()
+
+
+func test_u_without_a_waypoint_still_holds_course() -> void:
+	var s := _sess({"features": []})
+	_airborne(s, 70.0)
+	s.command(Roles.PILOT, "autopilot", {})
+	check(s.autopilot.engaged and s.autopilot.waypoints.is_empty() and not s.autopilot.to_point, "no waypoint: the plain hold, as before")
+	s.dispose()
+

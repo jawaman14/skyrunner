@@ -87,20 +87,25 @@ func _autopilot_hold() -> void:
 		autopilot.alt_target = safe
 
 
-func _autopilot_navigate() -> void:
-	var af := _autopilot_target()
-	if af == null or PyMath.hypot(af.x - state.x, af.y - state.y) < AUTOPILOT_MIN_ROUTE_M:
+func _autopilot_navigate(dest = null) -> void:
+	## `dest`: null for the usual target (a job's airfield), or [x, y] for the player's own waypoint.
+	var af: Airfield = _autopilot_target() if dest == null else null
+	var tx: float = af.x if af != null else (float(dest[0]) if dest != null else 0.0)
+	var ty: float = af.y if af != null else (float(dest[1]) if dest != null else 0.0)
+	if (af == null and dest == null) or PyMath.hypot(tx - state.x, ty - state.y) < AUTOPILOT_MIN_ROUTE_M:
 		_autopilot_hold()
 		say("Autopilot ON: nowhere worth routing to from here - holding %s ft, heading %s" % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
 		return
 	var hot := carrying_hot()
 	var wps: Array
 	if hot:
-		wps = RoutePlanner.plan_route(world, [state.x, state.y], [af.x, af.y], 6.0, 1.5, 1500.0, known_radar_zones())
+		wps = RoutePlanner.plan_route(world, [state.x, state.y], [tx, ty], 6.0, 1.5, 1500.0, known_radar_zones())
 		var c := police.case("runner")
 		transponder = not (c.wanted > 0 or c.tipped or c.suspicion >= AUTOPILOT_HOT_DARK_SUSPICION)
-	else:
+	elif af != null:
 		wps = _approach_route(af)
+	else:
+		wps = [[tx, ty]]  # a waypoint: a straight leg, at a height that clears the ground along it
 	var peak := world.ground(state.x, state.y)
 	var prev: Array = [state.x, state.y]
 	for wp in wps:
@@ -115,7 +120,8 @@ func _autopilot_navigate() -> void:
 		if wps.size() > 2:  # the descent legs must clear the ground they cross, whatever the glide path says
 			wps[1][2] = maxf(float(wps[1][2]), maxf(world.ground(wps[1][0], wps[1][1]), world.ground(wps[2][0], wps[2][1])) + 90.0)
 	autopilot.engage_route(state, wps, peak + margin, fm.controls.elevator)
-	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name, "low over the ground" if hot else "joining the approach",
+	autopilot.to_point = af == null
+	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name if af != null else "your waypoint (%s km)" % Py.f(PyMath.hypot(tx - state.x, ty - state.y) / 1000.0, 1), "low over the ground" if hot else ("joining the approach" if af != null else "straight there"),
 		"squawking" if transponder else "transponder off", Py.f((peak + margin) / FT, 0)])
 
 
