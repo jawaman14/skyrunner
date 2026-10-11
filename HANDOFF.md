@@ -144,6 +144,74 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   (SeatPicker-cancel by controller B button, reload restoring a waiting-room seat choice, and the two-machine
   checks remain).
 
+- **2026-10-11 — Claude, #90 translation-import churn (assigned by Codex):** Every `--import` rewrote eight tracked
+  `docs/AI_WORK_ALLOCATION*.translation` files, dirtying every worktree: the two planning CSVs added in #293 were
+  imported by Godot's `csv_translation` importer, which writes one `.translation` per column next to the source.
+  Nothing uses them (only a Markdown link in `docs/AI_WORK_ALLOCATION.md`; the project registers no translations).
+  Fix: tracked `docs/AI_WORK_ALLOCATION.csv.import` and `docs/AI_WORK_ALLOCATION_SUMMARY.csv.import` set
+  `importer="keep"`, `.gitignore` un-ignores `docs/*.csv.import` (`*.import` is otherwise ignored repo-wide), and the
+  eight generated `.translation` files are removed. A new `docs/*.csv` is imported as a translation table again unless
+  it gets a keep sidecar like these. Windows Godot 4.7.2: import exit 0, no tracked file rewritten, sidecars untouched,
+  no `.translation` regenerated; docs 2/2, status current, hygiene OK. No `.gd`, gameplay or save change. #90 stays
+  open (unused-function cleanup remains).
+
+- **2026-10-11 — Claude, leave and join coverage (#97, assigned by Codex):** On `claude/startup-leave-tests` from
+  main `e384241` (after #306, #307 and #308), added `tests/test_startup_leave.gd` (socket lane): from a direct-hosted
+  game, (1) `leave("lobby")` leaves no server, voice, client or game, opens the lobby, and the port can be listened on
+  again after the deferred frees; (2) `_mp_join` with the F4 menu open tears the host down, forgets the menu, ends with
+  one client link and one waiting room and no host voice, and then, pumping both ends, the other table welcomes the
+  guest under the address's password and the player's name. No production defect found, so `main.gd` is unchanged.
+  An automated review found that a reload cannot start from a hosted game (`PilotApp` offers "Load last save" only
+  when not hosting, and that is the one production `leave.emit("load")`), so the first draft's reload test was
+  synthetic; it is removed and this entry no longer claims it. Windows Godot 4.7.2: focused 2/2, docs 2/2, status
+  regenerated; Linux and the full suite are left to CI. #97 stays open: the SeatPicker-cancel route (see #312), and
+  the physical two-machine voice/controller checks. The suspected stale `main._mp` reference is not a defect (a freed
+  object compares equal to null in Godot 4.7.2).
+
+- **2026-10-11 — Claude, #88 strip-feasibility harness (assigned by Codex):** On `claude/strip-feasibility-harness`
+  from main `e384241`, added `scripts/balance/strip_trials.gd` (`StripTrials`), `tools/strip_feasibility.gd` and
+  `tests/test_strip_trials.gd` (simulation lane). Per-runway-end takeoff and landing trials for QRY/PNR/EGL (HAR as the
+  control) x c172p/c182 x light/half/max, with explicit `--map` (default city) and `--terrain natural|classic` (default
+  natural), filters, and JSON + markdown with commit/settings provenance written outside the repo. Takeoff passes at
+  3 km *along the runway line* inside a straight-departure corridor (this harness's convention: 90 m either side
+  plus 12.5% of the distance, 465 m at 3 km); leaving the corridor first is `inconclusive` (the path, not the
+  aircraft), and a crash, the bot giving up or 400 s is `fail`; 300 m above the ground is not a pass. Reaching 3 km
+  also needs a valid run (`takeoff_verdict`): airborne within the strip ahead of the start of the run (length - 25 m),
+  15 m reached, and the CG never below an obstacle top once clear of the strip (`MIN_CLEARANCE_M` = 0; the gear hangs
+  about a metre lower, so this is the least that is clear at all); otherwise it is `fail` with `invalid_reason`, and
+  the measured distances stay in the result. A landing reports the FINAL touchdown (where the successful roll began),
+  the first one alongside it, and the number of touchdowns, so a bounce or go-around is not hidden.
+  Landing rows also carry the planner's aim point (`aim_from_threshold_m`), the glide angle and approach clearance,
+  and the strip left at the aim and at the final touchdown. The planner moves the aim down the strip when the final
+  needs it (HAR end 0 aims 294 m out on classic terrain and 726 m on natural, because the natural pass raises the hill
+  under that final from about 600 m out), so a short strip's touchdown must be read with its aim and strip-left.
+  Clearance (`min_clear_m`) is the CG above the highest obstacle within 15 m, the rig's scoring convention, not proof
+  that the gear or whole airframe cleared it. The bot flies
+  the takeoff and keeps pitch, power and flaps, but from liftoff the harness holds the runway line with PilotBot's
+  own bank law (`StripTrials.LATERAL_MODE`, recorded in every result and the provenance): the rig measures whether the
+  aircraft can climb straight out over the terrain, not where the bot would turn. It records the ground roll,
+  distance to 15 m, least clearance over terrain and trees, along-track distance and largest deviation.
+  Landing forces the end's final and re-forces it after a go-around; an end with no clear final is reported
+  `obstructed` with the reason, not flown.
+  `Feasibility`, PilotBot, the flight model, the terrain and the jobs are unchanged; trials parity still passes.
+  Evidence found while planning: (1) `Feasibility.takeoff_trial` scores a post-goal glide into the ground as a pass
+  (`leg_i >= 1`), so takeoff outcomes in `sim-results/feasibility.json` are noise; (2) that file was flown on the
+  classic island (cli.gd never selects a map), not the city map `docs/STRIPS.md` and new games use; (3) both tools
+  ran classic terrain, while play uses the natural pass. Windows Godot 4.7.2: strip_trials 9/9, trials_parity 2/2,
+  docs 2/2, switches 6/6, status current, hygiene OK; CLI smoke HAR c172p light end 0, classic and natural: takeoff
+  pass (liftoff 223 m, 15 m at 422 m, least clearance 136 m, 3002 m along, at most 19 m off the line), landing pass. The full
+  measurement matrix and a `docs/STRIPS.md` regeneration wait for independent review of the harness; job-generator
+  gating is a separate decision. #88 stays open.
+  Review fixes (automated review of 95b121a, five P2s, all valid): a landing counts as passed only if the aircraft
+  stopped on the strip itself (the session calls it parked up to 30 m outside); a touchdown that crashes is logged
+  before the crash ends the trial; a takeoff must lift off over the runway rectangle, not beside it; the required
+  gradient counts from the real run start (25 m in); and the CLI rejects unknown aircraft, fields, loads, ends and
+  tests instead of labelling a report with values that did not run.
+  **Separate follow-up, not fixed here:** PilotBot `_safe_heading` (pilot.gd:345) uses margin = altitude - 80 m with a
+  75 s lookahead, so below 80 m ASL no heading qualifies and it turns ~40 degrees toward the lowest terrain ahead even
+  over flat ground (HAR end 0, c172p light: ~290-345 m off the runway line at 1.2 km before the hold). It likely
+  affects ordinary bot departures; a fix touches bot behaviour and the balance numbers, so it needs its own PR.
+
 - **2026-10-11 — Claude, waiting-room startup coverage (#97, assigned by Codex):** On `claude/startup-room-tests`
   from main `909efaf`, added `tests/test_startup_room.gd` (socket lane): through the real `Main._open_room` /
   `RoomScreen._start` / `_cancel` / `Main.start` paths, (1) a host who keeps the pilot seat flies with the room's own
