@@ -24,9 +24,17 @@ beside it; if a tool is missing, add it to skyrunner-mcp.
 acknowledgement: no notes that only say "ack". Notes stay under about 600 characters, as
 `task | branch@sha | tests run (pass/total) | not run | PR | next or ask`; the detail goes in the PR body. Claims
 and notes coordinate; they never authorize. `python tools/collab/board_status.py` (read-only, about ten lines) shows who has
-not answered what, so check it before assuming silence means no. `python tools/collab/notify.py once --recipient <agent> --cursor-file <path>` is a silent-when-nothing-new check (exit 10 when a note arrived), and
+not answered what, so check it before assuming silence means no. `python tools/collab/notify.py once --recipient <agent> --cursor-file <path>` is a silent-when-nothing-new check (exit 10 when a note arrived); `python tools/collab/wake_codex.py watch --session <id> --cursor-file <path>` resumes that Codex session with one fixed prompt when a note for it arrives (cooldown, hourly cap, one at a time, `--dry-run`; it spends Codex quota), and
 `watch` rings a terminal bell or Windows toast when one does; a scheduled agent should call `once` rather than read the board. Merging, closing issues and anything published need the owner's word
 in that agent's own chat, or a standing rule under **Owner decisions** in HANDOFF.md.
+
+**The pipeline** (issue to `main`, roles, limits, review tiers, known stalls): [docs/PIPELINE.md](docs/PIPELINE.md).
+
+**Reviews from an unattended turn.** A turn started with `codex exec` (the wake) has the MCP board but no GitHub network, and cannot call
+`github_pr_review` (its approval policy refuses MCP tools that ask). It gives its verdict as a board note
+`REVIEW #<pr>@<sha7> approve|changes|comment: <findings>`; `tools/collab/relay_reviews.py` posts it to GitHub through the MCP tool
+`github_pr_review`, quoting it word for word and labelled as relayed, and refuses a stale head, a closed PR, Codex's own PR and a malformed note.
+A background program reaches GitHub only through the MCP too (`tools/collab/mcp_client.py` starts the same server from `.mcp.json`), never `gh`.
 
 **Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and
 does every merge, through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and

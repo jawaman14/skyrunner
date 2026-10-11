@@ -18,8 +18,6 @@ The model in use is `prism-ml/bonsai-27b` (1-bit, 4.7 GB), chosen by the owner. 
 |---|---|---|
 | `models` | lists the models on the server | |
 | `digest --file F` or `--pr N` | at most 8 lines on a log or PR diff, exact error text quoted | decide whether a failure matters |
-| `draft-replies --pr N --out F` | per unanswered review thread: what is asked, what to check, and an empty `[TODO]` reply | decide whether the reviewer is right, promise a change, post, resolve or send anything |
-| `triage` | per open PR: tier (from the file paths, no model), who wrote it, a one-line summary | label, close or re-order PRs |
 | `first-draft --task F --paths a,b --slug s` | the model rewrites the named files (at most 3, at most 40 KB each); the result goes on a new `local/<slug>` branch and a DRAFT PR marked as an unreviewed first pass | touch a protected path, merge, review, mark ready, push to an existing branch |
 
 Protected from a local draft: `.github/`, `project.godot`, `tests/fixtures/`, `HANDOFF.md`, `AGENTS.md`, `CLAUDE.md`, the score ledger,
@@ -47,3 +45,5 @@ PR, review threads waiting, a conflict to sync, a merge), decided by code from G
 model add a neutral line to thread alerts; a model failure never loses an alert. `tools/collab/wake_codex.py --alerts-file` wakes the agent when the
 file changes. To keep this feed on its own model instance (for example a second bonsai loaded for Codex), set `SKYRUNNER_LOCAL_MODEL` to that
 instance id, as listed by `worker.py models`.
+
+**No `gh` (11 October).** The owner's rule is that GitHub goes through the skyrunner MCP tools, so the worker and the alert feed no longer call `gh`: `draft-replies`, `triage` and `digest --pr` are gone (the MCP tools `github_review_packet` and `github_pr_states` give an agent the same data), the alert feed reads through `tools/collab/mcp_client.py`, and `first-draft` pushes its branch and prints the draft-PR title and body for an agent to open with `github_pr_create`. The Phase 1 results above were measured with the earlier `gh` version.

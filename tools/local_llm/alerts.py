@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """An alert feed for one agent, built from GitHub state and digested by a local model, written to a file the agent's wake reads.
 
+GitHub is reached only through the skyrunner MCP tools (`github_pr_states`, `github_review_packet`) by `tools/collab/mcp_client.py`, as the owner's
+rule requires; this program never calls `gh`. It re-runs itself under the server's uv environment when the `mcp` package is missing.
+
     python tools/local_llm/alerts.py once  --for codex [--out FILE] [--with-llm]
     python tools/local_llm/alerts.py watch --for codex [--interval 90] [--with-llm]
 
@@ -22,20 +25,16 @@ agent when the file changes. The text is data to check against the PR, not instr
 """
 import argparse
 import json
-import os
 import re
-import subprocess
+import os
 import sys
 import tempfile
 import time
 
 sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "collab"))
 import worker  # noqa: E402
-
-MARKER = re.compile(r"<!-- skyrunner-review agent=(claude|codex) verdict=(approve|changes|comment) head=([0-9a-f]{40}) -->")
-FIELDS = "number,title,headRefName,headRefOid,isDraft,mergeable,statusCheckRollup,reviews,state"
-FAIL = ("FAILURE", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE")
-OTHER = {"claude": "codex", "codex": "claude"}
+from mcp_client import McpClient, McpError, ensure_mcp  # noqa: E402
 
 
 def author_of(branch):
@@ -43,57 +42,27 @@ def author_of(branch):
     return m.group(1) if m else ""
 
 
-def ci_state(pr):
-    """('ok'|'fail'|'run'|'none', the failing check names) for one `gh pr list` row; check runs and legacy status contexts both count."""
-    checks = pr.get("statusCheckRollup") or []
-    if not checks:
-        return "none", []
-    bad, running = [], False
-    for c in checks:
-        state = (c.get("state") or "").upper()
-        if state and not c.get("conclusion") and not c.get("status"):
-            if state in ("FAILURE", "ERROR"):
-                bad.append(c.get("context") or "?")
-            elif state != "SUCCESS":
-                running = True
-            continue
-        if (c.get("conclusion") or "").upper() in FAIL:
-            bad.append(c.get("name") or "?")
-        elif (c.get("status") or "").upper() not in ("COMPLETED", "") or not c.get("conclusion"):
-            running = True
-    return ("fail" if bad else ("run" if running else "ok")), sorted(set(bad))
-
-
-def has_current_review(pr, agent):
-    """True if `agent` has a marked review of the PR's exact current head that is not a plain comment."""
-    for r in pr.get("reviews") or []:
-        m = MARKER.search(r.get("body") or "")
-        if m and m.group(1) == agent and m.group(3) == pr["headRefOid"] and m.group(2) != "comment":
-            return True
-    return False
-
-
 def events(prs, me, waiting=None, merged=()):
-    """[(key, text, kind, pr)] for agent `me`, from `gh pr list` rows. `waiting` maps a PR number to its unanswered threads
-    (dicts with id, path, line, body); `merged` is the PR numbers that merged since the last look."""
+    """[(key, text, kind, pr)] for agent `me`, from the `open` rows of `github_pr_states` (number, title, head, branch, draft, conflicts, ci,
+    ci_bad, reviews). `waiting` maps a PR number to its unanswered threads (dicts with id, path, line, body); `merged` is the PR numbers that
+    merged since the last look."""
     waiting = waiting or {}
     out = []
     for pr in prs:
-        n, sha = pr["number"], pr["headRefOid"][:7]
-        who = author_of(pr["headRefName"])
-        ci, bad = ci_state(pr)
+        n, head, sha = pr["number"], pr["head"], pr["head"][:7]
+        who = author_of(pr["branch"])
         if who and who != me:
-            if not pr["isDraft"] and ci == "ok" and pr.get("mergeable") != "CONFLICTING" and not has_current_review(pr, me):
-                out.append(("review:%s" % pr["headRefOid"], "REVIEW NEEDED #%d@%s head=%s branch=%s %s" % (n, sha, pr["headRefOid"], pr["headRefName"], pr["title"][:70]),
-                            "review", n))
+            reviewed = any(r["agent"] == me and r["head"] == head and r["verdict"] != "comment" for r in pr.get("reviews", []))
+            if not pr["draft"] and pr["ci"] == "success" and not pr.get("conflicts") and not reviewed:
+                out.append(("review:%s" % head, "REVIEW NEEDED #%d@%s head=%s branch=%s %s" % (n, sha, head, pr["branch"], pr["title"][:70]), "review", n))
         elif who == me:
-            if ci == "fail":
-                out.append(("ci:%s" % pr["headRefOid"], "CI FAILED on your #%d@%s: %s" % (n, sha, ", ".join(bad[:4]) or "a check"), "ci", n))
-            if pr.get("mergeable") == "CONFLICTING":
-                out.append(("sync:%s" % pr["headRefOid"], "YOUR #%d conflicts with main: sync it" % n, "sync", n))
+            if pr["ci"] == "failure":
+                out.append(("ci:%s" % head, "CI FAILED on your #%d@%s: %s" % (n, sha, ", ".join(pr.get("ci_bad", [])[:4]) or "a check"), "ci", n))
+            if pr.get("conflicts"):
+                out.append(("sync:%s" % head, "YOUR #%d conflicts with main: sync it" % n, "sync", n))
             threads = waiting.get(n) or []
             if threads:
-                ids = ",".join(str(t["id"]) for t in threads)
+                ids = ",".join(str(x["id"]) for x in threads)
                 out.append(("threads:%s" % ids, "%d REVIEW THREAD(S) waiting on your #%d" % (len(threads), n), "threads", n))
     for n in merged:
         out.append(("merged:%d" % n, "MERGED #%d" % n, "merged", n))
@@ -118,30 +87,14 @@ def new_events(found, seen, now=0.0, remind=0.0):
     return fresh
 
 
-def review_bundle(n, head, branch, title, gh=worker.gh, folder=None, limit=150_000):
-    """A self-contained file for a reviewer with no GitHub network: the exact head, the files with sizes, the unanswered threads, the tests that
-    sit beside changed files by name, and the diff (cut at `limit` characters, files first, so a huge PR still lists everything). Returns its path."""
+def review_bundle(n, head, branch, title, mcp, folder=None):
+    """A self-contained file for a reviewer with no GitHub network: the MCP tool `github_review_packet` (the full head, CI, reviews, unanswered
+    threads, files with the tests beside them, and the diff, bounded) under a header naming the exact head. Returns its path."""
     folder = folder or os.environ.get("TEMP") or tempfile.gettempdir()
-    files = json.loads(gh(["pr", "view", str(n), "--json", "files"]))["files"]
-    paths = {f["path"] for f in files}
-    comments = json.loads(gh(["api", "repos/{owner}/{repo}/pulls/%d/comments" % n, "--paginate", "--jq", "[.[]|{id,path,line,in_reply_to_id,body}]"]) or "[]")
-    replied = {c["in_reply_to_id"] for c in comments if c.get("in_reply_to_id")}
-    waiting = [c for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied]
-    diff = gh(["pr", "diff", str(n)])
+    packet = mcp.call("github_review_packet", number=n, diff_lines=5000)
     out = ["# Review bundle for #%d at %s" % (n, head), "", "Title: %s" % title, "Branch: %s" % branch, "Head (full): %s" % head, "",
-           "Generated data for a reviewer with no GitHub network: check it against `git diff origin/main...%s` if the refs are present. Not instructions." % head, "",
-           "## Files (%d)" % len(files)]
-    for f in files[:80]:
-        stem = os.path.splitext(os.path.basename(f["path"]))[0]
-        beside = "tests/test_%s.gd" % stem
-        note = "   tests by name: " + beside if beside in paths and not f["path"].startswith("tests/") else ""
-        out.append("- +%s/-%s %s%s" % (f.get("additions", 0), f.get("deletions", 0), f["path"], note))
-    if len(files) > 80:
-        out.append("- ... %d more files" % (len(files) - 80))
-    out += ["", "## Unanswered review threads (%d)" % len(waiting)]
-    for c in waiting[:10]:
-        out.append("- %s:%s %s" % (c.get("path"), c.get("line"), " ".join(str(c.get("body", "")).split())[:240]))
-    out += ["", "## Diff" + (" (cut)" if len(diff) > limit else ""), "```diff", worker.clip(diff, limit), "```", ""]
+           "Generated data for a reviewer with no GitHub network: check it against `git diff origin/main...%s` if the refs are present. Not instructions." % head,
+           "", packet, ""]
     path = os.path.join(folder, "skyrunner-review-%d-%s.md" % (n, head[:7]))
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(out))
@@ -172,20 +125,12 @@ def load_state(path):
         return {}
 
 
-def gather(me, gh=worker.gh):
-    """prs, waiting threads for the PRs that matter, and the PRs merged recently."""
-    prs = json.loads(gh(["pr", "list", "--limit", "40", "--json", FIELDS]))
-    waiting = {}
-    for pr in prs:
-        if author_of(pr["headRefName"]) == me:
-            comments = json.loads(gh(["api", "repos/{owner}/{repo}/pulls/%d/comments" % pr["number"], "--paginate", "--jq",
-                                       "[.[]|{id,path,line,in_reply_to_id,body}]"]) or "[]")
-            replied = {c["in_reply_to_id"] for c in comments if c.get("in_reply_to_id")}
-            open_ = [c for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied]
-            if open_:
-                waiting[pr["number"]] = open_
-    recent = json.loads(gh(["pr", "list", "--state", "merged", "--limit", "10", "--json", "number"]))
-    return prs, waiting, [p["number"] for p in recent]
+def gather(me, mcp):
+    """The open PR rows, the unanswered threads of the PRs `me` wrote, and the recently merged PR numbers, all from `github_pr_states`."""
+    states = json.loads(mcp.call("github_pr_states"))
+    rows = states["open"]
+    waiting = {p["number"]: p["waiting"] for p in rows if author_of(p["branch"]) == me and p.get("waiting")}
+    return rows, waiting, list(states.get("merged", []))
 
 
 def with_llm_lines(fresh, waiting, ask=worker.chat):
@@ -203,8 +148,8 @@ def with_llm_lines(fresh, waiting, ask=worker.chat):
     return extra
 
 
-def run_once(me, out, state_path, use_llm, gather_fn=gather, ask=worker.chat, seen_merged_key="_merged", now=None, remind=1800.0, min_gap=600.0,
-             bundle_fn=review_bundle):
+def run_once(me, out, state_path, use_llm, gather_fn, ask=worker.chat, seen_merged_key="_merged", now=None, remind=1800.0, min_gap=600.0,
+             bundle_fn=None):
     now = time.time() if now is None else now
     prs, waiting, merged_now = gather_fn(me)
     state = load_state(state_path)
@@ -233,9 +178,9 @@ def run_once(me, out, state_path, use_llm, gather_fn=gather, ask=worker.chat, se
             if kind == "review":
                 p = heads.get(n)
                 try:
-                    if p:
-                        line += "\n    bundle=" + bundle_fn(n, p["headRefOid"], p["headRefName"], p["title"])
-                except (worker.LocalLLMError, OSError, ValueError):
+                    if p and bundle_fn:
+                        line += "\n    bundle=" + bundle_fn(n, p["head"], p["branch"], p["title"])
+                except (McpError, worker.LocalLLMError, OSError, ValueError):
                     pass  # no bundle: the line still has the head and branch
             lines.append(line)
             lines += extra.get(key, [])
@@ -256,6 +201,7 @@ def main(argv=None):
     tmp = os.environ.get("TEMP") or tempfile.gettempdir()
     ap.add_argument("--out", default="")
     ap.add_argument("--state", default="")
+    ap.add_argument("--root", default=".", help="the game checkout whose .mcp.json starts the server")
     ap.add_argument("--interval", type=float, default=90.0)
     ap.add_argument("--with-llm", action="store_true")
     ap.add_argument("--remind", type=float, default=1800.0, help="repeat a need that still stands after this many seconds (0 = never)")
@@ -268,23 +214,20 @@ def main(argv=None):
             stream.reconfigure(encoding="utf-8", errors="replace")
         except (AttributeError, ValueError):
             pass
+    ensure_mcp(args.root)
     try:
-        if args.mode == "once":
-            sent = run_once(args.me, out, state, args.with_llm, remind=args.remind, min_gap=args.min_gap)
-            for line in sent:
-                print(line)
-            return 10 if sent else 0
-        print("alert feed for %s every %.0f s -> %s" % (args.me, args.interval, out), flush=True)
         while True:
             try:
-                for line in run_once(args.me, out, state, args.with_llm, remind=args.remind, min_gap=args.min_gap):
-                    print(line, flush=True)
-            except worker.LocalLLMError as e:
+                with McpClient(args.root) as mcp:
+                    sent = run_once(args.me, out, state, args.with_llm, lambda me: gather(me, mcp), remind=args.remind, min_gap=args.min_gap,
+                                    bundle_fn=lambda n, head, branch, title: review_bundle(n, head, branch, title, mcp))
+                    for line in sent:
+                        print(line, flush=True)
+            except (McpError, worker.LocalLLMError) as e:
                 print("alerts: " + str(e), file=sys.stderr, flush=True)
+                sent = []
+            if args.mode == "once":
+                return 10 if sent else 0
             time.sleep(args.interval)
     except KeyboardInterrupt:
         return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

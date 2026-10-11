@@ -13,16 +13,22 @@ H = "a" * 40
 H2 = "b" * 40
 
 
-def pr(n, branch, head=H, draft=False, ci="ok", mergeable="MERGEABLE", reviews=(), title="Thing"):
-    checks = {"ok": [{"status": "COMPLETED", "conclusion": "SUCCESS", "name": "t"}],
-              "fail": [{"status": "COMPLETED", "conclusion": "FAILURE", "name": "test 1/3"}],
-              "run": [{"status": "IN_PROGRESS", "conclusion": "", "name": "t"}], "none": []}[ci]
-    return {"number": n, "title": title, "headRefName": branch, "headRefOid": head, "isDraft": draft, "mergeable": mergeable,
-            "statusCheckRollup": checks, "reviews": list(reviews), "state": "OPEN"}
+def pr(n, branch, head=H, draft=False, ci="success", conflicts=False, reviews=(), title="Thing", bad=()):
+    return {"number": n, "title": title, "branch": branch, "head": head, "draft": draft, "conflicts": conflicts, "behind": 0, "ci": ci,
+            "ci_bad": list(bad), "reviews": list(reviews), "waiting": []}
 
 
 def review(agent, verdict, head):
-    return {"body": "<!-- skyrunner-review agent=%s verdict=%s head=%s -->\nbody" % (agent, verdict, head)}
+    return {"agent": agent, "verdict": verdict, "head": head}
+
+
+class FakeMcp:
+    def __init__(self, states=None, packet="PACKET"):
+        self.states, self.packet, self.calls = states or {"open": [], "merged": []}, packet, []
+
+    def call(self, tool, **arguments):
+        self.calls.append((tool, arguments))
+        return json.dumps(self.states) if tool == "github_pr_states" else self.packet
 
 
 class Events(unittest.TestCase):
@@ -33,16 +39,16 @@ class Events(unittest.TestCase):
         ready = pr(1, "claude/x")
         self.assertEqual(self.kinds([ready], "codex"), [("review", 1)])
         self.assertEqual(self.kinds([pr(2, "claude/x", draft=True)], "codex"), [], "a draft is not ready")
-        self.assertEqual(self.kinds([pr(3, "claude/x", ci="fail")], "codex"), [], "CI must be green first")
-        self.assertEqual(self.kinds([pr(4, "claude/x", ci="run")], "codex"), [])
-        self.assertEqual(self.kinds([pr(5, "claude/x", mergeable="CONFLICTING")], "codex"), [])
+        self.assertEqual(self.kinds([pr(3, "claude/x", ci="failure")], "codex"), [], "CI must be green first")
+        self.assertEqual(self.kinds([pr(4, "claude/x", ci="pending")], "codex"), [])
+        self.assertEqual(self.kinds([pr(5, "claude/x", conflicts=True)], "codex"), [])
         self.assertEqual(self.kinds([pr(6, "claude/x", reviews=[review("codex", "approve", H)])], "codex"), [], "already reviewed this head")
         self.assertEqual(self.kinds([pr(7, "claude/x", reviews=[review("codex", "approve", H2)])], "codex"), [("review", 7)], "a review of an older head does not count")
         self.assertEqual(self.kinds([pr(8, "claude/x", reviews=[review("codex", "comment", H)])], "codex"), [("review", 8)], "a plain comment is not a verdict")
         self.assertEqual(self.kinds([pr(9, "codex/x")], "codex"), [], "my own PR needs no review from me")
 
     def test_my_own_pr_alerts_for_ci_failure_conflicts_and_waiting_threads(self):
-        mine = [pr(10, "codex/a", ci="fail"), pr(11, "codex/b", mergeable="CONFLICTING"), pr(12, "codex/c")]
+        mine = [pr(10, "codex/a", ci="failure", bad=["test 1/3"]), pr(11, "codex/b", conflicts=True), pr(12, "codex/c")]
         waiting = {12: [{"id": 5, "path": "a", "line": 1, "body": "x"}, {"id": 6, "path": "b", "line": 2, "body": "y"}]}
         got = self.kinds(mine, "codex", waiting=waiting)
         self.assertIn(("ci", 10), got)
@@ -67,13 +73,6 @@ class Events(unittest.TestCase):
         self.assertEqual(alerts.new_events(found, seen, 1000.0, remind=1800.0), [])
         self.assertEqual(len(alerts.new_events(found, seen, 1900.0, remind=1800.0)), 1, "a reminder")
         self.assertEqual(alerts.new_events(found, seen, 2000.0, remind=1800.0), [], "and not again at once")
-
-    def test_legacy_status_contexts_count(self):
-        legacy = pr(1, "codex/x", ci="ok")
-        legacy["statusCheckRollup"] = [{"context": "ci/old", "state": "FAILURE"}]
-        self.assertEqual(alerts.ci_state(legacy), ("fail", ["ci/old"]))
-        legacy["statusCheckRollup"] = [{"context": "ci/old", "state": "PENDING"}]
-        self.assertEqual(alerts.ci_state(legacy)[0], "run")
 
 
 class Runs(unittest.TestCase):
@@ -136,24 +135,25 @@ class Runs(unittest.TestCase):
         gone = self.gatherer([pr(3, "claude/z", draft=True)])
         self.assertEqual(alerts.run_once("codex", self.out, self.state, False, gather_fn=gone, now=20_000.0, min_gap=600.0, bundle_fn=bundles), [])
 
-    def test_the_review_bundle_has_the_full_head_files_threads_and_a_capped_diff(self):
-        calls = []
+    def test_gather_reads_everything_from_one_github_pr_states_call_and_waiting_only_for_my_prs(self):
+        mine, theirs = pr(1, "codex/a"), pr(2, "claude/b")
+        mine["waiting"] = [{"id": 5, "path": "a", "line": 1, "body": "x"}]
+        theirs["waiting"] = [{"id": 6, "path": "b", "line": 1, "body": "y"}]
+        mcp = FakeMcp({"open": [mine, theirs], "merged": [7]})
+        rows, waiting, merged = alerts.gather("codex", mcp)
+        self.assertEqual((len(rows), list(waiting), merged), (2, [1], [7]))
+        self.assertEqual([c[0] for c in mcp.calls], ["github_pr_states"])
 
-        def gh(args, run=None):
-            calls.append(args)
-            if args[:2] == ["pr", "view"]:
-                return json.dumps({"files": [{"path": "scripts/ui/hud.gd", "additions": 3, "deletions": 1}, {"path": "tests/test_hud.gd", "additions": 5, "deletions": 0}]})
-            if args[0] == "api":
-                return json.dumps([{"id": 1, "path": "a.gd", "line": 4, "in_reply_to_id": None, "body": "please fix"}])
-            return "diff --git a b" + "x" * 5000
-        folder = tempfile.mkdtemp()
-        path = alerts.review_bundle(9, H, "claude/x", "A title", gh=gh, folder=folder, limit=1000)
+    def test_the_review_bundle_wraps_the_mcp_packet_under_the_full_head_and_reads_only(self):
+        mcp = FakeMcp(packet="## Files - a.gd (cut)")
+        path = alerts.review_bundle(9, H, "claude/x", "A title", mcp, folder=tempfile.mkdtemp())
         text = open(path, encoding="utf-8").read()
         self.assertIn("Head (full): " + H, text)
-        self.assertIn("tests by name: tests/test_hud.gd", text)
-        self.assertIn("a.gd:4 please fix", text)
         self.assertIn("(cut)", text)
-        self.assertTrue(all(c[0] in ("pr", "api") for c in calls), "it only reads")
+        self.assertEqual([c[0] for c in mcp.calls], ["github_review_packet"])
+        source = open(alerts.__file__, encoding="utf-8").read()
+        for forbidden in ("subprocess", '"gh"', "'gh'"):
+            self.assertNotIn(forbidden, source)
 
     def test_the_digest_is_replaced_atomically(self):
         alerts.write_digest(self.out, "claude", ["- one"])

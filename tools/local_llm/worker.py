@@ -2,9 +2,7 @@
 """A cheap first-pass worker on the local LM Studio server, for the jobs that do not need Claude or Codex.
 
     python tools/local_llm/worker.py models
-    python tools/local_llm/worker.py digest --file build.log            # or --pr 322 for a PR's diff
-    python tools/local_llm/worker.py draft-replies --pr 330 --out drafts.md
-    python tools/local_llm/worker.py triage                             # open PRs: tier, area, owner, one line
+    python tools/local_llm/worker.py digest --file build.log            # a log or a saved diff
     python tools/local_llm/worker.py first-draft --task task.md --paths tools/x.py,tests/test_x.py --slug x
 
 The server address comes from SKYRUNNER_LOCAL_LLM (for example http://169.254.83.107:6456); there is no default. It talks to LM Studio's
@@ -21,8 +19,10 @@ BE CAREFUL WITH THE SERVER (the owner's large model is on it, and a model that d
     when it was on, and about 0 when off (a 20-token reply took 1 s). Pass --think to first-draft to turn it on for a hard change.
 
 Rules it keeps, because a model is wrong often enough to matter:
-  * It never merges, closes, reviews, approves, marks a PR ready, or posts a thread reply. `draft-replies` writes drafts to a file for the
-    author to read and send; `first-draft` opens a DRAFT pull request on a new `local/<slug>` branch, labelled as an unreviewed first pass.
+  * It never merges, closes, reviews, approves, marks a PR ready, or posts a thread reply, and it never calls `gh`: GitHub is reached only
+    through the skyrunner MCP tools (the owner's rule). `first-draft` pushes a new `local/<slug>` branch and prints the draft-PR title and
+    body for an agent to open with `github_pr_create`; PR reads (diffs, threads, triage) are the MCP tools `github_review_packet` and
+    `github_pr_states`.
   * Everything it produces is a draft that Claude and Codex finish and review. A first draft is always at least Tier 1 (see docs/PIPELINE.md).
   * `first-draft` touches only the files you name (at most 3, each at most 40 KB), never the protected paths below, applies nothing it cannot
     parse, and discards the branch if the optional test command fails.
@@ -221,49 +221,11 @@ def check_paths(paths):
 
 
 # --------------------------------------------------------------------------------------------------------------------- jobs
-def gh(args, run=subprocess.run):
-    out = run(["gh"] + args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=90)
-    if out.returncode != 0:
-        raise LocalLLMError("gh %s failed: %s" % (" ".join(args[:2]), " ".join((out.stderr or "").split())[:200]))
-    return out.stdout
-
-
 def job_digest(args, ask=chat):
-    if args.file:
-        text = open(args.file, encoding="utf-8", errors="replace").read()
-        what = "log"
-    else:
-        text = gh(["pr", "diff", str(args.pr)])
-        what = "pull request diff"
+    text = open(args.file, encoding="utf-8", errors="replace").read()
+    what = "log or diff"
     return ask("Summarise this %s for a developer in at most 8 short lines. Say what failed or changed and where (file and line if shown). "
                "Quote exact error text. Do not guess.\n\n%s" % (what, clip(text, input_budget())), system="You are terse and exact.", max_tokens=400)
-
-
-def job_draft_replies(args, ask=chat):
-    comments = json.loads(gh(["api", "repos/{owner}/{repo}/pulls/%d/comments" % args.pr, "--paginate", "--jq", "[.[]|{id,path,line,in_reply_to_id,body}]"]) or "[]")
-    replied = {c["in_reply_to_id"] for c in comments if c.get("in_reply_to_id")}
-    open_ = [c for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied]
-    parts = ["# Review threads to answer on PR #%d (summaries only, NOT replies: the author decides and writes the answer)\n" % args.pr]
-    for c in open_[:MAX_CALLS]:
-        draft = ask(THREAD_PROMPT.format(path=c.get("path"), line=c.get("line"), body=clip(c["body"], 3000)),
-                    system="You summarise review comments neutrally and never decide for the author.", max_tokens=200)
-        parts.append("## comment %s  %s:%s\n%s\n\nSUMMARY (a neutral reading, not a decision):\n%s\n" % (c["id"], c.get("path"), c.get("line"), " ".join(c["body"].split())[:300], draft))
-    if not open_:
-        parts.append("No unanswered review threads.\n")
-    return "\n".join(parts)
-
-
-def job_triage(args, ask=chat):
-    prs = json.loads(gh(["pr", "list", "--json", "number,title,headRefName,files,isDraft", "--limit", str(args.limit)]))
-    lines = []
-    for p in prs[:MAX_CALLS]:
-        paths = [f["path"] for f in p.get("files", [])]
-        tier = tier_of(paths)
-        owner = "claude" if p["headRefName"].startswith("claude/") else ("codex" if p["headRefName"].startswith("codex/") else "?")
-        one = ask("One line (under 18 words) saying what this pull request does, from its title and file list only.\nTitle: %s\nFiles: %s" % (p["title"], ", ".join(paths[:12])),
-                  max_tokens=60, )
-        lines.append("#%d tier %d, authored by %s%s: %s" % (p["number"], tier, owner, " (draft)" if p["isDraft"] else "", one.splitlines()[0]))
-    return "\n".join(lines)
 
 
 def job_first_draft(args, ask=chat, run=subprocess.run):
@@ -339,8 +301,8 @@ def job_first_draft(args, ask=chat, run=subprocess.run):
     body = ("UNREVIEWED FIRST PASS by a local model (%s). Claude and Codex finish and review it before it can merge; treat every line as suspect.\n"
             "Task: %s\nFiles: %s\nReview tier: at least %d (docs/PIPELINE.md)." % (os.environ.get("SKYRUNNER_LOCAL_MODEL", "local model"), args.slug,
                                                                                     ", ".join(sorted(files)), max(1, tier_of(list(files)))))
-    url = gh(["pr", "create", "--draft", "--title", "First pass (local model): " + args.slug, "--head", branch, "--body", body], run).strip()
-    return "opened draft " + url
+    return ("pushed branch %s (draft body below). Open the draft PR with the MCP tool github_pr_create (draft=true), never gh:\n%s\n%s"
+            % (branch, "First pass (local model): " + args.slug, body))
 
 
 def main(argv=None):
@@ -348,14 +310,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("models")
     d = sub.add_parser("digest")
-    g = d.add_mutually_exclusive_group(required=True)
-    g.add_argument("--file")
-    g.add_argument("--pr", type=int)
-    r = sub.add_parser("draft-replies")
-    r.add_argument("--pr", type=int, required=True)
-    r.add_argument("--out", default="")
-    t = sub.add_parser("triage")
-    t.add_argument("--limit", type=int, default=30)
+    d.add_argument("--file", required=True)
     f = sub.add_parser("first-draft")
     f.add_argument("--task", required=True)
     f.add_argument("--paths", required=True)
@@ -375,12 +330,8 @@ def main(argv=None):
         if args.cmd == "models":
             print("loaded: " + (", ".join(loaded_models()) or "none (this tool never loads a model)"))
             return 0
-        text = {"digest": job_digest, "draft-replies": job_draft_replies, "triage": job_triage, "first-draft": job_first_draft}[args.cmd](args)
-        if args.cmd == "draft-replies" and args.out:
-            open(args.out, "w", encoding="utf-8").write(text)
-            print("wrote " + args.out)
-        else:
-            print(text)
+        text = {"digest": job_digest, "first-draft": job_first_draft}[args.cmd](args)
+        print(text)
         return 0
     except LocalLLMError as e:
         print("local-llm: " + str(e), file=sys.stderr)

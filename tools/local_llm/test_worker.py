@@ -202,28 +202,15 @@ class Jobs(unittest.TestCase):
         path = os.path.join(tempfile.mkdtemp(), "build.log")
         open(path, "w").write("error: x" + "y" * 50000)
         sent = []
-        args = type("A", (), {"file": path, "pr": None})()
+        args = type("A", (), {"file": path})()
         out = worker.job_digest(args, ask=lambda prompt, **kw: sent.append(prompt) or "one failure")
         self.assertEqual(out, "one failure")
         self.assertLess(len(sent[0]), 26000)
 
-    def test_draft_replies_drafts_only_for_unanswered_threads_and_never_posts(self):
-        comments = [{"id": 1, "path": "a.py", "line": 3, "in_reply_to_id": None, "body": "fix this"},
-                    {"id": 2, "path": "b.py", "line": 4, "in_reply_to_id": None, "body": "and this"},
-                    {"id": 3, "path": "b.py", "line": 4, "in_reply_to_id": 2, "body": "done"}]
-        calls = []
-        real = worker.gh
-        worker.gh = lambda args, run=None: calls.append(args) or json.dumps(comments)
-        try:
-            args = type("A", (), {"pr": 9})()
-            text = worker.job_draft_replies(args, ask=lambda p, **kw: "ok [TODO: what was done]")
-        finally:
-            worker.gh = real
-        self.assertIn("comment 1", text)
-        self.assertNotIn("comment 2", text)
-        self.assertIn("NOT replies", text)
-        self.assertIn("neutral reading", text)
-        self.assertTrue(all(c[0] == "api" for c in calls), "it only reads")
+    def test_the_worker_never_calls_gh(self):
+        source = open(worker.__file__, encoding="utf-8").read()
+        for forbidden in ('"gh"', "'gh'", "def gh(", "gh(["):
+            self.assertNotIn(forbidden, source)
 
     def test_first_draft_dry_run_writes_nothing_and_a_bad_answer_is_an_error(self):
         root = tempfile.mkdtemp()
