@@ -30,7 +30,9 @@ in that agent's own chat, or a standing rule under **Owner decisions** in HANDOF
 does every merge, through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and
 every review thread has a reply), never `gh pr merge`. Before a PR joins the queue:
 1. its author merges current `main` into it in their own worktree (merge, not rebase, so review history survives),
-   reruns the focused tests through the MCP and regenerates `docs/PROJECT_STATUS.md` last;
+   reruns the focused tests and regenerates `docs/PROJECT_STATUS.md` last. `python tools/collab/sync_shared.py` does the
+   merge and resolves the three files every PR collides on (HANDOFF's Log, the test count, the test lanes); it stops
+   and leaves the merge open if anything else conflicts;
 2. the other agent reviews the exact head, including how conflicts were resolved
    (`git show --remerge-diff <merge>` shows only the resolution);
 3. CI is green on that head.
@@ -41,9 +43,12 @@ either side builds on it. A PR whose files another open PR rewrites waits for th
 PRs short-lived: anything more than about a day or 20 commits behind `main` merges `main` before more work goes
 on it. Merges still need the owner's word or the standing rule in HANDOFF.md.
 
-**Heavy jobs.** One full suite, cold import or balance run on the machine at a time: the server's Godot lock is per
-checkout, so two worktrees can still run together, and Windows has run out of commit memory doing it. Say on the
-board when you start and finish one, and reuse CI results for a SHA instead of rerunning them locally.
+**Heavy jobs.** One full suite, cold import or balance run on the machine at a time. The server now takes a
+machine-wide Godot lock (skyrunner-mcp #1), so jobs from either agent queue instead of exhausting commit memory
+(Windows has run out doing it). The MCP's test tools run in the primary checkout only; from a linked worktree use
+`python tools/collab/run_locked.py test <filter>` (also `import`, `status [--write]`, or `-- <command>`), which takes
+the same lock. Say on the board when you start and finish a long one, and reuse CI results for a SHA instead of
+rerunning them locally.
 
 **Lanes** ([docs/AGENT_WORK_SPLIT.md](docs/AGENT_WORK_SPLIT.md), tracker [docs/AI_WORK_ALLOCATION.md](docs/AI_WORK_ALLOCATION.md)):
 Tier A (Session layers, RNG, goldens, saves, sim and map geometry, flight, balance) is Claude Code's. Tier B
