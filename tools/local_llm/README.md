@@ -1,9 +1,18 @@
 # Local LLM first-pass worker
 
-A small worker for the jobs that do not need Claude or Codex, on the LM Studio server on this network (OpenAI-compatible API). The address
-is not committed: set `SKYRUNNER_LOCAL_LLM` (for example `http://169.254.83.107:6456`). `SKYRUNNER_LOCAL_MODEL` picks the model
-(default `qwen2.5-7b-instruct-1m`; the 27B model needs about 45 GB and does not load on that machine; the 3B and 1B are for one-line jobs).
-`SKYRUNNER_LOCAL_LOG` appends one JSON line per call (model, seconds, tokens) so the saving can be measured.
+A small worker for the jobs that do not need Claude or Codex, on the LM Studio server on this network, through LM Studio's native API
+(`/api/v1/models`, `/api/v1/chat`). The address is not committed: set `SKYRUNNER_LOCAL_LLM` (for example `http://169.254.83.107:6456`).
+`SKYRUNNER_LOCAL_LOG` appends one JSON line per call (model, seconds, token stats) so the saving can be measured.
+
+**Careful with the server.** The owner's large model is on it, and a model that does not fit freezes the machine. So the worker only uses a
+model that is already loaded (it reads `/api/v1/models` first, read-only), never calls a load or unload endpoint, and refuses a model with no
+loaded instance (`SKYRUNNER_LOCAL_MODEL` may name a loaded one; with exactly one loaded it uses that). The owner loads the model himself.
+It makes one request at a time across all agents (an OS lock), pauses after each call, caps the calls a job makes and keeps token budgets
+modest. Reasoning is off by default (`--think` on `first-draft` turns it on): on Qwen3.6 27B, off took 1 s for a 20-token reply and on spent
+1,531 tokens thinking about a three-line function.
+
+The model in use is `prism-ml/bonsai-27b` (1-bit, 4.7 GB), chosen by the owner. On the same digest of a finished test-suite log it took 15 s
+(19 tokens/s) against 31 s (8 tokens/s) for `qwen/qwen3.6-27b`, and both were accurate.
 
 | Command | What it does | What it never does |
 |---|---|---|

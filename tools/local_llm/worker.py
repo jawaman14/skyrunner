@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A cheap first-pass worker on a local LLM (LM Studio, OpenAI-compatible), for the jobs that do not need Claude or Codex.
+"""A cheap first-pass worker on the local LM Studio server, for the jobs that do not need Claude or Codex.
 
     python tools/local_llm/worker.py models
     python tools/local_llm/worker.py digest --file build.log            # or --pr 322 for a PR's diff
@@ -7,10 +7,20 @@
     python tools/local_llm/worker.py triage                             # open PRs: tier, area, owner, one line
     python tools/local_llm/worker.py first-draft --task task.md --paths tools/x.py,tests/test_x.py --slug x
 
-The server address comes from SKYRUNNER_LOCAL_LLM (for example http://169.254.83.107:6456); there is no default, and the model from
-SKYRUNNER_LOCAL_MODEL (default qwen2.5-7b-instruct-1m: the 27B model needs about 45 GB and does not load on that machine).
+The server address comes from SKYRUNNER_LOCAL_LLM (for example http://169.254.83.107:6456); there is no default. It talks to LM Studio's
+native API (`/api/v1/models`, `/api/v1/chat`).
 
-Rules it keeps, because a small model is wrong often enough to matter:
+BE CAREFUL WITH THE SERVER (the owner's large model is on it, and a model that does not fit freezes the machine):
+  * It only ever uses a model that is ALREADY LOADED. Before each run it reads `/api/v1/models` (read-only) and refuses a model with no
+    loaded instance, because asking the server for an unloaded model makes it load one, which is how an earlier probe broke the engine.
+    It never calls a load or unload endpoint. SKYRUNNER_LOCAL_MODEL may name a loaded model; otherwise it uses the one loaded LLM and
+    refuses if there are none or several.
+  * One request at a time across all agents (an OS lock), a pause after each call, modest token budgets and timeouts, and a cap on how
+    many calls a job makes, so it never competes hard with the owner's own use of the model.
+  * Reasoning is OFF by default (`"reasoning": "off"` on the chat call): the model spent 1,531 reasoning tokens on a three-line function
+    when it was on, and about 0 when off (a 20-token reply took 1 s). Pass --think to first-draft to turn it on for a hard change.
+
+Rules it keeps, because a model is wrong often enough to matter:
   * It never merges, closes, reviews, approves, marks a PR ready, or posts a thread reply. `draft-replies` writes drafts to a file for the
     author to read and send; `first-draft` opens a DRAFT pull request on a new `local/<slug>` branch, labelled as an unreviewed first pass.
   * Everything it produces is a draft that Claude and Codex finish and review. A first draft is always at least Tier 1 (see docs/PIPELINE.md).
@@ -28,7 +38,8 @@ import time
 import urllib.error
 import urllib.request
 
-DEFAULT_MODEL = "qwen2.5-7b-instruct-1m"
+MAX_CALLS = 30
+PAUSE_SECONDS = 1.0
 PROTECTED = (".github/", "project.godot", "tests/fixtures/", "HANDOFF.md", "AGENTS.md", "CLAUDE.md", "docs/COLLABORATION_SCORE.md",
              "scripts/sim/switches.gd", "tools/mcp/", "tools/local_llm/")
 MAX_FILES = 3
@@ -48,28 +59,96 @@ def endpoint():
     return url
 
 
-def chat(prompt, system="", model=None, max_tokens=800, temperature=0.2, opener=urllib.request.urlopen):
-    """One completion. Raises LocalLLMError on any failure; never returns an empty answer."""
-    model = model or os.environ.get("SKYRUNNER_LOCAL_MODEL", DEFAULT_MODEL)
-    messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
-    body = json.dumps({"model": model, "messages": messages, "max_tokens": max_tokens, "temperature": temperature}).encode()
-    req = urllib.request.Request(endpoint() + "/v1/chat/completions", data=body, headers={"Content-Type": "application/json"})
-    start = time.time()
+def _get_json(path, opener, timeout=20):
     try:
-        with opener(req, timeout=300) as r:
-            data = json.load(r)
+        with opener(urllib.request.Request(endpoint() + path), timeout=timeout) as r:
+            return json.load(r)
     except urllib.error.HTTPError as e:
-        raise LocalLLMError("the server refused: %s %s" % (e.code, e.read()[:200].decode("utf-8", "replace")))
+        raise LocalLLMError("the server refused %s: %s" % (path, e.code))
     except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
         raise LocalLLMError("could not reach the local LLM: %s" % e)
-    text = (data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
-    if not text.strip():
-        raise LocalLLMError("the model returned nothing")
-    log = os.environ.get("SKYRUNNER_LOCAL_LOG", "")
-    if log:
-        with open(log, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps({"model": model, "seconds": round(time.time() - start, 2), "usage": data.get("usage", {})}) + "\n")
-    return text.strip()
+
+
+def loaded_models(opener=urllib.request.urlopen):
+    """Keys of the language models that are loaded right now. A read-only look; it loads nothing."""
+    data = _get_json("/api/v1/models", opener)
+    return [m["key"] for m in data.get("models", []) if m.get("type") == "llm" and m.get("loaded_instances")]
+
+
+def pick_model(loaded, requested=""):
+    """The loaded model to use. Never one that is not loaded: asking for it would make the server load it."""
+    requested = requested or os.environ.get("SKYRUNNER_LOCAL_MODEL", "")
+    if requested:
+        if requested not in loaded:
+            raise LocalLLMError("%s is not loaded (loaded: %s). This tool never loads a model: load it in LM Studio first." % (requested, ", ".join(loaded) or "none"))
+        return requested
+    if len(loaded) == 1:
+        return loaded[0]
+    if not loaded:
+        raise LocalLLMError("no language model is loaded in LM Studio. This tool never loads one: load a model first.")
+    raise LocalLLMError("several models are loaded (%s): set SKYRUNNER_LOCAL_MODEL" % ", ".join(loaded))
+
+
+def _lock_file(fh):
+    """An exclusive OS lock, so only one agent talks to the server at a time; released if the holder dies."""
+    try:
+        if os.name == "nt":
+            import msvcrt
+            fh.seek(0)
+            msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except OSError:
+        return False
+
+
+def _wait_turn(seconds=600):
+    path = os.environ.get("SKYRUNNER_LOCAL_LOCK") or os.path.join(os.environ.get("TEMP") or "/tmp", "skyrunner_local_llm.lock")
+    fh = open(path, "a+", encoding="utf-8")
+    deadline = time.time() + seconds
+    while not _lock_file(fh):
+        if time.time() > deadline:
+            fh.close()
+            raise LocalLLMError("another job has been using the local LLM for over %d s; try later" % seconds)
+        time.sleep(2.0)
+    return fh
+
+
+def chat(prompt, system="", model=None, max_tokens=800, think=False, temperature=0.2, opener=urllib.request.urlopen, timeout=600, wait=True):
+    """One completion from an already-loaded model. Raises LocalLLMError on any failure; never returns an empty answer."""
+    lock = _wait_turn() if wait else None
+    try:
+        model = pick_model(loaded_models(opener), model or "")
+        body = {"model": model, "input": prompt, "reasoning": "on" if think else "off", "max_output_tokens": max_tokens,
+                "temperature": temperature, "store": False}
+        if system:
+            body["system_prompt"] = system
+        req = urllib.request.Request(endpoint() + "/api/v1/chat", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+        start = time.time()
+        try:
+            with opener(req, timeout=timeout) as r:
+                data = json.load(r)
+        except urllib.error.HTTPError as e:
+            raise LocalLLMError("the server refused: %s %s" % (e.code, e.read()[:200].decode("utf-8", "replace")))
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
+            raise LocalLLMError("could not reach the local LLM: %s" % e)
+        text = "".join(str(o.get("content", "")) for o in data.get("output", []) if o.get("type") == "message").strip()
+        stats = data.get("stats") or {}
+        if not text:
+            if think and stats.get("reasoning_output_tokens", 0) >= max_tokens * 0.9:
+                raise LocalLLMError("%s spent all %d tokens thinking and answered nothing: raise max_tokens" % (model, max_tokens))
+            raise LocalLLMError("the model returned nothing")
+        log = os.environ.get("SKYRUNNER_LOCAL_LOG", "")
+        if log:
+            with open(log, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps({"model": model, "seconds": round(time.time() - start, 2), "stats": stats}) + "\n")
+        return text
+    finally:
+        if lock is not None:
+            time.sleep(float(os.environ.get("SKYRUNNER_LOCAL_PAUSE", PAUSE_SECONDS)))
+            lock.close()
 
 
 def clip(text, limit):
@@ -142,7 +221,7 @@ def job_draft_replies(args, ask=chat):
     replied = {c["in_reply_to_id"] for c in comments if c.get("in_reply_to_id")}
     open_ = [c for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied]
     parts = ["# Draft replies for PR #%d (NOT posted: the author reads, corrects and sends them)\n" % args.pr]
-    for c in open_:
+    for c in open_[:MAX_CALLS]:
         draft = ask("A reviewer left this comment on %s line %s. Draft a short reply that says what the author did or will do about it. "
                     "If the comment is right, say it is fixed and what was changed in general terms; do not invent file names, commit ids or test results; "
                     "write [TODO: what was actually done] where the facts are not in the comment.\n\n%s" % (c.get("path"), c.get("line"), clip(c["body"], 3000)),
@@ -156,12 +235,12 @@ def job_draft_replies(args, ask=chat):
 def job_triage(args, ask=chat):
     prs = json.loads(gh(["pr", "list", "--json", "number,title,headRefName,files,isDraft", "--limit", str(args.limit)]))
     lines = []
-    for p in prs:
+    for p in prs[:MAX_CALLS]:
         paths = [f["path"] for f in p.get("files", [])]
         tier = tier_of(paths)
         owner = "claude" if p["headRefName"].startswith("claude/") else ("codex" if p["headRefName"].startswith("codex/") else "?")
         one = ask("One line (under 18 words) saying what this pull request does, from its title and file list only.\nTitle: %s\nFiles: %s" % (p["title"], ", ".join(paths[:12])),
-                  max_tokens=60, model=os.environ.get("SKYRUNNER_LOCAL_FAST", DEFAULT_MODEL))
+                  max_tokens=60, )
         lines.append("#%d tier %d, authored by %s%s: %s" % (p["number"], tier, owner, " (draft)" if p["isDraft"] else "", one.splitlines()[0]))
     return "\n".join(lines)
 
@@ -184,7 +263,7 @@ def job_first_draft(args, ask=chat, run=subprocess.run):
     shown = "\n\n".join("FILE: %s\n```\n%s```" % (p, current[p]) for p in current) or "(all files are new)"
     answer = ask("Task:\n%s\n\nYou may change ONLY these files: %s.\nCurrent contents:\n%s\n\nReturn the COMPLETE new contents of every file you change, each as a line "
                  "`FILE: <path>` followed by one fenced code block. No other prose. Follow the conventions visible in the existing code. "
-                 "Do not invent APIs that are not shown." % (task, ", ".join(paths), shown), system="You write careful, minimal code changes.", max_tokens=6000)
+                 "Do not invent APIs that are not shown." % (task, ", ".join(paths), shown), system="You write careful, minimal code changes.", max_tokens=14000 if args.think else 6000, think=args.think, timeout=3000)
     files = parse_files(answer, set(paths))
     if not files:
         raise LocalLLMError("the model's answer had no usable FILE blocks; nothing was written")
@@ -211,14 +290,14 @@ def job_first_draft(args, ask=chat, run=subprocess.run):
         git("add", *files)
         git("-c", "user.name=local-llm", "-c", "user.email=noreply@localhost", "commit", "-q", "-m",
             "First draft by a local model (%s): %s\n\nUnreviewed. Claude and Codex finish and review it.\n\nCo-Authored-By: %s (local) <noreply@localhost>" %
-            (os.environ.get("SKYRUNNER_LOCAL_MODEL", DEFAULT_MODEL), args.slug, os.environ.get("SKYRUNNER_LOCAL_MODEL", DEFAULT_MODEL)))
+            (os.environ.get("SKYRUNNER_LOCAL_MODEL", "local model"), args.slug, os.environ.get("SKYRUNNER_LOCAL_MODEL", "local model")))
         git("push", "-q", "-u", "origin", branch)
     except LocalLLMError:
         run(["git", "-C", root, "worktree", "remove", "--force", work], capture_output=True)
         run(["git", "-C", root, "branch", "-D", branch], capture_output=True)
         raise
     body = ("UNREVIEWED FIRST PASS by a local model (%s). Claude and Codex finish and review it before it can merge; treat every line as suspect.\n"
-            "Task: %s\nFiles: %s\nReview tier: at least %d (docs/PIPELINE.md)." % (os.environ.get("SKYRUNNER_LOCAL_MODEL", DEFAULT_MODEL), args.slug,
+            "Task: %s\nFiles: %s\nReview tier: at least %d (docs/PIPELINE.md)." % (os.environ.get("SKYRUNNER_LOCAL_MODEL", "local model"), args.slug,
                                                                                     ", ".join(sorted(files)), max(1, tier_of(list(files)))))
     url = gh(["pr", "create", "--draft", "--title", "First pass (local model): " + args.slug, "--head", branch, "--body", body], run).strip()
     return "opened draft " + url
@@ -243,6 +322,7 @@ def main(argv=None):
     f.add_argument("--slug", required=True)
     f.add_argument("--root", default=".")
     f.add_argument("--test", nargs="*", default=None, help="a command (argv list) run in the new branch; failure discards it")
+    f.add_argument("--think", action="store_true", help="turn reasoning on (slow: use for a hard change)")
     f.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
     for stream in (sys.stdout, sys.stderr):
@@ -252,8 +332,7 @@ def main(argv=None):
             pass
     try:
         if args.cmd == "models":
-            with urllib.request.urlopen(endpoint() + "/v1/models", timeout=20) as resp:
-                print("\n".join(m["id"] for m in json.load(resp)["data"]))
+            print("loaded: " + (", ".join(loaded_models()) or "none (this tool never loads a model)"))
             return 0
         text = {"digest": job_digest, "draft-replies": job_draft_replies, "triage": job_triage, "first-draft": job_first_draft}[args.cmd](args)
         if args.cmd == "draft-replies" and args.out:

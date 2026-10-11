@@ -57,42 +57,101 @@ class Pure(unittest.TestCase):
         self.assertEqual(worker.clip("short", 200), "short")
 
 
+MODELS = {"models": [
+    {"type": "llm", "key": "big/model", "loaded_instances": [{"id": "big/model"}]},
+    {"type": "llm", "key": "other/model", "loaded_instances": []},
+    {"type": "embedding", "key": "embed", "loaded_instances": [{"id": "embed"}]},
+]}
+
+
+class Server:
+    """A fake LM Studio: records every request so a test can prove nothing was loaded or unloaded."""
+
+    def __init__(self, models=MODELS, answer=None, chat_error=None):
+        self.models, self.requests = models, []
+        self.answer = answer or {"output": [{"type": "message", "content": " hello "}], "stats": {"total_output_tokens": 2, "reasoning_output_tokens": 0}}
+        self.chat_error = chat_error
+
+    def __call__(self, req, timeout):
+        path = req.full_url.split(":1", 1)[1] if ":1" in req.full_url else req.full_url
+        self.requests.append((req.get_method(), path, json.loads(req.data) if req.data else None))
+        if path.endswith("/api/v1/models"):
+            return FakeResponse(self.models)
+        if self.chat_error:
+            raise self.chat_error
+        return FakeResponse(self.answer)
+
+
 class Client(unittest.TestCase):
     def setUp(self):
         os.environ["SKYRUNNER_LOCAL_LLM"] = "http://localhost:1"
-        os.environ.pop("SKYRUNNER_LOCAL_LOG", None)
+        for k in ("SKYRUNNER_LOCAL_LOG", "SKYRUNNER_LOCAL_MODEL"):
+            os.environ.pop(k, None)
+        os.environ["SKYRUNNER_LOCAL_PAUSE"] = "0"
+        os.environ["SKYRUNNER_LOCAL_LOCK"] = os.path.join(tempfile.mkdtemp(), "lock")
 
     def test_no_server_address_is_an_error_not_a_default(self):
         os.environ.pop("SKYRUNNER_LOCAL_LLM")
         with self.assertRaises(worker.LocalLLMError):
             worker.chat("hi")
 
-    def test_a_completion_is_returned_and_logged(self):
+    def test_only_loaded_language_models_count_and_the_single_loaded_one_is_used(self):
+        server = Server()
+        self.assertEqual(worker.loaded_models(server), ["big/model"])
+        self.assertEqual(worker.chat("hi", system="s", opener=server), "hello")
+        chats = [r for r in server.requests if r[1].endswith("/api/v1/chat")]
+        self.assertEqual(len(chats), 1)
+        self.assertEqual(chats[0][2]["model"], "big/model")
+        self.assertEqual(chats[0][2]["reasoning"], "off", "reasoning is off unless asked for")
+        self.assertEqual(chats[0][2]["system_prompt"], "s")
+        self.assertFalse(chats[0][2]["store"])
+
+    def test_it_never_asks_for_a_model_that_is_not_loaded_and_never_loads_one(self):
+        server = Server()
+        os.environ["SKYRUNNER_LOCAL_MODEL"] = "other/model"
+        with self.assertRaises(worker.LocalLLMError) as cm:
+            worker.chat("hi", opener=server)
+        self.assertIn("never loads", str(cm.exception))
+        self.assertEqual([r[1] for r in server.requests if r[0] == "POST"], [], "no chat request was sent for the unloaded model")
+        for method, path, _ in server.requests:
+            self.assertNotIn("load", path.replace("loaded", ""), "no load or unload endpoint is ever called")
+        os.environ.pop("SKYRUNNER_LOCAL_MODEL")
+        with self.assertRaises(worker.LocalLLMError):
+            worker.chat("hi", opener=Server(models={"models": [{"type": "llm", "key": "x", "loaded_instances": []}]}))
+        two = {"models": [{"type": "llm", "key": "a", "loaded_instances": [1]}, {"type": "llm", "key": "b", "loaded_instances": [1]}]}
+        with self.assertRaises(worker.LocalLLMError):
+            worker.chat("hi", opener=Server(models=two))
+
+    def test_thinking_is_a_choice_and_a_log_line_is_written(self):
         log = os.path.join(tempfile.mkdtemp(), "usage.jsonl")
         os.environ["SKYRUNNER_LOCAL_LOG"] = log
-        seen = {}
-
-        def opener(req, timeout):
-            seen["url"] = req.full_url
-            seen["body"] = json.loads(req.data)
-            return FakeResponse({"choices": [{"message": {"content": " hello "}}], "usage": {"total_tokens": 7}})
-        self.assertEqual(worker.chat("hi", system="s", opener=opener), "hello")
-        self.assertTrue(seen["url"].endswith("/v1/chat/completions"))
-        self.assertEqual(seen["body"]["messages"][0]["role"], "system")
-        self.assertEqual(json.loads(open(log).read())["usage"]["total_tokens"], 7)
+        server = Server()
+        worker.chat("hi", think=True, opener=server)
+        self.assertEqual([r[2]["reasoning"] for r in server.requests if r[1].endswith("/chat")], ["on"])
+        self.assertEqual(json.loads(open(log).read())["stats"]["total_output_tokens"], 2)
 
     def test_a_refusal_an_unreachable_server_and_an_empty_answer_are_errors(self):
-        def refuses(req, timeout):
-            raise urllib.error.HTTPError(req.full_url, 400, "bad", {}, io.BytesIO(b"Failed to load model: insufficient memory"))
-
-        def down(req, timeout):
-            raise urllib.error.URLError("unreachable")
-
-        def empty(req, timeout):
-            return FakeResponse({"choices": [{"message": {"content": "  "}}]})
-        for opener in (refuses, down, empty):
+        refuses = Server(chat_error=urllib.error.HTTPError("u", 400, "bad", {}, io.BytesIO(b"insufficient memory")))
+        down = Server(chat_error=urllib.error.URLError("unreachable"))
+        empty = Server(answer={"output": [{"type": "message", "content": "  "}], "stats": {}})
+        for server in (refuses, down, empty):
             with self.assertRaises(worker.LocalLLMError):
-                worker.chat("hi", opener=opener)
+                worker.chat("hi", opener=server)
+
+    def test_a_thinking_run_that_uses_its_whole_budget_says_so(self):
+        server = Server(answer={"output": [], "stats": {"reasoning_output_tokens": 300}})
+        with self.assertRaises(worker.LocalLLMError) as cm:
+            worker.chat("hi", max_tokens=300, think=True, opener=server)
+        self.assertIn("raise max_tokens", str(cm.exception))
+
+    def test_a_second_job_waits_its_turn_instead_of_running_beside_the_first(self):
+        held = worker._wait_turn(5)
+        try:
+            with self.assertRaises(worker.LocalLLMError):
+                worker._wait_turn(0)
+        finally:
+            held.close()
+        worker._wait_turn(5).close()
 
 
 class Jobs(unittest.TestCase):
@@ -129,7 +188,7 @@ class Jobs(unittest.TestCase):
         root = tempfile.mkdtemp()
         task = os.path.join(root, "task.md")
         open(task, "w").write("add a helper")
-        args = type("A", (), {"paths": "tools/x.py", "root": root, "task": task, "slug": "x", "dry_run": True, "test": None})()
+        args = type("A", (), {"paths": "tools/x.py", "root": root, "task": task, "slug": "x", "dry_run": True, "test": None, "think": False})()
         out = worker.job_first_draft(args, ask=lambda p, **kw: fenced("tools/x.py", "print(1)" + NL))
         self.assertIn("dry run", out)
         self.assertFalse(os.path.exists(os.path.join(root, "tools", "x.py")))
