@@ -408,3 +408,26 @@ func test_leaving_pine_ridge_for_the_hub_clears_the_rising_ground() -> void:
 	check(s.phase != "crashed" and not s.state.on_ground, "still flying 90 s after leaving Pine Ridge for Harbor")
 	s.dispose()
 
+
+## The plain hold looks AHEAD along the heading (east is sin, north is cos), not sideways: aimed at the highest ground near Pine Ridge it targets
+## that ground plus the clearance.
+func test_the_plain_hold_looks_along_the_heading() -> void:
+	var s := _sess({"features": []})
+	var from := World.airfield("PNR")
+	var best_h := 0.0
+	var best_peak := -1e9
+	for k in 36:
+		var hr := deg_to_rad(float(k) * 10.0)
+		var pk := -1e9
+		var d := 250.0
+		while d <= Session.AUTOPILOT_HOLD_LOOKAHEAD_M:
+			pk = maxf(pk, s.world.ground(from.x + sin(hr) * d, from.y + cos(hr) * d))
+			d += 250.0
+		if pk > best_peak:
+			best_peak = pk
+			best_h = float(k) * 10.0
+	s.spawn_airborne(from.x, from.y, best_h, 150.0, 90.0)  # 150 m above the strip, aimed at the highest ground within 4 km
+	s.log.departed_from = "FRM"
+	s._autopilot_hold()
+	check(s.autopilot.alt_target >= best_peak + Session.AUTOPILOT_HOLD_CLEARANCE_M - 1.0, "it targets the ridge ahead (%s) plus the clearance: %s" % [best_peak, s.autopilot.alt_target])
+	s.dispose()

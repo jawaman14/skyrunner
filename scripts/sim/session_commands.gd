@@ -80,7 +80,7 @@ func _autopilot_hold() -> void:
 	var peak := world.ground(state.x, state.y)
 	var d := 250.0
 	while d <= AUTOPILOT_HOLD_LOOKAHEAD_M:
-		peak = maxf(peak, world.ground(state.x + cos(h) * d, state.y - sin(h) * d))
+		peak = maxf(peak, world.ground(state.x + sin(h) * d, state.y + cos(h) * d))  # heading is degrees from north: east is sin, north is cos
 		d += 250.0
 	var safe := peak + AUTOPILOT_HOLD_CLEARANCE_M
 	if safe > autopilot.alt_target:
