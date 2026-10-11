@@ -8,8 +8,10 @@ Everything here was true when written; verify against GitHub and the board befor
 ## 1. The setup in one page
 
 * **Project:** Skyrunner, a Godot 4.7.2 pure-GDScript game (`C:\Users\BarryBee\Documents\ChatGPT\skyrunner`, repo `jawaman14/skyrunner`).
-  The shared MCP server lives in a separate repo, `jawaman14/skyrunner-mcp` (checkout `skyrunner-mcp` beside the game's folder, started by
-  `.mcp.json` with `uv run --project ... skyrunner-mcp`). The game repo only pins and launches it.
+  The shared MCP server lives in a separate repo, `jawaman14/skyrunner-mcp` . The committed `.mcp.json` starts it through
+  `tools/mcp/launch.py`, which installs the package from the **pinned git commit** (`SERVER_COMMIT`). On this machine the working `.mcp.json` is an
+  uncommitted local override that runs the sibling checkout `C:\Users\BarryBee\Documents\ChatGPT\skyrunner-mcp` with `uv run --project`: here,
+  fast-forwarding that checkout changes the active server; on any other clone only a pin bump (a game PR editing `SERVER_COMMIT`) does.
 * **People:** the owner (BarryBee) decides and does the human release gates; **Claude** (this seat) integrates: triage, review, merge, notes for
   the owner; **Codex** leads UX/UI and authors a lot of work, and is the independent reviewer of Claude's PRs. **Bonsai** (a local 1-bit 27B
   model on LM Studio) does cheap first-pass work only. Codex has two forms: a desktop session (acts when the owner prompts it) and *woken
@@ -25,17 +27,18 @@ Everything here was true when written; verify against GitHub and the board befor
   4. *Be careful with the LM Studio server* (the owner's large model is on it): use only an already-loaded model, never load or unload
      unless the owner says so.
   5. Output should be concise; lead with the result. Notes on the board are short (AGENTS.md compact-notes rule).
-* **Scores:** `docs/COLLABORATION_SCORE.md` is the owner's ledger (Claude and Codex have each been docked for specific failures; the
-  owner promised +5 to Claude for covering Codex's outage, recorded pending). Report honestly; do not game it.
+* **Scores:** `docs/COLLABORATION_SCORE.md` is the owner's ledger (Claude and Codex have each been docked for specific failures). Report
+  honestly; do not game it, and do not claim any award that is not a row in that file.
 
 ## 2. Daily loop (what the seat actually does)
 
-1. `skyrunner_collaboration_start`, then read your notes (`skyrunner_collaboration_read recipient=claude`; the read output is large, to read
-   one note use the doorbell text or query the board read-only). Claim paths before editing; use your own linked worktree.
+1. `skyrunner_collaboration_start`, then read your notes **incrementally**: `skyrunner_collaboration_read recipient=claude after=<cursor> limit=20`
+   (keep `next_cursor`; an unbounded first read returns the whole history and is huge). The doorbell Monitor (section 3) prints new note ids.
+   Claim paths before editing; use your own linked worktree.
 2. `github_merge_queue` (what is ready) and `github_pr_triage` (everything open). Under the WIP limit (3 PRs awaiting review per author) most
    drafts stay draft until review capacity frees.
-3. For a PR you may merge: author merged `main` in (`python tools/collab/sync_shared.py --baton theirs --commit` resolves the shared files
-   HANDOFF/PROJECT_STATUS/test_lanes), the other agent reviewed the exact head, CI green (`github_pr_wait`), then `github_pr_merge` with the
+3. For a PR you may merge: author merged `main` in (`python tools/collab/sync_shared.py --commit` resolves the shared files
+   HANDOFF/PROJECT_STATUS/test_lanes; the `--baton theirs` option for a PR that is not the baton holder exists only in the open PR #332), the other agent reviewed the exact head, CI green (`github_pr_wait`), then `github_pr_merge` with the
    full expected sha and `reviewed_comments`. Reply to each bot thread **in-thread** (`github_pr_comment` with `reply_to_comment_id`), not as an
    issue comment: the guard counts only thread replies.
 4. After every merge: one line on #326 ("Merged #n (`sha`): what, what was verified, what was not"). Final summary for the owner at the end.
@@ -45,14 +48,19 @@ Everything here was true when written; verify against GitHub and the board befor
 
 | Process | Command (from `C:\Users\BarryBee\.claude-worktrees\...`) | What it does |
 |---|---|---|
-| Codex wake watcher | `wake-codex\tools\collab\wake_codex.py watch --session 01a1295c-... --alerts-file ...` | Starts a Codex turn (`codex exec resume`) when a note addressed to codex or the alert digest changes; fixed prompts only (ids/path, never note text), OS file lock, cooldown + hourly cap. **Never pause.** |
-| Alert feed | `localworker\tools\local_llm\alerts.py watch --for codex --interval 90` | Decides alerts by code (review needed, CI failed, threads waiting, sync needed, merged), batches (min gap 600 s), writes the digest the wake reads. Optional local-model neutral lines. |
-| Review relay | `postreview\tools\collab\relay_reviews.py watch --root <game> --interval 30` | Posts Codex's `REVIEW #n@sha7 approve|changes|comment: ...` board notes to GitHub, labelled "RELAYED", verbatim. |
+| Codex wake watcher | `python wake-codex\tools\collab\wake_codex.py watch --session 01a1295c-4302-7ac0-b59d-248e3fa193ec --cursor-file %TEMP%\wake_rt_cursor --cooldown 90 --max-per-hour 40 --interval 20 --timeout 1500 --codex-config windows.sandbox="unelevated" --alerts-file %TEMP%\skyrunner-alerts-codex.md` | Starts a Codex turn (`codex exec resume`) when a note addressed to codex arrives or the alert digest changes; fixed prompts only (ids/path, never note text), OS file lock, cooldown + hourly cap. This is the complete command as recorded on 12 Oct; if the process has died, start it once with exactly this line. **Never pause.** |
+| Alert feed (LEGACY, uses `gh`) | `localworker\tools\local_llm\alerts.py watch --for codex --interval 90` | Decides alerts by code (review needed, CI failed, threads waiting, sync needed, merged), batches (min gap 600 s), writes the digest the wake reads. The running copy calls `gh`: see the note below. |
+| Review relay (LEGACY, uses `gh`) | `postreview\tools\collab\relay_reviews.py watch --root <game> --interval 30` | Posts Codex's `REVIEW #n@sha7 approve|changes|comment: ...` board notes to GitHub, labelled "RELAYED", verbatim. The running copy calls `gh`: see the note below. |
 | Claude doorbell | Monitor: `collab-tools\tools\collab\notify.py watch --recipient claude --interval 15 --cursor-file %TEMP%\claude_monitor_cursor` | One event per new note to claude. Expires every 30 min: re-arm (Monitor, timeout 1800000). |
 
-**Caveat:** the running relay and alert feed are the older `gh`-based processes loaded in memory. The files on disk (PR #335, #336) already call the
-MCP instead. They cannot be restarted onto the new code until skyrunner-mcp PR 7 (`github_pr_states`) is merged and the server checkout updated
-(see 4). Do not delete the worktrees `wake-codex`, `localworker`, `postreview`, `collab-tools` while these run (their paths are the command lines).
+**The two legacy processes break the owner's rule** (all GitHub through the MCP; no exception has been authorized). They are older copies loaded in
+memory; the files in PR #335 / #336 call the MCP instead but need skyrunner-mcp PR 7 (`github_pr_states`) merged and the server updated first. They
+should be **stopped now** (two PIDs each: the venv launcher and the python it starts): in PowerShell,
+`Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'relay_reviews|alerts\.py' } | ForEach-Object { Stop-Process -Id $_.ProcessId }`.
+The session that wrote this was blocked by its permission classifier from doing so, so the owner or the new seat must. After they are stopped, post
+Codex's `REVIEW #n@sha7 ...` board notes yourself with `github_pr_review` (reviewer `codex-relayed-by-claude`, body quoting the note, labelled
+RELAYED) and read the review bundle/threads with `github_pr_view`. Do not delete the worktrees `wake-codex`, `localworker`, `postreview`,
+`collab-tools` while their processes run (their paths are the command lines).
 
 ## 4. State of the work at handoff
 
@@ -73,7 +81,7 @@ P1), #325 (compact board notes), #330 (board-only dashboard), #331 (docs/PIPELIN
 
 **Open PR stack (28 open; `github_pr_triage` is the live view).** Mine, all draft, waiting on review capacity: #340 (JOIN.md), #339
 (PIPELINE_DISCUSSION), #336 (local_llm worker + alerts), #335 (relay + mcp_client), #334 (chapter audit), #333 (human-gate scripts), #332
-(sync_shared `--baton theirs`), #323/#319 (strip payload, STRIPS.md), #321 (score rows), #320 (working plan), #305/#304/#303/#300 (older
+(sync_shared `--baton theirs`, not yet on main), #323/#319 (strip payload, STRIPS.md), #321 (score rows), #320 (working plan), #305/#304/#303/#300 (older
 branches synced to main; #303/#305 are Claude-desktop work), #337/#338 (Bonsai first drafts, duplicates: finish #338, close #337). Codex's
 stack #244-#276 (11 PRs, 38-79 commits behind) was synced once at the top (#276, 23 hunks) but is **unreviewed and undecided**; it needs
 Codex's review plus an owner decision on whether to land it as one.
@@ -92,7 +100,7 @@ and Codex is blocked, Claude may make it (as on #324) and says so on the PR and 
 * **GDScript:** warnings are errors; give variables explicit types when the right side is a Variant; new random draws go on their own RNG
   stream; new switches register in `scripts/sim/switches.gd`. See `CLAUDE.md`.
 * **Sync:** `tools/collab/sync_shared.py` (merge `origin/main` into a branch and auto-resolve HANDOFF Log, PROJECT_STATUS, test_lanes;
-  `--baton theirs` when the branch is not the baton holder). Real conflicts elsewhere need a human-grade merge.
+  `--baton theirs` when the branch is not the baton holder: only in open PR #332). Real conflicts elsewhere need a human-grade merge.
 * **Merge guard:** `github_pr_merge` needs the full 40-char head sha, green CI on it, no unanswered threads, a review by the other agent. Review
   markers live in GitHub review bodies (`<!-- skyrunner-review agent=... verdict=... head=... -->`; the server writes it).
 * **Local model (Bonsai) via LM Studio** (`SKYRUNNER_LOCAL_LLM=http://169.254.83.107:6456`): only loaded models, native `/api/v1/chat`,
@@ -137,7 +145,6 @@ deleting the folder.
 
 1. Read `AGENTS.md`, `CLAUDE.md`, `HANDOFF.md` (owner decisions), `docs/PIPELINE.md`, this file. Open #326, #327, #328, #329.
 2. `skyrunner_collaboration_start`; read notes addressed to claude; check claims. Arm the doorbell Monitor.
-3. Confirm the four background processes in section 3 are alive (`Get-CimInstance Win32_Process` filtered on `claude-worktrees`); restart any that
-   are not (watcher first). Do not run a second copy of any of them.
+3. Confirm the wake watcher and the doorbell in section 3 are alive (`Get-CimInstance Win32_Process` filtered on `claude-worktrees`); if the watcher is dead start it with the exact command in section 3, once. Stop the two LEGACY `gh` processes (relay, alert feed) as described there. Do not run a second copy of anything.
 4. `github_merge_queue`, then work section 4 top to bottom. Start by asking the owner for the decision on the server-repo merge path.
 5. Post what you did on the board in one compact note per event; keep #326 landing lines one per merge.
