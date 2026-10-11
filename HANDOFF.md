@@ -124,6 +124,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+
+- **2026-10-11 — Claude, plan item 2 (payload sweep, stacked on #319):** `StripTrials.max_payload` bisects the heaviest payload that takes off from a runway end (30% fuel, natural terrain), `strip_audit.gd --payload` writes it into `docs/STRIPS.md` beside what the game's own pickups weigh (`Trade.OWN`: grass 176 to 512 lb at bush strips, cocaine 36 to 175 lb at shady ones). The c172p cannot lift the loads the generator offers from some strips: **EGL 19 lb** at either end (the lightest grass load is 176 lb), **QRY end 0 76 lb** (cocaine loads go to 175 lb), **PNR end 1 and QRY end 1 none**; FRM end 1 457 lb and PNR end 0 438 lb are under the top of the grass range. Harness evidence (one calm run per cell, held runway line), not proof of an impossible mission: the c182 lifts more (EGL 585 lb). Nothing in the generator or the strips was changed; the choice (gate the generator, or make the strips fairer) is the owner's (#88). Tests 14/14 (bisection, payload override).
 - **2026-10-11 — Claude, STRIPS.md from the per-end trials (#88):** On `claude/strips-from-trials` from main `e01feb4`.
   `tools/strip_audit.gd --bot` now runs `scripts/balance/strip_trials.gd` for every strip end, aircraft and load (216 trials,
   about 15 minutes under the machine lock) instead of the `Feasibility` sweep whose takeoff scoring counted a glide into the

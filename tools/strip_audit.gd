@@ -3,7 +3,10 @@ extends SceneTree
 ## roster can use it for, and (with --bot) whether the pilot bot can take off from and land on it, end by end.
 ##
 ##   godot --headless --path . --script res://tools/strip_audit.gd -- [--map city|N] [--terrain natural|classic] [--bot]
-##       [--aircraft c172p,c182] [--loads light,half,max] [--out docs/STRIPS.md]
+##       [--aircraft c172p,c182] [--loads light,half,max] [--payload] [--out docs/STRIPS.md]
+##
+## --payload adds the heaviest payload that takes off from each end of the strips that matter for the loads the game offers
+## (a bisection per cell, about 7 trials each), at 30% fuel.
 ##
 ## The terrain is the natural pass by default, the one the game flies; classic is the generator the balance numbers
 ## were first measured on. The bot trials are scripts/balance/strip_trials.gd (a forced runway end, a straight
@@ -54,6 +57,7 @@ func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var map_seed := MapCity.SEED
 	var bot := false
+	var payload := false
 	var keys: Array = ["c172p"]
 	var loads: Array = ["light", "half", "max"]
 	var natural := true
@@ -66,6 +70,8 @@ func _initialize() -> void:
 				map_seed = MapCity.SEED if args[i] == "city" else int(args[i])
 			"--bot":
 				bot = true
+			"--payload":
+				payload = true
 			"--aircraft":
 				i += 1
 				keys = Array(args[i].split(","))
@@ -100,6 +106,8 @@ func _initialize() -> void:
 	lines.append("")
 	if bot:
 		lines.append_array(_bot_section(keys, loads))
+	if payload:
+		lines.append_array(_payload_section(keys))
 	lines.append_array(NOTES.split("
 "))
 	lines.append("")
@@ -238,3 +246,32 @@ func _bot_section(keys: Array, loads: Array) -> Array:
 	return ["## Pilot bot trials, per runway end", "",
 		"Aircraft %s at %s load, one calm run per cell. Key under Reading the results." % [", ".join(keys), ", ".join(loads)], "",
 		StripTrials.summary_table(results, fields, keys, loads), ""]
+
+
+## The heaviest payload (lb) that takes off from each end, from StripTrials.max_payload, next to what the game's own
+## pickups weigh (Trade.OWN: a bale is lb[0..1], a load is n[0..1] of them, at the strip kinds in "at").
+func _payload_section(keys: Array) -> Array:
+	var out := ["## Heaviest payload that takes off, per runway end", "",
+		"Bisected payload at 30% fuel, natural-terrain trials as above (assumes a heavier payload never helps; the samples are in the JSON). `none` = it cannot take off even empty.", ""]
+	for g in Trade.OWN:
+		var o: Dictionary = Trade.OWN[g]
+		out.append("- **%s** (%s, at %s strips): %.0f to %.0f lb a load." % [o.title, o.label.to_lower() + "s", ", ".join(o["at"]),
+			o["n"][0] * o["lb"][0], o["n"][1] * o["lb"][1]])
+	out.append("")
+	var head := "| strip | end |"
+	var rule := "|---|---|"
+	for k in keys:
+		head += " %s |" % k
+		rule += "---|"
+	out.append(head)
+	out.append(rule)
+	for code in ["HAR", "FRM", "EGL", "PNR", "QRY"]:
+		var af := World.airfield(code)
+		for end in [0, 1]:
+			var cells := []
+			for k in keys:
+				var r := StripTrials.max_payload(k, code, end, 0.3, 5)
+				cells.append("none" if r.max_payload_lb == null else "%.0f lb" % r.max_payload_lb)
+			out.append("| %s %s | %d | %s |" % [code, af.name, end, " | ".join(cells)])
+	out.append("")
+	return out
