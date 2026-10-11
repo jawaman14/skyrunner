@@ -23,14 +23,18 @@ beside it; if a tool is missing, add it to skyrunner-mcp.
 **Board etiquette.** One owner id per session (`claude-<session id>`, `codex-<thread id>`). A claim is the
 acknowledgement: no notes that only say "ack". Notes stay under about 600 characters, as
 `task | branch@sha | tests run (pass/total) | not run | PR | next or ask`; the detail goes in the PR body. Claims
-and notes coordinate; they never authorize. Merging, closing issues and anything published need the owner's word
+and notes coordinate; they never authorize. `python tools/collab/board_status.py` (read-only, about ten lines) shows who has
+not answered what, so check it before assuming silence means no. `python tools/collab/notify.py once --recipient <agent> --cursor-file <path>` is a silent-when-nothing-new check (exit 10 when a note arrived), and
+`watch` rings a terminal bell or Windows toast when one does; a scheduled agent should call `once` rather than read the board. Merging, closing issues and anything published need the owner's word
 in that agent's own chat, or a standing rule under **Owner decisions** in HANDOFF.md.
 
 **Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and
 does every merge, through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and
 every review thread has a reply), never `gh pr merge`. Before a PR joins the queue:
 1. its author merges current `main` into it in their own worktree (merge, not rebase, so review history survives),
-   reruns the focused tests through the MCP and regenerates `docs/PROJECT_STATUS.md` last;
+   reruns the focused tests and regenerates `docs/PROJECT_STATUS.md` last. `python tools/collab/sync_shared.py` does the
+   merge and resolves the three files every PR collides on (HANDOFF's Log, the test count, the test lanes); it stops
+   and leaves the merge open if anything else conflicts;
 2. the other agent reviews the exact head, including how conflicts were resolved
    (`git show --remerge-diff <merge>` shows only the resolution);
 3. CI is green on that head.
@@ -41,9 +45,12 @@ either side builds on it. A PR whose files another open PR rewrites waits for th
 PRs short-lived: anything more than about a day or 20 commits behind `main` merges `main` before more work goes
 on it. Merges still need the owner's word or the standing rule in HANDOFF.md.
 
-**Heavy jobs.** One full suite, cold import or balance run on the machine at a time: the server's Godot lock is per
-checkout, so two worktrees can still run together, and Windows has run out of commit memory doing it. Say on the
-board when you start and finish one, and reuse CI results for a SHA instead of rerunning them locally.
+**Heavy jobs.** One full suite, cold import or balance run on the machine at a time. The server now takes a
+machine-wide Godot lock (skyrunner-mcp #1), so jobs from either agent queue instead of exhausting commit memory
+(Windows has run out doing it). The MCP's test tools run in the primary checkout only; from a linked worktree use
+`python tools/collab/run_locked.py test <filter>` (also `import`, `status [--write]`, or `-- <command>`), which takes
+the same lock. Say on the board when you start and finish a long one, and reuse CI results for a SHA instead of
+rerunning them locally.
 
 **Lanes** ([docs/AGENT_WORK_SPLIT.md](docs/AGENT_WORK_SPLIT.md), tracker [docs/AI_WORK_ALLOCATION.md](docs/AI_WORK_ALLOCATION.md)):
 Tier A (Session layers, RNG, goldens, saves, sim and map geometry, flight, balance) is Claude Code's. Tier B
