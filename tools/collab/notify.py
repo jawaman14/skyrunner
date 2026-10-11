@@ -50,7 +50,8 @@ def read_cursor(path, db, recipient):
     backlog is not announced as new: use board_status.py for the backlog."""
     if path and os.path.exists(path):
         try:
-            return int(open(path, encoding="utf-8").read().strip())
+            with open(path, encoding="utf-8") as fh:
+                return int(fh.read().strip())
         except ValueError:
             pass
     return db.execute("SELECT COALESCE(MAX(id), 0) FROM notes").fetchone()[0]
