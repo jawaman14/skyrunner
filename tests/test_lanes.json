@@ -58,6 +58,7 @@
     "test_stash_works.gd",
     "test_story.gd",
     "test_strategic_save.gd",
+    "test_strip_trials.gd",
     "test_switches.gd",
     "test_terrain_natural.gd",
     "test_trials_parity.gd",
