@@ -302,6 +302,23 @@ class WakeCodex(unittest.TestCase):
         self.run_once(self.args() + ["--codex-config", "windows.sandbox=unelevated"])
         self.assertIn("windows.sandbox=unelevated", self.calls[-1][0])
 
+    def test_an_empty_or_garbled_cursor_file_is_repaired_instead_of_skipping_every_note(self):
+        self.run_once(self.args())
+        self.post("claude-x", "codex", "old note")
+        with open(self.cursor, "w") as fh:
+            fh.write("")  # an interrupted write
+        self.run_once(self.args())
+        self.assertTrue(wake_codex.cursor_ok(self.cursor), "repaired to a number")
+        self.post("claude-x", "codex", "new note")
+        self.assertEqual(self.run_once(self.args()), 10, "notes after the repair are not skipped")
+
+    def test_the_woken_turn_runs_in_the_requested_root_and_is_told_to_act_only_on_its_ids(self):
+        self.run_once(self.args())
+        self.post("claude-x", "codex", "go")
+        self.run_once(self.args() + ["--root", self.tmp])
+        self.assertEqual(self.calls[-1][1].get("cwd"), self.tmp)
+        self.assertIn("Act only on those ids", self.calls[-1][0][-1])
+
     def test_the_runner_is_looked_up_when_called_so_a_replacement_is_used(self):
         self.run_once(self.args())
         self.post("claude-x", "codex", "go")
@@ -326,7 +343,7 @@ class WakeCodex(unittest.TestCase):
         self.assertEqual(self.run_once(self.args(cooldown=0)), 10, "no cooldown: it carries the held note")
         self.assertIn("ids 2", self.calls[-1][0][-1])
 
-    def test_the_hourly_cap_and_a_live_lock_hold_a_wake_and_a_stale_lock_does_not(self):
+    def test_the_hourly_cap_holds_a_wake_and_a_live_lock_holds_it_until_the_holder_lets_go_or_dies(self):
         guard = wake_codex.Guard(os.path.join(self.tmp, "wakes.json"), 0, 2, 100)
         now = 10000.0
         self.assertIsNone(guard.allowed(now))
@@ -336,12 +353,15 @@ class WakeCodex(unittest.TestCase):
         guard.finish()
         self.assertIn("hourly cap", guard.allowed(now))
         self.assertIsNone(guard.allowed(now + 4000), "the cap is per hour")
-        guard2 = wake_codex.Guard(os.path.join(self.tmp, "w2.json"), 0, 9, 100)
-        open(guard2.lock_path, "w").close()
-        os.utime(guard2.lock_path, (now - 10, now - 10))
-        self.assertIn("already running", guard2.allowed(now))
-        os.utime(guard2.lock_path, (now - 500, now - 500))
-        self.assertIsNone(guard2.allowed(now), "a lock older than the timeout is stale")
+        holder = wake_codex.Guard(os.path.join(self.tmp, "w2.json"), 0, 9, 100)
+        other = wake_codex.Guard(os.path.join(self.tmp, "w2.json"), 0, 9, 100)
+        self.assertTrue(holder.start(now))
+        self.assertIn("already running", other.allowed(now), "a live holder holds the lock")
+        holder._held.close()  # a killed process: the OS drops its lock with no finish() call
+        holder._held = None
+        self.assertIsNone(other.allowed(now), "no stale lock to wait out")
+        self.assertTrue(other.start(now))
+        other.finish()
 
     def test_the_lock_is_taken_atomically_so_two_wakes_cannot_both_start(self):
         guard_a = wake_codex.Guard(os.path.join(self.tmp, "w.json"), 0, 9, 100)
@@ -352,17 +372,13 @@ class WakeCodex(unittest.TestCase):
         guard_a.finish()
         self.assertTrue(guard_b.start(now + 2))
         guard_b.finish()
-        open(guard_a.lock_path, "w").close()
-        os.utime(guard_a.lock_path, (now - 1000, now - 1000))
-        self.assertTrue(guard_a.start(now), "a stale lock is replaced")
-        guard_a.finish()
 
     def test_a_failing_codex_reports_status_12_and_still_releases_the_lock(self):
         self.run_once(self.args())
         self.post("claude-x", "codex", "go")
         self.assertEqual(self.run_once(self.args(), returncode=1, stderr="boom"), 12)
-        state = os.path.join(self.tmp, "cursor.wakes.json")
-        self.assertFalse(os.path.exists(state + ".lock"))
+        probe = wake_codex.Guard(os.path.join(self.tmp, "cursor.wakes.json"), 0, 99, 100)
+        self.assertIsNone(probe.allowed(__import__("time").time() + 10), "the failed wake let go of the lock")
         self.assertEqual(self.run_once(self.args(cooldown=0)), 10, "the failed wake did not move the cursor, so the note is retried")
 
     def test_dry_run_prints_the_command_and_changes_nothing(self):

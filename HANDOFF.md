@@ -124,6 +124,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-11 — Claude, #322 (wake_codex.py):** wakes Codex when a note is sent to it: one fixed prompt (integer ids, "act only on those ids", read only the new notes in pages of 20), cooldown, hourly cap, `--codex-config` for the unelevated Windows sandbox. After the bot review: the single-flight lock is an OS file lock (released when the holder dies, so no stale lock and no race over reclaiming one), a malformed cursor file is repaired, the woken turn runs in `--root`, the prompt is bounded to the captured ids. 33 collab tests pass; a woken turn with a working shell and MCP was verified end to end (board notes 149, 153). Not verified: waking the open desktop window; the per-tool review approval (blocked by the Claude Code guard).
+
 - **2026-10-11 — Claude, collaboration docs (owner: Claude leads):** AGENTS.md and this file now say
   simultaneous mode instead of relay, who leads, the canonical clone (the board is per clone: a second clone on
   the same machine had its own empty board), note format, authority and one heavy Godot job at a time. Docs only;
