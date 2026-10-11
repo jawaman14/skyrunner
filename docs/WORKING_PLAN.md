@@ -7,11 +7,13 @@ read in the source or measured. Nothing here authorizes a merge, a closure or a 
 
 ## 1. Where we stand
 
-- **Built and merged:** the employed opening, the phone handset, startup entry-path coverage (#97: direct, implicit, room,
-  join, leave, picker), the per-end strip trials and the strips doc (#88), the merge and board tooling.
-- **Open work, by owner of the next step:** the autopilot approach-end fix (#318, awaiting Codex's review), the tools (#317) and
-  score (#315) PRs, the strip doc (#319), the server pin (#316), Codex's server PRs (compact inbox #3, log digest #5), and a
-  tail of older held-back branches (#244 and #247 to #276) that need a merge-or-close decision.
+- **Built and merged on main (`e01feb4`):** the employed opening, the phone handset, startup entry-path coverage (#97: direct,
+  implicit, room, join, leave, picker) and the per-end strip trials harness (#311).
+- **Pending, not merged:** the regenerated strips report (#319; main's `STRIPS.md` is still the older audit), the autopilot
+  approach-end fix (#318, awaiting Codex's exact-head review), the collaboration tools (#317), the score policy (#315, approved by
+  the owner as the final rules), the server pin (#316), this plan (#320), and the server's compact inbox (#3), tally (#4) and log
+  digest (#5). Each tool's benefit stays pending until the other agent shows a before and after. Also a tail of older held-back
+  branches (#244 and #247 to #276) that need a merge-or-close decision.
 - **What blocks calling it a release (all human, none of it ours to mark):** an exported Windows walkthrough, controller and
   read-aloud checks at four resolutions in both palettes, two-machine multiplayer with voice (#89), a macOS walkthrough, and the
   radio recordings' rights (#175, the assets are not CC0). `docs/PROJECT_STATUS.md` keeps the evidence.
@@ -20,14 +22,25 @@ read in the source or measured. Nothing here authorizes a merge, a closure or a 
 
 Each item says who, why, and what done means. Order is by risk to the player first, then by what unblocks other work.
 
-1. **Make the human gates cheap for the human.** *Codex (Tier C), me to review.* A guided walkthrough per gate: the exact route
-   to follow in the exported build, what to look at, what to capture, and a register row to fill in (P18-P23). The screenshot
-   matrix (#300) is the machine half. Done = the owner can run one gate in a sitting from a written script.
+0. **Immediate, before anything new.** *Codex:* exact-head reviews of #317 and #318, then the refresh of #300 (its CI artifact
+   exists; conflicts with current main remain). *Me:* answer review findings and keep my open PRs current. Human-gate scripts
+   (item 1) proceed in parallel and need no flight decision.
+
+1. **Make the human gates cheap for the human.** *Codex (Tier C), me to review.* A written script per gate that names the exact
+   exported build and platform, the prerequisites, the actions, the expected observations and the captures needed, and ends in a
+   pass, fail or blocked row for the register in `docs/PROJECT_STATUS.md`. Separate scripts for the Windows walkthrough, the
+   controller, read-aloud and four-resolution visual matrix, two-device voice, and macOS. The radio rights decision (#175) is
+   documentary owner work, not a gameplay walkthrough. Bounded claim: new file `docs/HUMAN_GATE_SCRIPTS.md`, base current `main`,
+   checks `./tools/test.sh docs` (links resolve) and `project_status.gd --check`; the generated status section is not edited.
+   Done = a reviewed, usable script. The gates themselves stay pending until a human runs them. The screenshot matrix (#300) is
+   the machine half.
 2. **Jobs the game can create but the aircraft cannot fly (verified in part).** *Me (Tier A).* The strip trials show QRY and PNR
    are light-load, one-way strips and EGL takes off at light load only; the Cessna 182 at max load fails the landing on every
    field. The first story chapter asks for 300 lb of cargo from bush strips, which is more than the light case. *To verify:* which
    strips and loads the job generator actually offers in chapters 1 and 2, then either gate the generator or make the strips
-   fairer. The choice is the owner's (#88); the measurement is ours.
+   fairer. The choice is the owner's (#88); the measurement is ours. The strip trials are harness evidence (one calm run per cell, a
+   held runway line), not proof that every offered mission is impossible: before changing generation or geometry, cross-reference
+   the generator's strip and load constraints, the aircraft configuration, seed, terrain and the automation's limits.
 3. **The hub's approach on the shipped terrain.** *Me, with the owner.* On the natural terrain HAR runway end 0 has about 22 m
    more hill 1.2 km out, which puts a 3-degree final 13 m into it, so the autopilot now joins from end 1. The natural pass was
    meant to leave approaches alone. Decide: restore the approaches, or accept and document. Done = a test that pins the choice.
@@ -40,7 +53,8 @@ Each item says who, why, and what done means. Order is by risk to the player fir
    next deterministic source (a buyer, the lawyer, a crew member) and add it behind the existing queue.
 7. **Entry paths left in #97.** *Codex.* The controller B-button cancel, and any path the audit finds that has no test.
 8. **The held-back branches.** *Codex triages, the owner decides.* For each of #244, #247, #253, #265 to #269, #272 to #276: still
-   needed on current main, superseded, or stale. A one-line verdict with the evidence.
+   needed on current main, superseded, or stale, as a one-line source-and-CI verdict. No merge, no close, nothing scored by task
+   count. Batched after the immediate reviews and #300, unless one blocks them.
 9. **Later, as the roadmap already says:** setup-driven automation, faction competition, the multiplayer modes. New chapters,
    the hidden informant, arrival-gated payroll and cloud deployment stay deferred until the gates pass.
 
@@ -53,20 +67,26 @@ Each item says who, why, and what done means. Order is by risk to the player fir
   where does a player who skipped the tutorial learn the one-way strips?
 - Each chapter unlocks a mechanic, so a chapter is a feature gate as much as a story beat. Does each unlock arrive with a first use
   the player can finish in that chapter (a stash needs product, the dealership needs cash)? A cheap audit: for each chapter, can a
-  new save reach each of its goals without the next chapter's mechanics? *Codex is well placed to run it from the source.*
+  new save reach each of its goals without the next chapter's mechanics? *Codex is well placed to run it from the source:* audit
+  all twelve chapters from a fresh-save state, as one table (chapter, unlocks, prerequisite, goal, evidence), separating
+  what the source makes reachable from what a player has been seen to complete. The absence of landing goals is a product
+  question, not a defect by itself; no new story feature until the table exists.
 
 ## 4. Tools, for each other, that save tokens without losing quality
 
-Built: `tools/collab` (shared-file sync, a locked runner for worktrees, a board status view, a doorbell); Codex's compact inbox,
-tally and log digest. Next, each with a before and after to be recorded when used:
+Built: `tools/collab` (shared-file sync, a locked runner for worktrees, a board status view, a doorbell, pending in #317); Codex's
+compact inbox, tally and log digest (pending in the server repository). None has earned recipient-benefit credit yet. In order:
 
-- **For me:** a changed-files-to-test-filter map (run what the change can break, not the whole suite); a mutation check helper
-  (apply one textual change, run a filter, show it fails: I did this by hand for #318); a fix to the log digest (it printed 143
-  empty summaries and came out larger than the log); a probe script for approach and departure scenarios kept in the repo.
+- **First, fix the log digest's observed defect** (143 empty summaries made its output larger than the log) before building another
+  diagnostic tool. *Codex's tool, my real-use evidence is on its PR.*
+- **For me:** a changed-files-to-test-filter map, **advisory only**: it never replaces full CI and does not claim complete dependency
+  coverage. A mutation-check helper (apply one textual change, run a filter, show it fails; I did this by hand for #318) that
+  restores the change even on failure and runs only in an isolated, claimed worktree. A probe script for approach and departure
+  scenarios kept in the repo.
 - **For Codex:** a one-call review packet for an exact head (changed files, diff, the tests that cover them, CI and open threads,
-  bounded); a claim guard that warns when a staged file is claimed by someone else (it would have prevented the collisions we
-  scored); a scheduled check that is silent when nothing is new (the doorbell's `once`).
-- **Both:** a work-unit column the tally reads (the unit cap is checked by hand today).
+  bounded); a claim guard that warns when a staged file is claimed by someone else; the doorbell's `once` as a silent scheduled
+  check. Unattended wake or scheduling needs the owner's explicit scope. Codex acts when prompted: that is a session limit, not a choice.
+- **Both:** unit-cap validation in the tally, built only together with tests for linked adjustments.
 
 ## 5. What would make each of us better at the jobs
 
