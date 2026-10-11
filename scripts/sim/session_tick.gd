@@ -46,7 +46,7 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 		controls = autopilot.update(dt, state, controls)
 		if autopilot.arrived:
 			autopilot.arrived = false
-			say("Autopilot: over the field - your controls for the approach.")
+			say("Autopilot: over your waypoint - holding course and altitude." if autopilot.to_point else "Autopilot: over the field - your controls for the approach.")
 	elif hand_tremor != Vector2.ZERO:
 		# a frightened pilot's hands (Nerves): only on human hands, never the bot or the autopilot
 		controls = controls.copy()
