@@ -10,6 +10,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(__file__))
 import board_status  # noqa: E402
 import notify  # noqa: E402
+import post_review  # noqa: E402
 import run_locked  # noqa: E402
 import sync_shared as sync  # noqa: E402
 
@@ -228,6 +229,61 @@ class Notify(unittest.TestCase):
         self.assertEqual(cmd[0], "powershell.exe")
         self.assertIn("it''s here", cmd[-1])
         self.assertNotIn("shell=True", open(os.path.join(os.path.dirname(__file__), "notify.py"), encoding="utf-8").read().replace("no shell", "").replace("shell=True with", ""))
+
+
+class PostReview(unittest.TestCase):
+    HEAD = "c" * 40
+    SERVER_RE = __import__("re").compile(r"<!-- skyrunner-review agent=(claude|codex) verdict=(approve|changes|comment) head=([0-9a-f]{40}) -->")
+
+    def info(self, branch="claude/x", head=None):
+        return {"headRefOid": head or self.HEAD, "headRefName": branch, "isDraft": False}
+
+    def test_the_marker_is_the_one_the_servers_queue_parses(self):
+        for agent in post_review.AGENTS:
+            for verdict in post_review.VERDICTS:
+                m = self.SERVER_RE.search(post_review.marker(agent, verdict, self.HEAD))
+                self.assertEqual(m.groups(), (agent, verdict, self.HEAD))
+
+    def test_it_refuses_what_the_tool_refuses(self):
+        ok = post_review.check(self.info("claude/x"), "codex", "approve", self.HEAD, "read the diff, ran the tests")
+        self.assertIsNone(ok)
+        self.assertIn("own work", post_review.check(self.info("codex/x"), "codex", "approve", self.HEAD, "fine"))
+        self.assertIn("review the current head", post_review.check(self.info(head="d" * 40), "codex", "approve", self.HEAD, "fine"))
+        self.assertIn("empty review", post_review.check(self.info(), "codex", "approve", self.HEAD, "  "))
+        self.assertIn("40-character", post_review.check(self.info(), "codex", "approve", "abc123", "fine"))
+        self.assertIn("verdict", post_review.check(self.info(), "codex", "merge", self.HEAD, "fine"))
+
+    def test_author_agent_reads_the_branch_prefix(self):
+        self.assertEqual([post_review.author_agent(b) for b in ("claude/a", "codex/b", "codexfix/c", "feature/d", "")], ["claude", "codex", "", "", ""])
+
+    def test_it_posts_one_marked_review_pinned_to_the_head_without_a_shell(self):
+        calls = []
+
+        def fake(cmd, **kw):
+            calls.append((cmd, kw))
+            out = json.dumps(self.info("claude/x")) if cmd[1] == "pr" else "https://github.com/o/r/pull/9#pullrequestreview-1"
+            return subprocess.CompletedProcess(cmd, 0, out, "")
+        code = post_review.main(["--pr", "9", "--head", self.HEAD, "--verdict", "changes", "--agent", "codex", "--body", "the lock races"], run=fake)
+        self.assertEqual(code, 0)
+        self.assertEqual(len(calls), 2)
+        post = calls[1][0]
+        self.assertEqual(post[:2], ["gh", "api"])
+        self.assertIn("commit_id=" + self.HEAD, post)
+        body = [x for x in post if x.startswith("body=")][0]
+        self.assertTrue(self.SERVER_RE.search(body), "the queue can read it")
+        self.assertIn("the lock races", body)
+        for _, kw in calls:
+            self.assertNotIn("shell", kw)
+
+    def test_a_refused_review_posts_nothing(self):
+        calls = []
+
+        def fake(cmd, **kw):
+            calls.append(cmd)
+            return subprocess.CompletedProcess(cmd, 0, json.dumps(self.info("codex/x")), "")
+        code = post_review.main(["--pr", "9", "--head", self.HEAD, "--verdict", "approve", "--agent", "codex", "--body", "ok"], run=fake)
+        self.assertEqual(code, 2)
+        self.assertEqual(len(calls), 1, "only the read happened")
 
 
 class EndToEnd(unittest.TestCase):
