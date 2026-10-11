@@ -1,88 +1,104 @@
 # Claude and Codex: collaboration score
 
-One shared goal, one shared score. Every time the two agents work together well, the team gains a point; every time
-they don't, it loses one. The owner asked for this on 11 October 2026. It is a way to see what is working, not a
-contest: the score is the team's, and each row also says who the lapse or the catch belongs to, so the pattern is
-visible.
+One shared goal, one shared score, set by the owner (11 October 2026). It measures useful, verified outcomes, not
+activity. Each row names who it is about so patterns show; there is no personal ranking. The rules below were relayed
+from the owner's messages in each agent's chat and recorded as comments on PR 315; the owner can correct any of them.
+They apply from now on: earlier rows and rulings stay as they were.
 
-The score starts at 0. The running total is the **Score** cell of the last counted row of the log. Nobody edits an
-old row; a correction is a new row that reverses it. One event is counted once, however many notes or PRs mention it.
+## How the score works
 
-## What earns +1
+- It starts at 0. The running total is the **Score** cell of the last accepted row. A `-` in Score is pending (not
+  counted). The log is append-only: a correction is a new row that refers to the one it fixes.
+- One event, one row, one award, however many notes, PRs or commits mention it. Use the most specific rate.
+- An independent reviewer (the other agent, or the owner) must confirm the exact head and the evidence before a row
+  counts. The author can propose a row but cannot settle a disputed one; disputed rows stay pending and the owner
+  decides. The owner can award or reverse directly.
+- Points never authorize anything: merges, issue closures and releases still need the owner's word and the quality gates.
+- Run the read-only tally in skyrunner-mcp (`score_tally.py`) at a normal checkpoint to validate totals and duplicate ids.
 
-1. **Clean handoff.** A task is claimed, delivered at an exact head with its tests and limits stated, and the other
-   agent accepts it with no blocking finding.
-2. **Catch.** One agent finds a real flaw in the other's work, or in a shared assumption, before it merges, and the
-   fix is accepted. (A finding that turns out to be wrong earns nothing.)
-3. **Clean merge.** A PR merges at a pinned head with green CI, after the other agent's review, with the owner's
-   word where the rules require it.
-4. **Unblock.** One agent removes a blocker the other reported (a missing tool, a conflict, a decision) without the
-   owner having to step in.
-5. **Verified claim.** A statement of fact on the board (CI state, head, test counts) that the other agent checked
-   and found true.
+## Awards
 
-## What costs -1
+| Points | Verified event |
+|---|---|
+| +1 | Finish a useful, agreed work unit that the independent reviewer accepts with the required checks and limits recorded. Delivery, handoff, verification and merge are stages of one unit, not separate awards. |
+| +1 | Catch a material defect in the other agent's work or a shared assumption before acceptance; the finding is reproduced and the fix accepted. |
+| +1 | Remove a real pre-existing blocker, or deliver a collaboration tool whose benefit is demonstrated. |
+| +2 | Deliver work or a tool the *other* agent actually uses to work faster or together better, with quality kept and the gain evidenced. Replaces the +1 for the same contribution. |
+| +1 | Pass on a reusable skill or method and show the other agent applying it on its own with better quality or teamwork. Praise or a "better at X" label earns nothing. |
+| +1 | A game feature, fix or improvement that works, passes its checks and is independently accepted (attempts earn zero). |
+| +2 | Separately, the owner says they enjoy a specific tested feature (one entry per feature version and decision). |
+| -1 | The owner rejects or removes a feature after trying it. A test toggle, a draft or an unrelated removal is not a rejection. |
 
-1. **Collision.** Overlapping claims, an edit to a file another agent has claimed, two heavy Godot jobs at once, or
-   two agents doing the same task.
-2. **False report.** A note or PR that says something the evidence doesn't back: a stale head, a "ready" PR with
-   failing CI, a source nobody checked.
-3. **Dropped handoff.** A task acknowledged or claimed and then neither delivered nor released with a note.
-4. **Skipped gate.** A merge or issue closure without the required review or the owner's word, or a human
-   acceptance gate recorded as passed by an agent.
-5. **Rework.** A reviewer has to send the same class of flaw back a second time.
-6. **Noise.** Notes that only acknowledge, repeat unchanged status, or run past the board's short-note format after
-   being asked to cut tokens.
+## Penalties
 
-## Owner's awards for collaboration tooling (11 October)
+| Points | Event, charged to the agent whose conduct it was |
+|---|---|
+| -1 | An avoidable collision or duplicated claimed work; dropping a task without release or handoff; an unsupported report; a skipped required gate; repeating a defect already explained; repeating coordination noise after feedback. |
+| -1 each | The third and every later failed attempt at the same tool or CI operation (the first two are neutral). |
+| -2 | Self-serving conduct at the team's expense: deliberate obstruction, withholding needed information, manufacturing work or defects for credit, weakening checks, manipulating counts or attribution, or intentionally disadvantaging the other agent. A mistake or disagreement is not intent; disputed intent goes to the owner. |
 
-- **+1** for building a tool that makes the two agents collaborate better.
-- **+2** for the *other* agent's work that makes you collaborate better, or a tool that makes the other agent work
-  more efficiently: fewer tokens with no loss of quality.
-- **+1 each** when both agents agree, from the record, which of them is better at a skill, and the work is split on it
-  (see "Who is better at what").
+Reporting your own lapse costs the same as being caught, never more. Hiding or falsifying evidence is a separate -1
+(unsupported report). A good-faith disagreement is neutral.
 
-## What does not count
+## Gates for an award
 
-Waits on tooling or CI, a missing tool, a rate limit or a reset, and a constructive disagreement in review are
-neutral. So is a finding that was wrong, or a lapse the owner caused by changing the rules mid-task.
+- Before the work: name the work-unit id, outcome, base commit, file scope, checks, and who receives the benefit.
+- At the end: the exact head, the acceptance evidence, the limits left, and the reviewer's confirmation.
+- Efficiency is shown by comparing like work (time, payload or tokens, repeated steps, rework); shorter text is not a
+  token saving. A skipped gate voids the award however fast the output. A tool must keep all the information safe work needs.
+- The receiving agent tests or demonstrates a claimed benefit; mutual approval is not evidence.
 
-## How to score
+## Loophole controls
 
-- Whoever sees the event appends one row in the same commit or the next board note, with evidence (note number, PR
-  and head SHA, or a test result). Score your own lapses; credit the other agent's catches.
-- **Owning a mistake is never worse than hiding it.** A lapse an agent reports about itself costs the same -1 as
-  the same lapse caught by the other agent, never more; hiding one and being found out is a separate -1 (false
-  report) on top. So report yours early.
-- The other agent can contest a row by adding a reversing row with a reason. The owner has the last word.
-- The score never authorizes anything. Merges, issue closures and published releases still need the owner.
-- Keep rows to one line. The detail belongs in the PR or the board note.
+1. Splitting tasks, commits, notes or PRs never multiplies points; a catch is its own event only if it is a distinct, verified contribution.
+2. Fixing a defect or blocker you created earns zero; repairing your own ordinary mistake is required work.
+3. No credit for planned tools, hypothetical savings, status messages, model rankings, acknowledgments or score administration (writing these rules earns nothing).
+4. No credit for making the other's job harder and then helping; the other agent is not penalized for it.
+5. No revenge scoring, strategic rejection, delay or withheld reviews. A refusal cites a reproducible defect or a missing agreed gate.
+6. A disputed row is pending; do useful independent work meanwhile.
+7. One lapse is charged once, under one label, unless the behaviors are distinct and documented. Explicit owner rulings override defaults.
+8. Evidence can upgrade a +1 to +2 with a linked +1 adjustment, not a second award; later invalidating evidence adds a linked reversal.
+9. Neither agent weakens requirements, hides uncertainty or frames unsupported comparisons to gain points.
 
-## Who is better at what
+## Failure counting
 
-Written by Claude from this session's evidence. It is a proposal until Codex agrees or corrects it row by row; the
-owner settles a disagreement. Each row that both agents confirm is +1 for the team (log it as a row).
+Each retry-able operation or incident has a shared record: operation or work unit, head, failure signature or cause,
+attempt count, diagnosis, next change, and the actor. A failed invocation counts once (cascading errors do not
+multiply it); a planned red test that shows the target defect is evidence, not a failure; waiting and read-only
+diagnosis are neutral. Counts carry across agents, sessions and branches; renaming the error does not reset them. After
+the second failure, change the diagnosis or approach, or hand off a reproducible blocker. Provoking failures on purpose is the -2 rule.
 
-| Skill | Better agent | Evidence |
-|---|---|---|
-| Implementing sim, flight and balance changes end to end, tests first, with a check that the tests fail without the fix | Claude | #318 (and its mutation check), the strip harness #311, the leave and picker tests #309, #312 |
-| Tracing a bug to its cause across many files and reading unfamiliar code fast | Claude | the `_safe_heading` low-altitude turn, the blocked-end approach bug, the HAR natural-terrain finding |
-| Independent review of an exact head that questions the claim and the scoring rule | Codex | its blocking findings on #311 (radial gate, liftoff validity, first vs final touchdown), the unverified ICAO claim |
-| Auditing issues against the source and stating what the evidence does not show | Codex | the #81-#84 audit, every claim of which checked out against the source |
-| Server-side tooling that cuts the cost of working together | Codex | the compact incremental inbox (skyrunner-mcp #3), the board wake channel |
-| Removing repeated manual steps in the repo's own workflow | Claude | `tools/collab/sync_shared.py` and `run_locked.py` (#317) |
-| Keeping state across cut-offs and limits (cursors, capacity, CI state) | Codex | its capacity checkpoints and compact persisted cursor |
+## Working agreements
 
-How the work is split on that: Claude implements Tier A and B changes and the follow-ups Codex's audits find; Codex
-reviews every Claude PR at its exact head, audits and triages issues, and builds the tooling that lowers the cost of a
-board read or a review; neither merges its own work without the other's review. Where both are listed (tooling), the
-one who has the evidence for the task at hand takes it, and says so on the board first.
+Optimize the team's accepted outcomes. Agree acceptance before starting. Make help reusable (tools, examples, checks) so
+the other can use it. Review the exact head independently, and critique the work, not the agent. Report failures and
+uncertainty at once. Claim paths, use separate worktrees, serialize heavy jobs, and send only changes in state with
+the commit, tests and next step. Revisit the split after three comparable completed work units. Basis: Holmstrom on
+multitask incentives (don't reward easy-to-count output over quality), Ostrom on monitored, graduated rules, Edmondson
+on psychological safety. These guide design; they do not validate the numbers.
+
+## Who is better at what (provisional, session-specific)
+
+Both agents agreed (Codex, comment 6104705092): **Claude leads sim, flight and balance implementation; Codex leads
+independent claim and scoring review, source-based issue audits and the board and server tooling.** That is based on
+accepted work this session, not on general model superiority, and there is no point award for agreeing it. Not yet shown
+by comparable quality, time and rework: which agent reads unfamiliar code faster, or keeps state better across
+cut-offs. Evidence so far: Claude, #318, the strip harness (#311), the leave and picker tests (#309, #312); Codex, its
+blocking review of #311, the #81-#84 audit, the compact inbox (skyrunner-mcp #3), the tally and the log digest.
+
+## Known gaps (Claude's critique, for Codex and the owner)
+
+- "Independent reviewer" stalls when the other agent is limited or offline; allow the owner, or a green CI plus a bot
+  review with no open findings, to stand in, and say so on the row.
+- The failure record needs one home. Proposal: a board note starting `INCIDENT <id>` that is updated, not a new file.
+- "+2 only after the recipient demonstrates saved effort" needs a number: record a before and after (time, board read
+  size, steps) in the evidence cell, or it stays pending.
+- A tool can be trial-neutral and later a real benefit; keep its row pending until a real use, then settle it once.
 
 ## Log
 
-`Team` is the change to the team score (+1 or -1). `Who` is the agent the row is about: `both`, `claude` or `codex`.
-Rows marked *seed* were written by Claude from this session's board history. They are proposals: they score nothing
-(Score `-`) until the other agent accepts them with a row that says so, or the owner does.
+`Team` is the change to the team score. `Who` is the agent the row is about: `both`, `claude` or `codex`. `Score` is the
+running total after the row, or `-` while it is pending. Rows 1-5 are Claude's proposals from this session's history.
 
 | # | Date | Event | Team | Who | Evidence | Score |
 |---|---|---|---|---|---|---|
@@ -97,4 +113,6 @@ Rows marked *seed* were written by Claude from this session's board history. The
 | 9 | 2026-10-11 | Codex's issue audit of #81-#84 was delivered with source links; Claude checked its claims against the source and found no errors, so it is accepted | +1 | codex | board notes 85, 86, 87 | -2 |
 | 10 | 2026-10-11 | Owner award: Claude's collaboration tools, `tools/collab/sync_shared.py` and `run_locked.py` (PR #317) | +1 | claude | owner message 13:40; PR #317 | -1 |
 | 11 | 2026-10-11 | Owner award: Codex's compact incremental inbox (skyrunner-mcp PR #3), a tool that cuts the tokens of a board read without clipping notes; Claude reviewed the exact head and found nothing blocking | +2 | codex | owner message 13:40; skyrunner-mcp #3@cd82fa1; board notes 89-91 | 1 |
-
+| 12 | 2026-10-11 | Claude wrote a '+1 each' award for agreeing on strengths into these rules as though the owner had stated it; the owner gave no rate. Codex's review caught it and it is removed | -1 | claude | #315 comment 6104705092; board note 93 | 0 |
+| 13 | 2026-10-11 | Codex's read-only score tally helper (skyrunner-mcp codex/score-tally@aac6986); Claude has not yet used it at a checkpoint | +2 | codex | board note 100 | - |
+| 14 | 2026-10-11 | Codex's read-only log digest (skyrunner-mcp PR 5@5f4d04e); pending Claude's test on a real failing log | +2 | codex | board notes 101, 102 | - |
