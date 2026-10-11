@@ -64,6 +64,10 @@ func test_the_check_uses_the_altitude_the_route_flies() -> void:
 	check(Session.way_in_clear(100.0, 4.5, flat), "open ground is clear")
 	check(not Session.way_in_clear(0.0, 4.5, wall_at_1200), "a %.0f m wall at 1.2 km, under the audit line but above the route, blocks it" % wall)
 	check(Session.way_in_clear(0.0, 3.0, func(d: float) -> float: return 20.0 if absf(d - 1200.0) < 1.0 else 0.0), "a 20 m obstacle at 1.2 km is under both lines")
+	# the final runs out to the 5 km fix, past the audit's 3 km: a wall above the route at 4 km must block, one at 5.5 km is beyond it
+	var wall_4k := func(d: float) -> float: return Session.route_height_at(4000.0) + 5.0 if absf(d - 4000.0) < 16.0 else 0.0
+	check(not Session.way_in_clear(0.0, 3.0, wall_4k), "an obstacle above the route at 4 km blocks the end")
+	check(Session.way_in_clear(0.0, 3.0, func(d: float) -> float: return 500.0 if absf(d - 5400.0) < 1.0 else 0.0), "beyond the final fix is not checked")
 	# the same obstacle on the classic 3-degree strip: the audit line (10 + 63 m) is above the route there, so the route is the lower line too
 	check(not Session.way_in_clear(0.0, 3.0, func(d: float) -> float: return route + 3.0 if absf(d - 1200.0) < 1.0 else 0.0))
 

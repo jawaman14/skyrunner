@@ -113,7 +113,7 @@ static func route_height_at(d: float) -> float:
 
 ## True if the way in to runway end `end` clears the terrain and trees: both the 3-degree path (4.5 for a bush or shady
 ## strip) 10 m over the threshold that tools/strip_audit.gd checks, out to 3 km, and the final the autopilot actually
-## flies (route_height_at), whichever is lower, since the route is what meets the obstacle. A false end is one of the
+## flies (route_height_at) out to its 5 km fix, whichever is lower, since the route is what meets the obstacle. A false end is one of the
 ## "one-way strips" of docs/STRIPS.md (QRY and PNR end 0), where a route that flew the final would meet the pit wall
 ## or the tree line.
 func approach_end_clear(af: Airfield, end: int) -> bool:
@@ -127,12 +127,14 @@ func approach_end_clear(af: Airfield, end: int) -> bool:
 
 
 ## The rule on its own, so it can be tested without a map: `top_at(d)` is the obstacle height (m) d metres out from the
-## threshold; the way in is clear if, every 30 m out to 3 km, the lower of the audit line (10 m over the threshold at `deg`)
-## and the route's own height is at or above it.
+## threshold. Every 30 m out to the final fix (APPROACH_FINAL_M), the route's own height must be at or above it; out to 3 km
+## the lower of that and the audit line (10 m over the threshold at `deg`, as tools/strip_audit.gd checks) must be.
 static func way_in_clear(elev: float, deg: float, top_at: Callable) -> bool:
 	var d := 30.0
-	while d <= 3000.0:
-		var line := minf(10.0 + d * tan(deg_to_rad(deg)), route_height_at(d))
+	while d <= APPROACH_FINAL_M:
+		var line := route_height_at(d)
+		if d <= 3000.0:
+			line = minf(line, 10.0 + d * tan(deg_to_rad(deg)))
 		if elev + line < float(top_at.call(d)):
 			return false
 		d += 30.0
