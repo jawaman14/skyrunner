@@ -67,19 +67,45 @@ def pr_state(item):
     return state, bool(item.get("isDraft"))
 
 
+def next_action(item, state, draft):
+    """Who has to act next on a pull request, from what `gh pr list` gives: (who, what). Unanswered review threads are not in
+    that data; review_packet.py lists them."""
+    if state == "fail":
+        return "author", "CI failing"
+    if state == "run":
+        return "ci", "CI running"
+    if item.get("mergeable") == "CONFLICTING":
+        return "author", "sync main"
+    if draft:
+        return "author", "mark ready"
+    head = item.get("headRefOid", "")
+    marks = [r for r in item.get("reviews") or [] if ((r.get("author") or {}).get("login", "")).lower() not in ("chatgpt-codex-connector", "")
+             and not ((r.get("author") or {}).get("login", "")).endswith("[bot]")]
+    current = [r for r in marks if (r.get("commit") or {}).get("oid") == head]
+    if any((r.get("state") or "").upper() == "CHANGES_REQUESTED" for r in current):
+        return "author", "fix requested changes"
+    if any((r.get("state") or "").upper() == "APPROVED" for r in current):
+        return "integrator", "merge"
+    return "reviewer", "review head" if not marks else "re-review head"
+
+
 def load_prs(root, run=subprocess.run):
     """Open pull requests, or None when gh is missing or fails (the screen says so and carries on)."""
     try:
-        out = run(["gh", "pr", "list", "--json", "number,title,isDraft,author,statusCheckRollup,reviewDecision", "--limit", "30"],
+        out = run(["gh", "pr", "list", "--json", "number,title,isDraft,author,statusCheckRollup,reviewDecision,mergeable,headRefOid,reviews", "--limit", "30"],
                   cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
     except (OSError, subprocess.TimeoutExpired):
         return None
     if out.returncode != 0:
         return None
     try:
-        return [{"number": p["number"], "title": p["title"], "author": (p.get("author") or {}).get("login", "?"),
-                 "state": pr_state(p)[0], "draft": pr_state(p)[1], "review": p.get("reviewDecision") or ""}
-                for p in json.loads(out.stdout)]
+        rows = []
+        for p in json.loads(out.stdout):
+            state, draft = pr_state(p)
+            who, what = next_action(p, state, draft)
+            rows.append({"number": p["number"], "title": p["title"], "author": (p.get("author") or {}).get("login", "?"),
+                         "state": state, "draft": draft, "review": p.get("reviewDecision") or "", "who": who, "what": what})
+        return rows
     except (ValueError, KeyError, TypeError):
         return None
 
@@ -119,7 +145,9 @@ def render(data, prs, width=100, color=True, now=None):
         for p in prs[:14]:
             sym, tone = marks[p["state"]]
             tags = ("draft " if p["draft"] else "") + (p["review"].lower().replace("_", " ") + " " if p["review"] else "")
-            out.append("  %s #%-4d %s%s" % (paint(sym, tone, color), p["number"], paint(tags, "dim", color), cut(p["title"], width - 14 - len(tags))))
+            nxt = ("-> %s: %s" % (p["who"], p["what"])) if p.get("who") else ""
+            out.append("  %s #%-4d %s%s  %s" % (paint(sym, tone, color), p["number"], paint(nxt, "yellow" if p.get("who") in ("reviewer", "author") else "dim", color),
+                                                 paint(tags.rstrip() + " ", "dim", color), cut(p["title"], max(10, width - 16 - len(nxt) - len(tags)))))
         if len(prs) > 14:
             out.append("    … %d more" % (len(prs) - 14))
     return "\n".join(cut_ansi(line, width) for line in out)

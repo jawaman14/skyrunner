@@ -284,6 +284,25 @@ class Dashboard(unittest.TestCase):
         run = {"statusCheckRollup": [{"status": "IN_PROGRESS", "conclusion": ""}]}
         self.assertEqual([dashboard.pr_state(x)[0] for x in (ok, bad, run, {})], ["ok", "fail", "run", "none"])
 
+    def test_next_action_names_who_must_act(self):
+        head = "h" * 40
+        def pr(**kw):
+            base = {"headRefOid": head, "mergeable": "MERGEABLE", "isDraft": False, "reviews": []}
+            base.update(kw)
+            return base
+        def rev(login, state, oid=head):
+            return {"author": {"login": login}, "state": state, "commit": {"oid": oid}}
+        na = dashboard.next_action
+        self.assertEqual(na(pr(), "fail", False)[0], "author")
+        self.assertEqual(na(pr(), "run", False)[0], "ci")
+        self.assertEqual(na(pr(mergeable="CONFLICTING"), "ok", False), ("author", "sync main"))
+        self.assertEqual(na(pr(), "ok", True), ("author", "mark ready"))
+        self.assertEqual(na(pr(), "ok", False), ("reviewer", "review head"))
+        self.assertEqual(na(pr(reviews=[rev("chatgpt-codex-connector[bot]", "COMMENTED")]), "ok", False), ("reviewer", "review head"), "a bot review is not the other agent's")
+        self.assertEqual(na(pr(reviews=[rev("codex", "APPROVED", "old" * 13 + "x")]), "ok", False), ("reviewer", "re-review head"), "an approval of an older head")
+        self.assertEqual(na(pr(reviews=[rev("codex", "APPROVED")]), "ok", False), ("integrator", "merge"))
+        self.assertEqual(na(pr(reviews=[rev("codex", "CHANGES_REQUESTED")]), "ok", False)[0], "author")
+
     def test_once_prints_the_screen_from_a_real_board_file(self):
         tmp = tempfile.mkdtemp()
         path = os.path.join(tmp, "b.sqlite3")
