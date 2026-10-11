@@ -103,27 +103,80 @@ func _autopilot_navigate() -> void:
 		"squawking" if transponder else "transponder off", Py.f((peak + margin) / FT, 0)])
 
 
+## The height above the field that the autopilot's final actually flies at `d` metres out from the threshold: a straight
+## line from 30 m at the threshold to the final fix's altitude (3 degrees over APPROACH_FINAL_M, plus 15 m), which is a
+## little under 3 degrees. This is the route `_approach_route` builds, so the clearance check below uses the same numbers.
+static func route_height_at(d: float) -> float:
+	var at_fix := APPROACH_FINAL_M * tan(deg_to_rad(3.0)) + 15.0
+	return 30.0 + (at_fix - 30.0) * d / APPROACH_FINAL_M
+
+
+## True if the way in to runway end `end` clears the terrain and trees: both the 3-degree path (4.5 for a bush or shady
+## strip) 10 m over the threshold that tools/strip_audit.gd checks, out to 3 km, and the final the autopilot actually
+## flies (route_height_at) out to its 5 km fix, whichever is lower, since the route is what meets the obstacle. A false end is one of the
+## "one-way strips" of docs/STRIPS.md (QRY and PNR end 0), where a route that flew the final would meet the pit wall
+## or the tree line.
+func approach_end_clear(af: Airfield, end: int) -> bool:
+	var deg := 4.5 if af.kind in ["bush", "shady"] else 3.0
+	var th: Array = af.threshold(end)
+	var sgn := 1.0 if end == 1 else -1.0  ## the way out along the extended centreline from this threshold
+	var elev := world.airfield_elev(af)
+	var half := af.width * 0.5 + 12.0
+	return way_in_clear(elev, deg, func(d: float) -> float:
+		return world.obstacle_top(th[0] + sgn * af.ux * d, th[1] + sgn * af.uy * d, half))
+
+
+## The rule on its own, so it can be tested without a map: `top_at(d)` is the obstacle height (m) d metres out from the
+## threshold. Every 30 m out to the final fix (APPROACH_FINAL_M), the route's own height must be at or above it; out to 3 km
+## the lower of that and the audit line (10 m over the threshold at `deg`, as tools/strip_audit.gd checks) must be.
+static func way_in_clear(elev: float, deg: float, top_at: Callable) -> bool:
+	var d := 30.0
+	while d <= APPROACH_FINAL_M:
+		var line := route_height_at(d)
+		if d <= 3000.0:
+			line = minf(line, 10.0 + d * tan(deg_to_rad(deg)))
+		if elev + line < float(top_at.call(d)):
+			return false
+		d += 30.0
+	return true
+
+
+## Which of the runway ends to come in on, given how far each final fix is from the aircraft and whether each end's
+## final is clear: the nearer of the clear ends, or the nearer of both when neither (or both) is.
+static func _choose_end(dists: Array, clear: Array) -> int:
+	var best := -1
+	for end in dists.size():
+		if clear[end] and (best < 0 or dists[end] < dists[best]):
+			best = end
+	if best >= 0:
+		return best
+	return 0 if dists[0] <= dists[1] else 1
+
+
 ## A legal leg to `af`: a join on the extended centreline of the runway end it comes at, then down a 3-degree
 ## path to a final fix and along the runway at 30 m. [x, y, alt_m] each (the first altitude is set by the caller
-## to the cruise altitude). Which end: whichever puts the join nearer the aircraft, so it never overflies the field
-## to turn back onto it. Close in (less than the join's distance), it goes straight to the final fix.
+## to the cruise altitude). Which end: the nearer one whose final is clear of terrain and trees (approach_end_clear),
+## so a one-way strip is approached from its open end; otherwise whichever puts the join nearer the aircraft, so it
+## never overflies the field to turn back onto it. Close in (less than the join's distance), it goes straight to
+## the final fix.
 func _approach_route(af: Airfield) -> Array:
 	var elev := world.airfield_elev(af)
-	var best: Array = []
-	var best_d := INF
+	var ends: Array = []
+	var dists: Array = []
+	var clear: Array = []
 	for end in [0, 1]:
 		var th: Array = af.threshold(end)
 		var sgn := -1.0 if end == 0 else 1.0  ## the way out along the extended centreline from this threshold
 		var fix := [th[0] + sgn * af.ux * APPROACH_FINAL_M, th[1] + sgn * af.uy * APPROACH_FINAL_M]
-		var d := PyMath.hypot(fix[0] - state.x, fix[1] - state.y)
-		if d < best_d:
-			best_d = d
-			best = [th, sgn, fix]
+		ends.append([th, sgn, fix])
+		dists.append(PyMath.hypot(fix[0] - state.x, fix[1] - state.y))
+		clear.append(approach_end_clear(af, end))
+	var best: Array = ends[_choose_end(dists, clear)]
 	var th2: Array = best[0]
 	var sg: float = best[1]
 	var fix2: Array = best[2]
 	var join := [th2[0] + sg * af.ux * APPROACH_JOIN_M, th2[1] + sg * af.uy * APPROACH_JOIN_M]
-	var final_alt := elev + APPROACH_FINAL_M * tan(deg_to_rad(3.0)) + 15.0
+	var final_alt := elev + route_height_at(APPROACH_FINAL_M)
 	var route: Array = []
 	if PyMath.hypot(join[0] - state.x, join[1] - state.y) > APPROACH_JOIN_M * 0.6:
 		route.append([join[0], join[1], final_alt + 200.0])
