@@ -31,7 +31,19 @@ var arrived := false  ## engage_route() reached its last waypoint this frame (Se
 var _leg_from := [0.0, 0.0]  ## the current leg's other end, for the course line (see update())
 var _intercept = null  ## a temporary point flown ahead of waypoint wp_i when that fix lies behind us; the route itself is never edited
 var _intercepted_wp := -1  ## the waypoint index that already had its one intercept, so a fix straight behind can't be put off for ever
+const CLIMB_FPM_RECOVER := 1000.0  ## climb rate allowed when more than RECOVER_BELOW_M under the target
+const RECOVER_BELOW_M := 120.0
+const SPEED_MARGIN_KTS := 8.0  ## full power while within this of the minimum speed
+const TERRAIN_LOOKAHEAD_S := 25.0  ## seconds of flight ahead whose ground height is checked on every frame
+const TERRAIN_CLEARANCE_M := 100.0  ## the height above the highest of that ground it climbs to
+const CLIMB_FPM_TERRAIN := 1800.0  ## the hardest climb it asks for when the ground ahead is above it
+const AVOID_MARGIN_M := 150.0  ## ground this far above the aircraft ahead (after the clearance) is more than a climb will fix: turn away as well
+const AVOID_STEP_DEG := 25.0
+const LOW_TURN_AGL_M := 150.0  ## below this height above the ground a routed climb does not turn
+const CLIMB_STRAIGHT_BELOW_M := 60.0  ## ... while it is at least this far under the target height
 const MAX_BANK_DEG := 18.0  ## the bank limit of the lateral law below
+var ground_fn := Callable()  ## (x, y) -> ground height in metres; Session sets it. Empty: no terrain look-ahead (unit tests of the pure law)
+var terrain_aware := true  ## false for a hot (low, terrain-masking) route: it flies low on purpose, so the look-ahead must not lift it
 var to_point := false  ## the route is the player's own waypoint, not an airfield: Session says so on arrival
 const WAYPOINT_RADIUS_M := 800.0  ## this close (along the course, not as the crow flies): the next leg
 const CROSS_TRACK_GAIN := 0.12  ## a sideways m/s to close per metre off the course line
@@ -44,6 +56,7 @@ const CRUISE_AGL_M := 450.0  ## a legal leg: a proper cruise altitude
 
 func engage(s: FlightModel.FlightState, elevator_now := 0.0) -> void:
 	engaged = true
+	terrain_aware = true
 	alt_target = s.alt
 	hdg_target = s.heading
 	pitch_base = s.pitch
@@ -125,12 +138,55 @@ func update(dt: float, s: FlightModel.FlightState, c: FlightModel.Controls) -> F
 			var gs := maxf(20.0, s.gs_kts * 0.514444)
 			var v_lat := Py.clamp(-across * CROSS_TRACK_GAIN, -CROSS_TRACK_MAX_MS, CROSS_TRACK_MAX_MS)
 			hdg_target = course + Py.degrees(asin(Py.clamp(v_lat / gs, -0.7, 0.7)))
+	# terrain ahead: the ground within TERRAIN_LOOKAHEAD_S of flight along the heading, checked every frame, not only when it was engaged. If it is above the
+	# height flown it climbs hard, at full power, to clear it; the route target is only raised, never lowered, and the leg resumes once clear.
+	var threat := false
+	var avoid_hdg := -1.0  ## >= 0: a heading with lower ground ahead, taken in preference to the route's
+	# not on the descent legs of an approach (wp_i >= 1): the ground rises to meet the runway there, by design
+	if ground_fn.is_valid() and terrain_aware and (waypoints.is_empty() or wp_i == 0):
+		var reach := maxf(1500.0, s.gs_kts * 0.514444 * TERRAIN_LOOKAHEAD_S)
+		var hr := deg_to_rad(s.heading)
+		var peak := -1e9
+		var d := 0.0
+		while d <= reach:
+			peak = maxf(peak, float(ground_fn.call(s.x + sin(hr) * d, s.y + cos(hr) * d)))
+			d += 250.0
+		if peak + TERRAIN_CLEARANCE_M > s.alt:
+			threat = true
+			alt_target = maxf(alt_target, peak + TERRAIN_CLEARANCE_M + 50.0)
+		if peak + TERRAIN_CLEARANCE_M > s.alt + AVOID_MARGIN_M:
+			# more ground than it can climb over: look left and right for a heading with lower ground ahead (not far from the one flown)
+			var best_cost := peak
+			for k in range(-4, 5):
+				if k == 0:
+					continue
+				var h2 := deg_to_rad(s.heading + float(k) * AVOID_STEP_DEG)
+				var pk := -1e9
+				var d2 := 0.0
+				while d2 <= reach:
+					pk = maxf(pk, float(ground_fn.call(s.x + sin(h2) * d2, s.y + cos(h2) * d2)))
+					d2 += 250.0
+				var cost := pk + absf(float(k)) * 15.0
+				if cost < best_cost - 30.0:
+					best_cost = cost
+					avoid_hdg = fposmod(s.heading + float(k) * AVOID_STEP_DEG, 360.0)
+	# climbing out low (just off the ground, or recovering low) it keeps the heading it has and climbs: turning towards the next fix at 25 m up
+	# is how it met the hill beside the strip. The route resumes once it is above LOW_TURN_AGL_M or near the target height.
+	if not waypoints.is_empty() and s.agl < LOW_TURN_AGL_M and alt_target - s.alt > CLIMB_STRAIGHT_BELOW_M:
+		hdg_target = s.heading
+	if avoid_hdg >= 0.0:
+		hdg_target = avoid_hdg
 	# lateral
 	var bank_t := Py.clamp(Py.wrap180(hdg_target - s.heading) * 1.2, -MAX_BANK_DEG, MAX_BANK_DEG)
 	c.aileron = Py.clamp(0.04 * (bank_t - s.roll) - 0.012 * s.p_dps, -0.6, 0.6)
 	c.rudder = 0.0
 	# vertical
-	var vs_t := Py.clamp((alt_target - s.alt) * 18.0, -600.0, 600.0)  # fpm
+	# a long way below the target (climbing out after take-off, or recovering low) it may climb harder than the gentle cruise rate
+	var climb_max := CLIMB_FPM_RECOVER if alt_target - s.alt > RECOVER_BELOW_M else 600.0
+	if threat:
+		climb_max = CLIMB_FPM_TERRAIN
+		c.throttle = 1.0
+	var vs_t := Py.clamp((alt_target - s.alt) * 18.0, -600.0, climb_max)  # fpm
 	var tas := maxf(20.0, s.ias_kts * 0.514444)
 	var gamma_t := Py.degrees(atan2(vs_t * 0.00508, tas))
 	pitch_base = Py.clamp(pitch_base + (vs_t - s.vs_fpm) * 0.0006 * dt, -6.0, 12.0)
@@ -138,6 +194,8 @@ func update(dt: float, s: FlightModel.FlightState, c: FlightModel.Controls) -> F
 	if s.ias_kts < min_ias_kts:
 		pitch_t = minf(pitch_t, s.pitch - (min_ias_kts - s.ias_kts) * 0.6)
 		pitch_base = minf(pitch_base, pitch_t)
+	if min_ias_kts > 0.0 and s.ias_kts < min_ias_kts + SPEED_MARGIN_KTS:
+		c.throttle = 1.0  # too slow to be safe: full power until the speed is back (the pilot's throttle setting is not enough on its own)
 	var err := pitch_t - s.pitch
 	elev_i = Py.clamp(elev_i - err * 0.02 * dt, -0.6, 0.6)
 	c.elevator = Py.clamp(-0.07 * err + 0.03 * s.q_dps + elev_i, -0.8, 0.8)

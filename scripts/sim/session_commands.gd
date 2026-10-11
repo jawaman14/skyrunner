@@ -121,6 +121,7 @@ func _autopilot_navigate(dest = null) -> void:
 			wps[1][2] = maxf(float(wps[1][2]), maxf(world.ground(wps[1][0], wps[1][1]), world.ground(wps[2][0], wps[2][1])) + 90.0)
 	autopilot.engage_route(state, wps, peak + margin, fm.controls.elevator)
 	autopilot.to_point = af == null
+	autopilot.terrain_aware = not hot
 	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name if af != null else "your waypoint (%s km)" % Py.f(PyMath.hypot(tx - state.x, ty - state.y) / 1000.0, 1), "low over the ground" if hot else ("joining the approach" if af != null else "straight there"),
 		"squawking" if transponder else "transponder off", Py.f((peak + margin) / FT, 0)])
 
