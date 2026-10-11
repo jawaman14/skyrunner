@@ -42,6 +42,11 @@ func _initialize() -> void:
 				return
 		i += 2
 	StripTrials.use_map(map_seed, natural)
+	var bad := StripTrials.validate_filters(filters.aircraft, filters.fields, filters.loads, filters.ends, filters.tests)
+	if bad != "":
+		printerr(bad)
+		quit(2)
+		return
 	var js := StripTrials.jobs(filters.aircraft, filters.fields, filters.loads, filters.ends, filters.tests)
 	var t0 := Time.get_ticks_msec()
 	var results := []

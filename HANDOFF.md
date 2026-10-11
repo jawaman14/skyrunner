@@ -202,6 +202,11 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   pass (liftoff 223 m, 15 m at 422 m, least clearance 136 m, 3002 m along, at most 19 m off the line), landing pass. The full
   measurement matrix and a `docs/STRIPS.md` regeneration wait for independent review of the harness; job-generator
   gating is a separate decision. #88 stays open.
+  Review fixes (automated review of 95b121a, five P2s, all valid): a landing counts as passed only if the aircraft
+  stopped on the strip itself (the session calls it parked up to 30 m outside); a touchdown that crashes is logged
+  before the crash ends the trial; a takeoff must lift off over the runway rectangle, not beside it; the required
+  gradient counts from the real run start (25 m in); and the CLI rejects unknown aircraft, fields, loads, ends and
+  tests instead of labelling a report with values that did not run.
   **Separate follow-up, not fixed here:** PilotBot `_safe_heading` (pilot.gd:345) uses margin = altitude - 80 m with a
   75 s lookahead, so below 80 m ASL no heading qualifies and it turns ~40 degrees toward the lowest terrain ahead even
   over flat ground (HAR end 0, c172p light: ~290-345 m off the runway line at 1.2 km before the hold). It likely

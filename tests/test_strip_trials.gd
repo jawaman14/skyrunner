@@ -28,6 +28,7 @@ func test_takeoff_holds_the_line_and_stops_at_3km_on_both_terrains() -> void:
 		check_eq(r.invalid_reason, "", tag)
 		check_eq(r.usable_m, af.length - 25.0)
 		check(r.liftoff_m <= r.usable_m, "%s lifted off inside the usable strip" % tag)
+		check_eq(r.liftoff_on_strip, true, "%s lifted off over the runway" % tag)
 
 
 ## Reaching 3 km is not enough: the run has to lift off inside the strip, get 15 m up and never put the CG under an
@@ -47,6 +48,42 @@ func test_a_takeoff_that_reaches_3km_still_needs_a_valid_run() -> void:
 	var both := StripTrials.takeoff_verdict(2100.0, null, -1.0, usable)
 	check_eq(both.reason.count(";"), 2, "every failed condition is listed: " + both.reason)
 	check(StripTrials.takeoff_verdict(usable, 500.0, StripTrials.MIN_CLEARANCE_M, usable).valid, "the limits themselves are valid")
+	var beside := StripTrials.takeoff_verdict(223.0, 422.0, 136.0, usable, false)
+	check(not beside.valid and "beside the strip" in beside.reason, "lifting off over the shoulder is not lifting off from the strip: " + beside.reason)
+	check(StripTrials.takeoff_verdict(null, null, 40.0, usable, false).reason.count("beside") == 0, "no liftoff, no lateral complaint")
+
+
+## The run starts RUN_START_M in from the threshold, so every obstacle has that much less runway to climb over: the
+## required gradient from the real start is never lower than one measured from the threshold, and on some mountain
+## ends (where the worst obstacle is far enough out for the 150 m floor not to hide it) it is higher.
+func test_the_departure_gradient_counts_from_the_start_of_the_run() -> void:
+	StripTrials.use_map(MapCity.SEED, false)
+	var w := World.new()
+	var s := Feasibility._session("c172p", "QRY")
+	var higher := 0
+	for code in ["QRY", "PNR", "EGL"]:
+		var af := World.airfield(code)
+		var roll := s.spec.est_landing_roll(s.state.weight_lb, w.airfield_elev(af)) * 1.35
+		for end in [0, 1]:
+			var from_threshold := StripTrials._departure_gradient(w, af, end, roll, 0.0)
+			var from_start := StripTrials._departure_gradient(w, af, end, roll)
+			check(from_start >= from_threshold - 1e-9, "%s end %d: %.4f from the start vs %.4f from the threshold" % [code, end, from_start, from_threshold])
+			if from_start > from_threshold + 1e-9: higher += 1
+	s.dispose()
+	check(higher > 0, "somewhere the 25 m offset changes the answer")
+
+
+## A typo in a filter must stop the run, not write a report whose labels do not describe the trials that ran.
+func test_filters_are_validated_before_anything_is_flown() -> void:
+	StripTrials.use_map(MapCity.SEED, false)
+	check_eq(StripTrials.validate_filters(), "", "no filters is fine")
+	check_eq(StripTrials.validate_filters(["c172p", "c182"], ["QRY", "HAR"], ["light", "max"], [0, 1], ["takeoff", "landing"]), "")
+	check("--ends" in StripTrials.validate_filters(null, null, null, [2]), "an end other than 0 or 1")
+	check("--tests" in StripTrials.validate_filters(null, null, null, null, ["takeof"]), "a misspelled test")
+	check("--aircraft" in StripTrials.validate_filters(["a380"]), "an unknown aircraft")
+	check("--fields" in StripTrials.validate_filters(null, ["XXX"]), "an unknown field")
+	check("--loads" in StripTrials.validate_filters(null, null, ["heavy"]), "an unknown load")
+	check("empty" in StripTrials.validate_filters([]), "an empty list")
 
 
 ## A bounce, or a go-around that touches first, must not be reported as the final touchdown.

@@ -30,6 +30,7 @@ const CLEAR_RADIUS_M := 15.0  ## obstacle search radius under the aircraft for t
 ## The straight-departure corridor, this harness's measurement convention: 90 m either side of the runway line
 ## at the start of the run, widening by 12.5% of the distance flown along it (465 m either side at 3 km). It
 ## allows for drift in the climb, not for a turn away.
+const RUN_START_M := 25.0  ## the takeoff run starts this far in from the threshold (as Session.spawn_at)
 const CORRIDOR_HALF_M := 90.0
 const CORRIDOR_SPLAY := 0.125
 ## A takeoff that reaches the goal only counts if the run was valid: airborne within the usable strip, 15 m
@@ -109,13 +110,17 @@ static func hold_line_aileron(bot: PilotBot, st: FlightModel.FlightState, runway
 
 ## Did a takeoff that reached 3 km along the line also make a valid run? The strip's usable length is what is
 ## ahead of the start of the run (the run starts 25 m in from the threshold). Returns {valid, reason}; the reason
-## lists every failed condition, and the distances stay in the result either way.
-static func takeoff_verdict(liftoff_m, to_15m_m, min_clear_m, usable_m: float) -> Dictionary:
+## lists every failed condition, and the distances stay in the result either way. `liftoff_on_strip` is whether the
+## aircraft was over the runway rectangle at the moment it left the ground (the shoulders and rough ground beside it
+## are not the strip).
+static func takeoff_verdict(liftoff_m, to_15m_m, min_clear_m, usable_m: float, liftoff_on_strip := true) -> Dictionary:
 	var why := []
 	if liftoff_m == null:
 		why.append("never lifted off")
 	elif liftoff_m > usable_m:
 		why.append("lifted off %.0f m along, past the %.0f m of strip ahead of the start of the run" % [liftoff_m, usable_m])
+	if liftoff_m != null and not liftoff_on_strip:
+		why.append("lifted off beside the strip, not over it")
 	if to_15m_m == null:
 		why.append("never reached 15 m above the ground")
 	if min_clear_m == null:
@@ -161,11 +166,11 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 	var hdg: float = r.heading
 	var s := Feasibility._session(aircraft, code)
 	Feasibility.load_aircraft(s, Feasibility.LOADS[load][0], Feasibility.LOADS[load][1])
-	# the start of the run: 25 m in from the threshold of this end, facing down the runway (as Session.spawn_at)
+	# the start of the run: RUN_START_M in from the threshold of this end, facing down the runway (as Session.spawn_at)
 	var t: Array = af.threshold(end)
 	var h := deg_to_rad(hdg)
-	var x0: float = t[0] + sin(h) * 25.0
-	var y0: float = t[1] + cos(h) * 25.0
+	var x0: float = t[0] + sin(h) * RUN_START_M
+	var y0: float = t[1] + cos(h) * RUN_START_M
 	var elev := s.world.airfield_elev(af)
 	s.fm.spawn(x0, y0, hdg, elev, s.loadout)
 	s.fm.controls.brake = 1.0
@@ -183,6 +188,8 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 	var t0 := s.time
 	var dep := Departure.new(x0, y0, hdg)
 	var liftoff = null
+	var liftoff_on_strip := false
+	var liftoff_cross = null
 	var to_15m = null
 	var min_clear = null
 	var stop := "timeout"
@@ -204,6 +211,8 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 		var verdict := dep.sample(st.x, st.y)
 		if liftoff == null and not st.on_ground:
 			liftoff = dep.along
+			liftoff_cross = dep.cross
+			liftoff_on_strip = af.contains(st.x, st.y)
 		if to_15m == null and st.agl >= 15.0:
 			to_15m = dep.along
 		if liftoff != null and not af.contains(st.x, st.y, 4.0):
@@ -213,10 +222,10 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 			stop = verdict
 			break
 	r.status = "inconclusive" if stop == "left corridor" else "fail"
-	r.usable_m = af.length - 25.0
+	r.usable_m = af.length - RUN_START_M
 	r.invalid_reason = ""
 	if stop == "3km":
-		var v := takeoff_verdict(liftoff, to_15m, min_clear, r.usable_m)
+		var v := takeoff_verdict(liftoff, to_15m, min_clear, r.usable_m, liftoff_on_strip)
 		r.status = "pass" if v.valid else "fail"
 		r.invalid_reason = v.reason
 	r.stop = stop
@@ -228,6 +237,8 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 	else:
 		r.outcome = s.last_outcome if stop == "crash" else (str(bot.outcome) if stop == "bot gave up" else stop)
 	r.liftoff_m = liftoff
+	r.liftoff_cross_m = liftoff_cross
+	r.liftoff_on_strip = liftoff_on_strip if liftoff != null else null
 	r.to_15m_m = to_15m
 	r.min_clear_m = min_clear
 	r.along_m = dep.along
@@ -238,16 +249,18 @@ static func takeoff(aircraft: String, code: String, load: String, end: int) -> D
 	return r
 
 
-## The climb gradient the departure off `end` needs over the first 3 km (PilotBot.plan_departure, one end).
-static func _departure_gradient(world: World, af: Airfield, end: int, roll_m: float) -> float:
+## The climb gradient the departure off `end` needs over the first 3 km (PilotBot.plan_departure, one end). The run
+## starts `start_m` in from the threshold, so the liftoff point and every sample are that much further down the
+## runway than the threshold-based distances.
+static func _departure_gradient(world: World, af: Airfield, end: int, roll_m: float, start_m := RUN_START_M) -> float:
 	var elev := world.airfield_elev(af)
 	var h := deg_to_rad(end_heading(af, end))
 	var t: Array = af.threshold(end)
 	var worst := 0.0
 	var x := roll_m + 20
 	while x < 3000:
-		var px: float = t[0] + sin(h) * x
-		var py: float = t[1] + cos(h) * x
+		var px: float = t[0] + sin(h) * (start_m + x)
+		var py: float = t[1] + cos(h) * (start_m + x)
 		if not af.contains(px, py, 4.0):
 			var rise := maxf(0.0, world.obstacle_top(px, py, 25.0) - elev)
 			worst = maxf(worst, (rise + 10.0) / maxf(150.0, x - roll_m))
@@ -346,15 +359,17 @@ static func landing(aircraft: String, code: String, load: String, end: int) -> D
 			stop = "landed" if bot.outcome == "landed" else "bot gave up"
 			break
 		s.update(DT, null, c)
+		var st := s.state
+		tdlog.sample(st.on_ground, st.x, st.y, s.fm.last_touchdown_fpm)  # before the crash check: a touchdown that crashes is still a touchdown
 		if _ended(s):
 			stop = "crash"
 			break
-		var st := s.state
-		tdlog.sample(st.on_ground, st.x, st.y, s.fm.last_touchdown_fpm)
-	var ok: bool = s.phase == "parked" and s.location == code
+	# the session calls it parked within ARRIVE_MARGIN_M of the field; the trial only counts a stop on the strip itself
+	var parked: bool = s.phase == "parked" and s.location == code
+	var ok: bool = parked and af.contains(s.state.x, s.state.y)
 	r.status = "pass" if ok else "fail"
 	r.stop = stop
-	r.outcome = "landed" if ok else (s.last_outcome if stop == "crash" else (str(bot.outcome) if stop == "bot gave up" else stop))
+	r.outcome = "landed" if ok else ("rolled off the strip: parked beside or beyond it" if parked else (s.last_outcome if stop == "crash" else (str(bot.outcome) if stop == "bot gave up" else stop)))
 	r.go_arounds = bot.go_arounds
 	r.touchdown_from_threshold_m = null
 	r.touchdown_fpm = null
@@ -375,6 +390,24 @@ static func landing(aircraft: String, code: String, load: String, end: int) -> D
 	r.seconds = s.time - t0
 	s.dispose()
 	return r
+
+
+## An error message for a filter value the trials would silently mislabel or misrun (an unknown aircraft, field or
+## load, an end other than 0 or 1, a test other than takeoff or landing), or "" when every list is valid. null = all.
+## Call it after use_map(): the fields are those of the current map.
+static func validate_filters(aircraft = null, fields = null, loads = null, ends = null, tests = null) -> String:
+	var fields_all: Array = World.AIRFIELDS.map(func(a): return a.code)
+	var rules := [["aircraft", aircraft, Aircraft.ROSTER.keys()], ["fields", fields, fields_all],
+		["loads", loads, Feasibility.LOADS.keys()], ["ends", ends, [0, 1]], ["tests", tests, ["takeoff", "landing"]]]
+	for rule in rules:
+		if rule[1] == null:
+			continue
+		if rule[1].is_empty():
+			return "--%s is empty; leave it out to run them all" % rule[0]
+		for v in rule[1]:
+			if not v in rule[2]:
+				return "--%s: %s is not one of %s" % [rule[0], str(v), ", ".join(rule[2].map(func(x): return str(x)))]
+	return ""
 
 
 ## Every [test, aircraft, field, load, end] the filters allow (null = all).
