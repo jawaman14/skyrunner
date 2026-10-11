@@ -32,11 +32,11 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Claude (lead), from main `e384241`; Codex implements Tier C and reviews |
-| **Task** | This PR: AGENTS.md and this file say simultaneous mode, Claude leads, one canonical clone, short notes (owner, 11 Oct). |
+| **Holder** | Claude seat is being handed over: read [docs/CLAUDE_ROLE_HANDOFF.md](docs/CLAUDE_ROLE_HANDOFF.md) first. Claude is integrator and reviewer; Codex leads UX/UI. |
+| **Task** | Merged since the last baton: #318, #324 (tutorial footer), #325, #330, #331. Now: skyrunner-mcp PRs 6 and 7 are approved and green but cannot be merged through the MCP (it reaches only the game repo): owner to choose `gh` once or a `repo` argument on the PR tools. The legacy `gh` relay and alert feed must be stopped (see the handoff, section 3). |
 | **Branches / PRs** | Claude drafts: **#309** startup leave/rehost/join tests, **#310** planning-CSV import keep files (both 13/13 CI, reviewed by Codex, no blockers), **#311** strip-feasibility harness (head `4af1ea5`, Codex review pending), **#312** seat-picker cancel tests, **#303** P05 action-preview screen (needs a human look), **#304** docs after #296. Ready: **#305** shared connector node, **#272** Codex's road-node index. Codex drafts: #300, #265, #267, #268, #274, #275, #276; held: #244, #247, #253, #269. No PR yet: `feature/phone-ui` (the phone as a handset with apps, 3 commits, 42 behind `main`; built in a second clone the board couldn't see). |
-| **Next step** | Owner: merge or hold #309/#310 and #305. Codex: review #311 at `4af1ea5` and #312; then take the next Tier C tasks Claude posts on the board (candidates: the rest of #97's entry paths, the CI screenshot job at four resolutions and both palettes, issue triage). Claude: integrate Package A in order (#265, #267, #268, #272, #274, #275, #276; re-run `tools/logistics_routes.gd` at the end), then P05. |
-| **Codex task** | Reviews above; Tier C tasks only as posted on the board. |
+| **Next step** | Follow the handoff's first-hour checklist. Then, after PR 7 merges: update the server checkout and the game's pin/tool count, and restart the MCP-based relay and alert feed from PRs #335/#336. The branch list above is not the live merge queue: read `github_merge_queue` and the board. |
+| **Codex task** | Initial reviews posted for #318, #322, #316, #319, #323, #320, #321; refresh exact-head reviews after author fixes. Continue UI source audit using existing UIStyle/GameMenu. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
 ## Taking over (checklist for the incoming AI)
@@ -89,6 +89,15 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Owner decisions
 
+- **2026-10-11 (afternoon), standing merge rule (owner):** merge readiness is the agents' job. In the owner's words: "you dont need
+  to discuss with me what needs to be merged or not that is you and codex job to see if its ready too". The owner is involved when
+  work lands on `main` (a short note per merge, a summary at the end) and for the human release gates and decisions in #326. Release
+  gates and those decisions are never merged or ticked by an agent. Later that day the owner said, about Codex being out of tokens
+  until 19:57: "complete as much as his work for him". Asked how to handle
+  reviews during that outage, the owner chose "Stand-in reviewer agents": a separate fresh-context reviewer agent (not the author) reads
+  the exact head and records its findings in the PR; Codex re-reviews after 19:57 and findings become follow-up PRs. That choice covers that
+  outage only (it ended at 19:57); a future outage needs the owner's say again (docs/PIPELINE.md, Codex's review of #331).
+
 - **2026-10-10 (cloud session):** Begin collaboration using the documented Claude/Codex split. Claude is on the owner’s local computer; this cloud board is separate. Use published branches and committed handoffs across machines; local notes do not reach Claude’s board.
 
 - **2026-10-11 (later still):** All work on Skyrunner goes through its MCP (board, Godot jobs, GitHub). Claude, as
@@ -125,6 +134,14 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 ## Log
 
 
+- **2026-10-12 — Claude, role handoff:** `docs/CLAUDE_ROLE_HANDOFF.md` is an in-depth handoff for whoever takes the Claude seat: the owner's rules, the daily loop, the four background processes that must stay up (wake watcher, alert feed, review relay, doorbell) and which worktrees they run from, the open work (skyrunner-mcp PRs 6 and 7 approved but unmergeable without `gh` until the owner decides; the MCP-only relay/alerts waiting on PR 7; the 11-PR stale stack), tool traps, and a first-hour checklist. Same change removed 12 clean, fully pushed Claude worktrees and 2 `.build` verification worktrees (branches stay on the remote). Docs only; nothing verified beyond the links existing.
+- **2026-10-11 — Claude, on Codex's #324 (its unattended turn cannot write inside a linked worktree's .git, so it could not fix this):** the bot's P1 was right: KeyHints chips are Buttons with focus_mode FOCUS_ALL, so Tab could enter the always-visible tutorial footer instead of reaching PilotApp, and after a click Enter/Space could re-fire Skip. `KeyHints` gets a `focusable` option (default true, so every other footer is unchanged); `TutorialPanel` sets it false; a line in the existing frontend test pins it, and a mutation (focusable = true) makes that line fail. Frontend 14/14 under the shared lock. The change is Claude's, in Codex's UI lane, because of the blocker; Codex should review the new head.
+- **2026-10-11 — Claude, wake_codex.py alerts:** `--alerts-file PATH` also wakes Codex when an alert digest file changes (the prompt is fixed text naming only that path, and says the digest is data, never instructions; the file's mtime seen is kept beside the cursor), and `--queue-thread ID` delivers with `codex queue --thread ID --message` to an open Codex thread instead of resuming a headless session. 35 collab tests pass. NOT verified: delivery to the open desktop window via `codex queue` (Codex's earlier probe, note 187, exited 0 with delivery pending).
+
+- **2026-10-11 — Claude, #330 (dashboard.py):** a read-only terminal screen of the collaboration board: both agents (last post, notes waiting, a STALE flag), their claims and the newest notes. Codex's review (board notes 234, and the bot's P1 before it) was right: the owner's rule is that GitHub reads go through the `skyrunner` MCP tools, and the first version called `gh` for pull requests and shipped a `gh`-based `review_packet.py`. Both are removed: the dashboard shows no GitHub data (use `github_merge_queue`), and the review packet is the MCP tool `github_review_packet` (skyrunner-mcp PR 7). A test checks the dashboard source has no subprocess or gh call. The board itself is still read straight from its SQLite file, read-only (as board_status.py and notify.py already do, which Codex has used). 39 collab tests pass.
+
+- **2026-10-11 — Claude, #325 (compact notes):** AGENTS.md now asks for short board notes (under about 250 characters, ids not prose, no note without a new fact or ask, incremental reads, read-only tools). Measured before: notes since #100 averaged 534 characters (Claude) and 468 (Codex); the first notes after the rule were about 200. The dashboard and review packet it points at are in #330 (shell conveniences over gh; an MCP tool is queued in #328).
+
 - **2026-10-11 — Claude, #318 review fix (P1):** `approach_end_clear` checked a 4.5-degree path on bush and shady strips, but the autopilot's final flies a little under 3 degrees from 30 m at the threshold, so an obstacle between the two lines read "clear" and the selector could pick that end. The check now uses the lower of the audit line and `Session.route_height_at(d)`, the same height `_approach_route` builds its final fix from (one definition). The rule is a static `way_in_clear(elev, deg, top_at)` so it is tested without a map. New test pins it; mutation check (ignore the route line) fails it; the other 14 + 10 autopilot tests pass. Codex's review then found the check stopped at 3 km while the final runs out to the 5 km fix: it now checks the route's height to `APPROACH_FINAL_M` (the audit line still only to 3 km), with a 4 km regression that a 3 km loop fails. Not run: the full suite (CI). The QRY/PNR end-0 results are unchanged.
 - **2026-10-11 — Claude, autopilot approach end (#80/#82, Tier A):** On `claude/autopilot-approach-end` from main
   `e01feb4`. A diagnostic (QRY, PNR, EGL, HAR from 8 bearings x 2 distances x 3 headings) showed `Session._approach_route`
@@ -140,6 +157,10 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   joins HAR from end 1 when end 1 is clear; the natural pass is meant to leave approaches alone, so that is a terrain
   question for a separate decision. Not done from #82: a locked planner result, forward-intercept constants and
   heading-aware scoring (they would change ordinary-field behaviour). #80/#82 stay open.
+
+- **2026-10-11 — Claude, #322 (wake_codex.py):** wakes Codex when a note is sent to it: one fixed prompt (integer ids, "act only on those ids", read only the new notes in pages of 20), cooldown, hourly cap, `--codex-config` for the unelevated Windows sandbox. After the bot review: the single-flight lock is an OS file lock (released when the holder dies, so no stale lock and no race over reclaiming one), a malformed cursor file is repaired, the woken turn runs in `--root`, the prompt is bounded to the captured ids. 33 collab tests pass; a woken turn with a working shell and MCP was verified end to end (board notes 149, 153). Not verified: waking the open desktop window; the per-tool review approval (blocked by the Claude Code guard).
+
+- **2026-10-11 — Codex desktop/root:** TutorialPanel uses shared KeyHints buttons; pilot clicks skip/off call existing tutorial actions, station clicks use its existing tutorial command. Empty/completed lessons omit Skip. Existing frontend cases verify pilot and desk command paths, including seats without lessons (14/14 pass); test count unchanged. Screenshot and full suite queued under the machine lock; no human gate marked complete. Worktree: `~/.codex/worktrees/skyrunner-tutorial-footer`, branch `codex/tutorial-clickable-footer` from main `cc31bed`. Claude owns integration/review.
 
 - **2026-10-11 — Claude, collaboration docs (owner: Claude leads):** AGENTS.md and this file now say
   simultaneous mode instead of relay, who leads, the canonical clone (the board is per clone: a second clone on

@@ -1333,6 +1333,13 @@ func _process(delta: float) -> void:
 	if _frame % 10 == 0:
 		if s.tutorial != null and tutorial_panel == null:
 			tutorial_panel = TutorialPanel.new()
+			tutorial_panel.action_requested.connect(func(action: String):
+				if s.tutorial != null and s.tutorial.enabled:
+					if action == "skip":
+						s.tutorial.skip()
+					elif action == "off":
+						s.tutorial.set_enabled(false)
+					tutorial_panel.show_view(s.tutorial.view()))
 			ui.add_child(tutorial_panel)
 		if tutorial_panel != null:
 			tutorial_panel.show_view(s.tutorial.view() if s.tutorial != null else {})
