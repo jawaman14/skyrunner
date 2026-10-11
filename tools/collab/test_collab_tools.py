@@ -272,6 +272,7 @@ class WakeCodex(unittest.TestCase):
         self.assertIn("ids 5,7", prompt)
         self.assertIn("after=4,", prompt, "reads only the new notes, from one below the first id")
         self.assertIn("limit=20", prompt)
+        self.assertIn("next_cursor until fewer than 20", prompt, "more than 20 new notes are all delivered")
         self.assertNotIn("backlog", prompt.replace("not the backlog", ""))
         with self.assertRaises(ValueError):
             wake_codex.build_prompt(["1; rm -rf /"])
@@ -341,6 +342,20 @@ class WakeCodex(unittest.TestCase):
         self.assertIn("already running", guard2.allowed(now))
         os.utime(guard2.lock_path, (now - 500, now - 500))
         self.assertIsNone(guard2.allowed(now), "a lock older than the timeout is stale")
+
+    def test_the_lock_is_taken_atomically_so_two_wakes_cannot_both_start(self):
+        guard_a = wake_codex.Guard(os.path.join(self.tmp, "w.json"), 0, 9, 100)
+        guard_b = wake_codex.Guard(os.path.join(self.tmp, "w.json"), 0, 9, 100)
+        now = 5000.0
+        self.assertTrue(guard_a.start(now))
+        self.assertFalse(guard_b.start(now + 1), "the second watcher finds the lock held")
+        guard_a.finish()
+        self.assertTrue(guard_b.start(now + 2))
+        guard_b.finish()
+        open(guard_a.lock_path, "w").close()
+        os.utime(guard_a.lock_path, (now - 1000, now - 1000))
+        self.assertTrue(guard_a.start(now), "a stale lock is replaced")
+        guard_a.finish()
 
     def test_a_failing_codex_reports_status_12_and_still_releases_the_lock(self):
         self.run_once(self.args())
