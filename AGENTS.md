@@ -28,6 +28,8 @@ not answered what, so check it before assuming silence means no. `python tools/c
 `watch` rings a terminal bell or Windows toast when one does; a scheduled agent should call `once` rather than read the board. Merging, closing issues and anything published need the owner's word
 in that agent's own chat, or a standing rule under **Owner decisions** in HANDOFF.md.
 
+**The pipeline** (issue to `main`, roles, limits, review tiers, known stalls): [docs/PIPELINE.md](docs/PIPELINE.md).
+
 **Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and
 does every merge, through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and
 every review thread has a reply), never `gh pr merge`. Before a PR joins the queue:
