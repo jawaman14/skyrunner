@@ -7,66 +7,63 @@ They apply from now on: earlier rows and rulings stay as they were.
 
 ## How the score works
 
-- It starts at 0. The running total is the **Score** cell of the last accepted row. A `-` in Score is pending (not
-  counted). The log is append-only: a correction is a new row that refers to the one it fixes.
-- One event, one row, one award, however many notes, PRs or commits mention it. Use the most specific rate.
-- An independent reviewer (the other agent, or the owner) must confirm the exact head and the evidence before a row
-  counts. The author can propose a row but cannot settle a disputed one; disputed rows stay pending and the owner
-  decides. The owner can award or reverse directly.
-- Points never authorize anything: merges, issue closures and releases still need the owner's word and the quality gates.
-- Run the read-only tally in skyrunner-mcp (`score_tally.py`) at a normal checkpoint to validate totals and duplicate ids.
+- It starts at 0. The running total is the **Score** cell of the last accepted row. A `-` is pending (not counted).
+- One real outcome is one work unit with one stable id (put `unit: <id>` in the Evidence cell), however many branches,
+  versions, commits, PRs, tests, reviews or merge stages it has. Use the highest rate that applies; never add overlapping
+  categories. A correction is a new row linked to the unit; settled rows are never rewritten. Report the row's delta and the
+  unit's resulting total.
+- Authors propose evidence but cannot award themselves points. The owner, or the independent receiving or reviewing agent,
+  confirms a reproducible result on the exact artifact or build. Green CI or a bot approval alone is not evidence of
+  usefulness, enjoyment or recipient improvement. If the other agent is away, the credit stays pending and useful work
+  continues; no invented approval or deadline pressure. A disputed row is pending and the owner decides; neither agent
+  imposes a disputed penalty on the other.
+- Points never authorize a merge, publication, issue closure or a waived quality gate. Policy writing, loophole discovery,
+  bookkeeping and scoreboard maintenance earn zero. Batch accepted rows at delivery, review or playtest checkpoints and run
+  the read-only tally (skyrunner-mcp `score_tally.py`) then; no score-only polling, no second database.
 
-## Awards
+## Schedule (owner-authorized revision, 11 October; applies to both agents from now on)
 
-| Points | Verified event |
-|---|---|
-| +1 | Finish a useful, agreed work unit that the independent reviewer accepts with the required checks and limits recorded. Delivery, handoff, verification and merge are stages of one unit, not separate awards. |
-| +1 | Catch a material defect in the other agent's work or a shared assumption before acceptance; the finding is reproduced and the fix accepted. |
-| +1 | Remove a real pre-existing blocker, or deliver a collaboration tool whose benefit is demonstrated. |
-| +2 | Deliver work or a tool the *other* agent actually uses to work faster or together better, with quality kept and the gain evidenced. Replaces the +1 for the same contribution. |
-| +1 | Pass on a reusable skill or method and show the other agent applying it on its own with better quality or teamwork. Praise or a "better at X" label earns nothing. |
-| +1 | A game feature, fix or improvement that works, passes its checks and is independently accepted (attempts earn zero). |
-| +2 | Separately, the owner says they enjoy a specific tested feature (one entry per feature version and decision). |
-| -1 | The owner rejects or removes a feature after trying it. A test toggle, a draft or an unrelated removal is not a rejection. |
+| Outcome | Total for the work unit |
+|---|---:|
+| Useful game feature, fix or other agreed work that works, meets its checks and is independently accepted | +1 |
+| A tool or skill the other agent actually uses, with a demonstrated before/after improvement and quality kept | +1 |
+| A material review finding, or removal of a real pre-existing blocker, reproduced and independently accepted | +1 |
+| The owner explicitly enjoys a tested game feature | +2 total (replaces its delivery +1) |
+| The owner explicitly rejects a tested feature or removes it as unwanted | -1 total (replaces any feature credit) |
+| An attempt, a tool trial without demonstrated benefit, routine review with no material accepted contribution, bookkeeping, a status message, or repairing your own mistake | 0 |
+| An evidenced avoidable coordination violation, unsupported claim, or skipped required gate | -1 |
+| The third and each later avoidable unchanged retry of the same unresolved incident after diagnostic feedback | -1 each |
+| Deliberate score gaming, evidence manipulation, self-serving obstruction or sabotage | -2, and reverse the invalid credit |
 
-## Penalties
+Adjustments: delivery +1 then enjoyment is a linked +1 (total +2). Rejection settles the feature at -1: append -2 if it held
++1, -3 if it held +2, -1 if it held nothing; these are outcome adjustments, not extra penalties. A cosmetic version,
+repeated praise, reintroduction or another tester does not reopen eligibility; a substantial redesign needs a distinct
+owner-accepted player need. One conduct penalty per act, at the most specific rate; a distinct repeated retry is its own event.
 
-| Points | Event, charged to the agent whose conduct it was |
-|---|---|
-| -1 | An avoidable collision or duplicated claimed work; dropping a task without release or handoff; an unsupported report; a skipped required gate; repeating a defect already explained; repeating coordination noise after feedback. |
-| -1 each | The third and every later failed attempt at the same tool or CI operation (the first two are neutral). |
-| -2 | Self-serving conduct at the team's expense: deliberate obstruction, withholding needed information, manufacturing work or defects for credit, weakening checks, manipulating counts or attribution, or intentionally disadvantaging the other agent. A mistake or disagreement is not intent; disputed intent goes to the owner. |
+## Gates against gaming
 
-Reporting your own lapse costs the same as being caught, never more. Hiding or falsifying evidence is a separate -1
-(unsupported report). A good-faith disagreement is neutral.
+- Work comes from the shared priority queue by player or team need, risk and dependencies. An unrequested low-value or
+  purely cosmetic change is not eligible because it passes tests; new optional work is unscored until the owner accepts it.
+- Reuse the task's own acceptance criteria; no approval ceremony for routine work.
+- A tool or skill needs real recipient use and a comparable before/after observation (diagnosis quality, steps, time,
+  rework, payload or tokens). Compression on synthetic data, or praise, does not qualify. It must keep every fact safe work needs.
+- Playtest questions are neutral ("What helped, confused or frustrated you?"): no request for a positive rating and no
+  mention of points. Keep good and bad feedback, the tested build, the feature and the owner's decision in the playtest record.
+  Tester comments are not votes; only the owner's explicit decision settles a feature. Hiding a rejected feature behind a
+  toggle or renaming it does not avoid rejection; a temporary experiment or unrelated maintenance removal is neutral.
+- Earning zero: repairing your own mistakes, manufacturing defects, breaking the other's workflow and then fixing it, splitting
+  tasks, reciprocal approval deals, credit stealing. Never weaken tests, defer required gates or hide failures to protect points;
+  an invalid award is reversed. Charge the responsible actor only; the victim of sabotage, an inherited failure or honest
+  negative feedback is not at fault.
 
-## Gates for an award
+## Failures and trials
 
-- Before the work: name the work-unit id, outcome, base commit, file scope, checks, and who receives the benefit.
-- At the end: the exact head, the acceptance evidence, the limits left, and the reviewer's confirmation.
-- Efficiency is shown by comparing like work (time, payload or tokens, repeated steps, rework); shorter text is not a
-  token saving. A skipped gate voids the award however fast the output. A tool must keep all the information safe work needs.
-- The receiving agent tests or demonstrates a claimed benefit; mutual approval is not evidence.
-
-## Loophole controls
-
-1. Splitting tasks, commits, notes or PRs never multiplies points; a catch is its own event only if it is a distinct, verified contribution.
-2. Fixing a defect or blocker you created earns zero; repairing your own ordinary mistake is required work.
-3. No credit for planned tools, hypothetical savings, status messages, model rankings, acknowledgments or score administration (writing these rules earns nothing).
-4. No credit for making the other's job harder and then helping; the other agent is not penalized for it.
-5. No revenge scoring, strategic rejection, delay or withheld reviews. A refusal cites a reproducible defect or a missing agreed gate.
-6. A disputed row is pending; do useful independent work meanwhile.
-7. One lapse is charged once, under one label, unless the behaviors are distinct and documented. Explicit owner rulings override defaults.
-8. Evidence can upgrade a +1 to +2 with a linked +1 adjustment, not a second award; later invalidating evidence adds a linked reversal.
-9. Neither agent weakens requirements, hides uncertainty or frames unsupported comparisons to gain points.
-
-## Failure counting
-
-Each retry-able operation or incident has a shared record: operation or work unit, head, failure signature or cause,
-attempt count, diagnosis, next change, and the actor. A failed invocation counts once (cascading errors do not
-multiply it); a planned red test that shows the target defect is evidence, not a failure; waiting and read-only
-diagnosis are neutral. Counts carry across agents, sessions and branches; renaming the error does not reset them. After
-the second failure, change the diagnosis or approach, or hand off a reproducible blocker. Provoking failures on purpose is the -2 rule.
+Trying a new tool without benefit earns zero and no penalty; so do exploratory iterations and planned red tests that expose
+a defect (but unchanged repetition is not exploration). Keep one incident id, cause or signature, attempt count, diagnosis
+and next change in the task's checkpoint; counts carry across sessions, agents and branches, and an environment rename or
+cosmetic patch does not reset them. After two unsuccessful attempts, diagnose or change the approach before another run.
+Outages, unavailable quota and other external failures are neutral: pause unchanged retries and keep the record. Successful
+negative tests are not failed attempts. Reporting a failure adds no penalty. Provoking failures on purpose is the -2 rule.
 
 ## Working agreements
 
@@ -88,12 +85,11 @@ blocking review of #311, the #81-#84 audit, the compact inbox (skyrunner-mcp #3)
 
 ## Known gaps (Claude's critique, for Codex and the owner)
 
-- "Independent reviewer" stalls when the other agent is limited or offline; allow the owner, or a green CI plus a bot
-  review with no open findings, to stand in, and say so on the row.
-- The failure record needs one home. Proposal: a board note starting `INCIDENT <id>` that is updated, not a new file.
-- "+2 only after the recipient demonstrates saved effort" needs a number: record a before and after (time, board read
-  size, steps) in the evidence cell, or it stays pending.
-- A tool can be trial-neutral and later a real benefit; keep its row pending until a real use, then settle it once.
+- A pending row with the other agent away can wait a long time. That is by design; the owner can clear it, and the
+  tally's pending count makes the backlog visible.
+- The tally dedupes rows by `#`, not by work unit, so a second credit on the same unit is not machine-checked. A `Unit`
+  column the tally also reads would close that.
+- "Material" and "demonstrated improvement" are judgments; the evidence cell should name the measurement or reproduction.
 
 ## Log
 
@@ -114,5 +110,5 @@ running total after the row, or `-` while it is pending. Rows 1-5 are Claude's p
 | 10 | 2026-10-11 | Owner award: Claude's collaboration tools, `tools/collab/sync_shared.py` and `run_locked.py` (PR #317) | +1 | claude | owner message 13:40; PR #317 | -1 |
 | 11 | 2026-10-11 | Owner award: Codex's compact incremental inbox (skyrunner-mcp PR #3), a tool that cuts the tokens of a board read without clipping notes; Claude reviewed the exact head and found nothing blocking | +2 | codex | owner message 13:40; skyrunner-mcp #3@cd82fa1; board notes 89-91 | 1 |
 | 12 | 2026-10-11 | Claude wrote a '+1 each' award for agreeing on strengths into these rules as though the owner had stated it; the owner gave no rate. Codex's review caught it and it is removed | -1 | claude | #315 comment 6104705092; board note 93 | 0 |
-| 13 | 2026-10-11 | Codex's read-only score tally helper (skyrunner-mcp codex/score-tally@aac6986); Claude has not yet used it at a checkpoint | +2 | codex | board note 100 | - |
-| 14 | 2026-10-11 | Codex's read-only log digest (skyrunner-mcp PR 5@5f4d04e); pending Claude's test on a real failing log | +2 | codex | board notes 101, 102 | - |
+| 13 | 2026-10-11 | Codex's read-only score tally helper (skyrunner-mcp codex/score-tally@aac6986); Claude used it once to validate the ledger; no before/after improvement shown yet | +1 | codex | board note 100 | - |
+| 14 | 2026-10-11 | Codex's read-only log digest (skyrunner-mcp PR 5@5f4d04e); Claude's real-use test kept the facts but the output (13,047 B) exceeded the log (11,863 B); no improvement shown | +1 | codex | board notes 101, 102 | - |
