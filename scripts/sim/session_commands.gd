@@ -103,22 +103,56 @@ func _autopilot_navigate() -> void:
 		"squawking" if transponder else "transponder off", Py.f((peak + margin) / FT, 0)])
 
 
+## True if a 3-degree path (4.5 for a bush or shady strip) to runway end `end` clears the terrain and trees on the
+## way in: 10 m over the threshold, checked out to 3 km as tools/strip_audit.gd does. A false end is one of the
+## "one-way strips" of docs/STRIPS.md (QRY and PNR end 0), where a route that flew the final would meet the pit wall
+## or the tree line.
+func approach_end_clear(af: Airfield, end: int) -> bool:
+	var deg := 4.5 if af.kind in ["bush", "shady"] else 3.0
+	var th: Array = af.threshold(end)
+	var sgn := 1.0 if end == 1 else -1.0  ## the way out along the extended centreline from this threshold
+	var elev := world.airfield_elev(af)
+	var d := 30.0
+	while d <= 3000.0:
+		var x: float = th[0] + sgn * af.ux * d
+		var y: float = th[1] + sgn * af.uy * d
+		if elev + 10.0 + d * tan(deg_to_rad(deg)) < world.obstacle_top(x, y, af.width * 0.5 + 12.0):
+			return false
+		d += 30.0
+	return true
+
+
+## Which of the runway ends to come in on, given how far each final fix is from the aircraft and whether each end's
+## final is clear: the nearer of the clear ends, or the nearer of both when neither (or both) is.
+static func _choose_end(dists: Array, clear: Array) -> int:
+	var best := -1
+	for end in dists.size():
+		if clear[end] and (best < 0 or dists[end] < dists[best]):
+			best = end
+	if best >= 0:
+		return best
+	return 0 if dists[0] <= dists[1] else 1
+
+
 ## A legal leg to `af`: a join on the extended centreline of the runway end it comes at, then down a 3-degree
 ## path to a final fix and along the runway at 30 m. [x, y, alt_m] each (the first altitude is set by the caller
-## to the cruise altitude). Which end: whichever puts the join nearer the aircraft, so it never overflies the field
-## to turn back onto it. Close in (less than the join's distance), it goes straight to the final fix.
+## to the cruise altitude). Which end: the nearer one whose final is clear of terrain and trees (approach_end_clear),
+## so a one-way strip is approached from its open end; otherwise whichever puts the join nearer the aircraft, so it
+## never overflies the field to turn back onto it. Close in (less than the join's distance), it goes straight to
+## the final fix.
 func _approach_route(af: Airfield) -> Array:
 	var elev := world.airfield_elev(af)
-	var best: Array = []
-	var best_d := INF
+	var ends: Array = []
+	var dists: Array = []
+	var clear: Array = []
 	for end in [0, 1]:
 		var th: Array = af.threshold(end)
 		var sgn := -1.0 if end == 0 else 1.0  ## the way out along the extended centreline from this threshold
 		var fix := [th[0] + sgn * af.ux * APPROACH_FINAL_M, th[1] + sgn * af.uy * APPROACH_FINAL_M]
-		var d := PyMath.hypot(fix[0] - state.x, fix[1] - state.y)
-		if d < best_d:
-			best_d = d
-			best = [th, sgn, fix]
+		ends.append([th, sgn, fix])
+		dists.append(PyMath.hypot(fix[0] - state.x, fix[1] - state.y))
+		clear.append(approach_end_clear(af, end))
+	var best: Array = ends[_choose_end(dists, clear)]
 	var th2: Array = best[0]
 	var sg: float = best[1]
 	var fix2: Array = best[2]
