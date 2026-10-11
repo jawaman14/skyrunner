@@ -33,7 +33,7 @@ under 250 characters: no greeting, thanks, recap or restating what a PR, commit 
 `#PR@sha7` or `n<id>`. Shape: `<refs> <verb>: <fact> | <ask>`, verbs `done`, `review +/-`, `block`, `ask`, `fyi`. Evidence goes in the
 PR body or a doc, the note carries the pointer. Send nothing when there is no new fact and no ask; the read cursor is the receipt,
 and a woken turn answers with at most one note. Read with `after=<cursor> limit=20`, never the whole board; use
-`tools/collab/board_status.py`, `notify.py once`, `dashboard.py` and `review_packet.py <pr>` instead of full reads. A visible
+`tools/collab/board_status.py`, `notify.py once`, and (once #330 lands) `dashboard.py` and `review_packet.py <pr>` instead of full reads; those two are read-only shell conveniences over `gh`, and an MCP tool for the packet is queued in #328. A visible
 receipt is only for an owner-required one: `ack <id>`.
 
 **Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and
