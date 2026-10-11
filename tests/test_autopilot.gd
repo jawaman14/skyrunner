@@ -255,3 +255,23 @@ func test_too_close_falls_back_to_a_plain_hold() -> void:
 	check(s.autopilot.waypoints.is_empty(), "nothing close enough is worth routing to")
 	check_near(s.autopilot.hdg_target, h0, 1.0, "just holds the heading it was on")
 	s.dispose()
+
+
+## Engaged just after lift-off (a few metres up, still climbing) the hold used to freeze that height and fly into the ground ahead.
+func test_engaged_just_after_lift_off_climbs_to_clear_the_ground_ahead() -> void:
+	var s := _sess({"features": []})
+	var ar := AutoRunner.new(s, false)
+	var dt := 1.0 / 30
+	while s.time < 300.0:
+		var c = ar.step(dt)
+		if ar.bot != null and ar.bot.phase == "climb":
+			break
+		s.update(dt, null, c)
+	check(not s.state.on_ground and s.state.agl < 30.0, "just airborne: %s m up" % s.state.agl)
+	var r: Array = s.command(Roles.PILOT, "autopilot", {})
+	check(r[0] and s.autopilot.engaged, "engaged")
+	check(s.autopilot.alt_target > s.state.alt + 50.0, "it targets a safe height, not the %s m it is at: %s" % [s.state.alt, s.autopilot.alt_target])
+	_fly(s, 30.0, 1.0)
+	check(s.phase != "crashed" and not s.state.on_ground, "still flying 30 s later")
+	check(s.state.alt > 60.0, "and has climbed: %s" % s.state.alt)
+	s.dispose()

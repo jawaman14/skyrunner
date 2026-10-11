@@ -71,10 +71,26 @@ func known_radar_zones() -> Array:
 	return zones
 
 
+## Engage the plain course-and-altitude hold, but never at an altitude the ground ahead would meet: engaged just after lift-off (a few metres up,
+## still climbing) it used to hold that height and fly into the trees or the next hill. The target is the current altitude or, if higher,
+## the highest ground within AUTOPILOT_HOLD_LOOKAHEAD_M along the heading plus AUTOPILOT_HOLD_CLEARANCE_M, so it climbs to clear.
+func _autopilot_hold() -> void:
+	autopilot.engage(state, fm.controls.elevator)
+	var h := deg_to_rad(state.heading)
+	var peak := world.ground(state.x, state.y)
+	var d := 250.0
+	while d <= AUTOPILOT_HOLD_LOOKAHEAD_M:
+		peak = maxf(peak, world.ground(state.x + cos(h) * d, state.y - sin(h) * d))
+		d += 250.0
+	var safe := peak + AUTOPILOT_HOLD_CLEARANCE_M
+	if safe > autopilot.alt_target:
+		autopilot.alt_target = safe
+
+
 func _autopilot_navigate() -> void:
 	var af := _autopilot_target()
 	if af == null or PyMath.hypot(af.x - state.x, af.y - state.y) < AUTOPILOT_MIN_ROUTE_M:
-		autopilot.engage(state, fm.controls.elevator)
+		_autopilot_hold()
 		say("Autopilot ON: nowhere worth routing to from here - holding %s ft, heading %s" % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
 		return
 	var hot := carrying_hot()

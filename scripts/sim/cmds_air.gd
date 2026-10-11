@@ -116,15 +116,15 @@ static func _cmd_autopilot(role: String, a: Dictionary, session: Session):
 		if Py.truthy(a.get("navigate", false)):
 			session._autopilot_navigate()
 		else:
-			session.autopilot.engage(session.state, session.fm.controls.elevator)
-			session.say("Autopilot ON: holding %s ft, heading %s" % [Py.f(session.state.alt / Session.FT, 0), Py.f(session.state.heading, 0)])
+			session._autopilot_hold()
+			session.say("Autopilot ON: holding %s ft, heading %s" % [Py.f(session.autopilot.alt_target / Session.FT, 0), Py.f(session.state.heading, 0)])
 		return null
 	if not session.autopilot.engaged:
 		if session.state == null or session.state.on_ground:
 			return "Autopilot needs to be airborne."
-		session.autopilot.engage(session.state, session.fm.controls.elevator)
+		session._autopilot_hold()
 		session.autopilot.min_ias_kts = session.spec.approach_kts * 1.05
-		session.say("Autopilot ON: holding %s ft, heading %s. U again to route to an airfield." % [Py.f(session.state.alt / Session.FT, 0), Py.f(session.state.heading, 0)])
+		session.say("Autopilot ON: holding %s ft, heading %s. U again to route to an airfield." % [Py.f(session.autopilot.alt_target / Session.FT, 0), Py.f(session.state.heading, 0)])
 	elif session.autopilot.waypoints.is_empty():
 		session._autopilot_navigate()
 	else:
