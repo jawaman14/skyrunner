@@ -9,6 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(__file__))
 import board_status  # noqa: E402
+import notify  # noqa: E402
 import run_locked  # noqa: E402
 import sync_shared as sync  # noqa: E402
 
@@ -154,6 +155,61 @@ class BoardStatus(unittest.TestCase):
         self.assertIn("nothing waiting", text)
         self.assertIn("never posted", text)
         self.assertIn("30 min left", text)
+
+
+class Notify(unittest.TestCase):
+    def board(self):
+        db = sqlite3.connect(":memory:")
+        db.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT, recipient TEXT, task TEXT, text TEXT, created REAL)")
+        return db
+
+    def add(self, db, author, recipient, text="hello"):
+        db.execute("INSERT INTO notes (author, recipient, task, text, created) VALUES (?,?,?,?,0)", (author, recipient, "", text))
+
+    def test_only_notes_for_the_recipient_after_the_cursor_and_not_its_own(self):
+        db = self.board()
+        self.add(db, "claude-1", "codex", "first")    # 1
+        self.add(db, "claude-1", "claude", "other")   # 2: not for codex
+        self.add(db, "codex-a", "claude", "mine")     # 3: from codex
+        self.add(db, "claude-1", "all", "for everyone " + "x" * 400)  # 4
+        notes = notify.new_notes(db, "codex", 0)
+        self.assertEqual([n[0] for n in notes], [1, 4])
+        self.assertEqual(len(notes[1][2]), notify.PREVIEW, "the preview is bounded")
+        self.assertEqual([n[0] for n in notify.new_notes(db, "codex", 1)], [4])
+        self.assertEqual(notify.new_notes(db, "codex", 4), [])
+
+    def test_once_is_silent_when_nothing_is_new_and_exits_10_when_something_is(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "board.sqlite3")
+            db = sqlite3.connect(path)
+            db.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT, recipient TEXT, task TEXT, text TEXT, created REAL)")
+            db.execute("INSERT INTO notes (author, recipient, task, text, created) VALUES ('claude-1','codex','','old',0)")
+            db.commit()
+            cursor = os.path.join(d, "cursor.txt")
+            args = ["once", "--recipient", "codex", "--db", path, "--cursor-file", cursor]
+            import contextlib
+            import io
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(notify.main(args), 0, "a first run starts at the newest note: the backlog is not announced")
+            self.assertEqual(out.getvalue(), "")
+            db.execute("INSERT INTO notes (author, recipient, task, text, created) VALUES ('claude-1','codex','','new one',0)")
+            db.commit()
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(notify.main(args), 10)
+            self.assertIn("note 2 from claude-1: new one", out.getvalue())
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(notify.main(args), 0, "announced once, then silent")
+            self.assertEqual(out.getvalue(), "")
+            db.close()
+
+    def test_the_toast_command_quotes_its_text_and_the_wake_command_is_split_without_a_shell(self):
+        cmd = notify.toast_command("Board", "it's here")
+        self.assertEqual(cmd[0], "powershell.exe")
+        self.assertIn("it''s here", cmd[-1])
+        self.assertNotIn("shell=True", open(os.path.join(os.path.dirname(__file__), "notify.py"), encoding="utf-8").read().replace("no shell", "").replace("shell=True with", ""))
 
 
 class EndToEnd(unittest.TestCase):
