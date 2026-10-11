@@ -154,6 +154,32 @@ class Client(unittest.TestCase):
         worker._wait_turn(5).close()
 
 
+class Budget(unittest.TestCase):
+    def setUp(self):
+        os.environ["SKYRUNNER_LOCAL_LLM"] = "http://localhost:1"
+        os.environ.pop("SKYRUNNER_LOCAL_MAX_CHARS", None)
+
+    def models(self, context):
+        return Server(models={"models": [{"type": "llm", "key": "m", "loaded_instances": [{"config": {"context_length": context}}]}]})
+
+    def test_the_input_budget_follows_the_loaded_context_and_is_capped(self):
+        self.assertEqual(worker.input_budget(self.models(16384)), 32768)
+        self.assertEqual(worker.input_budget(self.models(262144)), worker.MAX_INPUT_CHARS, "a long prompt is slow, so there is a cap")
+        self.assertGreater(worker.input_budget(self.models(262144)), 100_000, "whole diffs fit")
+
+    def test_an_unknown_context_or_an_unreachable_server_gives_the_small_default_and_the_environment_overrides(self):
+        self.assertEqual(worker.input_budget(Server(models={"models": []})), worker.DEFAULT_INPUT_CHARS)
+
+        def down(req, timeout):
+            raise urllib.error.URLError("unreachable")
+        self.assertEqual(worker.input_budget(down), worker.DEFAULT_INPUT_CHARS)
+        os.environ["SKYRUNNER_LOCAL_MAX_CHARS"] = "5000"
+        self.assertEqual(worker.input_budget(self.models(262144)), 5000)
+        os.environ["SKYRUNNER_LOCAL_MAX_CHARS"] = "99999999"
+        self.assertEqual(worker.input_budget(self.models(262144)), worker.MAX_INPUT_CHARS)
+        os.environ.pop("SKYRUNNER_LOCAL_MAX_CHARS")
+
+
 class Jobs(unittest.TestCase):
     def setUp(self):
         os.environ["SKYRUNNER_LOCAL_LLM"] = "http://localhost:1"

@@ -35,3 +35,7 @@ baton of the base branch win). `draft-replies` as first written (a drafted reply
 real bot findings on #331, one was a restatement, one reasonable but promised work, and one was dangerous (it said "no changes are needed"
 to a valid blocking finding). So the job now writes only a neutral summary (ask, check, empty reply) and never a stance.
 `digest`: accurate on the one log tried. `first-draft`: not tried.
+
+**Input size.** What it sends follows the loaded model's context window (2 characters per token of it), capped at 400,000 characters, because a long
+prompt is slow to read: `SKYRUNNER_LOCAL_MAX_CHARS` overrides it, and an unknown context falls back to 24,000. With bonsai at 262,144 tokens a
+whole 35 KB PR diff (about 11,000 tokens) went in uncut and was digested in 24 s, 15 s of it reading the prompt.

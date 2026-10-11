@@ -39,6 +39,9 @@ import urllib.error
 import urllib.request
 
 MAX_CALLS = 30
+DEFAULT_INPUT_CHARS = 24_000
+MAX_INPUT_CHARS = 400_000
+MAX_REPAIRS = 1
 PAUSE_SECONDS = 1.0
 PROTECTED = (".github/", "project.godot", "tests/fixtures/", "HANDOFF.md", "AGENTS.md", "CLAUDE.md", "docs/COLLABORATION_SCORE.md",
              "scripts/sim/switches.gd", "tools/mcp/", "tools/local_llm/")
@@ -73,6 +76,22 @@ def loaded_models(opener=urllib.request.urlopen):
     """Keys of the language models that are loaded right now. A read-only look; it loads nothing."""
     data = _get_json("/api/v1/models", opener)
     return [m["key"] for m in data.get("models", []) if m.get("type") == "llm" and m.get("loaded_instances")]
+
+
+def input_budget(opener=urllib.request.urlopen):
+    """How many characters of a log or diff to send. It follows the loaded model's context window (2 characters per token of it, leaving
+    room for the answer; about 4 characters is a token, so this fills about half), capped at MAX_INPUT_CHARS because a long prompt is
+    slow to read. SKYRUNNER_LOCAL_MAX_CHARS overrides it. Unknown context: the small default. A read-only look; it loads nothing."""
+    env = os.environ.get("SKYRUNNER_LOCAL_MAX_CHARS", "")
+    if env.isdigit() and int(env) > 0:
+        return min(int(env), MAX_INPUT_CHARS)
+    try:
+        data = _get_json("/api/v1/models", opener)
+        sizes = [i.get("config", {}).get("context_length", 0) for m in data.get("models", []) if m.get("type") == "llm" for i in m.get("loaded_instances", [])]
+    except LocalLLMError:
+        return DEFAULT_INPUT_CHARS
+    sizes = [x for x in sizes if isinstance(x, int) and x > 0]
+    return min(min(sizes) * 2, MAX_INPUT_CHARS) if sizes else DEFAULT_INPUT_CHARS
 
 
 def pick_model(loaded, requested=""):
@@ -213,7 +232,7 @@ def job_digest(args, ask=chat):
         text = gh(["pr", "diff", str(args.pr)])
         what = "pull request diff"
     return ask("Summarise this %s for a developer in at most 8 short lines. Say what failed or changed and where (file and line if shown). "
-               "Quote exact error text. Do not guess.\n\n%s" % (what, clip(text, 24000)), system="You are terse and exact.", max_tokens=400)
+               "Quote exact error text. Do not guess.\n\n%s" % (what, clip(text, input_budget())), system="You are terse and exact.", max_tokens=400)
 
 
 def job_draft_replies(args, ask=chat):
@@ -262,9 +281,17 @@ def job_first_draft(args, ask=chat, run=subprocess.run):
                 raise LocalLLMError("%s is larger than %d bytes: too big for a local first draft" % (p, MAX_FILE_BYTES))
             current[p] = data
     shown = "\n\n".join("FILE: %s\n```\n%s```" % (p, current[p]) for p in current) or "(all files are new)"
-    answer = ask("Task:\n%s\n\nYou may change ONLY these files: %s.\nCurrent contents:\n%s\n\nReturn the COMPLETE new contents of every file you change, each as a line "
+    reference = ""
+    for ctx in [c.strip() for c in (getattr(args, "context", "") or "").split(",") if c.strip()][:3]:
+        full = os.path.join(root, ctx)
+        norm = ctx.replace("\\", "/")
+        if norm.startswith("/") or ".." in norm.split("/") or ":" in norm or not os.path.isfile(full):
+            raise LocalLLMError("%s is not a readable file inside the repository" % ctx)
+        data = open(full, encoding="utf-8", errors="replace").read()
+        reference += "\n\nREFERENCE (read only, do not change) %s:\n```\n%s\n```" % (ctx, clip(data, 20000))
+    answer = ask("Task:\n%s\n\nYou may change ONLY these files: %s.\nCurrent contents:\n%s%s\n\nReturn the COMPLETE new contents of every file you change, each as a line "
                  "`FILE: <path>` followed by one fenced code block. No other prose. Follow the conventions visible in the existing code. "
-                 "Do not invent APIs that are not shown." % (task, ", ".join(paths), shown), system="You write careful, minimal code changes.", max_tokens=14000 if args.think else 6000, think=args.think, timeout=3000)
+                 "Do not invent APIs that are not shown." % (task, ", ".join(paths), shown, reference), system="You write careful, minimal code changes.", max_tokens=14000 if args.think else 6000, think=args.think, timeout=3000)
     files = parse_files(answer, set(paths))
     if not files:
         raise LocalLLMError("the model's answer had no usable FILE blocks; nothing was written")
@@ -281,13 +308,24 @@ def job_first_draft(args, ask=chat, run=subprocess.run):
     if r.returncode != 0:
         raise LocalLLMError("could not create the branch %s (does it exist?): %s" % (branch, (r.stderr or "").strip()[:200]))
     try:
-        for p, content in files.items():
-            os.makedirs(os.path.dirname(os.path.join(work, p)) or work, exist_ok=True)
-            open(os.path.join(work, p), "w", encoding="utf-8", newline="\n").write(content)
-        if args.test:
+        for attempt in range(MAX_REPAIRS + 1):
+            for p, content in files.items():
+                os.makedirs(os.path.dirname(os.path.join(work, p)) or work, exist_ok=True)
+                open(os.path.join(work, p), "w", encoding="utf-8", newline="\n").write(content)
+            if not args.test:
+                break
             t = run(args.test, cwd=work, shell=False, capture_output=True, text=True, encoding="utf-8", errors="replace")
-            if t.returncode != 0:
-                raise LocalLLMError("the test command failed, branch discarded:\n" + clip((t.stdout or "") + (t.stderr or ""), 1500))
+            if t.returncode == 0:
+                break
+            failure = clip((t.stdout or "") + (t.stderr or ""), 1800)
+            if attempt >= MAX_REPAIRS:
+                raise LocalLLMError("the test command still failed after %d repair round(s), branch discarded:\n%s" % (MAX_REPAIRS, failure))
+            # one bounded repair round: the model sees its own files and the failing output, nothing else changes
+            current_now = "\n\n".join("FILE: %s\n```\n%s```" % (p, c) for p, c in files.items())
+            fixed = ask("Your previous change failed its test. Fix it.\n\nTask:\n%s\n\nYour files:\n%s\n\nFailing output:\n%s\n\nReturn the COMPLETE corrected contents "
+                        "of the files as `FILE: <path>` lines each followed by one fenced code block. No other prose.%s" % (task, current_now, failure, reference),
+                        system="You write careful, minimal code changes.", max_tokens=14000 if args.think else 6000, think=args.think, timeout=3000)
+            files = parse_files(fixed, set(paths)) or files
         git("add", *files)
         git("-c", "user.name=local-llm", "-c", "user.email=noreply@localhost", "commit", "-q", "-m",
             "First draft by a local model (%s): %s\n\nUnreviewed. Claude and Codex finish and review it.\n\nCo-Authored-By: %s (local) <noreply@localhost>" %
@@ -323,6 +361,7 @@ def main(argv=None):
     f.add_argument("--slug", required=True)
     f.add_argument("--root", default=".")
     f.add_argument("--test", nargs="*", default=None, help="a command (argv list) run in the new branch; failure discards it")
+    f.add_argument("--context", default="", help="up to 3 read-only reference files, comma separated (shown to the model, never changed)")
     f.add_argument("--think", action="store_true", help="turn reasoning on (slow: use for a hard change)")
     f.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
