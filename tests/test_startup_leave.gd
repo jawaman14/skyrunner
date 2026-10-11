@@ -1,6 +1,7 @@
 extends TestCase
-## Leaving a hosted game through Main (#97): reloading re-hosts with one set of services, going back to the lobby
-## leaves none, and joining another game from the multiplayer menu hands the table over without host services.
+## Leaving a hosted game through Main (#97): going back to the lobby leaves no services, and joining another game
+## from the multiplayer menu hands the table over without host services and reaches the other table's room.
+## (A reload cannot start from a hosted game: the pause menu does not offer "Load last save" while hosting.)
 const Main = preload("res://scripts/main.gd")
 
 class Entry extends Main:
@@ -66,36 +67,6 @@ func _no_services(why: String) -> void:
 	check_eq(_count(NetClient), 0, why + ": no client link")
 	check_eq(_count(PilotApp), 0, why + ": no game")
 
-func test_reload_from_a_hosted_game_rehosts_with_one_set_of_services() -> void:
-	var pilot := _host_game()
-	var old := _child(HostServer) as HostServer
-	check(pilot != null and old != null)
-	if pilot == null or old == null: return
-	var first_session := pilot.s
-	var old_beacon := _child(LanDiscovery.Announcer, old)
-	check(old_beacon != null, "the first game advertises")
-	pilot.leave.emit("load")
-	check(old.is_queued_for_deletion(), "the first server is released")
-	check(old.get_parent() == null, "and no longer part of the table")
-	check_eq(_entry.args["new"], false, "a reload is never a fresh game")
-	var fresh := _child(PilotApp) as PilotApp
-	check(fresh != null and fresh != pilot, "a new game opens")
-	if fresh == null: return
-	_sessions.append(fresh.s)
-	check(fresh.s != first_session, "on a new session")
-	var server := _child(HostServer) as HostServer
-	check(server != null and server != old, "hosted by a new server")
-	if server == null: return
-	check_eq(_count(HostServer), 1, "one authoritative server")
-	check_eq(_count(VoiceChat), 1, "one host voice pipeline")
-	check_eq(_count(LanDiscovery.Announcer, server), 1, "one beacon on the new server")
-	check(_child(LanDiscovery.Announcer, server) != old_beacon, "not the old beacon")
-	check(server.port > 0, "listening on an assigned port")
-	check_eq(server.sess, fresh.s, "serving the reloaded session")
-	check_eq(fresh.server, server)
-	var voice := _child(VoiceChat) as VoiceChat
-	if voice != null: check_eq(voice.server, server)
-
 func test_leaving_a_hosted_game_for_the_lobby_leaves_no_services() -> void:
 	var pilot := _host_game()
 	var server := _child(HostServer) as HostServer
@@ -140,3 +111,19 @@ func test_joining_from_a_hosted_game_hands_the_table_over() -> void:
 	check_eq(_count(RoomScreen), 1, "waiting in that table's room")
 	check_eq(_entry.args["connect"], "other-table@127.0.0.1:%d" % guest_game.port)
 	check_eq(_entry.args["new"], false)
+	# the handoff only worked if the other table accepted us: wait for the welcome and the room roster
+	var link := _child(NetClient) as NetClient
+	if link == null: return
+	check(_pump(guest_game, link, func(): return link.welcome != null and guest_game.room.players.size() == 2),
+		"the other table welcomed the guest into its room")
+	check_eq(link.error, null, "with the address's password accepted")
+	check(Py.any(guest_game.room.players.values(), func(p): return p.name == "Leave host"), "under the name the player had")
+
+func _pump(server: HostServer, link: NetClient, done: Callable) -> bool:
+	var deadline := Time.get_ticks_msec() + 5000
+	while Time.get_ticks_msec() < deadline:
+		server._process(0.0)
+		if link != null: link.poll()
+		if done.call(): return true
+		OS.delay_msec(5)
+	return false
