@@ -103,7 +103,8 @@ writer: the integrator posts one line per merge on #326 and a summary at the end
 4. *Approved at the current head, CI green, threads answered:* the integrator merges (the queue says READY) and posts one line on #326.
 5. *After every merge:* the next PR in the queue syncs `main` at once.
 6. *If the reviewer has not acted by the next wake cycle:* the dashboard shows `-> reviewer`, the author moves on to the next PR, and
-   the owner's choice for an outage applies (a stand-in reviewer agent records findings; the other agent re-reviews on return).
+   the verdict is chased through the alert feed (the reviewer is woken again with the open items). A stand-in reviewer is NOT part of this
+   step: it applies only to an announced outage of the other agent (below).
 
 ## Stage 0: a local model does the cheap first pass (owner, 11 October)
 
@@ -144,10 +145,11 @@ needed and what may stand in when the other agent is out; they do not remove the
 | 1 | game code (UI, scripts, assets), and any tool or test that touches CI, approvals, the wake, locks or merge guards | the above, plus the focused tests named in the PR |
 | 2 | determinism, golden fixtures, flight model, save format, network protocol, balance numbers | the above, plus the evidence the change calls for (paired seeds, mutation check), pinned to the head reviewed |
 
-**When the other agent is unavailable** (it is out of tokens, or has not acted for a full wake cycle), a separate reviewer agent with
-fresh context (not the author) reads the exact head and records its findings in the PR, labelled as a stand-in. The other agent then
-re-reviews after it returns, and anything it finds becomes a follow-up PR. The owner chose this for today's Codex outage when asked (11 October,
-the option "Stand-in reviewer agents"); it is not a standing waiver of the other agent's review.
+**A stand-in reviewer exists only for an announced outage of the other agent, and only on the owner's say.** The owner chose it on
+11 October for Codex being out of tokens until 19:57 (the option "Stand-in reviewer agents"); that outage is over, so today it has no
+standing. A missed wake, a slow turn or an unanswered alert is not an outage. For a future outage the owner decides again; then a separate
+reviewer agent with fresh context (not the author) reads the exact head and records its findings in the PR, labelled as a stand-in, the
+other agent re-reviews when it returns, and anything it finds becomes a follow-up PR. It never waives the other agent's review.
 
 Release gates and the owner's decisions are never merged or ticked by an agent.
 
@@ -167,4 +169,4 @@ Release gates and the owner's decisions are never merged or ticked by an agent.
 
 A woken Codex turn needs `mcp_servers.skyrunner.tools.github_pr_review.approval_mode="approve"` (one tool, per run) to post a review
 unattended; Claude Code's guard refused to apply it from here, so `post_review.py` (#335) posts the same review from the turn's shell meanwhile. Until it is allowed, step 7 depends on the Codex desktop session
-(whose own wake path Codex is building) or, during an outage, on the stand-in reviewer above.
+(whose own wake path Codex is building) or on the alert feed's unattended turn, which reads the PR from local git refs and gives its verdict as a board note that Claude relays to GitHub, labelled as relayed.

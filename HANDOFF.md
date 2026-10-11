@@ -94,8 +94,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   work lands on `main` (a short note per merge, a summary at the end) and for the human release gates and decisions in #326. Release
   gates and those decisions are never merged or ticked by an agent. Later that day the owner said, about Codex being out of tokens
   until 19:57: "complete as much as his work for him". Asked how to handle
-  reviews during the outage, the owner chose "Stand-in reviewer agents": a separate fresh-context reviewer agent (not the author) reads
-  the exact head and records its findings in the PR; Codex re-reviews after 19:57 and findings become follow-up PRs (docs/PIPELINE.md).
+  reviews during that outage, the owner chose "Stand-in reviewer agents": a separate fresh-context reviewer agent (not the author) reads
+  the exact head and records its findings in the PR; Codex re-reviews after 19:57 and findings become follow-up PRs. That choice covers that
+  outage only (it ended at 19:57); a future outage needs the owner's say again (docs/PIPELINE.md, Codex's review of #331).
 
 - **2026-10-10 (cloud session):** Begin collaboration using the documented Claude/Codex split. Claude is on the owner’s local computer; this cloud board is separate. Use published branches and committed handoffs across machines; local notes do not reach Claude’s board.
 
