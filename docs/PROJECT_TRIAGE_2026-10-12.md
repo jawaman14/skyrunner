@@ -4,6 +4,8 @@ Written for the owner's goal ("close things out properly or tick things partiall
 needed or in question, the most problematic, and what needs a rehaul from the early parts of the game that is bloat"). It covers all 5 open
 issues, the 98 closed ones, the 28 open PRs, the 47 squash-merged PRs on `main`, the repository's weight, and the biggest systems.
 
+**Two issues are cited throughout:** #326 is the owner's single issue (human release gates, decisions, and the 52 design epics) and #345 is the owner's playtest feedback of 12 October, as a checklist.
+
 **How to read it.** Every row says how it is known: *merged* (a PR on `main`, number given), *tested* (a test file exists and passes in the suite), *code
 exists* (present in `scripts/` but not checked beyond that), or *unverified* (a judgement from titles and size, to be confirmed). Apart from #337 (a duplicate draft, closed on 12 October) nothing here is
 closed or ticked by this document: closing and ticking need the owner's say for human gates and decisions (#326), and are proposed, not done, for
@@ -22,7 +24,7 @@ means a merged PR or a passing test, and is stated per row.
 | Shared multiplayer seat selection and one seat view (#96, #285) | merged #285; startup tests #306-#309, #312 | #97 (entry-path consolidation) is only partly done, see section 4. |
 | Network hardening: TCP framing, dedup, stale remote controls, host beacon/voice lifecycle | merged #259, #260, #282, #290 | |
 | Smoke tests for previously unverified systems (#94) | merged #288 and the 7 Oct slices | |
-| Employed opening: new stories start as an employed pilot, earn your own plane | merged #296 | The owner says this pace is right; do not change it. |
+| Employed opening: new stories start as an employed pilot, earn your own plane | merged #296 | The owner says the pace of this opening (how soon a new pilot earns their own aircraft) is right; do not change it. |
 | Incoming Family calls and the phone as a handset with apps (#83) | merged #225, #314 | A cockpit-phone pass remains in Codex's queue. |
 | Autopilot approach never picks a blocked runway end (#80, #82 part) | merged #318, tests pin it | Mid-flight circling in #80 was never re-verified. |
 | Tutorial skip/off are clickable (#324) | merged | Chips are non-focusable so Tab and Enter reach the game. |
