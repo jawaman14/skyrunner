@@ -25,6 +25,16 @@ class ResolveText(unittest.TestCase):
         self.assertEqual(out, "# Handoff\n## The baton\n| a | b |\n\n## Log\n\n- theirs\n\n- ours\n\n- older\n")
         self.assertFalse(sync.MARKER.search(out))
 
+    def test_baton_theirs_takes_the_base_branchs_baton_and_still_keeps_both_log_entries(self):
+        nl = chr(10)
+        head = nl.join(["# Handoff", "## The baton", "| a | b |", ""])
+        text = head + conflict("| holder | claude |" + nl, "| holder | codex |" + nl) + nl.join(["", "## Log", "", ""]) + conflict("- ours" + nl, "- theirs" + nl)
+        out = sync.keep_both_in_log(text, baton="theirs")
+        self.assertIn("| holder | codex |", out)
+        self.assertNotIn("| holder | claude |", out)
+        self.assertLess(out.index("- theirs"), out.index("- ours"))
+        self.assertFalse(sync.MARKER.search(out))
+
     def test_a_conflict_in_the_baton_is_left_for_a_person(self):
         text = "# Handoff\n" + conflict("| holder | claude |\n", "| holder | codex |\n") + "\n## Log\n\n- entry\n"
         with self.assertRaises(sync.Unresolved):

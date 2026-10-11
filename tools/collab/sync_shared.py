@@ -38,15 +38,18 @@ def _newline(text):
     return "\r\n" if "\r\n" in text else "\n"
 
 
-def keep_both_in_log(text):
+def keep_both_in_log(text, baton="stop"):
     """HANDOFF.md: both sides of a conflict below '## Log' (theirs first, then ours); a conflict above it is the
-    baton, which is overwritten, not appended, so it is left for a person."""
+    baton, which is overwritten, not appended, so by default it is left for a person. With baton="theirs" the base
+    branch's baton wins (right for a PR that is not the current holder: the baton there is out of date)."""
     nl = _newline(text)
     log_at = text.find("## Log")
 
     def sub(m):
         if log_at < 0 or m.start() < log_at:
-            raise Unresolved("a conflict in HANDOFF.md above the Log (the baton): merge it by hand")
+            if baton == "theirs":
+                return m.group(2)
+            raise Unresolved("a conflict in HANDOFF.md above the Log (the baton): merge it by hand, or pass --baton theirs")
         ours, theirs = m.group(1), m.group(2)
         return theirs.rstrip("\r\n") + nl + nl + ours
 
@@ -125,10 +128,10 @@ def _write(path, text):
         fh.write(text)
 
 
-def resolve_tree(root):
+def resolve_tree(root, baton="stop"):
     """Resolve the handled files in a working tree that is mid-merge. Returns the files it changed."""
     changed = []
-    for rel, fn in (("HANDOFF.md", keep_both_in_log), ("docs/PROJECT_STATUS.md", resolve_status),
+    for rel, fn in (("HANDOFF.md", lambda t: keep_both_in_log(t, baton)), ("docs/PROJECT_STATUS.md", resolve_status),
                     ("tests/test_lanes.json", union_lanes)):
         path = os.path.join(root, rel)
         if not os.path.exists(path):
@@ -169,6 +172,8 @@ def main(argv=None):
     ap.add_argument("--root", default=".", help="the worktree to merge into (default: here)")
     ap.add_argument("--base", default="origin/main")
     ap.add_argument("--no-fetch", action="store_true")
+    ap.add_argument("--baton", choices=["stop", "theirs"], default="stop",
+                    help="a conflict in the HANDOFF baton: stop for a person (default) or take the base branch's")
     ap.add_argument("--commit", action="store_true", help="commit the merge when it resolves cleanly")
     ap.add_argument("--message", default="", help="merge commit message (default: 'Merge <base> into <branch>')")
     args = ap.parse_args(argv)
@@ -192,7 +197,7 @@ def main(argv=None):
             print("  " + f, file=sys.stderr)
         return 2
     try:
-        changed = resolve_tree(root)
+        changed = resolve_tree(root, args.baton)
     except (Unresolved, ValueError) as e:
         print("NOT RESOLVED, merge left in progress: %s" % e, file=sys.stderr)
         return 3
