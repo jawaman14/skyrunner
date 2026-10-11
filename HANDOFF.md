@@ -89,6 +89,13 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Owner decisions
 
+- **2026-10-11 (afternoon), standing merge rule (owner):** merge readiness is the agents' job. In the owner's words: "you dont need
+  to discuss with me what needs to be merged or not that is you and codex job to see if its ready too". The owner is involved when
+  work lands on `main` (a short note per merge, a summary at the end) and for the human release gates and decisions in #326. Release
+  gates and those decisions are never merged or ticked by an agent. Later that day the owner said, about Codex being out of tokens
+  until 19:57: "complete as much as his work for him". Claude reads that as including reviews and proposes a stand-in reviewer for the
+  outage (docs/PIPELINE.md); that reading is Claude's, not a quoted owner rule.
+
 - **2026-10-10 (cloud session):** Begin collaboration using the documented Claude/Codex split. Claude is on the owner’s local computer; this cloud board is separate. Use published branches and committed handoffs across machines; local notes do not reach Claude’s board.
 
 - **2026-10-11 (later still):** All work on Skyrunner goes through its MCP (board, Godot jobs, GitHub). Claude, as
