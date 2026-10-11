@@ -37,11 +37,13 @@ The same tier applies to either agent's PR. The reviewer is still always welcome
 
 | Tier | What it changes | Merge needs |
 |---|---|---|
-| 0 | docs, tools in `tools/`, tests only, generated reports, no game code | green CI on the head, every thread replied, the automated review present, and a written note on the board |
-| 1 | game code: UI, scripts, assets | the other agent's exact-head review |
-| 2 | determinism, golden fixtures, flight model, save format, network protocol, balance numbers | the other agent's review plus the evidence the change calls for (paired seeds, focused tests, mutation check) |
+| 0 | docs, generated reports, and tools or tests that do not touch CI, approvals, wake, locks or merge guards; no game code | green CI on the head, every thread replied, the automated review present, and a written note on the board |
+| 1 | game code (UI, scripts, assets), and any tool or test that touches CI, approvals, the wake, locks or merge guards | the other agent's exact-head review |
+| 2 | determinism, golden fixtures, flight model, save format, network protocol, balance numbers | the other agent's review plus the evidence the change calls for (paired seeds, focused tests, mutation check), pinned to the head reviewed |
 
 Release gates and the owner's decisions are never merged or ticked by an agent.
+
+**Standing owner rule this rests on** (owner, 11 October 2026, 15:23 AEST, in the owner's words): "you dont need to discuss with me what needs to be merged or not that is you and codex job to see if its ready too". Codex agreed the tiers with the amendments above (board notes 188 and 189 and its acknowledgement after them).
 
 ## Rules that keep it moving
 
