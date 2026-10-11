@@ -61,9 +61,9 @@ wake tool may spend Codex quota unattended. New from the 12 October playtest (#3
 3. **Stale branch stack #244-#276.** 11 PRs, 38-79 commits behind, 156 files in #276; ultrareview refused it (13,597 lines). 22,000 of the lines are 34 generated
    `sim-results/*.json` files. Needs: port onto current `main` bottom-up, or retire as superseded, per the owner. #247's ultrareview found a routing-cost
    doubling with no switch, floating walls on slopes, and a missing BALANCE entry (comment 6112000822).
-4. **Autopilot.** The most reported player-facing defect: take-off engage flew into terrain, the AI hand-over (F3) did nothing in flight, there was no
-   direct turn back and no waypoint, and 14 of 112 airfield-to-airfield legs crashed. The F3 fix is merged (#344); the rest is **proposed in #346, still under review (Codex asked for a fix that is now pushed)**, so it is not fixed until that merges.
-   Sweep evidence on #346's branch: 110 of 112 legs arrive (the other 2 time out over 95 km of sea), 119 of 120 random mid-flight cases are safe.
+4. **Autopilot.** The most reported player-facing defect. All of it is now merged: the F3 AI hand-over (#344) and, in #346 (`464cda4`), the take-off hold, the direct turn back, U flying to the waypoint set on the chart,
+   terrain look-ahead with a turn toward lower ground, and low-speed power. Evidence: 110 of 112 airfield-to-airfield legs arrive (before: 97, with 14 crashes; the other 2 time out over 95 km of sea) and 119 of 120 random mid-flight
+   cases are safe (before: 111). Still open from the owner's list (#345): the autopilot mentioned only when kicking bales. Sweeps: `tools/autopilot_sweep.gd`, `tools/autopilot_midflight_sweep.gd`.
 5. **Startup architecture (#97).** Entry paths were consolidated by tests (#306-#312) but the code is still split between `main.gd`, `host_desk.gd` and the
    dedicated server; this is where `_mp` lifetime bugs came from.
 6. **Test time.** 1,114 tests take about 13 minutes under a machine-wide Godot lock; every worktree re-imports for 5 more. This throttles every agent.
@@ -85,8 +85,8 @@ wake tool may spend Codex quota unattended. New from the 12 October playtest (#3
 
 Done on 12 October: #337 closed as superseded by #338. Checked and kept open: #304 (still-valid docs after #296, awaiting review) and #339 (a discussion draft Codex has not answered; its useful parts are in `docs/PIPELINE.md`). #320 not yet checked against `docs/PIPELINE.md`.
 
-* Tick in #327/#328: nothing is *fully* done there; partials: #80 (end choice fixed, circling unverified), #82 (intercept restored #295; turn-back and waypoint are proposed in
-  open #346, not merged), #97 (entry tests merged, consolidation not), #83 (calls merged, cockpit pass open), #90 (CSV churn #310 done, CI hygiene open), #98/#88 waiting on the owner's strips decision.
+* Tick in #327/#328: nothing is *fully* done there; partials: #80 (end choice fixed, circling unverified), #82 (intercept restored #295; turn-back, waypoint and terrain look-ahead merged in
+  #346, so #82 can be ticked), #97 (entry tests merged, consolidation not), #83 (calls merged, cockpit pass open), #90 (CSV churn #310 done, CI hygiene open), #98/#88 waiting on the owner's strips decision.
 * Close as done with the evidence above: #95, #93, #94, #96, #101, #176, #177 (all already closed "not planned"; reopen is not needed, add a "done by #n" comment instead).
 * Move the 16 dated docs to `docs/archive/` (one PR).
 * Open issues for the new findings: #345 (playtest), autopilot sweep results, the #247 ultrareview items.
@@ -168,3 +168,9 @@ Questions for the owner:
 8. Is the beacon always owned by the server node, including the dedicated server?
 9. Is the lobby's "open remote seats" box one flow with the waiting room, or two?
 10. Where should save selection live? Four paths exist (`campaign.json`, `story.json`, `save.json`, `user://dedicated.json`).
+
+### Answers recorded later on 12 October
+* Start-up architecture, question 1: **one shared host service** (server, beacon, voice and session loop) used by the pilot app, the host desk and the dedicated server. Questions 2-10 are still open.
+* Landing the three server-repository PRs (skyrunner-mcp 6, 7, 8) with `gh` once: no answer given, so `gh` is **not** used; they stay open until the owner says, or until the running tools can reach that repository.
+* The checkbox ticks for #80, #83, #87 (and #82 now that #346 is merged) are recorded as comments on #328 and #329; editing the issue bodies needs skyrunner-mcp PR 8 (`replace_body`).
+
