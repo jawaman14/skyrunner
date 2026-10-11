@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import board_status  # noqa: E402
 import notify  # noqa: E402
 import post_review  # noqa: E402
+import relay_reviews  # noqa: E402
 import run_locked  # noqa: E402
 import sync_shared as sync  # noqa: E402
 
@@ -284,6 +285,80 @@ class PostReview(unittest.TestCase):
         code = post_review.main(["--pr", "9", "--head", self.HEAD, "--verdict", "approve", "--agent", "codex", "--body", "ok"], run=fake)
         self.assertEqual(code, 2)
         self.assertEqual(len(calls), 1, "only the read happened")
+
+
+class RelayReviews(unittest.TestCase):
+    HEAD = "c" * 40
+
+    def info(self, branch="claude/x", head=None, state="OPEN"):
+        return {"headRefOid": head or self.HEAD, "headRefName": branch, "state": state}
+
+    def test_only_the_exact_form_parses(self):
+        ok = relay_reviews.parse("REVIEW #331@9f3e0d1 approve: read all changes")
+        self.assertEqual((ok["pr"], ok["sha"], ok["verdict"], ok["text"]), (331, "9f3e0d1", "approve", "read all changes"))
+        for bad in ("review #1@9f3e0d1 approve: x", "REVIEW #1@zzzzzzz approve: x", "REVIEW #1@9f3e0d approve: x", "REVIEW #1@9f3e0d1 merge: x",
+                    "REVIEW #1@9f3e0d1 approve:", "REVIEW 1@9f3e0d1 approve: x", "please REVIEW #1@9f3e0d1 approve: x", "REVIEW #1@9f3e0d1 approve: " + "x" * 3001):
+            self.assertIsNone(relay_reviews.parse(bad), bad)
+
+    def test_a_current_head_review_is_relayed_verbatim_with_a_label_and_no_added_finding(self):
+        review, why = relay_reviews.decide(212, "REVIEW #7@cccccccc changes: the lock races", self.info())
+        self.assertIsNone(why)
+        self.assertEqual((review["pr"], review["head"], review["verdict"]), (7, self.HEAD, "changes"))
+        self.assertIn("RELAYED by Claude from Codex's board note #212", review["body"])
+        self.assertIn("> the lock races", review["body"])
+        self.assertIn("no finding of its own", review["body"])
+
+    def test_stale_closed_own_and_malformed_reviews_are_refused(self):
+        stale, why = relay_reviews.decide(1, "REVIEW #7@aaaaaaa approve: ok", self.info())
+        self.assertIn("stale", why)
+        self.assertIn("not open", relay_reviews.decide(1, "REVIEW #7@ccccccc approve: ok", self.info(state="MERGED"))[1])
+        self.assertIn("own work", relay_reviews.decide(1, "REVIEW #7@ccccccc approve: ok", self.info(branch="codex/x"))[1])
+        self.assertIn("form", relay_reviews.decide(1, "looks fine", self.info())[1])
+
+    def board(self):
+        db = sqlite3.connect(":memory:")
+        db.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY, author TEXT, recipient TEXT, text TEXT, created REAL)")
+        return db
+
+    def add(self, db, author, recipient, text):
+        db.execute("INSERT INTO notes (author, recipient, text, created) VALUES (?,?,?,0)", (author, recipient, text))
+
+    def test_it_relays_new_codex_notes_once_posts_only_to_the_named_pr_and_skips_history_and_other_authors(self):
+        db = self.board()
+        self.add(db, "codex-old", "claude", "REVIEW #7@ccccccc approve: old history")
+        state = os.path.join(tempfile.mkdtemp(), "state.json")
+        calls = []
+
+        def fake(cmd, **kw):
+            calls.append(cmd)
+            out = json.dumps(self.info()) if cmd[1] == "pr" else "https://github.com/o/r/pull/7#pullrequestreview-9"
+            return subprocess.CompletedProcess(cmd, 0, out, "")
+        lines = []
+        self.assertEqual(relay_reviews.run_once(db, state, run=fake, out=lines.append), [], "history at the first run is never relayed")
+        self.add(db, "claude-x", "claude", "REVIEW #7@ccccccc approve: not from codex")
+        self.add(db, "codex-new", "claude", "REVIEW #7@ccccccc approve: fine")
+        self.add(db, "codex-new", "codex", "REVIEW #7@ccccccc approve: not addressed to claude")
+        self.assertEqual(relay_reviews.run_once(db, state, run=fake, out=lines.append), [3])
+        posts = [c for c in calls if c[1] == "api"]
+        self.assertEqual(len(posts), 1)
+        self.assertIn("repos/{owner}/{repo}/pulls/7/reviews", posts[0][2])
+        self.assertTrue(any(x.startswith("body=<!-- skyrunner-review agent=codex verdict=approve head=" + self.HEAD) for x in posts[0]))
+        self.assertEqual(relay_reviews.run_once(db, state, run=fake, out=lines.append), [], "a note is relayed once")
+
+    def test_dry_run_posts_nothing_and_a_malformed_note_is_reported_not_relayed(self):
+        db = self.board()
+        state = os.path.join(tempfile.mkdtemp(), "state.json")
+        relay_reviews.run_once(db, state, run=lambda *a, **k: None, out=lambda x: None)
+        self.add(db, "codex-new", "claude", "REVIEW #7@ccccccc approve: fine")
+        self.add(db, "codex-new", "claude", "REVIEW but not in form")
+        lines = []
+
+        def fake(cmd, **kw):
+            assert cmd[1] != "api", "a dry run must not post"
+            return subprocess.CompletedProcess(cmd, 0, json.dumps(self.info()), "")
+        relay_reviews.run_once(db, state, dry_run=True, run=fake, out=lines.append)
+        self.assertTrue(any("dry run" in x for x in lines))
+        self.assertTrue(any("not in the REVIEW form" in x for x in lines))
 
 
 class EndToEnd(unittest.TestCase):
