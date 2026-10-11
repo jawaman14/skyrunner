@@ -1,5 +1,7 @@
 .godot/
 *.import
+# docs/*.csv are plain data: these two keep sidecars stop Godot importing them as translation tables
+!docs/*.csv.import
 export/
 .tools/
 .build/
