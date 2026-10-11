@@ -124,6 +124,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+
+- **2026-10-11 — Claude, #318 review fix (P1):** `approach_end_clear` checked a 4.5-degree path on bush and shady strips, but the autopilot's final flies a little under 3 degrees from 30 m at the threshold, so an obstacle between the two lines read "clear" and the selector could pick that end. The check now uses the lower of the audit line and `Session.route_height_at(d)`, the same height `_approach_route` builds its final fix from (one definition). The rule is a static `way_in_clear(elev, deg, top_at)` so it is tested without a map. New test pins it; mutation check (ignore the route line) fails it; the other 14 + 10 + 5 autopilot tests pass. Not run: the full suite (CI). The QRY/PNR end-0 results are unchanged.
 - **2026-10-11 — Claude, autopilot approach end (#80/#82, Tier A):** On `claude/autopilot-approach-end` from main
   `e01feb4`. A diagnostic (QRY, PNR, EGL, HAR from 8 bearings x 2 distances x 3 headings) showed `Session._approach_route`
   picks the runway end by nearest final fix alone, so from every entry on the end-0 side of QRY and PNR it flew the

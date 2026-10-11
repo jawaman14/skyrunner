@@ -49,6 +49,25 @@ func _nearest_end(af: Airfield, x: float, y: float) -> int:
 	return best
 
 
+## The clearance check uses the height the route actually flies, not only the audit's steeper line (a bot review of #318): the
+## final is a straight line from 30 m at the threshold to the fix, a little under 3 degrees, so on a bush strip, where the audit
+## line is 4.5 degrees, the route sits lower and an obstacle between the two must block the end.
+func test_the_check_uses_the_altitude_the_route_flies() -> void:
+	check_near(Session.route_height_at(0.0), 30.0, 0.001)
+	check_near(Session.route_height_at(Session.APPROACH_FINAL_M), Session.APPROACH_FINAL_M * tan(deg_to_rad(3.0)) + 15.0, 0.001)
+	var route := Session.route_height_at(1200.0)
+	var audit := 10.0 + 1200.0 * tan(deg_to_rad(4.5))
+	check(route < audit - 5.0, "the route (%.0f m) is below the bush audit line (%.0f m) at 1.2 km" % [route, audit])
+	var wall := (route + audit) / 2.0
+	var flat := func(d: float) -> float: return 0.0
+	var wall_at_1200 := func(d: float) -> float: return wall if absf(d - 1200.0) < 1.0 else 0.0
+	check(Session.way_in_clear(100.0, 4.5, flat), "open ground is clear")
+	check(not Session.way_in_clear(0.0, 4.5, wall_at_1200), "a %.0f m wall at 1.2 km, under the audit line but above the route, blocks it" % wall)
+	check(Session.way_in_clear(0.0, 3.0, func(d: float) -> float: return 20.0 if absf(d - 1200.0) < 1.0 else 0.0), "a 20 m obstacle at 1.2 km is under both lines")
+	# the same obstacle on the classic 3-degree strip: the audit line (10 + 63 m) is above the route there, so the route is the lower line too
+	check(not Session.way_in_clear(0.0, 3.0, func(d: float) -> float: return route + 3.0 if absf(d - 1200.0) < 1.0 else 0.0))
+
+
 ## On the classic terrain tools/strip_audit.gd and docs/STRIPS.md describe. (On the natural pass HAR end 0 is also blocked:
 ## its hill rises about 22 m higher 1.2 km out, which puts the 3-degree path 13 m into it; that is a terrain finding, so it is
 ## not pinned here.)

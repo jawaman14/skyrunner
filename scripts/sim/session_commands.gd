@@ -103,8 +103,17 @@ func _autopilot_navigate() -> void:
 		"squawking" if transponder else "transponder off", Py.f((peak + margin) / FT, 0)])
 
 
-## True if a 3-degree path (4.5 for a bush or shady strip) to runway end `end` clears the terrain and trees on the
-## way in: 10 m over the threshold, checked out to 3 km as tools/strip_audit.gd does. A false end is one of the
+## The height above the field that the autopilot's final actually flies at `d` metres out from the threshold: a straight
+## line from 30 m at the threshold to the final fix's altitude (3 degrees over APPROACH_FINAL_M, plus 15 m), which is a
+## little under 3 degrees. This is the route `_approach_route` builds, so the clearance check below uses the same numbers.
+static func route_height_at(d: float) -> float:
+	var at_fix := APPROACH_FINAL_M * tan(deg_to_rad(3.0)) + 15.0
+	return 30.0 + (at_fix - 30.0) * d / APPROACH_FINAL_M
+
+
+## True if the way in to runway end `end` clears the terrain and trees: both the 3-degree path (4.5 for a bush or shady
+## strip) 10 m over the threshold that tools/strip_audit.gd checks, out to 3 km, and the final the autopilot actually
+## flies (route_height_at), whichever is lower, since the route is what meets the obstacle. A false end is one of the
 ## "one-way strips" of docs/STRIPS.md (QRY and PNR end 0), where a route that flew the final would meet the pit wall
 ## or the tree line.
 func approach_end_clear(af: Airfield, end: int) -> bool:
@@ -112,11 +121,19 @@ func approach_end_clear(af: Airfield, end: int) -> bool:
 	var th: Array = af.threshold(end)
 	var sgn := 1.0 if end == 1 else -1.0  ## the way out along the extended centreline from this threshold
 	var elev := world.airfield_elev(af)
+	var half := af.width * 0.5 + 12.0
+	return way_in_clear(elev, deg, func(d: float) -> float:
+		return world.obstacle_top(th[0] + sgn * af.ux * d, th[1] + sgn * af.uy * d, half))
+
+
+## The rule on its own, so it can be tested without a map: `top_at(d)` is the obstacle height (m) d metres out from the
+## threshold; the way in is clear if, every 30 m out to 3 km, the lower of the audit line (10 m over the threshold at `deg`)
+## and the route's own height is at or above it.
+static func way_in_clear(elev: float, deg: float, top_at: Callable) -> bool:
 	var d := 30.0
 	while d <= 3000.0:
-		var x: float = th[0] + sgn * af.ux * d
-		var y: float = th[1] + sgn * af.uy * d
-		if elev + 10.0 + d * tan(deg_to_rad(deg)) < world.obstacle_top(x, y, af.width * 0.5 + 12.0):
+		var line := minf(10.0 + d * tan(deg_to_rad(deg)), route_height_at(d))
+		if elev + line < float(top_at.call(d)):
 			return false
 		d += 30.0
 	return true
@@ -157,7 +174,7 @@ func _approach_route(af: Airfield) -> Array:
 	var sg: float = best[1]
 	var fix2: Array = best[2]
 	var join := [th2[0] + sg * af.ux * APPROACH_JOIN_M, th2[1] + sg * af.uy * APPROACH_JOIN_M]
-	var final_alt := elev + APPROACH_FINAL_M * tan(deg_to_rad(3.0)) + 15.0
+	var final_alt := elev + route_height_at(APPROACH_FINAL_M)
 	var route: Array = []
 	if PyMath.hypot(join[0] - state.x, join[1] - state.y) > APPROACH_JOIN_M * 0.6:
 		route.append([join[0], join[1], final_alt + 200.0])
