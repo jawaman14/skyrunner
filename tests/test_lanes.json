@@ -16,6 +16,7 @@
     "test_analyst.gd",
     "test_arsenal.gd",
     "test_autopilot.gd",
+    "test_autopilot_approach.gd",
     "test_autopilot_unit.gd",
     "test_beta.gd",
     "test_bots.gd",
