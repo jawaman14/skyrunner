@@ -106,6 +106,7 @@ func test_phone_input_answers_once_and_refresh_preserves_contact_identity() -> v
 	Engine.get_main_loop().root.add_child(_menu)
 	_menu.setup(s)
 	_menu.open()
+	_menu.open_app("contacts")  # the handset opens on its home screen unless a call is already ringing
 	var ids: Array = _menu.rows.map(PhoneMenu._row_id)
 	_menu.list.select(ids.find("contact:family"))
 	s.family.offer("loan")
@@ -227,6 +228,7 @@ func test_pilot_menu_dispatch_can_open_and_leave_guidance_without_calling() -> v
 	_menu = PhoneMenu.new().setup(sess)
 	Engine.get_main_loop().root.add_child(_menu)
 	_menu.open()
+	_menu.open_app("contacts")
 	check(_menu.list.has_focus(), "contacts remain initial task")
 	_menu.key("g")
 	check(_menu.campaign_scroll.visible, "app letter dispatch opens guide")

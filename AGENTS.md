@@ -2,11 +2,55 @@
 
 This is the single rules file. `CLAUDE.md` only imports it, so both agents read the same text.
 
-**Working mode: relay.** The owner runs one AI until its tokens run out, then the other. Start every session with
-[HANDOFF.md](HANDOFF.md) ("Taking over") and keep its baton current in every commit you push. If two sessions
-ever overlap on one checkout, use the MCP board (`skyrunner_collaboration_start`, claims, notes; see
-[tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md)) and separate linked worktrees. Claims coordinate; they
-do not authorize anything.
+**Working mode: simultaneous, Claude Code leads** (owner, 11 October 2026). Both agents work at the same time.
+Claude Code turns the [HANDOFF.md](HANDOFF.md) baton into tasks, keeps Tier A and B (below) and posts at most three
+Tier C tasks at a time to Codex, each with a goal, base SHA, allowed files, test command and done-when. Codex
+implements those in parallel and reviews every Claude PR at its exact head; Claude reviews Codex's. Start every
+session with HANDOFF.md ("Taking over") and the board, and keep the baton current in every commit you push.
+
+**One clone, one board.** The MCP board (`skyrunner_collaboration_start`, claims, notes; see
+[tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md)) is a file in the clone's Git directory, so only linked
+worktrees of the same clone share it. On the owner's machine the canonical clone is
+`%USERPROFILE%\Documents\ChatGPT\skyrunner`: work in your own linked worktree of it (Claude in `~/.claude-worktrees/`,
+Codex in `~/.codex/worktrees/`), never in a second clone or in another agent's worktree. Codex cloud and other
+machines have no board; they use pushed branches and the committed HANDOFF.md.
+
+**Everything through the MCP** (owner, 11 October 2026). Board reads, claims and notes, Godot imports, tests,
+smoke and balance runs, and GitHub reads and writes go through the `skyrunner` MCP tools, so both agents share
+its claims, job locks and merge guards. Never write the board's database directly or start Godot from a shell
+beside it; if a tool is missing, add it to skyrunner-mcp.
+
+**Board etiquette.** One owner id per session (`claude-<session id>`, `codex-<thread id>`). A claim is the
+acknowledgement: no notes that only say "ack". Notes stay under about 600 characters, as
+`task | branch@sha | tests run (pass/total) | not run | PR | next or ask`; the detail goes in the PR body. Claims
+and notes coordinate; they never authorize. `python tools/collab/board_status.py` (read-only, about ten lines) shows who has
+not answered what, so check it before assuming silence means no. `python tools/collab/notify.py once --recipient <agent> --cursor-file <path>` is a silent-when-nothing-new check (exit 10 when a note arrived), and
+`watch` rings a terminal bell or Windows toast when one does; a scheduled agent should call `once` rather than read the board. Merging, closing issues and anything published need the owner's word
+in that agent's own chat, or a standing rule under **Owner decisions** in HANDOFF.md.
+
+**Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and
+does every merge, through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and
+every review thread has a reply), never `gh pr merge`. Before a PR joins the queue:
+1. its author merges current `main` into it in their own worktree (merge, not rebase, so review history survives),
+   reruns the focused tests and regenerates `docs/PROJECT_STATUS.md` last. `python tools/collab/sync_shared.py` does the
+   merge and resolves the three files every PR collides on (HANDOFF's Log, the test count, the test lanes); it stops
+   and leaves the merge open if anything else conflicts;
+2. the other agent reviews the exact head, including how conflicts were resolved
+   (`git show --remerge-diff <merge>` shows only the resolution);
+3. CI is green on that head.
+
+After each merge, the next PR in the queue merges `main` straight away. Run `github_pr_triage` each session: it
+shows which open PRs conflict with `main` and with each other, so overlapping work is split or ordered before
+either side builds on it. A PR whose files another open PR rewrites waits for that one, then merges `main`. Keep
+PRs short-lived: anything more than about a day or 20 commits behind `main` merges `main` before more work goes
+on it. Merges still need the owner's word or the standing rule in HANDOFF.md.
+
+**Heavy jobs.** One full suite, cold import or balance run on the machine at a time. The server now takes a
+machine-wide Godot lock (skyrunner-mcp #1), so jobs from either agent queue instead of exhausting commit memory
+(Windows has run out doing it). The MCP's test tools run in the primary checkout only; from a linked worktree use
+`python tools/collab/run_locked.py test <filter>` (also `import`, `status [--write]`, or `-- <command>`), which takes
+the same lock. Say on the board when you start and finish a long one, and reuse CI results for a SHA instead of
+rerunning them locally.
 
 **Lanes** ([docs/AGENT_WORK_SPLIT.md](docs/AGENT_WORK_SPLIT.md), tracker [docs/AI_WORK_ALLOCATION.md](docs/AI_WORK_ALLOCATION.md)):
 Tier A (Session layers, RNG, goldens, saves, sim and map geometry, flight, balance) is Claude Code's. Tier B
@@ -20,7 +64,7 @@ this repo only holds the pinned launcher (`tools/mcp/`, `.mcp.json`). Server cha
 in `tools/mcp/launch.py` in a reviewed commit.
 
 Pure GDScript on Godot 4.7.2. No native code, no plug-ins to build. See README.md for the game,
-docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the relay.
+docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the baton.
 
 ## Commands
 ```bash
