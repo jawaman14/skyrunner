@@ -134,11 +134,8 @@
     "test_seats.gd",
     "test_startup.gd",
     "test_startup_host.gd",
-<<<<<<< HEAD
     "test_startup_leave.gd",
-=======
     "test_startup_picker.gd",
->>>>>>> origin/main
     "test_startup_room.gd",
     "test_station_link.gd",
     "test_voice.gd",
