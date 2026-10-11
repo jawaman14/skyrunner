@@ -130,6 +130,44 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   `docs` tests left to CI. Next: Codex's heartbeat to a 30-60 minute fallback (Codex or owner), and the
   skyrunner-mcp board-path override and machine-wide Godot lock (separate PR there).
 
+- **2026-10-11 — Claude, seat-picker cancellation coverage (#97, own initiative while Codex was out of credits):** On
+  `claude/startup-picker-tests` from main `e384241`, added `tests/test_startup_picker.gd` (socket lane). Through the real
+  `Main.start` / `_join` / `_enter_game` against a real running-game host, a guest who joined without a seat reaches the
+  live `SeatPicker` and leaves it: (1) the link is closed, nothing of the join is left (no picker, client, room, desk,
+  3D seat, voice, host service or game), exactly one Lobby is shown, `args.new` is false, the host sees the guest go
+  and no seat is held; (2) a late `role_changed` or claim on the closed link, before and after the deferred frees,
+  opens nothing and reaches no seat, and the link and picker are released; (3) leaving with a claim already sent
+  leaves no guest UI and the seat is `ai` or `reserved` (the host holds a dropped guest's seat for `Seats.HOLD_S`),
+  never `human`. No production change. Whether a deliberate Leave should hold a granted seat like a dropped
+  connection is an open design question, so test 3 pins only the safe invariants. Windows Godot 4.7.2: focused 3/3,
+  socket lane 147/147, docs 2/2, status current, hygiene OK. Linux and the full suite are left to CI. #97 stays open
+  (SeatPicker-cancel by controller B button, reload restoring a waiting-room seat choice, and the two-machine
+  checks remain).
+
+- **2026-10-11 — Claude, #90 translation-import churn (assigned by Codex):** Every `--import` rewrote eight tracked
+  `docs/AI_WORK_ALLOCATION*.translation` files, dirtying every worktree: the two planning CSVs added in #293 were
+  imported by Godot's `csv_translation` importer, which writes one `.translation` per column next to the source.
+  Nothing uses them (only a Markdown link in `docs/AI_WORK_ALLOCATION.md`; the project registers no translations).
+  Fix: tracked `docs/AI_WORK_ALLOCATION.csv.import` and `docs/AI_WORK_ALLOCATION_SUMMARY.csv.import` set
+  `importer="keep"`, `.gitignore` un-ignores `docs/*.csv.import` (`*.import` is otherwise ignored repo-wide), and the
+  eight generated `.translation` files are removed. A new `docs/*.csv` is imported as a translation table again unless
+  it gets a keep sidecar like these. Windows Godot 4.7.2: import exit 0, no tracked file rewritten, sidecars untouched,
+  no `.translation` regenerated; docs 2/2, status current, hygiene OK. No `.gd`, gameplay or save change. #90 stays
+  open (unused-function cleanup remains).
+
+- **2026-10-11 — Claude, leave and join coverage (#97, assigned by Codex):** On `claude/startup-leave-tests` from
+  main `e384241` (after #306, #307 and #308), added `tests/test_startup_leave.gd` (socket lane): from a direct-hosted
+  game, (1) `leave("lobby")` leaves no server, voice, client or game, opens the lobby, and the port can be listened on
+  again after the deferred frees; (2) `_mp_join` with the F4 menu open tears the host down, forgets the menu, ends with
+  one client link and one waiting room and no host voice, and then, pumping both ends, the other table welcomes the
+  guest under the address's password and the player's name. No production defect found, so `main.gd` is unchanged.
+  An automated review found that a reload cannot start from a hosted game (`PilotApp` offers "Load last save" only
+  when not hosting, and that is the one production `leave.emit("load")`), so the first draft's reload test was
+  synthetic; it is removed and this entry no longer claims it. Windows Godot 4.7.2: focused 2/2, docs 2/2, status
+  regenerated; Linux and the full suite are left to CI. #97 stays open: the SeatPicker-cancel route (see #312), and
+  the physical two-machine voice/controller checks. The suspected stale `main._mp` reference is not a defect (a freed
+  object compares equal to null in Godot 4.7.2).
+
 - **2026-10-11 — Claude, #88 strip-feasibility harness (assigned by Codex):** On `claude/strip-feasibility-harness`
   from main `e384241`, added `scripts/balance/strip_trials.gd` (`StripTrials`), `tools/strip_feasibility.gd` and
   `tests/test_strip_trials.gd` (simulation lane). Per-runway-end takeoff and landing trials for QRY/PNR/EGL (HAR as the
