@@ -18,7 +18,7 @@ The model in use is `prism-ml/bonsai-27b` (1-bit, 4.7 GB), chosen by the owner. 
 |---|---|---|
 | `models` | lists the models on the server | |
 | `digest --file F` or `--pr N` | at most 8 lines on a log or PR diff, exact error text quoted | decide whether a failure matters |
-| `draft-replies --pr N --out F` | a draft reply per unanswered review thread, `[TODO]` where the facts are not in the comment | post, resolve or send anything |
+| `draft-replies --pr N --out F` | per unanswered review thread: what is asked, what to check, and an empty `[TODO]` reply | decide whether the reviewer is right, promise a change, post, resolve or send anything |
 | `triage` | per open PR: tier (from the file paths, no model), who wrote it, a one-line summary | label, close or re-order PRs |
 | `first-draft --task F --paths a,b --slug s` | the model rewrites the named files (at most 3, at most 40 KB each); the result goes on a new `local/<slug>` branch and a DRAFT PR marked as an unreviewed first pass | touch a protected path, merge, review, mark ready, push to an existing branch |
 
@@ -28,3 +28,10 @@ agent's exact-head review after the author has finished it. A model this size is
 until a person or Claude or Codex has read it.
 
 Tests (no server needed): `python tools/local_llm/test_worker.py`.
+
+**Phase 1 results (11 October, bonsai-27b, real `POST /api/v1/chat` calls).** `triage`: 6 PRs in 14 s; the tiers are right (they come from the file
+paths, not the model) but the one-line summaries are loose, and one is wrong ("Sync shared baton to contributors" for a PR that makes the
+baton of the base branch win). `draft-replies` as first written (a drafted reply): checked against the three replies actually sent to
+real bot findings on #331, one was a restatement, one reasonable but promised work, and one was dangerous (it said "no changes are needed"
+to a valid blocking finding). So the job now writes only a neutral summary (ask, check, empty reply) and never a stance.
+`digest`: accurate on the one log tried. `first-draft`: not tried.

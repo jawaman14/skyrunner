@@ -220,13 +220,14 @@ def job_draft_replies(args, ask=chat):
     comments = json.loads(gh(["api", "repos/{owner}/{repo}/pulls/%d/comments" % args.pr, "--paginate", "--jq", "[.[]|{id,path,line,in_reply_to_id,body}]"]) or "[]")
     replied = {c["in_reply_to_id"] for c in comments if c.get("in_reply_to_id")}
     open_ = [c for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied]
-    parts = ["# Draft replies for PR #%d (NOT posted: the author reads, corrects and sends them)\n" % args.pr]
+    parts = ["# Review threads to answer on PR #%d (summaries only, NOT replies: the author decides and writes the answer)\n" % args.pr]
     for c in open_[:MAX_CALLS]:
-        draft = ask("A reviewer left this comment on %s line %s. Draft a short reply that says what the author did or will do about it. "
-                    "If the comment is right, say it is fixed and what was changed in general terms; do not invent file names, commit ids or test results; "
-                    "write [TODO: what was actually done] where the facts are not in the comment.\n\n%s" % (c.get("path"), c.get("line"), clip(c["body"], 3000)),
-                    system="You draft honest, brief pull request replies.", max_tokens=250)
-        parts.append("## comment %s  %s:%s\n%s\n\nDRAFT:\n%s\n" % (c["id"], c.get("path"), c.get("line"), " ".join(c["body"].split())[:300], draft))
+        draft = ask("A reviewer left this comment on %s line %s. Do NOT say whether it is right or wrong and do NOT promise any change. Write exactly three lines.\n"
+                    "ASK: what the reviewer is asking for, in one sentence.\n"
+                    "CHECK: what the author must verify in the code before answering, in one sentence.\n"
+                    "REPLY: [TODO: what was actually done]\n\n%s" % (c.get("path"), c.get("line"), clip(c["body"], 3000)),
+                    system="You summarise review comments neutrally and never decide for the author.", max_tokens=200)
+        parts.append("## comment %s  %s:%s\n%s\n\nSUMMARY (a neutral reading, not a decision):\n%s\n" % (c["id"], c.get("path"), c.get("line"), " ".join(c["body"].split())[:300], draft))
     if not open_:
         parts.append("No unanswered review threads.\n")
     return "\n".join(parts)

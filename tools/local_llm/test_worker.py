@@ -181,7 +181,8 @@ class Jobs(unittest.TestCase):
             worker.gh = real
         self.assertIn("comment 1", text)
         self.assertNotIn("comment 2", text)
-        self.assertIn("NOT posted", text)
+        self.assertIn("NOT replies", text)
+        self.assertIn("neutral reading", text)
         self.assertTrue(all(c[0] == "api" for c in calls), "it only reads")
 
     def test_first_draft_dry_run_writes_nothing_and_a_bad_answer_is_an_error(self):
