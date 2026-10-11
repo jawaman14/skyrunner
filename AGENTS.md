@@ -23,7 +23,8 @@ beside it; if a tool is missing, add it to skyrunner-mcp.
 **Board etiquette.** One owner id per session (`claude-<session id>`, `codex-<thread id>`). A claim is the
 acknowledgement: no notes that only say "ack". Notes stay under about 600 characters, as
 `task | branch@sha | tests run (pass/total) | not run | PR | next or ask`; the detail goes in the PR body. Claims
-and notes coordinate; they never authorize. Merging, closing issues and anything published need the owner's word
+and notes coordinate; they never authorize. `python tools/collab/board_status.py` (read-only, about ten lines) shows who has
+not answered what, so check it before assuming silence means no. Merging, closing issues and anything published need the owner's word
 in that agent's own chat, or a standing rule under **Owner decisions** in HANDOFF.md.
 
 **Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and

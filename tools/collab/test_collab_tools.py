@@ -1,12 +1,14 @@
 """Tests for tools/collab: python tools/collab/test_collab_tools.py (stdlib only; needs git on PATH)."""
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(__file__))
+import board_status  # noqa: E402
 import run_locked  # noqa: E402
 import sync_shared as sync  # noqa: E402
 
@@ -103,6 +105,55 @@ class RunLocked(unittest.TestCase):
             json.dump({"mcpServers": {"skyrunner": {"args": ["--project", os.path.join(d, "server")]}}}, fh)
         with self.assertRaises(SystemExit):
             run_locked.plan(d, ["import"], bash="/bin/bash", env={})
+
+
+class BoardStatus(unittest.TestCase):
+    def board(self):
+        db = sqlite3.connect(":memory:")
+        db.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, owner TEXT, title TEXT, paths TEXT, checkout TEXT, revision TEXT, status TEXT, expires REAL, updated REAL, detail TEXT)")
+        db.execute("CREATE TABLE notes (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT, recipient TEXT, task TEXT, text TEXT, created REAL)")
+        return db
+
+    def note(self, db, author, recipient, minutes_ago, now=10000.0):
+        db.execute("INSERT INTO notes (author, recipient, task, text, created) VALUES (?,?,?,?,?)",
+                   (author, recipient, "", "t", now - minutes_ago * 60))
+
+    def test_notes_sent_after_an_agents_last_post_are_unanswered_and_it_is_stale_when_quiet(self):
+        now = 10000.0
+        db = self.board()
+        self.note(db, "codex-a", "claude", 100)
+        self.note(db, "claude-1", "codex", 60)  # waited 60 min
+        self.note(db, "claude-1", "all", 30)     # also for codex
+        self.note(db, "claude-1", "claude", 5)   # not for codex
+        s = board_status.summarize(db, now, quiet_min=20)
+        self.assertEqual(s["codex"]["unanswered"], 2)
+        self.assertEqual(s["codex"]["oldest_unanswered_min"], 60.0)
+        self.assertEqual(s["codex"]["last_post_min_ago"], 100.0)
+        self.assertTrue(s["codex"]["stale"])
+        self.assertEqual(s["claude"]["unanswered"], 0, "its only inbound note came before it spoke")
+        self.assertFalse(s["claude"]["stale"])
+
+    def test_an_agent_that_posted_after_the_notes_has_nothing_waiting(self):
+        now = 10000.0
+        db = self.board()
+        self.note(db, "claude-1", "codex", 50)
+        self.note(db, "codex-b", "claude", 10)
+        s = board_status.summarize(db, now)
+        self.assertEqual(s["codex"]["unanswered"], 0)
+        self.assertEqual(s["claude"]["unanswered"], 1, "codex's note is waiting for claude")
+        self.assertFalse(s["claude"]["stale"], "10 minutes is not quiet")
+
+    def test_claims_and_rendering(self):
+        now = 10000.0
+        db = self.board()
+        db.execute("INSERT INTO tasks VALUES ('x','claude-1','a very long task title','[]','','','active',?,?,'')", (now + 1800, now))
+        db.execute("INSERT INTO tasks VALUES ('y','claude-1','released one','[]','','','review',?,?,'')", (now + 1800, now))
+        s = board_status.summarize(db, now)
+        self.assertEqual([c["title"] for c in s["claude"]["active_claims"]], ["a very long task title"])
+        text = board_status.render(s)
+        self.assertIn("nothing waiting", text)
+        self.assertIn("never posted", text)
+        self.assertIn("30 min left", text)
 
 
 class EndToEnd(unittest.TestCase):
