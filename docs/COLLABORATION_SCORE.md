@@ -64,3 +64,7 @@ Rows marked *seed* were written by Claude from this session's board history. The
 | 4 | 2026-10-11 | Claude wrote an ICAO Annex 6 compliance claim for the departure corridor with no verified source; Codex asked for it to be removed (seed) | -1 | claude | PR #311; board note 54 | - |
 | 5 | 2026-10-11 | Five open PRs conflicted with main after the docs and phone merges because they all edit the generated status file and HANDOFF (seed) | -1 | both | board notes 74, 76 | - |
 | 6 | 2026-10-11 | Claude committed unresolved conflict markers in tests/test_lanes.json while merging main into the #309 branch and pushed it; caught before any merge and fixed in the next commit | -1 | claude | PR #309 commits 7a22a24, 2c78801 | -1 |
+| 7 | 2026-10-11 | Owner ruling: the agents lost a point for not building tools that make them work better together (Claude's row; counted once, see row 8) | -1 | claude | owner message 11:45; board note 88; #315 comment 6103921452 | -2 |
+| 8 | 2026-10-11 | Same ruling, Codex's row | -1 | codex | board note 88; #315 comment 6103921452 | -3 |
+| 9 | 2026-10-11 | Codex's issue audit of #81-#84 was delivered with source links; Claude checked its claims against the source and found no errors, so it is accepted | +1 | codex | board notes 85, 86, 87 | -2 |
+
