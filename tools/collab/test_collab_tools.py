@@ -352,6 +352,38 @@ class ReviewPacket(unittest.TestCase):
         self.assertIn("changes 1 test file", text)
         self.assertLess(len(text), 2500, "the packet stays small")
 
+    def test_legacy_status_contexts_count_as_ok_fail_or_running(self):
+        ctx = lambda state: {"context": "ci/legacy", "state": state}
+        self.assertEqual([review_packet.check_state(ctx(x)) for x in ("SUCCESS", "FAILURE", "ERROR", "PENDING", "EXPECTED")],
+                         ["ok", "fail", "fail", "run", "run"])
+        summary = review_packet.check_summary([ctx("SUCCESS"), ctx("FAILURE"), {"name": "a", "status": "COMPLETED", "conclusion": "SUCCESS"}])
+        self.assertEqual((summary["passed"], summary["failed"]), (2, ["ci/legacy"]))
+        self.assertEqual(dashboard.pr_state({"statusCheckRollup": [ctx("PENDING")]})[0], "run")
+        self.assertEqual(dashboard.pr_state({"statusCheckRollup": [ctx("SUCCESS")]})[0], "ok")
+
+    def test_a_current_review_body_is_shown_and_test_files_outside_tests_are_recognised(self):
+        view = self.view()
+        view["reviews"] = [{"author": {"login": "codex"}, "state": "COMMENTED", "body": "Blocking: the lock is racy", "commit": {"oid": "b" * 40}}]
+        view["files"] = [{"path": "tools/collab/test_collab_tools.py", "additions": 5, "deletions": 0}, {"path": "tests/test_x.gd.uid", "additions": 1, "deletions": 0}]
+        packet = review_packet.build(view, [], tempfile.mkdtemp())
+        self.assertIn("Blocking: the lock is racy", review_packet.render(packet))
+        self.assertEqual(packet["pr_changes_tests"], ["tools/collab/test_collab_tools.py"])
+
+    def test_covering_tests_come_from_the_prs_own_file_set_not_only_the_local_checkout(self):
+        root = tempfile.mkdtemp()
+        added = [{"path": "scripts/sim/foo.gd", "additions": 3, "deletions": 0}, {"path": "tests/test_foo.gd", "additions": 9, "deletions": 0}]
+        view = dict(self.view(), files=added)
+        self.assertEqual(review_packet.build(view, [], root)["tests_by_name"], {"scripts/sim/foo.gd": ["tests/test_foo.gd"]}, "added by the PR, absent locally")
+        os.makedirs(os.path.join(root, "tests"))
+        open(os.path.join(root, "tests", "test_foo.gd"), "w").close()
+        gone = [{"path": "scripts/sim/foo.gd", "additions": 3, "deletions": 0}, {"path": "tests/test_foo.gd", "additions": 0, "deletions": 9, "changeType": "DELETED"}]
+        self.assertEqual(review_packet.build(dict(self.view(), files=gone), [], root)["tests_by_name"], {}, "deleted by the PR, present locally")
+
+    def test_the_json_diff_is_capped_like_the_text_one(self):
+        diff = NL.join("line %d" % i for i in range(500))
+        self.assertEqual(len(review_packet.cap_diff(diff, 20).splitlines()), 20)
+        self.assertEqual(review_packet.cap_diff(diff, 0), "")
+
     def test_pages_from_gh_paginate_are_joined_and_the_diff_is_capped(self):
         pages = '[{"a":1}]' + NL + '[{"a":2},{"a":3}]'
         self.assertEqual(review_packet.parse_pages(pages), [{"a": 1}, {"a": 2}, {"a": 3}])

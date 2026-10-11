@@ -22,6 +22,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(__file__))
 import board_status  # noqa: E402
+import review_packet  # noqa: E402
 
 COLORS = {"reset": "\033[0m", "dim": "\033[2m", "bold": "\033[1m", "red": "\033[31m", "green": "\033[32m",
           "yellow": "\033[33m", "cyan": "\033[36m", "magenta": "\033[35m"}
@@ -57,14 +58,12 @@ def read_board(db, now, quiet_min, notes=8):
 
 
 def pr_state(item):
-    """('ok'|'fail'|'run'|'none', draft) from one `gh pr list` row."""
+    """('ok'|'fail'|'run'|'none', draft) from one `gh pr list` row; check runs and legacy status contexts both count."""
     checks = item.get("statusCheckRollup") or []
     if not checks:
         return "none", bool(item.get("isDraft"))
-    bad = [c for c in checks if (c.get("conclusion") or "").upper() in ("FAILURE", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE")]
-    running = [c for c in checks if (c.get("status") or "").upper() not in ("COMPLETED", "") or not c.get("conclusion")]
-    state = "fail" if bad else ("run" if running else "ok")
-    return state, bool(item.get("isDraft"))
+    states = [review_packet.check_state(c) for c in checks]
+    return ("fail" if "fail" in states else ("run" if "run" in states else "ok")), bool(item.get("isDraft"))
 
 
 def next_action(item, state, draft):

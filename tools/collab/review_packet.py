@@ -17,6 +17,7 @@ import subprocess
 import sys
 
 VIEW_FIELDS = "number,title,author,isDraft,headRefOid,baseRefName,mergeable,mergeStateStatus,files,statusCheckRollup,reviews,reviewDecision"
+NL = chr(10)
 FAIL = ("FAILURE", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE")
 
 
@@ -40,36 +41,67 @@ def parse_pages(text):
         items += page if isinstance(page, list) else [page]
 
 
-def covering_tests(path, root):
-    """Test files named after a changed source file: tests/test_<stem>.gd, if it exists. A heuristic, said so in the packet."""
+def covering_tests(path, root, in_pr=None, deleted=()):
+    """Test files named after a changed source file: tests/test_<stem>.gd. A heuristic, said so in the packet. It exists if the
+    PR's own file set adds or changes it (the reviewer's checkout may not have the head) or, failing that, if the local checkout
+    has it and the PR does not delete it."""
     stem = os.path.splitext(os.path.basename(path))[0]
     if path.startswith("tests/") or not path.endswith(".gd"):
         return []
     cand = "tests/test_%s.gd" % stem
+    if cand in deleted:
+        return []
+    if in_pr is not None and cand in in_pr:
+        return [cand]
     return [cand] if os.path.exists(os.path.join(root, cand)) else []
 
 
+def check_state(c):
+    """'ok', 'fail' or 'run' for one statusCheckRollup entry. A CheckRun has status and conclusion; a legacy StatusContext has
+    only `state` (SUCCESS, FAILURE, ERROR, PENDING, EXPECTED) and a `context` name."""
+    state = (c.get("state") or "").upper()
+    if state and not c.get("conclusion") and not c.get("status"):
+        return "ok" if state == "SUCCESS" else ("fail" if state in ("FAILURE", "ERROR") else "run")
+    conclusion = (c.get("conclusion") or "").upper()
+    if conclusion in FAIL:
+        return "fail"
+    if (c.get("status") or "").upper() not in ("COMPLETED", "") or not conclusion:
+        return "run"
+    return "ok"
+
+
+def is_test_path(path):
+    """tests/, test_*.py, *_test.py, test_*.gd: this repository's test files, wherever they sit (not .uid or fixtures)."""
+    base = os.path.basename(path)
+    named = base.startswith("test_") and base.endswith((".py", ".gd"))
+    return (path.startswith("tests/") or named or base.endswith("_test.py")) and not path.endswith((".uid", ".json"))
+
+
 def check_summary(rollup):
-    failed = sorted({c.get("name") or c.get("context") or "?" for c in rollup or []
-                     if (c.get("conclusion") or "").upper() in FAIL})
-    running = sorted({c.get("name") or "?" for c in rollup or [] if not c.get("conclusion") or (c.get("status") or "").upper() not in ("COMPLETED", "")})
-    ok = len([c for c in rollup or [] if (c.get("conclusion") or "").upper() == "SUCCESS"])
-    return {"passed": ok, "failed": failed, "running": running, "total": len(rollup or [])}
+    rollup = rollup or []
+
+    def name(c):
+        return c.get("name") or c.get("context") or "?"
+    return {"passed": len([c for c in rollup if check_state(c) == "ok"]),
+            "failed": sorted({name(c) for c in rollup if check_state(c) == "fail"}),
+            "running": sorted({name(c) for c in rollup if check_state(c) == "run"}), "total": len(rollup)}
 
 
 def build(view, comments, root, diff_text=""):
     head = view["headRefOid"]
     files = view.get("files") or []
-    tests, changed_tests = {}, [f["path"] for f in files if f["path"].startswith("tests/")]
+    paths = {f["path"] for f in files}
+    deleted = {f["path"] for f in files if (f.get("changeType") or "").upper() == "DELETED"}
+    tests, changed_tests = {}, [f["path"] for f in files if is_test_path(f["path"])]
     for f in files:
-        found = covering_tests(f["path"], root)
+        found = covering_tests(f["path"], root, paths - deleted, deleted)
         if found:
             tests[f["path"]] = found
     reviews = []
     for r in view.get("reviews") or []:
         oid = (r.get("commit") or {}).get("oid", "")
         reviews.append({"by": (r.get("author") or {}).get("login", "?"), "state": r.get("state", ""),
-                        "current": oid == head, "commit": oid[:7]})
+                        "current": oid == head, "commit": oid[:7], "body": " ".join(str(r.get("body") or "").split())[:200]})
     # inline comments: an unanswered thread root is a comment with no reply to it
     replied = {c.get("in_reply_to_id") for c in comments if c.get("in_reply_to_id")}
     open_threads = [{"path": c.get("path"), "line": c.get("line") or c.get("original_line"), "by": (c.get("user") or {}).get("login", "?"),
@@ -82,6 +114,11 @@ def build(view, comments, root, diff_text=""):
             "reviews": reviews, "open_threads": open_threads, "diff": diff_text}
 
 
+def cap_diff(diff_text, lines):
+    """At most `lines` diff lines, for both the text and the JSON output."""
+    return NL.join(diff_text.splitlines()[:lines]) if lines else ""
+
+
 def render(p, diff_lines=0):
     ci = p["ci"]
     out = ["PR #%d %s%s | %s -> %s | head %s | %s/%s" % (p["number"], "[draft] " if p["draft"] else "", p["title"], p["author"], p["base"],
@@ -91,7 +128,8 @@ def render(p, diff_lines=0):
     if not p["reviews"]:
         out.append("Reviews: none")
     for r in p["reviews"]:
-        out.append("Review by %s: %s at %s (%s)" % (r["by"], r["state"], r["commit"], "CURRENT" if r["current"] else "STALE: older head"))
+        out.append("Review by %s: %s at %s (%s)%s" % (r["by"], r["state"], r["commit"], "CURRENT" if r["current"] else "STALE: older head",
+                                                    ": " + r["body"] if r.get("body") and r["current"] else ""))
     out.append("Open review threads: %d" % len(p["open_threads"]))
     for t in p["open_threads"][:6]:
         out.append("  %s:%s %s: %s" % (t["path"], t["line"], t["by"], t["text"]))
@@ -123,11 +161,18 @@ def main(argv=None):
             stream.reconfigure(encoding="utf-8", errors="replace")
         except (AttributeError, ValueError):
             pass
-    view = json.loads(gh(["pr", "view", str(args.number), "--json", VIEW_FIELDS], args.root))
-    comments = parse_pages(gh(["api", "repos/{owner}/{repo}/pulls/%d/comments" % args.number, "--paginate"], args.root))
-    diff = gh(["pr", "diff", str(args.number)], args.root) if args.diff else ""
-    packet = build(view, comments, args.root, diff)
-    print(json.dumps(packet) if args.json else render(packet, args.diff))
+    for attempt in range(2):  # the calls are not one snapshot: read the head again and rebuild once if it moved
+        view = json.loads(gh(["pr", "view", str(args.number), "--json", VIEW_FIELDS], args.root))
+        comments = parse_pages(gh(["api", "repos/{owner}/{repo}/pulls/%d/comments" % args.number, "--paginate"], args.root))
+        diff = gh(["pr", "diff", str(args.number)], args.root) if args.diff else ""
+        now = json.loads(gh(["pr", "view", str(args.number), "--json", "headRefOid"], args.root))["headRefOid"]
+        if now == view["headRefOid"]:
+            break
+    moved = now != view["headRefOid"]
+    packet = build(view, comments, args.root, cap_diff(diff, args.diff))
+    packet["head_moved_while_reading"] = moved
+    text = json.dumps(packet) if args.json else render(packet, args.diff)
+    print(text + (NL + "WARNING: the head moved while this was read (now %s); run it again." % now[:7] if moved and not args.json else ""))
     return 0
 
 
