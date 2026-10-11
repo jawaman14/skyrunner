@@ -9,7 +9,7 @@ extends Control
 signal clicked(button: int, world_xy: Vector2)
 
 const LAYERS := {"operations": "Operations", "people": "People / logistics", "intelligence": "Intelligence"}
-const ITEM_LAYER := {"jobs": "operations", "units": "operations", "boats": "people", "bales": "people", "stashes": "people", "trucks": "people",
+const ITEM_LAYER := {"jobs": "operations", "units": "operations", "boats": "people", "bales": "people", "stashes": "people", "trucks": "people", "people": "people",
 	"intel": "intelligence", "spotters": "intelligence", "radars": "intelligence", "df": "intelligence", "jammed": "intelligence", "tips": "intelligence", "tracks": "intelligence"}
 var layers := {"operations": true, "people": true, "intelligence": true}
 var snap = null
@@ -136,6 +136,23 @@ func _draw() -> void:
 	else:
 		_draw_runner()
 	_draw_ground()
+	_draw_people()
+
+
+## Only the host-filtered own-worker records reach this presentation layer.
+func _draw_people() -> void:
+	for person in visible_items("people"):
+		var at := w2m(person.x, person.y)
+		var color := UIStyle.CYAN if snap.get("side") == "law" else UIStyle.ACCENT
+		if person.get("car", false):
+			draw_rect(Rect2(at - Vector2(4, 3), Vector2(8, 6)), color, false, 1.5)
+		else:
+			draw_circle(at, 3.0, color)
+		if person.get("moving", false): draw_arc(at, 5.5, 0, TAU, 12, color, 1.0)
+		if get_local_mouse_position().distance_to(at) < 10.0:
+			var description := "%s (%s): %s" % [person.name, person.role, person.doing]
+			if person.get("blocked_reason", "") != "": description += " — " + str(person.blocked_reason)
+			_text(person.x, person.y, description, color)
 
 
 func _draw_runner() -> void:

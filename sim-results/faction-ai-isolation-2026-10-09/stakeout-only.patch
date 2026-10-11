@@ -1,0 +1,7 @@
+diff --git a/scripts/sim/ground.gd b/scripts/sim/ground.gd
+index f36ec4e..3c5bd3f 100644
+--- a/scripts/sim/ground.gd
++++ b/scripts/sim/ground.gd
+@@ -1243 +1243 @@ func _trucks(dt: float) -> void:
+-		if q == null or st == null or st.burned:
++		if q == null or st == null or st.burned or q.faction != "police" or q.order.get("type", "") != "stakeout" or q.order.get("stash", "") != id:

@@ -5,9 +5,12 @@ an organisation whose money, people and territory must be protected. The career
 loop is earn, invest, expand, attract pressure, defend, recover and expand again.
 Flying remains useful; delegation is a progression reward.
 
-## Owner clarification — 8 October 2026
-
-[PLAYER_DIRECTION.md](PLAYER_DIRECTION.md) records the owner’s detailed choices: setup-driven automation with explicit worker orders, an interconnected economy, recoverable player death and permanent crew losses, optional campaign with continuing sandbox, stylised period cinema, and cooperative plus competitive organisation/rival/police play in the initial experience. These targets supersede conflicting earlier recommendations. Follow-up choices establish an employed start immediately flying a legitimate business’s aircraft, its gradual and unavoidable main-story transition into smuggling, and eventual first-aircraft purchase, economy-driven rivals with distinct starting strengths, conditional orders and task sequences, situation-dependent recovery, multiple impound approaches, and money/reputation/activity unlocks with campaign alternatives. Separate co-op and competitive modes target 2–16 players; a leader departure halts the multiplayer session, while lower-rank departures do not. Product delivery proceeds early rise, automation, faction competition, then multiplayer teamwork. Exact costs and reconnect/resume rules remain open. Preserve measured delivery and compatibility gates.
+**Superseded in part (8 October 2026).** The owner's later answers are in
+[DESIGN.md §0](DESIGN.md#0-where-the-game-is-heading-owner-approved-direction-8-october-2026) and win where they
+disagree with this page. In particular, co-op *and* competitive play (2–16 players, organisation/rival/police)
+are part of the intended first full experience, so competitive modes are no longer deferred; multiplayer racing
+and the hidden informant remain separate proposals. The product order there (early rise, automation, faction
+competition, multiplayer) is the current one; the delivery sequence below is the reliability work inside it.
 
 ## Delivery sequence
 
@@ -71,81 +74,3 @@ coordinates, IDs and casualty counters are withheld. Aggregate control remains
 the existing public strategic picture, not a claim of exact current deployment.
 Two regression tests cover distant, partially observed, observed and lost contact.
 No simulation or balance calculations change. Coarse news is retained.
-
-## Initial batch validation
-
-Drafts #234 (intelligence), #235 (loading endpoints), #236 (squad detail) are
-pushed, not merged. At code head `6fa99f9`, desktop full shards pass 1,012 tests,
-0 failed (334/345/333), with no script/parse failures. Smoke reports SMOKE OK;
-native Git hygiene/diff checks pass. Existing resource/ObjectDB/PagedAllocator
-shutdown cleanup diagnostics remain. Full coverage includes save/parity/export
-checks; human input/display/world and two-machine evidence remain pending.
-
-Loading-area audit: 2/99 reachable (HQ/docks in both directions), 97 blocked.
-The lookup changes no live dispatch. Destination/upkeep/order ownership additions
-are restricted to owned squads; older peers explicitly lack those details.
-
-The next draft, #237, reuses validated local building detours and selects usable
-nearby authored road nodes. Same endpoint limits and geometry checks remain.
-At code head `b51f2e0`, all 1,014 desktop tests pass (334/347/333), zero failed,
-with no script/parse errors; smoke is OK. Ten paired war seeds over three hours
-match all raw rows/aggregates against the old connector method. Loading audit
-improves to 7/99 reachable with unchanged lengths for the two previous routes.
-92 failures remain; live truck/squad migration is not enabled.
-
-Still required: correct remaining physical connectors/meeting areas, complete
-district/dashboard and order-lifecycle work, operational/battle debriefs, coastal
-art/gameplay profiling, physical-member combat migration, human pacing and release
-gates. Initial slices do not establish completion of the entire milestone.
-
-## Command clarity and completed battle accounts (2026-10-07)
-
-Draft #238 restricts HQ attack targeting to observed enemies and withholds enemy
-route plans. Draft #239 adds shared district hold/direction, owned deployment and
-upkeep, reported threats, and authoritative collection estimates. The HQ overview
-uses a scrolling surface; input/layout checks exercised four supported resolutions
-in both palettes. These checks do not replace physical controller acceptance.
-
-The following battle-history slice records completed own-unit strength, ammunition,
-morale, state and place accounts. Reports are faction filtered, capped at 64 stored
-accounts and 16 recent accounts per snapshot, and included in strategic saves with
-optional old-save fields. HQ and station displays use the same formatter. No enemy
-losses or causal explanations are inferred. Combat authority and random draws remain
-unchanged. Operational debriefs, custody-specific accounting, cover/range explanations
-and human battle-report acceptance remain work to finish.
-
-### Grouped desktop validation
-
-At code head `560617f`, the full three-shard suite passes 1,021 tests (310/335/376),
-zero failures and no script/parse errors. Smoke reports SMOKE OK. Native tracked-file
-hygiene/export exclusions pass. Two subsequent focused tests verify JSON history
-restoration, missing old-save history and report limits in wording; an expanded
-history test verifies 64 stored/16 presented limits. All pass. These extra tests
-were run separately, not included in the 1,021 full-suite count. Existing shutdown
-ObjectDB/resource/PagedAllocator cleanup diagnostics remain separately recorded.
-Drafts #238, #239 and #240 are pushed; merged baseline and human gates are unchanged.
-
-## Faction AI and battle lifecycle follow-ups, 8 October 2026
-
-Draft #244 preserves active truck escorts through ordinary AI planning while
-allowing emergency retreat, and expires police stakeout registrations after
-reassignment. Code 6880d41 passes 1,026 full desktop tests, zero failed, and smoke.
-Ten paired three-hour war seeds show material changes: mean organisation arrests
-19.5 to 23.5 and burned stashes 0.2 to 0.8. Keep wider balance/human review pending;
-no compensating tuning. See FACTION_AI_AUDIT_2026-10-08.md and its raw comparison.
-
-Draft #245 corrects external combatant removal: clear both engagement references,
-settle the survivor and then record accounts. Ground 30, foot 9 and report 2 focused
-tests pass; smoke is OK. Final code 4707627 passes all 1,027 desktop tests (369/313/345), zero failed
-and no script/parse errors.
-This is required follow-up for #240's reproduced stale fighting state. Human order
-ownership, existing loss/arrest authority and ammo returns remain preserved.
-
-Planning drafts #241-#243 describe remaining physical access, command feedback and
-coastal/release packages; they do not implement those features. The 92 blocked
-loading pairs, operational/custody/tactical debriefs, knowledge policy, coastal
-walkthrough/performance and real two-machine/controller/release gates remain open.
-
-## Comparative gameplay reference (8 October 2026)
-
-[GAMEPLAY_INSPIRATION.md](GAMEPLAY_INSPIRATION.md) compares the Mount & Blade family, Schedule I and both Cities: Skylines games. Apply personal intervention, earned delegation, visible logistics and crew consequences within the existing sequence. New mechanics remain proposals; validate enjoyment through recorded human sessions.

@@ -12,7 +12,18 @@ static var _golden := {}
 static func golden() -> Dictionary:
 	if _golden.is_empty():
 		_golden = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/flight_golden.json"))
+		_freeze(_golden)
 	return _golden
+
+
+## Parsed parity values are shared, but no test may change a later test's oracle.
+static func _freeze(value: Variant) -> void:
+	if value is Dictionary:
+		for child in value.values(): _freeze(child)
+		value.make_read_only()
+	elif value is Array:
+		for child in value: _freeze(child)
+		value.make_read_only()
 
 
 ## A pressed key event, physical keycode set (what _unhandled_input reads).

@@ -191,10 +191,13 @@ footer, which is also clickable), ESC closes.
 | F2 | Move the time of day on three hours |
 | Esc | Release the mouse, then the pause menu |
 
-**The phone (T)** rings whoever you would otherwise have to walk or fly to: Manny's hiring hall, the buyers, your lawyer,
-the Family, the General's aide, the desk (the boss's orders, and the squads when there is a war), **the track** (races), **the
-collectors** (the rackets), dispatch (logistics) and **a taxi** (a ride, fare up front, to the aircraft, the desk, the job board,
-the hangar or a stash house). Only the systems switched on appear.
+**The phone (T on foot, Shift+T in the cockpit)** is a handset with apps (arrows and **Enter**, or **1–7**; **Esc** goes back):
+**Contacts** rings whoever you would otherwise have to walk or fly to (Manny's hiring hall, the buyers, your lawyer, the Family,
+the General's aide, the Collective, the car lot, the casino, the desk, **the track**, **the collectors**, dispatch and **a taxi**;
+only the systems switched on appear, and a new number is marked NEW); **Messages** keeps what the phone has buzzed with;
+**Map** opens the chart; **Jobs** lists the jobs you have taken and **Enter** puts a waypoint on one; **Bank** shows the money in
+hand, in each stash house and aboard; **Radio** tunes the dial; **Settings** is the pause menu. A call is a chat on the handset:
+their lines on the left, your answers on the right. Offers (the Family's) buzz in as notifications with the keys that answer them.
 
 When a human-run organisation receives a Family offer, the same event rings the
 phone for 20 seconds. Open **T** on foot or **Shift+T** in the cockpit, select
@@ -206,7 +209,9 @@ declined and missed calls appear above the contact list. Calls and their expiry
 times survive saving/loading; unanswered calls are not recreated on load.
 
 **The car.** A parked car stands beside the aircraft. **E** at it gets you in; W / S throttle and brake, A / D steer, Space
-handbrake, **E** to get out. The road is fast; anywhere else is a crawl. In the car: **R** radio on / off, **, .** (or **[ ]**)
+handbrake, **E** to get out. The road is fast; anywhere else is a crawl. It has weight: the pedals and the wheel take a moment,
+a hard turn at speed slides, the handbrake kicks the tail out. The dashboard shows the speed, revs, gear, the pedals, the G
+forces, the radio and an arrow to your waypoint (set one on the chart, **M**, or from the phone's Jobs). In the car: **R** radio on / off, **, .** (or **[ ]**)
 tune. The radio plays real broadcasts from 1979–86 from Miami and around the Caribbean, always on the air by the sim clock.
 Your own recordings go in `user://radio/`.
 
@@ -300,6 +305,11 @@ touchdown or an overrun can wreck the aircraft.
 The **job board** at each strip lists work: passengers and cargo for money, **hot** contraband that pays far more, **airdrops**
 to a boat, **gun runs**, and fuel drums (fly them to a strip to start a cache). A job shows its pay, weight and distance and,
 for a strip, the estimated landing roll against the strip length, so a trap shows red. Hot jobs and gun runs raise **heat**.
+
+How you fly changes the pay: late is 40% of it, fragile cargo broken by a landing over 400 fpm halves it, an unhappy
+VIP (bank over 45° or a landing over 300 fpm) takes 30% off, and a touchdown under 150 fpm adds 10%. Contraband is
+paid at the street price on the day it lands. Dropping a job pays nothing; at its origin it goes back on the board.
+Details: DESIGN 46.
 
 ### 5.3 The police and the heat (DESIGN 3, 4)
 

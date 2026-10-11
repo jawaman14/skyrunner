@@ -189,3 +189,27 @@ func test_autorunner_completes_a_flight() -> void:
 	check_eq(ar.bot.outcome if ar.bot else null, "landed")
 	check(s.money > money, "paid: %s -> %s" % [money, s.money])
 	s.dispose()
+
+func test_hot_route_penalty_is_deterministic_and_optional() -> void:
+	var w := World.new()
+	var from := [-12000.0, -12000.0]
+	var to := [12000.0, 12000.0]
+	var plain: Array = RoutePlanner.plan_route(w, from, to)
+	check(not plain.is_empty(), "a route exists")
+	# a zone on the plain route itself, so the test doesn't depend on where this terrain's cheapest line runs
+	var mid: Array = plain[plain.size() / 2]
+	var zones: Array = [{"x": mid[0], "y": mid[1], "radius": 4000.0}]
+	var detoured: Array = RoutePlanner.plan_route(w, from, to, 6.0, 1.5, 1500.0, zones)
+	var replay: Array = RoutePlanner.plan_route(w, from, to, 6.0, 1.5, 1500.0, zones)
+	check(not detoured.is_empty())
+	check_eq(detoured, replay, "radar penalties are deterministic")
+	check(detoured != plain, "an explicit radar zone changes only opted-in routing")
+	check_eq(RoutePlanner.plan_route(w, from, to, 6.0, 1.5, 1500.0, []), plain, "no zones: the plain route, unchanged")
+	var inside := func(route: Array) -> int:
+		var n := 0
+		for p in route:
+			if PyMath.hypot(float(p[0]) - float(mid[0]), float(p[1]) - float(mid[1])) < 4000.0:
+				n += 1
+		return n
+	check(inside.call(detoured) < inside.call(plain), "the detour spends fewer waypoints inside the zone (%d < %d)" % [inside.call(detoured), inside.call(plain)])
+
