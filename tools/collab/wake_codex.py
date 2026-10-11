@@ -15,6 +15,8 @@ It costs Codex quota and lets it act on its own, so it is guarded:
   * a hard --timeout on the Codex turn (default 1800 s), after which it is killed;
   * no shell: the command is an argument list.
 Name the session explicitly (--session). `--last` is accepted but resumes whichever session is newest in this directory.
+Windows: a woken turn's shell failed with helper_unknown_error under the default elevated sandbox (node_repl ACL sharing violation,
+found by Codex); `--codex-config 'windows.sandbox="unelevated"'` fixed it, verified with a shell round trip (board note 149).
 If that session is also open and mid-turn in the Codex desktop app, the headless turn can run alongside it, so prefer a
 session that is idle. Exit status: 0 nothing new, 10 woke, 11 held back by a guard, 12 Codex failed or timed out.
 """
@@ -41,8 +43,12 @@ def build_prompt(ids):
     return PROMPT.format(ids=",".join(str(int(i)) for i in ids))
 
 
-def build_command(codex_bin, session, last, ids):
-    cmd = [codex_bin, "exec", "resume"]
+def build_command(codex_bin, session, last, ids, config=()):
+    """`config` is a list of KEY=VALUE pairs, each passed as `-c KEY=VALUE` (e.g. windows.sandbox="unelevated")."""
+    cmd = [codex_bin]
+    for pair in config:
+        cmd += ["-c", pair]
+    cmd += ["exec", "resume"]
     if last:
         cmd.append("--last")
     else:
@@ -100,7 +106,7 @@ def wake(args, guard, ids, now=None, run=None):
     """Run one wake for these note ids. Returns (status, message)."""
     now = time.time() if now is None else now
     run = run or subprocess.run  # looked up now, not when the function is defined, so a test can replace it
-    cmd = build_command(args.codex_bin, args.session, args.last, ids)
+    cmd = build_command(args.codex_bin, args.session, args.last, ids, args.codex_config)
     if args.dry_run:
         return 10, "dry run: " + " ".join(cmd[:4]) + " ... " + repr(cmd[-1][:60])
     why = guard.allowed(now)
@@ -156,6 +162,9 @@ def main(argv=None):
     ap.add_argument("--max-per-hour", type=int, default=6)
     ap.add_argument("--timeout", type=float, default=1800.0)
     ap.add_argument("--codex-bin", default="")
+    ap.add_argument("--codex-config", action="append", default=[], metavar="KEY=VALUE",
+                    help="repeatable; passed as `codex -c KEY=VALUE`. Windows: windows.sandbox=\"unelevated\" gave a woken turn a working shell "
+                         "when the default elevated sandbox failed (helper_unknown_error). Never a full-access bypass.")
     ap.add_argument("--dry-run", action="store_true", help="print the command that would run; do not run it or move the cursor")
     args = ap.parse_args(argv)
     notify.utf8_streams()

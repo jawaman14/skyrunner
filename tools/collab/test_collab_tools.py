@@ -289,6 +289,15 @@ class WakeCodex(unittest.TestCase):
         self.assertEqual(self.run_once(self.args()), 0, "the cursor moved, so there is nothing new")
         self.assertEqual(len(self.calls), 1)
 
+    def test_codex_config_pairs_become_dash_c_options_before_exec_and_the_default_has_none(self):
+        cmd = wake_codex.build_command("codex", "s", False, [1], ['windows.sandbox="unelevated"'])
+        self.assertEqual(cmd[:5], ["codex", "-c", 'windows.sandbox="unelevated"', "exec", "resume"])
+        self.assertNotIn("-c", wake_codex.build_command("codex", "s", False, [1]))
+        self.run_once(self.args())
+        self.post("claude-x", "codex", "go")
+        self.run_once(self.args() + ["--codex-config", "windows.sandbox=unelevated"])
+        self.assertIn("windows.sandbox=unelevated", self.calls[-1][0])
+
     def test_the_runner_is_looked_up_when_called_so_a_replacement_is_used(self):
         self.run_once(self.args())
         self.post("claude-x", "codex", "go")
