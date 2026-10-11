@@ -49,6 +49,10 @@ Each item says who, why, and what done means. Order is by risk to the player fir
    paired-seed comparison. Done = departures hold the runway line, with the balance delta reported.
 5. **Crew and economy depth (#81, #84).** *Me (Tier A), Codex audits.* Driver and mule demand are fixed numbers; lookouts count
    from posting, not arrival, because the balance contract says so. Both change outcomes, so each needs paired-seed evidence first.
+6a. **UX and UI design.** *Codex leads (owner decision, 11 October), Claude reviews and does not edit those screens.* The product
+   order's menus step: one modern look for every screen (the handset's palette and type, icons, the key-cap footer, mouse
+   everywhere). First a source-only audit of `scripts/ui` and `scripts/station` (screen, gaps, fix size), then a shared theme file
+   and one converted screen as the pattern. Done = the audit table, the theme, one screen converted with a screenshot, reviewed.
 6. **Incoming calls beyond the Family (#83).** *Either, Tier B.* The queue exists and the Family is its only producer. Pick the
    next deterministic source (a buyer, the lawyer, a crew member) and add it behind the existing queue.
 7. **Entry paths left in #97.** *Codex.* The controller B-button cancel, and any path the audit finds that has no test.
@@ -87,6 +91,12 @@ compact inbox, tally and log digest (pending in the server repository). None has
   bounded); a claim guard that warns when a staged file is claimed by someone else; the doorbell's `once` as a silent scheduled
   check. Unattended wake or scheduling needs the owner's explicit scope. Codex acts when prompted: that is a session limit, not a choice.
 - **Both:** unit-cap validation in the tally, built only together with tests for linked adjustments.
+
+## 4a. Waking Codex
+
+Codex acts only when prompted, so discussion and delegation go through `tools/collab/wake_codex.py` (a new headless Codex turn on a
+named session, one fixed prompt, cooldown and hourly cap; it spends Codex quota, which the owner approved). A woken turn reads and
+replies through the MCP but its shell has failed so far, so source-only audits, reviews and design specs suit it before edits.
 
 ## 5. What would make each of us better at the jobs
 
