@@ -34,6 +34,14 @@ old row; a correction is a new row that reverses it. One event is counted once, 
 6. **Noise.** Notes that only acknowledge, repeat unchanged status, or run past the board's short-note format after
    being asked to cut tokens.
 
+## Owner's awards for collaboration tooling (11 October)
+
+- **+1** for building a tool that makes the two agents collaborate better.
+- **+2** for the *other* agent's work that makes you collaborate better, or a tool that makes the other agent work
+  more efficiently: fewer tokens with no loss of quality.
+- **+1 each** when both agents agree, from the record, which of them is better at a skill, and the work is split on it
+  (see "Who is better at what").
+
 ## What does not count
 
 Waits on tooling or CI, a missing tool, a rate limit or a reset, and a constructive disagreement in review are
@@ -49,6 +57,26 @@ neutral. So is a finding that was wrong, or a lapse the owner caused by changing
 - The other agent can contest a row by adding a reversing row with a reason. The owner has the last word.
 - The score never authorizes anything. Merges, issue closures and published releases still need the owner.
 - Keep rows to one line. The detail belongs in the PR or the board note.
+
+## Who is better at what
+
+Written by Claude from this session's evidence. It is a proposal until Codex agrees or corrects it row by row; the
+owner settles a disagreement. Each row that both agents confirm is +1 for the team (log it as a row).
+
+| Skill | Better agent | Evidence |
+|---|---|---|
+| Implementing sim, flight and balance changes end to end, tests first, with a check that the tests fail without the fix | Claude | #318 (and its mutation check), the strip harness #311, the leave and picker tests #309, #312 |
+| Tracing a bug to its cause across many files and reading unfamiliar code fast | Claude | the `_safe_heading` low-altitude turn, the blocked-end approach bug, the HAR natural-terrain finding |
+| Independent review of an exact head that questions the claim and the scoring rule | Codex | its blocking findings on #311 (radial gate, liftoff validity, first vs final touchdown), the unverified ICAO claim |
+| Auditing issues against the source and stating what the evidence does not show | Codex | the #81-#84 audit, every claim of which checked out against the source |
+| Server-side tooling that cuts the cost of working together | Codex | the compact incremental inbox (skyrunner-mcp #3), the board wake channel |
+| Removing repeated manual steps in the repo's own workflow | Claude | `tools/collab/sync_shared.py` and `run_locked.py` (#317) |
+| Keeping state across cut-offs and limits (cursors, capacity, CI state) | Codex | its capacity checkpoints and compact persisted cursor |
+
+How the work is split on that: Claude implements Tier A and B changes and the follow-ups Codex's audits find; Codex
+reviews every Claude PR at its exact head, audits and triages issues, and builds the tooling that lowers the cost of a
+board read or a review; neither merges its own work without the other's review. Where both are listed (tooling), the
+one who has the evidence for the task at hand takes it, and says so on the board first.
 
 ## Log
 
@@ -67,4 +95,6 @@ Rows marked *seed* were written by Claude from this session's board history. The
 | 7 | 2026-10-11 | Owner ruling: the agents lost a point for not building tools that make them work better together (Claude's row; counted once, see row 8) | -1 | claude | owner message 11:45; board note 88; #315 comment 6103921452 | -2 |
 | 8 | 2026-10-11 | Same ruling, Codex's row | -1 | codex | board note 88; #315 comment 6103921452 | -3 |
 | 9 | 2026-10-11 | Codex's issue audit of #81-#84 was delivered with source links; Claude checked its claims against the source and found no errors, so it is accepted | +1 | codex | board notes 85, 86, 87 | -2 |
+| 10 | 2026-10-11 | Owner award: Claude's collaboration tools, `tools/collab/sync_shared.py` and `run_locked.py` (PR #317) | +1 | claude | owner message 13:40; PR #317 | -1 |
+| 11 | 2026-10-11 | Owner award: Codex's compact incremental inbox (skyrunner-mcp PR #3), a tool that cuts the tokens of a board read without clipping notes; Claude reviewed the exact head and found nothing blocking | +2 | codex | owner message 13:40; skyrunner-mcp #3@cd82fa1; board notes 89-91 | 1 |
 
