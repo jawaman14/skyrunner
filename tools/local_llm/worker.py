@@ -1,0 +1,271 @@
+#!/usr/bin/env python3
+"""A cheap first-pass worker on a local LLM (LM Studio, OpenAI-compatible), for the jobs that do not need Claude or Codex.
+
+    python tools/local_llm/worker.py models
+    python tools/local_llm/worker.py digest --file build.log            # or --pr 322 for a PR's diff
+    python tools/local_llm/worker.py draft-replies --pr 330 --out drafts.md
+    python tools/local_llm/worker.py triage                             # open PRs: tier, area, owner, one line
+    python tools/local_llm/worker.py first-draft --task task.md --paths tools/x.py,tests/test_x.py --slug x
+
+The server address comes from SKYRUNNER_LOCAL_LLM (for example http://169.254.83.107:6456); there is no default, and the model from
+SKYRUNNER_LOCAL_MODEL (default qwen2.5-7b-instruct-1m: the 27B model needs about 45 GB and does not load on that machine).
+
+Rules it keeps, because a small model is wrong often enough to matter:
+  * It never merges, closes, reviews, approves, marks a PR ready, or posts a thread reply. `draft-replies` writes drafts to a file for the
+    author to read and send; `first-draft` opens a DRAFT pull request on a new `local/<slug>` branch, labelled as an unreviewed first pass.
+  * Everything it produces is a draft that Claude and Codex finish and review. A first draft is always at least Tier 1 (see docs/PIPELINE.md).
+  * `first-draft` touches only the files you name (at most 3, each at most 40 KB), never the protected paths below, applies nothing it cannot
+    parse, and discards the branch if the optional test command fails.
+  * Each call is logged (model, tokens, seconds) to the file in SKYRUNNER_LOCAL_LOG (default none) so the saving can be measured.
+"""
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+
+DEFAULT_MODEL = "qwen2.5-7b-instruct-1m"
+PROTECTED = (".github/", "project.godot", "tests/fixtures/", "HANDOFF.md", "AGENTS.md", "CLAUDE.md", "docs/COLLABORATION_SCORE.md",
+             "scripts/sim/switches.gd", "tools/mcp/", "tools/local_llm/")
+MAX_FILES = 3
+MAX_FILE_BYTES = 40_000
+FENCE = re.compile(r"^```[a-zA-Z0-9_+-]*[ \t]*\n(.*?)^```[ \t]*$", re.S | re.M)
+FILE_HEAD = re.compile(r"^(?:#+\s*)?(?:FILE|File|file)\s*:\s*`?([^\s`]+)`?\s*$", re.M)
+
+
+class LocalLLMError(Exception):
+    pass
+
+
+def endpoint():
+    url = os.environ.get("SKYRUNNER_LOCAL_LLM", "").rstrip("/")
+    if not url:
+        raise LocalLLMError("set SKYRUNNER_LOCAL_LLM to the LM Studio address, for example http://169.254.83.107:6456")
+    return url
+
+
+def chat(prompt, system="", model=None, max_tokens=800, temperature=0.2, opener=urllib.request.urlopen):
+    """One completion. Raises LocalLLMError on any failure; never returns an empty answer."""
+    model = model or os.environ.get("SKYRUNNER_LOCAL_MODEL", DEFAULT_MODEL)
+    messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
+    body = json.dumps({"model": model, "messages": messages, "max_tokens": max_tokens, "temperature": temperature}).encode()
+    req = urllib.request.Request(endpoint() + "/v1/chat/completions", data=body, headers={"Content-Type": "application/json"})
+    start = time.time()
+    try:
+        with opener(req, timeout=300) as r:
+            data = json.load(r)
+    except urllib.error.HTTPError as e:
+        raise LocalLLMError("the server refused: %s %s" % (e.code, e.read()[:200].decode("utf-8", "replace")))
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
+        raise LocalLLMError("could not reach the local LLM: %s" % e)
+    text = (data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
+    if not text.strip():
+        raise LocalLLMError("the model returned nothing")
+    log = os.environ.get("SKYRUNNER_LOCAL_LOG", "")
+    if log:
+        with open(log, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"model": model, "seconds": round(time.time() - start, 2), "usage": data.get("usage", {})}) + "\n")
+    return text.strip()
+
+
+def clip(text, limit):
+    """Head and tail of long text, so a log keeps its start and its failure."""
+    if len(text) <= limit:
+        return text
+    half = limit // 2
+    return text[:half] + "\n...[%d characters cut]...\n" % (len(text) - limit) + text[-half:]
+
+
+# ---------------------------------------------------------------------------------------------------------------- pure parts
+def tier_of(paths):
+    """The review tier of a change from its paths alone (docs/PIPELINE.md): no model involved, so it cannot be argued with."""
+    risky_t2 = ("scripts/sim/", "scripts/net/", "data/jsbsim/", "tests/fixtures/", "scripts/balance/")
+    risky_t1 = ("scripts/", ".github/", "tools/collab/", "tools/mcp/", "assets/", "project.godot")
+    if any(p.startswith(risky_t2) for p in paths):
+        return 2
+    if any(p.startswith(risky_t1) for p in paths):
+        return 1
+    return 0
+
+
+def parse_files(answer, allowed):
+    """{path: content} from the model's answer. Each file is `FILE: <path>` then a fenced block. Only paths in `allowed` count."""
+    out = {}
+    heads = list(FILE_HEAD.finditer(answer))
+    for i, h in enumerate(heads):
+        end = heads[i + 1].start() if i + 1 < len(heads) else len(answer)
+        block = FENCE.search(answer[h.end():end])
+        path = h.group(1).replace("\\", "/")
+        if block and path in allowed:
+            out[path] = block.group(1)
+    return out
+
+
+def check_paths(paths):
+    """None if first-draft may touch these files, else why not."""
+    if not paths or len(paths) > MAX_FILES:
+        return "name between 1 and %d files with --paths" % MAX_FILES
+    for p in paths:
+        norm = p.replace("\\", "/")
+        if norm.startswith("/") or ".." in norm.split("/") or ":" in norm:
+            return "%s is not a path inside the repository" % p
+        if norm.startswith(PROTECTED) or norm in PROTECTED:
+            return "%s is protected: a local draft may not touch it" % p
+    return None
+
+
+# --------------------------------------------------------------------------------------------------------------------- jobs
+def gh(args, run=subprocess.run):
+    out = run(["gh"] + args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=90)
+    if out.returncode != 0:
+        raise LocalLLMError("gh %s failed: %s" % (" ".join(args[:2]), " ".join((out.stderr or "").split())[:200]))
+    return out.stdout
+
+
+def job_digest(args, ask=chat):
+    if args.file:
+        text = open(args.file, encoding="utf-8", errors="replace").read()
+        what = "log"
+    else:
+        text = gh(["pr", "diff", str(args.pr)])
+        what = "pull request diff"
+    return ask("Summarise this %s for a developer in at most 8 short lines. Say what failed or changed and where (file and line if shown). "
+               "Quote exact error text. Do not guess.\n\n%s" % (what, clip(text, 24000)), system="You are terse and exact.", max_tokens=400)
+
+
+def job_draft_replies(args, ask=chat):
+    comments = json.loads(gh(["api", "repos/{owner}/{repo}/pulls/%d/comments" % args.pr, "--paginate", "--jq", "[.[]|{id,path,line,in_reply_to_id,body}]"]) or "[]")
+    replied = {c["in_reply_to_id"] for c in comments if c.get("in_reply_to_id")}
+    open_ = [c for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied]
+    parts = ["# Draft replies for PR #%d (NOT posted: the author reads, corrects and sends them)\n" % args.pr]
+    for c in open_:
+        draft = ask("A reviewer left this comment on %s line %s. Draft a short reply that says what the author did or will do about it. "
+                    "If the comment is right, say it is fixed and what was changed in general terms; do not invent file names, commit ids or test results; "
+                    "write [TODO: what was actually done] where the facts are not in the comment.\n\n%s" % (c.get("path"), c.get("line"), clip(c["body"], 3000)),
+                    system="You draft honest, brief pull request replies.", max_tokens=250)
+        parts.append("## comment %s  %s:%s\n%s\n\nDRAFT:\n%s\n" % (c["id"], c.get("path"), c.get("line"), " ".join(c["body"].split())[:300], draft))
+    if not open_:
+        parts.append("No unanswered review threads.\n")
+    return "\n".join(parts)
+
+
+def job_triage(args, ask=chat):
+    prs = json.loads(gh(["pr", "list", "--json", "number,title,headRefName,files,isDraft", "--limit", str(args.limit)]))
+    lines = []
+    for p in prs:
+        paths = [f["path"] for f in p.get("files", [])]
+        tier = tier_of(paths)
+        owner = "claude" if p["headRefName"].startswith("claude/") else ("codex" if p["headRefName"].startswith("codex/") else "?")
+        one = ask("One line (under 18 words) saying what this pull request does, from its title and file list only.\nTitle: %s\nFiles: %s" % (p["title"], ", ".join(paths[:12])),
+                  max_tokens=60, model=os.environ.get("SKYRUNNER_LOCAL_FAST", DEFAULT_MODEL))
+        lines.append("#%d tier %d, authored by %s%s: %s" % (p["number"], tier, owner, " (draft)" if p["isDraft"] else "", one.splitlines()[0]))
+    return "\n".join(lines)
+
+
+def job_first_draft(args, ask=chat, run=subprocess.run):
+    paths = [p.strip() for p in args.paths.split(",") if p.strip()]
+    why = check_paths(paths)
+    if why:
+        raise LocalLLMError(why)
+    root = os.path.abspath(args.root)
+    task = open(args.task, encoding="utf-8").read()
+    current = {}
+    for p in paths:
+        full = os.path.join(root, p)
+        if os.path.exists(full):
+            data = open(full, encoding="utf-8").read()
+            if len(data.encode()) > MAX_FILE_BYTES:
+                raise LocalLLMError("%s is larger than %d bytes: too big for a local first draft" % (p, MAX_FILE_BYTES))
+            current[p] = data
+    shown = "\n\n".join("FILE: %s\n```\n%s```" % (p, current[p]) for p in current) or "(all files are new)"
+    answer = ask("Task:\n%s\n\nYou may change ONLY these files: %s.\nCurrent contents:\n%s\n\nReturn the COMPLETE new contents of every file you change, each as a line "
+                 "`FILE: <path>` followed by one fenced code block. No other prose. Follow the conventions visible in the existing code. "
+                 "Do not invent APIs that are not shown." % (task, ", ".join(paths), shown), system="You write careful, minimal code changes.", max_tokens=6000)
+    files = parse_files(answer, set(paths))
+    if not files:
+        raise LocalLLMError("the model's answer had no usable FILE blocks; nothing was written")
+    if args.dry_run:
+        return "dry run: would write %s on branch local/%s" % (", ".join(sorted(files)), args.slug)
+    branch = "local/" + re.sub(r"[^a-z0-9-]+", "-", args.slug.lower()).strip("-")
+    work = os.path.join(os.path.dirname(root), ".local-llm-" + branch.split("/")[1])
+    def git(*a):
+        o = run(["git", "-C", work] + list(a), capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if o.returncode != 0:
+            raise LocalLLMError("git %s failed: %s" % (a[0], (o.stderr or o.stdout).strip()[:200]))
+        return o.stdout
+    r = run(["git", "-C", root, "worktree", "add", "-q", "-b", branch, work, "origin/main"], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise LocalLLMError("could not create the branch %s (does it exist?): %s" % (branch, (r.stderr or "").strip()[:200]))
+    try:
+        for p, content in files.items():
+            os.makedirs(os.path.dirname(os.path.join(work, p)) or work, exist_ok=True)
+            open(os.path.join(work, p), "w", encoding="utf-8", newline="\n").write(content)
+        if args.test:
+            t = run(args.test, cwd=work, shell=False, capture_output=True, text=True, encoding="utf-8", errors="replace")
+            if t.returncode != 0:
+                raise LocalLLMError("the test command failed, branch discarded:\n" + clip((t.stdout or "") + (t.stderr or ""), 1500))
+        git("add", *files)
+        git("-c", "user.name=local-llm", "-c", "user.email=noreply@localhost", "commit", "-q", "-m",
+            "First draft by a local model (%s): %s\n\nUnreviewed. Claude and Codex finish and review it.\n\nCo-Authored-By: %s (local) <noreply@localhost>" %
+            (os.environ.get("SKYRUNNER_LOCAL_MODEL", DEFAULT_MODEL), args.slug, os.environ.get("SKYRUNNER_LOCAL_MODEL", DEFAULT_MODEL)))
+        git("push", "-q", "-u", "origin", branch)
+    except LocalLLMError:
+        run(["git", "-C", root, "worktree", "remove", "--force", work], capture_output=True)
+        run(["git", "-C", root, "branch", "-D", branch], capture_output=True)
+        raise
+    body = ("UNREVIEWED FIRST PASS by a local model (%s). Claude and Codex finish and review it before it can merge; treat every line as suspect.\n"
+            "Task: %s\nFiles: %s\nReview tier: at least %d (docs/PIPELINE.md)." % (os.environ.get("SKYRUNNER_LOCAL_MODEL", DEFAULT_MODEL), args.slug,
+                                                                                    ", ".join(sorted(files)), max(1, tier_of(list(files)))))
+    url = gh(["pr", "create", "--draft", "--title", "First pass (local model): " + args.slug, "--head", branch, "--body", body], run).strip()
+    return "opened draft " + url
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("models")
+    d = sub.add_parser("digest")
+    g = d.add_mutually_exclusive_group(required=True)
+    g.add_argument("--file")
+    g.add_argument("--pr", type=int)
+    r = sub.add_parser("draft-replies")
+    r.add_argument("--pr", type=int, required=True)
+    r.add_argument("--out", default="")
+    t = sub.add_parser("triage")
+    t.add_argument("--limit", type=int, default=30)
+    f = sub.add_parser("first-draft")
+    f.add_argument("--task", required=True)
+    f.add_argument("--paths", required=True)
+    f.add_argument("--slug", required=True)
+    f.add_argument("--root", default=".")
+    f.add_argument("--test", nargs="*", default=None, help="a command (argv list) run in the new branch; failure discards it")
+    f.add_argument("--dry-run", action="store_true")
+    args = ap.parse_args(argv)
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+    try:
+        if args.cmd == "models":
+            with urllib.request.urlopen(endpoint() + "/v1/models", timeout=20) as resp:
+                print("\n".join(m["id"] for m in json.load(resp)["data"]))
+            return 0
+        text = {"digest": job_digest, "draft-replies": job_draft_replies, "triage": job_triage, "first-draft": job_first_draft}[args.cmd](args)
+        if args.cmd == "draft-replies" and args.out:
+            open(args.out, "w", encoding="utf-8").write(text)
+            print("wrote " + args.out)
+        else:
+            print(text)
+        return 0
+    except LocalLLMError as e:
+        print("local-llm: " + str(e), file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
