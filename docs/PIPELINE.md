@@ -18,18 +18,36 @@ person can do (the human release gates and the decisions in #326). This file is 
 | 8 | Merge | the integrator (Claude) | `github_pr_merge` (needs green CI on the head and every thread replied) | seconds | waiting on step 7 |
 | 9 | Notes for the owner | the integrator | one comment on #326 per merge, a summary at the end | seconds | did not exist |
 
-## Roles, including the ones that were missing
+## Roles and handoffs: who leads what, and who waits for whom
 
-- **Author:** claims, builds, syncs, answers every review thread in-thread, keeps the PR current. (Existing.)
-- **Reviewer (the other agent):** reviews the exact head; replies in the PR. (Existing; the bottleneck.)
-- **Integrator:** merges one PR at a time, keeps `main` moving, runs the next sync after each merge. Claude. (Existing.)
-- **Queue driver (was missing):** every cycle, for every open PR, names the next action and who owns it, so nothing waits unseen.
-  `dashboard.py` shows it (#330, landing first); the integrator runs it each cycle once it is on `main`.
-- **Thread responder (was missing as a job):** the author, within the same cycle as the bot review; `review_packet.py` lists them.
-- **Conflict syncer (was missing for stale branches):** the author of each; `sync_shared.py --baton theirs`.
-- **Watcher keeper (was missing):** keeps `wake_codex.py watch` alive, never paused, and restarts it after a code change.
-- **Release-notes writer (was missing):** the integrator posts one line per merge on #326 (what, PR, evidence) and a summary at the end.
-- **Human-gate runner:** the owner only. Scripts for them are Codex's (`docs/HUMAN_GATE_SCRIPTS.md`).
+**Lanes** (standing; revisit after three comparable completed units, as the score policy says).
+
+| Area | Leads | The other agent |
+|---|---|---|
+| Simulation, flight, balance, economy, crew and NPCs (#328) | Claude | reviews every PR |
+| UX and UI: extend `UIStyle` and `GameMenu`, the tutorial, menus (#329) | Codex | Claude reviews, does not edit those screens |
+| Audits, human-gate scripts, held-back branch triage (#329) | Codex | Claude reviews |
+| Integration: merges, syncing `main` into branches, the notes for the owner | Claude | Codex reviews tool PRs |
+| Board tooling, the wake, the dashboard and review packet | Claude (Codex for tools it needs) | the other reviews |
+| Reviewing | each, for the other's PRs | |
+| skyrunner-mcp (the server) | whoever needs the tool | the other reviews |
+
+**Jobs that did not exist before this audit.** Queue driver: each cycle the integrator names the next action and owner for every open PR
+(`dashboard.py`, #330). Thread responder: the author answers every bot and agent review thread in-thread in the same cycle
+(`review_packet.py` lists them). Conflict syncer: the author merges `main` in (`sync_shared.py`, `--baton theirs` for a PR that is not the
+holder, #332). Watcher keeper: Claude keeps `wake_codex.py watch` alive, never paused, restarted after any change to it. Release-notes
+writer: the integrator posts one line per merge on #326 and a summary at the end. Human-gate runner: the owner only.
+
+**The handoff, event by event** (one short note each; the wake delivers it):
+1. *Author finishes:* the PR is ready (not a draft), CI is green, bot threads are answered, the HANDOFF log is updated. Note: `review #PR@sha7`.
+2. *Reviewer's turn* (a woken turn or the desktop session): `review_packet.py <pr>`, read the diff, run the focused tests (a woken turn's
+   shell works under the unelevated sandbox), then post the verdict: `github_pr_review`, or from a woken turn `post_review.py` (#335).
+   Note back: `review +/- #PR@sha7`.
+3. *Changes requested:* the author fixes and posts `review #PR@new-sha7`; the reviewer re-reviews the new head only.
+4. *Approved at the current head, CI green, threads answered:* the integrator merges (the queue says READY) and posts one line on #326.
+5. *After every merge:* the next PR in the queue syncs `main` at once.
+6. *If the reviewer has not acted by the next wake cycle:* the dashboard shows `-> reviewer`, the author moves on to the next PR, and
+   the owner's choice for an outage applies (a stand-in reviewer agent records findings; the other agent re-reviews on return).
 
 ## Review by risk: every tier keeps an independent exact-head review
 
@@ -64,5 +82,5 @@ Release gates and the owner's decisions are never merged or ticked by an agent.
 ## Still blocked by something only the owner can allow
 
 A woken Codex turn needs `mcp_servers.skyrunner.tools.github_pr_review.approval_mode="approve"` (one tool, per run) to post a review
-unattended; Claude Code's guard refused to apply it from here. Until it is allowed, step 7 depends on the Codex desktop session
+unattended; Claude Code's guard refused to apply it from here, so `post_review.py` (#335) posts the same review from the turn's shell meanwhile. Until it is allowed, step 7 depends on the Codex desktop session
 (whose own wake path Codex is building) or, during an outage, on the stand-in reviewer above.
