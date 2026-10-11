@@ -61,8 +61,9 @@ wake tool may spend Codex quota unattended. New from the 12 October playtest (#3
 3. **Stale branch stack #244-#276.** 11 PRs, 38-79 commits behind, 156 files in #276; ultrareview refused it (13,597 lines). 22,000 of the lines are 34 generated
    `sim-results/*.json` files. Needs: port onto current `main` bottom-up, or retire as superseded, per the owner. #247's ultrareview found a routing-cost
    doubling with no switch, floating walls on slopes, and a missing BALANCE entry (comment 6112000822).
-4. **Autopilot.** The most reported player-facing defect: take-off engage flew into terrain (fixed in #346), the AI hand-over did nothing in flight (#344), no
-   direct turn back and no waypoint (fixed in #346's later commits), and, pending the sweep, some airfield pairs.
+4. **Autopilot.** The most reported player-facing defect: take-off engage flew into terrain, the AI hand-over (F3) did nothing in flight, there was no
+   direct turn back and no waypoint, and 14 of 112 airfield-to-airfield legs crashed. The F3 fix is merged (#344); the rest is **proposed in #346, still under review (Codex asked for a fix that is now pushed)**, so it is not fixed until that merges.
+   Sweep evidence on #346's branch: 110 of 112 legs arrive (the other 2 time out over 95 km of sea), 119 of 120 random mid-flight cases are safe.
 5. **Startup architecture (#97).** Entry paths were consolidated by tests (#306-#312) but the code is still split between `main.gd`, `host_desk.gd` and the
    dedicated server; this is where `_mp` lifetime bugs came from.
 6. **Test time.** 1,114 tests take about 13 minutes under a machine-wide Godot lock; every worktree re-imports for 5 more. This throttles every agent.
@@ -84,8 +85,8 @@ wake tool may spend Codex quota unattended. New from the 12 October playtest (#3
 
 Done on 12 October: #337 closed as superseded by #338. Checked and kept open: #304 (still-valid docs after #296, awaiting review) and #339 (a discussion draft Codex has not answered; its useful parts are in `docs/PIPELINE.md`). #320 not yet checked against `docs/PIPELINE.md`.
 
-* Tick in #327/#328: nothing is *fully* done there; partials: #80 (end choice fixed, circling unverified), #82 (intercept restored #295, turn-back and waypoint in
-  #346), #97 (entry tests merged, consolidation not), #83 (calls merged, cockpit pass open), #90 (CSV churn #310 done, CI hygiene open), #98/#88 waiting on the owner's strips decision.
+* Tick in #327/#328: nothing is *fully* done there; partials: #80 (end choice fixed, circling unverified), #82 (intercept restored #295; turn-back and waypoint are proposed in
+  open #346, not merged), #97 (entry tests merged, consolidation not), #83 (calls merged, cockpit pass open), #90 (CSV churn #310 done, CI hygiene open), #98/#88 waiting on the owner's strips decision.
 * Close as done with the evidence above: #95, #93, #94, #96, #101, #176, #177 (all already closed "not planned"; reopen is not needed, add a "done by #n" comment instead).
 * Move the 16 dated docs to `docs/archive/` (one PR).
 * Open issues for the new findings: #345 (playtest), autopilot sweep results, the #247 ultrareview items.
