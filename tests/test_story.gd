@@ -312,4 +312,3 @@ func test_debug_skip_walks_through_the_chapters_to_the_end() -> void:
 	check(last >= Story.CHAPTERS.size() - 1, "having passed through the chapters (reached %d)" % last)
 	s.dispose()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://test_debug_skip.json"))
-
