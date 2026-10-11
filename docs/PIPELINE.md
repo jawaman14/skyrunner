@@ -49,6 +49,33 @@ writer: the integrator posts one line per merge on #326 and a summary at the end
 6. *If the reviewer has not acted by the next wake cycle:* the dashboard shows `-> reviewer`, the author moves on to the next PR, and
    the owner's choice for an outage applies (a stand-in reviewer agent records findings; the other agent re-reviews on return).
 
+## Stage 0: a local model does the cheap first pass (owner, 11 October)
+
+The owner connected an LM Studio server on this network and asked for the cheap first-pass work, then the GitHub chores and the first run
+of small coding jobs, to go to it, with Claude and Codex finishing and reviewing. The worker is `tools/local_llm/worker.py` (PR for it
+separate). The 7B model (`qwen2.5-7b-instruct-1m`) answered a small GDScript task correctly in 1.5 s; the 27B model does not load (about
+45 GB needed); the 3B and 1B are for one-line jobs.
+
+| Job | The local model does | Then | Never |
+|---|---|---|---|
+| CI log and PR-diff digests | at most 8 lines, exact error text quoted | the reader opens the real log if it matters | decides if a failure is real |
+| Review-thread replies | a draft per unanswered thread, `[TODO]` where facts are missing | the author reads, corrects and posts | posts or resolves a thread |
+| PR triage | a one-line summary; the tier comes from the file paths, no model | the queue driver reads it on the dashboard | labels, closes or re-orders |
+| First drafts of small changes | rewrites at most 3 named files; opens a DRAFT PR on a new `local/` branch, marked unreviewed | the author (Claude or Codex) finishes it, then the other agent reviews | merges, reviews, marks ready, touches protected paths (CI, fixtures, HANDOFF, the ledger, the MCP launcher) |
+
+First drafts are suited to docs, tests for existing behaviour, simple tools and boilerplate. They are not suited to the simulation, flight,
+determinism, saves or the network protocol (Tier 2): a model this size gets those wrong in ways tests may not catch.
+
+**Trial before trusting it.** Phase 1 (once the LM Studio engine is running again; it refused every model after the first probe): digests of
+the last five failing CI logs and drafts for five real bot threads, each compared with what Claude or Codex actually wrote. Phase 2: three small
+first drafts (a doc, a test, a tool) as draft PRs. Keep a count of drafts accepted, reworked and discarded (`SKYRUNNER_LOCAL_LOG` records the
+calls). Widen the scope only if most are accepted or lightly reworked; if more than half are discarded, or any draft states a result nobody
+measured, narrow it back to digests. The saving is measured, not assumed: calls and tokens taken from the log, against what the same job cost
+Claude or Codex.
+
+**Handoff.** Draft PRs from `local/` are not in the review queue until their finisher (Claude or Codex) has read every line, fixed it, and
+marked it ready; the dashboard shows them as `-> author`. Their commits carry a `Co-Authored-By` line naming the local model.
+
 ## Review by risk: every tier keeps an independent exact-head review
 
 The existing rule stands: the other agent reviews the exact head, including how conflicts were resolved. The tiers say what else is
