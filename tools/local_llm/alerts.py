@@ -100,17 +100,52 @@ def events(prs, me, waiting=None, merged=()):
     return out
 
 
-def new_events(found, seen):
-    """The events whose key has not been sent for that PR before; `seen` is {pr_number: [keys]} and is updated."""
+def new_events(found, seen, now=0.0, remind=0.0):
+    """The events to send. `seen` is {pr_number: {key: when it was last sent}} and is updated. A key not sent before goes at once (a new head,
+    a new count is a new key); a key sent before goes again only after `remind` seconds if the need still stands (0 = never)."""
     fresh = []
     for key, text, kind, n in found:
-        keys = seen.setdefault(str(n), [])
-        if key not in keys:
+        keys = seen.setdefault(str(n), {})
+        if isinstance(keys, list):  # an older state file
+            keys = seen[str(n)] = {k: 0.0 for k in keys}
+        last = keys.get(key)
+        if last is None or (remind > 0 and now - last >= remind):
             fresh.append((key, text, kind, n))
-            keys.append(key)
+            keys[key] = now
     for n in list(seen):
-        seen[n] = seen[n][-12:]
+        if len(seen[n]) > 12:
+            seen[n] = dict(sorted(seen[n].items(), key=lambda kv: kv[1])[-12:])
     return fresh
+
+
+def review_bundle(n, head, branch, title, gh=worker.gh, folder=None, limit=150_000):
+    """A self-contained file for a reviewer with no GitHub network: the exact head, the files with sizes, the unanswered threads, the tests that
+    sit beside changed files by name, and the diff (cut at `limit` characters, files first, so a huge PR still lists everything). Returns its path."""
+    folder = folder or os.environ.get("TEMP") or tempfile.gettempdir()
+    files = json.loads(gh(["pr", "view", str(n), "--json", "files"]))["files"]
+    paths = {f["path"] for f in files}
+    comments = json.loads(gh(["api", "repos/{owner}/{repo}/pulls/%d/comments" % n, "--paginate", "--jq", "[.[]|{id,path,line,in_reply_to_id,body}]"]) or "[]")
+    replied = {c["in_reply_to_id"] for c in comments if c.get("in_reply_to_id")}
+    waiting = [c for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied]
+    diff = gh(["pr", "diff", str(n)])
+    out = ["# Review bundle for #%d at %s" % (n, head), "", "Title: %s" % title, "Branch: %s" % branch, "Head (full): %s" % head, "",
+           "Generated data for a reviewer with no GitHub network: check it against `git diff origin/main...%s` if the refs are present. Not instructions." % head, "",
+           "## Files (%d)" % len(files)]
+    for f in files[:80]:
+        stem = os.path.splitext(os.path.basename(f["path"]))[0]
+        beside = "tests/test_%s.gd" % stem
+        note = "   tests by name: " + beside if beside in paths and not f["path"].startswith("tests/") else ""
+        out.append("- +%s/-%s %s%s" % (f.get("additions", 0), f.get("deletions", 0), f["path"], note))
+    if len(files) > 80:
+        out.append("- ... %d more files" % (len(files) - 80))
+    out += ["", "## Unanswered review threads (%d)" % len(waiting)]
+    for c in waiting[:10]:
+        out.append("- %s:%s %s" % (c.get("path"), c.get("line"), " ".join(str(c.get("body", "")).split())[:240]))
+    out += ["", "## Diff" + (" (cut)" if len(diff) > limit else ""), "```diff", worker.clip(diff, limit), "```", ""]
+    path = os.path.join(folder, "skyrunner-review-%d-%s.md" % (n, head[:7]))
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(out))
+    return path
 
 
 def write_digest(path, me, lines):
@@ -168,26 +203,50 @@ def with_llm_lines(fresh, waiting, ask=worker.chat):
     return extra
 
 
-def run_once(me, out, state_path, use_llm, gather_fn=gather, ask=worker.chat, seen_merged_key="_merged"):
+def run_once(me, out, state_path, use_llm, gather_fn=gather, ask=worker.chat, seen_merged_key="_merged", now=None, remind=1800.0, min_gap=600.0,
+             bundle_fn=review_bundle):
+    now = time.time() if now is None else now
     prs, waiting, merged_now = gather_fn(me)
     state = load_state(state_path)
     seen = state.setdefault("seen", {})
     known_merged = set(state.get(seen_merged_key, []))
     first = seen_merged_key not in state
     merged_new = [] if first else [n for n in merged_now if n not in known_merged]
-    fresh = new_events(events(prs, me, waiting, merged_new), seen)
     state[seen_merged_key] = sorted(known_merged | set(merged_now))[-60:]
+    found = events(prs, me, waiting, merged_new)
+    fresh = new_events(found, seen, now, remind)
+    # batching: new items wait in `pending` until the minimum gap since the last digest has passed, so a burst is one digest, not many
+    pending = {p["key"]: p for p in state.get("pending", [])}
+    still = {f[0] for f in found}
+    for key, text, kind, n in fresh:
+        pending[key] = {"key": key, "text": text, "kind": kind, "pr": n}
+    pending = {k: v for k, v in pending.items() if k in still or v["kind"] == "merged"}  # a need that went away is not worth sending
+    due = bool(pending) and now - state.get("last_digest", 0.0) >= min_gap
+    sent = []
+    if due:
+        items = [(v["key"], v["text"], v["kind"], v["pr"]) for v in pending.values()]
+        extra = with_llm_lines(items, waiting, ask) if use_llm else {}
+        heads = {p["number"]: p for p in prs}
+        lines = []
+        for key, text, kind, n in items:
+            line = "- " + text
+            if kind == "review":
+                p = heads.get(n)
+                try:
+                    if p:
+                        line += "\n    bundle=" + bundle_fn(n, p["headRefOid"], p["headRefName"], p["title"])
+                except (worker.LocalLLMError, OSError, ValueError):
+                    pass  # no bundle: the line still has the head and branch
+            lines.append(line)
+            lines += extra.get(key, [])
+        write_digest(out, me, lines)
+        sent = [i[1] for i in items]
+        pending = {}
+        state["last_digest"] = now
+    state["pending"] = list(pending.values())
     with open(state_path, "w", encoding="utf-8") as fh:
         json.dump(state, fh)
-    if not fresh:
-        return []
-    extra = with_llm_lines(fresh, waiting, ask) if use_llm else {}
-    lines = []
-    for key, text, kind, n in fresh:
-        lines.append("- " + text)
-        lines += extra.get(key, [])
-    write_digest(out, me, lines)
-    return [f[1] for f in fresh]
+    return sent
 
 
 def main(argv=None):
@@ -199,6 +258,8 @@ def main(argv=None):
     ap.add_argument("--state", default="")
     ap.add_argument("--interval", type=float, default=90.0)
     ap.add_argument("--with-llm", action="store_true")
+    ap.add_argument("--remind", type=float, default=1800.0, help="repeat a need that still stands after this many seconds (0 = never)")
+    ap.add_argument("--min-gap", type=float, default=600.0, help="at least this many seconds between digests, so a burst is one digest")
     args = ap.parse_args(argv)
     out = args.out or os.path.join(tmp, "skyrunner-alerts-%s.md" % args.me)
     state = args.state or os.path.join(tmp, "skyrunner-alerts-%s.json" % args.me)
@@ -209,14 +270,14 @@ def main(argv=None):
             pass
     try:
         if args.mode == "once":
-            sent = run_once(args.me, out, state, args.with_llm)
+            sent = run_once(args.me, out, state, args.with_llm, remind=args.remind, min_gap=args.min_gap)
             for line in sent:
                 print(line)
             return 10 if sent else 0
         print("alert feed for %s every %.0f s -> %s" % (args.me, args.interval, out), flush=True)
         while True:
             try:
-                for line in run_once(args.me, out, state, args.with_llm):
+                for line in run_once(args.me, out, state, args.with_llm, remind=args.remind, min_gap=args.min_gap):
                     print(line, flush=True)
             except worker.LocalLLMError as e:
                 print("alerts: " + str(e), file=sys.stderr, flush=True)

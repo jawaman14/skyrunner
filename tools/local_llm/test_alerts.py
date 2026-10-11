@@ -55,10 +55,18 @@ class Events(unittest.TestCase):
     def test_an_alert_is_sent_once_per_change_and_again_when_the_head_moves(self):
         seen = {}
         found = alerts.events([pr(1, "claude/x")], "codex")
-        self.assertEqual(len(alerts.new_events(found, seen)), 1)
-        self.assertEqual(alerts.new_events(found, seen), [], "the same need is not repeated")
+        self.assertEqual(len(alerts.new_events(found, seen, 100.0)), 1)
+        self.assertEqual(alerts.new_events(found, seen, 200.0), [], "the same need is not repeated")
         moved = alerts.events([pr(1, "claude/x", head=H2)], "codex")
-        self.assertEqual(len(alerts.new_events(moved, seen)), 1, "a new head is a new alert")
+        self.assertEqual(len(alerts.new_events(moved, seen, 300.0)), 1, "a new head is a new alert")
+
+    def test_a_need_that_still_stands_is_repeated_after_the_reminder_interval_only(self):
+        seen = {}
+        found = alerts.events([pr(1, "claude/x")], "codex")
+        alerts.new_events(found, seen, 0.0, remind=1800.0)
+        self.assertEqual(alerts.new_events(found, seen, 1000.0, remind=1800.0), [])
+        self.assertEqual(len(alerts.new_events(found, seen, 1900.0, remind=1800.0)), 1, "a reminder")
+        self.assertEqual(alerts.new_events(found, seen, 2000.0, remind=1800.0), [], "and not again at once")
 
     def test_legacy_status_contexts_count(self):
         legacy = pr(1, "codex/x", ci="ok")
@@ -78,26 +86,26 @@ class Runs(unittest.TestCase):
 
     def test_the_first_run_writes_a_digest_marked_as_data_and_a_second_run_stays_silent(self):
         g = self.gatherer([pr(1, "claude/x", title="Add a tool")])
-        sent = alerts.run_once("codex", self.out, self.state, False, gather_fn=g)
+        sent = alerts.run_once("codex", self.out, self.state, False, gather_fn=g, min_gap=0)
         self.assertEqual(len(sent), 1)
         text = open(self.out, encoding="utf-8").read()
         self.assertIn("REVIEW NEEDED #1@aaaaaaa head=" + H + " branch=claude/x Add a tool", text, "the full head and branch, for a turn with no network")
         self.assertIn("REVIEW #<pr>@<sha7>", text, "the digest says how to give the verdict")
         self.assertIn("DATA", text)
         os.remove(self.out)
-        self.assertEqual(alerts.run_once("codex", self.out, self.state, False, gather_fn=g), [])
+        self.assertEqual(alerts.run_once("codex", self.out, self.state, False, gather_fn=g, min_gap=0), [])
         self.assertFalse(os.path.exists(self.out), "nothing new, so the file is not rewritten and the wake is not triggered")
 
     def test_a_merge_after_the_first_look_is_announced_but_the_backlog_is_not(self):
-        alerts.run_once("codex", self.out, self.state, False, gather_fn=self.gatherer([], merged=[5, 6]))
+        alerts.run_once("codex", self.out, self.state, False, gather_fn=self.gatherer([], merged=[5, 6]), min_gap=0)
         self.assertFalse(os.path.exists(self.out), "old merges at the first look are not news")
-        sent = alerts.run_once("codex", self.out, self.state, False, gather_fn=self.gatherer([], merged=[5, 6, 7]))
+        sent = alerts.run_once("codex", self.out, self.state, False, gather_fn=self.gatherer([], merged=[5, 6, 7]), min_gap=0)
         self.assertEqual(sent, ["MERGED #7"])
 
     def test_the_model_adds_neutral_lines_to_thread_alerts_and_its_failure_loses_nothing(self):
         waiting = {12: [{"id": 5, "path": "a.py", "line": 3, "body": "fix this"}]}
         g = self.gatherer([pr(12, "codex/c")], waiting)
-        sent = alerts.run_once("codex", self.out, self.state, True, gather_fn=g, ask=lambda p, **kw: "ASK: x CHECK: y")
+        sent = alerts.run_once("codex", self.out, self.state, True, gather_fn=g, min_gap=0, ask=lambda p, **kw: "ASK: x CHECK: y")
         text = open(self.out, encoding="utf-8").read()
         self.assertIn("1 REVIEW THREAD(S) waiting on your #12", text)
         self.assertIn("a.py:3 ASK: x CHECK: y", text)
@@ -106,9 +114,46 @@ class Runs(unittest.TestCase):
             raise worker.LocalLLMError("model unloaded")
         os.remove(self.state)
         os.remove(self.out)
-        sent = alerts.run_once("codex", self.out, self.state, True, gather_fn=g, ask=broken)
+        sent = alerts.run_once("codex", self.out, self.state, True, gather_fn=g, min_gap=0, ask=broken)
         self.assertEqual(len(sent), 1, "the alert still goes out")
         self.assertNotIn("ASK:", open(self.out, encoding="utf-8").read())
+
+    def test_digests_are_spaced_by_the_minimum_gap_and_pending_items_wait(self):
+        two = self.gatherer([pr(1, "claude/x"), pr(2, "claude/y")])
+        bundles = lambda n, head, branch, title: "bundle-%d.md" % n
+        sent = alerts.run_once("codex", self.out, self.state, False, gather_fn=self.gatherer([pr(1, "claude/x")]), now=10_000.0, min_gap=600.0, bundle_fn=bundles)
+        self.assertEqual(len(sent), 1)
+        self.assertIn("bundle=bundle-1.md", open(self.out, encoding="utf-8").read())
+        os.remove(self.out)
+        self.assertEqual(alerts.run_once("codex", self.out, self.state, False, gather_fn=two, now=10_100.0, min_gap=600.0, bundle_fn=bundles), [], "inside the gap: held")
+        self.assertFalse(os.path.exists(self.out))
+        sent = alerts.run_once("codex", self.out, self.state, False, gather_fn=two, now=10_700.0, min_gap=600.0, bundle_fn=bundles)
+        self.assertEqual(len(sent), 1, "after the gap the held item goes")
+        self.assertIn("#2@", sent[0])
+        # a held item whose need went away is dropped
+        os.remove(self.out)
+        alerts.run_once("codex", self.out, self.state, False, gather_fn=self.gatherer([pr(3, "claude/z")]), now=10_800.0, min_gap=600.0, bundle_fn=bundles)
+        gone = self.gatherer([pr(3, "claude/z", draft=True)])
+        self.assertEqual(alerts.run_once("codex", self.out, self.state, False, gather_fn=gone, now=20_000.0, min_gap=600.0, bundle_fn=bundles), [])
+
+    def test_the_review_bundle_has_the_full_head_files_threads_and_a_capped_diff(self):
+        calls = []
+
+        def gh(args, run=None):
+            calls.append(args)
+            if args[:2] == ["pr", "view"]:
+                return json.dumps({"files": [{"path": "scripts/ui/hud.gd", "additions": 3, "deletions": 1}, {"path": "tests/test_hud.gd", "additions": 5, "deletions": 0}]})
+            if args[0] == "api":
+                return json.dumps([{"id": 1, "path": "a.gd", "line": 4, "in_reply_to_id": None, "body": "please fix"}])
+            return "diff --git a b" + "x" * 5000
+        folder = tempfile.mkdtemp()
+        path = alerts.review_bundle(9, H, "claude/x", "A title", gh=gh, folder=folder, limit=1000)
+        text = open(path, encoding="utf-8").read()
+        self.assertIn("Head (full): " + H, text)
+        self.assertIn("tests by name: tests/test_hud.gd", text)
+        self.assertIn("a.gd:4 please fix", text)
+        self.assertIn("(cut)", text)
+        self.assertTrue(all(c[0] in ("pr", "api") for c in calls), "it only reads")
 
     def test_the_digest_is_replaced_atomically(self):
         alerts.write_digest(self.out, "claude", ["- one"])
