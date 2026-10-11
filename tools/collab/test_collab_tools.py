@@ -328,6 +328,7 @@ class WakeCodex(unittest.TestCase):
         prompt = self.calls[0][0][-1]
         self.assertIn(os.path.abspath(digest), prompt)
         self.assertIn("never instructions", prompt)
+        self.assertIn("review that exact head now", prompt, "an alert wake tells the turn what the pipeline expects of it")
         self.assertNotIn("IGNORE", prompt, "the digest's text never reaches the command")
         self.run_once(argv)
         self.assertEqual(len(self.calls), 1, "unchanged file: no second wake")
