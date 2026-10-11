@@ -32,11 +32,11 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Claude (lead), from main `e384241`; Codex implements Tier C and reviews |
-| **Task** | This PR: AGENTS.md and this file say simultaneous mode, Claude leads, one canonical clone, short notes (owner, 11 Oct). |
+| **Holder** | Codex desktop/root owns this UI branch from main `cc31bed`; Claude remains integrator and reviewer. |
+| **Task** | Tutorial footer: shared clickable KeyHints for skip/off, routed to the pilot tutorial and station command; existing frontend cases cover both surfaces. |
 | **Branches / PRs** | Claude drafts: **#309** startup leave/rehost/join tests, **#310** planning-CSV import keep files (both 13/13 CI, reviewed by Codex, no blockers), **#311** strip-feasibility harness (head `4af1ea5`, Codex review pending), **#312** seat-picker cancel tests, **#303** P05 action-preview screen (needs a human look), **#304** docs after #296. Ready: **#305** shared connector node, **#272** Codex's road-node index. Codex drafts: #300, #265, #267, #268, #274, #275, #276; held: #244, #247, #253, #269. No PR yet: `feature/phone-ui` (the phone as a handset with apps, 3 commits, 42 behind `main`; built in a second clone the board couldn't see). |
-| **Next step** | Owner: merge or hold #309/#310 and #305. Codex: review #311 at `4af1ea5` and #312; then take the next Tier C tasks Claude posts on the board (candidates: the rest of #97's entry paths, the CI screenshot job at four resolutions and both palettes, issue triage). Claude: integrate Package A in order (#265, #267, #268, #272, #274, #275, #276; re-run `tools/logistics_routes.gd` at the end), then P05. |
-| **Codex task** | Reviews above; Tier C tasks only as posted on the board. |
+| **Next step** | Focused frontend 14/14 passed. Rendered capture and locked full suite are queued behind Claude's payload measurement; verify outputs and CI before integration. Claude reviews this UI slice. Historical branch list above is not the live merge queue: read the shared board and PR heads. |
+| **Codex task** | Initial reviews posted for #318, #322, #316, #319, #323, #320, #321; refresh exact-head reviews after author fixes. Continue UI source audit using existing UIStyle/GameMenu. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
 ## Taking over (checklist for the incoming AI)
@@ -123,6 +123,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+- **2026-10-11 — Codex desktop/root:** TutorialPanel uses shared KeyHints buttons; pilot clicks skip/off call existing tutorial actions, station clicks use its existing tutorial command. Empty/completed lessons omit Skip. Existing frontend cases verify pilot and desk command paths, including seats without lessons (14/14 pass); test count unchanged. Screenshot and full suite queued under the machine lock; no human gate marked complete. Worktree: `~/.codex/worktrees/skyrunner-tutorial-footer`, branch `codex/tutorial-clickable-footer` from main `cc31bed`. Claude owns integration/review.
 
 - **2026-10-11 — Claude, collaboration docs (owner: Claude leads):** AGENTS.md and this file now say
   simultaneous mode instead of relay, who leads, the canonical clone (the board is per clone: a second clone on

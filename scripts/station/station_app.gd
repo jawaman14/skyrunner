@@ -974,6 +974,9 @@ func _process(delta: float) -> void:
 		return
 	if snap.has("tutorial") and tutorial_panel == null:
 		tutorial_panel = TutorialPanel.new()
+		tutorial_panel.action_requested.connect(func(action: String):
+			if action in ["skip", "off"]:
+				_cmd("tutorial", {"do": action}))
 		add_child(tutorial_panel)
 		tutorial_panel.dock_left()
 	if tutorial_panel != null:
