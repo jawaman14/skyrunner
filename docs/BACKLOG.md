@@ -60,7 +60,7 @@ and the documentation PRs #241, #242, #243, #246, #249, #264, #273 (folded into 
 | 85 | Combat from physically present agents | not started | Keep: package A step 6, after movement migration |
 | 86 | Pathfinding: terrain, checkpoints, blocked routes | partly: penalty hook, checked routes; #258/#270/#272 drafts | Keep: package A |
 | 87 | Radar-aware hot routing | **done** (#295, #297): route-planner zones, wired into hot autopilot legs from public airfield radars only | Close |
-| 88 | QRY/PNR aircraft/load feasibility | documented, not resolved: in `docs/STRIPS.md` the bot's C182 overruns QRY and PNR at light load, and the C172 can't take off from them at half load, so the job board can send a load where it can't fly out | Keep: an owner/balance decision (accept and stop offering those loads, or change the strips) |
+| 88 | QRY/PNR aircraft/load feasibility | documented, not resolved: `docs/STRIPS.md` (216 per-end trials) shows QRY and PNR are one-way, light-load strips (PNR also half load, from end 0 only), EGL takes off at light load only, and the C182 at max load fails the landing everywhere (a heavy-aircraft problem, not a strip one), so the job board can send a load where it can't fly out | Keep: an owner/balance decision (accept and stop offering those loads, or change the strips) |
 | 89 | Two-machine multiplayer verification | gate | Keep until a real two-machine session is recorded |
 | 90 | Housekeeping and CI hygiene | partly: `tools/hygiene.sh` enforces the stray-folder, scratch-script and export-filter checks | Narrow to the dead-code scan, or close |
 | 91 | Repository weight | not started: `.git` is 190 MB; `docs/video` tracks 41 MB of MP4 | Keep. Move videos to release assets; don't add #253's media |

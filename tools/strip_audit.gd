@@ -22,6 +22,15 @@ const BUSH_APPROACH_DEG := 4.5
 const ROLL_MARGIN := 1.6
 const SPAN_MARGIN := 1.6
 
+## Only true of the canonical run (--bot, natural terrain, the default map, c172p and c182, light/half/max loads): written from that
+## table, so a run with other options must not print it.
+const ENVELOPE := """- **Measured envelope** (read from the table on 11 October 2026: natural terrain, map seed 100000, session seed 11, one calm
+  run per cell). QRY and PNR are one-way, light-load strips: land on end 1 (end 0 has no clear final) and take off from end 0, and
+  only at light load (PNR also at half load); from end 1 no takeoff passes. EGL takes off at light load only, from either end.
+  The ordinary fields pass nearly everywhere; their failures are max-load cases (the Cessna 172 on the shorter strips) and the
+  Cessna 182 at max load, which fails the *landing* on every field including HAR. That last one is a heavy-aircraft landing
+  problem, not a strip problem, so it should be looked at on its own."""
+
 const NOTES := """## Reading the results
 
 - **The trial marks.** T is a takeoff from that end, L a landing on that end, flown by the pilot bot on the runway line
@@ -30,12 +39,7 @@ const NOTES := """## Reading the results
   up, never under an obstacle top); a landing passes if the aircraft stops on the strip. The bot holds the runway line from
   liftoff so the answer is about the aircraft and the terrain, not where the bot would choose to turn. One calm run per cell.
   Terrain matters: re-run with `--terrain classic` to compare.
-- **Measured envelope** (read from the table on 11 October 2026: natural terrain, map seed 100000, session seed 11, one calm
-  run per cell). QRY and PNR are one-way, light-load strips: land on end 1 (end 0 has no clear final) and take off from end 0, and
-  only at light load (PNR also at half load); from end 1 no takeoff passes. EGL takes off at light load only, from either end.
-  The ordinary fields pass nearly everywhere; their failures are max-load cases (the Cessna 172 on the shorter strips) and the
-  Cessna 182 at max load, which fails the *landing* on every field including HAR. That last one is a heavy-aircraft landing
-  problem, not a strip problem, so it should be looked at on its own.
+@ENVELOPE@
 - **One-way strips, by design.** QRY end 0 and PNR end 0 have terrain or mountain in the approach path
   (the flag says how far up it is), so land toward the open end and take off away from the high ground.
 - **EGL is a mesa.** About 170 m of cliff past both ends: a short field, and an overrun is fatal.
@@ -51,6 +55,7 @@ const NOTES := """## Reading the results
 
 var world: World
 var flags: Array = []  ## [code, text]
+var payload_results: Array = []  ## every max_payload result of --payload, written beside the report as JSON
 
 
 func _initialize() -> void:
@@ -107,8 +112,8 @@ func _initialize() -> void:
 	if bot:
 		lines.append_array(_bot_section(keys, loads))
 	if payload:
-		lines.append_array(_payload_section(keys))
-	lines.append_array(NOTES.split("
+		lines.append_array(_payload_section(keys, natural, map_seed))
+	lines.append_array(_notes(bot, natural, map_seed, keys, loads).split("
 "))
 	lines.append("")
 	lines.append("## Flags")
@@ -125,6 +130,12 @@ func _initialize() -> void:
 		if f != null:
 			f.store_string(text)
 			print("wrote ", path)
+		if not payload_results.is_empty():
+			var jpath := path.get_basename() + "_PAYLOAD.json"
+			var jf := FileAccess.open(jpath, FileAccess.WRITE)
+			if jf != null:
+				jf.store_string(JSON.stringify(payload_results, "  "))
+				print("wrote ", jpath)
 	quit()
 
 
@@ -248,11 +259,13 @@ func _bot_section(keys: Array, loads: Array) -> Array:
 		StripTrials.summary_table(results, fields, keys, loads), ""]
 
 
-## The heaviest payload (lb) that takes off from each end, from StripTrials.max_payload, next to what the game's own
-## pickups weigh (Trade.OWN: a bale is lb[0..1], a load is n[0..1] of them, at the strip kinds in "at").
-func _payload_section(keys: Array) -> Array:
-	var out := ["## Heaviest payload that takes off, per runway end", "",
-		"Bisected payload at 30% fuel, natural-terrain trials as above (assumes a heavier payload never helps; the samples are in the JSON). `none` = it cannot take off even empty.", ""]
+## The largest payload (lb) that took off from each end, from StripTrials.max_payload, next to what the game's own pickups
+## weigh (Trade.OWN: a bale is lb[0..1], a load is n[0..1] of them, at the strip kinds in "at"). Each cell is a sampled lower
+## bound: a 5-step bisection of the payload room, so within room/32 of the true limit, and it assumes a heavier payload never
+## helps. Every sample and run is kept in the JSON beside the report so that assumption can be audited.
+func _payload_section(keys: Array, natural: bool, map_seed: int) -> Array:
+	var out := ["## Largest payload that took off, per runway end", "",
+		"%s terrain, map seed %d, 30%% fuel. Each value is a **sampled lower bound** from a 5-step bisection of the payload room (so within room/32, about 19 lb for the Cessna 172, of the true limit; it assumes a heavier payload never helps), and the cell says the lightest payload tried that failed. Every sample and run is in `STRIPS_PAYLOAD.json` next to this report. `none` = it cannot take off even empty." % ["Natural" if natural else "Classic", map_seed], ""]
 	for g in Trade.OWN:
 		var o: Dictionary = Trade.OWN[g]
 		out.append("- **%s** (%s, at %s strips): %.0f to %.0f lb a load." % [o.title, o.label.to_lower() + "s", ", ".join(o["at"]),
@@ -271,7 +284,35 @@ func _payload_section(keys: Array) -> Array:
 			var cells := []
 			for k in keys:
 				var r := StripTrials.max_payload(k, code, end, 0.3, 5)
-				cells.append("none" if r.max_payload_lb == null else "%.0f lb" % r.max_payload_lb)
+				r["terrain"] = "natural" if natural else "classic"
+				r["map_seed"] = map_seed
+				payload_results.append(r)
+				cells.append(_payload_cell(r))
 			out.append("| %s %s | %d | %s |" % [code, af.name, end, " | ".join(cells)])
 	out.append("")
 	return out
+
+
+## "at least X lb (failed at Y lb)", "at least X lb (all the room)", or "none".
+static func _payload_cell(r: Dictionary) -> String:
+	if r.max_payload_lb == null:
+		return "none"
+	var failed := INF
+	for sample in r.samples:
+		if not sample[1]:
+			failed = minf(failed, float(sample[0]))
+	if failed == INF:
+		return ">= %.0f lb (all the room)" % r.max_payload_lb
+	return ">= %.0f lb (failed at %.0f)" % [r.max_payload_lb, failed * float(r.payload_room_lb)]
+
+
+## The notes for this run: the envelope paragraph only for the configuration it was measured on, else a line saying it is left out.
+func _notes(bot: bool, natural: bool, map_seed: int, keys: Array, loads: Array) -> String:
+	var canonical := bot and natural and map_seed == MapCity.SEED and keys == ["c172p", "c182"] and loads == ["light", "half", "max"]
+	if canonical:
+		return NOTES.replace("@ENVELOPE@
+", ENVELOPE + "
+")
+	return NOTES.replace("@ENVELOPE@
+", "- **Measured envelope.** Left out: it describes the canonical run (`--bot` on the natural terrain, the default map, the Cessna 172 and 182, light, half and max loads), and this run used other options.
+")
