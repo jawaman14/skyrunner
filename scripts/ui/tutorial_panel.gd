@@ -7,10 +7,13 @@ extends PanelContainer
 var title: Label
 var body: Label
 var tip: Label
-var foot: Label
+signal action_requested(action: String)
+
+var foot: KeyHints
 
 
 func _ready() -> void:
+	theme = UIStyle.theme()
 	add_theme_stylebox_override("panel", UIStyle.box(Color(0.05, 0.03, 0.09, 0.9), 8, UIStyle.CYAN, 1, Vector4(16, 10, 16, 10)))
 	anchor_left = 0.5
 	anchor_right = 0.5
@@ -29,7 +32,10 @@ func _ready() -> void:
 	tip = UIStyle.label("", 14, UIStyle.AMBER)
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(tip)
-	foot = UIStyle.caption("F10 skip this step   SHIFT+F10 tutorial off")
+	foot = KeyHints.new()
+	foot.focusable = false  # an overlay over gameplay: Tab and Enter must keep reaching the game, and a click must not leave focus on Skip
+	foot.hint_pressed.connect(func(action: String): action_requested.emit(action))
+	foot.set_hints([["F10", "skip this step", "skip"], ["SHIFT+F10", "tutorial off", "off"]])
 	v.add_child(foot)
 	visible = false
 
@@ -58,3 +64,5 @@ func show_view(tv: Dictionary) -> void:
 	body.text = str(tv.text)
 	tip.visible = str(tv.tip) != ""
 	tip.text = "TIP: " + str(tv.tip)
+	foot.set_hints([["F10", "skip this step", "skip"], ["SHIFT+F10", "tutorial off", "off"]]
+		if title.visible and str(tv.id) != "complete" else [["SHIFT+F10", "tutorial off", "off"]])
