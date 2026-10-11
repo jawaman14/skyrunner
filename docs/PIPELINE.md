@@ -18,6 +18,62 @@ person can do (the human release gates and the decisions in #326). This file is 
 | 8 | Merge | the integrator (Claude) | `github_pr_merge` (needs green CI on the head and every thread replied) | seconds | waiting on step 7 |
 | 9 | Notes for the owner | the integrator | one comment on #326 per merge, a summary at the end | seconds | did not exist |
 
+## What went wrong on 11 October, with the evidence
+
+**Running Godot (tests, imports, measurements).**
+1. One Godot job at a time on the machine, with no priority or estimate. A 40-minute strip regeneration of mine held the lock while Codex's
+   screenshot and full-suite runs queued behind it (Codex said so in note 173). The full suite is about 13 minutes (1,114 tests, 761 s) and a
+   cold import in a fresh worktree about 5 more, because every worktree has its own `.godot` cache.
+2. A test run is refused if `docs/PROJECT_STATUS.md` is stale, so adding one test cost a failed run before the regeneration.
+3. A filtered run (`phone`) showed a walker failure that does not happen when the whole file runs: a selection artifact that looked like a
+   regression until the whole file was run.
+4. Codex's woken turns could not run Godot at all for hours: the default elevated Windows sandbox failed (`helper_unknown_error`); the
+   `unelevated` setting fixed it.
+5. My own test started a real Codex three times (a default argument bound too early) and spent its quota.
+
+**GitHub development.**
+1. The review gate waits on an agent that acts only when prompted. Reviews stalled for hours; a woken turn cannot call `github_pr_review`
+   (approval policy never), so reviews depended on the owner prompting the desktop session.
+2. Too much open work for the reviewer: one agent had 16 open PRs awaiting the other's review at once.
+3. The bot review lands minutes after CI. A P1 on #318 and 16 other findings went unseen until `review_packet.py` existed, and replies
+   posted as issue comments did not answer the thread, so the merge guard still counted them.
+4. Twelve Codex branches (one cumulative stack) were 38 to 79 commits behind: syncing them meant a 23-hunk, 12-file conflict nobody had
+   reviewed, which cost a full CI run and still needs Codex's review.
+5. Every PR collides on three shared files (the HANDOFF baton, the status count, the test lanes); the sync tool resolved two of the three
+   automatically and the baton by hand until `--baton theirs`.
+6. Drafts stayed drafts, which the merge queue hides; both agents use one GitHub account, so assignees and approvals cannot tell them apart.
+7. The written rule (the owner's word before every merge) disagreed with what the owner had said (merge readiness is the agents' job):
+   fixed in HANDOFF.md, but only on an unmerged branch.
+8. Notices: Claude's board channel went quiet after note 201, so two pings from Codex (204, 205) sat unanswered until a direct read of the
+   board. Codex had a watcher; Claude had none.
+9. Cost: notes averaged about 500 characters, the stand-in reviewers hit a session rate limit before reporting, Codex ran out of tokens.
+10. Claude's own errors: a "done" note for a change the harness had blocked (corrected), a doc line attributing a rule to the owner that
+    he had not stated (corrected), conflict markers committed once, and edit scripts with escape bugs.
+
+## Who does what at every stage, now including the local model and Codex
+
+"Bonsai" is the local model (`prism-ml/bonsai-27b` on the owner's LM Studio server): it only drafts, and a person or agent checks everything it says.
+
+| Stage | Bonsai (local) | Claude | Codex | Owner |
+|---|---|---|---|---|
+| Intake: issues, PR triage | one-line summaries (hints) | reads them, confirms the tier from paths, assigns | takes its queue (#329) | decisions and gates only (#326) |
+| Plan | | simulation, flight, balance, tooling | UX and UI, audits, gate scripts | priorities |
+| First drafts of docs, tests, boilerplate | writes a draft PR on a `local/` branch, marked unreviewed | finishes drafts in its lane | finishes drafts in its lane | |
+| Build and local checks | | its own PRs; runs Godot under the machine lock | its own PRs; runs Godot under the machine lock | |
+| Sync `main` into a branch | | `sync_shared.py` for its PRs | `sync_shared.py` or `github_pr_sync_main` for its PRs | |
+| CI and bot review | digest of a long log or diff; neutral summary of each review thread | reads the digests, answers its threads in-thread | reads the digests, answers its threads in-thread | |
+| Review of an exact head | never | reviews Codex's PRs | reviews Claude's PRs (`github_pr_review`, or `post_review.py` from a woken turn) | |
+| Merge and notes for the owner | never | merges when the queue says READY; one line per merge on #326 | | reads the notes |
+| Wake and notices | | keeps the Codex watcher on and its own doorbell checked at the start of every turn | acknowledges within one wake | |
+| Human release gates | | prepares builds and rows | writes the scripts (#333) | runs them |
+
+**New rules from the above.**
+- *Work in progress limit:* an author has at most 3 PRs awaiting the other agent's review; more work waits on its branch as a draft, and small docs changes are batched into one PR a day. Review capacity is the bottleneck, not authoring.
+- *Godot lock steward (Claude):* a job expected to take over 10 minutes announces itself on the board with its estimate before it takes the lock and runs when the lock is otherwise idle, or splits into smaller runs; no agent holds the lock past its estimate without a note.
+- *Ready for review means:* not a draft, CI green on the head, bot threads answered in-thread, HANDOFF log updated.
+- *Doorbell:* every turn starts with `python tools/collab/notify.py once --recipient <agent>`; the channel is a convenience, not the source of truth.
+- *Bonsai's drafts are not review-queue work* until their finisher has read every line and marked them ready.
+
 ## Roles and handoffs: who leads what, and who waits for whom
 
 **Lanes** (standing; revisit after three comparable completed units, as the score policy says).
