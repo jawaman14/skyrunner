@@ -33,6 +33,7 @@ func _ready() -> void:
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(tip)
 	foot = KeyHints.new()
+	foot.focusable = false  # an overlay over gameplay: Tab and Enter must keep reaching the game, and a click must not leave focus on Skip
 	foot.hint_pressed.connect(func(action: String): action_requested.emit(action))
 	foot.set_hints([["F10", "skip this step", "skip"], ["SHIFT+F10", "tutorial off", "off"]])
 	v.add_child(foot)

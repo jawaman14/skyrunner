@@ -74,6 +74,7 @@ func test_pilot_app_flies_a_frame_and_opens_menus() -> void:
 	var lesson: String = s.tutorial.current()[0]
 	var skip_button := app.tutorial_panel.foot.get_child(0) as Button
 	check(skip_button != null and skip_button.custom_minimum_size.y >= UIStyle.TOUCH_MIN, "skip is a touch-sized button")
+	check_eq(skip_button.focus_mode, Control.FOCUS_NONE, "the tutorial chips never take keyboard focus, so Tab and Enter reach the game")
 	skip_button.pressed.emit()
 	check(s.tutorial.done.has(lesson), "clicking skip completes the current lesson")
 	var off_button := app.tutorial_panel.foot.get_child(1) as Button
