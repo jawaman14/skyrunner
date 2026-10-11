@@ -19,6 +19,15 @@ const BUSH_APPROACH_DEG := 4.5
 const ROLL_MARGIN := 1.6
 const SPAN_MARGIN := 1.6
 
+## Only true of the canonical run (--bot, natural terrain, the default map, c172p and c182, light/half/max loads): written from that
+## table, so a run with other options must not print it.
+const ENVELOPE := """- **Measured envelope** (read from the table on 11 October 2026: natural terrain, map seed 100000, session seed 11, one calm
+  run per cell). QRY and PNR are one-way, light-load strips: land on end 1 (end 0 has no clear final) and take off from end 0, and
+  only at light load (PNR also at half load); from end 1 no takeoff passes. EGL takes off at light load only, from either end.
+  The ordinary fields pass nearly everywhere; their failures are max-load cases (the Cessna 172 on the shorter strips) and the
+  Cessna 182 at max load, which fails the *landing* on every field including HAR. That last one is a heavy-aircraft landing
+  problem, not a strip problem, so it should be looked at on its own."""
+
 const NOTES := """## Reading the results
 
 - **The trial marks.** T is a takeoff from that end, L a landing on that end, flown by the pilot bot on the runway line
@@ -27,12 +36,7 @@ const NOTES := """## Reading the results
   up, never under an obstacle top); a landing passes if the aircraft stops on the strip. The bot holds the runway line from
   liftoff so the answer is about the aircraft and the terrain, not where the bot would choose to turn. One calm run per cell.
   Terrain matters: re-run with `--terrain classic` to compare.
-- **Measured envelope** (read from the table on 11 October 2026: natural terrain, map seed 100000, session seed 11, one calm
-  run per cell). QRY and PNR are one-way, light-load strips: land on end 1 (end 0 has no clear final) and take off from end 0, and
-  only at light load (PNR also at half load); from end 1 no takeoff passes. EGL takes off at light load only, from either end.
-  The ordinary fields pass nearly everywhere; their failures are max-load cases (the Cessna 172 on the shorter strips) and the
-  Cessna 182 at max load, which fails the *landing* on every field including HAR. That last one is a heavy-aircraft landing
-  problem, not a strip problem, so it should be looked at on its own.
+@ENVELOPE@
 - **One-way strips, by design.** QRY end 0 and PNR end 0 have terrain or mountain in the approach path
   (the flag says how far up it is), so land toward the open end and take off away from the high ground.
 - **EGL is a mesa.** About 170 m of cliff past both ends: a short field, and an overrun is fatal.
@@ -100,7 +104,7 @@ func _initialize() -> void:
 	lines.append("")
 	if bot:
 		lines.append_array(_bot_section(keys, loads))
-	lines.append_array(NOTES.split("
+	lines.append_array(_notes(bot, natural, map_seed, keys, loads).split("
 "))
 	lines.append("")
 	lines.append("## Flags")
@@ -238,3 +242,15 @@ func _bot_section(keys: Array, loads: Array) -> Array:
 	return ["## Pilot bot trials, per runway end", "",
 		"Aircraft %s at %s load, one calm run per cell. Key under Reading the results." % [", ".join(keys), ", ".join(loads)], "",
 		StripTrials.summary_table(results, fields, keys, loads), ""]
+
+
+## The notes for this run: the envelope paragraph only for the configuration it was measured on, else a line saying it is left out.
+func _notes(bot: bool, natural: bool, map_seed: int, keys: Array, loads: Array) -> String:
+	var canonical := bot and natural and map_seed == MapCity.SEED and keys == ["c172p", "c182"] and loads == ["light", "half", "max"]
+	if canonical:
+		return NOTES.replace("@ENVELOPE@
+", ENVELOPE + "
+")
+	return NOTES.replace("@ENVELOPE@
+", "- **Measured envelope.** Left out: it describes the canonical run (`--bot` on the natural terrain, the default map, the Cessna 172 and 182, light, half and max loads), and this run used other options.
+")
