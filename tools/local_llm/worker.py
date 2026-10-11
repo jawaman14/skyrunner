@@ -148,15 +148,22 @@ def chat(prompt, system="", model=None, max_tokens=800, think=False, temperature
                 "temperature": temperature, "store": False}
         if system:
             body["system_prompt"] = system
-        req = urllib.request.Request(endpoint() + "/api/v1/chat", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
         start = time.time()
-        try:
-            with opener(req, timeout=timeout) as r:
-                data = json.load(r)
-        except urllib.error.HTTPError as e:
-            raise LocalLLMError("the server refused: %s %s" % (e.code, e.read()[:200].decode("utf-8", "replace")))
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
-            raise LocalLLMError("could not reach the local LLM: %s" % e)
+        data = None
+        for attempt in range(2):
+            req = urllib.request.Request(endpoint() + "/api/v1/chat", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+            try:
+                with opener(req, timeout=timeout) as r:
+                    data = json.load(r)
+                break
+            except urllib.error.HTTPError as e:
+                detail = e.read()[:300].decode("utf-8", "replace")
+                if attempt == 0 and not think and "does not expose reasoning" in detail:
+                    del body["reasoning"]  # a model with no reasoning switch (for example a coder model): ask without it
+                    continue
+                raise LocalLLMError("the server refused: %s %s" % (e.code, detail[:200]))
+            except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
+                raise LocalLLMError("could not reach the local LLM: %s" % e)
         text = "".join(str(o.get("content", "")) for o in data.get("output", []) if o.get("type") == "message").strip()
         stats = data.get("stats") or {}
         if not text:

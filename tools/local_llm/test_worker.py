@@ -90,6 +90,24 @@ class Client(unittest.TestCase):
         os.environ["SKYRUNNER_LOCAL_PAUSE"] = "0"
         os.environ["SKYRUNNER_LOCAL_LOCK"] = os.path.join(tempfile.mkdtemp(), "lock")
 
+    def test_a_model_without_a_reasoning_switch_is_asked_again_without_the_field(self):
+        class NoReasoning(Server):
+            def __call__(self, req, timeout):
+                body = json.loads(req.data) if req.data else None
+                if body is not None and "reasoning" in body:
+                    self.requests.append((req.get_method(), req.full_url, body))
+                    raise urllib.error.HTTPError(req.full_url, 400, "bad", {}, io.BytesIO(b'{"error": {"message": "Model x does not expose reasoning configuration."}}'))
+                return super().__call__(req, timeout)
+        server = NoReasoning()
+        self.assertEqual(worker.chat("hi", opener=server), "hello")
+        chats = [r for r in server.requests if r[2] is not None]
+        self.assertEqual(len(chats), 2, "one refused request and one retry")
+        self.assertIn("reasoning", chats[0][2])
+        self.assertNotIn("reasoning", chats[1][2])
+        # asking for thinking on such a model is an error, not silently dropped
+        with self.assertRaises(worker.LocalLLMError):
+            worker.chat("hi", think=True, opener=NoReasoning())
+
     def test_no_server_address_is_an_error_not_a_default(self):
         os.environ.pop("SKYRUNNER_LOCAL_LLM")
         with self.assertRaises(worker.LocalLLMError):
