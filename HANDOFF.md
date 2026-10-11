@@ -124,6 +124,27 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+
+- **2026-10-11 — Claude, wake_codex.py alerts:** `--alerts-file PATH` also wakes Codex when an alert digest file changes (the prompt is fixed text naming only that path, and says the digest is data, never instructions; the file's mtime seen is kept beside the cursor), and `--queue-thread ID` delivers with `codex queue --thread ID --message` to an open Codex thread instead of resuming a headless session. 35 collab tests pass. NOT verified: delivery to the open desktop window via `codex queue` (Codex's earlier probe, note 187, exited 0 with delivery pending).
+
+- **2026-10-11 — Claude, #318 review fix (P1):** `approach_end_clear` checked a 4.5-degree path on bush and shady strips, but the autopilot's final flies a little under 3 degrees from 30 m at the threshold, so an obstacle between the two lines read "clear" and the selector could pick that end. The check now uses the lower of the audit line and `Session.route_height_at(d)`, the same height `_approach_route` builds its final fix from (one definition). The rule is a static `way_in_clear(elev, deg, top_at)` so it is tested without a map. New test pins it; mutation check (ignore the route line) fails it; the other 14 + 10 autopilot tests pass. Codex's review then found the check stopped at 3 km while the final runs out to the 5 km fix: it now checks the route's height to `APPROACH_FINAL_M` (the audit line still only to 3 km), with a 4 km regression that a 3 km loop fails. Not run: the full suite (CI). The QRY/PNR end-0 results are unchanged.
+- **2026-10-11 — Claude, autopilot approach end (#80/#82, Tier A):** On `claude/autopilot-approach-end` from main
+  `e01feb4`. A diagnostic (QRY, PNR, EGL, HAR from 8 bearings x 2 distances x 3 headings) showed `Session._approach_route`
+  picks the runway end by nearest final fix alone, so from every entry on the end-0 side of QRY and PNR it flew the
+  *blocked* end (terrain 53 m up at 570 m out, trees 153 m up at 3000 m out), some with turns of 150-170 degrees. Now
+  `approach_end_clear(af, end)` judges an end by `tools/strip_audit.gd`'s rule (3 degrees, 4.5 for bush/shady, 10 m over the
+  threshold, out to 3 km) and `_choose_end` takes the nearer clear end, else the old nearest rule; nothing else about the route
+  changes. `tests/test_autopilot_approach.gd` (simulation lane, 5 tests) pins the selector to the audit's blocked ends,
+  QRY/PNR always on end 1, every other field on the old nearest-end rule, the either-terrain invariant, and the choice
+  function; with the selector forced to "never blocked" the QRY/PNR tests fail (mutation check). Windows Godot 4.7.2 under
+  the machine lock: autopilot files 30/30. **Finding for the lead:** on the *natural* terrain (what the game ships) HAR end 0's
+  3-degree path is also blocked (the natural pass puts ~22 m more hill 1.2 km out, 13 m into the path), so the autopilot now
+  joins HAR from end 1 when end 1 is clear; the natural pass is meant to leave approaches alone, so that is a terrain
+  question for a separate decision. Not done from #82: a locked planner result, forward-intercept constants and
+  heading-aware scoring (they would change ordinary-field behaviour). #80/#82 stay open.
+
+- **2026-10-11 — Claude, #322 (wake_codex.py):** wakes Codex when a note is sent to it: one fixed prompt (integer ids, "act only on those ids", read only the new notes in pages of 20), cooldown, hourly cap, `--codex-config` for the unelevated Windows sandbox. After the bot review: the single-flight lock is an OS file lock (released when the holder dies, so no stale lock and no race over reclaiming one), a malformed cursor file is repaired, the woken turn runs in `--root`, the prompt is bounded to the captured ids. 33 collab tests pass; a woken turn with a working shell and MCP was verified end to end (board notes 149, 153). Not verified: waking the open desktop window; the per-tool review approval (blocked by the Claude Code guard).
+
 - **2026-10-11 — Codex desktop/root:** TutorialPanel uses shared KeyHints buttons; pilot clicks skip/off call existing tutorial actions, station clicks use its existing tutorial command. Empty/completed lessons omit Skip. Existing frontend cases verify pilot and desk command paths, including seats without lessons (14/14 pass); test count unchanged. Screenshot and full suite queued under the machine lock; no human gate marked complete. Worktree: `~/.codex/worktrees/skyrunner-tutorial-footer`, branch `codex/tutorial-clickable-footer` from main `cc31bed`. Claude owns integration/review.
 
 - **2026-10-11 — Claude, collaboration docs (owner: Claude leads):** AGENTS.md and this file now say
