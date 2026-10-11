@@ -52,9 +52,10 @@ writer: the integrator posts one line per merge on #326 and a summary at the end
 ## Stage 0: a local model does the cheap first pass (owner, 11 October)
 
 The owner connected an LM Studio server on this network and asked for the cheap first-pass work, then the GitHub chores and the first run
-of small coding jobs, to go to it, with Claude and Codex finishing and reviewing. The worker is `tools/local_llm/worker.py` (PR for it
-separate). The 7B model (`qwen2.5-7b-instruct-1m`) answered a small GDScript task correctly in 1.5 s; the 27B model does not load (about
-45 GB needed); the 3B and 1B are for one-line jobs.
+of small coding jobs, to go to it, with Claude and Codex finishing and reviewing. The worker is `tools/local_llm/worker.py` (its own PR). It uses LM Studio's native API and **only a model the owner has already loaded**
+(it reads the model list first and never calls a load or unload endpoint, because his large model is on that server and a model that does
+not fit freezes the machine), one request at a time across agents, reasoning off by default. The owner chose `prism-ml/bonsai-27b`
+(1-bit, 4.7 GB): the same digest of a finished test-suite log took 15 s, against 31 s for `qwen/qwen3.6-27b`, and both were accurate.
 
 | Job | The local model does | Then | Never |
 |---|---|---|---|
@@ -66,7 +67,7 @@ separate). The 7B model (`qwen2.5-7b-instruct-1m`) answered a small GDScript tas
 First drafts are suited to docs, tests for existing behaviour, simple tools and boilerplate. They are not suited to the simulation, flight,
 determinism, saves or the network protocol (Tier 2): a model this size gets those wrong in ways tests may not catch.
 
-**Trial before trusting it.** Phase 1 (once the LM Studio engine is running again; it refused every model after the first probe): digests of
+**Trial before trusting it.** Phase 1: digests of
 the last five failing CI logs and drafts for five real bot threads, each compared with what Claude or Codex actually wrote. Phase 2: three small
 first drafts (a doc, a test, a tool) as draft PRs. Keep a count of drafts accepted, reworked and discarded (`SKYRUNNER_LOCAL_LOG` records the
 calls). Widen the scope only if most are accepted or lightly reworked; if more than half are discarded, or any draft states a result nobody
