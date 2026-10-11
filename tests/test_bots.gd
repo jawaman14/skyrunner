@@ -190,6 +190,52 @@ func test_autorunner_completes_a_flight() -> void:
 	check(s.money > money, "paid: %s -> %s" % [money, s.money])
 	s.dispose()
 
+## F3 in the middle of a flight: the AI used to do nothing unless the aircraft was parked.
+func test_autorunner_takes_over_a_flight_in_progress() -> void:
+	var s := _sess({"seed": 5, "location": "HAR", "features": []})
+	s.police.frozen = true
+	var ar := AutoRunner.new(s, false)
+	var job = ar._pick()
+	check(job != null and s.accept_job(job) == null, "a job is on board")
+	var af := World.airfield("HAR")
+	s.spawn_airborne(af.x + 3000.0, af.y - 1000.0, 70.0, 450.0, 95.0)
+	s.log.departed_from = "HAR"
+	var dt := 1.0 / 30
+	var c = ar.step(dt)
+	check(ar.bot != null and ar.bot.phase == "enroute", "the AI adopted the flight")
+	check(c != null, "and is flying it")
+	var dest := World.airfield(job.dest)
+	var d0 := Py.dist2([s.state.x, s.state.y], [dest.x, dest.y])
+	while s.time < 200.0:
+		s.update(dt, null, ar.step(dt))
+	var d1 := Py.dist2([s.state.x, s.state.y], [dest.x, dest.y])
+	check(d1 < d0 or ar.bot.phase in ["approach", "flare", "rollout", "done"], "it makes progress to the destination: %s -> %s" % [d0, d1])
+	check(s.phase != "crashed", "and does not crash")
+	s.dispose()
+
+
+func test_autorunner_takes_over_a_take_off_run() -> void:
+	var s := _sess({"seed": 5, "location": "HAR", "features": []})
+	s.police.frozen = true
+	var ar := AutoRunner.new(s, false)
+	var job = ar._pick()
+	check(job != null and s.accept_job(job) == null, "a job is on board")
+	var dt := 1.0 / 30
+	while s.parked and s.time < 60.0:  # the human opens the throttle: no longer parked
+		var inp := ControlMapper.InputFrame.new()
+		inp.throttle_axis = 1.0
+		inp.held["throttle_up"] = true
+		s.update(dt, inp, null)
+	check(not s.parked, "rolling, not parked")
+	var took_off := false
+	while s.time < 200.0 and not took_off:
+		s.update(dt, null, ar.step(dt))
+		took_off = not s.state.on_ground and s.state.agl > 8.0
+	check(ar.bot != null, "the AI took over")
+	check(took_off, "and flew it off the runway")
+	s.dispose()
+
+
 func test_hot_route_penalty_is_deterministic_and_optional() -> void:
 	var w := World.new()
 	var from := [-12000.0, -12000.0]
