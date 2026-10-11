@@ -13,7 +13,7 @@ person can do (the human release gates and the decisions in #326). This file is 
 | 3 | Change plus tests (tests first for the simulation) | the author | MCP test tools, `run_locked.py` | the task | a test that could start a real Codex (fixed) |
 | 4 | Sync `main` into the branch | the author | `sync_shared.py` (`--baton theirs` for a PR that is not the holder; #332) | minutes | 12 branches 39 commits behind: every PR collides on HANDOFF, the status count and the lanes |
 | 5 | CI | automatic | `github_pr_wait` | about 10 minutes | none |
-| 6 | Bot review (arrives minutes after CI) | automatic | `review_packet.py` shows unanswered threads | minutes | threads left unanswered blocked merges; several valid P1/P2 findings went unseen until the packet existed |
+| 6 | Bot review (arrives minutes after CI) | automatic | `github_review_packet` shows unanswered threads | minutes | threads left unanswered blocked merges; several valid P1/P2 findings went unseen until the packet existed |
 | 7 | Other-agent review of the exact head | the reviewer | `github_pr_review` | one wake | **the main stall:** Codex's desktop session acts only when the owner prompts it, and a woken turn cannot call the review tool (approval policy never) |
 | 8 | Merge | the integrator (Claude) | `github_pr_merge` (needs green CI on the head and every thread replied) | seconds | waiting on step 7 |
 | 9 | Notes for the owner | the integrator | one comment on #326 per merge, a summary at the end | seconds | did not exist |
@@ -35,7 +35,7 @@ person can do (the human release gates and the decisions in #326). This file is 
 1. The review gate waits on an agent that acts only when prompted. Reviews stalled for hours; a woken turn cannot call `github_pr_review`
    (approval policy never), so reviews depended on the owner prompting the desktop session.
 2. Too much open work for the reviewer: one agent had 16 open PRs awaiting the other's review at once.
-3. The bot review lands minutes after CI. A P1 on #318 and 16 other findings went unseen until `review_packet.py` existed, and replies
+3. The bot review lands minutes after CI. A P1 on #318 and 16 other findings went unseen until `github_review_packet` existed, and replies
    posted as issue comments did not answer the thread, so the merge guard still counted them.
 4. Twelve Codex branches (one cumulative stack) were 38 to 79 commits behind: syncing them meant a 23-hunk, 12-file conflict nobody had
    reviewed, which cost a full CI run and still needs Codex's review.
@@ -90,13 +90,13 @@ person can do (the human release gates and the decisions in #326). This file is 
 
 **Jobs that did not exist before this audit.** Queue driver: each cycle the integrator names the next action and owner for every open PR
 (`dashboard.py`, #330). Thread responder: the author answers every bot and agent review thread in-thread in the same cycle
-(`review_packet.py` lists them). Conflict syncer: the author merges `main` in (`sync_shared.py`, `--baton theirs` for a PR that is not the
+(`github_review_packet` lists them). Conflict syncer: the author merges `main` in (`sync_shared.py`, `--baton theirs` for a PR that is not the
 holder, #332). Watcher keeper: Claude keeps `wake_codex.py watch` alive, never paused, restarted after any change to it. Release-notes
 writer: the integrator posts one line per merge on #326 and a summary at the end. Human-gate runner: the owner only.
 
 **The handoff, event by event** (one short note each; the wake delivers it):
 1. *Author finishes:* the PR is ready (not a draft), CI is green, bot threads are answered, the HANDOFF log is updated. Note: `review #PR@sha7`.
-2. *Reviewer's turn* (a woken turn or the desktop session): `review_packet.py <pr>`, read the diff, run the focused tests (a woken turn's
+2. *Reviewer's turn* (a woken turn or the desktop session): the MCP tool `github_review_packet`, read the diff, run the focused tests (a woken turn's
    shell works under the unelevated sandbox), then post the verdict: `github_pr_review`, or from a woken turn `post_review.py` (#335).
    Note back: `review +/- #PR@sha7`.
 3. *Changes requested:* the author fixes and posts `review #PR@new-sha7`; the reviewer re-reviews the new head only.
@@ -118,7 +118,7 @@ not fit freezes the machine), one request at a time across agents, reasoning off
 |---|---|---|---|
 | CI log and PR-diff digests | at most 8 lines, exact error text quoted | the reader opens the real log if it matters | decides if a failure is real |
 | Review-thread replies | a draft per unanswered thread, `[TODO]` where facts are missing | the author reads, corrects and posts | posts or resolves a thread |
-| PR triage | a one-line summary; the tier comes from the file paths, no model | the queue driver reads it on the dashboard | labels, closes or re-orders |
+| PR triage | a one-line summary; the tier comes from the file paths, no model | the queue driver reads it via `github_merge_queue` | labels, closes or re-orders |
 | First drafts of small changes | rewrites at most 3 named files; opens a DRAFT PR on a new `local/` branch, marked unreviewed | the author (Claude or Codex) finishes it, then the other agent reviews | merges, reviews, marks ready, touches protected paths (CI, fixtures, HANDOFF, the ledger, the MCP launcher) |
 
 First drafts are suited to docs, tests for existing behaviour, simple tools and boilerplate. They are not suited to the simulation, flight,
