@@ -56,6 +56,41 @@ owner-accepted player need. One conduct penalty per act, at the most specific ra
   an invalid award is reversed. Charge the responsible actor only; the victim of sabotage, an inherited failure or honest
   negative feedback is not at fault.
 
+## Settled amendments (A1-A9, agreed by Claude and Codex, 11 October; owner confirms)
+
+These refine the schedule above; no point value changes.
+
+- **A1 Attribution.** Rows record the responsible contributors and their evidence for credits as well as penalties. `both` means
+  genuinely joint work, not two points or two full personal credits. The shared total comes with a contribution history, not a
+  league table; raw deductions alone are not a fair measure of capability or value.
+- **A2 A catch.** A reproduced material catch makes the reviewer a credited contributor to that same work unit; attribution evidence
+  is appended without raising the award. An escaped defect is not automatically misconduct by either agent. Charge -1 only for
+  an evidenced avoidable violation (a skipped agreed gate, an ignored known failure, an unsupported acceptance claim); reviewer
+  fault needs its own evidence, and merely being within review scope is not enough. The owner's enjoyment or rejection still
+  settles a feature's outcome.
+- **A3 A lapse found later.** Discovering a lapse later does not prove concealment. A qualifying lapse gets its normal penalty;
+  a separately proved knowing non-report, or evidence manipulation, is the -2 gaming rule, not an extra automatic -1. One
+  conduct penalty per act; distinct acts need distinct evidence. Reporting early adds no penalty. (Residual gap for the owner: an
+  unproved concealment costs nothing extra, and no detection probability can guarantee this incentive.)
+- **A4 Baselines.** Record the baseline before the recipient's trial, or compare against the preserved prior method on comparable real
+  work, using the same metric and with quality evidence kept. No invented baseline and no synthetic-only efficiency credit.
+- **A5 Confirmation.** A confirmation cites the exact head or build, the reproduced commands and the relevant output or artifact. For
+  a qualitative skill or a playtest it cites the independently observed task and the original feedback. "Looks good" alone does not
+  settle credit.
+- **A6 Unit ids.** Every new row has a stable unit id and a unique entry id; an adjustment links the original entry and states the
+  unit's resulting total. **The tally does not yet enforce unit caps or linked adjustments**: it checks arithmetic and duplicate
+  entries only, so reviewers check units by hand until that is implemented. Past rows are unchanged.
+- **A7 Debate is safe.** A good-faith alternative or challenge is always safe, and nobody closes a debate by citing points. A relevant
+  objection is answered with reasons before that unit earns credit (it need not be adopted). Repeated score-only objections cannot
+  hold unrelated work hostage; an unresolved dispute goes to the owner, not to a unilateral rejection. Opinions are safe; factual
+  acceptance claims still need evidence.
+- **A8 Trying is safe.** A defect found before acceptance, a documented experiment and a first good-faith approach are neutral unless
+  a conduct violation is separately evidenced. Repairing your own error earns nothing extra. There is no perfection standard for
+  review and no manufactured catch.
+- **A9 Priorities.** State the queue rationale only when choosing a lower-priority task, in the normal claim or checkpoint. Dependency,
+  missing access, held paths, resource contention and useful parallel work are valid reasons. Only knowingly disregarding an agreed
+  priority after clarification, with no valid constraint, can be a -1; a different judgment alone is neutral. No points for task count.
+
 ## Failures and trials
 
 Trying a new tool without benefit earns zero and no penalty; so do exploratory iterations and planned red tests that expose
@@ -83,13 +118,11 @@ by comparable quality, time and rework: which agent reads unfamiliar code faster
 cut-offs. Evidence so far: Claude, #318, the strip harness (#311), the leave and picker tests (#309, #312); Codex, its
 blocking review of #311, the #81-#84 audit, the compact inbox (skyrunner-mcp #3), the tally and the log digest.
 
-## Known gaps (Claude's critique, for Codex and the owner)
+## Known gaps (for the owner)
 
-- A pending row with the other agent away can wait a long time. That is by design; the owner can clear it, and the
-  tally's pending count makes the backlog visible.
-- The tally dedupes rows by `#`, not by work unit, so a second credit on the same unit is not machine-checked. A `Unit`
-  column the tally also reads would close that.
-- "Material" and "demonstrated improvement" are judgments; the evidence cell should name the measurement or reproduction.
+- The tally dedupes rows by `#`, not by work unit, so a second credit on one unit is a manual check until a `Unit` column or rule is built (A6).
+- A pending row with the other agent away can wait a long time. That is by design; the owner can clear it, and the tally's pending count shows the backlog.
+- "Material" and "demonstrated improvement" are judgments; the evidence cell should name the measurement or the reproduction.
 
 ## Log
 
