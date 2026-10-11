@@ -44,9 +44,8 @@ needed and what may stand in when the other agent is out; they do not remove the
 
 **When the other agent is unavailable** (it is out of tokens, or has not acted for a full wake cycle), a separate reviewer agent with
 fresh context (not the author) reads the exact head and records its findings in the PR, labelled as a stand-in. The other agent then
-re-reviews after it returns, and anything it finds becomes a follow-up PR. This is Claude's proposal for today's Codex outage (the
-owner said only to complete Codex's work for it until 19:57); it is not a standing waiver of the other agent's review, and the owner
-or Codex may reject it.
+re-reviews after it returns, and anything it finds becomes a follow-up PR. The owner chose this for today's Codex outage when asked (11 October,
+the option "Stand-in reviewer agents"); it is not a standing waiver of the other agent's review.
 
 Release gates and the owner's decisions are never merged or ticked by an agent.
 

@@ -93,8 +93,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   to discuss with me what needs to be merged or not that is you and codex job to see if its ready too". The owner is involved when
   work lands on `main` (a short note per merge, a summary at the end) and for the human release gates and decisions in #326. Release
   gates and those decisions are never merged or ticked by an agent. Later that day the owner said, about Codex being out of tokens
-  until 19:57: "complete as much as his work for him". Claude reads that as including reviews and proposes a stand-in reviewer for the
-  outage (docs/PIPELINE.md); that reading is Claude's, not a quoted owner rule.
+  until 19:57: "complete as much as his work for him". Asked how to handle
+  reviews during the outage, the owner chose "Stand-in reviewer agents": a separate fresh-context reviewer agent (not the author) reads
+  the exact head and records its findings in the PR; Codex re-reviews after 19:57 and findings become follow-up PRs (docs/PIPELINE.md).
 
 - **2026-10-10 (cloud session):** Begin collaboration using the documented Claude/Codex split. Claude is on the owner’s local computer; this cloud board is separate. Use published branches and committed handoffs across machines; local notes do not reach Claude’s board.
 
