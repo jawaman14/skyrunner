@@ -16,7 +16,7 @@ means a merged PR or a passing test, and is stated per row.
 
 | Item | Evidence | Note |
 |---|---|---|
-| Session split into layers and stateless command domains (#95) | merged #284, 1114 tests | Structure of `session_*.gd`; the layering rule is in CLAUDE.md. |
+| Session split into layers and stateless command domains (#95) | merged #284; the suite then had 1,114 tests | Structure of `session_*.gd`; the layering rule is in CLAUDE.md. |
 | Determinism: parity switches, RNG streams, misuse scan (#93) | merged #280, `scripts/sim/switches.gd`, `tests/test_switches.gd` | Any new switch must register there. |
 | CI split into logic, simulation, presentation, socket lanes (#101) | merged #286; 13 jobs green on every PR | Both MCP runtimes and three desktop smoke jobs included. |
 | macOS export smoke and release-package checks (#176) | merged (7 Oct "validate and launch exported macOS builds") | The macOS *walkthrough* is still a human gate. |
@@ -66,7 +66,7 @@ wake tool may spend Codex quota unattended. New from the 12 October playtest (#3
    cases are safe (before: 111). Still open from the owner's list (#345): the autopilot mentioned only when kicking bales. Sweeps: `tools/autopilot_sweep.gd`, `tools/autopilot_midflight_sweep.gd`.
 5. **Startup architecture (#97).** Entry paths were consolidated by tests (#306-#312) but the code is still split between `main.gd`, `host_desk.gd` and the
    dedicated server; this is where `_mp` lifetime bugs came from.
-6. **Test time.** 1,114 tests take about 13 minutes under a machine-wide Godot lock; every worktree re-imports for 5 more. This throttles every agent.
+6. **Test time.** The suite (1,126 declared test methods in 142 files per `docs/PROJECT_STATUS.md`; 1,114 when last timed at 761 s) takes about 13 minutes under a machine-wide Godot lock; every worktree re-imports for 5 more. This throttles every agent.
 7. **Windows memory.** Codex hit `alloc_static` null-memory failures with overlapping Godot jobs (note 3); the lock policy is the only guard.
 
 ## 5. Needs a rehaul: early-game bloat and weight (unverified judgements are marked)
@@ -173,4 +173,3 @@ Questions for the owner:
 * Start-up architecture, question 1: **one shared host service** (server, beacon, voice and session loop) used by the pilot app, the host desk and the dedicated server. Questions 2-10 are still open.
 * Landing the three server-repository PRs (skyrunner-mcp 6, 7, 8) with `gh` once: no answer given, so `gh` is **not** used; they stay open until the owner says, or until the running tools can reach that repository.
 * The checkbox ticks for #80, #83, #87 (and #82 now that #346 is merged) are recorded as comments on #328 and #329; editing the issue bodies needs skyrunner-mcp PR 8 (`replace_body`).
-
