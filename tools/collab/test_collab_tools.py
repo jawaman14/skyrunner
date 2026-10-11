@@ -1,6 +1,7 @@
 """Tests for tools/collab: python tools/collab/test_collab_tools.py (stdlib only; needs git on PATH)."""
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -9,6 +10,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(__file__))
 import board_status  # noqa: E402
+import dashboard  # noqa: E402
+import review_packet  # noqa: E402
 import notify  # noqa: E402
 import run_locked  # noqa: E402
 import sync_shared as sync  # noqa: E402
@@ -228,6 +231,117 @@ class Notify(unittest.TestCase):
         self.assertEqual(cmd[0], "powershell.exe")
         self.assertIn("it''s here", cmd[-1])
         self.assertNotIn("shell=True", open(os.path.join(os.path.dirname(__file__), "notify.py"), encoding="utf-8").read().replace("no shell", "").replace("shell=True with", ""))
+
+
+ESC = chr(27)
+NL = chr(10)
+
+
+class Dashboard(unittest.TestCase):
+    def board(self):
+        db = sqlite3.connect(":memory:")
+        db.executescript("""CREATE TABLE notes (id INTEGER PRIMARY KEY, author TEXT, recipient TEXT, task TEXT, text TEXT, created REAL);
+            CREATE TABLE tasks (id TEXT, owner TEXT, title TEXT, paths TEXT, checkout TEXT, revision TEXT, status TEXT, expires REAL,
+                updated REAL, detail TEXT);""")
+        now = 100000.0
+        db.execute("INSERT INTO notes (author, recipient, text, created) VALUES ('claude-1','codex','please review 322 → now',?)", (now - 3000,))
+        db.execute("INSERT INTO notes (author, recipient, text, created) VALUES ('codex-1','claude','done',?)", (now - 600,))
+        db.execute("INSERT INTO notes (author, recipient, text, created) VALUES ('claude-1','codex','x' || char(10) || 'y',?)", (now - 100,))
+        db.execute("INSERT INTO tasks VALUES ('t','claude-1','a very long claim title for the screen','[]','c','r','active',?,?,'')", (now + 3600, now))
+        return db, now
+
+    def test_the_screen_shows_agents_claims_notes_and_prs_without_colour_codes_when_off(self):
+        db, now = self.board()
+        prs = [{"number": 322, "title": "Add wake", "author": "x", "state": "ok", "draft": True, "review": ""},
+               {"number": 7, "title": "Broken thing", "author": "x", "state": "fail", "draft": False, "review": "CHANGES_REQUESTED"}]
+        text = dashboard.render(dashboard.read_board(db, now, 20.0), prs, 100, False, now)
+        self.assertNotIn(ESC, text)
+        for needle in ("claude", "codex", "claim", "#1 claude→codex", "#322", "draft", "changes requested", "✓", "✗"):
+            self.assertIn(needle, text)
+        self.assertIn("1 waiting", text, "codex has one unanswered note (id 3) after its last post (id 2)")
+
+    def test_every_line_fits_the_width_even_with_colour_and_long_text(self):
+        db, now = self.board()
+        db.execute("INSERT INTO notes (author, recipient, text, created) VALUES ('codex-1','claude',?,?)", ("long " * 200, now - 1))
+        data = dashboard.read_board(db, now, 20.0)
+        prs = [{"number": 1, "title": "t" * 300, "author": "x", "state": "run", "draft": False, "review": ""}]
+        for color in (False, True):
+            for line in dashboard.render(data, prs, 70, color, now).split(NL):
+                visible = re.sub(ESC + r"\[[0-9;]*m", "", line)
+                self.assertLessEqual(len(visible), 70, visible)
+        self.assertIn(ESC, dashboard.render(data, prs, 70, True, now))
+
+    def test_a_missing_gh_is_a_message_not_a_crash_and_ci_states_are_classified(self):
+        db, now = self.board()
+        text = dashboard.render(dashboard.read_board(db, now, 20.0), None, 100, False, now)
+        self.assertIn("unavailable", text)
+
+        def boom(*a, **k):
+            raise OSError("no gh")
+        self.assertIsNone(dashboard.load_prs(".", run=boom))
+        ok = {"statusCheckRollup": [{"status": "COMPLETED", "conclusion": "SUCCESS"}], "isDraft": False}
+        bad = {"statusCheckRollup": [{"status": "COMPLETED", "conclusion": "SUCCESS"}, {"status": "COMPLETED", "conclusion": "FAILURE"}]}
+        run = {"statusCheckRollup": [{"status": "IN_PROGRESS", "conclusion": ""}]}
+        self.assertEqual([dashboard.pr_state(x)[0] for x in (ok, bad, run, {})], ["ok", "fail", "run", "none"])
+
+    def test_once_prints_the_screen_from_a_real_board_file(self):
+        tmp = tempfile.mkdtemp()
+        path = os.path.join(tmp, "b.sqlite3")
+        con = sqlite3.connect(path)
+        con.executescript("""CREATE TABLE notes (id INTEGER PRIMARY KEY, author TEXT, recipient TEXT, task TEXT, text TEXT, created REAL);
+            CREATE TABLE tasks (id TEXT, owner TEXT, title TEXT, paths TEXT, checkout TEXT, revision TEXT, status TEXT, expires REAL,
+                updated REAL, detail TEXT);""")
+        con.execute("INSERT INTO notes (author, recipient, text, created) VALUES ('claude-1','codex','hi',1.0)")
+        con.commit()
+        con.close()
+        out = subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "dashboard.py"), "--db", path, "--once", "--no-prs"],
+                             capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn("Newest notes", out.stdout)
+        self.assertIn("#1 claude→codex", out.stdout)
+        self.assertNotIn(ESC, out.stdout, "piped output has no colour codes")
+
+
+class ReviewPacket(unittest.TestCase):
+    def view(self):
+        return {"number": 9, "title": "Fix thing", "author": {"login": "claude-bot"}, "isDraft": False, "headRefOid": "b" * 40,
+                "baseRefName": "main", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
+                "files": [{"path": "scripts/sim/people.gd", "additions": 10, "deletions": 2}, {"path": "tests/test_people.gd", "additions": 5, "deletions": 0},
+                          {"path": "docs/x.md", "additions": 1, "deletions": 0}],
+                "statusCheckRollup": [{"name": "a", "status": "COMPLETED", "conclusion": "SUCCESS"},
+                                      {"name": "b", "status": "COMPLETED", "conclusion": "FAILURE"}, {"name": "c", "status": "IN_PROGRESS", "conclusion": ""}],
+                "reviews": [{"author": {"login": "codex"}, "state": "APPROVED", "commit": {"oid": "a" * 40}},
+                            {"author": {"login": "codex"}, "state": "COMMENTED", "commit": {"oid": "b" * 40}}]}
+
+    def test_a_review_on_an_older_head_is_stale_and_ci_failures_are_named(self):
+        root = tempfile.mkdtemp()
+        os.makedirs(os.path.join(root, "tests"))
+        open(os.path.join(root, "tests", "test_people.gd"), "w").close()
+        comments = [{"id": 1, "path": "a.gd", "line": 3, "user": {"login": "bot"}, "body": "unanswered"},
+                    {"id": 2, "path": "b.gd", "line": 4, "user": {"login": "bot"}, "body": "answered"},
+                    {"id": 3, "in_reply_to_id": 2, "user": {"login": "me"}, "body": "done"}]
+        text = review_packet.render(review_packet.build(self.view(), comments, root), 0)
+        self.assertIn("STALE: older head", text)
+        self.assertIn("CURRENT", text)
+        self.assertIn("FAILED: b", text)
+        self.assertIn("running: c", text)
+        self.assertIn("Open review threads: 1", text)
+        self.assertIn("a.gd:3", text)
+        self.assertNotIn("b.gd:4", text)
+        self.assertIn("scripts/sim/people.gd", text)
+        self.assertIn("tests by name: tests/test_people.gd", text)
+        self.assertIn("changes 1 test file", text)
+        self.assertLess(len(text), 2500, "the packet stays small")
+
+    def test_pages_from_gh_paginate_are_joined_and_the_diff_is_capped(self):
+        pages = '[{"a":1}]' + NL + '[{"a":2},{"a":3}]'
+        self.assertEqual(review_packet.parse_pages(pages), [{"a": 1}, {"a": 2}, {"a": 3}])
+        self.assertEqual(review_packet.parse_pages(""), [])
+        packet = review_packet.build(self.view(), [], tempfile.mkdtemp(), NL.join("line %d" % i for i in range(500)))
+        text = review_packet.render(packet, 20)
+        self.assertIn("first 20 of 500 lines", text)
+        self.assertIn("line 19", text)
+        self.assertNotIn(NL + "line 20" + NL, NL + text + NL)
 
 
 class EndToEnd(unittest.TestCase):
