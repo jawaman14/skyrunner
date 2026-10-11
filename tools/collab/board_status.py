@@ -71,6 +71,14 @@ def render(summary):
     return "\n".join(lines)
 
 
+def utf8_streams():
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--db", default="", help="board file (default: the clone's shared board)")
@@ -78,6 +86,7 @@ def main(argv=None):
     ap.add_argument("--quiet-min", type=float, default=20.0)
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
+    utf8_streams()
     path = args.db or board_path(args.root)
     if not os.path.exists(path):
         raise SystemExit("no board at " + path)

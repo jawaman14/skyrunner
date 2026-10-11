@@ -101,6 +101,16 @@ def open_board(args):
     return sqlite3.connect("file:%s?mode=ro" % path.replace("\\", "/"), uri=True)
 
 
+def utf8_streams():
+    """Notes hold characters (arrows, dashes) that a Windows console in cp1252 cannot print: a first real use crashed on one.
+    Print UTF-8 and replace what still cannot be encoded, instead of failing."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("mode", choices=["once", "watch"])
@@ -113,6 +123,7 @@ def main(argv=None):
     ap.add_argument("--wake-cmd", default="", help="OFF by default; a command run for each batch (see the module notes)")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
+    utf8_streams()
     if args.mode == "once":
         db = open_board(args)
         try:

@@ -205,6 +205,24 @@ class Notify(unittest.TestCase):
             self.assertEqual(out.getvalue(), "")
             db.close()
 
+    def test_a_note_with_an_arrow_prints_on_a_cp1252_console_instead_of_crashing(self):
+        import io
+        raw = io.BytesIO()
+        console = io.TextIOWrapper(raw, encoding="cp1252", errors="strict")
+        real, sys.stdout = sys.stdout, console
+        try:
+            with self.assertRaises(UnicodeEncodeError):
+                print("a → b")
+                console.flush()
+            console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252", errors="strict")
+            sys.stdout = console
+            notify.utf8_streams()
+            print("a → b")
+            console.flush()
+            self.assertIn("a → b".encode("utf-8"), console.buffer.getvalue())
+        finally:
+            sys.stdout = real
+
     def test_the_toast_command_quotes_its_text_and_the_wake_command_is_split_without_a_shell(self):
         cmd = notify.toast_command("Board", "it's here")
         self.assertEqual(cmd[0], "powershell.exe")
