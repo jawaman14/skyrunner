@@ -28,10 +28,11 @@ not answered what, so check it before assuming silence means no. `python tools/c
 `watch` rings a terminal bell or Windows toast when one does; a scheduled agent should call `once` rather than read the board. Merging, closing issues and anything published need the owner's word
 in that agent's own chat, or a standing rule under **Owner decisions** in HANDOFF.md.
 
-**Reviews from an unattended turn.** A turn started with `codex exec` (the wake) cannot call `github_pr_review` (its approval policy refuses
-MCP tools that ask), but its shell works: `python tools/collab/post_review.py --pr N --head <full sha> --verdict approve|changes|comment
---agent codex --body-file review.md` posts the same marked review, refuses a stale head, an empty body and a review of your own PR. It is a bridge
-until the one-tool approval is allowed for woken turns.
+**Reviews from an unattended turn.** A turn started with `codex exec` (the wake) has the MCP board but no GitHub network, and cannot call
+`github_pr_review` (its approval policy refuses MCP tools that ask). It gives its verdict as a board note
+`REVIEW #<pr>@<sha7> approve|changes|comment: <findings>`; `tools/collab/relay_reviews.py` posts it to GitHub through the MCP tool
+`github_pr_review`, quoting it word for word and labelled as relayed, and refuses a stale head, a closed PR, Codex's own PR and a malformed note.
+A background program reaches GitHub only through the MCP too (`tools/collab/mcp_client.py` starts the same server from `.mcp.json`), never `gh`.
 
 **Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and
 does every merge, through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and

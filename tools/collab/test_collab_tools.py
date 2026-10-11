@@ -10,7 +10,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(__file__))
 import board_status  # noqa: E402
 import notify  # noqa: E402
-import post_review  # noqa: E402
+import mcp_client  # noqa: E402
 import relay_reviews  # noqa: E402
 import run_locked  # noqa: E402
 import sync_shared as sync  # noqa: E402
@@ -232,66 +232,43 @@ class Notify(unittest.TestCase):
         self.assertNotIn("shell=True", open(os.path.join(os.path.dirname(__file__), "notify.py"), encoding="utf-8").read().replace("no shell", "").replace("shell=True with", ""))
 
 
-class PostReview(unittest.TestCase):
-    HEAD = "c" * 40
-    SERVER_RE = __import__("re").compile(r"<!-- skyrunner-review agent=(claude|codex) verdict=(approve|changes|comment) head=([0-9a-f]{40}) -->")
+class FakeMcp:
+    """Stands in for McpClient: answers github_pr_states and records every call, so a test can prove what was (not) sent to GitHub."""
 
-    def info(self, branch="claude/x", head=None):
-        return {"headRefOid": head or self.HEAD, "headRefName": branch, "isDraft": False}
+    def __init__(self, states=None, refuse=None):
+        self.states, self.refuse, self.calls = states or {"open": [], "merged": []}, refuse, []
 
-    def test_the_marker_is_the_one_the_servers_queue_parses(self):
-        for agent in post_review.AGENTS:
-            for verdict in post_review.VERDICTS:
-                m = self.SERVER_RE.search(post_review.marker(agent, verdict, self.HEAD))
-                self.assertEqual(m.groups(), (agent, verdict, self.HEAD))
+    def call(self, tool, **arguments):
+        self.calls.append((tool, arguments))
+        if tool == "github_pr_states":
+            return json.dumps(self.states)
+        if self.refuse:
+            raise relay_reviews.McpError(self.refuse)
+        return "Posted a review at https://github.com/o/r/pull/7#pullrequestreview-9"
 
-    def test_it_refuses_what_the_tool_refuses(self):
-        ok = post_review.check(self.info("claude/x"), "codex", "approve", self.HEAD, "read the diff, ran the tests")
-        self.assertIsNone(ok)
-        self.assertIn("own work", post_review.check(self.info("codex/x"), "codex", "approve", self.HEAD, "fine"))
-        self.assertIn("review the current head", post_review.check(self.info(head="d" * 40), "codex", "approve", self.HEAD, "fine"))
-        self.assertIn("empty review", post_review.check(self.info(), "codex", "approve", self.HEAD, "  "))
-        self.assertIn("40-character", post_review.check(self.info(), "codex", "approve", "abc123", "fine"))
-        self.assertIn("verdict", post_review.check(self.info(), "codex", "merge", self.HEAD, "fine"))
 
-    def test_author_agent_reads_the_branch_prefix(self):
-        self.assertEqual([post_review.author_agent(b) for b in ("claude/a", "codex/b", "codexfix/c", "feature/d", "")], ["claude", "codex", "", "", ""])
+class McpClientPure(unittest.TestCase):
+    def test_the_server_definition_is_read_from_mcp_json_and_the_project_is_found_for_the_uv_rerun(self):
+        root = tempfile.mkdtemp()
+        with open(os.path.join(root, ".mcp.json"), "w", encoding="utf-8") as fh:
+            json.dump({"mcpServers": {"skyrunner": {"command": "uv", "args": ["run", "--quiet", "--project", "C:/srv", "skyrunner-mcp"], "env": {"SKYRUNNER_ROOT": "C:/g"}},
+                                      "skyrunner_board": {"command": "x"}}}, fh)
+        command, args, env = mcp_client.load_server(root)
+        self.assertEqual((command, env["SKYRUNNER_ROOT"]), ("uv", "C:/g"))
+        self.assertEqual(mcp_client.server_project(args), "C:/srv")
+        self.assertEqual(mcp_client.server_project(["run", "x"]), "")
 
-    def test_it_posts_one_marked_review_pinned_to_the_head_without_a_shell(self):
-        calls = []
-
-        def fake(cmd, **kw):
-            calls.append((cmd, kw))
-            out = json.dumps(self.info("claude/x")) if cmd[1] == "pr" else "https://github.com/o/r/pull/9#pullrequestreview-1"
-            return subprocess.CompletedProcess(cmd, 0, out, "")
-        code = post_review.main(["--pr", "9", "--head", self.HEAD, "--verdict", "changes", "--agent", "codex", "--body", "the lock races"], run=fake)
-        self.assertEqual(code, 0)
-        self.assertEqual(len(calls), 2)
-        post = calls[1][0]
-        self.assertEqual(post[:2], ["gh", "api"])
-        self.assertIn("commit_id=" + self.HEAD, post)
-        body = [x for x in post if x.startswith("body=")][0]
-        self.assertTrue(self.SERVER_RE.search(body), "the queue can read it")
-        self.assertIn("the lock races", body)
-        for _, kw in calls:
-            self.assertNotIn("shell", kw)
-
-    def test_a_refused_review_posts_nothing(self):
-        calls = []
-
-        def fake(cmd, **kw):
-            calls.append(cmd)
-            return subprocess.CompletedProcess(cmd, 0, json.dumps(self.info("codex/x")), "")
-        code = post_review.main(["--pr", "9", "--head", self.HEAD, "--verdict", "approve", "--agent", "codex", "--body", "ok"], run=fake)
-        self.assertEqual(code, 2)
-        self.assertEqual(len(calls), 1, "only the read happened")
+    def test_the_client_never_shells_out_or_calls_gh(self):
+        source = open(os.path.join(os.path.dirname(__file__), "mcp_client.py"), encoding="utf-8").read()
+        for forbidden in ('"gh"', "'gh'", "subprocess", "shell=True"):
+            self.assertNotIn(forbidden, source)
 
 
 class RelayReviews(unittest.TestCase):
     HEAD = "c" * 40
 
-    def info(self, branch="claude/x", head=None, state="OPEN"):
-        return {"headRefOid": head or self.HEAD, "headRefName": branch, "state": state}
+    def states(self, branch="claude/x", head=None, number=7):
+        return {"open": [{"number": number, "head": head or self.HEAD, "branch": branch}], "merged": []}
 
     def test_only_the_exact_form_parses(self):
         ok = relay_reviews.parse("REVIEW #331@9f3e0d1 approve: read all changes")
@@ -301,7 +278,7 @@ class RelayReviews(unittest.TestCase):
             self.assertIsNone(relay_reviews.parse(bad), bad)
 
     def test_a_current_head_review_is_relayed_verbatim_with_a_label_and_no_added_finding(self):
-        review, why = relay_reviews.decide(212, "REVIEW #7@cccccccc changes: the lock races", self.info())
+        review, why = relay_reviews.decide(212, "REVIEW #7@cccccccc changes: the lock races", self.states())
         self.assertIsNone(why)
         self.assertEqual((review["pr"], review["head"], review["verdict"]), (7, self.HEAD, "changes"))
         self.assertIn("RELAYED by Claude from Codex's board note #212", review["body"])
@@ -309,11 +286,10 @@ class RelayReviews(unittest.TestCase):
         self.assertIn("no finding of its own", review["body"])
 
     def test_stale_closed_own_and_malformed_reviews_are_refused(self):
-        stale, why = relay_reviews.decide(1, "REVIEW #7@aaaaaaa approve: ok", self.info())
-        self.assertIn("stale", why)
-        self.assertIn("not open", relay_reviews.decide(1, "REVIEW #7@ccccccc approve: ok", self.info(state="MERGED"))[1])
-        self.assertIn("own work", relay_reviews.decide(1, "REVIEW #7@ccccccc approve: ok", self.info(branch="codex/x"))[1])
-        self.assertIn("form", relay_reviews.decide(1, "looks fine", self.info())[1])
+        self.assertIn("stale", relay_reviews.decide(1, "REVIEW #7@aaaaaaa approve: ok", self.states())[1])
+        self.assertIn("not open", relay_reviews.decide(1, "REVIEW #9@ccccccc approve: ok", self.states())[1])
+        self.assertIn("own work", relay_reviews.decide(1, "REVIEW #7@ccccccc approve: ok", self.states(branch="codex/x"))[1])
+        self.assertIn("form", relay_reviews.decide(1, "looks fine", self.states())[1])
 
     def board(self):
         db = sqlite3.connect(":memory:")
@@ -323,42 +299,40 @@ class RelayReviews(unittest.TestCase):
     def add(self, db, author, recipient, text):
         db.execute("INSERT INTO notes (author, recipient, text, created) VALUES (?,?,?,0)", (author, recipient, text))
 
-    def test_it_relays_new_codex_notes_once_posts_only_to_the_named_pr_and_skips_history_and_other_authors(self):
+    def test_it_relays_through_the_mcp_tool_once_only_for_codex_notes_to_claude_and_never_calls_gh(self):
         db = self.board()
         self.add(db, "codex-old", "claude", "REVIEW #7@ccccccc approve: old history")
         state = os.path.join(tempfile.mkdtemp(), "state.json")
-        calls = []
-
-        def fake(cmd, **kw):
-            calls.append(cmd)
-            out = json.dumps(self.info()) if cmd[1] == "pr" else "https://github.com/o/r/pull/7#pullrequestreview-9"
-            return subprocess.CompletedProcess(cmd, 0, out, "")
-        lines = []
-        self.assertEqual(relay_reviews.run_once(db, state, run=fake, out=lines.append), [], "history at the first run is never relayed")
+        mcp, lines = FakeMcp(self.states()), []
+        self.assertEqual(relay_reviews.run_once(db, state, mcp, out=lines.append), [], "history at the first run is never relayed")
         self.add(db, "claude-x", "claude", "REVIEW #7@ccccccc approve: not from codex")
         self.add(db, "codex-new", "claude", "REVIEW #7@ccccccc approve: fine")
         self.add(db, "codex-new", "codex", "REVIEW #7@ccccccc approve: not addressed to claude")
-        self.assertEqual(relay_reviews.run_once(db, state, run=fake, out=lines.append), [3])
-        posts = [c for c in calls if c[1] == "api"]
+        self.assertEqual(relay_reviews.run_once(db, state, mcp, out=lines.append), [3])
+        posts = [c for c in mcp.calls if c[0] == "github_pr_review"]
         self.assertEqual(len(posts), 1)
-        self.assertIn("repos/{owner}/{repo}/pulls/7/reviews", posts[0][2])
-        self.assertTrue(any(x.startswith("body=<!-- skyrunner-review agent=codex verdict=approve head=" + self.HEAD) for x in posts[0]))
-        self.assertEqual(relay_reviews.run_once(db, state, run=fake, out=lines.append), [], "a note is relayed once")
+        self.assertEqual((posts[0][1]["number"], posts[0][1]["expected_head_sha"], posts[0][1]["verdict"]), (7, self.HEAD, "approve"))
+        self.assertTrue(posts[0][1]["reviewer"].startswith("codex"), "the tool derives the agent from this")
+        self.assertEqual({c[0] for c in mcp.calls}, {"github_pr_states", "github_pr_review"}, "only MCP tools: GitHub is reached through them")
+        self.assertEqual(relay_reviews.run_once(db, state, mcp, out=lines.append), [], "a note is relayed once")
+        source = open(os.path.join(os.path.dirname(__file__), "relay_reviews.py"), encoding="utf-8").read()
+        for forbidden in ("subprocess", '"gh"', "'gh'"):
+            self.assertNotIn(forbidden, source)
 
-    def test_dry_run_posts_nothing_and_a_malformed_note_is_reported_not_relayed(self):
+    def test_dry_run_posts_nothing_a_malformed_note_is_reported_and_a_server_refusal_is_not_a_crash(self):
         db = self.board()
         state = os.path.join(tempfile.mkdtemp(), "state.json")
-        relay_reviews.run_once(db, state, run=lambda *a, **k: None, out=lambda x: None)
+        relay_reviews.run_once(db, state, FakeMcp(), out=lambda x: None)
         self.add(db, "codex-new", "claude", "REVIEW #7@ccccccc approve: fine")
         self.add(db, "codex-new", "claude", "REVIEW but not in form")
-        lines = []
-
-        def fake(cmd, **kw):
-            assert cmd[1] != "api", "a dry run must not post"
-            return subprocess.CompletedProcess(cmd, 0, json.dumps(self.info()), "")
-        relay_reviews.run_once(db, state, dry_run=True, run=fake, out=lines.append)
+        lines, mcp = [], FakeMcp(self.states())
+        relay_reviews.run_once(db, state, mcp, dry_run=True, out=lines.append)
         self.assertTrue(any("dry run" in x for x in lines))
         self.assertTrue(any("not in the REVIEW form" in x for x in lines))
+        self.assertEqual([c for c in mcp.calls if c[0] == "github_pr_review"], [])
+        refused, lines = FakeMcp(self.states(), refuse="No: the author cannot review its own PR"), []
+        relay_reviews.run_once(db, state, refused, out=lines.append)
+        self.assertTrue(any("refused by the server" in x for x in lines))
 
 
 class EndToEnd(unittest.TestCase):
