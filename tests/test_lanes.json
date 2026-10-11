@@ -134,6 +134,7 @@
     "test_seats.gd",
     "test_startup.gd",
     "test_startup_host.gd",
+    "test_startup_picker.gd",
     "test_startup_room.gd",
     "test_station_link.gd",
     "test_voice.gd",
