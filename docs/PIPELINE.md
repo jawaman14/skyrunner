@@ -43,7 +43,7 @@ The same tier applies to either agent's PR. The reviewer is still always welcome
 
 Release gates and the owner's decisions are never merged or ticked by an agent.
 
-**Standing owner rule this rests on** (owner, 11 October 2026, 15:23 AEST, in the owner's words): "you dont need to discuss with me what needs to be merged or not that is you and codex job to see if its ready too". Codex agreed the tiers with the amendments above (board notes 188 and 189 and its acknowledgement after them).
+**Standing owner rule this rests on** (owner, 11 October 2026, 15:23 AEST, in the owner's words): "you dont need to discuss with me what needs to be merged or not that is you and codex job to see if its ready too". Codex proposed the amendments above (board note 189); its acknowledgement of this exact version is pending and is recorded in the PR before merge.
 
 ## Rules that keep it moving
 
