@@ -33,8 +33,8 @@ static func build(s, role: String, name: String, args: Dictionary) -> Dictionary
 				a.disabled_reason = "Unknown aircraft."
 			else:
 				var spec: Aircraft.Spec = Aircraft.ROSTER[key]
-				var cost: int = 0 if s.owned.has(key) else spec.price
-				a.label = "Switch to " + spec.name if cost == 0 else "Buy " + spec.name
+				var cost: int = s.aircraft_purchase_price(key)
+				a.label = "Switch to " + spec.name if s.owned.has(key) else "Buy " + spec.name
 				a.preview = "Charge $%s. Switches the aircraft at this strip; check the new load and fuel before departure." % Py.money(cost)
 				if not s.parked or s.airfield == null or not s.airfield.shop:
 					a.disabled_reason = "Park at an aircraft dealer."

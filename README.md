@@ -124,7 +124,7 @@ seat is run by the AI until a player claims it.
 ## For developers
 
 The code is a seeded, replayable simulation that runs headless (`scripts/sim/`), with the 3D game, the 2D desks and
-the network layered on top. [CLAUDE.md](CLAUDE.md) has the conventions; the short version:
+the network layered on top. [AGENTS.md](AGENTS.md) has the conventions; the short version:
 
 - **Deterministic.** Every random draw is seeded on its own stream (the table is in
   [docs/DESIGN.md](docs/DESIGN.md)); new systems sit behind a static switch registered in `scripts/sim/switches.gd`,

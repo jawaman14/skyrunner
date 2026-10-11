@@ -201,16 +201,16 @@ func key(k: String) -> void:
 	if squad_mode and k == "d":
 		_toggle_districts()
 		return
-	if squad_mode and districts_open:
-		if k in ["up", "down"]:
-			district_scroll.scroll_vertical += -40 if k == "up" else 40
-		return
 	if k == "q" and s.ground != null:
 		if squad_mode:
 			_leave_squad_mode()
 		else:
 			_enter_squad_mode()
 		refresh()
+		return
+	if squad_mode and districts_open:
+		if k in ["up", "down"]:
+			district_scroll.scroll_vertical += -40 if k == "up" else 40
 		return
 	if squad_mode:
 		_squad_key(k)
@@ -268,6 +268,7 @@ func _leave_squad_mode() -> void:
 		s.seats.release(Roles.BOSS)
 		_claimed_boss = false
 	squad_mode = false
+	districts_open = false
 	sel_squad = null
 
 

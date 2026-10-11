@@ -51,7 +51,7 @@ Went through [awesome-godot](https://github.com/godotengine/awesome-godot) secti
   - surf, rain and thunder;
   - an 80s synth station (F7).
 
-  Listen to samples in `docs/audio/`.
+  To hear samples, render them: `godot --headless --script res://tools/sound_demo.gd -- <out dir>`.
 
 | From the lists | Licence | Verdict |
 |---|---|---|

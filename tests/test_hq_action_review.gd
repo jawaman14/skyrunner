@@ -66,6 +66,39 @@ func test_district_overview_toggle_preserves_selection_and_blocks_hidden_map() -
 	menu.close()
 	menu.free()
 
+func test_native_q_returns_from_districts_and_held_key_does_not_reclaim_seat() -> void:
+	var s := _session()
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1024,768)
+	Engine.get_main_loop().root.add_child(viewport)
+	var app := PilotApp.new()
+	app.s = s
+	viewport.add_child(app)
+	app.set_process(false)
+	var menu := HQMenu.new()
+	viewport.add_child(menu)
+	menu.setup(s)
+	app.menus["hq"] = menu
+	menu.open()
+	menu.key("d")
+	for i in 3: await Engine.get_main_loop().process_frame
+	check(menu.squad_mode and menu.districts_open and menu._claimed_boss)
+	var press := InputEventKey.new()
+	press.keycode = KEY_Q
+	press.physical_keycode = KEY_Q
+	press.pressed = true
+	viewport.push_input(press)
+	check(not menu.squad_mode and not menu.districts_open, "native Q returns to orders from the overview")
+	check(not menu._claimed_boss, "return hands the boss seat back")
+	press.echo = true
+	viewport.push_input(press)
+	check(not menu.squad_mode and not menu._claimed_boss, "held Q cannot reclaim the seat")
+	press.echo = false
+	press.pressed = false
+	viewport.push_input(press)
+	menu.close()
+	viewport.free()
+
 
 func test_hq_right_click_cannot_target_a_hidden_squad() -> void:
 	var s := _session()

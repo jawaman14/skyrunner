@@ -109,7 +109,7 @@ func test_off_the_course_line_it_steers_back_onto_it() -> void:
 	ap.update(0.1, s, FlightModel.Controls.new())
 	check(ap.hdg_target > 0.0 and ap.hdg_target < 90.0, "west of the line: aim east of north (%.1f)" % ap.hdg_target)
 
-func test_waypoint_behind_aircraft_gets_forward_intercept() -> void:
+func test_waypoint_behind_aircraft_gets_a_temporary_forward_intercept() -> void:
 	var ap := Autopilot.new()
 	var state := FlightModel.FlightState.new()
 	state.x = 1000.0
@@ -120,5 +120,65 @@ func test_waypoint_behind_aircraft_gets_forward_intercept() -> void:
 	state.pitch = 2.0
 	ap.engage_route(state, [[0.0, 0.0], [100.0, 0.0]], 1000.0)
 	ap.update(1.0 / 30.0, state, FlightModel.Controls.new())
-	check(float(ap.waypoints[0][0]) > state.x + 1000.0)
+	check(ap._intercept != null and float(ap._intercept[0]) > state.x + 1000.0, "a point ahead is flown first")
+	check_eq(ap.waypoints, [[0.0, 0.0], [100.0, 0.0]], "the route itself is untouched: the real fix is still there")
+	check_eq(ap.wp_i, 0, "still bound for the first real waypoint")
 	check_eq(ap._leg_from, [state.x, state.y])
+
+
+## Fly the autopilot's own commands with a bank-limited kinematic aircraft (3 degrees a second, the C172 at 18 degrees
+## of bank), and return [arrived, seconds, final x, final y, highest waypoint index reached, route intact].
+func _fly_route(route: Array, heading: float) -> Array:
+	var ap := Autopilot.new()
+	var s := FlightModel.FlightState.new()
+	s.heading = heading
+	s.gs_kts = 100.0
+	s.ias_kts = 100.0
+	s.alt = 1000.0
+	s.pitch = 2.0
+	ap.engage_route(s, route.duplicate(true), 1000.0)
+	var dt := 0.1
+	var t := 0.0
+	var top := 0
+	var intact := true
+	while not ap.arrived and t < 1800.0:
+		ap.update(dt, s, FlightModel.Controls.new())
+		if ap.arrived:
+			break
+		top = maxi(top, ap.wp_i)
+		intact = intact and ap.waypoints == route
+		s.heading = fposmod(s.heading + clampf(Py.wrap180(ap.hdg_target - s.heading), -3.0 * dt, 3.0 * dt), 360.0)
+		var v := s.gs_kts * 0.514444 * dt
+		s.x += sin(deg_to_rad(s.heading)) * v
+		s.y += cos(deg_to_rad(s.heading)) * v
+		t += dt
+	return [ap.arrived, t, s.x, s.y, top, intact]
+
+
+func test_a_route_behind_the_aircraft_is_still_flown_to_its_last_waypoint() -> void:
+	# Engaged heading north, every waypoint south of us: the first fix needs a turn of nearly 180 degrees.
+	var route := [[0.0, -5000.0], [3000.0, -9000.0], [6000.0, -9000.0]]
+	var r := _fly_route(route, 0.0)
+	check(r[0], "it arrives within 30 minutes (%.0f s)" % r[1])
+	var end := Vector2(r[2], r[3])
+	check(end.distance_to(Vector2(6000.0, -9000.0)) < 1600.0, "and arrives at the last waypoint, not somewhere on the way (%.0f m off)" % end.distance_to(Vector2(6000.0, -9000.0)))
+	check_eq(r[4], 2, "every waypoint was flown in order")
+	check(r[5], "the route list was never edited")
+
+
+func test_a_waypoint_straight_behind_is_turned_back_to_not_postponed_for_ever() -> void:
+	var r := _fly_route([[0.0, -6000.0]], 0.0)
+	check(r[0], "a single fix dead astern is reached (%.0f s)" % r[1])
+	check(Vector2(r[2], r[3]).distance_to(Vector2(0.0, -6000.0)) < 1600.0, "at the fix")
+
+
+func test_a_route_ahead_is_not_given_an_intercept() -> void:
+	var ap := Autopilot.new()
+	var s := FlightModel.FlightState.new()
+	s.heading = 0.0
+	s.gs_kts = 100.0
+	s.ias_kts = 100.0
+	s.alt = 1000.0
+	ap.engage_route(s, [[0.0, 8000.0]], 1000.0)
+	ap.update(0.1, s, FlightModel.Controls.new())
+	check(ap._intercept == null, "a fix ahead is simply flown to")

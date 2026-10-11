@@ -47,7 +47,10 @@ func test_every_menu_builds_opens_takes_every_key_and_closes() -> void:
 				continue
 			m.key(k)
 		m.refresh()
-		m.close()
+		var presses := 0
+		while m.visible and presses < 4:  # a menu with pages (the phone's apps) steps back one page per ESC
+			m.close()
+			presses += 1
 		check(closed[0] >= 1, "%s says it closed (some close themselves on ENTER, once a call or a race is set up)" % path.get_file())
 		check(not m.visible, "%s is hidden again" % path.get_file())
 		m.queue_free()

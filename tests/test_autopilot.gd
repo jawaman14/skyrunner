@@ -76,21 +76,21 @@ func test_hot_cargo_flies_low_but_still_squawks_without_heat() -> void:
 	s.dispose()
 
 
-func test_known_radar_zones_are_the_active_police_sites() -> void:
+func test_known_radar_zones_are_the_fixed_airfield_radars_only() -> void:
 	var s := _sess({"trade": true})
 	var zones: Array = s.known_radar_zones()
-	var active := 0
-	for site in s.police.sensors.sites:
-		if bool(site.active):
-			active += 1
-	check(active > 0 and zones.size() == active, "one avoid zone per active radar site (%d of %d)" % [zones.size(), active])
+	var fixed := 0
+	for a in s.world.airfields:
+		if a.radar_km > 0:
+			fixed += 1
+	check(fixed > 0 and zones.size() == fixed, "one zone per airfield radar (%d of %d)" % [zones.size(), fixed])
 	for z in zones:
-		check(float(z.radius) > 0.0, "each zone has the site's range")
-	for site in s.police.sensors.sites:
-		if bool(site.active):
-			site.active = false
-			break
-	check_eq(s.known_radar_zones().size(), active - 1, "a site that is off is no longer routed around")
+		check(float(z.radius) > 0.0, "each zone has the radar's reach")
+	# what the law keeps secret must not move the runner's route: raise the aerostat, buy a coastal radar
+	var before: Array = zones.duplicate(true)
+	s.police.sensors.site("AER").active = true
+	s.police.sensors.add_site(SensorNet.RadarSite.new("XTRA", "Coastal radar", 500.0, 500.0, 100.0, 30000.0))
+	check_eq(s.known_radar_zones(), before, "the aerostat and law-side sites are not in the runner's picture")
 	s.dispose()
 
 

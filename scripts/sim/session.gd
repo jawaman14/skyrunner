@@ -183,7 +183,9 @@ static func load_or_new(path: String, opts := {}) -> Session:
 	World.use_map(int(o["map_seed"]))
 	o["money"] = int(data.get("money", opts.get("money", START_MONEY)))  # a new game may start with a float
 	var owned_list := (data.get("owned", ["c172p"]) as Array).filter(func(k): return Aircraft.ROSTER.has(k))
-	o["owned"] = owned_list if not owned_list.is_empty() else ["c172p"]
+	var saved_story: Dictionary = data.get("story", {}) if data.get("story") is Dictionary else {}
+	var saved_employment: Dictionary = saved_story.get("employment", {}) if saved_story.get("employment") is Dictionary else {}
+	o["owned"] = owned_list if not owned_list.is_empty() or bool(saved_employment.get("loaner", false)) else ["c172p"]
 	o["aircraft_key"] = data.aircraft if Aircraft.ROSTER.has(data.get("aircraft", "")) else "c172p"
 	o["location"] = data.location if World.AIRFIELD_BY_CODE.has(data.get("location", "")) else START_FIELD
 	o["gear"] = (data.get("gear", []) as Array).filter(func(k): return GEAR.has(k))

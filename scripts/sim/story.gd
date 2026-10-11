@@ -125,6 +125,15 @@ const CHAPTERS := [
 		[["net_worth", "Be worth $90,000 (cash and product)", 90000], ["case_cold", "Be clear of the law: the case under 50% for twenty minutes", 20]]],
 ]
 
+var employment: EmploymentOpening = null
+
+## Only explicit fresh-story startup opts into employment; old saves retain their chapter.
+static func new_employed() -> Story:
+	var st := Story.new()
+	st.employment = EmploymentOpening.new()
+	return st
+
+
 var index := 0
 var progress := {}  ## goal key -> value this chapter
 const GUIDANCE := [
@@ -143,13 +152,27 @@ const GUIDANCE := [
 ]
 
 func guidance() -> String:
+	if employment != null and employment.active():
+		return employment.guidance(sess)
 	var names: Array = CHAPTERS[index][3].map(func(k): return NAMES.get(k, k))
 	return "NEW: %s\n\n%s" % [", ".join(names) if not names.is_empty() else "No new systems", GUIDANCE[index]]
 
-func journal_text() -> String:
-	var sections: Array = ["CHAPTER %d - %s\n\n%s\n\n%s\n\n%s" % [chapter.num, chapter.title, chapter.briefing, guidance(), "\n".join(objective_lines())]]
+## Called only after an authoritative purchase ends the employer loan.
+func record_first_aircraft(key: String, price: int) -> void:
+	if employment == null or sess == null:
+		return
 	for entry in history:
-		sections.append("CHAPTER %d - %s\n%s\n%s" % [entry.chapter, entry.title, entry.briefing + "\n" + str(entry.get("aftermath", "")), "\n".join(entry.objectives)])
+		if entry.get("milestone", "") == "first_aircraft":
+			return
+	history.append({"chapter": 0, "milestone": "first_aircraft", "title": "Your first aircraft",
+		"briefing": "Bought your own %s for $%s. The employer loan has ended." % [Aircraft.ROSTER[key].name, Py.money(price)],
+		"objectives": ["[x] Own an aircraft"], "time": sess.time, "status": "completed"})
+
+
+func journal_text() -> String:
+	var sections: Array = ["%s - %s\n\n%s\n\n%s\n\n%s" % ["EMPLOYMENT" if chapter.num == 0 else "CHAPTER %d" % chapter.num, chapter.title, chapter.briefing, guidance(), "\n".join(objective_lines())]]
+	for entry in history:
+		sections.append("%s - %s\n%s\n%s" % ["EMPLOYMENT" if int(entry.chapter) == 0 else "CHAPTER %d" % int(entry.chapter), entry.title, entry.briefing + "\n" + str(entry.get("aftermath", "")), "\n".join(entry.objectives)])
 	if completed_all:
 		sections.append("1989. Benny: You made enough to choose your next move. The coast is still here. So are the people who remember you.\n" + ending_summary())
 	return "\n\n".join(sections)
@@ -181,6 +204,8 @@ func _init(index_ := 0, progress_ = null) -> void:
 
 var chapter: Campaign.Chapter:
 	get:
+		if employment != null and employment.active():
+			return employment.chapter()
 		if _chapter == null or _chapter.num != index + 1:
 			var c: Array = CHAPTERS[index]
 			var goals := []
@@ -190,12 +215,15 @@ var chapter: Campaign.Chapter:
 					o.optional = bool(g[3])
 					o.bonus = int(g[4])
 				goals.append(o)
-			_chapter = Campaign.Chapter.new(index + 1, c[0], c[1], c[2], [], [], goals)
+			var briefing: String = c[2]
+			if index == 0 and employment != null:
+				briefing = "The company has crossed into smuggling. Until you buy your own aircraft, the Cessna remains company property. Benny Ruiz introduces the growers: buy grass, fly it into stash houses, and set up your first dealer through Phone > Manny Ortega.\n" + "A loaned aircraft is use of company equipment, not ownership. Your savings and first purchase remain yours."
+			_chapter = Campaign.Chapter.new(index + 1, c[0], c[1], briefing, [], [], goals)
 		return _chapter
 
 
 func to_dict() -> Dictionary:
-	return {"index": index, "progress": progress, "done": completed_all, "outcomes": outcomes, "outcome_status": outcome_status, "history": history, "v": 4}
+	return {"index": index, "progress": progress, "done": completed_all, "outcomes": outcomes, "outcome_status": outcome_status, "history": history, "employment": employment.to_dict() if employment != null else null, "v": 5}
 
 
 static func from_dict(d) -> Story:
@@ -208,6 +236,8 @@ static func from_dict(d) -> Story:
 	if v < 3 and idx >= 2:
 		idx += 1  # ... and from before 'Blotter' was added after The Connection
 	var st := Story.new(idx, d.get("progress"))
+	if d.get("employment") is Dictionary:
+		st.employment = EmploymentOpening.from_dict(d.employment)
 	st.completed_all = bool(d.get("done", false))
 	st.outcomes = d.get("outcomes", {}).duplicate()
 	st.outcome_status = d.get("outcome_status", {}).duplicate()
@@ -242,6 +272,14 @@ func attach(s) -> void:
 	sess = s
 	s.story = self
 	s.bus.subscribe("*", _on_event)
+	if employment != null and employment.active():
+		if employment.loaner:
+			s.owned.erase(EmploymentOpening.AIRCRAFT)
+		for code in s.boards.keys():
+			s.refresh_board(code)
+		show_briefing = true
+		s.say("EMPLOYER: " + chapter.title)
+		return
 	if s.trade == null:
 		s.enable_system("trade", true)
 	for i in index + 1:
@@ -279,6 +317,8 @@ const NAMES := {"logistics": "logistics (stock and cash have to be moved)", "dea
 
 
 func objective_lines() -> Array:
+	if employment != null and employment.active():
+		return ["[%s] Complete employer deliveries (%d/%d)" % ["x" if employment.delivered >= (2 if employment.stage == 0 else 1) else " ", employment.delivered, 2 if employment.stage == 0 else 1]]
 	var out := []
 	for o in chapter.objectives:
 		if outcomes.has(o.key):
@@ -321,6 +361,21 @@ func _waive(key: String, reason: String, status := "waived") -> bool:
 
 func _on_event(ev: EventBus.Event) -> void:
 	var d := ev.data
+	if employment != null and employment.active():
+		var previous = employment.chapter()
+		if ev.kind == "job_delivered" and employment.record(d):
+			history.append({"chapter": 0, "title": previous.title, "briefing": previous.briefing, "objectives": ["[x] Employer deliveries completed"], "time": sess.time, "status": "completed"})
+			show_briefing = true
+			if not employment.active():
+				if sess.trade == null:
+					sess.enable_system("trade", true)
+				_open(0, false)
+				sess.say("The company is in the trade now. CHAPTER 1: " + chapter.title)
+			else:
+				sess.say("EMPLOYER: " + chapter.title)
+			for code in sess.boards.keys():
+				sess.refresh_board(code)
+		return
 	match ev.kind:
 		"job_delivered":
 			var good := str(d.get("good", ""))
@@ -375,6 +430,8 @@ func _blotter_ends() -> void:
 
 ## Polled goals (state, not events), then the chapter check.
 func tick(s) -> void:
+	if employment != null and employment.active():
+		return
 	if completed_all:
 		return
 	if s.trade != null:
@@ -442,8 +499,23 @@ func tick(s) -> void:
 
 ## On to the next chapter (or the end): what finishing one does, and what a
 ## chapter jump (--chapter N) does.
+func select_chapter(number: int) -> void:
+	if number <= 0:
+		return
+	if employment != null and employment.active():
+		advance()
+	while index + 1 < number and not completed_all:
+		advance()
+
+
 func advance() -> void:
 	var s = sess
+	if employment != null and employment.active():
+		employment.stage = EmploymentOpening.TITLES.size()
+		if s.trade == null:
+			s.enable_system("trade", true)
+		_open(0, false)
+		return
 	if completed_all:
 		return
 	history.append({"chapter": chapter.num, "title": chapter.title, "briefing": chapter.briefing,

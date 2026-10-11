@@ -534,15 +534,19 @@ func needs(o: String) -> Dictionary:
 		n["dealer"] = sess.trade.dealers_wanted(o)
 	return n
 
-## Explainable hiring demand for roster screens and deterministic AI diagnostics.
-## This is read-only; `_think` remains the only path that hires anyone.
+## Explainable hiring demand for roster screens and deterministic AI diagnostics: for every role that is wanted or
+## staffed, its target, the people active in it, the vacancy and any surplus. A role whose target has fallen to zero
+## (the pilot's and accountant's depend on cash) stays in the report while it still has staff, as an overstaffed row,
+## rather than vanishing. This is read-only; `_think` remains the only path that hires anyone.
 func demand(o: String) -> Dictionary:
 	var out := {}
 	var targets := needs(o)
-	for role in targets:
-		var target: int = int(targets[role])
+	for role in ROLES:
+		var target: int = int(targets.get(role, 0))
 		var have: int = of(o, role).filter(func(w): return w.status in ["free", "assigned"]).size()
-		out[role] = {"target": target, "active": have, "vacancy": maxi(0, target - have)}
+		if target == 0 and have == 0:
+			continue
+		out[role] = {"target": target, "active": have, "vacancy": maxi(0, target - have), "surplus": maxi(0, have - target)}
 	return out
 
 
