@@ -39,6 +39,7 @@ jobs:
       - run: python tools/mcp/test_connection.py
       - run: python tools/collab/test_collab_tools.py
       - run: python tools/local_llm/test_worker.py
+      - run: python tools/local_llm/test_alerts.py
 
   test:
     name: ${{ matrix.label }}

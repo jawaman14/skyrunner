@@ -47,6 +47,9 @@ PROTECTED = (".github/", "project.godot", "tests/fixtures/", "HANDOFF.md", "AGEN
              "scripts/sim/switches.gd", "tools/mcp/", "tools/local_llm/")
 MAX_FILES = 3
 MAX_FILE_BYTES = 40_000
+THREAD_PROMPT = ("A reviewer left this comment on {path} line {line}. Do NOT say whether it is right or wrong and do NOT promise any change. "
+                 "Write exactly three lines.\nASK: what the reviewer is asking for, in one sentence.\nCHECK: what the author must verify in the code "
+                 "before answering, in one sentence.\nREPLY: [TODO: what was actually done]\n\n{body}")
 FENCE = re.compile(r"^```[a-zA-Z0-9_+-]*[ \t]*\n(.*?)^```[ \t]*$", re.S | re.M)
 FILE_HEAD = re.compile(r"^(?:#+\s*)?(?:FILE|File|file)\s*:\s*`?([^\s`]+)`?\s*$", re.M)
 
@@ -73,9 +76,10 @@ def _get_json(path, opener, timeout=20):
 
 
 def loaded_models(opener=urllib.request.urlopen):
-    """Keys of the language models that are loaded right now. A read-only look; it loads nothing."""
+    """Ids of the language-model INSTANCES that are loaded right now (a model loaded twice, for example a second bonsai kept for another
+    agent, has two ids: `prism-ml/bonsai-27b` and `prism-ml/bonsai-27b:2`). A read-only look; it loads nothing."""
     data = _get_json("/api/v1/models", opener)
-    return [m["key"] for m in data.get("models", []) if m.get("type") == "llm" and m.get("loaded_instances")]
+    return [(i.get("id") if isinstance(i, dict) else None) or m["key"] for m in data.get("models", []) if m.get("type") == "llm" for i in m.get("loaded_instances", [])]
 
 
 def input_budget(opener=urllib.request.urlopen):
@@ -96,7 +100,7 @@ def input_budget(opener=urllib.request.urlopen):
 
 def pick_model(loaded, requested=""):
     """The loaded model to use. Never one that is not loaded: asking for it would make the server load it."""
-    requested = requested or os.environ.get("SKYRUNNER_LOCAL_MODEL", "")
+    requested = requested or os.environ.get("SKYRUNNER_LOCAL_MODEL", "")  # a model key or an instance id
     if requested:
         if requested not in loaded:
             raise LocalLLMError("%s is not loaded (loaded: %s). This tool never loads a model: load it in LM Studio first." % (requested, ", ".join(loaded) or "none"))
@@ -105,7 +109,7 @@ def pick_model(loaded, requested=""):
         return loaded[0]
     if not loaded:
         raise LocalLLMError("no language model is loaded in LM Studio. This tool never loads one: load a model first.")
-    raise LocalLLMError("several models are loaded (%s): set SKYRUNNER_LOCAL_MODEL" % ", ".join(loaded))
+    raise LocalLLMError("several instances are loaded (%s): set SKYRUNNER_LOCAL_MODEL to the one this job may use" % ", ".join(loaded))
 
 
 def _lock_file(fh):
@@ -241,10 +245,7 @@ def job_draft_replies(args, ask=chat):
     open_ = [c for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied]
     parts = ["# Review threads to answer on PR #%d (summaries only, NOT replies: the author decides and writes the answer)\n" % args.pr]
     for c in open_[:MAX_CALLS]:
-        draft = ask("A reviewer left this comment on %s line %s. Do NOT say whether it is right or wrong and do NOT promise any change. Write exactly three lines.\n"
-                    "ASK: what the reviewer is asking for, in one sentence.\n"
-                    "CHECK: what the author must verify in the code before answering, in one sentence.\n"
-                    "REPLY: [TODO: what was actually done]\n\n%s" % (c.get("path"), c.get("line"), clip(c["body"], 3000)),
+        draft = ask(THREAD_PROMPT.format(path=c.get("path"), line=c.get("line"), body=clip(c["body"], 3000)),
                     system="You summarise review comments neutrally and never decide for the author.", max_tokens=200)
         parts.append("## comment %s  %s:%s\n%s\n\nSUMMARY (a neutral reading, not a decision):\n%s\n" % (c["id"], c.get("path"), c.get("line"), " ".join(c["body"].split())[:300], draft))
     if not open_:

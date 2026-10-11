@@ -27,7 +27,7 @@ Protected from a local draft: `.github/`, `project.godot`, `tests/fixtures/`, `H
 agent's exact-head review after the author has finished it. A model this size is wrong often enough that nothing here is trusted
 until a person or Claude or Codex has read it.
 
-Tests (no server needed): `python tools/local_llm/test_worker.py`.
+Tests (no server needed): `python tools/local_llm/test_worker.py` and `python tools/local_llm/test_alerts.py`.
 
 **Phase 1 results (11 October, bonsai-27b, real `POST /api/v1/chat` calls).** `triage`: 6 PRs in 14 s; the tiers are right (they come from the file
 paths, not the model) but the one-line summaries are loose, and one is wrong ("Sync shared baton to contributors" for a PR that makes the
@@ -39,3 +39,11 @@ to a valid blocking finding). So the job now writes only a neutral summary (ask,
 **Input size.** What it sends follows the loaded model's context window (2 characters per token of it), capped at 400,000 characters, because a long
 prompt is slow to read: `SKYRUNNER_LOCAL_MAX_CHARS` overrides it, and an unknown context falls back to 24,000. With bonsai at 262,144 tokens a
 whole 35 KB PR diff (about 11,000 tokens) went in uncut and was digested in 24 s, 15 s of it reading the prompt.
+
+## Alert feed
+
+`alerts.py once|watch --for codex|claude [--with-llm]` writes a short markdown digest of what that agent must act on (a review needed, CI failed on its
+PR, review threads waiting, a conflict to sync, a merge), decided by code from GitHub state and sent once per change. `--with-llm` lets the local
+model add a neutral line to thread alerts; a model failure never loses an alert. `tools/collab/wake_codex.py --alerts-file` wakes the agent when the
+file changes. To keep this feed on its own model instance (for example a second bonsai loaded for Codex), set `SKYRUNNER_LOCAL_MODEL` to that
+instance id, as listed by `worker.py models`.

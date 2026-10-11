@@ -122,6 +122,20 @@ class Client(unittest.TestCase):
         with self.assertRaises(worker.LocalLLMError):
             worker.chat("hi", opener=Server(models=two))
 
+    def test_a_model_loaded_twice_has_two_instance_ids_and_the_job_names_the_one_it_may_use(self):
+        two = {"models": [{"type": "llm", "key": "prism-ml/bonsai-27b", "loaded_instances": [{"id": "prism-ml/bonsai-27b"}, {"id": "prism-ml/bonsai-27b:2"}]}]}
+        server = Server(models=two)
+        self.assertEqual(worker.loaded_models(server), ["prism-ml/bonsai-27b", "prism-ml/bonsai-27b:2"])
+        with self.assertRaises(worker.LocalLLMError):
+            worker.chat("hi", opener=server)
+        os.environ["SKYRUNNER_LOCAL_MODEL"] = "prism-ml/bonsai-27b:2"
+        self.assertEqual(worker.chat("hi", opener=server), "hello")
+        sent = [r for r in server.requests if r[1].endswith("/chat")][0][2]
+        self.assertEqual(sent["model"], "prism-ml/bonsai-27b:2")
+        os.environ["SKYRUNNER_LOCAL_MODEL"] = "prism-ml/bonsai-27b:3"
+        with self.assertRaises(worker.LocalLLMError):
+            worker.chat("hi", opener=server)
+
     def test_thinking_is_a_choice_and_a_log_line_is_written(self):
         log = os.path.join(tempfile.mkdtemp(), "usage.jsonl")
         os.environ["SKYRUNNER_LOCAL_LOG"] = log
