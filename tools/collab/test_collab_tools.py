@@ -270,6 +270,9 @@ class WakeCodex(unittest.TestCase):
     def test_the_prompt_holds_only_integer_ids_never_note_text(self):
         prompt = wake_codex.build_prompt([5, "7"])
         self.assertIn("ids 5,7", prompt)
+        self.assertIn("after=4,", prompt, "reads only the new notes, from one below the first id")
+        self.assertIn("limit=20", prompt)
+        self.assertNotIn("backlog", prompt.replace("not the backlog", ""))
         with self.assertRaises(ValueError):
             wake_codex.build_prompt(["1; rm -rf /"])
         cmd = wake_codex.build_command("codex", "thread-1", False, [3])
