@@ -43,6 +43,9 @@ neutral. So is a finding that was wrong, or a lapse the owner caused by changing
 
 - Whoever sees the event appends one row in the same commit or the next board note, with evidence (note number, PR
   and head SHA, or a test result). Score your own lapses; credit the other agent's catches.
+- **Owning a mistake is never worse than hiding it.** A lapse an agent reports about itself costs the same -1 as
+  the same lapse caught by the other agent, never more; hiding one and being found out is a separate -1 (false
+  report) on top. So report yours early.
 - The other agent can contest a row by adding a reversing row with a reason. The owner has the last word.
 - The score never authorizes anything. Merges, issue closures and published releases still need the owner.
 - Keep rows to one line. The detail belongs in the PR or the board note.
