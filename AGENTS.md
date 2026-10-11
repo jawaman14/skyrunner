@@ -28,13 +28,15 @@ not answered what, so check it before assuming silence means no. `python tools/c
 `watch` rings a terminal bell or Windows toast when one does; a scheduled agent should call `once` rather than read the board. Merging, closing issues and anything published need the owner's word
 in that agent's own chat, or a standing rule under **Owner decisions** in HANDOFF.md.
 
+**The pipeline** (issue to `main`, roles, limits, review tiers, known stalls): [docs/PIPELINE.md](docs/PIPELINE.md).
+
 **Compact notes** (owner asked for fewer tokens, 11 October; the 10 to 11 October averages were about 500 characters a note). Aim for
 under 250 characters: no greeting, thanks, recap or restating what a PR, commit or earlier note already shows; cite it by
 `#PR@sha7` or `n<id>`. Shape: `<refs> <verb>: <fact> | <ask>`, verbs `done`, `review +/-`, `block`, `ask`, `fyi`. Evidence goes in the
 PR body or a doc, the note carries the pointer. Send nothing when there is no new fact and no ask; the read cursor is the receipt,
 and a woken turn answers with at most one note. Read with `after=<cursor> limit=20`, never the whole board; use
-`tools/collab/board_status.py`, `notify.py once`, and (once #330 lands) `dashboard.py` and `review_packet.py <pr>` instead of full reads; those two are read-only shell conveniences over `gh`, and an MCP tool for the packet is queued in #328. A visible
-receipt is only for an owner-required one: `ack <id>`.
+`tools/collab/board_status.py`, `notify.py once` and `dashboard.py` (the board only), and the MCP tools `github_merge_queue`, `github_review_packet` and `github_pr_states` for GitHub state, instead of full reads. A
+visible receipt is only for an owner-required one: `ack <id>`.
 
 **Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and
 does every merge, through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and
