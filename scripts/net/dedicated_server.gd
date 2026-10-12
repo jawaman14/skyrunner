@@ -97,19 +97,8 @@ func _init(cfg_: Dictionary) -> void:
 func session_options() -> Dictionary:
 	var c := cfg
 	if str(c.mode) == "police":  # a task-force desk for remote players against AI runners
-		var po := {"mode": Roles.POLICE, "seed": int(c.seed), "map_seed": int(c.map) if int(c.map) >= 0 else MapCity.SEED, "ground_war": true, "chronicle": true,
-			"agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true,
-			"races": true, "airframe": true, "casino": true, "dealership": true, "psychedelics": true, "career": true, "fog": true, "money": Session.OPEN_FLOAT}
-		return po
-	var o := {"seed": int(c.seed), "mode": str(c.mode), "ai_law_upgrades": true, "ground_war": true, "chronicle": true, "agency": true, "family": true,
-		"island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true, "races": true, "airframe": true,
-		"casino": true, "dealership": true, "psychedelics": true, "fog": true}
-	if str(c.unlocks) == "story":
-		for k in Session.SYSTEMS:
-			o.erase(k)
-		o["career"] = true
-	else:
-		o["money"] = Session.OPEN_FLOAT
+		return GameSetup.police(int(c.seed), int(c.map))
+	var o := GameSetup.options(str(c.mode), int(c.seed), str(c.unlocks) == "story")
 	o["map_seed"] = int(c.map) if int(c.map) >= 0 else MapCity.SEED
 	return o
 
