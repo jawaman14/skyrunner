@@ -36,6 +36,7 @@
     "test_flight_dynamics.gd",
     "test_fuel.gd",
     "test_game_setup.gd",
+    "test_host_loop.gd",
     "test_island.gd",
     "test_keyboard_flight.gd",
     "test_loadout.gd",
