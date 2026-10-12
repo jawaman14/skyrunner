@@ -1,0 +1,11 @@
+{
+	"draw_calls": 116.0,
+	"mean_ms": 0.135922222222222,
+	"mode": "period",
+	"p95_ms": 0.203,
+	"resolution": "1280x720",
+	"sample_frames": 360,
+	"static_memory_bytes": 154762560,
+	"vehicles": 60,
+	"warmup_frames": 180
+}

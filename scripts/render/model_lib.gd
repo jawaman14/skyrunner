@@ -12,8 +12,8 @@ extends RefCounted
 ## The cast, 1980s coast: the organisation in suits and vests (q, k, p, b),
 ## Los Cuervos in bandoliers and work clothes (m, a, c), the task force in
 ## uniform and plain clothes (j, i), SWAT in black (r); the Family in dark
-## suits. Cars: a white sports coupe for the organisation, pickups and SUVs for
-## Los Cuervos, black-and-whites for the police, a luxury SUV for the Family.
+## suits. Land vehicles use original period silhouettes, muted faction paint and
+## three LODs. Existing CC0 car meshes supply envelopes and fallback support.
 
 static var ENABLED := true
 
@@ -35,6 +35,7 @@ const BOATS := {"gofast": ["boat-speed-a", 12.0], "cutter": ["boat-tug-a", 30.0]
 const PALMS := ["tree_palmTall", "tree_palmBend", "tree_palm", "tree_palmShort"]
 
 static var _cache := {}
+static var _vehicle_envelopes := {}
 const FURNITURE := "furniture/"  ## Kenney's Furniture Kit (Buildings.Kit.prop): the desks, sofas and stools in the villa and the club
 
 
@@ -143,13 +144,23 @@ static func weapon(tier: String, mul := 1.0) -> Node3D:
 ## A squad's vehicle, facing -Z, wheels on the ground.
 static func car(faction: String, kind: String) -> Node3D:
 	var k := "truck" if kind == "truck" else "car"
-	var path: String = "cars/" + CARS.get(faction, CARS.civilian)[k]
-	return wrapped(path, fit_scale(path, CAR_LEN[k]))
+	var file: String = CARS.get(faction, CARS.civilian)[k]
+	return _period_vehicle(file,CAR_LEN[k],faction)
 
 
-## Any car of Kenney's Car Kit by file name (the dealership's), `length` metres bumper to bumper, facing -Z.
+## Existing dealership model IDs with period bodies, length metres, facing -Z.
 static func vehicle(file: String, length: float) -> Node3D:
+	return _period_vehicle(file,length,"civilian")
+
+static func _period_vehicle(file: String, length: float, faction: String) -> Node3D:
 	var path := "cars/" + file
+	if ENABLED and PeriodVehicles.supports(file):
+		if not _vehicle_envelopes.has(file):
+			var old := wrapped(path,fit_scale(path,1.0))
+			if old == null: return null
+			_vehicle_envelopes[file] = bounds(old).size
+			old.free()
+		return PeriodVehicles.build(file,_vehicle_envelopes[file]*length,faction)
 	return wrapped(path, fit_scale(path, length))
 
 
