@@ -120,13 +120,13 @@ func start() -> String:
 		opts.erase("map_seed")
 	opts["save_path"] = save
 	var fresh := not FileAccess.file_exists(save)
+	var story: Story = null
 	sess = Session.load_or_new(save, opts)
 	if str(cfg.mode) == Roles.CAMPAIGN:
 		Campaign.from_dict(Session.read_save(save).get("campaign")).attach(sess)
 	elif str(cfg.unlocks) == "story" and str(cfg.mode) != "police":
-		var st := Story.new_employed() if fresh else Story.from_dict(Session.read_save(save).get("story"))
-		st.attach(sess)
-		st.select_chapter(int(cfg.chapter))
+		story = Story.new_employed() if fresh else Story.from_dict(Session.read_save(save).get("story"))
+		story.attach(sess)
 	for role in sess.seats.seats.keys():  # a session starts with its pilot's seat the local player's: nobody is local on a server
 		if sess.seats.who(role) == "human" and str(sess.seats.seats[role].token) == "":
 			sess.seats.release(role)
@@ -140,6 +140,8 @@ func start() -> String:
 	var err = srv.start(int(cfg.port), str(cfg.mode), str(cfg.bind), int(cfg.seed))
 	if err:
 		return str(err)
+	if story != null:  # only now: advancing a chapter saves, and a server that could not listen must not rewrite the save
+		story.select_chapter(int(cfg.chapter))
 	note("%s listening on port %d: %s, %s, seed %d%s (%s)" % [cfg.name, srv.port, cfg.mode, cfg.unlocks, int(cfg.seed), ", password set" if str(cfg.password) != "" else ", no password",
 		"new game" if fresh else "loaded %s" % save])
 	return ""

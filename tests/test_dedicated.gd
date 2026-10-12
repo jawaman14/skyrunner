@@ -264,3 +264,26 @@ func test_a_campaign_server_attaches_the_campaign_and_a_story_server_starts_on_i
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE))
 	_server({"unlocks": "story", "chapter": 5})
 	check_eq(_srv.sess.story.chapter.num, 5, "a story server starts on chapter 5")
+
+
+## The Codex bot's review of #357: a campaign server has the campaign's four seats and no others.
+func test_a_campaign_server_refuses_desks_that_are_not_in_the_campaign() -> void:
+	_server({"mode": "campaign"})
+	var boss := _client("Ann", Roles.BOSS)
+	check(_pump_until(func(): return boss.error != null), "the boss's desk is refused")
+	check("no boss seat" in str(boss.error), "with a reason: %s" % str(boss.error))
+	var pilot := _client("Bo", Roles.PILOT)
+	check(_pump_until(func(): return pilot.latest != null), "the pilot's seat is still open")
+
+
+## And: a server that cannot listen must not advance the story or touch the save (--chapter advances and saves each step).
+func test_a_server_that_cannot_listen_leaves_the_save_alone() -> void:
+	var first := _server({"mode": "coop"})
+	var taken: int = first.srv.port
+	var other_save := "user://test_dedicated_busy.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(other_save))
+	var second := DedicatedServer.new({"port": taken, "bind": "127.0.0.1", "save": other_save, "quiet": true, "seed": 3, "unlocks": "story", "chapter": 5})
+	var err := second.start()
+	check(err != "", "the second server cannot bind the busy port")
+	check(not FileAccess.file_exists(other_save), "and wrote no save with skipped chapters")
+	second.sess.dispose()
