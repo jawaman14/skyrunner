@@ -6,7 +6,7 @@ extends SceneTree
 ##   --port 47800        --bind "*"          --seed 1           --map -1 (the city coast)
 ##   --mode coop|versus|police               --unlocks open|story
 ##   --name "My server"  --password secret   --max-players 16
-##   --save user://dedicated.json   --autosave 120 (seconds, 0 = off)   --stop-file /path (touch it for a clean stop)
+##   --save user://saves/dedicated.json   --autosave 120 (seconds, 0 = off)   --stop-file /path (touch it for a clean stop)
 ##   --autopilot true    (the AI flies the aircraft until a player takes the pilot's seat)
 ##   --lan               (announce on the local network too; off in the cloud)
 ##   --seconds N         (stop after N server seconds: for tests)   --quiet
@@ -23,6 +23,7 @@ func _init() -> void:
 		var e := "SKYRUNNER_" + str(k).to_upper()
 		if OS.has_environment(e):
 			env[e] = OS.get_environment(e)
+	SavePaths.migrate()  # a game kept the old way (user://dedicated.json) moves into the saves folder once
 	var parsed := DedicatedServer.parse(OS.get_cmdline_user_args(), env)
 	if str(parsed.error) != "":
 		printerr("skyrunner server: " + str(parsed.error))
