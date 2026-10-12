@@ -66,3 +66,17 @@ rest of the systems can plug in one at a time.
 
 See [ROADMAP.md](ROADMAP.md): stations per crew, era music in stems with the same key and tempo, changes only at natural
 breaks, original fictional tracks only.
+
+## Decisions from the owner (13 October 2026)
+
+1. **Stinger:** a one-to-three-second musical sting marking a single event. Punctuation, not a change of track.
+2. **Player faction:** the player chooses their own colours and tag. AI factions get stakeholder designs so the player can
+   read who is who at a glance.
+3. **Zones:** a zone is yours only after you win it, and then you must graffiti it to claim it. The graffiti is a visual
+   indicator of ownership, added by the player, not an automatic change.
+4. **Dynamic between systems:** the economy, factions and turf war react to each other, not as separate signals.
+5. **Per year, per station:** the music and look are accurate to each year. New genres bring new stations, and a genre
+   that takes over a station replaces the one it displaces. A playlist of tracks for these is being collated for the
+   owner's own use, kept under `user://radio` and never in the repository.
+6. **Scope:** future roadmap, not scheduled.
+7. **Wordless:** the pulse never states its meaning in words. The player learns it from the pause-menu legend.
