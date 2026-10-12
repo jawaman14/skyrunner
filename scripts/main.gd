@@ -225,17 +225,12 @@ func start() -> void:
 			return
 	if args["new"] and FileAccess.file_exists(save):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(save))
-	var opts := {"seed": args["seed"], "mode": mode, "ai_law_upgrades": true, "ground_war": true, "chronicle": true, "agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true, "races": true, "airframe": true, "casino": true, "dealership": true, "psychedelics": true, "fog": true}  # the AI chief shops as forfeiture comes in
-	if story:  # the chapters build the rest as they open (Story.CHAPTERS)
-		for k in Session.SYSTEMS:
-			opts.erase(k)
-		opts["career"] = true
-	elif mode != Roles.CAMPAIGN and features == null:
-		opts["money"] = Session.OPEN_FLOAT  # open mode: everything live at once, so a float (a new game only)
-	if args["map"] >= 0:  # positive seeds select generated maps; zero is rejected above
-		opts["map_seed"] = args["map"]
-	elif not FileAccess.file_exists(save):
-		opts["map_seed"] = MapCity.SEED  # a new game starts on the city coast; old saves keep their island
+	var opts := GameSetup.options(mode, int(args["seed"]), story)  # the one shared builder (scripts/net/game_setup.gd)
+	if features != null:
+		opts.erase("money")  # a layer-plan game has its own start; the open-mode float is for the plain open game
+	var ms := GameSetup.map_seed(int(args["map"]), FileAccess.file_exists(save))  # a new game starts on the city coast; an old save keeps its island
+	if ms >= 0:
+		opts["map_seed"] = ms
 	if features != null:
 		opts["features"] = features
 	var fresh := not FileAccess.file_exists(save)
