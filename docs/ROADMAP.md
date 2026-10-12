@@ -46,6 +46,23 @@ continue. New feature branches wait; feature ideas go in as issues.
    then architecture, period vehicles (#367 needs its geometry reworked first), cockpit surfaces and feedback.
    Frame-time captures before and after each asset batch.
 
+## Future: presentation layers (owner ideas, 12–13 October; not scheduled)
+
+Read-only presentation that follows the simulation. None of it may change a sim outcome or draw on a sim RNG stream.
+Build after the territory radio, which supplies the first inputs.
+
+1. **Territory radio and era music.** Each crew gets a station that is stronger in its district. Music evolves by era
+   through stems (same key and tempo) and changes only at natural breaks. Original fictional tracks only.
+2. **Era fashion and liveries.** Wardrobe, vehicle and aircraft paint change by in-game year, in step with the music.
+   Owned aircraft keep their livery.
+3. **Crew colours, signage and graffiti.** Each crew has a colour and motif. Graffiti and signs mark who holds a street
+   and repaint when a district changes hands. Trusted crews' colours show on the player's clothing and car.
+4. **City pulse.** Economy sets the rhythm, each faction gets a motif, disputed districts get an unresolved interval,
+   and consequences give a directional stinger (push or pull). The HUD shows a pressure tilt, not a number. Each signal
+   is named in the pause menu.
+5. **Heat in the look.** Police heat shows as streetlight flicker, more patrols and darker clothing, easing off as the
+   heat cools.
+
 ## Decisions waiting on the owner
 
 - **Strip decision (#326, #88, #319, #323):** job generator versus strips.
