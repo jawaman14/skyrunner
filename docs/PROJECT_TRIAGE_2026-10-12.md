@@ -169,7 +169,14 @@ Codex leads UX/UI; all of these are for the owner to order. What the code shows 
   * **Delegating a flight costs money**, because you hire people out.
   * **Reputation is trust with the other crews.** It is gained by building trust with a crew and it makes you lose trust with some of the others, depending on which crew. Trust is also **lost when you lose shipments**, and a crew whose trust you have lost **goes to other sources** for the product they sell, and so on down the chain.
 * **What this asks of the code.** Trust per crew is **not new state everywhere**: the Sunrise Collective already has an authoritative `Psychedelics.trust` (0..100, `psychedelics.gd:62`, it sets the barter rate at :107-113, changes after trades and raids, is shown in the UI and is saved through `StrategicSave.PSYCH`, `strategic_save.gd:38`), and the Family and the Company keep their own standings in `family.gd` and `agency.gd`. The design therefore needs **one source of truth**: a single per-crew trust table that the Collective, the Family and the Company fields delegate to or migrate into (with a save migration), not a second, divergent number. A lost shipment must hit the trust of the crew it was meant for (`Logistics.lost_by`, `logistics.gd:45`, already counts seized, hijacked, raided and bust losses). A crew that defects needs **an outside or rival supply flow** to go to: `logistics.gd` stashes and convoys hold only our own stock and cash (`logistics.gd:39-44`) and `Trade.BUYERS` (`trade.gd:51`) are downstream buyers, so neither can stand for "another source". Opposing crews give and take trust in a small table. First slice: the shared trust table with migration, a lost-shipment hook, a rival supply flow for one crew, and a visible trust line per crew in the phone. Needs the owner's table of which crews trade trust against which.
-* **Still open for the owner.** The uncle's name; the table of crew relationships (who gains when whom loses); how much of the empire is "crumbling" at the start of the takeover (which of the stashes, trucks and crew are still there).
+* **Owner's answers, second round (12 October).** **The uncle is Rafael "Rafa" Quintero.** **The crew trust table is accepted as proposed** (each row is "A up means B down"):
+  * Morettis up means Los Cuervos down.
+  * Los Cuervos up means the Morettis and the street dealers down.
+  * The Company up means the Sunrise Collective down a little.
+  * The Collective up means the Company down a little.
+  * The street dealers up means Los Cuervos down a little.
+  * Losing a shipment costs trust with the crew it was meant for; that crew then buys from a rival or outside source (the supply flow the design needs, not the player's stashes).
+* **Still open for the owner.** How much of the empire is "crumbling" at the start of the takeover (which of the stashes, trucks and crew are still there).
 
 ## 9. Start-up architecture (#97): what Claude needs answered before consolidating
 
@@ -191,6 +198,9 @@ Questions for the owner:
 10. Where should save selection live? Four paths exist (`campaign.json`, `story.json`, `save.json`, `user://dedicated.json`).
 
 ### Answers recorded later on 12 October
-* Start-up architecture, question 1: **one shared host service** (server, beacon, voice and session loop) used by the pilot app, the host desk and the dedicated server. Questions 2-10 are still open.
+* Start-up architecture, question 1: **one shared host service** (server, beacon, voice and session loop) used by the pilot app, the host desk and the dedicated server. Questions 2-7 were answered later the same day (fixed 30 Hz, voice on the server, campaign and police in the waiting room, the server runs story, campaign and `--watch`, lobby fields, `--smoke`/`--shot` everywhere) and questions 8-10 in the second round below.
 * Landing the three server-repository PRs (skyrunner-mcp 6, 7, 8) with `gh` once: no answer given, so `gh` is **not** used; they stay open until the owner says, or until the running tools can reach that repository.
 * The checkbox ticks for #80, #83, #87 (and #82 now that #346 is merged) are recorded as comments on #328 and #329; editing the issue bodies needs skyrunner-mcp PR 8 (`replace_body`).
+* Questions 8-10 (12 October, second round): **the LAN beacon always belongs to the server node, the dedicated server included** (8a); **one flow: the waiting room only, the lobby's "open remote seats" box goes** (9a); **one saves folder with one file per mode, with a migration of existing saves** (10a).
+* The pilot app's frame step (12 October): **fixed 30 Hz with the picture smoothed between steps, as its own task** (not per-frame, not 60 Hz).
+* The server pin and the local `.mcp.json` (12 October): **both**: the game's committed pin moves to the current skyrunner-mcp `main`, and the local `.mcp.json` points at a clean server checkout.
