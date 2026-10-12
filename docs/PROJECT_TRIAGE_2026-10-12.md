@@ -196,7 +196,7 @@ Questions for the owner:
 * The checkbox ticks for #80, #83, #87 (and #82 now that #346 is merged) are recorded as comments on #328 and #329; editing the issue bodies needs skyrunner-mcp PR 8 (`replace_body`).
 
 ## 10. Every open item on 12 October, one line each
-Taken from `github_pr_triage` and `github_issue_list` at the end of 12 October (37 open pull requests and 5 open issues). Everything that is not listed here is merged (complete) or closed (not needed). Categories: **ready** (done, waiting for the other agent's exact-head review), **keep** (still valid, needs a sync or an owner call), **in question** (the owner or an agent must decide), **retire?** (superseded or stale: a close is proposed, nothing is closed without the owner for the stale stack).
+**A historical snapshot, as of 17:15 AEST on 12 October 2026** (the end of the day's merges and closings; the list changes as work lands, so check `github_merge_queue` for the live state). Taken from `github_pr_triage` and `github_issue_list` that morning (37 open pull requests and 5 open issues) and then updated for what was merged or closed during the day (ticked items). Everything that is not listed here is merged (complete) or closed (not needed). Categories: **ready** (done, waiting for the other agent's exact-head review), **keep** (still valid, needs a sync or an owner call), **in question** (the owner or an agent must decide), **retire?** (superseded or stale).
 
 ### Open issues
 * [ ] **#326** owner: release gates, decisions and design epics. keep (the owner's page; never ticked by an agent).
