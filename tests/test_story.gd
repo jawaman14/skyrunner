@@ -314,6 +314,30 @@ func test_debug_skip_walks_through_the_chapters_to_the_end() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://test_debug_skip.json"))
 
 
+## Goal checks are forgiving at the start and sparing later (owner, 12 Oct): chapter 1 needs 150 lb and $2,500, chapter 2 $2,000 home, and from chapter 3 no chapter
+## asks for more than two required goals, except The House, whose three goals are a chain (stake, laundering, then getting out).
+func test_goal_checks_are_forgiving_early_and_sparing_later() -> void:
+	var targets := {}
+	for o in Story.CHAPTERS[0][4]:
+		targets[o[0]] = o[2]
+	check_eq(targets["weed_lb"], 150, "chapter 1: 150 lb")
+	check_eq(targets["trade_earned"], 2500, "chapter 1: $2,500")
+	var home := 0
+	for o in Story.CHAPTERS[1][4]:
+		if o[0] == "cash_home":
+			home = o[2]
+	check_eq(home, 2000, "chapter 2: $2,000 home")
+	for i in range(2, Story.CHAPTERS.size()):
+		var required := 0
+		for o in Story.CHAPTERS[i][4]:
+			if not (o.size() > 3 and o[3]):
+				required += 1
+		if Story.CHAPTERS[i][1] == "The House":
+			check_eq(required, 3, "The House keeps exactly its three chained goals (stake, laundering, getting out)")
+		else:
+			check(required <= 2, "%s asks for %d required goals (limit 2)" % [Story.CHAPTERS[i][1], required])
+
+
 ## The early game is gentle: the police suspicion multiplier is 0.1 in chapters 1-2 (and the employed opening), 0.5 in chapter 3, 1 from chapter 4.
 func test_the_police_pace_follows_the_chapter() -> void:
 	check_eq(Story.early_police_scale(0), 0.1)

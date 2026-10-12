@@ -15,7 +15,7 @@ extends RefCounted
 ## Run it:  godot --headless --path . --script res://scripts/net/dedicated.gd -- --port 47800 --mode coop --unlocks open
 ## See docs/SERVER.md (Google Cloud, Docker, systemd).
 
-const DT := 1.0 / 30.0
+const DT := HostLoop.DT
 const AUTOSAVE_S := 120.0
 const DEFAULTS := {
 	"port": 47800, "bind": "*", "seed": 1, "mode": "coop", "unlocks": "open", "name": "Skyrunner server", "password": "", "max_players": 16,
@@ -30,7 +30,7 @@ var bot: AutoRunner = null
 var t := 0.0  ## server seconds
 var lines: Array = []  ## the log, newest last (tests read it; the script prints it)
 var print_log := true
-var _acc := 0.0
+var _loop := HostLoop.new()  ## the shared fixed-step loop
 var _save_t := 0.0
 var _stop_t := 0.0
 var _had_players := false
@@ -97,19 +97,8 @@ func _init(cfg_: Dictionary) -> void:
 func session_options() -> Dictionary:
 	var c := cfg
 	if str(c.mode) == "police":  # a task-force desk for remote players against AI runners
-		var po := {"mode": Roles.POLICE, "seed": int(c.seed), "map_seed": int(c.map) if int(c.map) >= 0 else MapCity.SEED, "ground_war": true, "chronicle": true,
-			"agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true,
-			"races": true, "airframe": true, "casino": true, "dealership": true, "psychedelics": true, "career": true, "fog": true, "money": Session.OPEN_FLOAT}
-		return po
-	var o := {"seed": int(c.seed), "mode": str(c.mode), "ai_law_upgrades": true, "ground_war": true, "chronicle": true, "agency": true, "family": true,
-		"island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true, "races": true, "airframe": true,
-		"casino": true, "dealership": true, "psychedelics": true, "fog": true}
-	if str(c.unlocks) == "story":
-		for k in Session.SYSTEMS:
-			o.erase(k)
-		o["career"] = true
-	else:
-		o["money"] = Session.OPEN_FLOAT
+		return GameSetup.police(int(c.seed), int(c.map))
+	var o := GameSetup.options(str(c.mode), int(c.seed), str(c.unlocks) == "story")
 	o["map_seed"] = int(c.map) if int(c.map) >= 0 else MapCity.SEED
 	return o
 
@@ -159,19 +148,7 @@ func note(text: String) -> void:
 ## One step of the server: the network, the AI pilot, the session, the snapshots, the saves. Call with the frame's delta.
 ## Returns true when the server is done (the time limit, or a stop file).
 func step(delta: float) -> bool:
-	_acc += delta
-	var n := 0
-	while _acc >= DT and n < 5:
-		_acc -= DT
-		n += 1
-		srv.pump(sess)
-		_pilot_seat()
-		var remote: bool = sess.seats.human(Roles.PILOT) and sess.seats.seats[Roles.PILOT].token != ""
-		var bc = bot.step(DT) if bot != null else (sess.remote_controls() if remote else null)
-		sess.update(DT, null, bc)
-		t += DT
-	if n == 5:
-		_acc = 0.0  # a slow machine drops time rather than spiralling
+	_loop.advance(delta, _step)
 	srv.publish(sess)
 	_autosave(delta)
 	if str(cfg.stop_file) != "":
@@ -185,15 +162,21 @@ func step(delta: float) -> bool:
 	return float(cfg.seconds) > 0.0 and t >= float(cfg.seconds)
 
 
+## One fixed step: the network, the AI pilot, the session.
+func _step(step_dt: float) -> void:
+	srv.pump(sess)
+	_pilot_seat()
+	var remote: bool = sess.seats.human(Roles.PILOT) and sess.seats.seats[Roles.PILOT].token != ""
+	var bc = bot.step(step_dt) if bot != null else (sess.remote_controls() if remote else null)
+	sess.update(step_dt, null, bc)
+	t += step_dt
+
+
 ## The AI flies whenever nobody holds the pilot's seat; a player who takes it flies from their own machine.
 func _pilot_seat() -> void:
 	if str(cfg.mode) == "police" or not bool(cfg.autopilot):
 		return
-	var who := sess.seats.who(Roles.PILOT)
-	if who == "ai" and bot == null:
-		bot = AutoRunner.new(sess)
-	elif who != "ai" and bot != null:
-		bot = null
+	bot = HostLoop.ai_pilot(sess, bot)
 
 
 func players() -> int:
