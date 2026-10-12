@@ -89,6 +89,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Owner decisions
 
+- **2026-10-12, story and economy design (owner, in chat):** the boss is the player's **uncle**: jovial and bigger than life, with a darkness you can't place. Chapter 2 is a few suspicious jobs while he starts to reveal his business. In a later chapter **Los Cuervos kill him** (the natural place is chapter 4, where the ground war opens); the player **hears about it** and takes his seat as boss, which starts the turf wars. He leaves a **crumbling empire to fix**, so the player starts smaller (a Mount & Blade start); the player is not locked into the boss seat and can still take part in the other layers. **Delegating a flight costs money** (you hire people out). **Reputation is trust with the other crews**: it is built with a crew, costs trust with some others depending on which, and is lost when shipments are lost, after which a crew goes to other sources. Early game: police interception odds **much lower** in chapters 1-2 (PR #350), chapter goal checks forgiving in chapter 1 and very sparing from chapter 3 (numbers awaiting approval, #345). Details and open questions: `docs/PROJECT_TRIAGE_2026-10-12.md` sections 7 and 8.5.
+
 - **2026-10-11 (afternoon), standing merge rule (owner):** merge readiness is the agents' job. In the owner's words: "you dont need
   to discuss with me what needs to be merged or not that is you and codex job to see if its ready too". The owner is involved when
   work lands on `main` (a short note per merge, a summary at the end) and for the human release gates and decisions in #326. Release
