@@ -21,7 +21,7 @@ extends Node
 
 var _finder: LanDiscovery.Finder = null  ## listens for games on the network (the multiplayer menu's list)
 var _mp: MultiplayerMenu = null
-var save_dir := "user://"  ## the tests point it elsewhere so they never touch a player's saves
+var save_dir := SavePaths.DIR  ## the tests point it elsewhere so they never touch a player's saves
 
 var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1,
 	"players": 0, "layer": 0, "graphics": "high", "watch": false, "shot": "", "frames": 90, "hour": -1.0,
@@ -218,7 +218,9 @@ func start() -> void:
 		return
 	var mode: String = args["mode"]
 	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and mode != Roles.POLICE and features == null
-	var save := save_dir + ("campaign.json" if mode == Roles.CAMPAIGN else ("police.json" if mode == Roles.POLICE else ("story.json" if story else "save.json")))
+	if save_dir == SavePaths.DIR:
+		SavePaths.migrate()  # an old player's loose save files move into the folder once
+	var save := save_dir + SavePaths.file_name(mode, story)
 	if not args["new"]:
 		var save_error := PlayableMaps.error(int(args["map"]), Session.read_save(save))
 		if save_error != "":

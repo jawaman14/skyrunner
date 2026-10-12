@@ -6,6 +6,7 @@
     "test_fixture_isolation.gd",
     "test_hq.gd",
     "test_rng.gd",
+    "test_save_paths.gd",
     "test_strategic.gd"
   ],
   "simulation": [
