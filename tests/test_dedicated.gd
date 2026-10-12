@@ -238,3 +238,29 @@ func test_guests_hear_each_other_through_a_dedicated_server() -> void:
 	if not heard.is_empty():
 		check_eq(heard[0].from, "Ann", "from the talker")
 		check_eq(heard[0].ch, "all", "on the channel they keyed")
+
+
+## The owner's 12 Oct answer: the dedicated server runs the story, the campaign with a chapter to start on, and `--watch`.
+func test_the_campaign_a_start_chapter_and_watch_are_server_options() -> void:
+	var c := DedicatedServer.parse(["--mode", "campaign", "--chapter", "3"], {})
+	check_eq(c.error, "", "campaign is a mode")
+	check_eq(c.cfg.mode, "campaign")
+	check_eq(c.cfg.chapter, 3, "and --chapter takes a number")
+	var w := DedicatedServer.parse(["--autopilot", "false", "--watch"], {})
+	check(bool(w.cfg.autopilot), "--watch turns the AI pilot on, whatever --autopilot said")
+	check_eq(DedicatedServer.parse(["--chapter", "-4"], {}).cfg.chapter, 0, "a negative chapter is the start")
+	var o := DedicatedServer.new({"mode": "campaign"}).session_options()
+	check_eq(o.mode, "campaign")
+	check(not o.has("money") and not o.has("career"), "no start-up float and no story career: the chapters set the game up")
+
+
+func test_a_campaign_server_attaches_the_campaign_and_a_story_server_starts_on_its_chapter() -> void:
+	_server({"mode": "campaign"})
+	check(_srv.sess.campaign != null, "the campaign is attached")
+	_srv.shutdown()
+	_srv.srv.free()
+	_srv.sess.dispose()
+	_srv = null
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE))
+	_server({"unlocks": "story", "chapter": 5})
+	check_eq(_srv.sess.story.chapter.num, 5, "a story server starts on chapter 5")

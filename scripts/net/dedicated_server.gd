@@ -20,8 +20,11 @@ const AUTOSAVE_S := 120.0
 const DEFAULTS := {
 	"port": 47800, "bind": "*", "seed": 1, "mode": "coop", "unlocks": "open", "name": "Skyrunner server", "password": "", "max_players": 16,
 	"save": "user://dedicated.json", "autosave": AUTOSAVE_S, "autopilot": true, "lan": false, "seconds": -1.0, "stop_file": "", "map": -1, "quiet": false,
+	"chapter": 0, "watch": false,
 }
-const MODES := ["coop", "versus", "police"]
+const MODES := ["coop", "versus", "police", "campaign"]  # campaign: the four-chapter tutorial campaign (Campaign), hosted for remote seats
+## `chapter` N (story games): start on chapter N, as --chapter does for the game. `watch`: the AI plays the aircraft whenever nobody holds the pilot's seat, as --watch does
+## (the same thing `autopilot` already does on a server; kept as an alias so the two entry points take the same flags).
 
 var cfg := {}
 var sess: Session = null
@@ -75,6 +78,9 @@ static func parse(args: Array, env := {}) -> Dictionary:
 	if int(c.map) == 0:
 		err = PlayableMaps.CLASSIC_REMOVED
 	c["max_players"] = clampi(int(c.max_players), 1, 64)
+	c["chapter"] = maxi(0, int(c.chapter))
+	if bool(c.watch):
+		c["autopilot"] = true
 	return {"cfg": c, "error": err}
 
 
@@ -98,7 +104,7 @@ func session_options() -> Dictionary:
 	var c := cfg
 	if str(c.mode) == "police":  # a task-force desk for remote players against AI runners
 		return GameSetup.police(int(c.seed), int(c.map))
-	var o := GameSetup.options(str(c.mode), int(c.seed), str(c.unlocks) == "story")
+	var o := GameSetup.options(str(c.mode), int(c.seed), str(c.unlocks) == "story" and str(c.mode) != Roles.CAMPAIGN)
 	o["map_seed"] = int(c.map) if int(c.map) >= 0 else MapCity.SEED
 	return o
 
@@ -115,9 +121,12 @@ func start() -> String:
 	opts["save_path"] = save
 	var fresh := not FileAccess.file_exists(save)
 	sess = Session.load_or_new(save, opts)
-	if str(cfg.unlocks) == "story" and str(cfg.mode) != "police":
+	if str(cfg.mode) == Roles.CAMPAIGN:
+		Campaign.from_dict(Session.read_save(save).get("campaign")).attach(sess)
+	elif str(cfg.unlocks) == "story" and str(cfg.mode) != "police":
 		var st := Story.new_employed() if fresh else Story.from_dict(Session.read_save(save).get("story"))
 		st.attach(sess)
+		st.select_chapter(int(cfg.chapter))
 	for role in sess.seats.seats.keys():  # a session starts with its pilot's seat the local player's: nobody is local on a server
 		if sess.seats.who(role) == "human" and str(sess.seats.seats[role].token) == "":
 			sess.seats.release(role)

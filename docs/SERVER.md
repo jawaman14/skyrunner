@@ -34,7 +34,7 @@ Every option is a flag (`--max-players 8`) or an environment variable (`SKYRUNNE
 |---|---|---|
 | `--port` | 47800 | the TCP port |
 | `--bind` | `*` | the address to listen on (`127.0.0.1` for local only) |
-| `--mode` | `coop` | `coop` (the runners are the players, the law is the AI), `versus` (both sides can be players), `police` (a task-force table: no pilot, AI runners) |
+| `--mode` | `coop` | `coop` (the runners are the players, the law is the AI), `versus` (both sides can be players), `police` (a task-force table: no pilot, AI runners), `campaign` (the four-chapter tutorial campaign, hosted for remote seats) |
 | `--unlocks` | `open` | `open`: every system from the first minute, with a float of money. `story`: the Costa Brava story's chapters open them one at a time (the whole table plays one story) |
 | `--seed` | 1 | the game's seed (a new game only; a save keeps its own) |
 | `--map` | -1 | `-1` the city coast; positive `N` generated island N; `0` is retired |
@@ -44,6 +44,8 @@ Every option is a flag (`--max-players 8`) or an environment variable (`SKYRUNNE
 | `--save` | `user://dedicated.json` | where the game is kept (an absolute path, e.g. `/var/lib/skyrunner/dedicated.json`) |
 | `--autosave` | 120 | seconds between saves; 0 turns it off (it still saves when the last player leaves and on a clean stop) |
 | `--autopilot` | true | the AI flies the aircraft until a player takes the pilot's seat |
+| `--watch` | false | an alias of `--autopilot true`, so a server takes the same flag as the game's `--watch`: the AI plays the aircraft whenever nobody holds the pilot's seat |
+| `--chapter` | 0 | with `--unlocks story`, start on this story chapter (as the game's `--chapter N`); 0 is the start |
 | `--stop-file` | none | when this file appears the server saves, deletes it and exits (see below) |
 | `--lan` | off | also announce on the local network (useless in the cloud) |
 | `--seconds` | none | stop after this many server seconds (for tests) |
