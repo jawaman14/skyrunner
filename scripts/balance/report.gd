@@ -160,6 +160,9 @@ const CHANGELOG := [
 	["Acid is a good in the logistics network",
 		"Until now the Sunrise Collective's sheets lived in the Collective's own counters and moved instantly: no truck could carry them, no raid on a stash could take them, and the price never moved.",
 		"The sheets are stock in the stash houses (`Logistics.goods()` lists cocaine, marijuana and acid), trucks carry them from stash to stash, a raid on a stash takes them and makes the street scarcer for a while (`RAID_SCARCITY` 0.3, decaying over two hours), and the street price walks about the scene's mood (`WALK_VOL` 0.04, reverting over half an hour). A sale leaves its money at the stash for a truck to bring home, so the live-play stand-in now brings stash cash home every half hour at 90 percent. 40 seeds, 16 hours, the story: 100 percent reach The Connection to The Task Force, 97 percent Isla Soberana to The Company, 93 percent Kingpin, 82 percent The Hearings, 68 percent Last Flight, 45 percent finish (before: 55 percent reached Last Flight, 40 percent finished). n = 40: a regression check, not a measurement."],
+	["The first two chapters asked too much",
+		"The owner's playtest (12 Oct): the opening felt like a grind before the story began. Chapter 1 wanted 300 lb of grass landed, a dealer and $4,000 from the trade; chapter 2 wanted $3,000 of street money home. From chapter 3 the required goals were already at most two per chapter (The House has three, a chain of stake, laundering and getting out).",
+		"Chapter 1 now asks for 150 lb and $2,500 (the dealer stays) and chapter 2 for $2,000 home: roughly a third faster to the first unlocks, no change from chapter 3 on. The story-run interpretation below was measured against the old gates; its progression times are about a third shorter for chapters 1-2 until the story run is repeated."],
 ]
 
 

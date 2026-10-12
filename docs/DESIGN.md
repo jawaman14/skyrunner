@@ -786,8 +786,8 @@ The game had grown a dozen systems, all on from the first minute. The story (`st
 
 | Chapter | Year | Opens | Goals |
 |---|---|---|---|
-| Square Grouper | 1979 | trade (grass only), payroll, the papers | 300 lb of grass landed, a dealer on a corner, $4,000 from the trade |
-| The Connection | 1980 | logistics, the dealership | $3,000 of street money home; the Colombian connection calls; *side goal:* buy a vehicle (+$2,000) |
+| Square Grouper | 1979 | trade (grass only), payroll, the papers | 150 lb of grass landed, a dealer on a corner, $2,500 from the trade |
+| The Connection | 1980 | logistics, the dealership | $2,000 of street money home; the Colombian connection calls; *side goal:* buy a vehicle (+$2,000) |
 | Blotter | 1980 | the Sunrise Collective (acid for grass) | 150 lb of grass traded for acid, 20 sheets sold; the lab is taken at the end |
 | Cocaine Cowboys | 1981 | the street war, gun runs and gun sales, soldiers | 60 lb of cocaine flown home, 8 weapons in the armoury; *side goal:* a truck with real cover or steel (+$3,000) |
 | Family Business | 1982 | the Moretti family | a deal with them (offer, loan or bulk sale); $30,000 in spendable cash |

@@ -17,6 +17,9 @@ extends RefCounted
 const LOCKS := ["guns", "role_soldier", "role_mule"]
 
 ## [year, title, briefing, opens, goals [[key, text, target]]]
+## Goal checks (owner, 12 Oct): forgiving in chapters 1-2 (150 lb and $2,500; $2,000 home) and sparing from chapter 3: at most two required goals per chapter,
+## the rest optional. The House is the one chapter with three required goals: stake, laundering and getting out are a chain (getting out only happens after the
+## laundering sets off the uprising), so none of them can be optional.
 const CHAPTERS := [
 	[1979, "Square Grouper",
 		"San Telmo, 1979. The Cessna is half the bank's, the charters don't cover the fuel,\n"
@@ -24,8 +27,8 @@ const CHAPTERS := [
 		+ "Buy it at the bush strips, fly it into our stash houses, and hire a kid or two\n"
 		+ "to sell it on the corners [Phone > Manny Ortega]. Low money, low risk - for now.",
 		["trade", "payroll", "chronicle"],
-		[["weed_lb", "Fly 300 lb of marijuana into our stash houses", 300], ["dealers", "Put a street dealer on a corner", 1],
-			["trade_earned", "Make $4,000 from the trade", 4000]]],
+		[["weed_lb", "Fly 150 lb of marijuana into our stash houses", 150], ["dealers", "Put a street dealer on a corner", 1],
+			["trade_earned", "Make $2,500 from the trade", 2500]]],
 	[1980, "The Connection",
 		"The boatlift brings a hundred thousand people across the straits, and a few of them
 "
@@ -37,7 +40,7 @@ const CHAPTERS := [
 "
 		+ "A dealership will sell you vans for the trucks and a car of your own [phone].",
 		["logistics", "dealership"],
-		[["cash_home", "Truck or fly $3,000 of street money home", 3000],
+		[["cash_home", "Truck or fly $2,000 of street money home", 2000],
 			["connected", "Get the call from the Colombian connection", 1],
 			["dealership_buy", "Buy a vehicle at the dealership", 1, true, 2000]]],
 	[1980, "Blotter",
