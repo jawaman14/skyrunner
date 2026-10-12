@@ -41,7 +41,7 @@ Every option is a flag (`--max-players 8`) or an environment variable (`SKYRUNNE
 | `--name` | `Skyrunner server` | the name in the status reply and the LAN list |
 | `--password` | none | a hello without it is refused; join as `password@host:port` |
 | `--max-players` | 16 | at most 64 |
-| `--save` | `user://dedicated.json` | where the game is kept (an absolute path, e.g. `/var/lib/skyrunner/dedicated.json`) |
+| `--save` | `user://saves/dedicated.json` | where the game is kept (an absolute path, e.g. `/var/lib/skyrunner/dedicated.json`); a game kept the old way, in `user://dedicated.json`, moves into the saves folder the first time the server starts |
 | `--autosave` | 120 | seconds between saves; 0 turns it off (it still saves when the last player leaves and on a clean stop) |
 | `--autopilot` | true | the AI flies the aircraft until a player takes the pilot's seat |
 | `--watch` | false | an alias of `--autopilot true`, so a server takes the same flag as the game's `--watch`: the AI plays the aircraft whenever nobody holds the pilot's seat |
