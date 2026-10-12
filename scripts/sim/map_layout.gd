@@ -21,6 +21,7 @@ var extra_trees := []  ## unused hook for decorative planting
 var post := false  ## MapCity: a GDScript post-pass reshapes and replants the generated terrain
 var land_use := PackedByteArray()  ## MapCity land-use class per terrain cell (empty on other maps)
 var bridges: Array = []  ## [{road: index into roads, from: metres, to: metres}] where a road crosses water
+var settlement_trunk_count := -1  ## rebuild post-pass may run for multiple terrain presets
 var roads: Array = []  ## polylines [[x, y], ...]
 var buildings: Array = []  ## {x, y, z, w, d, h, style}
 var stashes: Array = []  ## the organisation's stash houses: {id, name, kind, x, y, strip, zone}

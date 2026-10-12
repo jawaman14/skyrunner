@@ -73,6 +73,8 @@ static func _load(spec: Array) -> Variant:
 	var key: String = spec[0] + "/" + spec[1]
 	if _models.has(key):
 		return _models[key]
+	if spec[0] == "period":
+		return PeriodArchitecture.model(spec[1])
 	var path: String = KITS[spec[0]] + spec[1] + ".glb"
 	var out = null
 	if ResourceLoader.exists(path):
@@ -101,6 +103,8 @@ static func _load(spec: Array) -> Variant:
 
 
 static func material(kit: String) -> ShaderMaterial:
+	if kit == "period":
+		return PeriodArchitecture.material()
 	if not _mats.has(kit):
 		var mat := ShaderMaterial.new()
 		mat.shader = load("res://shaders/city_lot.gdshader")
@@ -112,6 +116,7 @@ static func material(kit: String) -> ShaderMaterial:
 
 static func set_night(n: float) -> void:
 	_night = clampf((n - 0.25) / 0.5, 0.0, 1.0)
+	PeriodArchitecture.material().set_shader_parameter("night", _night)
 	for k in _mats:
 		(_mats[k] as ShaderMaterial).set_shader_parameter("night", _night)
 
@@ -139,6 +144,11 @@ static func lots(b: Dictionary, i: int) -> Array:
 	rng.seed = 4177 + i * 7919
 	if DowntownDress.marks.has(i):
 		return []  # a landmark stands here (DowntownDress): no Kenney lots
+	if b.get("period", false):
+		var yaw: float = b.get("yaw", 0.0)
+		var turn := absf(sin(yaw)) > 0.5
+		var scale := Vector3(b.d if turn else b.w, b.h, b.w if turn else b.d)
+		return [{"kit": "period", "name": str(b.style), "xf": Transform3D(Basis(Vector3.UP, yaw) * Basis.from_scale(scale), Vector3(b.x, b.z, -b.y)), "colour": Color.WHITE, "roof": b.z + b.h}]
 	var style: String = b.style
 	var nx := clampi(roundi(float(b.w) / LOT_M), 1, 3)
 	var nz := clampi(roundi(float(b.d) / LOT_M), 1, 3)
