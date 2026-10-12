@@ -35,7 +35,7 @@ static func build(file: String, envelope: Vector3, faction := "civilian") -> Nod
 		mi.mesh = _cache[key]
 		mi.material_override = material()
 		mi.visibility_range_begin = [0.0,55.0,180.0][lod]
-		mi.visibility_range_end = [55.0,180.0,2500.0][lod]
+		mi.visibility_range_end = [55.0,180.0,3500.0][lod]  # as far as the squads render on the high preset (SquadRender.RANGE_M)
 		if lod > 0: mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		root.add_child(mi)
 	return root
