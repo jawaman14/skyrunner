@@ -198,7 +198,7 @@ Questions for the owner:
 10. Where should save selection live? Four paths exist (`campaign.json`, `story.json`, `save.json`, `user://dedicated.json`).
 
 ### Answers recorded later on 12 October
-* Start-up architecture, question 1: **one shared host service** (server, beacon, voice and session loop) used by the pilot app, the host desk and the dedicated server. Questions 2-10 are still open.
+* Start-up architecture, question 1: **one shared host service** (server, beacon, voice and session loop) used by the pilot app, the host desk and the dedicated server. Questions 2-7 were answered later the same day (fixed 30 Hz, voice on the server, campaign and police in the waiting room, the server runs story, campaign and `--watch`, lobby fields, `--smoke`/`--shot` everywhere) and questions 8-10 in the second round below.
 * Landing the three server-repository PRs (skyrunner-mcp 6, 7, 8) with `gh` once: no answer given, so `gh` is **not** used; they stay open until the owner says, or until the running tools can reach that repository.
 * The checkbox ticks for #80, #83, #87 (and #82 now that #346 is merged) are recorded as comments on #328 and #329; editing the issue bodies needs skyrunner-mcp PR 8 (`replace_body`).
 * Questions 8-10 (12 October, second round): **the LAN beacon always belongs to the server node, the dedicated server included** (8a); **one flow: the waiting room only, the lobby's "open remote seats" box goes** (9a); **one saves folder with one file per mode, with a migration of existing saves** (10a).
