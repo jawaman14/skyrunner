@@ -13,12 +13,12 @@ async def main():
         async with ClientSession(reader, writer) as client:
             await client.initialize()
             tools = await client.list_tools()
-            assert len(tools.tools) == 37, len(tools.tools)
+            assert len(tools.tools) == 43, len(tools.tools)
             result = await client.call_tool("skyrunner_collaboration_start", {})
             assert not result.is_error, result.content
             payload = json.loads(result.content[0].text)
             assert Path(payload["root"]).resolve() == root
             assert payload["server_repository"] == "https://github.com/jawaman14/skyrunner-mcp"
-            print("External MCP: 37 tools, correct game root and collaboration startup verified")
+            print("External MCP: 43 tools, correct game root and collaboration startup verified")
 
 asyncio.run(main())
