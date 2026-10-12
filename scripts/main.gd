@@ -98,7 +98,8 @@ func _open_room() -> void:
 	var server := HostServer.new()
 	server.password = str(args["password"])
 	add_child(server)
-	var mode: String = "versus" if args["mode"] == "versus" else "coop"
+	# the waiting room hosts any table the game has: co-op, versus, the campaign, or a task-force (police) table (owner, 12 Oct)
+	var mode: String = args["mode"] if args["mode"] in [Roles.VERSUS, Roles.CAMPAIGN, Roles.POLICE] else Roles.COOP
 	var err = server.start_room(args["port"], mode, "*", args["seed"], str(args["name"]))
 	if err:
 		push_warning(str(err))
@@ -210,8 +211,8 @@ func start() -> void:
 		desk.setup(LocalLink.new(ps, Roles.CONTROLLER), Roles.CONTROLLER, ps.world)
 		return
 	var mode: String = args["mode"]
-	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and features == null
-	var save := save_dir + ("campaign.json" if mode == Roles.CAMPAIGN else ("story.json" if story else "save.json"))
+	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and mode != Roles.POLICE and features == null
+	var save := save_dir + ("campaign.json" if mode == Roles.CAMPAIGN else ("police.json" if mode == Roles.POLICE else ("story.json" if story else "save.json")))
 	if not args["new"]:
 		var save_error := PlayableMaps.error(int(args["map"]), Session.read_save(save))
 		if save_error != "":
@@ -219,7 +220,7 @@ func start() -> void:
 			return
 	if args["new"] and FileAccess.file_exists(save):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(save))
-	var opts := GameSetup.options(mode, int(args["seed"]), story)  # the one shared builder (scripts/net/game_setup.gd)
+	var opts: Dictionary = GameSetup.police(int(args["seed"]), int(args["map"])) if mode == Roles.POLICE else GameSetup.options(mode, int(args["seed"]), story)  # the one shared builder (scripts/net/game_setup.gd)
 	if features != null:
 		opts.erase("money")  # a layer-plan game has its own start; the open-mode float is for the plain open game
 	var ms := GameSetup.map_seed(int(args["map"]), FileAccess.file_exists(save))  # a new game starts on the city coast; an old save keeps its island

@@ -336,3 +336,45 @@ func test_goal_checks_are_forgiving_early_and_sparing_later() -> void:
 			check_eq(required, 3, "The House keeps exactly its three chained goals (stake, laundering, getting out)")
 		else:
 			check(required <= 2, "%s asks for %d required goals (limit 2)" % [Story.CHAPTERS[i][1], required])
+
+
+## The early game is gentle: the police suspicion multiplier is 0.1 in chapters 1-2 (and the employed opening), 0.5 in chapter 3, 1 from chapter 4.
+func test_the_police_pace_follows_the_chapter() -> void:
+	check_eq(Story.early_police_scale(0), 0.1)
+	check_eq(Story.early_police_scale(1), 0.1)
+	check_eq(Story.early_police_scale(2), 0.5)
+	check_eq(Story.early_police_scale(3), 1.0)
+	check_eq(Story.early_police_scale(11), 1.0)
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "career": true, "save_path": "user://test_police_pace.json"})
+	var st := Story.new_employed()
+	st.attach(s)
+	check_eq(s.police.suspicion_scale, 0.1, "the employed opening is as gentle as chapter 1")
+	st.select_chapter(3)
+	check_eq(s.police.suspicion_scale, 0.5, "chapter 3")
+	st.select_chapter(6)
+	check_eq(s.police.suspicion_scale, 1.0, "chapter 6")
+	PoliceSystem.EARLY_PACE = false
+	st._set_police_pace(0)
+	check_eq(s.police.suspicion_scale, 1.0, "the switch off leaves full strength")
+	PoliceSystem.EARLY_PACE = true
+	s.dispose()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://test_police_pace.json"))
+
+
+## What a radar sighting adds is scaled: the same dark flight in radar range gains a tenth of the suspicion in chapter 1.
+func test_a_sighting_in_chapter_one_adds_a_tenth_of_the_suspicion() -> void:
+	var gained := []
+	for scale in [1.0, 0.1]:
+		var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "ground_war": false})
+		s.police.suspicion_scale = scale
+		var af := World.airfield("HAR")
+		s.spawn_airborne(af.x + 6000.0, af.y, 90.0, 400.0, 95.0)
+		s.transponder = false
+		for i in 60 * 30:
+			var inp := ControlMapper.InputFrame.new()
+			inp.throttle_axis = 0.8
+			s.update(1.0 / 30, inp, null)
+		gained.append(s.police.case("runner").suspicion)
+		s.dispose()
+	check(gained[0] > 5.0, "a dark minute in radar range builds suspicion at full strength: %s" % gained[0])
+	check(gained[1] < gained[0] * 0.3, "and a tenth as much with the early-game scale: %s against %s" % [gained[1], gained[0]])
