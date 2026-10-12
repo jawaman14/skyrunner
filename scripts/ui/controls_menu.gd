@@ -51,8 +51,8 @@ func _ready() -> void:
 	var body := _page(tabs, "Flight hardware")
 	var reference := _page(tabs, "Other controls")
 	for entry in [
-		["Everywhere", "F8 Controls • F1 Help • M Map • Esc Back / pause"],
-		["Flying", "Tab Leave aircraft when parked • J Jobs • L Load • H Hangar\nN Transponder • U Autopilot • C Camera • Y Mouse yoke\nShift+T Phone: contacts and organisation services"],
+		["Everywhere", "F8 Controls • F1 Help • F4 Multiplayer • M Map • Esc Back / pause"],
+		["Flying", "Tab Leave aircraft when parked • J Jobs • L Load • H Hangar\nN Transponder • U Autopilot (chart waypoint, or hold → route → off)\nF3 AI pilot handoff • C Camera • Y Mouse yoke\nShift+T Phone: contacts and organisation services"],
 		["Walking", "WASD Move • Shift Run • Space Jump • Mouse Look\nE Interact / enter vehicle • F Torch • T Phone • I Pack\n1–4 Weapons • R Reload • H Holster • 5 Medkit\nZ Hold • X Come • C Charge • V Fall back (field orders)"],
 		["Driving", "W / S or Up / Down Accelerate / reverse • A / D or Left / Right Steer\nSpace Handbrake • E Exit • R Radio power • , / . Radio station"],
 		["Menus", "Arrows / controller direction: navigate • Enter / controller Accept: activate\nEsc / controller Back: cancel or leave • Tab: move focus\nFlight bindings below are rebindable; other shortcuts are fixed."]

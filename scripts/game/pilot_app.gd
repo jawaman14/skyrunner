@@ -33,10 +33,11 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
             toe brakes (several devices) with invert, deadzone and expo; the colour-safe palette
 View     C cycle camera (chase / cockpit / tower)    M big map    P pause   F2 time of day
-Seats    F3 hand the aircraft to the AI (take another seat from a station) / take it back
+Seats    F3 hand the aircraft to the AI pilot / take it back (separate from U autopilot)
 Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)   CTRL+F5 skip to the next story chapter (solo, for testing)
 Table    F4 multiplayer menu: games on your network, who is at the table (mute, remove), chat, voice settings
-Voice    hold ` to talk on your side's net (a radio: range, hills, static), SHIFT + ` to the whole table (hosting or joined)
+Voice    hold ` (default, rebind in F4) to talk on your side's net (a radio: range, hills, static);
+         SHIFT + that key talks to the whole table (hosting or joined)
 Radio    F7 radio on / off, , and . tune (in the aircraft); in the car R, , and . : real 1979-86 broadcasts, the same dial
 Learn    F10 skip a tutorial step   SHIFT+F10 tutorial on / off (the lobby's Tutorial box, or --tutorial)
 Screen   F9 filter: off / VHS / colour-blindness simulations (protan, deutan, tritan, mono)
@@ -54,9 +55,11 @@ On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mou
             or ESC hands the squads straight back to the AI, the same as leaving the lieutenant's seat.
          I your pack: spare guns, rounds, medkits (24 kg; over 12 kg you slow down)   5 medkit
 Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT: upgrade trees)
+         SHIFT+T phone from the cockpit   SHIFT+V car lot (when available)
 Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
-         U autopilot: holds course, U again routes you to an airfield (low with a hot load, direct
-            at cruise otherwise - squawking either way unless there's already heat on you), U again off
+         U autopilot: with a chart waypoint set, fly there; U again turns it off. Otherwise U holds
+            course and altitude, U again routes to an airfield, U again turns it off. Routed flights
+            stay low with a hot load, direct at cruise otherwise; squawk unless there's already heat
          K kick a bale   O call the boat (SHIFT+O: the 1 s codeword - harder to DF)
          V ferry fuel pump   I push aircraft round (stopped)   ENTER continue   ESC close menu / pause menu
 Family   SHIFT+F sit down with Sal Moretti: hear the offer, your man's read on it, press him for
@@ -65,6 +68,7 @@ Family   SHIFT+F sit down with Sal Moretti: hear the offer, your man's read on i
 Trade    SHIFT+B Benny Ruiz and the buyers: sell cocaine, grass or rifles in bulk to the Morettis, the Company
          or (guns only) Los Cuervos. Our own loads (grass at the bush strips; cocaine once the Colombians call)
          go into the stash; dealers (hire them from Manny) sell it on the corners
+         SHIFT+C talk to the Sunrise Collective (when available)
 Haul     SHIFT+H logistics: product and cash sit in the stashes - truck them (to the club, a buyer, the corners) or fly cash bags (C load, U unload)
 Court    arrested (with a court): SHIFT+L your lawyer - bail or a bond, a better lawyer, motions to
          suppress / discovery / more time, the plea, the witness, the judge, a deal; the appeal inside
@@ -74,6 +78,7 @@ Island   Isla Soberana is over the southern horizon (SOB): cheap loads, the Gene
          task force can't follow you past the line. SHIFT+G the General's aide on the radio:
          passage, the island's news, mules and containers with customs' odds. SHIFT+U four mules
          SHIFT+I a container (quick orders). Land there and the aide meets you on the ramp.
+         SHIFT+K talk to the Hotel Cielo manager (when available)
 Radar    fly across a radar's beam or slow and the MTI loses you; low over rough sea or in rain the
          clutter hides you; the detector shows who's painting you and from where
 
