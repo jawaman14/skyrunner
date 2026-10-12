@@ -31,18 +31,56 @@ func test_the_basics_follow_what_you_do() -> void:
 	s.refresh_board("HAR")
 	var j = Py.first(s.boards["HAR"], func(x): return not x.hot())
 	check(s.accept_job(j) == null, "took a legal job")
-	check_eq(_ids(s), "load", "taking a job finishes 'find work'")
+	check_eq(_ids(s), "takeoff", "taking a job moves to the take-off phase")
 	s.tutorial.note("menu_l")
 	s.tutorial.tick(s)
-	check_eq(_ids(s), "takeoff")
+	check(not s.tutorial.done.has("second_flight_load"), "the load lesson waits until the first landing")
 	s.bus.emit("job_delivered", s.time, "", ["runner"], {"job_id": j.id, "pay": 100, "hot": false})
 	check(s.tutorial.done.has("deliver"), "a delivery counts even out of order")
 	s.dispose()
 
 
+func test_flight_lessons_follow_the_phase_and_load_waits_for_the_first_landing() -> void:
+	var s := _sess()
+	s.tutorial.done["load"] = true  # a previous save may have completed the old load card
+	s.tutorial.done["welcome"] = true
+	s.tutorial.done["jobs"] = true
+	check_eq(_ids(s), "takeoff", "take-off is the first flight lesson on the ground")
+	s.tutorial.done["takeoff"] = true
+	s.state.on_ground = false
+	s.state.agl = 1000.0
+	s.phase = "flying"
+	s.location = null
+	check_eq(_ids(s), "flight", "the in-flight lesson waits until airborne")
+	s.tutorial.tick(s)
+	s.time += Tutorial.FLIGHT_LESSON_S
+	s.tutorial.tick(s)
+	check_eq(_ids(s), "landing", "landing follows the in-flight lesson during flight")
+	s.tutorial.view()
+	s.state.on_ground = true
+	s.phase = "parked"
+	s.location = "HAR"
+	s.bus.emit("landed", s.time, "", ["runner"], {"code": "HAR"})
+	check(s.tutorial.done.has("first_landing"), "first landing unlocks the next-flight load lesson")
+	check(s.tutorial.done.has("landing"), "the landing lesson completes on touchdown")
+	check_eq(_ids(s), "second_flight_load", "load and fuel appears after the first flight")
+	s.tutorial.note("menu_l")
+	s.tutorial.tick(s)
+	check(s.tutorial.done.has("second_flight_load"), "opening the load planner completes the second-flight lesson")
+	s.dispose()
+
+
+func test_older_save_with_takeoff_complete_unlocks_the_new_load_lesson() -> void:
+	var s := Session.new({"seed": 4, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES})
+	var t := Tutorial.new({"on": true, "done": ["welcome", "jobs", "takeoff", "flight", "landing", "load"]}).attach(s)
+	check(t.done.has("first_landing"), "completed take-off in an older parked save implies a first landing")
+	check_eq(t.current()[0], "second_flight_load", "the new lesson survives the old load-card progress")
+	s.dispose()
+
+
 func test_a_systems_lesson_waits_for_its_system() -> void:
 	var s := _sess({"trade": true})
-	for id in ["welcome", "jobs", "load", "takeoff", "deliver", "transponder", "grass"]:
+	for id in ["welcome", "jobs", "load", "second_flight_load", "takeoff", "flight", "landing", "deliver", "transponder", "grass"]:
 		s.tutorial.done[id] = true
 	check_eq(_ids(s), "buyers", "no payroll or logistics yet: their lessons wait")
 	s.enable_system("payroll")
@@ -67,6 +105,21 @@ func test_tips_come_once() -> void:
 	s.dispose()
 
 
+func test_runway_push_around_explanation_appears_for_the_first_three_uses() -> void:
+	var s := _sess()
+	for n in 3:
+		s.turnaround_t = 5.0
+		s.tutorial.tick(s)
+		check(s.tutorial.view().tip.contains("press I"), "push-around %d explains the runway-end turn" % (n + 1))
+		s.turnaround_t = 0.0
+		s.tutorial.tick(s)
+	s.turnaround_t = 5.0
+	s.tutorial.tick(s)
+	check(s.tutorial.tips_shown.has("turnaround_3"), "three explanations are saved")
+	check_eq(s.messages.filter(func(m): return str(m[1]).contains("At a short runway")).size(), 3, "later push-arounds do not repeat the tip")
+	s.dispose()
+
+
 func test_skip_and_off() -> void:
 	var s := _sess()
 	s.tutorial.skip()
@@ -85,7 +138,7 @@ func test_progress_is_saved() -> void:
 	s.tutorial.tips_shown["fog"] = true
 	var t := Tutorial.new(s.tutorial.to_dict())
 	check(t.done.has("jobs") and t.tips_shown.has("fog") and t.enabled, "round trip")
-	s.save_path = "user://test_tutorial_save.json"
+	s.save_path = OS.get_temp_dir().path_join("skyrunner-tutorial-save.json")
 	s.save()
 	check(Session.read_save(s.save_path).has("tutorial"), "in the save file")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(s.save_path))
@@ -145,7 +198,7 @@ func test_the_papi_tip_fires_when_the_hud_sees_it() -> void:
 
 func test_the_ai_hiring_lesson_fires_when_the_ai_actually_hires() -> void:
 	var s := _sess({"payroll": true, "ground_war": true})
-	for id in ["welcome", "jobs", "load", "takeoff", "deliver", "transponder"]:
+	for id in ["welcome", "jobs", "load", "second_flight_load", "takeoff", "flight", "landing", "deliver", "transponder"]:
 		s.tutorial.done[id] = true
 	check_eq(_ids(s), "org_crew", "the lesson is up: the organisation runs itself")
 	s.money = 80000

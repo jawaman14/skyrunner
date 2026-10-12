@@ -20,10 +20,14 @@ const LESSONS := [
 		"This panel teaches as you play: each step finishes when you do it.\nF10 skips a step, SHIFT+F10 turns the tutorial off. F1 lists every key."],
 	["jobs", "", "Find work",
 		"Parked at an airfield: press J for the job board. UP/DOWN to pick, ENTER to take it.\nLegal freight and passengers pay the bills; 'hot' jobs pay big and draw the police."],
-	["load", "", "Load and fuel",
-		"Press L for the load planner: where each item sits and how much fuel you carry.\nKeep the CG dot inside the envelope - too far aft and she pitches up and stalls."],
 	["takeoff", "", "Take off",
-		"Z full throttle (or R / PAGE UP), hold the centreline with Q/E, and ease back on S\nat about 55 kt. G/T flaps, B brakes. Climb past 300 ft."],
+		"Z full throttle (or R / PAGE UP), hold the centreline with Q/E, and ease back on S\nat about 55 kt. G/T flaps, B brakes. Climb past 300 ft.", "takeoff"],
+	["flight", "", "In flight",
+		"Use the heading and attitude on the dash to hold your course. C cycles chase, cockpit and tower views.\nWhile airborne, hold the RIGHT mouse button and drag to look around; Y toggles mouse yoke separately.", "airborne"],
+	["landing", "", "Landing",
+		"Line up with the runway, reduce power and descend gently. Keep the wings level, flare just above the strip,\nand stop on the runway. A short strip may need a push-around before the next take-off.", "landing"],
+	["second_flight_load", "", "Load and fuel for the next flight",
+		"Before your second flight, press L. Use Route +30 min for the active job; the route tile shows fuel and reserve.\nPlace heavy cargo near the centre of gravity and keep the CG dot in its envelope. Deliveries unload on landing; wait if told.", "after_first_landing"],
 	["deliver", "", "Deliver",
 		"Fly to the job's destination: the HUD shows its bearing and distance, M the big map.\nLand, stop on the strip, and the job pays out."],
 	["transponder", "", "Seen and unseen",
@@ -136,10 +140,12 @@ const TIPS := {
 	"truck": "A truck was stopped. Roads near police strips and checkpoints are the risk; a soldier escort or a good driver helps.",
 	"connection": "The Colombians called: cocaine jobs are on the shady strips' boards now. Much more money per pound - and per year inside.",
 	"prisoners": "You are holding prisoners: Phone > The collectors, A ransoms them, F puts them on the payroll, G lets them go. A few get away every ten minutes.",
+	"turnaround": "At a short runway, stop on the ground and press I to push the aircraft around. Wait for the turn to finish before taking off again.",
 	"papi": "Those four squares are the PAPI: red over red is too low, white over white too high, two and two is right on the glide path.",
 }
 
 const GRADUATION_S := 40.0  ## how long the closing card stays up
+const FLIGHT_LESSON_S := 8.0  ## let the in-flight card be read before the landing lesson
 
 var sess
 var enabled := true
@@ -153,6 +159,9 @@ var _sub := false
 var _xpdr = null  ## the transponder when the lesson began
 var desk_done := {}  ## role -> {lesson id: true}
 var graduated_at := -1e9  ## when the last lesson there was to teach was finished (the closing card shows for a while)
+var _flight_lesson_started_at := -1.0
+var _landing_seen := false
+var _turnaround_active := false
 
 
 func _init(state = null) -> void:
@@ -174,6 +183,8 @@ func attach(s) -> Tutorial:
 	sess = s
 	s.tutorial = self
 	_t0 = s.time
+	if done.has("takeoff") and sess.parked:
+		done["first_landing"] = true  # older saves recorded take-off but had no explicit landing lesson
 	if not _sub:
 		_sub = true
 		s.bus.subscribe("*", _on_event)
@@ -222,9 +233,23 @@ func current() -> Variant:
 	if not enabled:
 		return null
 	for l in LESSONS:
-		if not done.has(l[0]) and _needs_ok(l[1]):
+		if not done.has(l[0]) and _needs_ok(l[1]) and _phase_ok(str(l[4]) if l.size() > 4 else ""):
 			return l
 	return null
+
+
+func _phase_ok(phase: String) -> bool:
+	var state = sess.state
+	match phase:
+		"takeoff":
+			return sess.parked
+		"airborne":
+			return state != null and not state.on_ground and done.has("takeoff")
+		"landing":
+			return state != null and not state.on_ground and done.has("flight")
+		"after_first_landing":
+			return done.has("first_landing") and sess.parked
+	return true
 
 
 ## "3/9": this lesson's place among those the game can teach right now.
@@ -280,6 +305,10 @@ func _on_event(ev: EventBus.Event) -> void:
 				complete("grass")
 			if d.get("agency", false):
 				complete("company")
+		"landed":
+			done["first_landing"] = true
+			if _landing_seen:
+				complete("landing")
 		"cash_home":
 			complete("cash_home")
 		"bulk_sale":
@@ -302,10 +331,23 @@ func tick(s) -> void:
 		_t0 = s.time
 	if s.time - _t0 > 12.0:
 		complete("welcome")
-	if _notes.has("menu_l"):
-		complete("load")
+	if _notes.has("menu_l") and done.has("first_landing"):
+		complete("second_flight_load")
 	if not s.parked and s.state != null and not s.state.on_ground and s.state.agl > 300.0 * 0.3048:
 		complete("takeoff")
+	if done.has("takeoff") and s.state != null and not s.state.on_ground and not done.has("flight"):
+		if _flight_lesson_started_at < 0.0:
+			_flight_lesson_started_at = s.time
+		elif s.time - _flight_lesson_started_at >= FLIGHT_LESSON_S:
+			complete("flight")
+	elif s.state == null or s.state.on_ground:
+		_flight_lesson_started_at = -1.0
+	if s.turnaround_t > 0.0:
+		if not _turnaround_active:
+			_show_turnaround_tip()
+		_turnaround_active = true
+	else:
+		_turnaround_active = false
 	if _xpdr == null:
 		_xpdr = s.transponder
 	if done.has("deliver") and s.transponder != _xpdr:
@@ -366,8 +408,23 @@ func _show(id: String) -> void:
 	sess.say("TIP - " + tip)
 
 
+func _show_turnaround_tip() -> void:
+	if not enabled:
+		return
+	for n in range(1, 4):
+		var id := "turnaround_%d" % n
+		if not tips_shown.has(id):
+			tips_shown[id] = true
+			tip = TIPS.turnaround
+			tip_until = sess.time + 20.0
+			sess.say("TIP - " + tip)
+			return
+
+
 func view() -> Dictionary:
 	var c = current()
+	if c != null and c[0] == "landing":
+		_landing_seen = true
 	var p := progress()
 	if c == null and enabled and sess != null and sess.time - graduated_at < GRADUATION_S:
 		return {"on": true, "id": "complete", "title": "That's the tour", "text": "You have seen every lesson this game can teach so far.\nF1 lists every key, ESC is the menu, SHIFT+F10 turns this panel off. New lessons appear if more of the game opens up.",

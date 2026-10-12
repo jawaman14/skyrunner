@@ -7,6 +7,10 @@ extends Node3D
 ## if given, is pumped before and published after each session update.
 
 const CAM_MODES := ["chase", "cockpit", "tower"]
+const AIR_LOOK_SENSITIVITY := 0.0035
+const AIR_LOOK_YAW_LIMIT := 2.61799388  ## 150 degrees either way
+const AIR_LOOK_PITCH_MIN := -0.65
+const AIR_LOOK_PITCH_MAX := 0.80
 
 ## The pause menu's way out: "load" (the last save), "lobby" or "desktop". Main
 ## acts on it; with nobody listening, "desktop" quits here and the rest do too.
@@ -30,6 +34,7 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
          R/F or PGUP/PGDN throttle (hold; a tap is a few %)   Z ramp to full   X ramp to idle   (Z Z / X X: instant)
          G flaps down   T flaps up   [ / ] pitch trim   B or SPACE brakes
          Y toggle mouse yoke (mouse position = stick)   joystick / gamepad work too
+         Air look: hold RIGHT mouse and drag while airborne (independent of Y)
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
             toe brakes (several devices) with invert, deadzone and expo; the colour-safe palette
 View     C cycle camera (chase / cockpit / tower)    M big map    P pause   F2 time of day
@@ -107,6 +112,10 @@ var glareshield: Control
 var ui: CanvasLayer
 var cam_mode := "chase"
 var mouse_yoke := false
+var _air_look_active := false
+var _air_look_yaw := 0.0
+var _air_look_pitch := 0.0
+var _mouse_yoke_stick := Vector2.ZERO
 var paused := false
 var _pressed := {}
 var _cam_pos = null
@@ -774,7 +783,36 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 	pass
 
 
+func _air_camera_look_allowed() -> bool:
+	return s != null and s.state != null and not s.state.on_ground and not on_foot and not paused \
+		and _active_menu() == null and controls_menu == null and pack_menu == null and not _map_open() \
+		and (s.narrative == null or not s.narrative.show_briefing)
+
+
+func _end_air_camera_look() -> void:
+	if not _air_look_active:
+		return
+	_air_look_active = false
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
 func _input(ev: InputEvent) -> void:
+	if _air_look_active and ev is InputEventMouseMotion:
+		_air_look_yaw = clampf(_air_look_yaw + ev.relative.x * AIR_LOOK_SENSITIVITY, -AIR_LOOK_YAW_LIMIT, AIR_LOOK_YAW_LIMIT)
+		_air_look_pitch = clampf(_air_look_pitch + ev.relative.y * AIR_LOOK_SENSITIVITY, AIR_LOOK_PITCH_MIN, AIR_LOOK_PITCH_MAX)
+		get_viewport().set_input_as_handled()
+		return
+	if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_RIGHT:
+		if ev.pressed and _air_camera_look_allowed():
+			_air_look_active = true
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			get_viewport().set_input_as_handled()
+			return
+		if not ev.pressed and _air_look_active:
+			_end_air_camera_look()
+			get_viewport().set_input_as_handled()
+			return
 	if s != null and s.narrative != null and s.narrative.show_briefing and ev is InputEventJoypadButton and ev.pressed:
 		if ev.button_index == JOY_BUTTON_A:
 			_pressed["confirm"] = true
@@ -1281,10 +1319,12 @@ func _gather_input() -> ControlMapper.InputFrame:
 	else:
 		inp.pressed.erase("confirm")
 	if mouse_yoke and not menu_open:
-		var vp := get_viewport()
-		var m := vp.get_mouse_position() / vp.get_visible_rect().size * 2.0 - Vector2.ONE
-		var dz := func(v: float) -> float: return 0.0 if absf(v) < 0.04 else v
-		inp.stick = [clampf(dz.call(m.x) * 1.3, -1, 1), clampf(dz.call(m.y) * 1.3, -1, 1)]
+		if not _air_look_active:
+			var vp := get_viewport()
+			var m := vp.get_mouse_position() / vp.get_visible_rect().size * 2.0 - Vector2.ONE
+			var dz := func(v: float) -> float: return 0.0 if absf(v) < 0.04 else v
+			_mouse_yoke_stick = Vector2(clampf(dz.call(m.x) * 1.3, -1, 1), clampf(dz.call(m.y) * 1.3, -1, 1))
+		inp.stick = [_mouse_yoke_stick.x, _mouse_yoke_stick.y]
 	if not menu_open:
 		_poll_stick(inp)
 	return inp
@@ -1327,6 +1367,11 @@ func _offers_watch() -> void:
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.1)
 	_frame += 1
+	if _air_look_active and not _air_camera_look_allowed():
+		_end_air_camera_look()
+	if s.state == null or s.state.on_ground:
+		_air_look_yaw = 0.0
+		_air_look_pitch = 0.0
 	if _frame % 10 == 3:
 		_offers_watch()
 	if radio != null:
@@ -1718,7 +1763,8 @@ func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
 	glareshield.visible = cockpit
 	var target := MeshBuilder.to_godot([st.x, st.y, st.alt])
 	if cockpit:
-		cam.global_transform = player.global_transform * Transform3D(Basis.from_euler(Vector3(deg_to_rad(-4), 0, 0)),
+		var cockpit_look := Vector3(deg_to_rad(-4.0) - _air_look_pitch, -_air_look_yaw, 0.0)
+		cam.global_transform = player.global_transform * Transform3D(Basis.from_euler(cockpit_look),
 			MeshBuilder.to_godot([-0.3, L * 0.14, 0.25 + L * 0.085 * 0.75]))
 		cam.fov = 80
 		return
@@ -1728,17 +1774,23 @@ func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
 			s.world.airfield_elev(af) + 24])
 		cam.global_position = tower
 		if tower.distance_to(target) > 1.0:
-			cam.look_at(target, Vector3.UP)
+			var tower_view := target - tower
+			var tower_right := tower_view.normalized().cross(Vector3.UP).normalized()
+			cam.look_at(tower + tower_view.rotated(Vector3.UP, -_air_look_yaw).rotated(tower_right, _air_look_pitch), Vector3.UP)
 		cam.fov = clampf(rad_to_deg(atan2(L * 3, (target - tower).length())) * 2, 8, 70)
 		return
 	cam.fov = 70
 	var want := target - fwd * (L * 2.6 + 6) + Vector3(0, L * 0.55 + 1.5, 0)
-	if _cam_pos == null or (_cam_pos - want).length() > 400:
-		_cam_pos = want  # respawn / teleport: don't sweep across the map
+	var orbit_yaw := -_air_look_yaw
+	var orbit_right := fwd.rotated(Vector3.UP, orbit_yaw).cross(Vector3.UP).normalized()
+	var camera_want := target + (want - target).rotated(Vector3.UP, orbit_yaw).rotated(orbit_right, _air_look_pitch)
+	var view_offset := (fwd * L * 1.5 + Vector3(0, 0.5, 0)).rotated(Vector3.UP, orbit_yaw).rotated(orbit_right, _air_look_pitch)
+	if _cam_pos == null or (_cam_pos - camera_want).length() > 400:
+		_cam_pos = camera_want  # respawn / teleport: don't sweep across the map
 	var k := 1 - exp(-dt * 4.0)
-	_cam_pos = _cam_pos + (want - _cam_pos) * k
+	_cam_pos = _cam_pos + (camera_want - _cam_pos) * k
 	var ground := s.world.ground(_cam_pos.x, -_cam_pos.z) + 1.5
 	if _cam_pos.y < ground:
 		_cam_pos.y = ground
 	cam.global_position = _cam_pos
-	cam.look_at(target + fwd * L * 1.5 + Vector3(0, 0.5, 0), Vector3.UP)
+	cam.look_at(target + view_offset, Vector3.UP)

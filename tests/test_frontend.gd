@@ -85,6 +85,38 @@ func test_pilot_app_flies_a_frame_and_opens_menus() -> void:
 	s.dispose()
 
 
+func test_air_camera_look_uses_right_drag_without_changing_mouse_yoke() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	var right := InputEventMouseButton.new()
+	right.button_index = MOUSE_BUTTON_RIGHT
+	right.pressed = true
+	app._update_camera(s.state, 1.0 / 30.0)
+	var centered_camera := app.cam.global_basis
+	app._input(right)
+	check(not app._air_look_active, "right drag does not look around while parked")
+	s.state.on_ground = false
+	app.mouse_yoke = true
+	app._input(right)
+	check(app._air_look_active, "right drag starts an airborne camera look")
+	var motion := InputEventMouseMotion.new()
+	motion.relative = Vector2(40, -20)
+	app._input(motion)
+	check(app._air_look_yaw != 0.0 and app._air_look_pitch != 0.0, "drag moves camera yaw and pitch")
+	app._update_camera(s.state, 1.0 / 30.0)
+	check(not app.cam.global_basis.is_equal_approx(centered_camera), "camera transform responds to the drag")
+	check(app.mouse_yoke, "camera look leaves the Y mouse-yoke toggle unchanged")
+	right.pressed = false
+	app._input(right)
+	check(not app._air_look_active, "releasing right mouse ends the camera look")
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	app.queue_free()
+	app.free()
+	s.dispose()
+
+
 func test_station_screens_for_every_seat() -> void:
 	var s := Session.new({"seed": 9, "location": "FRM", "mode": Roles.VERSUS, "features": Session.SANDBOX_FEATURES + ["hq"]})
 	s.update(1.0 / 30)
