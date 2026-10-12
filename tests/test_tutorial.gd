@@ -22,6 +22,16 @@ func _ids(s: Session) -> String:
 	return c[0] if c != null else ""
 
 
+func test_takeoff_lesson_stays_visible_during_the_ground_roll() -> void:
+	var s := _sess()
+	s.tutorial.done["welcome"] = true
+	s.tutorial.done["jobs"] = true
+	check_eq(_ids(s), "takeoff", "take-off lesson is shown while parked")
+	s.state.gs_kts = 5.0
+	check_eq(_ids(s), "takeoff", "ground roll keeps the take-off instructions visible")
+	s.dispose()
+
+
 func test_the_basics_follow_what_you_do() -> void:
 	var s := _sess()
 	check_eq(_ids(s), "welcome")
@@ -37,6 +47,42 @@ func test_the_basics_follow_what_you_do() -> void:
 	check(not s.tutorial.done.has("second_flight_load"), "the load lesson waits until the first landing")
 	s.bus.emit("job_delivered", s.time, "", ["runner"], {"job_id": j.id, "pay": 100, "hot": false})
 	check(s.tutorial.done.has("deliver"), "a delivery counts even out of order")
+	s.dispose()
+
+
+func test_a_preflight_load_menu_does_not_skip_the_next_flight_lesson() -> void:
+	var s := _sess()
+	for id in ["welcome", "jobs", "takeoff", "flight", "landing"]:
+		s.tutorial.done[id] = true
+	s.tutorial.note("menu_l")  # opened before the first landing
+	s.bus.emit("landed", s.time, "", ["runner"], {"code": "HAR"})
+	s.tutorial.tick(s)
+	check(not s.tutorial.done.has("second_flight_load"), "the old preflight menu open does not satisfy the next-flight lesson")
+	s.tutorial.note("menu_l")  # reopened after the first landing
+	s.tutorial.tick(s)
+	check(s.tutorial.done.has("second_flight_load"), "opening the load planner after landing completes the lesson")
+	s.dispose()
+
+
+func test_flight_lesson_timer_waits_until_the_lesson_is_current() -> void:
+	var s := _sess()
+	s.tutorial.done["welcome"] = true
+	s.tutorial.done["takeoff"] = true
+	s.state.on_ground = false
+	s.state.agl = 1000.0
+	s.phase = "flying"
+	s.location = null
+	check_eq(_ids(s), "jobs", "an unseen jobs lesson remains current in flight")
+	s.tutorial.tick(s)
+	s.time += Tutorial.FLIGHT_LESSON_S + 1.0
+	s.tutorial.tick(s)
+	check(not s.tutorial.done.has("flight"), "flight time does not count before the card can be seen")
+	s.tutorial.done["jobs"] = true
+	check_eq(_ids(s), "flight", "the flight card becomes current after jobs")
+	s.tutorial.tick(s)
+	s.time += Tutorial.FLIGHT_LESSON_S
+	s.tutorial.tick(s)
+	check(s.tutorial.done.has("flight"), "flight time counts while its card is current")
 	s.dispose()
 
 

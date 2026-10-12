@@ -784,7 +784,7 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 
 
 func _air_camera_look_allowed() -> bool:
-	return s != null and s.state != null and not s.state.on_ground and not on_foot and not paused \
+	return s != null and s.state != null and not s.state.on_ground and not on_foot and not paused and pause_menu == null \
 		and _active_menu() == null and controls_menu == null and pack_menu == null and not _map_open() \
 		and (s.narrative == null or not s.narrative.show_briefing)
 
@@ -1775,8 +1775,9 @@ func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
 		cam.global_position = tower
 		if tower.distance_to(target) > 1.0:
 			var tower_view := target - tower
-			var tower_right := tower_view.normalized().cross(Vector3.UP).normalized()
-			cam.look_at(tower + tower_view.rotated(Vector3.UP, -_air_look_yaw).rotated(tower_right, _air_look_pitch), Vector3.UP)
+			var yawed_tower_view := tower_view.rotated(Vector3.UP, -_air_look_yaw)
+			var tower_right := yawed_tower_view.normalized().cross(Vector3.UP).normalized()
+			cam.look_at(tower + yawed_tower_view.rotated(tower_right, _air_look_pitch), Vector3.UP)
 		cam.fov = clampf(rad_to_deg(atan2(L * 3, (target - tower).length())) * 2, 8, 70)
 		return
 	cam.fov = 70

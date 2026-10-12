@@ -242,7 +242,7 @@ func _phase_ok(phase: String) -> bool:
 	var state = sess.state
 	match phase:
 		"takeoff":
-			return sess.parked
+			return state != null and sess.phase in ["parked", "flying"] and not done.has("takeoff")
 		"airborne":
 			return state != null and not state.on_ground and done.has("takeoff")
 		"landing":
@@ -291,7 +291,10 @@ func set_enabled(on: bool) -> void:
 
 ## What only the seat's UI sees: "menu_j", "menu_l", "on_foot", "talk_family", "talk_general", "logistics".
 func note(what: String) -> void:
-	_notes[what] = true
+	if what == "menu_l" and done.has("first_landing"):
+		_notes["second_flight_load_menu_opened"] = true
+	else:
+		_notes[what] = true
 
 
 func _on_event(ev: EventBus.Event) -> void:
@@ -331,16 +334,18 @@ func tick(s) -> void:
 		_t0 = s.time
 	if s.time - _t0 > 12.0:
 		complete("welcome")
-	if _notes.has("menu_l") and done.has("first_landing"):
+	if _notes.has("second_flight_load_menu_opened") and done.has("first_landing"):
 		complete("second_flight_load")
 	if not s.parked and s.state != null and not s.state.on_ground and s.state.agl > 300.0 * 0.3048:
 		complete("takeoff")
-	if done.has("takeoff") and s.state != null and not s.state.on_ground and not done.has("flight"):
+	var c: Variant = current()
+	var flight_lesson_visible: bool = c != null and c[0] == "flight"
+	if done.has("takeoff") and flight_lesson_visible and s.state != null and not s.state.on_ground and not done.has("flight"):
 		if _flight_lesson_started_at < 0.0:
 			_flight_lesson_started_at = s.time
 		elif s.time - _flight_lesson_started_at >= FLIGHT_LESSON_S:
 			complete("flight")
-	elif s.state == null or s.state.on_ground:
+	else:
 		_flight_lesson_started_at = -1.0
 	if s.turnaround_t > 0.0:
 		if not _turnaround_active:
