@@ -170,3 +170,20 @@ func test_the_lobby_offers_the_waiting_room() -> void:
 	lobby.room_requested.emit(lobby._opts())
 	check_eq(got[0].mode, "versus", "the room gets the mode chosen")
 	lobby.queue_free()
+
+
+## One hosting flow (owner, 12 Oct): the lobby has no separate "Open remote seats" box, only the waiting room; the --host command-line flag stays.
+func test_the_lobby_has_one_way_to_host() -> void:
+	var lobby := Lobby.new()
+	_tree().root.add_child(lobby)
+	check(not lobby._opts().has("host"), "no host option from the lobby (the command-line flag is the only way)")
+	var texts := []
+	for b in lobby.find_children("*", "CheckBox", true, false):
+		texts.append((b as CheckBox).text)
+	check(not texts.has("Open remote seats"), "no open-remote-seats box: %s" % [texts])
+	var has_room_button := false
+	for b in lobby.find_children("*", "Button", true, false):
+		if (b as Button).text.begins_with("Host a multiplayer game"):
+			has_room_button = true
+	check(has_room_button, "the waiting room button is there")
+	lobby.queue_free()

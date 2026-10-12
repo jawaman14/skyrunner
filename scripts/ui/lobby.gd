@@ -19,7 +19,6 @@ var map_ob: OptionButton
 var new_cb: CheckBox
 var watch_cb: CheckBox
 var tutorial_cb: CheckBox
-var host_cb: CheckBox
 var addr: LineEdit
 var role_ob: OptionButton
 var name_le: LineEdit
@@ -107,13 +106,11 @@ func _ready() -> void:
 	new_cb.text = "New game (ignore save)"
 	watch_cb = CheckBox.new()
 	watch_cb.text = "Watch the AI fly"
-	host_cb = CheckBox.new()
-	host_cb.text = "Open remote seats"
 	tutorial_cb = CheckBox.new()
 	tutorial_cb.text = "Tutorial"
 	tutorial_cb.tooltip_text = "Lessons that finish when you do the thing, and tips when something new happens. F10 skips a step."
 	tutorial_cb.button_pressed = not bool(ControlsConfig.settings().tutorial_seen)  # on for a first game
-	for c in [new_cb, watch_cb, host_cb, tutorial_cb]:
+	for c in [new_cb, watch_cb, tutorial_cb]:
 		flags.add_child(c)
 	v.add_child(flags)
 	var pp := PanelContainer.new()
@@ -196,7 +193,7 @@ func _opts() -> Dictionary:
 	return {"mode": MODES[mode_ob.selected][1] if MODES[mode_ob.selected][1] != "police" else "solo",
 		"police": MODES[mode_ob.selected][1] == "police", "players": int(players.value) if players.value > 1 else 0,
 		"graphics": graphics_ob.get_item_text(graphics_ob.selected), "seed": int(seed_box.value), "new": new_cb.button_pressed,
-		"watch": watch_cb.button_pressed, "tutorial": tutorial_cb.button_pressed, "unlocks": UNLOCKS[unlocks_ob.selected][1], "host": host_cb.button_pressed, "map": [MapCity.SEED, int(map_box.value)][map_ob.selected]}
+		"watch": watch_cb.button_pressed, "tutorial": tutorial_cb.button_pressed, "unlocks": UNLOCKS[unlocks_ob.selected][1], "map": [MapCity.SEED, int(map_box.value)][map_ob.selected]}
 
 
 func _go() -> void:
