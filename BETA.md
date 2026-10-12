@@ -58,7 +58,7 @@ It then opens the folder the zip is in:
 | macOS | `~/Library/Application Support/Godot/app_userdata/Skyrunner/feedback/` |
 
 Send us the zip with a line on what you expected and what happened. Nothing personal is in it,
-and you can open it and check. The saves live one folder up (`story.json`, `save.json`), if we
+and you can open it and check. The saves live one folder up, in `saves/` (`story.json`, `open.json`, `campaign.json`, `police.json`; the first start moves old loose saves in), if we
 ask for one.
 
 ## Known rough edges
