@@ -163,6 +163,9 @@ const CHANGELOG := [
 	["The first two chapters asked too much",
 		"The owner's playtest (12 Oct): the opening felt like a grind before the story began. Chapter 1 wanted 300 lb of grass landed, a dealer and $4,000 from the trade; chapter 2 wanted $3,000 of street money home. From chapter 3 the required goals were already at most two per chapter (The House has three, a chain of stake, laundering and getting out).",
 		"Chapter 1 now asks for 150 lb and $2,500 (the dealer stays) and chapter 2 for $2,000 home: roughly a third faster to the first unlocks, no change from chapter 3 on. The story-run interpretation below was measured against the old gates; its progression times are about a third shorter for chapters 1-2 until the story run is repeated."],
+	["Early police pace",
+		"The owner's playtest (12 Oct): in the first chapters the task force chased every aircraft it saw, which is neither realistic nor fun while the player is still earning a first plane. A primary-only radar track built suspicion at the full 1.2-4.2 %/s from the first minute of the game.",
+		"A new multiplier on what a radar sighting adds to the runner's case (`PoliceSystem.suspicion_scale`, switch `PoliceSystem.EARLY_PACE`): 0.1 for the employed opening and chapters 1-2, 0.5 for chapter 3, 1.0 from chapter 4. It scales the continuous track gain, the lost-squawk bump and the odd-destination bump; no new random draws. Interceptions are still possible early (suspicion still rises, a tenth as fast) and are unchanged from chapter 4. The strategic and tactical sweeps did not use the story's chapters, so their numbers are unchanged; a story run should be repeated to measure the early chapters."],
 ]
 
 

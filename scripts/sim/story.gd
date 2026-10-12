@@ -275,6 +275,7 @@ func attach(s) -> void:
 	sess = s
 	s.story = self
 	s.bus.subscribe("*", _on_event)
+	_set_police_pace(0)
 	if employment != null and employment.active():
 		if employment.loaner:
 			s.owned.erase(EmploymentOpening.AIRCRAFT)
@@ -296,7 +297,18 @@ func attach(s) -> void:
 	s.say("CHAPTER %d (%d): %s" % [index + 1, chapter.year, chapter.title])
 
 
+## The police case's suspicion multiplier for chapter index `i` (chapter i + 1): gentle in chapters 1-2, half in 3, full after.
+static func early_police_scale(i: int) -> float:
+	return 0.1 if i < 2 else (0.5 if i == 2 else 1.0)
+
+
+func _set_police_pace(i: int) -> void:
+	if sess != null and sess.police != null:
+		sess.police.suspicion_scale = Story.early_police_scale(i) if PoliceSystem.EARLY_PACE else 1.0
+
+
 func _open(i: int, announce: bool) -> void:
+	_set_police_pace(i)
 	var names := []
 	for key in CHAPTERS[i][3]:
 		opened[key] = true
