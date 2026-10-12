@@ -1,4 +1,5 @@
 extends TestCase
+const Main = preload("res://scripts/main.gd")
 ## The waiting room's screen (host and guest), the host at a desk (HostDesk), and the lobby's way into the room.
 
 var _srv: HostServer
@@ -187,3 +188,28 @@ func test_the_lobby_has_one_way_to_host() -> void:
 			has_room_button = true
 	check(has_room_button, "the waiting room button is there")
 	lobby.queue_free()
+
+
+## A --host from the command line applies to that launch only (the stand-in review of #364): starting another game from the lobby does not keep opening remote seats.
+func test_the_lobby_start_clears_a_command_line_host_flag() -> void:
+	var entry := LobbyEntry.new()
+	entry.args["host"] = true
+	entry.show_lobby()
+	var lobby: Lobby = null
+	for c in entry.get_children():
+		if c is Lobby: lobby = c
+	check(lobby != null, "the lobby is shown")
+	if lobby != null:
+		lobby.start.emit({"mode": "solo"})
+		check(not entry.args["host"], "the lobby's start puts the host flag back to off")
+		check(entry.started, "and the game start was reached")
+	entry.free()
+
+
+## Main with the game start stubbed, so the lobby's start signal can be emitted without launching a game.
+class LobbyEntry extends Main:
+	var started := false
+	func _ready() -> void:
+		pass
+	func start() -> void:
+		started = true
