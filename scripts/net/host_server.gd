@@ -75,6 +75,7 @@ var password := ""  ## a dedicated server's: a hello without it is refused ("" =
 var log_fn: Callable = Callable()  ## called with a line of text for joins, leaves and refusals (the dedicated server prints them)
 var host_name := "host"
 var announce := true  ## the LAN beacon says where this game is (the menu switches it)
+var advert_name := ""  ## the name the beacon shows ("" = "<host name>'s game"; a dedicated server shows its own name)
 var _keyed := {}  ## talker token -> {t0, n, sec, last} (when the key went down; frames this second)
 var _seats_rev := -1
 var _seats_t := 0.0
@@ -521,6 +522,19 @@ func kick(token: String, ban := true) -> bool:
 			_drop(c)
 			return true
 	return false
+
+
+## The LAN beacon (owner, 12 Oct: it always belongs to the server node, the dedicated server included): one Announcer child that lives and dies
+## with this server, whoever hosts it. Calling this again returns the same one.
+func ensure_beacon() -> LanDiscovery.Announcer:
+	for child in get_children():
+		if child is LanDiscovery.Announcer and not child.is_queued_for_deletion():
+			return child
+	var ann := LanDiscovery.Announcer.new()
+	add_child(ann)
+	ann.start(func(): return {} if not announce else {"name": advert_name if advert_name != "" else "%s's game" % host_name, "port": port, "mode": mode,
+		"players": roster().size() - (1 if dedicated else 0), "locked": locked})
+	return ann
 
 
 ## Who is at the table: [{token, name, role, host}], the host first.

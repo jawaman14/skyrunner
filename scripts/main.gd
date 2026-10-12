@@ -85,13 +85,7 @@ func _host_extras(server) -> void:
 ## Available in the waiting room as well as the running game. Server ownership
 ## makes cancellation close the beacon without leaving a stale lobby advert.
 func _host_beacon(server: HostServer) -> LanDiscovery.Announcer:
-	for child in server.get_children():
-		if child is LanDiscovery.Announcer and not child.is_queued_for_deletion():
-			return child
-	var ann := LanDiscovery.Announcer.new()
-	server.add_child(ann)
-	ann.start(func(): return {} if not server.announce else {"name": "%s's game" % server.host_name, "port": server.port, "mode": server.mode, "players": server.roster().size(), "locked": server.locked})
-	return ann
+	return server.ensure_beacon()
 
 
 ## The host's waiting room: listen now, show the room, and when the host starts, build the game with the server that is already
