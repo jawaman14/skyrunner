@@ -163,7 +163,13 @@ Codex leads UX/UI; all of these are for the owner to order. What the code shows 
   to a hired pilot so being the boss is a real alternative to flying. Solo, the boss desk is just another menu from the start.
 * **First slice (proposal).** (1) Name the employer as the uncle in the opening and give chapter 2 two or three dialogue beats (talk scenes through `scripts/game/talk.gd`). (2) In chapter 4 a scripted beat after the first Cuervos incident kills the uncle, turns on the turf war and hands the player the boss desk and its orders. (3) A hired pilot who flies delegated jobs with the existing bot.
   Every other layer stays open at all times. Dialogue and the death scene are Codex's lane (UI and dialogue); the beat and the unlock are Claude's.
-* **Questions for the owner.** The uncle's name and a line or two of character (is he warm, ruthless, funny)? Is the death at the start of chapter 4 or does the player witness it? Does the player inherit the uncle's money, men and enemies, or start the empire smaller (the Mount & Blade start in section 5)? Does delegating a flight cost money or reputation?
+* **Owner's answers (12 October).**
+  * **The uncle's character:** jovial, a character bigger than life, but with a darkness to him that you can't put your finger on. (His name is not given yet.)
+  * **His death:** the player **hears about it**; it is not witnessed. He leaves the player a **crumbling empire to fix**, so the player **starts smaller** than he ran it (the Mount & Blade start of section 5), not with his money, men and standing.
+  * **Delegating a flight costs money**, because you hire people out.
+  * **Reputation is trust with the other crews.** It is gained by building trust with a crew and it makes you lose trust with some of the others, depending on which crew. Trust is also **lost when you lose shipments**, and a crew whose trust you have lost **goes to other sources** for the product they sell, and so on down the chain.
+* **What this asks of the code.** Trust per crew is a new state (today the game has reputation and heat as single numbers, and a Family/Company standing in their own modules). Crews are the existing factions (the Morettis, Los Cuervos, the Company, the Collective, the dealers); a lost shipment must hit the trust of the crew it was meant for, and the sellers must have a second source to defect to (`trade.gd` buyers, `logistics.gd` stashes). Opposing crews give and take trust in a small table. First slice: the table, a lost-shipment hook, and a visible trust line per crew in the phone. Needs the owner's table of which crews trade trust against which.
+* **Still open for the owner.** The uncle's name; the table of crew relationships (who gains when whom loses); how much of the empire is "crumbling" at the start of the takeover (which of the stashes, trucks and crew are still there).
 
 ## 9. Start-up architecture (#97): what Claude needs answered before consolidating
 
