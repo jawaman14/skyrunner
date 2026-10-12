@@ -19,7 +19,7 @@ const DT := HostLoop.DT
 const AUTOSAVE_S := 120.0
 const DEFAULTS := {
 	"port": 47800, "bind": "*", "seed": 1, "mode": "coop", "unlocks": "open", "name": "Skyrunner server", "password": "", "max_players": 16,
-	"save": "user://saves/dedicated.json", "autosave": AUTOSAVE_S, "autopilot": true, "lan": false, "seconds": -1.0, "stop_file": "", "map": -1, "quiet": false,
+	"save": SavePaths.DIR + "dedicated.json", "autosave": AUTOSAVE_S, "autopilot": true, "lan": false, "seconds": -1.0, "stop_file": "", "map": -1, "quiet": false,
 }
 const MODES := ["coop", "versus", "police"]
 

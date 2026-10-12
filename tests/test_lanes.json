@@ -6,6 +6,7 @@
     "test_fixture_isolation.gd",
     "test_hq.gd",
     "test_rng.gd",
+    "test_save_paths.gd",
     "test_strategic.gd"
   ],
   "simulation": [
@@ -141,7 +142,6 @@
     "test_startup_leave.gd",
     "test_startup_picker.gd",
     "test_startup_room.gd",
-    "test_save_paths.gd",
     "test_station_link.gd",
     "test_voice.gd",
     "test_voice_chat.gd"
