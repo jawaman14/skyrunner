@@ -192,6 +192,8 @@ jobs:
         with:
           name: skyrunner-linux
           path: build
+      - name: Make the exported game executable
+        run: chmod +x build/Skyrunner.x86_64
       - name: Mesa and a virtual display
         run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri >/dev/null
       - name: Capture all resolutions and palettes
