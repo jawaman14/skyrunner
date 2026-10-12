@@ -106,6 +106,20 @@ writer: the integrator posts one line per merge on #326 and a summary at the end
    the verdict is chased through the alert feed (the reviewer is woken again with the open items). A stand-in reviewer is NOT part of this
    step: it applies only to an announced outage of the other agent (below).
 
+## QA and QC lane: Codex runs the simulations and tests (owner, 12 October)
+
+The owner asked that Claude hands the running of simulations, tests and other QA and QC to Codex from now on, to lighten Claude's load. So:
+
+| Work | Owner of the run | Claude's part |
+|---|---|---|
+| Full suite and focused test runs for a PR (`python tools/collab/run_locked.py test [filter]`, or `skyrunner_run_tests`) | Codex, in its own worktree, under the machine lock | Writes the tests with the change; reads the result |
+| Balance runs and the `docs/BALANCE.md` entry (`godot --headless --script res://scripts/balance/cli.gd -- feasibility\|tactical\|strategic\|report`) | Codex | Names which run a change needs; decides the tuning from the numbers |
+| Sweeps and measurement tools (`tools/autopilot_sweep.gd`, `tools/autopilot_midflight_sweep.gd`, `tools/strip_audit.gd`, `scripts/balance/strip_trials.gd`) | Codex | Fixes what a failing case shows |
+| Hygiene, `git diff --check`, project-status regeneration, import, smoke runs and screenshots | Codex | none |
+| Playtest-style checks (a take-off, a landing, a chapter walk with the Ctrl+F5 skip, the key audit) | Codex, with the owner for the feel | Fixes defects found |
+
+How a run is reported: one board note per run with the PR, the exact head, the command, the pass and fail counts and the first failing lines; long output stays in a scratch file, not in notes. A run that cannot happen (a woken turn cannot open the Godot machine lock file; memory pressure has killed a full suite once) is reported as not run, with the reason, never as passed. Authors still run the focused tests of the system they touched before asking for review; the full suite and the sweeps are Codex's. The one-Godot-job-at-a-time rule and the 10-minute lock-steward rule above still apply, now to Codex.
+
 ## Stage 0: a local model does the cheap first pass (owner, 11 October)
 
 The owner connected an LM Studio server on this network and asked for the cheap first-pass work, then the GitHub chores and the first run
