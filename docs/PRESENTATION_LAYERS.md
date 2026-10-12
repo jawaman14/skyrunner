@@ -87,3 +87,17 @@ breaks, original fictional tracks only.
   is a gradual change, not a switch.
 - **Genre stations:** the playlist for the genre stations is being finished by the owner's ChatGPT, then used as the
   station content for each year. The arc of genres follows the playlist, not a fixed list in the game.
+
+## The unifying visual: the year-strip, with the wall and the tide (owner, 13 October 2026)
+
+One forward-moving timeline ties every layer together.
+
+- **Year-strip (the spine):** a timeline where each year is a segment. The present is a moving edge that only ever
+  advances. Every system adds its marks to the current segment; past segments stay visible as history.
+- **City wall (layer 1):** each year's graffiti, posters and tags are painted over the last, like a palimpsest. Older
+  layers fade but remain underneath, so the wall visibly builds forward.
+- **Tide line (layer 2):** across the strip, economy, faction and turf war show as colours flowing along it. Rising money
+  pushes the line up, a contested zone churns it, and a rival's gain pulls it their way.
+
+**Endgame:** the tide settles. One faction takes the whole strip and the wall is repainted in its colours, so the end of
+the game is a single visible result built from every year before it.
