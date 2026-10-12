@@ -209,6 +209,7 @@ func start() -> void:
 		var desk := StationApp.new()
 		add_child(desk)
 		desk.setup(LocalLink.new(ps, Roles.CONTROLLER), Roles.CONTROLLER, ps.world)
+		_after_start(ps)
 		return
 	var mode: String = args["mode"]
 	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and mode != Roles.POLICE and features == null
@@ -278,6 +279,7 @@ func start() -> void:
 		add_child(desk)
 		desk.setup(sess, server, host_seat)
 		_host_extras(server)
+		_after_start(sess)
 		return
 	var app := PilotApp.new()
 	add_child(app)
@@ -286,10 +288,7 @@ func start() -> void:
 	_host_extras(server)
 	if args["hour"] >= 0:
 		app.scene.set_hour(args["hour"])
-	if args["shot"] != "":
-		_shoot(app)
-	elif args["smoke"] > 0:
-		_smoke(sess)
+	_after_start(sess)
 
 
 ## Remote seat: a 3D view for the police pilot (and the co-pilot with --seat3d),
@@ -348,6 +347,7 @@ func _seat(link: NetClient, role: String) -> void:
 		var st := StationApp.new()
 		add_child(st)
 		st.setup(link, role)
+	_after_start(null)  # a joined seat has no session of its own
 
 func _client_voice(link: NetClient) -> VoiceChat:
 	for child in get_children():
@@ -360,15 +360,27 @@ func _client_voice(link: NetClient) -> VoiceChat:
 
 ## Run a new game for a while and quit (the release smoke test in CI): the
 ## output is checked for SCRIPT ERROR, and the game has to reach the end.
-func _smoke(sess: Session) -> void:
+## --shot and --smoke end the run the same way on every entry path (owner, 12 Oct): the pilot's game, the host desk, the offline task-force desk and a joined seat.
+## `sess` is null for a joined seat (the session lives on the host).
+func _after_start(sess) -> void:
+	if args["shot"] != "":
+		_shoot()
+	elif args["smoke"] > 0:
+		_smoke(sess)
+
+
+func _smoke(sess) -> void:
 	for f in args["smoke"]:
 		await get_tree().process_frame
-	print("SMOKE OK %s t=%.1fs phase=%s money=%s" % [Beta.version(), sess.time, sess.phase, sess.money])
+	if sess == null:
+		print("SMOKE OK %s (remote seat)" % Beta.version())
+	else:
+		print("SMOKE OK %s t=%.1fs phase=%s money=%s" % [Beta.version(), sess.time, sess.phase, sess.money])
 	get_tree().quit()
 
 
 ## Render a few frames and save a screenshot (docs, CI smoke tests).
-func _shoot(app: PilotApp) -> void:
+func _shoot() -> void:
 	for f in args["frames"]:
 		await get_tree().process_frame
 	await RenderingServer.frame_post_draw
