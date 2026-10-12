@@ -216,7 +216,7 @@ jobs:
               log="captures/${palette}-${size}.log"
               xvfb-run -a -s "-screen 0 ${size}x24" build/Skyrunner.x86_64 \
                 --rendering-driver opengl3 --audio-driver Dummy --resolution "$size" \
-                -- --new --graphics low --hour 16 --shot "$PWD/$image" --frames 240 2>&1 | tee "$log" || true
+                -- --new --graphics low --hour 16 --shot "$PWD/$image" --frames 240 2>&1 | tee "$log"
               test -s "$image"
               ! grep -Eq 'SCRIPT ERROR|Parse Error' "$log"
               python - "$image" "$width" "$height" <<'PY'
@@ -236,7 +236,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: visual-captures-${{ github.run_id }}
+          name: visual-captures-${{ github.run_id }}-${{ github.run_attempt }}
           path: captures/
           if-no-files-found: ignore
 
