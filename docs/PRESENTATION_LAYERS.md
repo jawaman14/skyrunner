@@ -80,3 +80,10 @@ breaks, original fictional tracks only.
    owner's own use, kept under `user://radio` and never in the repository.
 6. **Scope:** future roadmap, not scheduled.
 7. **Wordless:** the pulse never states its meaning in words. The player learns it from the pause-menu legend.
+
+## Follow-up decisions (13 October 2026)
+
+- **Zone takeover:** a rival's graffiti spreads over a zone slowly, and the player's graffiti fades as it does. Ownership
+  is a gradual change, not a switch.
+- **Genre stations:** the playlist for the genre stations is being finished by the owner's ChatGPT, then used as the
+  station content for each year. The arc of genres follows the playlist, not a fixed list in the game.
