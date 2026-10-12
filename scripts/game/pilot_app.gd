@@ -57,7 +57,7 @@ On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mou
 Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT: upgrade trees)
          SHIFT+T phone from the cockpit   SHIFT+V car lot (when available)
 Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
-         U autopilot: with a chart waypoint set, fly there; U again turns it off. Otherwise U holds
+         U autopilot: from off, with a chart waypoint set, fly there; U again turns it off. Otherwise U holds
             course and altitude, U again routes to an airfield, U again turns it off. Routed flights
             stay low with a hot load, direct at cruise otherwise; squawk unless there's already heat
          K kick a bale   O call the boat (SHIFT+O: the 1 s codeword - harder to DF)

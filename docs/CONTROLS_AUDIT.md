@@ -1,6 +1,6 @@
-# Controls audit — 12 October 2026
+# Controls reference (default bindings)
 
-This is the source check for the pilot's F1 help and F8 **Other controls** page under [playtest #345](https://github.com/jawaman14/skyrunner/issues/345). It records the default bindings; a player's saved flight bindings may differ and are shown in F8.
+This is the source-checked key map behind the pilot's F1 help and F8 **Other controls** page (playtest [#345](https://github.com/jawaman14/skyrunner/issues/345)); the audit evidence and the open checks live in that issue and in PR #369. It records the default bindings; a player's saved flight bindings may differ and are shown in F8.
 
 | Context | Keys checked against input handling | Source |
 |---|---|---|
@@ -12,15 +12,3 @@ This is the source check for the pilot's F1 help and F8 **Other controls** page 
 | On foot | Tab board aircraft; WASD/arrow movement, Shift run, Space jump; E use, F torch, T phone, I pack, 5 medkit; 1–4 weapons, H holster, R reload; Z/X/C/V field orders; Escape releases captured mouse or pauses | `scripts/game/pilot_app.gd`, `scripts/game/walker.gd` |
 | Driving | W/S or Up/Down accelerator and reverse; A/D or Left/Right steer; Space handbrake; E exit; R radio; comma/period tune | `scripts/game/car.gd`, `scripts/game/pilot_app.gd` |
 | Station and remote seats | Arrows, Enter, Tab, plus/minus, letters and 1–4 go through each desk's role-specific `_key`; F10 controls the desk tutorial, F12 saves feedback, Escape asks to leave. Remote crew uses K/O/V/T; remote interceptor uses Space/H/X plus flight axes. Their visible hints depend on the seat. | `scripts/station/station_app.gd`, `scripts/station/remote_seat.gd` |
-
-## Corrections in this pass
-
-- The F1 autopilot line omitted the chart waypoint path. With a waypoint selected, the first U routes to it and the next U turns autopilot off. Without one, U cycles hold, airfield route, off (`scripts/sim/cmds_air.gd`).
-- The F8 quick reference omitted F3. It now identifies F3 as the AI pilot handoff, separate from U autopilot.
-- The F8 quick reference also omitted F4. F1 now says that backtick is the default voice key and points to F4 for rebinding.
-- F1 omitted the cockpit phone and the conditional car lot, Sunrise Collective and Hotel Cielo shortcuts. Their Shift+T/V/C/K entries now match the pilot input handler.
-
-## Follow-up checks
-
-- Check the role-specific station and remote-seat hints in a rendered session. This source check confirms the handlers, but does not prove each visible hint fits or is readable.
-- Check the F1 and F8 overlays at 720p after this copy change, including scrolling and the focus path. Human playtest controls and camera feel remain open in #345.
