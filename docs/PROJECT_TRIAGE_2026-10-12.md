@@ -100,6 +100,7 @@ Done on 12 October: #337 closed as superseded by #338. Checked and kept open: #3
 3. The local model reads finished documents as a first-pass reviewer (unclear passages and missing links only); Claude checks every point against the repository.
 4. Videos go to YouTube; new photos and videos are needed. The roughly 940 asset files stay and are checked for fit to the era. Generated results stay, with better display.
 5. The empire layer follows the start of Mount & Blade (section 5).
+6. The boss is the player's **uncle**; chapter 2 is a few suspicious jobs while he starts to reveal his business; in a later chapter **Los Cuervos kill him**, which starts the turf wars, and the player **takes his seat as boss** without being locked out of the other layers (section 8.5).
 
 ## 8. The four programs and the 52 design epics, in detail
 
@@ -149,6 +150,20 @@ Codex leads UX/UI; all of these are for the owner to order. What the code shows 
 * **UI and dialogue (19).** Present: the phone as a handset with apps and calls (#225, #314), role station dashboards, the shared menu frame. Absent: a dialogue framework with character memory (#130, #131), briefing/debriefing
   scenes (#133). Overlaps: #130 and #131; #135 and #124. Natural first step: #138 accessibility and readability, since it touches everything else.
 * **Rule for all 52.** One epic is started only when the owner names it; the first PR is its smallest slice behind the shared UIStyle/GameMenu, with a screenshot, never a rewrite.
+
+### 8.5 The boss layer: the uncle, and taking his seat (owner, 12 October)
+* **Owner's story.** The boss is **the player's uncle**. In the second chapter the player flies a few suspicious jobs for him and he slowly starts to reveal his business. In later chapters **Los Cuervos kill him**, which starts the
+  **turf-war part of the game**, and the player **takes his seat as boss of the organisation**. The player is not locked into that seat: they can still take part in the other layers (flying, the ground, the desks), the way Mount & Blade lets a lord still fight in the field.
+* **Fit with the story table (`scripts/sim/story.gd:20`).** Chapter 1 "Square Grouper" (the employed opening, `employment_opening.gd`) introduces the employer/uncle; chapter 2 "The Connection" is the suspicious jobs and the slow reveal (the connection call, cash home, the dealership);
+  chapter 3 "Blotter" widens the business; **chapter 4 "Cocaine Cowboys" already turns on Los Cuervos, the ground war, guns and soldiers** (`story.gd`, opens `ground_war`, `guns`, `role_soldier`): the natural place for the uncle's death and the takeover. Chapters 5-12 are the player as boss
+  (the Family, the task force, the island, the House, the Company, Kingpin).
+* **Exists.** `Roles.BOSS` (`scripts/sim/roles.gd:13`) is a seat: "the organisation's HQ, night by night" (:29), with its own command list (:54: `hq`, `casino`, vehicles, fleet and barter automation, chat, tutorial). `hq.gd` (1,305 lines) runs the nightly season; `ground.gd` is the turf war. Solo, the boss's desk is a place you walk or taxi to
+  ("hq_org", `pilot_app.gd:1020`) with `HQMenu` as the screen; seats are separate in multiplayer (`MODE_ROLES`, `roles.gd:72-78`), and a solo player reaches every desk from the phone, so nothing locks a solo player into one role. Hired pilots exist (`payroll.gd`) and the AI can fly a job (`AutoRunner`, `PilotBot`).
+* **Missing.** The uncle as a character (the employer is anonymous in the opening); the chapter-2 reveal beats; a scripted death by Los Cuervos in or after chapter 4 (story beats like the House uprising are scripted, `story.gd:459`, so there is a pattern); the takeover moment (the boss seat and the HQ orders becoming the player's); and a way to delegate your own flights
+  to a hired pilot so being the boss is a real alternative to flying. Solo, the boss desk is just another menu from the start.
+* **First slice (proposal).** (1) Name the employer as the uncle in the opening and give chapter 2 two or three dialogue beats (talk scenes through `scripts/game/talk.gd`). (2) In chapter 4 a scripted beat after the first Cuervos incident kills the uncle, turns on the turf war and hands the player the boss desk and its orders. (3) A hired pilot who flies delegated jobs with the existing bot.
+  Every other layer stays open at all times. Dialogue and the death scene are Codex's lane (UI and dialogue); the beat and the unlock are Claude's.
+* **Questions for the owner.** The uncle's name and a line or two of character (is he warm, ruthless, funny)? Is the death at the start of chapter 4 or does the player witness it? Does the player inherit the uncle's money, men and enemies, or start the empire smaller (the Mount & Blade start in section 5)? Does delegating a flight cost money or reputation?
 
 ## 9. Start-up architecture (#97): what Claude needs answered before consolidating
 
