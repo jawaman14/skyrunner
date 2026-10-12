@@ -206,23 +206,23 @@ Taken from `github_pr_triage` and `github_issue_list` at the end of 12 October (
 * [ ] **#345** owner playtest of 12 October (checklist). keep (autopilot, F3, goals, police pace done or in review; tutorials by phase, air camera look, slow reverse, tyre wear on dirt, key audit are Codex's QA lane).
 
 ### Ready: done, awaiting Codex's exact-head review (usage returns 4:11 PM)
-* [ ] **#350** early police pace (BALANCE item 53 added). ready.
+* [x] **#350** early police pace (BALANCE item 53 added). merged 12 Oct as `7bba55a5` after Codex's exact-head approval.
 * [ ] **#357** dedicated server: campaign, `--chapter`, `--watch`, voice relay (Codex bot's two findings fixed; the third is the follow-up "resuming a partial campaign"). ready.
 * [ ] **#358** the waiting room hosts campaign and police tables. ready (sync `police.json` with #365 when the second one merges).
 * [ ] **#359** lobby game name, password, port, join roles. ready (same file as #364).
 * [ ] **#360** `--smoke` and `--shot` on every entry path. ready.
 * [ ] **#361** docs: the owner's second round of answers. ready.
-* [ ] **#362** pin skyrunner-mcp `1b8edfd` (43 tools). ready.
+* [x] **#362** pin skyrunner-mcp `1b8edfd` (43 tools). merged 12 Oct as `ae35929b` (Codex asked for one README fix, done).
 * [ ] **#363** the LAN beacon always belongs to the server node. ready.
 * [ ] **#364** one hosting flow: the waiting room. ready.
 * [ ] **#365** one saves folder with a migration. ready.
 
 ### Keep: valid drafts that need a sync or a decision
 * [ ] **#321** score rows 15-22 (draft). keep: the owner's ruling is recorded; merge after review.
-* [ ] **#320** joint working plan. in question: `docs/PIPELINE.md` and `docs/CLAUDE_ROLE_HANDOFF.md` cover most of it; propose closing.
+* [x] **#320** joint working plan. closed 12 Oct on the owner's instruction (superseded by `docs/PIPELINE.md` and `docs/CLAUDE_ROLE_HANDOFF.md`).
 * [ ] **#304** docs about the employed opening. keep: still valid.
 * [ ] **#339** pipeline discussion draft. keep: unanswered questions.
-* [ ] **#340** docs: which MCP server and how an agent joins. in question: conflicts; `tools/mcp/README.md` and `docs/COLLABORATION.md` cover it; propose syncing or closing.
+* [x] **#340** docs: which MCP server and how an agent joins. closed 12 Oct on the owner's instruction (covered by `tools/mcp/README.md` and the server's `COLLABORATION.md`).
 * [ ] **#338** first pass by the local model (a test). retire?: a Bonsai draft; the better of the two duplicates, #337, was closed.
 * [ ] **#336** `tools/local_llm` worker. keep: conflicts; needed by the local-model tools' reviewers; sync.
 * [ ] **#335** relay script and MCP client. keep: conflicts; the on-disk MCP version of the relay.
@@ -234,5 +234,5 @@ Taken from `github_pr_triage` and `github_issue_list` at the end of 12 October (
 * [ ] **#303** P05 action-preview reference screen. keep: UX/UI is Codex's lane.
 * [ ] **#300** screenshot matrix and lobby shortcuts. keep: conflicts.
 
-### Stale stack: the owner's call
-* [ ] **#244, #247, #253, #265, #267, #268, #269, #272, #274, #275, #276**: eleven stacked road, loading-site, settlement and recording branches from 8-11 October. In question (a decision on the whole stack): either sync each in order on top of main and review, or retire the stack and redo the wanted parts. `#276` is the top of the stack and conflicts with main, 156 files.
+### Stale stack: salvaged, then closed (owner, 12 Oct: "salvage then close")
+* [x] **#244, #247, #253, #265, #267, #268, #269, #272, #274, #275, #276**: all eleven closed with a comment each. Salvaged onto current main first: the period land vehicles (**#367**, from #269) and the Costa Brava rebuild with period architecture (**#368**, draft, from #247; it changes the map and needs the owner's decision and Codex's QA). Not salvaged (the branches stay on origin): the loading-approach and road fixes (#265, #267, #268, #275), the Moretti club (#274), the route performance change (#272), the escort and stakeout fix (#244), the recordings (#253: videos go to YouTube) and the loading-access diagnostics (#276).
