@@ -221,3 +221,20 @@ func test_a_story_server_runs_the_chapters_and_remembers_them() -> void:
 	_srv = null
 	var again := _server({"unlocks": "story", "autosave": 0.0})
 	check_eq(again.sess.story.chapter.title, "The Connection", "the next start picks the story up where it was")
+
+
+## Voice works on a dedicated server: it has no microphone or speaker of its own, but it relays one guest's push-to-talk frames to the others (HostServer.relay_voice),
+## on the side's net and to the whole table. (The owner asked for voice on the dedicated server on 12 Oct; this is the part a headless server can do, and it is pinned here.)
+func test_guests_hear_each_other_through_a_dedicated_server() -> void:
+	_server({"mode": "coop"})
+	var a := _client("Ann", Roles.PILOT)
+	var b := _client("Bo", Roles.COPILOT)
+	var heard := []
+	b.voice_heard.connect(func(m): heard.append(m))
+	check(_pump_until(func(): return a.latest != null and b.latest != null), "both guests are at the table")
+	var frame := Marshalls.raw_to_base64(PackedByteArray([1, 2, 3, 4]))
+	a.send_voice("all", 1, frame, true)
+	check(_pump_until(func(): return not heard.is_empty()), "the other guest hears the table channel")
+	if not heard.is_empty():
+		check_eq(heard[0].from, "Ann", "from the talker")
+		check_eq(heard[0].ch, "all", "on the channel they keyed")
