@@ -332,6 +332,7 @@ func test_goal_checks_are_forgiving_early_and_sparing_later() -> void:
 		for o in Story.CHAPTERS[i][4]:
 			if not (o.size() > 3 and o[3]):
 				required += 1
-		var limit := 3 if Story.CHAPTERS[i][1] == "The House" else 2
-		check(required <= limit, "%s asks for %d required goals (limit %d)" % [Story.CHAPTERS[i][1], required, limit])
-
+		if Story.CHAPTERS[i][1] == "The House":
+			check_eq(required, 3, "The House keeps exactly its three chained goals (stake, laundering, getting out)")
+		else:
+			check(required <= 2, "%s asks for %d required goals (limit 2)" % [Story.CHAPTERS[i][1], required])
