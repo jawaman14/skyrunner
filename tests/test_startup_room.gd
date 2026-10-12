@@ -156,3 +156,32 @@ func _pump(server: HostServer, link: NetClient, done: Callable) -> bool:
 		if done.call(): return true
 		OS.delay_msec(5)
 	return false
+
+## The owner's 12 Oct answer: the waiting room hosts the campaign and a task-force (police) table too.
+func test_the_room_hosts_a_campaign_table() -> void:
+	_entry.args["mode"] = Roles.CAMPAIGN
+	_entry._open_room()
+	var server := _child(HostServer) as HostServer
+	check(server != null and server.room != null, "the room opened")
+	if server == null or server.room == null: return
+	check_eq(server.room.mode, Roles.CAMPAIGN, "as a campaign table")
+	check(not server.room.available(Roles.BOSS), "the campaign is the pilot's crew: no boss seat")
+	check(server.room.available(Roles.COPILOT), "but a co-pilot")
+	(_child(RoomScreen) as RoomScreen)._start()
+	var pilot := _child(PilotApp) as PilotApp
+	check(pilot != null, "Start opens the pilot's game")
+	if pilot == null: return
+	_session = pilot.s
+	check(_session.campaign != null, "with the campaign attached")
+	check_eq(_session.mode, Roles.CAMPAIGN)
+
+
+func test_the_room_hosts_a_police_table() -> void:
+	_entry.args["mode"] = Roles.POLICE
+	_entry._open_room()
+	var server := _child(HostServer) as HostServer
+	check(server != null and server.room != null, "the room opened")
+	if server == null or server.room == null: return
+	check_eq(server.room.mode, Roles.POLICE, "as a task-force table")
+	check(not server.room.available(Roles.PILOT), "no pilot's seat")
+	check(server.room.available(Roles.CONTROLLER), "but a controller's desk")

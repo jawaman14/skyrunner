@@ -206,3 +206,11 @@ func test_a_host_at_a_desk_and_a_closed_door() -> void:
 	_srv.locked = true
 	var late := _join("Late")
 	check(_pump_until(func(): return late.error != null), "a locked room turns newcomers away")
+
+
+func test_a_campaign_table_is_the_pilots_crew_only() -> void:
+	var ca := Room.new(Roles.CAMPAIGN, "Barry")
+	for r in [Roles.PILOT, Roles.COPILOT, Roles.SPOTTER, Roles.BOAT]:
+		check(ca.available(r), "%s is in the campaign" % r)
+	for r in [Roles.BOSS, Roles.LIEUTENANT, Roles.CONTROLLER, Roles.FIXER]:
+		check(not ca.available(r), "%s is not" % r)
