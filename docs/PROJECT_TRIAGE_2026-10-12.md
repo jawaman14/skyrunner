@@ -173,3 +173,15 @@ Questions for the owner:
 * Start-up architecture, question 1: **one shared host service** (server, beacon, voice and session loop) used by the pilot app, the host desk and the dedicated server. Questions 2-10 are still open.
 * Landing the three server-repository PRs (skyrunner-mcp 6, 7, 8) with `gh` once: no answer given, so `gh` is **not** used; they stay open until the owner says, or until the running tools can reach that repository.
 * The checkbox ticks for #80, #83, #87 (and #82 now that #346 is merged) are recorded as comments on #328 and #329; editing the issue bodies needs skyrunner-mcp PR 8 (`replace_body`).
+
+### 8.5 The boss layer: taking over the boss's spot later (owner, 12 October)
+* **Owner's intent.** Later in the game the player takes over the boss's spot, but is **not locked into it**: they can still take part in the other layers (flying, the ground war, the desks), the way Mount & Blade lets a
+  lord still fight in the field. This is the same idea as the empire layer starting small (section 5, section 7).
+* **Exists.** `Roles.BOSS` (`scripts/sim/roles.gd:13`) is a seat: "the organisation's HQ, night by night" (:29), with its own command list (:54: `hq`, `casino`, vehicles, fleet and barter automation, chat, tutorial). `hq.gd` (1,305 lines) runs the
+  nightly season. Solo, the boss's desk is a place you walk to or taxi to ("hq_org", `pilot_app.gd:1020`), and `HQMenu` is the screen. Seats are separate in multiplayer (`MODE_ROLES`, `roles.gd:72-78`, co-op has pilot, copilot, spotter,
+  boat, boss, lieutenant, fixer, mechanic), and a solo player reaches every desk from the phone, so nothing today locks a solo player into one role. Hired pilots exist (the hiring hall, `payroll.gd`) and the AI can fly a job (`AutoRunner`, `PilotBot`).
+* **Missing.** There is no *takeover*: no moment in the story when the player becomes the boss, no change of title or authority, and nothing that lets the player hand their own flights to a hired pilot so that being the boss is a real
+  alternative to flying. Solo, the boss desk is just another menu from the start.
+* **First slice (proposal, needs the owner's numbers).** A story milestone (suggested: the chapter in which the Family or the first lieutenants arrive, so around chapters 4-5) that promotes the player: it unlocks the boss desk's orders as the
+  player's own, gives the player a hired pilot who flies delegated jobs with the existing bot, and keeps every other layer open at all times (no seat is ever taken away). The player can fly any job themselves or delegate it; the story never forces either.
+* **Questions for the owner.** At which chapter does the takeover happen? What changes visibly (a title, an office, a call from the old boss)? Is the old boss written out, killed, or still around? Does delegating a flight cost money or reputation, or is it free once you have the pilot?
