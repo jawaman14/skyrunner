@@ -48,6 +48,8 @@ continue. New feature branches wait; feature ideas go in as issues.
 
 ## Future: presentation layers (owner ideas, 12–13 October; not scheduled)
 
+Full text, with the city pulse and graffiti detail: [PRESENTATION_LAYERS.md](PRESENTATION_LAYERS.md).
+
 Read-only presentation that follows the simulation. None of it may change a sim outcome or draw on a sim RNG stream.
 Build after the territory radio, which supplies the first inputs.
 
