@@ -86,7 +86,14 @@ func test_hq_and_casino_redesign_preserves_access_and_prop_budget() -> void:
 			if child is Area3D:
 				actions.append([child.get_meta("action"), child.position])
 		Buildings.hq_identity(k, style)
-		check_eq(k.body.get_child_count(), collisions, "HQ redesign keeps the original stairs and physical access")
+		check_eq(k.body.get_child_count(), collisions + (2 if style == "nightclub" else 0), "only the club's two raised beds add collision")
+		if style == "nightclub":
+			for i in range(collisions, k.body.get_child_count()):
+				var bed := k.body.get_child(i) as CollisionShape3D
+				var shape := bed.shape as BoxShape3D
+				check(absf(bed.position.x) - shape.size.x / 2 >= 5.5, "planting leaves the central entrance approach clear")
+				check(bed.position.z - shape.size.z / 2 >= -15, "planting remains on the existing club pavement")
+				check(bed.position.z + shape.size.z / 2 < -8.2, "planting cannot obstruct the side door or stairwell")
 		var dressed_actions := []
 		for child in k.root.get_children():
 			if child is Area3D:
@@ -104,6 +111,26 @@ func test_hq_and_casino_redesign_preserves_access_and_prop_budget() -> void:
 			triangles += child.mesh.get_faces().size() / 3
 	check(triangles < 1500, "casino redesign stays within a small batched geometry budget")
 	node.free()
+	var court := Buildings.Kit.new("arrival-court-test")
+	CasinoBuilding._forecourt(court)
+	for i in range(1, 5):
+		var bed := court.body.get_child(i) as CollisionShape3D
+		var shape := bed.shape as BoxShape3D
+		check(absf(bed.position.x) - shape.size.x / 2 > 36, "casino beds clear the drive, fountain and existing palms")
+		check(absf(bed.position.x) + shape.size.x / 2 < 52, "casino planting remains inside the paved court")
+		check(bed.position.z - shape.size.z / 2 > -36, "casino beds stay inside the front pavement edge")
+	court.finish().free()
+	var bed_kit := Buildings.Kit.new("planting-budget-test")
+	Buildings.forecourt_planter(bed_kit, Vector3.ZERO, Vector2(5, 2), true)
+	check_eq(bed_kit.body.get_child_count(), 1, "foliage and palm remain inside one solid raised-bed footprint")
+	var bed_node := bed_kit.finish()
+	var bed_triangles := 0
+	for child in bed_node.get_children():
+		if child is MeshInstance3D:
+			bed_triangles += child.mesh.get_faces().size() / 3
+		check(not (child is Area3D) and not (child is Light3D), "planting adds no gameplay action or light")
+	check(bed_triangles < 400, "each planted court stays below 400 batched triangles")
+	bed_node.free()
 
 
 func test_city_district_colours_preserve_transforms_and_window_flags() -> void:

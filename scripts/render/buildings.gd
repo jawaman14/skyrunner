@@ -694,6 +694,13 @@ static func hq_identity(k: Kit, style: String) -> void:
 	match style:
 		"nightclub":
 			painted_sign(k, "club-name", "CLUB TROPICANA", Vector3(0, 5.6, -8.32), 0.025)
+			# Raised planting stays on the existing pavement wings, clear of both doors.
+			for side in [-1, 1]:
+				forecourt_planter(k, Vector3(side * 8, 0.1, -12), Vector2(5, 2), true)
+			k.box(Vector3(0, 3.25, -9.5), Vector3(7, 0.22, 3), "pump_cream", false)
+			k.box(Vector3(0, 3.12, -11.03), Vector3(7, 0.09, 0.06), "neon_cyan", false)
+			for stripe in [-2.4, -1.2, 0.0, 1.2, 2.4]:
+				k.box(Vector3(stripe, 0.112, -11.5), Vector3(0.12, 0.012, 6), "terracotta", false)
 			# Eyebrow ledges shade the existing upper windows, a Miami Deco motif.
 			for i in 6:
 				var x := lerpf(-9.5, 9.5, (i + 0.5) / 6.0)
@@ -741,6 +748,24 @@ static func planning_board(k: Kit, at: Vector3, key: String) -> void:
 		k.box(at + Vector3(0, y, -0.05), Vector3(2.6, 0.025, 0.015), "pump_cream", false)
 	for x in [-1.1, 0.65]:
 		k.box(at + Vector3(x, 0.35, -0.07), Vector3(0.22, 0.3, 0.015), "white", false)
+
+
+## Solid raised bed with low foliage; the palm trunk is inside the bed's collider.
+## All geometry batches into the building's existing material surfaces.
+static func forecourt_planter(k: Kit, at: Vector3, size: Vector2, palm := false) -> void:
+	k.box(at + Vector3(0, 0.3, 0), Vector3(size.x, 0.6, size.y), "terracotta")
+	k.box(at + Vector3(0, 0.61, 0), Vector3(size.x - 0.22, 0.03, size.y - 0.22), "wood", false)
+	for i in 5:
+		var x := (i - 2) * (size.x - 0.8) / 5.0
+		k.cylinder(at + Vector3(x, 0.62, 0), 0.38, 0.45 + (i % 2) * 0.15, "green", 6, false)
+		k.box(at + Vector3(x, 1.1, -0.1), Vector3(0.16, 0.1, 0.16), "stucco_pink", false)
+	if palm:
+		k.cylinder(at + Vector3(0, 0.62, 0), 0.16, 4.8, "wood", 6, false)
+		# Narrow staggered fronds rather than the old flat circular palm crown.
+		for i in 3:
+			var spread := 2.2 - i * 0.45
+			k.box(at + Vector3(0, 5.35 + i * 0.14, 0), Vector3(spread * 2, 0.09, 0.3), "green", false)
+			k.box(at + Vector3(0, 5.42 + i * 0.14, 0), Vector3(0.3, 0.09, spread * 2), "drum_sage", false)
 
 
 ## The organisation's villa: stucco, terracotta, a pool, a courtyard wall. The

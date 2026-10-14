@@ -192,6 +192,13 @@ static func _table(k: Buildings.Kit, x: float, z: float, size: Vector3, action: 
 static func _forecourt(k: Buildings.Kit) -> void:
 	k.box(Vector3(0, 0.05, 20), Vector3(104, 0.1, 112), "concrete")  # the pavement, front, sides and the courtyard behind
 	k.box(Vector3(0, 0.07, -24), Vector3(46, 0.04, 16), "asphalt", false)  # the drive
+	# Planted arrival courts occupy the unused outer pavement, not the drive,
+	# fountain, canopy columns or the runway-facing entrance corridor.
+	for side in [-1, 1]:
+		for z in [-27.0, -11.0]:
+			Buildings.forecourt_planter(k, Vector3(side * 44, 0.1, z), Vector2(6, 3), true)
+		k.box(Vector3(side * 34, 0.113, -29), Vector3(14, 0.012, 0.18), "terracotta", false)
+		k.box(Vector3(side * 34, 0.113, -31), Vector3(14, 0.012, 0.18), "terracotta", false)
 	# the porte-cochere: a flat plate on four slim columns, its edge a neon strip
 	k.box(Vector3(0, 5.2, -8), Vector3(26, 0.35, 16), "white")
 	k.box(Vector3(0, 4.95, -16.1), Vector3(26, 0.16, 0.1), "neon_cyan", false)

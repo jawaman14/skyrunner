@@ -29,6 +29,7 @@ func _capture() -> void:
 	var rival_frame := SiteLayout.hq_frame(world, rival)
 	var shots := [
 		["01-club-tropicana", club_frame * Vector3(25, 14, -38), club_frame * Vector3(0, 4.5, 0), 14.0],
+		["01-club-evening", club_frame * Vector3(16, 7, -27), club_frame * Vector3(0, 3.5, -7), 19.0],
 		["02-customs-house", law_frame * Vector3(32, 17, -36), law_frame * Vector3(0, 6, 0), 14.0],
 		["03-hacienda", rival_frame * Vector3(44, 24, -50), rival_frame * Vector3(0, 4, 4), 15.0],
 		["04-hotel-cielo", CasinoBuilding.world_point(world, 95, 32, -64), CasinoBuilding.world_point(world, 0, 15, 20), 15.0],

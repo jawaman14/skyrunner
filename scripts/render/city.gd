@@ -611,6 +611,15 @@ static func sidewalk_furniture(k: Buildings.Kit, kind: String) -> void:
 			for x in [-0.4, 0, 0.4]:
 				k.cylinder(Vector3(x, 1.06, -0.12), 0.055, 0.09, "white", 8, false)
 			k.box(Vector3(0.55, 1.15, 0.1), Vector3(0.35, 0.2, 0.25), "metal", false)
+			# A deeper-looking shopfront within the counter's existing footprint.
+			k.box(Vector3(0, 1.57, 0.29), Vector3(1.6, 0.7, 0.04), "wood", false)
+			k.box(Vector3(0, 1.57, 0.26), Vector3(1.4, 0.52, 0.02), "black", false)
+			for x in [-0.7, 0.0, 0.7]:
+				k.box(Vector3(x, 1.57, 0.23), Vector3(0.035, 0.55, 0.025), "pump_cream", false)
+			for stripe in [-0.8, -0.4, 0.0, 0.4, 0.8]:
+				k.box(Vector3(stripe, 2.296, 0), Vector3(0.17, 0.012, 0.7), "pump_cream", false)
+			k.box(Vector3(-0.55, 1.36, 0.20), Vector3(0.28, 0.32, 0.02), "pump_cream", false)
+			Buildings.painted_sign(k, "coffee-menu", "CAFE\nPAN", Vector3(-0.55, 1.36, 0.18), 0.0022)
 		"domino":
 			# Decorative domino table; no new playable game or interaction point.
 			k.box(Vector3(0, 0.36, 0), Vector3(0.75, 0.72, 0.6), "wood")
