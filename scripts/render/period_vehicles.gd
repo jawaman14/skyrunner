@@ -72,7 +72,7 @@ class Builder:
 	func box(at: Vector3, size: Vector3, key: String) -> void:
 		var mesh := BoxMesh.new()
 		mesh.size = size
-		tool(key).append_from(mesh, 0, Transform3D(Basis.IDENTITY, at))
+		append(mesh, Transform3D(Basis.IDENTITY, at), key)
 
 	func cylinder(at: Vector3, radius: float, width: float, key: String) -> void:
 		var mesh := CylinderMesh.new()
@@ -81,14 +81,33 @@ class Builder:
 		mesh.height = width
 		mesh.radial_segments = 12
 		mesh.rings = 1
-		tool(key).append_from(mesh, 0, Transform3D(Basis(Vector3.FORWARD, PI / 2), at))
+		append(mesh, Transform3D(Basis(Vector3.FORWARD, PI / 2), at), key)
+
+	## Expand primitive indices before combining them with authored quads.
+	## Mixing indexed append_from with direct vertices drops the earlier quads.
+	func append(mesh: Mesh, xf: Transform3D, key: String) -> void:
+		var arrays := mesh.surface_get_arrays(0)
+		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+		var order: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+		if order.is_empty():
+			order.resize(vertices.size())
+			for i in vertices.size():
+				order[i] = i
+		var st := tool(key)
+		for i in order:
+			st.set_normal((xf.basis * normals[i]).normalized())
+			st.add_vertex(xf * vertices[i])
 
 	func quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, key: String) -> void:
-		var normal := (b - a).cross(c - a).normalized()
 		var st := tool(key)
-		for p in [a, b, c, a, c, d]:
-			st.set_normal(normal)
-			st.add_vertex(p)
+		# Each triangle gets its own outward normal on tapered, non-planar panels.
+		# Godot front faces are clockwise; emit the opposite of the normal's cross.
+		for points in [[a, b, c], [a, c, d]]:
+			var normal: Vector3 = (points[1] - points[0]).cross(points[2] - points[0]).normalized()
+			for p in [points[0], points[2], points[1]]:
+				st.set_normal(normal)
+				st.add_vertex(p)
 
 	## Rows: z, bottom y, top y, half-width below, half-width above.
 	## Sloping windscreens and tapered bonnets are actual geometry, not boxes.
@@ -111,7 +130,7 @@ class Builder:
 		mesh.size = Vector3(width, width, a.distance_to(b))
 		var xf := Transform3D(Basis.IDENTITY, (a + b) / 2)
 		xf = xf.looking_at(b, Vector3.UP)
-		tool(key).append_from(mesh, 0, xf)
+		append(mesh, xf, key)
 
 	func finish() -> ArrayMesh:
 		var mesh := ArrayMesh.new()

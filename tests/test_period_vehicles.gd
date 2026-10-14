@@ -46,6 +46,13 @@ func test_period_body_geometry_budgets_and_facing() -> void:
 		for surface in mi.mesh.get_surface_count():
 			var mat := mi.mesh.surface_get_material(surface) as StandardMaterial3D
 			var vertices: PackedVector3Array = mi.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+			var normals: PackedVector3Array = mi.mesh.surface_get_arrays(surface)[Mesh.ARRAY_NORMAL]
+			check(mi.mesh.surface_get_arrays(surface)[Mesh.ARRAY_INDEX] == null or mi.mesh.surface_get_arrays(surface)[Mesh.ARRAY_INDEX].is_empty(), "authored and primitive geometry share an unindexed triangle batch")
+			for i in range(0, vertices.size(), 3):
+				var cross_ := (vertices[i + 1] - vertices[i]).cross(vertices[i + 2] - vertices[i]).normalized()
+				check(cross_.dot(normals[i]) < -0.9, "clockwise front-face winding: %s surface %d triangle %d" % [file, surface, i / 3])
+			if mat.albedo_color == PeriodVehicles.PAINT[PeriodVehicles.TYPES[file]]:
+				check(Array(vertices).any(func(v): return v.y < 0.45 and v.z < -1.8), "authored lower hull survives primitive-detail batching")
 			for vertex in vertices:
 				if mat.albedo_color == Color(0.83, 0.80, 0.69) and vertex.z < -2.24 and vertex.y > 0.6:
 					front = true
