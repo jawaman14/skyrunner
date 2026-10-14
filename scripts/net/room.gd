@@ -32,6 +32,8 @@ func available(role: String) -> bool:
 		return false
 	if mode == Roles.POLICE and role == Roles.PILOT:
 		return false
+	if mode == Roles.CAMPAIGN and not (role in Roles.MODE_ROLES[Roles.CAMPAIGN]):
+		return false  # the campaign is the pilot's crew: pilot, co-pilot, spotter and the boat
 	return true
 
 

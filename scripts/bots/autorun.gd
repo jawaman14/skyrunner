@@ -21,6 +21,21 @@ func _init(s: Session, prefer_hot_ := true) -> void:
 	prefer_hot = prefer_hot_
 
 
+## The AI takes the controls part-way through a flight: airborne it carries on to the job's destination, on the ground but moving it
+## starts the take-off run from wherever the aircraft stands (PilotBot's wait_load phase plans the departure from the position).
+func _adopt_flight() -> void:
+	var s := sess
+	if s.state == null or s.phase in ["crashed", "busted", "custody"]:
+		return
+	var job: Jobs.Job = s.active_jobs[0]
+	var home = s.log.departed_from if s.log.departed_from else s.location
+	bot = PilotBot.new(s, PilotBot.mission_for(s, job, home))
+	if not s.state.on_ground:
+		bot.pitch_base = s.state.pitch
+		bot._set_phase("enroute")
+	flights += 1
+
+
 func _pick():
 	var s := sess
 	var board: Array = s.boards.get(s.location, [])
@@ -47,6 +62,10 @@ func step(dt: float) -> FlightModel.Controls:
 		return null
 	if bot != null and bot.phase != "done":
 		return bot.step(dt)
+	if bot == null and not s.parked and not s.active_jobs.is_empty():
+		_adopt_flight()  # the human handed over (F3) in the middle of a flight or a take-off run
+		if bot != null:
+			return bot.step(dt)
 	if not s.parked or not s.unloading.is_empty():
 		return null
 	if s.psych != null:

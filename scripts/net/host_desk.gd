@@ -9,6 +9,7 @@ var server: HostServer
 var station: StationApp
 var bot: AutoRunner = null
 var role := ""
+var _loop := HostLoop.new()  ## the shared fixed-step loop
 
 
 func setup(sess_: Session, server_: HostServer, role_: String) -> HostDesk:
@@ -24,18 +25,18 @@ func setup(sess_: Session, server_: HostServer, role_: String) -> HostDesk:
 
 
 func _process(dt: float) -> void:
+	_loop.advance(dt, _step)
+	server.publish(sess)
+
+
+func _step(step_dt: float) -> void:
 	server.pump(sess)
 	_pilot_seat()
 	var remote: bool = sess.seats.human(Roles.PILOT) and sess.seats.seats[Roles.PILOT].token != ""
-	var bc = bot.step(dt) if bot != null else (sess.remote_controls() if remote else null)
-	sess.update(minf(dt, 0.1), null, bc)
-	server.publish(sess)
+	var bc = bot.step(step_dt) if bot != null else (sess.remote_controls() if remote else null)
+	sess.update(step_dt, null, bc)
 
 
 ## The AI flies whenever nobody holds the pilot's seat; a guest who takes it flies from their own machine.
 func _pilot_seat() -> void:
-	var who := sess.seats.who(Roles.PILOT)
-	if who == "ai" and bot == null:
-		bot = AutoRunner.new(sess)
-	elif who != "ai" and bot != null:
-		bot = null
+	bot = HostLoop.ai_pilot(sess, bot)
