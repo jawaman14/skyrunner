@@ -39,6 +39,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | **Codex task** | QA and QC runs (owner, 12 Oct; `docs/PIPELINE.md` "QA and QC lane"): full suite on #350 and #354, the autopilot sweeps, the key audit; UX: tutorials by phase, the air camera look; exact-head reviews of Claude's PRs. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
+**Vehicle rebuild draft (Codex, 14 Oct):** Separate branch off main, original procedural period bodies for all 12 dealer/squad model keys. IDs, catalogue prices/specs, saves, physics and collision remain unchanged. Five new render-contract tests pass clean locally; eight existing car-physics tests also pass with baseline cleanup resource warnings. Local full import retains ActionReview.COMMANDS error under 4.6.3. Capture script passes parse check; read-only pinned CI will render 15 staged asset views in WorldScene plus the actual dealership. References: 1981 Ford brochure, 1983 C/K pickup brochure, Mercedes W123/Porsche 944 archives, Vice City/Stories and Driver Parallel Lines (1978 fleet). No copied assets or real brands shipped. Scenery PR #373 remains independent. Next: inspect capture artifact, latest pinned CI and review; no merge or human gate passed.
+
 ## Taking over (checklist for the incoming AI)
 
 1. Read the MCP collaboration board, verify your checkout, then `git fetch origin`, `git status` and
@@ -429,3 +431,4 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 - **Left open:** 38 PRs, mostly drafts stacked on each other (36 conflict into `main`). The largest gameplay stacks are logistics loading
   endpoints and the employed-pilot opening. Its own records are in `docs/PR_INTEGRATION_2026-10-08.md`,
   `docs/OPEN_PR_AUDIT_2026-10-08.md` and the other dated docs, plus each PR body.
+
