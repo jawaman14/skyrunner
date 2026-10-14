@@ -49,6 +49,8 @@ Windows capture fix (14 Oct): root cause is twofold: Windows `--headless` select
 
 Publication status: the Windows capture fix is committed locally, but `git push` failed first against the configured proxy and then because Git's credential prompt script could not start (`Win32 error 5`). Draft #374 is still at remote head `ced9ea0`; no exact-head CI exists for this local fix. Preserve the clean local commit and retry publication when Git credentials work.
 
+TTS follow-up (14 Oct): after the owner reported that the game was still invisible, removed `audio/general/text_to_speech=true` from `project.godot` and guarded the default speech callback. The setting caused a reproducible WinRT startup exception on this PC. The Windows capture launcher no longer edits project settings; it produced 16/16 PNGs after the change. A fresh game process launched through the `SkyRunner Review` desktop shortcut and has a responsive `Skyrunner (DEBUG)` window. The desktop controller cannot select or focus that window, so visibility to the owner remains unverified. The main checkout's dirty `project.godot` and `scripts/game/speech.gd` were patched with the same TTS fix without disturbing its editor plugin setting.
+
 ## Taking over (checklist for the incoming AI)
 
 1. Read the MCP collaboration board, verify your checkout, then `git fetch origin`, `git status` and

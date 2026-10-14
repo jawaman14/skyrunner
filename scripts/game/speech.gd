@@ -12,6 +12,8 @@ static var enabled := false
 static var rate := 1.1
 static var spoken: Array = []  ## the last 40 things said
 static var speaker := func(text: String, interrupt: bool) -> void:
+	if not ProjectSettings.get_setting("audio/general/text_to_speech", false):
+		return
 	var voices := DisplayServer.tts_get_voices_for_language(OS.get_locale_language())
 	if voices.is_empty():
 		voices = DisplayServer.tts_get_voices_for_language("en")

@@ -5,9 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$project = Join-Path $root 'project.godot'
-
-# Lock the entire setting change and Godot run, not just the renderer process.
+# Lock the entire Godot run.
 if ($env:SKYRUNNER_CAPTURE_LOCKED -ne '1') {
     $env:SKYRUNNER_CAPTURE_LOCKED = '1'
     try {
@@ -24,13 +22,6 @@ if ($env:SKYRUNNER_CAPTURE_LOCKED -ne '1') {
     return
 }
 
-# Godot 4.7.2's Windows TTS initialization can throw before a scene opens on
-# machines without a working WinRT voice service. Restore the project exactly.
-$original = [System.IO.File]::ReadAllBytes($project)
-$settings = [System.Text.Encoding]::UTF8.GetString($original)
-if (-not $settings.Contains('general/text_to_speech=true')) {
-    throw 'Expected text-to-speech setting is missing from project.godot.'
-}
 if ($Godot -eq '') { $Godot = $env:GODOT }
 if ($Godot -eq '') { throw 'Godot path is missing; pass -Godot or configure SKYRUNNER_GODOT.' }
 if ($Output -eq '') {
@@ -40,8 +31,6 @@ New-Item -ItemType Directory -Path $Output -Force | Out-Null
 $Output = (Resolve-Path -LiteralPath $Output).Path
 
 try {
-    $settings.Replace('general/text_to_speech=true', 'general/text_to_speech=false') |
-        Set-Content -LiteralPath $project -Encoding utf8 -NoNewline
     Push-Location $root
     & $Godot --rendering-method gl_compatibility --rendering-driver opengl3 --audio-driver Dummy --path $root --script res://tools/capture_period_vehicles.gd -- $Output
     if ($LASTEXITCODE -ne 0) {
@@ -54,5 +43,4 @@ try {
     Write-Output "Captured 16 vehicle images in $Output"
 } finally {
     Pop-Location
-    [System.IO.File]::WriteAllBytes($project, $original)
 }
