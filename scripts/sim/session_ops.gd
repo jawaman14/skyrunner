@@ -441,7 +441,7 @@ func buy_or_switch(key: String):
 ## After a crash or bust.
 func respawn() -> void:
 	var code = log.departed_from if log.departed_from else START_FIELD
-	if phase == "busted":
+	if phase == "busted" and not _first_missions():  # the first missions: back at the airport you flew from
 		code = START_FIELD
 	for j in active_jobs:
 		if j.boat_id:

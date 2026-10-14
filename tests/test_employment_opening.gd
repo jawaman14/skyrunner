@@ -181,3 +181,27 @@ func test_first_ownership_journal_and_guidance_survive_reload() -> void:
 	check("Your first aircraft" in restored.story.journal_text())
 	check(not "First ownership" in restored.story.guidance())
 	restored.dispose()
+
+## Owner, 14 Oct: failing a first mission must never end the game. After a crash or a bust the pilot is back at an airport and the same stage's cargo is offered again, at no cost.
+func test_failing_a_first_mission_lets_the_pilot_retry_the_cargo() -> void:
+	for how in ["crash", "bust"]:
+		session = _start()
+		var opening: EmploymentOpening = session.story.employment
+		var stage: int = opening.stage
+		var money_before: int = session.money
+		session.refresh_board(session.location)
+		var job: Jobs.Job = session.boards[session.location][0]
+		check(session.command(Roles.PILOT, "accept_job", {"job_id": job.id})[0], "%s: the first load is accepted" % how)
+		if how == "crash":
+			session._crash("test")
+		else:
+			session._bust("test")
+		check(session.phase in ["crashed", "busted"], "%s: the flight failed" % how)
+		session.respawn()
+		check_eq(session.phase, "parked", "%s: the pilot is back on the ground" % how)
+		check(opening.active() and opening.stage == stage, "%s: the story did not move on or end" % how)
+		session.refresh_board(session.location)
+		check(not session.boards[session.location].is_empty(), "%s: the employer offers the cargo again" % how)
+		check_eq(session.money, money_before, "%s: a first-mission retry costs nothing" % how)
+		session.dispose()
+		session = null
