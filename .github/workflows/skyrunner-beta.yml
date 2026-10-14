@@ -182,6 +182,64 @@ jobs:
           name: smoke-screenshot-linux
           path: smoke.png
 
+  visual-captures:
+    name: Visual captures (four sizes, two palettes)
+    needs: export
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: skyrunner-linux
+          path: build
+      - name: Make the exported game executable
+        run: chmod +x build/Skyrunner.x86_64
+      - name: Mesa and a virtual display
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri >/dev/null
+      - name: Capture all resolutions and palettes
+        run: |
+          set -euo pipefail
+          mkdir -p captures
+          user_dir="$HOME/.local/share/godot/app_userdata/Skyrunner"
+          mkdir -p "$user_dir"
+          {
+            echo "Commit: $GITHUB_SHA"
+            echo "Engine: $GODOT_VERSION"
+            echo "Human visual review is still required; these captures do not pass the release gate."
+          } > captures/README.txt
+          for palette in neon safe; do
+            printf '[look]\npalette="%s"\ngraphics="low"\n' "$palette" > "$user_dir/settings.cfg"
+            for size in 1024x768 1280x720 1920x1080 2560x1080; do
+              width="${size%x*}"
+              height="${size#*x}"
+              image="captures/${palette}-${size}.png"
+              log="captures/${palette}-${size}.log"
+              xvfb-run -a -s "-screen 0 ${size}x24" build/Skyrunner.x86_64 \
+                --rendering-driver opengl3 --audio-driver Dummy --resolution "$size" \
+                -- --new --graphics low --hour 16 --shot "$PWD/$image" --frames 240 2>&1 | tee "$log"
+              test -s "$image"
+              ! grep -Eq 'SCRIPT ERROR|Parse Error' "$log"
+              python - "$image" "$width" "$height" <<'PY'
+          import struct, sys
+          with open(sys.argv[1], "rb") as image:
+              header = image.read(24)
+          if header[:8] != b"\x89PNG\r\n\x1a\n":
+              raise SystemExit(f"not a PNG: {sys.argv[1]}")
+          actual = struct.unpack(">II", header[16:24])
+          expected = (int(sys.argv[2]), int(sys.argv[3]))
+          if actual != expected:
+              raise SystemExit(f"{sys.argv[1]}: expected {expected}, got {actual}")
+          PY
+              printf '%s %s %s\n' "$palette" "$size" "$image" >> captures/README.txt
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-captures-${{ github.run_id }}-${{ github.run_attempt }}
+          path: captures/
+          if-no-files-found: ignore
+
   smoke-windows:
     needs: export
     runs-on: windows-latest
