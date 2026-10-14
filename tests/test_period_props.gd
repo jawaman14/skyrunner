@@ -30,6 +30,45 @@ func test_costa_brava_frontages_preserve_physical_access() -> void:
 	storage.free()
 
 
+func test_rural_dressing_keeps_storage_aisles_and_footprints_clear() -> void:
+	for pair in [["barn", "barn"], ["quarry", "shed"], ["camp", "camp"]]:
+		var stash := {"id": pair[0], "kind": pair[1]}
+		var dimensions: Vector3 = SiteLayout.stash_spec(stash).dimensions
+		var k := Buildings.Kit.new("rural-access-test")
+		StashInterior.rural_dressing(k, stash, dimensions)
+		check(k.body.get_child_count() > 0, str(pair[0]) + " has physical furnishings")
+		for child in k.body.get_children():
+			var collision := child as CollisionShape3D
+			var box := collision.shape as BoxShape3D
+			check(box != null, "simple box colliders bound the rural props")
+			if box == null:
+				continue
+			var half := box.size / 2
+			check(absf(collision.position.x) + half.x <= dimensions.x / 2 - 0.2, "solid prop stays inside the side walls")
+			check(absf(collision.position.z) + half.z <= dimensions.z / 2 - 0.2, "solid prop stays inside the front/back walls")
+			check(absf(collision.position.x) - half.x >= 1.1, "2.2m central entrance-to-desk aisle stays clear")
+		var node := k.finish()
+		for child in node.get_children():
+			check(not (child is Area3D), "rural supplies add no misleading stock action")
+		node.free()
+	# Reusing a rural kind elsewhere does not give it a Costa Brava landmark name.
+	var other := Buildings.Kit.new("other-stash-test")
+	StashInterior.rural_dressing(other, {"id": "other", "kind": "barn"}, Vector3(12, 6, 18))
+	check_eq(other.body.get_child_count(), 0, "unrelated stashes keep their existing layout")
+	other.finish().free()
+	for code in ["FRM", "QRY", "PNR"]:
+		var shed := Buildings.Kit.new("rural-shed-test")
+		Buildings.shed(shed, Vector3.ZERO)
+		var collisions := shed.body.get_child_count()
+		var job_position: Vector3 = shed.root.get_node("use_jobs").position
+		Buildings.rural_airfield_frontage(shed, code, Vector3.ZERO, 7, 5)
+		check_eq(shed.body.get_child_count(), collisions, "strip facade adds no obstruction")
+		check_eq(shed.root.get_node("use_jobs").position, job_position, "strip job-board access is preserved")
+		var site := shed.finish()
+		check(site.get_node("rural-strip-name") is Label3D, "rural strip has fixed identifying lettering")
+		site.free()
+
+
 func test_fuel_dressing_preserves_interaction_and_collision() -> void:
 	var k := Buildings.Kit.new("fuel-test")
 	Buildings.fuel_pump(k, Vector3.ZERO)

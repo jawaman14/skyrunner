@@ -592,6 +592,31 @@ static func painted_sign(k: Kit, node_name: String, text: String, at: Vector3, p
 	k.root.add_child(label)
 
 
+## Distinct rural shed fronts, kept below the roof and outside the doorway.
+static func rural_airfield_frontage(k: Kit, code: String, c: Vector3, w: float, d: float) -> void:
+	var names := {"FRM": "FINCA MORALES", "QRY": "OLD QUARRY", "PNR": "LA SELVA"}
+	if not names.has(code):
+		return
+	var front := -d / 2
+	k.box(c + Vector3(0, 2.5, front - 0.12), Vector3(3.4, 0.4, 0.05), "pump_cream", false)
+	painted_sign(k, "rural-strip-name", str(names[code]), c + Vector3(0, 2.5, front - 0.155), 0.007)
+	match code:
+		"FRM":
+			# Faded planks frame the farm shed's entry.
+			for side in [-1, 1]:
+				for row in 3:
+					k.box(c + Vector3(side * w / 4, 0.7 + row * 0.4, front - 0.115), Vector3(w / 2 - 1.6, 0.035, 0.025), "metal_rust", false)
+		"QRY":
+			# Narrow rusted battens give the old industrial shed a ribbed front.
+			for side in [-1, 1]:
+				for rib in 3:
+					k.box(c + Vector3(side * (1.2 + rib * 0.6), 1.15, front - 0.115), Vector3(0.045, 2.1, 0.025), "metal_rust", false)
+		"PNR":
+			# Repaired wall panels: canvas colours without adding a new shelter.
+			for side in [-1, 1]:
+				k.box(c + Vector3(side * w / 4, 1.25, front - 0.115), Vector3(1.5, 0.75, 0.025), "drum_sage", false)
+
+
 ## The buildings beside one strip, in Godot coordinates, facing the runway.
 static func airfield_site(world: World, af: Airfield) -> Node3D:
 	var k := Kit.new("site-" + af.code)
@@ -613,7 +638,10 @@ static func airfield_site(world: World, af: Airfield) -> Node3D:
 					workshop_tools(k, c + Vector3(-dims.x / 2 + 2.0, 0, dims.z / 2 - 1.2))
 			"pump": fuel_pump(k, c)
 			"showroom": showroom(k, c, dims.x, dims.z)
-			"shed": shed(k, c, dims.x, dims.z, "wood" if af.kind == "bush" else "metal_rust")
+			"shed":
+				shed(k, c, dims.x, dims.z, "wood" if af.kind == "bush" else "metal_rust")
+				if world.map.map_seed == MapCity.SEED:
+					rural_airfield_frontage(k, af.code, c, dims.x, dims.z)
 			"drums": drums(k, c, 5 if af.kind == "bush" else 7)
 		records.append(SiteLayout.record(world, part.id, part.kind, SiteLayout.airfield_frame(world, af).translated_local(c), dims))
 	var node := k.finish()
