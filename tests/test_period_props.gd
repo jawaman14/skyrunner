@@ -125,6 +125,63 @@ func test_city_district_colours_preserve_transforms_and_window_flags() -> void:
 	collision.free()
 
 
+func test_sidewalk_pockets_keep_roads_and_authored_access_clear() -> void:
+	World.use_map(MapCity.SEED)
+	var world := World.new()
+	var sites := CityRender.sidewalk_sites(world, world.map.roads)
+	check(sites.size() > 0 and sites.size() <= CityRender.SIDEWALK_POCKETS, "bounded street scenery exists")
+	check_eq(sites, CityRender.sidewalk_sites(world, world.map.roads), "placements are deterministic")
+	var records := SiteLayout.records(world)
+	var reserved := CityRender.sidewalk_reservations(world.map.roads)
+	for site in sites:
+		var p: Vector2 = site.at
+		check(not reserved.any(func(at): return p.distance_to(at) < 3.6), "existing street furniture stays clear")
+		check(MapCity.road_dist(world.map.roads, p.x, p.y) >= 6.05, "furniture clears every carriageway")
+		check(world.airfield_at(p.x, p.y, 250) == null, "furniture stays away from the strips")
+		for record in records:
+			for key in ["entrance", "loading"]:
+				var at: Vector3 = record[key]
+				check(p.distance_to(Vector2(at.x, -at.z)) >= 14, "authored entry/loading area stays clear")
+			if record.connector is Vector2:
+				for at in [record.approach[0], record.loading]:
+					var point: Vector3 = at
+					var closest := Geometry2D.get_closest_point_to_segment(p, record.connector, Vector2(point.x, -point.z))
+					check(p.distance_to(closest) >= 4.5, "candidate walking and loading legs stay clear")
+	var details := CityRender._road_details(world, world.map.roads)
+	var pavement := details.get_node("pavements") as MeshInstance3D
+	var pavement_body := pavement.get_node("sidewalk-collision") as StaticBody3D
+	var pavement_shape := (pavement_body.get_child(0) as CollisionShape3D).shape as ConcavePolygonShape3D
+	check_eq(pavement_shape.get_faces(), pavement.mesh.get_faces(), "physical paving matches visible sidewalk and kerbs")
+	Engine.get_main_loop().root.add_child(details)
+	for frame in 3:
+		await Engine.get_main_loop().physics_frame
+	if not sites.is_empty():
+		var site: Dictionary = sites[0]
+		var at := Vector3(site.at.x, site.height, -site.at.y)
+		var ray := PhysicsRayQueryParameters3D.create(at + Vector3.UP * 3, at - Vector3.UP, 1)
+		var hit := details.get_world_3d().direct_space_state.intersect_ray(ray)
+		check(not hit.is_empty(), "visible sidewalk supports physics at a furnished spot")
+		if not hit.is_empty():
+			check_near(hit.position.y, float(site.height), 0.03, "standing surface matches the scenery base height")
+	details.free()
+	World.use_map(0)
+	for kind in ["planter", "shade", "notice"]:
+		var k := Buildings.Kit.new("sidewalk-width-test")
+		CityRender.sidewalk_furniture(k, kind)
+		for child in k.body.get_children():
+			var cs := child as CollisionShape3D
+			var half_width := 0.0
+			if cs.shape is BoxShape3D:
+				half_width = (cs.shape as BoxShape3D).size.z / 2
+			elif cs.shape is CylinderShape3D:
+				half_width = (cs.shape as CylinderShape3D).radius
+			check(absf(cs.position.z) + half_width <= 0.35, "solid furniture fits the outer 0.7m sidewalk strip")
+		var node := k.finish()
+		for child in node.get_children():
+			check(not (child is Area3D), "street scenery adds no misleading interactions")
+		node.free()
+
+
 func test_fuel_dressing_preserves_interaction_and_collision() -> void:
 	var k := Buildings.Kit.new("fuel-test")
 	Buildings.fuel_pump(k, Vector3.ZERO)

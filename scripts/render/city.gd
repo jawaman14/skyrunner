@@ -69,6 +69,7 @@ static func build(world: World, q: Quality) -> Node3D:
 	root.add_child(_bridges(world, l.roads, l.bridges))
 	root.add_child(_lamps(world, l.roads))
 	root.add_child(_props(world, l.roads))
+	root.add_child(_sidewalk_pockets(world, l.roads, q))
 	root.add_child(_palms(world, l.roads, q))
 	for st in l.stashes:
 		root.add_child(stash_house(world, st))
@@ -244,6 +245,17 @@ static func _road_details(world: World, roads: Array) -> Node3D:
 		mi.material_override = m
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.visibility_range_end = 2500.0
+		if mi.name == "pavements" and not mi.mesh.get_faces().is_empty():
+			# Characters stand on the same paving and kerbs that are rendered.
+			var body := StaticBody3D.new()
+			body.name = "sidewalk-collision"
+			var collider := CollisionShape3D.new()
+			var shape := ConcavePolygonShape3D.new()
+			shape.backface_collision = true
+			shape.set_faces(mi.mesh.get_faces())
+			collider.shape = shape
+			body.add_child(collider)
+			mi.add_child(body)
 		root.add_child(mi)
 	return root
 
@@ -469,6 +481,139 @@ static func _props(world: World, roads: Array) -> Node3D:
 		var m := kit_mesh(part)
 		if m != null and not xfs[part].is_empty():
 			root.add_child(_mm_of(m, xfs[part], part, 1500.0))
+	return root
+
+
+const SIDEWALK_POCKETS := 36
+
+## Conservative occupied positions for existing lamps, palms and furniture.
+static func sidewalk_reservations(roads: Array) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	var origin: Vector2 = MapCity.CITY_C - MapCity.CITY_R
+	for road in roads:
+		for i in road.size() - 1:
+			var a := Vector2(road[i][0], road[i][1])
+			var b := Vector2(road[i + 1][0], road[i + 1][1])
+			var dir := (b - a).normalized()
+			var side := Vector2(-dir.y, dir.x)
+			for spec in [[0.0, 45.0, 5.3], [14.0, 28.0, 6.2], [22.0, 90.0, 5.6]]:
+				var along: float = spec[0]
+				while along < a.distance_to(b):
+					for sign_ in [-1, 1]:
+						out.append(a + dir * along + side * float(spec[2]) * sign_)
+					along += float(spec[1])
+			for axis in [0, 1]:
+				if absf(b[axis] - a[axis]) < 1:
+					continue
+				var line := ceilf((minf(a[axis], b[axis]) - origin[axis]) / GRID_BLOCK) * GRID_BLOCK + origin[axis]
+				while line <= maxf(a[axis], b[axis]):
+					var crossing := a.lerp(b, (line - a[axis]) / (b[axis] - a[axis]))
+					for sign_ in [-1, 1]:
+						out.append(crossing + dir * 7 + side * sign_ * 5.3)
+					line += GRID_BLOCK
+	var graph := RoadGraph.new(roads)
+	for i in graph.road_nodes:
+		if graph.adj[i].size() >= 3:
+			out.append(graph.nodes[i] + Vector2(7, 7))
+			out.append(graph.nodes[i] - Vector2(7, 7))
+	return out
+
+## Small furnishings at the outer sidewalk edge, using the actual road deck.
+## Keep junctions, buildings, airfields and authored access legs clear.
+static func sidewalk_sites(world: World, roads: Array) -> Array:
+	var out := []
+	if world.map.map_seed != MapCity.SEED:
+		return out
+	var records := SiteLayout.records(world)
+	var reserved := sidewalk_reservations(roads)
+	var serial := 0
+	for road in roads:
+		var samples := _samples(world, road)
+		for i in range(4, samples.size() - 4, 14):
+			var sample: Array = samples[i]
+			var dir: Vector2 = sample[1]
+			var side := Vector2(-dir.y, dir.x) * (-1.0 if serial % 2 == 0 else 1.0)
+			var p: Vector2 = sample[0] + side * 6.45
+			var kind: String = ["planter", "shade", "notice"][serial % 3]
+			serial += 1
+			var neighbourhood: Vector2 = p + side * 18
+			var pavement_before: Vector2 = (Vector2(samples[i - 1][0]) + Vector2(sample[0])) * 0.5
+			var pavement_after: Vector2 = (Vector2(samples[i + 1][0]) + Vector2(sample[0])) * 0.5
+			if not MapCity.at(world.map.land_use, pavement_before.x, pavement_before.y) in [MapCity.URBAN, MapCity.PORT]:
+				continue
+			if not MapCity.at(world.map.land_use, pavement_after.x, pavement_after.y) in [MapCity.URBAN, MapCity.PORT]:
+				continue
+			if MapCity.at(world.map.land_use, neighbourhood.x, neighbourhood.y) != MapCity.URBAN:
+				continue
+			if world.ground(p.x, p.y) < 0.5 or world.airfield_at(p.x, p.y, 250) != null:
+				continue
+			# The 0.7m-wide pocket leaves at least 1.6m of the 2.4m pavement free.
+			if MapCity.road_dist(roads, p.x, p.y) < 6.05:
+				continue
+			if reserved.any(func(at): return p.distance_to(at) < 3.6):
+				continue
+			var blocked := false
+			for b in world.map.buildings:
+				if absf(p.x - float(b.x)) < float(b.w) / 2 + 1.6 and absf(p.y - float(b.y)) < float(b.d) / 2 + 1.6:
+					blocked = true
+					break
+			if blocked:
+				continue
+			for site in records:
+				for key in ["entrance", "loading"]:
+					var at: Vector3 = site[key]
+					if p.distance_to(Vector2(at.x, -at.z)) < 14:
+						blocked = true
+				if site.connector is Vector2:
+					for at in [site.approach[0], site.loading]:
+						var point: Vector3 = at
+						var closest := Geometry2D.get_closest_point_to_segment(p, site.connector, Vector2(point.x, -point.z))
+						if p.distance_to(closest) < 4.5:
+							blocked = true
+			if blocked or out.any(func(s): return p.distance_to(s.at) < 22):
+				continue
+			out.append({"at": p, "height": float(sample[2]) + 0.14, "yaw": atan2(side.x, -side.y), "kind": kind})
+			if out.size() >= SIDEWALK_POCKETS:
+				return out
+	return out
+
+
+## Narrow planters, shaded cafe tables and community notice boards. Their
+## colliders match their solid pieces; they expose no gameplay interaction.
+static func sidewalk_furniture(k: Buildings.Kit, kind: String) -> void:
+	match kind:
+		"planter":
+			k.box(Vector3(0, 0.3, 0), Vector3(2.2, 0.6, 0.65), "terracotta")
+			k.box(Vector3(0, 0.61, 0), Vector3(2, 0.025, 0.5), "wood", false)
+			for x in [-0.75, -0.25, 0.25, 0.75]:
+				k.cylinder(Vector3(x, 0.62, 0), 0.22, 0.4, "green", 6, false)
+		"shade":
+			k.cylinder(Vector3(0.8, 0, 0), 0.05, 2.4, "wood", 6)
+			k.box(Vector3(-0.25, 0.4, 0), Vector3(0.75, 0.8, 0.55), "wood")
+			k.box(Vector3(0, 2.4, 0), Vector3(2.6, 0.08, 0.7), "drum_blue", false)
+			for stripe in [-0.9, -0.3, 0.3, 0.9]:
+				k.box(Vector3(stripe, 2.446, 0), Vector3(0.22, 0.012, 0.7), "pump_cream", false)
+			k.box(Vector3(-0.25, 0.82, 0), Vector3(0.8, 0.04, 0.6), "pump_cream", false)
+		"notice":
+			for x in [-0.65, 0.65]:
+				k.box(Vector3(x, 0.65, 0), Vector3(0.08, 1.3, 0.08), "wood")
+			k.box(Vector3(0, 1.35, 0), Vector3(1.6, 1, 0.12), "wood")
+			k.plate("res://assets/props/pinned_notices.svg", Vector3(0, 1.35, -0.065), Vector2(1.45, 0.85))
+
+
+static func _sidewalk_pockets(world: World, roads: Array, q: Quality) -> Node3D:
+	var root := Node3D.new()
+	root.name = "sidewalk-pockets"
+	for site in sidewalk_sites(world, roads):
+		var k := Buildings.Kit.new("pocket-" + str(site.kind))
+		sidewalk_furniture(k, site.kind)
+		var node := k.finish()
+		node.position = Vector3(site.at.x, site.height, -site.at.y)
+		node.rotation.y = site.yaw
+		for mesh in node.find_children("*", "MeshInstance3D", true, false):
+			(mesh as MeshInstance3D).visibility_range_end = 1000
+			(mesh as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if q.shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(node)
 	return root
 
 
