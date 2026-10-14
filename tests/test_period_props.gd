@@ -94,6 +94,7 @@ func test_hq_and_casino_redesign_preserves_access_and_prop_budget() -> void:
 				check(absf(bed.position.x) - shape.size.x / 2 >= 5.5, "planting leaves the central entrance approach clear")
 				check(bed.position.z - shape.size.z / 2 >= -15, "planting remains on the existing club pavement")
 				check(bed.position.z + shape.size.z / 2 < -8.2, "planting cannot obstruct the side door or stairwell")
+				check(bed.position.z - shape.size.z / 2 > -11.5, "planting clears the original parked car's front edge")
 		var dressed_actions := []
 		for child in k.root.get_children():
 			if child is Area3D:

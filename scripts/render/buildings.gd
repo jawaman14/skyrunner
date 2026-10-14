@@ -696,7 +696,7 @@ static func hq_identity(k: Kit, style: String) -> void:
 			painted_sign(k, "club-name", "CLUB TROPICANA", Vector3(0, 5.6, -8.32), 0.025)
 			# Raised planting stays on the existing pavement wings, clear of both doors.
 			for side in [-1, 1]:
-				forecourt_planter(k, Vector3(side * 8, 0.1, -12), Vector2(5, 2), true)
+				forecourt_planter(k, Vector3(side * 8, 0.1, -9.7), Vector2(5, 2), true)
 			k.box(Vector3(0, 3.25, -9.5), Vector3(7, 0.22, 3), "pump_cream", false)
 			k.box(Vector3(0, 3.12, -11.03), Vector3(7, 0.09, 0.06), "neon_cyan", false)
 			for stripe in [-2.4, -1.2, 0.0, 1.2, 2.4]:
