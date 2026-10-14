@@ -6,6 +6,10 @@ func _initialize() -> void:
 	call_deferred("_capture")
 
 func _capture() -> void:
+	if DisplayServer.get_name() == "headless":
+		push_error("Vehicle screenshots need a windowed renderer; use tools/capture_period_vehicles.ps1 on Windows.")
+		quit(1)
+		return
 	var args := OS.get_cmdline_user_args()
 	var output := args[0] if not args.is_empty() else ProjectSettings.globalize_path("user://vehicle-screenshots")
 	DirAccess.make_dir_recursive_absolute(output)
@@ -68,7 +72,12 @@ func _save(path: String) -> bool:
 	for frame in 8:
 		await process_frame
 	await RenderingServer.frame_post_draw
-	var result := root.get_texture().get_image().save_png(path)
+	var image := root.get_texture().get_image()
+	if image == null:
+		push_error("Vehicle capture has no rendered viewport image: " + path)
+		quit(1)
+		return false
+	var result := image.save_png(path)
 	print("VEHICLE CAPTURE ", path, " result=", result)
 	if result != OK:
 		quit(1)

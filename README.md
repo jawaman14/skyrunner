@@ -163,6 +163,11 @@ $GODOT --headless --path . -- --unlocks open --watch --new --smoke 1800  # the C
 $GODOT --headless --path . --script res://scripts/balance/cli.gd -- all --workers 4
 ```
 
+On Windows, capture the period vehicle lineup with `./tools/capture_period_vehicles.ps1 -Godot PATH_TO_GODOT_CONSOLE_EXE`.
+The script runs a windowed renderer under the shared Godot lock, saves 16 PNGs under `.build/visual-audit/`, and
+restores `project.godot` after a temporary text-to-speech startup workaround. Windows `--headless` has no image
+renderer for this capture.
+
 The game started as a Python prototype, kept on the git tag `python-prototype-archive`; it generated the frozen
 parity fixtures and you never need it to build, play or test ([docs/PORTING.md](docs/PORTING.md)).
 
