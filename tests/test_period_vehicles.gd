@@ -80,6 +80,44 @@ func test_distinct_silhouettes_and_cached_mesh_instance_independence() -> void:
 	b.free()
 
 
+func test_hq_and_casino_parked_cars_use_period_models() -> void:
+	var hq := Buildings.Kit.new("period-vehicle-hq-test")
+	Buildings._task_force(hq)
+	var police := []
+	for child in hq.root.get_children():
+		if child.has_meta("period_style"):
+			police.append(child)
+	check_eq(police.size(), 3, "task-force HQ keeps all three parked cars")
+	for car in police:
+		check_eq(car.get_meta("period_style"), "patrol", "task-force patrol car uses its period model")
+		check(car.has_node("body") and car.get_node("body").mesh.get_surface_count() > 0, "patrol car has a rendered body")
+	var hq_scene := hq.finish()
+	var hq_colliders := 0
+	for child in hq_scene.get_children():
+		if child is StaticBody3D:
+			hq_colliders += 1
+	check_eq(hq_colliders, 4, "patrol-car collision remains in addition to HQ collision")
+	hq_scene.free()
+
+	var club := Buildings.Kit.new("period-vehicle-club-test")
+	Buildings._nightclub(club)
+	var boss_car := club.root.get_children().filter(func(n): return n.has_meta("period_style"))
+	check_eq(boss_car.size(), 1, "club keeps the boss's kerbside car")
+	if not boss_car.is_empty():
+		check_eq(boss_car[0].name, "suv-luxury", "club car uses a period luxury model")
+		check_near(boss_car[0].rotation.y, deg_to_rad(90), 0.001, "club car retains its frontage-parallel footprint")
+	club.finish().free()
+
+	var casino := Buildings.Kit.new("period-vehicle-casino-test")
+	CasinoBuilding._forecourt(casino)
+	var guest_car := casino.root.get_children().filter(func(n): return n.has_meta("period_style"))
+	check_eq(guest_car.size(), 1, "casino keeps a guest car by the kerb")
+	if not guest_car.is_empty():
+		check_eq(guest_car[0].name, "sedan-sports", "casino guest car uses a period saloon")
+		check_near(guest_car[0].rotation.y, deg_to_rad(90), 0.001, "casino car retains its frontage-parallel footprint")
+	casino.finish().free()
+
+
 func test_disabled_models_keep_existing_procedural_fallback() -> void:
 	ModelLib.ENABLED = false
 	check(ModelLib.vehicle("sedan", 4.6) == null, "disabled vehicle models return null")
