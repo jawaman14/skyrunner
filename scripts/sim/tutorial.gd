@@ -162,10 +162,12 @@ var graduated_at := -1e9  ## when the last lesson there was to teach was finishe
 var _flight_lesson_started_at := -1.0
 var _landing_seen := false
 var _turnaround_active := false
+var _legacy_save := false  ## loaded from a save made before the landing lessons (it has no landing_v)
 
 
 func _init(state = null) -> void:
 	if state is Dictionary:
+		_legacy_save = not state.has("landing_v")
 		enabled = bool(state.get("on", true))
 		for id in state.get("done", []):
 			done[str(id)] = true
@@ -183,8 +185,8 @@ func attach(s) -> Tutorial:
 	sess = s
 	s.tutorial = self
 	_t0 = s.time
-	if done.has("takeoff") and sess.parked:
-		done["first_landing"] = true  # older saves recorded take-off but had no explicit landing lesson
+	if _legacy_save and done.has("takeoff") and sess.parked:
+		done["first_landing"] = true  # older saves recorded take-off but had no explicit landing lesson (a current save that skipped take-off has not landed)
 	if not _sub:
 		_sub = true
 		s.bus.subscribe("*", _on_event)
@@ -195,7 +197,7 @@ func to_dict() -> Dictionary:
 	var dd := {}
 	for r in desk_done:
 		dd[r] = desk_done[r].keys()
-	return {"on": enabled, "done": done.keys(), "tips": tips_shown.keys(), "desks": dd}
+	return {"on": enabled, "done": done.keys(), "tips": tips_shown.keys(), "desks": dd, "landing_v": 1}
 
 
 # ------------------------------------------------------------------ the lessons

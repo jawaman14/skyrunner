@@ -116,6 +116,15 @@ func test_flight_lessons_follow_the_phase_and_load_waits_for_the_first_landing()
 	s.dispose()
 
 
+## The bot's P2 on #372: the migration is for saves from before the landing lessons only. A current save that skipped take-off while parked has not landed.
+func test_a_current_save_that_skipped_takeoff_has_not_landed() -> void:
+	var s := Session.new({"seed": 4, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES})
+	var t := Tutorial.new({"on": true, "done": ["welcome", "jobs", "takeoff"], "landing_v": 1}).attach(s)
+	check(not t.done.has("first_landing"), "a current save is not migrated: skipping take-off does not count as a landing")
+	check(bool(t.to_dict().get("landing_v", 0)), "and every save now says it has the landing lessons")
+	s.dispose()
+
+
 func test_older_save_with_takeoff_complete_unlocks_the_new_load_lesson() -> void:
 	var s := Session.new({"seed": 4, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES})
 	var t := Tutorial.new({"on": true, "done": ["welcome", "jobs", "takeoff", "flight", "landing", "load"]}).attach(s)
