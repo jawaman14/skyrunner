@@ -694,6 +694,10 @@ static func hq_identity(k: Kit, style: String) -> void:
 	match style:
 		"nightclub":
 			painted_sign(k, "club-name", "CLUB TROPICANA", Vector3(0, 5.6, -8.32), 0.025)
+			# Eyebrow ledges shade the existing upper windows, a Miami Deco motif.
+			for i in 6:
+				var x := lerpf(-9.5, 9.5, (i + 0.5) / 6.0)
+				k.box(Vector3(x, 6.93, -8.3), Vector3(1.7, 0.12, 0.55), "pump_cream", false)
 			for side in [-1, 1]:
 				for fin in 3:
 					k.box(Vector3(side * (7.6 + fin * 0.65), 5.7, -8.2), Vector3(0.18, 4.4 - fin * 0.5, 0.12), "pump_cream", false)

@@ -93,6 +93,12 @@ static func _deco_identity(k: Buildings.Kit) -> void:
 			for step in 5:
 				k.box(Vector3(side * (W / 2 - 0.23), 5.6, z - 0.9 + step * 0.45), Vector3(0.04, 0.6 + (2 - absi(2 - step)) * 0.55, 0.12), "brass", false)
 	# Reception panel and cabaret stage retain their original envelope.
+	# Small glass-block accents borrow the period Deco material vocabulary.
+	for side in [-1, 1]:
+		k.box(Vector3(side * 20, 6.05, -0.09), Vector3(1.55, 1.2, 0.035), "pump_cream", false)
+		for row in 3:
+			for column in 4:
+				k.box(Vector3(side * 20 - 0.555 + column * 0.37, 5.67 + row * 0.38, -0.13), Vector3(0.29, 0.29, 0.055), "glass", false)
 	for x in [-27.0, -25.5, -24.0, -22.5, -21.0]:
 		k.box(Vector3(x, FLOOR + 0.55, 1.38), Vector3(0.035, 1, 0.025), "brass", false)
 	for x in [19.0, 21.0, 31.0, 33.0]:

@@ -534,7 +534,7 @@ static func sidewalk_sites(world: World, roads: Array) -> Array:
 			var dir: Vector2 = sample[1]
 			var side := Vector2(-dir.y, dir.x) * (-1.0 if serial % 2 == 0 else 1.0)
 			var p: Vector2 = sample[0] + side * 6.45
-			var kind: String = ["planter", "shade", "notice"][serial % 3]
+			var kind: String = ["planter", "shade", "notice", "coffee", "domino"][out.size() % 5]
 			serial += 1
 			var neighbourhood: Vector2 = p + side * 18
 			var pavement_before: Vector2 = (Vector2(samples[i - 1][0]) + Vector2(sample[0])) * 0.5
@@ -599,6 +599,27 @@ static func sidewalk_furniture(k: Buildings.Kit, kind: String) -> void:
 				k.box(Vector3(x, 0.65, 0), Vector3(0.08, 1.3, 0.08), "wood")
 			k.box(Vector3(0, 1.35, 0), Vector3(1.6, 1, 0.12), "wood")
 			k.plate("res://assets/props/pinned_notices.svg", Vector3(0, 1.35, -0.065), Vector2(1.45, 0.85))
+		"coffee":
+			# A fictional walk-up cafe counter, inspired by Miami's ventanitas.
+			k.box(Vector3(0, 0.5, 0), Vector3(1.8, 1, 0.65), "drum_sage")
+			k.box(Vector3(0, 1.025, 0), Vector3(1.9, 0.05, 0.7), "pump_cream", false)
+			for x in [-0.85, 0.85]:
+				k.box(Vector3(x, 1.6, 0.25), Vector3(0.08, 1.2, 0.08), "wood")
+			k.box(Vector3(0, 2.23, 0), Vector3(2.2, 0.12, 0.7), "terracotta", false)
+			k.box(Vector3(0, 1.95, 0.22), Vector3(1.7, 0.35, 0.05), "pump_cream", false)
+			Buildings.painted_sign(k, "coffee-name", "CAFE DEL PUERTO", Vector3(0, 1.95, 0.18), 0.0045)
+			for x in [-0.4, 0, 0.4]:
+				k.cylinder(Vector3(x, 1.06, -0.12), 0.055, 0.09, "white", 8, false)
+			k.box(Vector3(0.55, 1.15, 0.1), Vector3(0.35, 0.2, 0.25), "metal", false)
+		"domino":
+			# Decorative domino table; no new playable game or interaction point.
+			k.box(Vector3(0, 0.36, 0), Vector3(0.75, 0.72, 0.6), "wood")
+			k.box(Vector3(0, 0.75, 0), Vector3(0.8, 0.06, 0.65), "pump_cream", false)
+			for x in [-0.8, 0.8]:
+				k.box(Vector3(x, 0.24, 0), Vector3(0.45, 0.48, 0.55), "wood")
+			for i in 5:
+				k.box(Vector3(-0.24 + i * 0.1, 0.79, 0), Vector3(0.08, 0.025, 0.035), "white", false)
+				k.box(Vector3(-0.24 + i * 0.1, 0.805, 0), Vector3(0.008, 0.005, 0.035), "black", false)
 
 
 static func _sidewalk_pockets(world: World, roads: Array, q: Quality) -> Node3D:

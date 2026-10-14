@@ -130,6 +130,11 @@ func test_sidewalk_pockets_keep_roads_and_authored_access_clear() -> void:
 	var world := World.new()
 	var sites := CityRender.sidewalk_sites(world, world.map.roads)
 	check(sites.size() > 0 and sites.size() <= CityRender.SIDEWALK_POCKETS, "bounded street scenery exists")
+	var kinds := {}
+	for site in sites:
+		kinds[site.kind] = true
+	for kind in ["planter", "shade", "notice", "coffee", "domino"]:
+		check(kinds.has(kind), "street scenery includes " + kind)
 	check_eq(sites, CityRender.sidewalk_sites(world, world.map.roads), "placements are deterministic")
 	var records := SiteLayout.records(world)
 	var reserved := CityRender.sidewalk_reservations(world.map.roads)
@@ -165,7 +170,7 @@ func test_sidewalk_pockets_keep_roads_and_authored_access_clear() -> void:
 			check_near(hit.position.y, float(site.height), 0.03, "standing surface matches the scenery base height")
 	details.free()
 	World.use_map(0)
-	for kind in ["planter", "shade", "notice"]:
+	for kind in ["planter", "shade", "notice", "coffee", "domino"]:
 		var k := Buildings.Kit.new("sidewalk-width-test")
 		CityRender.sidewalk_furniture(k, kind)
 		for child in k.body.get_children():
