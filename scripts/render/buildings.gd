@@ -555,6 +555,43 @@ static func terminal(k: Kit, c: Vector3, w := 36.0, d := 14.0) -> void:
 	k.box(c + Vector3(w / 4, 1.1, 0), Vector3(6, 1.1, 1.0), "wood")
 
 
+## San Telmo's frontage fits the terminal pad: paint and shallow facade detail
+## leave the doorway, interaction approaches and existing colliders authoritative.
+static func san_telmo_frontage(k: Kit, c: Vector3, w: float, d: float) -> void:
+	var front := -d / 2
+	# A faded enamel name board, below the roof and above the upper windows.
+	k.box(c + Vector3(0, 5.55, front - 0.19), Vector3(15, 0.8, 0.06), "pump_cream", false)
+	painted_sign(k, "san-telmo-name", "SAN TELMO INTERNACIONAL", c + Vector3(0, 5.55, front - 0.23), 0.012)
+	# Shallow sunshade over the existing opening, with its underside above head height.
+	k.box(c + Vector3(0, 3.25, front - 0.65), Vector3(7, 0.12, 1.6), "drum_sage", false)
+	k.box(c + Vector3(0, 3.12, front - 1.43), Vector3(7, 0.16, 0.04), "pump_cream", false)
+	# Repairs on the existing concrete forecourt, away from the centre doorway.
+	for side in [-1, 1]:
+		var x: float = side * (w / 2 - 4.0)
+		k.box(c + Vector3(x, 0.009, front - 2.0), Vector3(3.6, 0.012, 1.7), "concrete_dark", false)
+		k.box(c + Vector3(x + side * 0.4, 0.019, front - 2.1), Vector3(0.025, 0.008, 1.4), "asphalt", false)
+		# Broken paint marks keep the middle entrance route visually distinct.
+		for dash in 3:
+			k.box(c + Vector3(side * 2.0, 0.015, front - 0.7 - dash * 1.05), Vector3(0.1, 0.012, 0.6), "pump_cream", false)
+
+
+## Fixed lettering on a facade; it respects depth and does not turn towards the player.
+static func painted_sign(k: Kit, node_name: String, text: String, at: Vector3, pixel_size: float) -> void:
+	var label := Label3D.new()
+	label.name = node_name
+	label.text = text
+	label.font_size = 48
+	label.pixel_size = pixel_size
+	label.outline_size = 0
+	label.modulate = Color(0.22, 0.29, 0.27)
+	label.shaded = true
+	label.double_sided = false
+	label.no_depth_test = false
+	label.position = at
+	label.rotation.y = PI  # the building's front faces local -z
+	k.root.add_child(label)
+
+
 ## The buildings beside one strip, in Godot coordinates, facing the runway.
 static func airfield_site(world: World, af: Airfield) -> Node3D:
 	var k := Kit.new("site-" + af.code)
@@ -563,7 +600,10 @@ static func airfield_site(world: World, af: Airfield) -> Node3D:
 		var c: Vector3 = part.center
 		var dims: Vector3 = part.dimensions
 		match part.kind:
-			"terminal": terminal(k, c, dims.x, dims.z)
+			"terminal":
+				terminal(k, c, dims.x, dims.z)
+				if world.map.map_seed == MapCity.SEED and af.code == "HAR":
+					san_telmo_frontage(k, c, dims.x, dims.z)
 			"tower":
 				tower(k, c, dims.y)
 				if af.code == "HAR": vhf_aerial(k, c + Vector3(0, dims.y + 2.8, 0))
@@ -809,3 +849,4 @@ static func _hacienda(k: Kit) -> void:
 		k.box(Vector3(-3 + i * 4.5, 1.4, 8.4), Vector3(0.3, 2.8, 0.3), "wood")
 	k.box(Vector3(6, 2.9, 8.4), Vector3(22, 0.2, 2.4), "terracotta", false)
 	_windows(k, -3, 15, 8.9, 1.8, 4)
+

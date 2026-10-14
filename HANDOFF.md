@@ -39,6 +39,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | **Codex task** | QA and QC runs (owner, 12 Oct; `docs/PIPELINE.md` "QA and QC lane"): full suite on #350 and #354, the autopilot sweeps, the key audit; UX: tutorials by phase, the air camera look; exact-head reviews of Claude's PRs. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
+**Costa Brava detail draft (Codex, 14 Oct):** San Telmo terminal frontage and Warehouse 7 facade dressing; no simulation or site-layout edits. Owner authorized the GitHub connector and local Godot workflow in this session because the Skyrunner MCP is unavailable. Local Godot 4.6.3 focused checks: 9/9 (period props and site layout). The game pins 4.7.2; pinned CI and a visual walkthrough remain required. Full local import hits the existing ActionReview.COMMANDS parse error. Next: review this small frontage slice, then loading-yard access and farm/quarry/jungle detail. Other baton tasks above remain active.
+
 ## Taking over (checklist for the incoming AI)
 
 1. Read the MCP collaboration board, verify your checkout, then `git fetch origin`, `git status` and
@@ -429,3 +431,4 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 - **Left open:** 38 PRs, mostly drafts stacked on each other (36 conflict into `main`). The largest gameplay stacks are logistics loading
   endpoints and the employed-pilot opening. Its own records are in `docs/PR_INTEGRATION_2026-10-08.md`,
   `docs/OPEN_PR_AUDIT_2026-10-08.md` and the other dated docs, plus each PR body.
+

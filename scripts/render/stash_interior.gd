@@ -44,6 +44,8 @@ static func build(world: World, stash: Dictionary) -> Node3D:
 		k.box(Vector3(0, 0.3, -12), Vector3(3, 0.6, 10), "wood")
 		k.box(Vector3(0, 0.15, -6.6), Vector3(2, 0.3, 0.8), "wood")
 		k.box(Vector3(0, 0.15, -17.4), Vector3(2, 0.3, 0.8), "wood")
+	if world.map.map_seed == MapCity.SEED and stash.id == "docks" and stash.kind == "warehouse":
+		warehouse_frontage(k, size)
 	var desk_x: float = -6.0 if stash.kind == "lockup" else 0.0
 	var desk_z := size.z / 2 - 1.0
 	k.box(Vector3(desk_x, floor_y + 0.95, desk_z), Vector3(2.0, 0.12, 0.7), "wood")
@@ -57,6 +59,23 @@ static func build(world: World, stash: Dictionary) -> Node3D:
 	var area := node.get_node("use_stash_logistics") as Area3D
 	area.set_meta("stash", stash.id)
 	return node
+
+## Warehouse 7's working-port identity is painted onto its existing shell.
+## Thin battens sit against the wall; the central loading doorway stays clear.
+static func warehouse_frontage(k: Buildings.Kit, size: Vector3) -> void:
+	var front := -size.z / 2
+	k.box(Vector3(0, 5.0, front - 0.035), Vector3(10, 1.2, 0.05), "pump_cream", false)
+	Buildings.painted_sign(k, "warehouse-seven-name", "ALMACEN 7", Vector3(0, 5.0, front - 0.065), 0.025)
+	for side in [-1, 1]:
+		# Door-jamb paint and low scuffs, with no step or barrier at the threshold.
+		k.box(Vector3(side * 1.7, 1.2, front - 0.025), Vector3(0.18, 2.4, 0.035), "pump_cream", false)
+		for mark in 4:
+			k.box(Vector3(side * 1.7, 0.3 + mark * 0.55, front - 0.05), Vector3(0.18, 0.15, 0.015), "black", false)
+		for rib in 4:
+			var x: float = side * (3.5 + rib * 3.0)
+			k.box(Vector3(x, size.y / 2, front - 0.025), Vector3(0.045, size.y - 0.3, 0.035), "metal_rust", false)
+		k.box(Vector3(side * 8, 0.3, front - 0.025), Vector3(8, 0.3, 0.025), "metal_rust", false)
+
 
 static func available(stash: Dictionary) -> bool:
 	return not stash.is_empty() and not bool(stash.get("burned", false))
@@ -75,3 +94,4 @@ static func show_state(node: Node3D, stash: Dictionary) -> void:
 		sign.position = area.position + Vector3(0, 0.7, 0)
 	sign.text = "STORAGE / WORKSHOP" if usable else "BURNED — STORAGE UNAVAILABLE"
 	sign.modulate = Color(0.8, 0.76, 0.65) if usable else Color(0.8, 0.3, 0.2)
+

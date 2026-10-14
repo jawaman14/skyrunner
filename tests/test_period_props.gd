@@ -1,5 +1,35 @@
 extends TestCase
 
+func test_costa_brava_frontages_preserve_physical_access() -> void:
+	var k := Buildings.Kit.new("terminal-frontage-test")
+	var center := Vector3(0, 0, 18)
+	Buildings.terminal(k, center, 36, 14)
+	var collisions := k.body.get_child_count()
+	var actions := []
+	for child in k.root.get_children():
+		if child is Area3D:
+			actions.append([child.get_meta("action"), child.position])
+	Buildings.san_telmo_frontage(k, center, 36, 14)
+	check_eq(k.body.get_child_count(), collisions, "terminal dressing adds no physical obstruction")
+	var dressed_actions := []
+	for child in k.root.get_children():
+		if child is Area3D:
+			dressed_actions.append([child.get_meta("action"), child.position])
+	check_eq(dressed_actions, actions, "freight and aircraft desk access stays unchanged")
+	var terminal := k.finish()
+	var sign := terminal.get_node("san-telmo-name") as Label3D
+	check(not sign.no_depth_test and sign.billboard == BaseMaterial3D.BILLBOARD_DISABLED, "terminal name respects walls and facade orientation")
+	check(sign.basis.z.dot(Vector3.FORWARD) > 0.99, "lettering faces the terminal approach")
+	terminal.free()
+	var warehouse := Buildings.Kit.new("warehouse-frontage-test")
+	StashInterior.warehouse_frontage(warehouse, Vector3(30, 10, 18))
+	check_eq(warehouse.body.get_child_count(), 0, "warehouse doorway gains no collider")
+	var storage := warehouse.finish()
+	for child in storage.get_children():
+		check(not (child is Area3D), "painted cargo dressing implies no new inventory action")
+	storage.free()
+
+
 func test_fuel_dressing_preserves_interaction_and_collision() -> void:
 	var k := Buildings.Kit.new("fuel-test")
 	Buildings.fuel_pump(k, Vector3.ZERO)
@@ -60,3 +90,4 @@ func test_drum_stack_keeps_fuel_access_and_small_prop_budget() -> void:
 			check_eq(child.position, Vector3(0.7, 1, -1.4), "original approach position")
 	check_eq(actions, 1, "dressing adds no misleading inventory actions")
 	site.free()
+
