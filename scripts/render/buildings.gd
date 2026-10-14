@@ -673,6 +673,7 @@ static func hq(world: World, spec: Dictionary) -> Node3D:
 					_task_force(k)
 				_:
 					_compound(k)
+	hq_identity(k, str(spec.get("style", "")))
 	var node := k.finish()
 	var z := world.ground(spec.x, spec.y)
 	node.transform = SiteLayout.hq_frame(world, spec)
@@ -685,6 +686,57 @@ static func hq(world: World, spec: Dictionary) -> Node3D:
 	node.add_child(fk.finish())
 	node.set_meta("hq", spec.kind)
 	return node
+
+
+## Shallow architectural dressings use the existing walls and floors as authority.
+## The club stairwell, office approaches and HQ interaction points stay untouched.
+static func hq_identity(k: Kit, style: String) -> void:
+	match style:
+		"nightclub":
+			painted_sign(k, "club-name", "CLUB TROPICANA", Vector3(0, 5.6, -8.32), 0.025)
+			for side in [-1, 1]:
+				for fin in 3:
+					k.box(Vector3(side * (7.6 + fin * 0.65), 5.7, -8.2), Vector3(0.18, 4.4 - fin * 0.5, 0.12), "pump_cream", false)
+				k.box(Vector3(side * 1.6, 1.15, -8.18), Vector3(0.08, 2.3, 0.08), "brass", false)
+			k.box(Vector3(0, 2.35, -8.18), Vector3(3.3, 0.12, 0.08), "brass", false)
+			# Timber paneling behind the boss, kept west of the stairwell.
+			k.box(Vector3(-3, 6.15, 7.8), Vector3(9, 2.6, 0.06), "wood", false)
+			for x in [-7.0, -5.0, -1.0, 1.0]:
+				k.box(Vector3(x, 6.15, 7.75), Vector3(0.04, 2.6, 0.025), "brass", false)
+			planning_board(k, Vector3(-3, 6.2, 7.72), "green")
+		"customs":
+			painted_sign(k, "customs-name", "ADUANAS / SAN TELMO", Vector3(0, 9, -6.68), 0.017)
+			(k.root.get_node("customs-name") as Label3D).modulate = Color(0.92, 0.88, 0.72)
+			# A maritime blue band between the existing window rows.
+			k.box(Vector3(0, 3.6, -6.72), Vector3(23.5, 0.28, 0.06), "drum_blue", false)
+			for side in [-1, 1]:
+				k.box(Vector3(side * 11.65, 3.6, -6.72), Vector3(0.12, 6.5, 0.06), "pump_cream", false)
+			planning_board(k, Vector3(-2, 2.1, 6.27), "drum_blue")
+			painted_sign(k, "customs-duty-room", "CONTROL COSTERO", Vector3(-2, 3.1, 6.22), 0.009)
+		"hacienda":
+			# Shuttered veranda windows, inside the compound's established envelope.
+			for i in 4:
+				var x := lerpf(-3.0, 15.0, (i + 0.5) / 4.0)
+				for side in [-1, 1]:
+					k.box(Vector3(x + side * 0.85, 1.8, 8.72), Vector3(0.42, 1.5, 0.06), "drum_sage", false)
+					for slat in 4:
+						k.box(Vector3(x + side * 0.85, 1.25 + slat * 0.35, 8.675), Vector3(0.4, 0.025, 0.025), "wood", false)
+			k.box(Vector3(6, 3.25, 8.7), Vector3(6, 0.5, 0.06), "pump_cream", false)
+			painted_sign(k, "hacienda-name", "HACIENDA LOS CUERVOS", Vector3(6, 3.25, 8.66), 0.009)
+			for i in 12:
+				k.box(Vector3(-3 + i * 1.5, 0.115, 7), Vector3(0.65, 0.015, 0.65), "terracotta", false)
+
+
+## Analogue wall map: painted roads and pinned slips, with no live intelligence.
+static func planning_board(k: Kit, at: Vector3, key: String) -> void:
+	k.box(at, Vector3(3.2, 1.6, 0.04), "pump_cream", false)
+	k.box(at + Vector3(0, 0, -0.03), Vector3(2.9, 1.3, 0.025), key, false)
+	for x in [-0.85, 0.25, 0.9]:
+		k.box(at + Vector3(x, 0, -0.05), Vector3(0.025, 1.1, 0.015), "pump_cream", false)
+	for y in [-0.35, 0.2]:
+		k.box(at + Vector3(0, y, -0.05), Vector3(2.6, 0.025, 0.015), "pump_cream", false)
+	for x in [-1.1, 0.65]:
+		k.box(at + Vector3(x, 0.35, -0.07), Vector3(0.22, 0.3, 0.015), "white", false)
 
 
 ## The organisation's villa: stucco, terracotta, a pool, a courtyard wall. The

@@ -69,6 +69,62 @@ func test_rural_dressing_keeps_storage_aisles_and_footprints_clear() -> void:
 		site.free()
 
 
+func test_hq_and_casino_redesign_preserves_access_and_prop_budget() -> void:
+	for style in ["nightclub", "customs", "hacienda"]:
+		var k := Buildings.Kit.new("hq-redesign-test")
+		match style:
+			"nightclub": Buildings._nightclub(k)
+			"customs":
+				Buildings._task_force(k)
+				Buildings._customs(k)
+			"hacienda":
+				Buildings._compound(k)
+				Buildings._hacienda(k)
+		var collisions := k.body.get_child_count()
+		var actions := []
+		for child in k.root.get_children():
+			if child is Area3D:
+				actions.append([child.get_meta("action"), child.position])
+		Buildings.hq_identity(k, style)
+		check_eq(k.body.get_child_count(), collisions, "HQ redesign keeps the original stairs and physical access")
+		var dressed_actions := []
+		for child in k.root.get_children():
+			if child is Area3D:
+				dressed_actions.append([child.get_meta("action"), child.position])
+		check_eq(dressed_actions, actions, "HQ desks keep their original positions")
+		k.finish().free()
+	var casino := Buildings.Kit.new("casino-redesign-test")
+	CasinoBuilding._deco_identity(casino)
+	check_eq(casino.body.get_child_count(), 0, "casino portals and inlays add no physical barriers")
+	var node := casino.finish()
+	var triangles := 0
+	for child in node.get_children():
+		check(not (child is Area3D) and not (child is Light3D), "casino dressings add no actions or lighting cost")
+		if child is MeshInstance3D:
+			triangles += child.mesh.get_faces().size() / 3
+	check(triangles < 1500, "casino redesign stays within a small batched geometry budget")
+	node.free()
+
+
+func test_city_district_colours_preserve_transforms_and_window_flags() -> void:
+	var boxes := []
+	for pair in [["warehouse", MapCity.COAST_Y], ["shop", MapCity.COAST_Y], ["shop", MapCity.CITY_C.y + 1400]]:
+		boxes.append({"style": pair[0], "x": -1200.0, "y": pair[1], "z": 3.0, "w": 20.0, "d": 18.0, "h": 12.0})
+	var before := boxes.duplicate(true)
+	var collision := CityDress.colliders(boxes)
+	check_eq(boxes, before, "district colours do not mutate map geometry")
+	check_near(CityRender.district_colour(boxes[0], Color(0.5, 0.5, 0.5, 0)).a, 0, 0.001, "warehouse window flag stays off")
+	check_near(CityRender.district_colour(boxes[1], Color(0.8, 0.8, 0.8, 1)).a, 1, 0.001, "shop window flag stays on")
+	for i in boxes.size():
+		var b: Dictionary = boxes[i]
+		var shape := collision.get_child(i) as CollisionShape3D
+		check_near(shape.position.x, b.x, 0.001)
+		check_near(shape.position.z, -float(b.y), 0.001)
+	var base := Color(0.8, 0.8, 0.8, 1)
+	check(CityRender.district_colour(boxes[1], base) != CityRender.district_colour(boxes[2], base), "waterfront and inland have distinct colour treatment")
+	collision.free()
+
+
 func test_fuel_dressing_preserves_interaction_and_collision() -> void:
 	var k := Buildings.Kit.new("fuel-test")
 	Buildings.fuel_pump(k, Vector3.ZERO)

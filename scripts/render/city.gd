@@ -14,6 +14,18 @@ static var _mat: ShaderMaterial
 static var _lamp_mat: StandardMaterial3D
 static var _road_mat: StandardMaterial3D
 
+## Shared district colour treatment for both distant boxes and near model lots.
+## Positional blends avoid hard neighbourhood seams and consume no random draws.
+static func district_colour(b: Dictionary, base: Color) -> Color:
+	if b.style == "warehouse":
+		return base.lerp(Color(0.47, 0.51, 0.49, base.a), 0.65)
+	var coast := clampf(1.0 - absf(float(b.y) - MapCity.COAST_Y) / 1800.0, 0, 1)
+	var centre := clampf(1.0 - Vector2(b.x, b.y).distance_to(MapCity.CITY_C) / 2200.0, 0, 1)
+	var inland := Color(0.79, 0.72, 0.59, base.a)
+	var waterfront := Color(0.65, 0.83, 0.79, base.a)
+	var downtown := Color(0.85, 0.65, 0.61, base.a)
+	return base.lerp(inland.lerp(waterfront, coast).lerp(downtown, centre * 0.7), 0.5)
+
 
 static func city_material() -> ShaderMaterial:
 	if _mat == null:
@@ -91,7 +103,7 @@ static func box_layer(boxes: Array, q: Quality, idx := []) -> MultiMeshInstance3
 			_:
 				col = PALETTE[rng.randi() % PALETTE.size()]
 				col.a = 1.0
-		mm.set_instance_color(i, col)
+		mm.set_instance_color(i, district_colour(b, col))
 	var mmi := MultiMeshInstance3D.new()
 	mmi.name = "buildings"
 	mmi.multimesh = mm
@@ -528,3 +540,4 @@ static func _palms(world: World, roads: Array, q: Quality) -> MultiMeshInstance3
 ## a lock-up, tents under the canopy, a quarry shed, a boathouse, a villa.
 static func stash_house(world: World, st: Dictionary) -> Node3D:
 	return StashInterior.build(world, st)
+
