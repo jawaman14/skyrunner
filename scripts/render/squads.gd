@@ -217,7 +217,7 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, peo
 		men_by[f] = []
 	var head_xf := []
 	var flash_xf := []
-	var entries := []  ## every man: [key, faction, look, Transform3D, anim, tier, dist]
+	var entries := []  ## every man: [key, faction, look, Transform3D, anim, tier, dist²]
 	men_pts = []
 	var fighting := {}
 	for fx in fights:
@@ -245,7 +245,7 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, peo
 				var off := Vector2(_rng.randf_range(-6, 6), _rng.randf_range(-6, 6))
 				fallen.append([now, Vector3(p.x + off.x, world.ground(p.x + off.x, p.y + off.y), -(p.y + off.y)), d.faction, _rng.randf() * TAU])
 		last_men[id] = men
-		if g3.distance_to(cam) > range_m:
+		if g3.distance_squared_to(cam) > range_m * range_m:
 			_hide_vehicle(id)
 			continue
 		var moving: bool = d.state in ["moving", "routed"] and step.length() > 0.5
@@ -259,7 +259,7 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, peo
 			v.visible = true
 			v.position = g3 + Vector3(0, 0.45, 0)  # the roads are draped 0.45 m up
 			v.rotation = Vector3(0, -sp[1], 0)
-		if riding or bool(d.hidden) and d.faction != "police" and cam.distance_to(g3) > 150.0:
+		if riding or bool(d.hidden) and d.faction != "police" and cam.distance_squared_to(g3) > 22500.0:
 			continue  # in the car, or melted into the crowd
 		var yaw: float = -sp[1]
 		if fighting.has(id):
@@ -293,7 +293,7 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, peo
 			var a := anim
 			if tier == "pistol" and anim.begins_with("holding-both"):
 				a = anim.replace("both", "right")
-			entries.append(["%s#%d" % [id, k], d.faction, look, Transform3D(basis, wp), a, tier, wp.distance_to(cam), k + id.hash()])
+			entries.append(["%s#%d" % [id, k], d.faction, look, Transform3D(basis, wp), a, tier, wp.distance_squared_to(cam), k + id.hash()])
 			if fighting.has(id) and _rng.randf() < 0.35:
 				flash_xf.append(Transform3D(Basis.IDENTITY, wp + Vector3(0, 1.25, 0) + fwd * 0.9 + right * 0.12))
 	# the payroll's people (People.draw_list): a man at his post or walking to it, or in the car taking him there
@@ -311,7 +311,7 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, peo
 		psp[0] = ptarget if pstep.length() > 400.0 else pcur + pstep * clampf(dt * 1.5, 0.0, 1.0)
 		var pp: Vector2 = psp[0]
 		var pg := Vector3(pp.x, world.ground(pp.x, pp.y), -pp.y)
-		if pg.distance_to(cam) > range_m:
+		if pg.distance_squared_to(cam) > range_m * range_m:
 			_hide_vehicle(pid)
 			continue
 		if bool(pd.car):
@@ -327,12 +327,12 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, peo
 		_hide_vehicle(pid)
 		var pwp := pg + Vector3(0, 0.3, 0)
 		entries.append([pid, pd.faction, pd.faction, Transform3D(Basis(Vector3.UP, -float(psp[1])), pwp), "walk" if pd.moving else "idle", "",
-			pwp.distance_to(cam), pid.hash()])
+			pwp.distance_squared_to(cam), pid.hash()])
 	# the nearest men as characters, the rest as figures
 	entries.sort_custom(func(a, b): return a[6] < b[6])
 	var used := {}
 	for e in entries:
-		if used.size() < near_n and e[6] < NEAR_M:
+		if used.size() < near_n and e[6] < NEAR_M * NEAR_M:
 			_actor(e[0], e[2], e[7], e[3], e[4], e[5])
 			used[e[0]] = true
 		else:
@@ -370,7 +370,7 @@ func sync(squads: Array, fights: Array, cam: Vector3, now: float, dt: float, peo
 	var near_dead := 0
 	for i in fallen.size():
 		var fl: Array = fallen[i]
-		if near_n > 0 and near_dead < FALLEN_NEAR and fl[1].distance_to(cam) < NEAR_M:
+		if near_n > 0 and near_dead < FALLEN_NEAR and fl[1].distance_squared_to(cam) < NEAR_M * NEAR_M:
 			var key := "fallen#%d#%d" % [int(fl[0] * 1000.0), i]
 			_actor(key, fl[2], i, Transform3D(Basis(Vector3.UP, fl[3]), fl[1]), "die", "")
 			used[key] = true

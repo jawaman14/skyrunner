@@ -209,6 +209,7 @@ Second wave, larger features:
       there. BALANCE entry 37. Not done: men taking the best cover near them (cover is still the squad
       centre's terrain), retreating to keep a range, vehicles dismounting, and a squad deciding to fight
       or flee from the geometry rather than from the flat odds.
+      **Turf expansion (in progress):** `Territories` adds map-scoped district IDs while retaining the four economy markets as parent rollups. Costa Brava has ten authored areas; classic/generated maps use their current market centres. Ground control, squad decisions and exposed one-leg truck routes read the local layer. Stable region IDs allow later maps to bring their own districts. Initial local verification passed (898 tests, Costa Brava smoke, and a 200-seed war balance run); the balance run shifts the war economy and losses and needs interpretation before tuning. Not yet: a visible territory map, balance calibration for district control, and authored content for an additional region.
 - **Roads.** Done: a planned network in `data/maps/city_roads.json` from `tools/plan_roads.gd`,
   see docs/ROADS.md. La Selva has no road on purpose (it stays the remote strip). The balance re-run on the ring roads is
   BALANCE entry 36 (a larger re-run with a confidence interval is under way).

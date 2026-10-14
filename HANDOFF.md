@@ -1,3 +1,13 @@
+# Turf expansion checkpoint — 2026-10-14
+
+- User approved expanding the current island first and then supporting additional playable regions, with combat and logistics NPC behavior in scope.
+- Worktree: `C:\Users\BarryBee\Documents\ChatGPT\skyrunner-turfwar`, branch `codex/turf-war-expansion`, based on `c521775bbeba8d035ab4406278afe233ac25bf8f`.
+- Design and plan: `docs/superpowers/specs/2026-10-14-turf-war-expansion-design.md` and `docs/superpowers/plans/2026-10-14-turf-war-expansion-plan.md`.
+- Implementation adds map region IDs, ten Costa Brava districts, generic market-centre areas for classic/generated maps, region-qualified local control in the war snapshot and save migration, geometry-aware fight decisions, contested-area patrol targets, selective escorts, and progress-preserving reroutes for exposed one-leg delivery trucks.
+- Verification: after the cleanup, the full suite passed 899/899 in 511.1 s; focused agent (20), analyst (11), ground war (38), effects (14) and city map (8) suites passed. The earlier Costa Brava 1,800-frame smoke run printed `SMOKE OK`; the 200-seed, 3-hour live war balance run completed and its figures are in `docs/BALANCE.md` (war money p50 $39,882; 11.53 fights/run). The analyst formatting errors and 65 debris-timer lambda-capture errors are fixed. Full tests reported zero string-format and zero lambda-capture errors; Godot still prints shutdown renderer/resource-leak diagnostics. No CI, commit, push, PR or merge was run.
+- Cleanup: territory catalogs validate on initial/selected layouts; stash trucks delegate remaining-route calculation to `Agent`; territory snapshots respect `Territories.ENABLED`; territory seeding groups areas once; unused `MapLayout.extra_trees` was removed; analyst guidance escapes the percent formatter; FX debris timers now hold weak references rather than closed-over bodies. Agent-route and debris-lifecycle regressions are covered. The whole-game scan found no duplicated function bodies; police line-of-sight checks and per-frame squad render sorting remain profile-first performance candidates.
+- Shared MCP claim IDs: `0477dbef4ebb409ab32540b14c98ea6b` and `f360f902b8b34133b6281f8e4590cf5f`. Keep the separate #373 city worktree untouched.
+
 # Update 2026-10-03: everything below the line was written on 2026-09-28; this is what changed since
 
 **Where things are.** `main` has all of the work stacked since the cloud handoff (PRs #1-#38, merged bottom-up

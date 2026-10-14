@@ -1021,7 +1021,7 @@ func _draw_analyst(snap: Dictionary) -> void:
 		colors[i] = UIStyle.GREEN if r.checked == "good" else (UIStyle.RED if r.checked == "bad" else UIStyle.WHITE)
 	_set_list("analyst", keys, cells, colors, [{"title": "Tip", "min": 50}, {"title": "From", "min": 110}, {"title": "Age", "align": "right", "min": 60},
 		{"title": "Check", "min": 110}, {"title": "What", "expand": true, "ratio": 3}])
-	info.text = ("Tips wait here before dispatch sees them. Check one (45 s: right about 85% of the time), then forward it or bin it. A false lead costs $1,000; a real one binned is a load that gets through. Untouched tips go to dispatch after %d s." % int(a.get("stale_s", 150))) if rows.is_empty() else ""
+	info.text = ("Tips wait here before dispatch sees them. Check one (45 s: right about 85%% of the time), then forward it or bin it. A false lead costs $1,000; a real one binned is a load that gets through. Untouched tips go to dispatch after %d s." % int(a.get("stale_s", 150))) if rows.is_empty() else ""
 	detail.text = ""
 	var sel := list.selected_row()
 	if sel >= 0 and sel < rows.size():

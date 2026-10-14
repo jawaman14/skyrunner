@@ -70,6 +70,19 @@ func test_clear_cancels_everything() -> void:
 	check_near(a.x, 1.4, 0.1, "stays wherever it got to, not reset")
 
 
+func test_remaining_route_starts_at_position_and_keeps_only_ahead_waypoints() -> void:
+	var a := Agent.new("A5-route", "car", 0.0, 0.0)
+	a.speed = 10.0
+	var path := PackedVector2Array([Vector2(0, 0), Vector2(100, 0), Vector2(100, 100)])
+	a.queue(Agent.Task.new("drive", Vector2(100, 100), 0.0, path))
+	a.update(5.0)
+	var remaining := a.remaining_route()
+	check_eq(remaining.size(), 3, "current point and both ahead waypoints remain")
+	check_near(remaining[0].x, 50.0, 0.01, "route starts at current position")
+	check_near(remaining[1].x, 100.0, 0.01, "route retains the next waypoint")
+	check_near(remaining[2].y, 100.0, 0.01, "route retains the destination")
+
+
 func test_a_car_agent_follows_the_road_graph() -> void:
 	World.use_map(MapCity.SEED)
 	var w := World.new()

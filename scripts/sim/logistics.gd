@@ -46,6 +46,7 @@ var lost_by := {"seized": 0, "hijacked": 0, "raided": 0, "bust": 0}  ## ... the 
 var last := ""
 var _t := 0.0
 var _watch_t := 0.0
+var _route_t := 0.0
 var _move_t := -1e9  ## the last product move (the AI waits AI_MOVE_EVERY_S between them)
 var _item_id := 0
 
@@ -664,16 +665,19 @@ func _pull_over(dt: float) -> void:
 	if cps.is_empty():
 		return
 	for t in sess.stash_net.trucks:
-		if not convoys.has(t.job_id) or sess.time - t.t0 < t.lead_s() or t.route.size() < 2:
+		if not convoys.has(t.job_id) or sess.time - t.t0 < t.lead_s():
 			continue
 		var here := Vector2(t.pos(sess.time)[0], t.pos(sess.time)[1])
+		var route: PackedVector2Array = t.remaining_route()
+		if route.size() < 2:
+			continue
 		var escorted: bool = sess.ground.squads.any(func(q): return q.faction == "org" and int(q.order.get("job_id", -1)) == t.job_id and q.state != "gone")
 		if escorted:
 			continue
 		var ahead := false
 		for q in cps:
 			var d: float = q.pos().distance_to(here)
-			if d > 350.0 and d < 2500.0 and _near_route(t.route, q.pos()):
+			if d > 350.0 and d < 2500.0 and _near_route(route, q.pos()):
 				ahead = true
 				break
 		if ahead:
@@ -707,6 +711,13 @@ func truck_info(t) -> Dictionary:
 	elif c.lb <= 0.0 and c.cash > 0.0:
 		kind = "cash"
 	return {"kind": kind, "to": name_of(c.to), "tx": t.x1, "ty": t.y1, "waiting": c.get("waiting", false)}
+
+
+func route_risk(t) -> float:
+	if sess.ground == null or not Territories.ENABLED or t.route.size() < 2:
+		return 0.0
+	var route: PackedVector2Array = t.remaining_route()
+	return maxf(0.0, sess.ground.route_cost("org", route) - RoadGraph.length(route))
 
 
 func owns(t) -> bool:
@@ -952,6 +963,10 @@ func update(dt: float) -> void:
 	if _watch_t >= 5.0:
 		_pull_over(_watch_t)
 		_watch_t = 0.0
+	_route_t += dt
+	if _route_t >= 30.0:
+		_refresh_routes()
+		_route_t = 0.0
 	_t += dt
 	if _t < 60.0:
 		return
@@ -1008,6 +1023,28 @@ func update(dt: float) -> void:
 				send(from, to.id, g, minf(most, want), true)
 				_move_t = sess.time
 				return
+
+
+func _refresh_routes() -> void:
+	if sess.ground == null or sess.stash_net == null or not Agent.ENABLED or not GroundWar.ENABLED or not Territories.ENABLED:
+		return
+	for t: StashNet.Truck in sess.stash_net.trucks:
+		if not convoys.has(t.job_id) or t.agent == null or not t.legs.is_empty():
+			continue
+		var task := t.agent.current()
+		if task == null or task.kind != "drive" or t.agent.route.size() < 2:
+			continue
+		var here := t.agent.pos()
+		var remaining := t.remaining_route()
+		var candidate: PackedVector2Array = sess.ground.route("org", here, Vector2(t.x1, t.y1))
+		if candidate.size() < 2:
+			continue
+		var old_cost: float = sess.ground.route_cost("org", remaining)
+		var new_cost: float = sess.ground.route_cost("org", candidate)
+		if old_cost - new_cost < 500.0:
+			continue
+		if t.reroute(candidate):
+			t.sync(sess.time)
 
 
 # ------------------------------------------------------------------ views

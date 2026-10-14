@@ -85,6 +85,22 @@ func left_m() -> float:
 	return maxf(0.0, RoadGraph.length(route) - s) if not tasks.is_empty() else 0.0
 
 
+## Current position followed by the remaining waypoints on the active route.
+func remaining_route() -> PackedVector2Array:
+	if current() == null or route.size() < 2:
+		return PackedVector2Array([pos()])
+	var out := PackedVector2Array([pos()])
+	var distance := 0.0
+	for i in range(1, route.size()):
+		var a: Vector2 = route[i - 1]
+		var b: Vector2 = route[i]
+		var leg := a.distance_to(b)
+		if distance + leg > s + 0.01 and pos().distance_to(b) > 0.01:
+			out.append(b)
+		distance += leg
+	return out
+
+
 ## Adds a task to the end of the queue; a new leg is routed only once it
 ## becomes the one under way (queuing several keeps the plan, not the path,
 ## until each is reached - the road graph can change underfoot otherwise).
@@ -106,6 +122,39 @@ func clear() -> void:
 ## Stuck for `seconds` more: nothing moves or gets done until they pass.
 func hold(seconds: float) -> void:
 	_held += seconds
+
+
+## Replace the part of a drive route still ahead, preserving the travelled path and progress.
+func reroute(route_to_goal: PackedVector2Array) -> bool:
+	if tasks.is_empty() or route_to_goal.size() < 2 or route.size() < 2:
+		return false
+	var task: Task = tasks[0]
+	if task.kind != "drive" and not task.kind.begins_with("stop:"):
+		return false
+	var prefix := PackedVector2Array()
+	prefix.append(route[0])
+	var distance := 0.0
+	for i in range(1, route.size()):
+		var a: Vector2 = route[i - 1]
+		var b: Vector2 = route[i]
+		var leg := a.distance_to(b)
+		if distance + leg < s - 0.01:
+			prefix.append(b)
+			distance += leg
+			continue
+		var at := RoadGraph.along(route, s)
+		if prefix[prefix.size() - 1].distance_to(at) > 0.01:
+			prefix.append(at)
+		break
+	for i in range(1, route_to_goal.size()):
+		var p: Vector2 = route_to_goal[i]
+		if prefix[prefix.size() - 1].distance_to(p) > 0.01:
+			prefix.append(p)
+	if prefix.size() < 2:
+		return false
+	route = prefix
+	task.route = prefix
+	return true
 
 
 func _route_to(task: Task, graph: RoadGraph = null) -> void:

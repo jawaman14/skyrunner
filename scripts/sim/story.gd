@@ -94,7 +94,8 @@ const CHAPTERS := [
 		+ "Central America that Congress won't pay for. Fly his crates south, bring his\n"
 		+ "product north, sell him guns - and pray nobody ever holds the hearings.",
 		["agency"],
-		[["agency_jobs", "Fly a job for the Company", 1], ["guns_to_company", "Sell the Company 4 guns", 4]]],
+		[["agency_jobs", "Fly a job for the Company", 1], ["guns_to_company", "Sell the Company 4 guns", 4],
+			["general_choice", "Choose the General's fate", 1]]],
 	[1986, "Kingpin",
 		"The mandatory minimums pass, the Commission trial starts in New York, and every\n"
 		+ "faction on the coast wants what's ours. Build it big enough that it doesn't\n"
@@ -130,6 +131,7 @@ var progress := {}  ## goal key -> value this chapter
 var opened := {}  ## every system and lock opened so far
 var completed_all := false
 var show_briefing := true
+var company_decision := ""  ## remove | spare | skipped: the Company order at the end of Chapter 9
 var _last_t := -1.0  ## the clock at the last tick (for the goals that count minutes)
 var sess = null
 var _chapter: Campaign.Chapter = null
@@ -151,12 +153,20 @@ var chapter: Campaign.Chapter:
 					o.optional = bool(g[3])
 					o.bonus = int(g[4])
 				goals.append(o)
-			_chapter = Campaign.Chapter.new(index + 1, c[0], c[1], c[2], [], [], goals)
+			var briefing: String = c[2]
+			if c[1] == "Kingpin":
+				if company_decision == "remove":
+					briefing += "\nThe Moretti-backed government now controls Isla Soberana. Containers clear more often, but the Family takes its cut."
+				elif company_decision == "spare":
+					briefing += "\nThe General still grants passage, but the Company has withdrawn its protection. The Morettis remember you refused Washington."
+				elif company_decision == "skipped":
+					briefing += "\nThe Company cut you loose before the order came. The General remains in power and the island route stays open."
+			_chapter = Campaign.Chapter.new(index + 1, c[0], c[1], briefing, [], [], goals)
 		return _chapter
 
 
 func to_dict() -> Dictionary:
-	return {"index": index, "progress": progress, "done": completed_all, "v": 3}
+	return {"index": index, "progress": progress, "done": completed_all, "company_decision": company_decision, "v": 4}
 
 
 static func from_dict(d) -> Story:
@@ -170,7 +180,36 @@ static func from_dict(d) -> Story:
 		idx += 1  # ... and from before 'Blotter' was added after The Connection
 	var st := Story.new(idx, d.get("progress"))
 	st.completed_all = bool(d.get("done", false))
+	st.company_decision = str(d.get("company_decision", ""))
 	return st
+
+
+func company_choice_ready() -> bool:
+	return chapter.title == "The Company" and company_decision == "" \
+		and progress.get("agency_jobs", 0.0) >= 1.0 and progress.get("guns_to_company", 0.0) >= 4.0
+
+
+func choose_general(decision: String) -> bool:
+	if not company_choice_ready() or decision not in ["remove", "spare"]:
+		return false
+	company_decision = decision
+	progress["general_choice"] = 1.0
+	if decision == "remove":
+		sess.island.controller = "mob"
+		sess.island.relations = 20.0
+		sess.agency.trust = minf(100.0, sess.agency.trust + 20.0)
+		sess.agency.exposure = minf(100.0, sess.agency.exposure + 8.0)
+		sess.family.respect = minf(100.0, sess.family.respect + 10.0)
+		sess.say("The General is gone. The Moretti-backed government takes Isla Soberana; the Company protects the operation for now.")
+	else:
+		sess.island.relations = minf(100.0, sess.island.relations + 15.0)
+		sess.agency.trust = maxf(0.0, sess.agency.trust - 25.0)
+		sess.agency.exposure = minf(100.0, sess.agency.exposure + 12.0)
+		sess.agency.protected_until = minf(sess.agency.protected_until, sess.time)
+		sess.family.respect = minf(100.0, sess.family.respect + 25.0)
+		sess.say("You refuse the order. The General keeps the island; the Morettis back your independence, and the Company pulls its protection.")
+	sess.save()
+	return true
 
 
 ## The index of the chapter titled `title` (the chapters are found by name so that adding one does not break the code that waits on another).
@@ -345,8 +384,9 @@ func tick(s) -> void:
 				cz.force_uprising_at = s.time + 600.0
 				s.say("Word from the capital: the General's colonels are meeting. It may be time to be somewhere else.")
 	if s.agency != null and (not s.agency.active() or s.agency.hung_out) and chapter.title == "The Company" and progress.get("agency_jobs", 0.0) < 99.0:
-		for k in ["agency_jobs", "guns_to_company"]:
+		for k in ["agency_jobs", "guns_to_company", "general_choice"]:
 			_put(k, 99.0)
+		company_decision = "skipped"
 		s.say("The Company has cut us loose. So much for friends in Washington - the story moves on.")
 	_put("bank", float(s.money))
 	_put("net_worth", float(s.money) + (s.trade.stock_value() if s.trade != null else 0.0)
