@@ -255,3 +255,28 @@ func test_too_close_falls_back_to_a_plain_hold() -> void:
 	check(s.autopilot.waypoints.is_empty(), "nothing close enough is worth routing to")
 	check_near(s.autopilot.hdg_target, h0, 1.0, "just holds the heading it was on")
 	s.dispose()
+
+
+func test_ai_pilot_takes_over_without_stale_autopilot() -> void:
+	var s := _sess()
+	_airborne(s)
+	s.command(Roles.PILOT, "autopilot", {"on": true})
+	check(s.autopilot.engaged, "autopilot starts engaged")
+	s.seats.release(Roles.PILOT)
+	check_eq(s.seats.who(Roles.PILOT), "ai", "AI takes the pilot seat")
+	check(not s.autopilot.engaged, "AI handoff disconnects the old autopilot mode")
+	s.dispose()
+
+
+func test_ai_controls_do_not_cancel_its_own_autopilot() -> void:
+	var s := _sess()
+	_airborne(s)
+	s.seats.release(Roles.PILOT)
+	s.autopilot.engage(s.state, s.fm.controls.elevator)  # AI uses it during a solo airdrop
+	var inp := ControlMapper.InputFrame.new()
+	inp.held["roll_left"] = true  # host input must not override the AI seat
+	var ai := FlightModel.Controls.make({"aileron": 0.25, "throttle": 0.8})
+	s.update(1.0 / 30.0, inp, ai)
+	check(s.autopilot.engaged, "host stick input does not disconnect an AI-owned autopilot")
+	check_near(s.fm.controls.aileron, 0.25, 0.01, "AI controls win this frame")
+	s.dispose()
