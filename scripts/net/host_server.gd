@@ -345,6 +345,9 @@ func _message(c: Conn, msg: Dictionary) -> void:
 	match msg.get("t"):
 		"claim":
 			var role := str(msg.get("role", ""))
+			if mode == Roles.CAMPAIGN and not Roles.MODE_ROLES[Roles.CAMPAIGN].has(role):  # a later claim may not reach the desks the hello refuses
+				c.peer.put_data(line({"t": "claim_failed", "msg": "The campaign has no %s seat (pilot, copilot, spotter, boat)." % role}))
+				return
 			c.seat_generation += 1
 			if c.role != "":
 				_clear_input(c)

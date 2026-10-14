@@ -249,6 +249,7 @@ func test_the_campaign_a_start_chapter_and_watch_are_server_options() -> void:
 	var w := DedicatedServer.parse(["--autopilot", "false", "--watch"], {})
 	check(bool(w.cfg.autopilot), "--watch turns the AI pilot on, whatever --autopilot said")
 	check_eq(DedicatedServer.parse(["--chapter", "-4"], {}).cfg.chapter, 0, "a negative chapter is the start")
+	check_eq(DedicatedServer.parse(["--chapter", "13"], {}).cfg.chapter, Story.CHAPTERS.size(), "a chapter past the story stops at the last one: --chapter 13 must not finish the whole story")
 	var o := DedicatedServer.new({"mode": "campaign"}).session_options()
 	check_eq(o.mode, "campaign")
 	check(not o.has("money") and not o.has("career"), "no start-up float and no story career: the chapters set the game up")
@@ -274,6 +275,18 @@ func test_a_campaign_server_refuses_desks_that_are_not_in_the_campaign() -> void
 	check("no boss seat" in str(boss.error), "with a reason: %s" % str(boss.error))
 	var pilot := _client("Bo", Roles.PILOT)
 	check(_pump_until(func(): return pilot.latest != null), "the pilot's seat is still open")
+
+
+## A later claim is held to the same four seats: a guest can join with no role and ask for the boss desk afterwards (the bot's second review of #357).
+func test_a_campaign_server_refuses_a_later_claim_for_a_desk_outside_the_campaign() -> void:
+	_server({"mode": "campaign"})
+	var guest := _client("Ann", "")
+	check(_pump_until(func(): return _srv.srv.conns.filter(func(x): return x.joined).size() == 1), "the guest joins with no seat")
+	guest.claim(Roles.BOSS)
+	check(_pump_until(func(): return guest.claim_error != null), "the boss desk is refused on a later claim")
+	check("no boss seat" in str(guest.claim_error), "with a reason: %s" % str(guest.claim_error))
+	guest.claim(Roles.PILOT)
+	check(_pump_until(func(): return guest.role == Roles.PILOT), "and the pilot's seat is still open")
 
 
 ## And: a server that cannot listen must not advance the story or touch the save (--chapter advances and saves each step).

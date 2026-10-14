@@ -78,7 +78,7 @@ static func parse(args: Array, env := {}) -> Dictionary:
 	if int(c.map) == 0:
 		err = PlayableMaps.CLASSIC_REMOVED
 	c["max_players"] = clampi(int(c.max_players), 1, 64)
-	c["chapter"] = maxi(0, int(c.chapter))
+	c["chapter"] = clampi(int(c.chapter), 0, Story.CHAPTERS.size())
 	if bool(c.watch):
 		c["autopilot"] = true
 	return {"cfg": c, "error": err}
