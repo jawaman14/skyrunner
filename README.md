@@ -40,6 +40,24 @@ $GODOT --path . -- --unlocks open     # skip the lobby: everything open from the
 Nothing to build: you can also just open the folder in Godot 4.7 and press play. Press **F1** in game for the
 keys, **F8** to rebind them, **F4** for the multiplayer menu.
 
+## The world on screen
+
+The story runs from 1979 into the late 1980s, but its visual baseline stays in **1979–82** throughout. Costa Brava
+uses low-poly coastal streets, airfields, farms, mangroves and docks. The [asset bible](docs/ASSET_BIBLE.md) sets
+the period rules for buildings, vehicles, clothing, equipment and analogue technology.
+
+- **Scenery and surfaces:** city-kit buildings and street details sit over procedural terrain textures. The ground,
+  roads and buildings darken in rain; the sea shows shallow water, shoreline foam and nearby rain ripples.
+- **Vehicles:** period-inspired car, van, truck, ambulance and patrol silhouettes share the existing driving and
+  traffic systems. Their model keys remain stable for saves. Visible age, repairs and damage are still an art task.
+- **Weather and effects:** rain follows the wind; storms change light and visibility; sea fog shortens the view.
+  Fire, smoke, explosions, debris, dust and water splashes use layered effects.
+- **Weapons:** on-foot weapons use the existing low-poly pack. Their silhouettes, especially the generic rifle,
+  still need a period and in-game readability review.
+
+The [asset coverage list](docs/ASSET_COVERAGE.md) tracks unfinished visual work. Rendered screenshots and a human
+walk-and-drive review are required before treating the scenery and vehicle changes as visually accepted.
+
 ## The game
 
 ### Fly
