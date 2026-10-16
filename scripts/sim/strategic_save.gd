@@ -244,7 +244,7 @@ static func restore(s: Session, d: Dictionary) -> void:
 		var c = s.police.case("runner")
 		c.suspicion = float(d.case.get("suspicion", 0.0))
 		c.bust_meter = float(d.case.get("bust_meter", 0.0))
-		c.rival_meter = float(d.case.get("rival_meter", 0.0))
+		c.rival_meter = 0.0  # nothing fills or decays this any more (no air hijack): an old save must not leave the HUD bar stuck
 	if s.court != null and d.get("court") is Dictionary:
 		s.court.case_ = d.court.get("case")
 		s.court.history = d.court.get("history", [])

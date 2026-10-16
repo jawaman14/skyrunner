@@ -20,7 +20,6 @@ const ENDURANCE_S := {"heli": 900.0, "interceptor": 1200.0, "rival": 1e9}  # the
 const CALLSIGNS := {"heli": "Hawk", "interceptor": "Falcon", "rival": "Rival", "cutter": "Cutter"}
 
 const BUST_RANGE_M := 350.0
-const RIVAL_RANGE_M := 250.0
 const SIGHT_RANGE_M := 4500.0
 const LANDING_BUST_RANGE_M := 2500.0
 const SWEEP_INTERVAL_S := 1.0
