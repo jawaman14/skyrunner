@@ -27,8 +27,9 @@ const CHAPTERS := [
 		+ "Buy it at the bush strips, fly it into our stash houses, and hire a kid or two\n"
 		+ "to sell it on the corners [Phone > Manny Ortega]. Low money, low risk - for now.",
 		["trade", "payroll", "chronicle"],
-		[["weed_lb", "Fly 150 lb of marijuana into our stash houses", 150], ["dealers", "Put a street dealer on a corner", 1],
-			["trade_earned", "Make $2,500 from the trade", 2500]]],
+		[["weed_lb", "Fly 150 lb of grass to our stash houses (take the grass jobs on the bush strips' boards [J], land at the stash house)", 150],
+			["dealers", "Hire a street dealer for a corner [Phone > Manny Ortega]", 1],
+			["trade_earned", "Earn $2,500 from the corners: the product your dealers sell counts as you are paid", 2500]]],
 	[1980, "The Connection",
 		"The boatlift brings a hundred thousand people across the straits, and a few of them
 "

@@ -389,10 +389,29 @@ func _world_marks(font: Font) -> void:
 			var to := to_screen(t.x1, t.y1)
 			if _inside(to):
 				draw_line(tq, to, Color(col, 0.35), 1.0)
+				if big:  # the destination, named
+					draw_arc(to, 6.0, 0, TAU, 14, Color(col, 0.8), 1.5)
+					var sh_to = s.stash_net.get_stash(t.stash)
+					_label(font, to + Vector2(9, 12), "> %s" % (str(sh_to.name) if sh_to != null else "stash"), 10, col)
 			draw_circle(tq, 3.5, col)
 	for b in s.maritime.boats:
 		if b.kind == "gofast" and b.state != "delivered":
 			var bp := to_screen(b.x, b.y)
+			var dest = null  # where it is going: the cove with the load, the pickup point before that
+			var dest_name := ""
+			if b.state in ["running", "fleeing"] and not b.cargo.is_empty():
+				dest = b.home
+				dest_name = "cove"
+			elif b.state in ["to_rendezvous", "waiting"] and b.goal != null:
+				dest = b.goal
+				dest_name = "pickup"
+			if dest != null:
+				var dq := to_screen(float(dest[0]), float(dest[1]))
+				draw_line(bp, dq, Color(0.3, 0.9, 1, 0.35), 1.0)
+				if _inside(dq, 8.0):
+					draw_arc(dq, 6.0, 0, TAU, 14, Color(0.3, 0.9, 1, 0.8), 1.5)
+					if big:
+						_label(font, dq + Vector2(9, 4), "%s > %s%s" % [b.id, dest_name, " (%d bales)" % b.cargo.size() if not b.cargo.is_empty() else ""], 11, Color(0.3, 0.9, 1))
 			if _inside(bp, 4.0):
 				_cross(bp, Color(0.3, 0.9, 1), 4.0)
 	for bl in s.maritime.bales:

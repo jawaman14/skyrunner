@@ -17,6 +17,37 @@ static func _airdrop(s: Session, bales: int) -> Jobs.Job:
 	return job
 
 
+## Owner, 17 Oct: when the boat picks the load up the player gets updates (each bale, then "running for the cove").
+func test_the_boat_reports_each_bale_and_when_it_runs_for_the_cove() -> void:
+	var m := Maritime.new(World.new(), PyRandom.new())
+	var spot: Array = m.cove.duplicate()
+	var boat := m.new_gofast(spot, 77)
+	boat.x = float(spot[0])
+	boat.y = float(spot[1])
+	boat.state = "waiting"
+	var bale := Maritime.Bale.new()
+	bale.id = 1
+	bale.job_id = 77
+	bale.x = float(spot[0])
+	bale.y = float(spot[1])
+	bale.state = "floating"
+	m.bales.append(bale)
+	var kinds := []
+	var counts := {}
+	for i in 400:
+		m.update(1.0)
+		for ev in m.events:
+			kinds.append(ev[0])
+			counts[ev[0]] = ev[1].get("count", -1)
+		m.events.clear()
+		if kinds.has("boat_running"):
+			break
+	check(kinds.has("bale_collected"), "the boat reports the bale it took aboard")
+	check_eq(int(counts.get("bale_collected", -1)), 1, "with how many are aboard")
+	check(kinds.has("boat_running"), "and reports that it is running for the cove")
+	check_eq(int(counts.get("boat_running", -1)), 1, "with the load it carries")
+
+
 func test_the_gate_lets_the_copilot_crew_but_not_fly() -> void:
 	var s := T.sess(5)
 	T.idle(s, 0.3)
