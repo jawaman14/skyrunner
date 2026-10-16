@@ -20,7 +20,6 @@ const ENDURANCE_S := {"heli": 900.0, "interceptor": 1200.0, "rival": 1e9}  # the
 const CALLSIGNS := {"heli": "Hawk", "interceptor": "Falcon", "rival": "Rival", "cutter": "Cutter"}
 
 const BUST_RANGE_M := 350.0
-const RIVAL_RANGE_M := 250.0
 const SIGHT_RANGE_M := 4500.0
 const LANDING_BUST_RANGE_M := 2500.0
 const SWEEP_INTERVAL_S := 1.0
@@ -638,7 +637,7 @@ func predict_destination(sig: SensorNet.Signature, origin = null):
 
 
 # ---------------------------------------------------- main tick
-## Advance the task force. Returns {target_id: "busted" | "clean" | "hijacked"}.
+## Advance the task force. Returns {target_id: "busted" | "clean"}.
 func tick(dt: float, now_: float, targets: Array) -> Dictionary:
 	if frozen:
 		return {}
@@ -798,15 +797,8 @@ func tick(dt: float, now_: float, targets: Array) -> Dictionary:
 			_rival_spawned[tid] = true
 			if rng.random() < 0.6:
 				spawn_rival([t.sig.x, t.sig.y], tid)
-				events.append("Rival smugglers inbound! Don't let them close in.")
-		var rclose := Py.any(seen_by.get("rival:" + tid, []), func(u): return u.dist_to(t.sig) < RIVAL_RANGE_M)
-		c.rival_meter = minf(100.0, c.rival_meter + 14 * dt) if rclose else maxf(0.0, c.rival_meter - 10 * dt)
-		if c.rival_meter >= 100:
-			c.rival_meter = 0.0
-			for u in units:
-				if u.faction() == "rival" and u.target_id == tid:
-					u.state = "return"
-			outcomes[tid] = "hijacked"
+				events.append("Rival smugglers inbound. They will chase you, but they cannot take the cargo.")
+		# Rival smugglers chase and can be shot, but they never take the cargo from the air (owner, 14 Oct): the old rival meter and the "hijacked" outcome are gone.
 	return outcomes
 
 
