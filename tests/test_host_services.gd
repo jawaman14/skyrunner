@@ -50,3 +50,25 @@ func test_client_seat_setup_reuses_one_voice_pipeline() -> void:
 	check_eq(_count(app, VoiceChat), 1)
 	app.free()
 	link.free()
+
+
+## The beacon belongs to the server node, the dedicated server included (owner, 12 Oct): one Announcer child, the same one on a second call,
+## the server's own name and no player count for the server itself.
+func test_a_dedicated_server_owns_its_beacon_too() -> void:
+	var server := HostServer.new()
+	server.dedicated = true
+	server.host_name = "Island server"
+	server.advert_name = "Island server"
+	server.port = 47900
+	var beacon := server.ensure_beacon()
+	check_eq(_count(server, LanDiscovery.Announcer), 1, "the beacon is the server's child")
+	check_eq(server.ensure_beacon(), beacon, "asking again returns the same beacon")
+	var info: Dictionary = beacon.info.call()
+	check_eq(info.name, "Island server", "a dedicated server shows its own name")
+	check_eq(info.port, 47900)
+	check_eq(info.players, 0, "nobody is at an empty dedicated server")
+	server.advert_name = ""
+	server.dedicated = false
+	check_eq(beacon.info.call().name, "Island server's game", "a hosted game is '<host>'s game'")
+	check_eq(beacon.info.call().players, 1, "the host counts at a hosted table")
+	server.free()

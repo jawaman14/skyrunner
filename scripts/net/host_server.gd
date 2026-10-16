@@ -75,6 +75,7 @@ var password := ""  ## a dedicated server's: a hello without it is refused ("" =
 var log_fn: Callable = Callable()  ## called with a line of text for joins, leaves and refusals (the dedicated server prints them)
 var host_name := "host"
 var announce := true  ## the LAN beacon says where this game is (the menu switches it)
+var advert_name := ""  ## the name the beacon shows ("" = "<host name>'s game"; a dedicated server shows its own name)
 var _keyed := {}  ## talker token -> {t0, n, sec, last} (when the key went down; frames this second)
 var _seats_rev := -1
 var _seats_t := 0.0
@@ -270,6 +271,8 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		err = "The host isn't ready yet."
 	elif role != "" and not Roles.valid(role):
 		err = "No such role %s." % role
+	elif role != "" and mode == Roles.CAMPAIGN and not Roles.MODE_ROLES[Roles.CAMPAIGN].has(role):  # the campaign has four seats; the other desks are not part of it
+		err = "The campaign has no %s seat (pilot, copilot, spotter, boat)." % role
 	elif v == 2 and role == "":
 		err = "Protocol v2 needs a role."
 	elif password != "" and str(hello.get("password", "")) != password:
@@ -342,6 +345,9 @@ func _message(c: Conn, msg: Dictionary) -> void:
 	match msg.get("t"):
 		"claim":
 			var role := str(msg.get("role", ""))
+			if mode == Roles.CAMPAIGN and not Roles.MODE_ROLES[Roles.CAMPAIGN].has(role):  # a later claim may not reach the desks the hello refuses
+				c.peer.put_data(line({"t": "claim_failed", "msg": "The campaign has no %s seat (pilot, copilot, spotter, boat)." % role}))
+				return
 			c.seat_generation += 1
 			if c.role != "":
 				_clear_input(c)
@@ -521,6 +527,19 @@ func kick(token: String, ban := true) -> bool:
 			_drop(c)
 			return true
 	return false
+
+
+## The LAN beacon (owner, 12 Oct: it always belongs to the server node, the dedicated server included): one Announcer child that lives and dies
+## with this server, whoever hosts it. Calling this again returns the same one.
+func ensure_beacon() -> LanDiscovery.Announcer:
+	for child in get_children():
+		if child is LanDiscovery.Announcer and not child.is_queued_for_deletion():
+			return child
+	var ann := LanDiscovery.Announcer.new()
+	add_child(ann)
+	ann.start(func(): return {} if not announce else {"name": advert_name if advert_name != "" else "%s's game" % host_name, "port": port, "mode": mode,
+		"players": roster().size() - (1 if dedicated else 0), "locked": locked})
+	return ann
 
 
 ## Who is at the table: [{token, name, role, host}], the host first.

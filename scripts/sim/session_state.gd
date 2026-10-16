@@ -206,6 +206,8 @@ const SYSTEMS := ["ground_war", "agency", "island", "trade", "logistics", "payro
 
 const APPROACH_JOIN_M := 9000.0  ## the autopilot's join point, out along the runway's centreline
 const APPROACH_FINAL_M := 5000.0  ## and its final fix: 3 degrees down from here is the runway end
+const AUTOPILOT_HOLD_LOOKAHEAD_M := 4000.0  ## the plain hold looks this far along the heading for ground to clear
+const AUTOPILOT_HOLD_CLEARANCE_M := 120.0  ## ... and climbs to this much above the highest of it
 const AUTOPILOT_MIN_ROUTE_M := 3000.0  ## closer than this isn't worth engaging the navigate leg for
 const AUTOPILOT_HOT_DARK_SUSPICION := 50.0  ## a hot leg goes dark once suspicion's at least this, even without a tip or a wanted level yet
 

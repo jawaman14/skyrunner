@@ -9,6 +9,13 @@ extends HFlowContainer
 signal hint_pressed(action: String)
 
 var _last: Array = []
+## False for an overlay that must not take keyboard focus (a tutorial footer over gameplay): Tab and Enter then keep reaching the game.
+var focusable := true:
+	set(value):
+		focusable = value
+		for c in get_children():
+			if c is Button:
+				c.focus_mode = Control.FOCUS_ALL if value else Control.FOCUS_NONE
 
 
 func _init() -> void:
@@ -56,6 +63,7 @@ func _chip(key: String, text: String, action: String) -> Control:
 	button.accessibility_name = "%s: %s" % [key, text]
 	button.custom_minimum_size = row.get_combined_minimum_size() + Vector2(12, 12)
 	button.custom_minimum_size.y = maxf(UIStyle.TOUCH_MIN, button.custom_minimum_size.y)
+	button.focus_mode = Control.FOCUS_ALL if focusable else Control.FOCUS_NONE
 	button.pressed.connect(func(): hint_pressed.emit(action))
 	button.add_child(row)
 	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

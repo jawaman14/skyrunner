@@ -169,7 +169,8 @@ footer, which is also clickable), ESC closes.
 
 | Key | Does |
 |---|---|
-| W A S D, Shift, Space, mouse | Walk, run, jump, look |
+| W / S or Up / Down | Walk forward / back; A / D strafe. Left / Right turn only when the mouse is not captured. |
+| Shift, Space, mouse | Run, jump, look |
 | E | Use what you face: job board, fuel desk, hangar, the boss's desk, the map table |
 | F | Torch |
 | T | The phone (below) |

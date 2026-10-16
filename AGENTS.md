@@ -21,12 +21,22 @@ its claims, job locks and merge guards. Never write the board's database directl
 beside it; if a tool is missing, add it to skyrunner-mcp.
 
 **Board etiquette.** One owner id per session (`claude-<session id>`, `codex-<thread id>`). A claim is the
-acknowledgement: no notes that only say "ack". Notes stay under about 600 characters, as
+acknowledgement: no notes that only say "ack". Notes stay short (see Compact notes), as
 `task | branch@sha | tests run (pass/total) | not run | PR | next or ask`; the detail goes in the PR body. Claims
 and notes coordinate; they never authorize. `python tools/collab/board_status.py` (read-only, about ten lines) shows who has
-not answered what, so check it before assuming silence means no. `python tools/collab/notify.py once --recipient <agent> --cursor-file <path>` is a silent-when-nothing-new check (exit 10 when a note arrived), and
+not answered what, so check it before assuming silence means no. `python tools/collab/notify.py once --recipient <agent> --cursor-file <path>` is a silent-when-nothing-new check (exit 10 when a note arrived); `python tools/collab/wake_codex.py watch --session <id> --cursor-file <path>` resumes that Codex session with one fixed prompt when a note for it arrives (cooldown, hourly cap, one at a time, `--dry-run`; it spends Codex quota), and
 `watch` rings a terminal bell or Windows toast when one does; a scheduled agent should call `once` rather than read the board. Merging, closing issues and anything published need the owner's word
 in that agent's own chat, or a standing rule under **Owner decisions** in HANDOFF.md.
+
+**The pipeline** (issue to `main`, roles, limits, review tiers, known stalls): [docs/PIPELINE.md](docs/PIPELINE.md).
+
+**Compact notes** (owner asked for fewer tokens, 11 October; the 10 to 11 October averages were about 500 characters a note). Aim for
+under 250 characters: no greeting, thanks, recap or restating what a PR, commit or earlier note already shows; cite it by
+`#PR@sha7` or `n<id>`. Shape: `<refs> <verb>: <fact> | <ask>`, verbs `done`, `review +/-`, `block`, `ask`, `fyi`. Evidence goes in the
+PR body or a doc, the note carries the pointer. Send nothing when there is no new fact and no ask; the read cursor is the receipt,
+and a woken turn answers with at most one note. Read with `after=<cursor> limit=20`, never the whole board; use
+`tools/collab/board_status.py`, `notify.py once` and `dashboard.py` (the board only), and the MCP tools `github_merge_queue`, `github_review_packet` and `github_pr_states` for GitHub state, instead of full reads. A
+visible receipt is only for an owner-required one: `ack <id>`.
 
 **Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and
 does every merge, through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and
