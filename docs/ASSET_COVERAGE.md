@@ -44,13 +44,27 @@ The owner's direction is a slow move from low-poly toward a PS2 look. That chang
   about 256² per prop family.
 - Settle this before more props are built, or each is built twice.
 
+### Priority rule: simulated figures first, render-only figures for the rest
+
+(Owner, 16 October, on PR #380.) Where the simulation already has an actual worker, driver or soldier, the render uses
+that data (`People`, `Agent`, squad render data) and nothing else, so the player never sees a second pedestrian or
+vehicle standing in for the same activity. Render-only figures are added only for roles the simulation does not model.
+
+| Case | Source |
+|---|---|
+| Workers, drivers, crews, police and ground-war soldiers that exist as `People` / `Agent` / squads | The existing render data. Better models and animation, no extra bodies |
+| Roles the simulation does not model (casino patrons, bar smokers, fishermen on piers, gulls and shore birds) | Render-only figures: no sim state, no authoritative position, no draws on existing random streams |
+| Anything that could be mistaken for a modelled role (a "road traffic" van next to a real courier route, a "dock worker" beside a payroll worker) | Not added until it has been checked against the simulated version first |
+
+This is compatible with the no-new-sim-state rule above and takes priority over every row below.
+
 ### Props, by how much life they add
 
 | Tier | Item | Notes |
 |---|---|---|
 | 1 | Gulls and shore birds | Render-only flocks; scatter near aircraft and boats |
-| 1 | Ambient road traffic | Pickup, bus, motorbike on existing roads; render-only, no sim vehicles |
-| 1 | Idle pedestrians | Smokers outside bars, fishermen on piers; period clothing, no payroll identity |
+| 1 | Ambient road traffic | Pickup, bus, motorbike on existing roads; render-only, and only where no simulated vehicle covers the same road (see the priority rule) |
+| 1 | Idle pedestrians | Smokers outside bars, fishermen on piers, casino patrons; period clothing, no payroll identity, never standing in for a simulated worker |
 | 1 | Dock activity | Forklift, cranes, nets drying, moored fishing boats bobbing |
 | 1 | Moving small details | Laundry lines, ceiling fans, flags in the wind |
 | 2 | Utility poles and wires | Sagging wires, transformer, payphone (also listed under Infrastructure above) |
