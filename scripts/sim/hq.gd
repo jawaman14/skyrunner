@@ -16,7 +16,7 @@ extends RefCounted
 # Every number the balance simulator is allowed to move lives here.
 const RULES := {
 	"nights": 10,
-	"retire_target": 52000,  # clean $ to win (45000 -> 38000 cartel -> 48000 weather -> 52000 airdrop fix; docs/BALANCE.md)
+	"retire_target": 56000,  # clean $ to win (45000 -> 38000 cartel -> 48000 weather -> 52000 airdrop fix -> 56000 no rival hijack; docs/BALANCE.md)
 	"indict_evidence": 100.0,
 	"start_dirty": 16000,
 	"start_budget_k": 15.0,
