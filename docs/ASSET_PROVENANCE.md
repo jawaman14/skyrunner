@@ -43,3 +43,16 @@ and the original prop authorship register. The export-filter test checks inclusi
 and exclusion for each used notice; unused model packs remain excluded. This
 repairs missing notice filters and does not resolve the separate radio provenance
 limitation above. Exported-package inspection remains a release check.
+# Costa Brava original architecture — 8 October 2026
+
+`scripts/render/period_architecture.gd` and `shaders/period_architecture.gdshader`
+are original project geometry/material code. Residential, shop and warehouse
+archetypes are used by `CityDress` for `CostaBravaPlan` parcels. No image textures
+or external model data are included. Shared meshes/material and distant LODs
+keep the production cost bounded. Geometry tests enforce unit bounds and fewer
+than 500 triangles per archetype. Waterfront planting reuses the project's
+original procedural palm geometry.
+
+External Godot repositories reviewed for possible future tooling are documented
+in `docs/COSTA_BRAVA_REBUILD.md`; none was imported by this batch. Candidate
+repositories are not recorded as shipped assets.
