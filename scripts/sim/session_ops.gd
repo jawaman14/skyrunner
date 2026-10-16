@@ -441,7 +441,10 @@ func buy_or_switch(key: String):
 ## After a crash or bust.
 func respawn() -> void:
 	var code = log.departed_from if log.departed_from else START_FIELD
-	if phase == "busted" and not _first_missions():  # the first missions: back at the airport you flew from
+	if _first_missions():  # back at the airport the failed job started from (a bust while unloading has no departure on this log)
+		if not active_jobs.is_empty():
+			code = active_jobs[0].origin
+	elif phase == "busted":
 		code = START_FIELD
 	for j in active_jobs:
 		if j.boat_id:
@@ -452,6 +455,8 @@ func respawn() -> void:
 	loadout = Loadout.new(spec, loadout.mass, loadout.mass.fuel_capacity_lb() * 0.5, Py.truthy(copilot))
 	police.reset()
 	spawn_at(code)
+	if _first_missions():
+		refresh_board(code)  # the employer offers the cargo again
 
 
 ## Get out and swing the tail round: the bush pilot's answer to a runway too

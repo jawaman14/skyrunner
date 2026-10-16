@@ -23,7 +23,7 @@ func _bust(how: String) -> void:
 		phase = "busted"  # no arrest, no fine, no seizure: the same airport, the same cargo, another try
 		last_outcome = "FORCED DOWN (%s). Nothing is lost; try the flight again." % how
 		say(last_outcome)
-		bus.emit("busted", time, "", ["runner", "law"], {"how": how})
+		bus.emit("forced_down", time, "", ["runner", "law"], {"how": how})  # not "busted": the market and renown punish that, and a first-mission retry must cost nothing
 		return
 	if agency != null and agency.quash(how):
 		return  # friends in Washington
