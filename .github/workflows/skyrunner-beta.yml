@@ -1,7 +1,7 @@
 name: Skyrunner beta builds
 
 # Tests the Godot game, exports Linux / Windows / macOS builds and smoke-tests
-# the Linux and Windows ones. The builds are attached to the run as artifacts
+# all three desktop targets. The builds are attached to the run as artifacts
 # (Actions -> this run -> Artifacts). Pure GDScript: no compiler needed.
 
 on:
@@ -19,18 +19,48 @@ env:
   GAME: .
 
 jobs:
+  mcp:
+    name: MCP connection (${{ matrix.os }})
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: astral-sh/setup-uv@v6
+      - run: python -m pip install "mcp>=2.3,<3"
+      - run: python tools/mcp/test_connection.py
+      - run: python tools/collab/test_collab_tools.py
+
   test:
-    name: test ${{ matrix.shard }}
+    name: ${{ matrix.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        shard: ["1/3", "2/3", "3/3"]  # the suite as three parallel slices (tests/run_tests.gd, SHARD=i/n)
+        include:
+          - {lane: logic, shard: "1/1", label: "test logic"}
+          - {lane: simulation, shard: "1/3", label: "test 1/3"}
+          - {lane: simulation, shard: "2/3", label: "test 2/3"}
+          - {lane: simulation, shard: "3/3", label: "test 3/3"}
+          - {lane: presentation, shard: "1/1", label: "test presentation"}
+          - {lane: socket, shard: "1/1", label: "test socket"}
     steps:
       - uses: actions/checkout@v4
       - name: Repo hygiene
         run: bash tools/hygiene.sh
+      - uses: actions/cache@v4
+        with:
+          path: .tools/Godot_v${{ env.GODOT_VERSION }}_linux.x86_64
+          key: godot-${{ runner.os }}-x64-${{ env.GODOT_VERSION }}
       - name: Godot
         run: echo "GODOT=$(${GAME}/tools/get_godot.sh)" >> "$GITHUB_ENV"
       - name: Test suite
@@ -38,6 +68,7 @@ jobs:
         env:
           TEST_TIMEOUT: "2700"
           SHARD: ${{ matrix.shard }}
+          TEST_LANE: ${{ matrix.lane }}
         run: ./tools/test.sh
 
   server:
@@ -151,6 +182,64 @@ jobs:
           name: smoke-screenshot-linux
           path: smoke.png
 
+  visual-captures:
+    name: Visual captures (four sizes, two palettes)
+    needs: export
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: skyrunner-linux
+          path: build
+      - name: Make the exported game executable
+        run: chmod +x build/Skyrunner.x86_64
+      - name: Mesa and a virtual display
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri >/dev/null
+      - name: Capture all resolutions and palettes
+        run: |
+          set -euo pipefail
+          mkdir -p captures
+          user_dir="$HOME/.local/share/godot/app_userdata/Skyrunner"
+          mkdir -p "$user_dir"
+          {
+            echo "Commit: $GITHUB_SHA"
+            echo "Engine: $GODOT_VERSION"
+            echo "Human visual review is still required; these captures do not pass the release gate."
+          } > captures/README.txt
+          for palette in neon safe; do
+            printf '[look]\npalette="%s"\ngraphics="low"\n' "$palette" > "$user_dir/settings.cfg"
+            for size in 1024x768 1280x720 1920x1080 2560x1080; do
+              width="${size%x*}"
+              height="${size#*x}"
+              image="captures/${palette}-${size}.png"
+              log="captures/${palette}-${size}.log"
+              xvfb-run -a -s "-screen 0 ${size}x24" build/Skyrunner.x86_64 \
+                --rendering-driver opengl3 --audio-driver Dummy --resolution "$size" \
+                -- --new --graphics low --hour 16 --shot "$PWD/$image" --frames 240 2>&1 | tee "$log"
+              test -s "$image"
+              ! grep -Eq 'SCRIPT ERROR|Parse Error' "$log"
+              python - "$image" "$width" "$height" <<'PY'
+          import struct, sys
+          with open(sys.argv[1], "rb") as image:
+              header = image.read(24)
+          if header[:8] != b"\x89PNG\r\n\x1a\n":
+              raise SystemExit(f"not a PNG: {sys.argv[1]}")
+          actual = struct.unpack(">II", header[16:24])
+          expected = (int(sys.argv[2]), int(sys.argv[3]))
+          if actual != expected:
+              raise SystemExit(f"{sys.argv[1]}: expected {expected}, got {actual}")
+          PY
+              printf '%s %s %s\n' "$palette" "$size" "$image" >> captures/README.txt
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-captures-${{ github.run_id }}-${{ github.run_attempt }}
+          path: captures/
+          if-no-files-found: ignore
+
   smoke-windows:
     needs: export
     runs-on: windows-latest
@@ -167,3 +256,47 @@ jobs:
           cat run.log
           grep -q "SMOKE OK" run.log
           ! grep -q "SCRIPT ERROR" run.log
+
+  smoke-macos:
+    needs: export
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: skyrunner-macos
+          path: build
+      - name: Validate exported app bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive=$(find build -type f -name Skyrunner.zip -print -quit)
+          test -n "$archive"
+          ditto -x -k "$archive" build/unpacked
+          app=$(find build/unpacked -maxdepth 2 -type d -name '*.app' -print -quit)
+          test -n "$app"
+          plist="$app/Contents/Info.plist"
+          plutil -lint "$plist"
+          executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$plist")
+          binary="$app/Contents/MacOS/$executable"
+          test -x "$binary"
+          test -d "$app/Contents/Resources"
+          if find "$app" -type d \( -name .git -o -name .godot -o -name sim-results \) | grep -q .; then
+            echo 'Development directories found in release bundle'
+            exit 1
+          fi
+          printf 'SKYRUNNER_BINARY=%s\n' "$binary" >> "$GITHUB_ENV"
+      - name: Headless run (the AI flies an open-mode game)
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$SKYRUNNER_BINARY" --headless -- --unlocks open --watch --new --smoke 1800 > run.log 2>&1
+          cat run.log
+          grep -q 'SMOKE OK' run.log
+          ! grep -Eq 'SCRIPT ERROR|Parse Error' run.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-log-macos
+          path: run.log
+          if-no-files-found: ignore

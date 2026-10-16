@@ -7,6 +7,10 @@ extends Node3D
 ## if given, is pumped before and published after each session update.
 
 const CAM_MODES := ["chase", "cockpit", "tower"]
+const AIR_LOOK_SENSITIVITY := 0.0035
+const AIR_LOOK_YAW_LIMIT := 2.61799388  ## 150 degrees either way
+const AIR_LOOK_PITCH_MIN := -0.65
+const AIR_LOOK_PITCH_MAX := 0.80
 
 ## The pause menu's way out: "load" (the last save), "lobby" or "desktop". Main
 ## acts on it; with nobody listening, "desktop" quits here and the rest do too.
@@ -30,11 +34,12 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
          R/F or PGUP/PGDN throttle (hold; a tap is a few %)   Z ramp to full   X ramp to idle   (Z Z / X X: instant)
          G flaps down   T flaps up   [ / ] pitch trim   B or SPACE brakes
          Y toggle mouse yoke (mouse position = stick)   joystick / gamepad work too
+         Air look: hold RIGHT mouse and drag while airborne (independent of Y)
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
             toe brakes (several devices) with invert, deadzone and expo; the colour-safe palette
 View     C cycle camera (chase / cockpit / tower)    M big map    P pause   F2 time of day
 Seats    F3 hand the aircraft to the AI (take another seat from a station) / take it back
-Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)
+Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)   CTRL+F5 skip to the next story chapter (solo, for testing)
 Table    F4 multiplayer menu: games on your network, who is at the table (mute, remove), chat, voice settings
 Voice    hold ` to talk on your side's net (a radio: range, hills, static), SHIFT + ` to the whole table (hosting or joined)
 Radio    F7 radio on / off, , and . tune (in the aircraft); in the car R, , and . : real 1979-86 broadcasts, the same dial
@@ -102,10 +107,15 @@ var hud: Hud
 var menus := {}
 var help: Control
 var briefing: Label
+var briefing_panel: Control
 var glareshield: Control
 var ui: CanvasLayer
 var cam_mode := "chase"
 var mouse_yoke := false
+var _air_look_active := false
+var _air_look_yaw := 0.0
+var _air_look_pitch := 0.0
+var _mouse_yoke_stick := Vector2.ZERO
 var paused := false
 var _pressed := {}
 var _cam_pos = null
@@ -134,7 +144,8 @@ var walker: Walker = null
 var gun: Gunplay = null
 var _auto_bot := false  ## the AI took the stick because nobody's in the pilot seat  ## the walker's gun (sessions with a ground war)
 var ground_body: StaticBody3D = null
-var foot_prompt: Label
+var foot_prompt: Label  ## the subtitle on foot and at the wheel
+var act_hints: KeyHints  ## what you can do here, as key caps
 var aircraft_body: StaticBody3D = null
 
 
@@ -182,6 +193,16 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ui.add_child(glareshield)
 	hud = Hud.new().setup(sess)
 	ui.add_child(hud)
+	notify = PhoneNotify.new()  # the phone's banners: new numbers, the Family's offers
+	notify.anchor_left = 0.0
+	notify.anchor_right = 0.0
+	notify.anchor_top = 0.0
+	notify.anchor_bottom = 0.30
+	notify.offset_left = 14.0
+	notify.offset_right = 340.0
+	notify.offset_top = 78.0
+	notify.offset_bottom = -4.0
+	ui.add_child(notify)
 	car_map = Minimap.new()  # the radar for the car and for walking: it follows the car or the walker, not the aircraft
 	car_map.visible = false
 	ui.add_child(car_map)
@@ -204,18 +225,40 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 		m.setup(sess)
 		m.closed.connect(_menu_closed)
 		menus[k[0]] = m
+	var ph: PhoneMenu = menus["phone"]
+	ph.notify = notify
+	ph.radio = radio
+	ph.waypoint_to.connect(_waypoint_picked)
 	if sess.races != null:
 		add_child(RaceMarkers.new().setup(sess))
-	foot_prompt = UIStyle.label("", 20, UIStyle.WHITE)
+	# on foot and at the wheel: what was just said runs as a subtitle low in the middle, and what you can do here is a
+	# row of key caps under it ([E] Get in the car) - no box in the middle of the view
+	foot_prompt = UIStyle.label("", 18, UIStyle.WHITE)
 	foot_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long line wraps instead of running off the screen
-	foot_prompt.custom_minimum_size = Vector2(640, 0)
 	foot_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	foot_prompt.add_theme_stylebox_override("normal", UIStyle.panel_box(Color(0, 0, 0, 0.55)))
-	foot_prompt.set_anchors_preset(Control.PRESET_CENTER)
-	foot_prompt.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	foot_prompt.position += Vector2(0, 70)
+	foot_prompt.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	foot_prompt.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	foot_prompt.add_theme_constant_override("shadow_offset_x", 2)
+	foot_prompt.add_theme_constant_override("shadow_offset_y", 2)
+	foot_prompt.add_theme_constant_override("outline_size", 6)
+	foot_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	foot_prompt.anchor_left = 0.2
+	foot_prompt.anchor_right = 0.8
+	foot_prompt.anchor_top = 1.0
+	foot_prompt.anchor_bottom = 1.0
+	foot_prompt.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	foot_prompt.visible = false
 	ui.add_child(foot_prompt)
+	act_hints = KeyHints.new()
+	act_hints.alignment = FlowContainer.ALIGNMENT_CENTER
+	act_hints.anchor_left = 0.25
+	act_hints.anchor_right = 0.75
+	act_hints.anchor_top = 1.0
+	act_hints.anchor_bottom = 1.0
+	act_hints.offset_top = -96.0
+	act_hints.offset_bottom = -60.0
+	act_hints.visible = false
+	ui.add_child(act_hints)
 	help = _help_overlay(HELP_TEXT, UIStyle.WHITE)
 	var ver := UIStyle.label(Beta.label() + "   F12 feedback", 12, UIStyle.DIM)
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -224,7 +267,10 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	ver.position -= Vector2(8, 4)
 	ver.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(ver)
-	briefing = _overlay("", Color(1, 0.85, 0.5))
+	briefing_panel = _help_overlay("", Color(1, 0.85, 0.5))
+	briefing = briefing_panel.get_child(0).get_child(0)
+	briefing.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	briefing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sess.say("F1 for controls. [J] to see the job board.")
 	return self
 
@@ -338,13 +384,28 @@ func _active_menu() -> GameMenu:
 
 
 func _unhandled_input(ev: InputEvent) -> void:
+	if controls_menu != null or pack_menu != null:
+		get_viewport().set_input_as_handled()
+		return
 	if ev is InputEventJoypadButton and ev.pressed and _active_menu() == null and not on_foot:
 		_flight_press(ev)
 		return
 	if ev is InputEventKey and ev.pressed:
 		var k: int = ev.physical_keycode if ev.physical_keycode else ev.keycode
+		if k == KEY_F2 and ev.ctrl_pressed and not ev.echo:
+			scene.toggle_access_overlay()
+			get_viewport().set_input_as_handled()
+			return
+		if k == KEY_F5 and ev.ctrl_pressed and not ev.echo and s.story != null and server == null:  # debug: solo only, never at a shared table
+			s.story.debug_skip_chapter()
+			s.say("Debug: skipped to chapter %d." % s.story.chapter.num)
+			get_viewport().set_input_as_handled()
+			return
 		var m := _active_menu()
 		if m != null:
+			if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k == KEY_G) or (m is HQMenu and k in [KEY_Q, KEY_D])):
+				get_viewport().set_input_as_handled()
+				return  # holding Enter must not confirm a newly armed action
 			if k == KEY_ESCAPE:
 				m.close()
 			elif MENU_KEYS.has(k):
@@ -356,6 +417,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if ev.echo:
+			return
+		if k == KEY_F8:
+			toggle_controls()
+			get_viewport().set_input_as_handled()
 			return
 		if k == KEY_TAB:
 			_toggle_on_foot()
@@ -473,7 +538,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			if not r[0]:
 				s.say(r[1])
 		elif CREW_KEYS.has(k):
-			var r: Array = s.command(Roles.PILOT, CREW_KEYS[k], {})
+			var args := {}
+			if k == KEY_U and waypoint != null:
+				args["waypoint"] = [waypoint.x, waypoint.y]  # U flies to the waypoint set on the chart
+			var r: Array = s.command(Roles.PILOT, CREW_KEYS[k], args)
 			if not r[0]:
 				s.say(r[1])
 		elif k == KEY_7:
@@ -510,8 +578,6 @@ func _unhandled_input(ev: InputEvent) -> void:
 			toggle_ai_pilot()
 		elif k == KEY_F6:
 			cycle_debug_menu()
-		elif k == KEY_F8:
-			toggle_controls()
 		elif k == KEY_F9:
 			var mode := screen_filter.cycle()
 			ControlsConfig.save_setting("filter", mode)
@@ -535,6 +601,7 @@ var screen_filter: ScreenFilter = null
 var controls_menu: ControlsMenu = null
 var pack_menu: PackMenu = null
 var sound: Soundscape = null
+var notify: PhoneNotify = null  ## the phone's banners
 var car_map: Minimap = null  ## the radar and chart while on foot or driving
 var waypoint = null  ## the ground point you picked on the chart (Vector2), or null
 var _wp_beacon: MeshInstance3D = null
@@ -589,7 +656,9 @@ func _talk_cues() -> void:
 		for o in s.family.offers:
 			if not _offers_seen.has(o.id):
 				_offers_seen[o.id] = true
-				s.say("%s wants a word. SHIFT+F to sit down with him." % Talk.CAPO)
+				notify.push("The Family", "%s wants a word: %s
+SHIFT+F to sit down with him." % [Talk.CAPO, str(o.text)], "family",
+					[["SHIFT+Y", "accept", "yes"], ["SHIFT+N", "decline", "no"]], o.id, 10.0)
 	if s.court != null:
 		# the lawyer is there at the bail hearing and when the sentence comes down
 		var st := s.court.stage()
@@ -628,12 +697,17 @@ func _flight_press(ev: InputEvent) -> bool:
 
 
 ## SHIFT+H: logistics - the stashes' product and cash, the trucks, cash bags on and off.
-func toggle_logistics() -> void:
+func toggle_logistics(stash := "") -> void:
 	if logistics_menu != null and is_instance_valid(logistics_menu):
+		if not stash.is_empty():
+			logistics_menu.focus_source(stash)
+			return
 		logistics_menu.close()
 		return
 	logistics_menu = LogisticsMenu.new()
+	logistics_menu.review_link = LocalLink.new(s, Roles.PILOT, false)
 	logistics_menu.pilot = true
+	logistics_menu.focused_stash = stash
 	logistics_menu.view_fn = func() -> Dictionary: return s.logistics.view() if s.logistics != null else {}
 	logistics_menu.cmd_fn = func(n: String, a: Dictionary) -> Array: return s.command(Roles.PILOT, n, a)
 	logistics_menu.closed.connect(func(): Input.mouse_mode = Input.MOUSE_MODE_VISIBLE)
@@ -730,9 +804,48 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 	pass
 
 
+func _air_camera_look_allowed() -> bool:
+	return s != null and s.state != null and not s.state.on_ground and not on_foot and not paused and pause_menu == null \
+		and _active_menu() == null and controls_menu == null and pack_menu == null and not _map_open() \
+		and (s.narrative == null or not s.narrative.show_briefing)
+
+
+func _end_air_camera_look() -> void:
+	if not _air_look_active:
+		return
+	_air_look_active = false
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
 func _input(ev: InputEvent) -> void:
+	if _air_look_active and ev is InputEventMouseMotion:
+		_air_look_yaw = clampf(_air_look_yaw + ev.relative.x * AIR_LOOK_SENSITIVITY, -AIR_LOOK_YAW_LIMIT, AIR_LOOK_YAW_LIMIT)
+		_air_look_pitch = clampf(_air_look_pitch + ev.relative.y * AIR_LOOK_SENSITIVITY, AIR_LOOK_PITCH_MIN, AIR_LOOK_PITCH_MAX)
+		get_viewport().set_input_as_handled()
+		return
+	if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_RIGHT:
+		if ev.pressed and _air_camera_look_allowed():
+			_air_look_active = true
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			get_viewport().set_input_as_handled()
+			return
+		if not ev.pressed and _air_look_active:
+			_end_air_camera_look()
+			get_viewport().set_input_as_handled()
+			return
+	if s != null and s.narrative != null and s.narrative.show_briefing and ev is InputEventJoypadButton and ev.pressed:
+		if ev.button_index == JOY_BUTTON_A:
+			_pressed["confirm"] = true
+			get_viewport().set_input_as_handled()
+			return
+		if ev.button_index in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_DOWN] and briefing_panel != null:
+			var scroll: ScrollContainer = briefing_panel.get_child(0)
+			scroll.scroll_vertical += 48 if ev.button_index == JOY_BUTTON_DPAD_DOWN else -48
+			get_viewport().set_input_as_handled()
+			return
 	# click to grab the mouse again while walking
-	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and not _map_open():
+	if on_foot and ev is InputEventMouseButton and ev.pressed and _active_menu() == null and pause_menu == null and controls_menu == null and pack_menu == null and not _map_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -831,6 +944,7 @@ func _toggle_on_foot() -> void:
 		cam.current = true
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		foot_prompt.visible = false
+		act_hints.visible = false
 		s.say("Back in the %s." % s.spec.name)
 		return
 	if not s.parked:
@@ -876,6 +990,10 @@ func _toggle_on_foot() -> void:
 ## desk and dispatch without walking to them.
 func _phone_call(action: String) -> void:
 	match action:
+		"map":
+			_map_toggle()
+		"settings":
+			open_pause()
 		"desk":
 			_open("hq")
 		"logistics":
@@ -1153,6 +1271,14 @@ func _exit_car() -> void:
 
 func _on_use(action: String, area: Area3D) -> void:
 	match action:
+		"stash_logistics":
+			var id: String = area.get_meta("stash", "")
+			var found = s.stash_net.get_stash(id) if s.stash_net != null else null
+			var stash: Dictionary = found if found is Dictionary else {}
+			if not StashInterior.available(stash) or s.logistics == null:
+				s.say("This storage site is unavailable.")
+			else:
+				toggle_logistics(id)
 		"car":
 			_enter_car()
 		"jobs", "load", "hangar":
@@ -1206,7 +1332,7 @@ func _gather_input() -> ControlMapper.InputFrame:
 	var inp := ControlMapper.InputFrame.new()
 	inp.pressed = _pressed
 	_pressed = {}
-	var menu_open := _active_menu() != null or controls_menu != null or pause_menu != null
+	var menu_open := _active_menu() != null or controls_menu != null or pack_menu != null or pause_menu != null
 	if not menu_open:
 		for action in ControlsConfig.HELD:
 			if Input.is_action_pressed(ControlsConfig.action(action)):
@@ -1214,10 +1340,12 @@ func _gather_input() -> ControlMapper.InputFrame:
 	else:
 		inp.pressed.erase("confirm")
 	if mouse_yoke and not menu_open:
-		var vp := get_viewport()
-		var m := vp.get_mouse_position() / vp.get_visible_rect().size * 2.0 - Vector2.ONE
-		var dz := func(v: float) -> float: return 0.0 if absf(v) < 0.04 else v
-		inp.stick = [clampf(dz.call(m.x) * 1.3, -1, 1), clampf(dz.call(m.y) * 1.3, -1, 1)]
+		if not _air_look_active:
+			var vp := get_viewport()
+			var m := vp.get_mouse_position() / vp.get_visible_rect().size * 2.0 - Vector2.ONE
+			var dz := func(v: float) -> float: return 0.0 if absf(v) < 0.04 else v
+			_mouse_yoke_stick = Vector2(clampf(dz.call(m.x) * 1.3, -1, 1), clampf(dz.call(m.y) * 1.3, -1, 1))
+		inp.stick = [_mouse_yoke_stick.x, _mouse_yoke_stick.y]
 	if not menu_open:
 		_poll_stick(inp)
 	return inp
@@ -1240,31 +1368,66 @@ func _phone_watch() -> void:
 			_phone_known[c[0]] = true
 			if not first:
 				m.fresh[c[0]] = true
+				notify.push("Phone", "New contact: %s. %s." % [c[1], c[2]], "phone")
 				s.say("New contact on your phone: %s - %s." % [c[1], c[2]])
+
+
+## When an offer is gone so is its card (it was answered, or it ran out).
+func _offers_watch() -> void:
+	if s.family == null or notify == null:
+		return
+	var live := {}
+	for o in s.family.offers:
+		live[o.id] = true
+	for id in _offers_seen.keys():
+		if not live.has(id):
+			notify.drop_data(id)
+			_offers_seen.erase(id)
 
 
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.1)
 	_frame += 1
+	if _air_look_active and not _air_camera_look_allowed():
+		_end_air_camera_look()
+	if s.state == null or s.state.on_ground:
+		_air_look_yaw = 0.0
+		_air_look_pitch = 0.0
+	if _frame % 10 == 3:
+		_offers_watch()
 	if radio != null:
 		radio.active = driving != null or not on_foot
 	if _frame % 30 == 1:
 		_phone_watch()
+		if scene != null and s.stash_net != null:
+			for stash in s.stash_net.stashes:
+				var node := scene.find_child("stash-" + str(stash.id), true, false) as Node3D
+				if node != null:
+					StashInterior.show_state(node, stash)
 	if _frame % 10 == 0:
 		if s.tutorial != null and tutorial_panel == null:
 			tutorial_panel = TutorialPanel.new()
+			tutorial_panel.action_requested.connect(func(action: String):
+				if s.tutorial != null and s.tutorial.enabled:
+					if action == "skip":
+						s.tutorial.skip()
+					elif action == "off":
+						s.tutorial.set_enabled(false)
+					tutorial_panel.show_view(s.tutorial.view()))
 			ui.add_child(tutorial_panel)
 		if tutorial_panel != null:
 			tutorial_panel.show_view(s.tutorial.view() if s.tutorial != null else {})
 	var camp = s.narrative
 	if camp != null and camp.show_briefing:
 		var ch: Campaign.Chapter = camp.chapter
-		briefing.text = "CHAPTER %d  -  %d  -  %s\n\n%s\n\n%s\n\nPress ENTER" % [ch.num, ch.year, ch.title, ch.briefing,
-			"\n".join(camp.objective_lines())]
-		briefing.visible = true
+		briefing.text = "%s  -  %d  -  %s\n\n%s\n\n%s\n\nContinue: %s" % ["EMPLOYMENT" if ch.num == 0 else "CHAPTER %d" % ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
+			"\n".join(camp.objective_lines()), ", ".join(PRESS_KEYS.keys().map(func(code): return OS.get_keycode_string(code))) + " / controller Accept"]
+		if not briefing_panel.visible:
+			Speech.say(briefing.text, true)
+		briefing_panel.visible = true
 		if _pressed.has("confirm"):
 			camp.show_briefing = false
-			briefing.visible = false
+			briefing_panel.visible = false
 		_pressed.clear()
 	elif s.story != null and s.story.company_choice_ready():
 		if company_choice_dialog == null:
@@ -1391,23 +1554,33 @@ func _foot_hud() -> void:
 				ml2.append(msg[1])
 		car_dash.visible = _active_menu() == null and not _map_open()
 		car_dash.set_data(driving, radio, scene.night > 0.35, waypoint)
-		foot_prompt.text = "\n".join(ml2.slice(-2))
-		foot_prompt.visible = _active_menu() == null and not ml2.is_empty() and not _map_open()
+		_subtitle(ml2.slice(-2), car_dash.size.y + 40.0)
+		act_hints.visible = false
 		return
 	car_dash.visible = false
 	if s.foot != null:
 		walker.speed_scale = s.foot.speed_factor()
-	var lines := []
+	var acts := []
 	if walker.focus != null:
-		lines.append("[E] " + str(walker.focus.get_meta("label")))
+		acts.append(["E", str(walker.focus.get_meta("label"))])
 	if walker.global_position.distance_to(player.global_position) < 9.0:
-		lines.append("[TAB] Climb into the %s" % s.spec.name)
+		acts.append(["TAB", "Climb into the %s" % s.spec.name])
+	var free_view := _active_menu() == null and pack_menu == null and not _map_open()
+	act_hints.set_hints(acts)
+	act_hints.visible = free_view and not acts.is_empty()
 	var ml := []
 	for msg in s.messages:
 		if s.time - msg[0] < 8:
 			ml.append(msg[1])
-	foot_prompt.text = "\n".join(lines + ml.slice(-2))
-	foot_prompt.visible = not foot_prompt.text.is_empty() and _active_menu() == null and pack_menu == null
+	_subtitle(ml.slice(-2) if free_view else [], 110.0)
+
+
+## The last thing said, as a subtitle `above` px from the bottom of the screen.
+func _subtitle(lines: Array, above: float) -> void:
+	foot_prompt.text = "\n".join(lines)
+	foot_prompt.offset_bottom = -above
+	foot_prompt.offset_top = -above - 80.0
+	foot_prompt.visible = not lines.is_empty() and _active_menu() == null and not _map_open()
 
 
 static func _basis(heading: float, pitch := 0.0, roll := 0.0) -> Basis:
@@ -1614,7 +1787,8 @@ func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
 	glareshield.visible = cockpit
 	var target := MeshBuilder.to_godot([st.x, st.y, st.alt])
 	if cockpit:
-		cam.global_transform = player.global_transform * Transform3D(Basis.from_euler(Vector3(deg_to_rad(-4), 0, 0)),
+		var cockpit_look := Vector3(deg_to_rad(-4.0) - _air_look_pitch, -_air_look_yaw, 0.0)
+		cam.global_transform = player.global_transform * Transform3D(Basis.from_euler(cockpit_look),
 			MeshBuilder.to_godot([-0.3, L * 0.14, 0.25 + L * 0.085 * 0.75]))
 		cam.fov = 80
 		return
@@ -1624,17 +1798,24 @@ func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
 			s.world.airfield_elev(af) + 24])
 		cam.global_position = tower
 		if tower.distance_to(target) > 1.0:
-			cam.look_at(target, Vector3.UP)
+			var tower_view := target - tower
+			var yawed_tower_view := tower_view.rotated(Vector3.UP, -_air_look_yaw)
+			var tower_right := yawed_tower_view.normalized().cross(Vector3.UP).normalized()
+			cam.look_at(tower + yawed_tower_view.rotated(tower_right, _air_look_pitch), Vector3.UP)
 		cam.fov = clampf(rad_to_deg(atan2(L * 3, (target - tower).length())) * 2, 8, 70)
 		return
 	cam.fov = 70
 	var want := target - fwd * (L * 2.6 + 6) + Vector3(0, L * 0.55 + 1.5, 0)
-	if _cam_pos == null or (_cam_pos - want).length() > 400:
-		_cam_pos = want  # respawn / teleport: don't sweep across the map
+	var orbit_yaw := -_air_look_yaw
+	var orbit_right := fwd.rotated(Vector3.UP, orbit_yaw).cross(Vector3.UP).normalized()
+	var camera_want := target + (want - target).rotated(Vector3.UP, orbit_yaw).rotated(orbit_right, _air_look_pitch)
+	var view_offset := (fwd * L * 1.5 + Vector3(0, 0.5, 0)).rotated(Vector3.UP, orbit_yaw).rotated(orbit_right, _air_look_pitch)
+	if _cam_pos == null or (_cam_pos - camera_want).length() > 400:
+		_cam_pos = camera_want  # respawn / teleport: don't sweep across the map
 	var k := 1 - exp(-dt * 4.0)
-	_cam_pos = _cam_pos + (want - _cam_pos) * k
+	_cam_pos = _cam_pos + (camera_want - _cam_pos) * k
 	var ground := s.world.ground(_cam_pos.x, -_cam_pos.z) + 1.5
 	if _cam_pos.y < ground:
 		_cam_pos.y = ground
 	cam.global_position = _cam_pos
-	cam.look_at(target + fwd * L * 1.5 + Vector3(0, 0.5, 0), Vector3.UP)
+	cam.look_at(target + view_offset, Vector3.UP)

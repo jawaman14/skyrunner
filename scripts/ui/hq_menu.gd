@@ -25,6 +25,10 @@ var map: StationMap
 var squad_label: Label
 var squad_buttons: HFlowContainer
 var sel_squad = null
+var districts_open := false
+var districts_button: Button
+var district_scroll: ScrollContainer
+var district_text: Label
 
 
 func _build() -> void:
@@ -45,6 +49,7 @@ func _build() -> void:
 	map.clicked.connect(_on_map_click)
 	content.add_child(map)
 	squad_label = UIStyle.label("- (click a squad)", 15, UIStyle.DIM)
+	squad_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(squad_label)
 	squad_buttons = HFlowContainer.new()
 	squad_buttons.add_theme_constant_override("h_separation", 6)
@@ -53,10 +58,22 @@ func _build() -> void:
 			["Raise car", "raise_car"], ["Raise truck", "raise_truck"]]:
 		var btn := Button.new()
 		btn.text = b[0]
-		btn.focus_mode = Control.FOCUS_NONE
+		btn.focus_mode = Control.FOCUS_ALL
 		btn.pressed.connect(key.bind(b[1]))
 		squad_buttons.add_child(btn)
 	content.add_child(squad_buttons)
+	districts_button = Button.new()
+	districts_button.text = "District overview  [D]"
+	districts_button.pressed.connect(_toggle_districts)
+	content.add_child(districts_button)
+	district_scroll = ScrollContainer.new()
+	district_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	district_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(district_scroll)
+	district_text = UIStyle.label("", 15, UIStyle.WHITE)
+	district_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	district_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	district_scroll.add_child(district_text)
 
 
 func _view():
@@ -67,12 +84,15 @@ func _view():
 ## it needs a snapshot every frame, not just on open() or a keypress like the
 ## rest of this menu's static panels.
 func _process(_dt: float) -> void:
+	super._process(_dt)
 	if visible and squad_mode:
 		map.snap = Snapshot.build(s, Roles.BOSS, 0)
 		if sel_squad != null and s.ground.get_squad(str(sel_squad)) == null:
 			sel_squad = null
 		map.sel_squad = sel_squad
 		_squad_detail()
+		if districts_open:
+			district_text.text = preload("res://scripts/ui/widgets/district_summary.gd").describe(map.snap.get("ground", {}).get("districts", [])) + "\n\n" + preload("res://scripts/ui/widgets/battle_report.gd").describe(map.snap.get("ground", {}).get("battle_reports", []))
 
 
 ## With no season running the orders board has nothing to show, so a solo player's desk would
@@ -80,15 +100,13 @@ func _process(_dt: float) -> void:
 func open() -> void:
 	if not intel and not squad_mode and _view() == null and s.ground != null:
 		_enter_squad_mode()
-	visible = true
-	refresh()
+	super.open()
 
 
 func close() -> void:
 	if squad_mode:
 		_leave_squad_mode()
-	visible = false
-	closed.emit()
+	super.close()
 
 
 ## Belt and braces: something elsewhere (switching to another desk menu,
@@ -103,15 +121,22 @@ func refresh() -> void:
 	board.visible = false
 	turf.visible = false
 	info.visible = false
-	map.visible = squad_mode
-	squad_label.visible = squad_mode
-	squad_buttons.visible = squad_mode
+	map.visible = squad_mode and not districts_open
+	squad_label.visible = squad_mode and not districts_open
+	squad_buttons.visible = squad_mode and not districts_open
+	districts_button.visible = squad_mode
+	district_scroll.visible = squad_mode and districts_open
 	if squad_mode:
 		title.text = "THE BOSS'S DESK"
-		subtitle.text = "Squads"
+		subtitle.text = "Districts" if districts_open else "Squads"
+		districts_button.text = "Back to squads  [D]" if districts_open else "District overview  [D]"
+		if districts_open:
+			district_text.text = preload("res://scripts/ui/widgets/district_summary.gd").describe(s.ground.district_view("org")) + "\n\n" + preload("res://scripts/ui/widgets/battle_report.gd").describe(s.ground.battle_history("org"))
+			hints.set_hints([["UP/DOWN", "scroll", "down"], ["D", "back to squads", "d"], ["ESC", "leave the desk", "esc"]])
+			return
 		_squad_detail()
 		hints.set_hints(([["Q", "back to the orders", "q"]] if _view() != null else []) + [["CLICK", "squad", ""],
-			["RIGHT-CLICK", "send it", ""], ["ESC", "leave the desk", "esc"]])
+			["RIGHT-CLICK", "send it", ""], ["D", "districts", "d"], ["ESC", "leave the desk", "esc"]])
 		return
 	var ss = _view()
 	if ss == null:
@@ -169,7 +194,12 @@ func _detail() -> void:
 
 
 func key(k: String) -> void:
+	if confirmation_key(k):
+		return
 	if intel:
+		return
+	if squad_mode and k == "d":
+		_toggle_districts()
 		return
 	if k == "q" and s.ground != null:
 		if squad_mode:
@@ -177,6 +207,10 @@ func key(k: String) -> void:
 		else:
 			_enter_squad_mode()
 		refresh()
+		return
+	if squad_mode and districts_open:
+		if k in ["up", "down"]:
+			district_scroll.scroll_vertical += -40 if k == "up" else 40
 		return
 	if squad_mode:
 		_squad_key(k)
@@ -206,6 +240,13 @@ func key(k: String) -> void:
 
 
 # ------------------------------------------------------------------ squads
+func _toggle_districts() -> void:
+	districts_open = not districts_open
+	refresh()
+	districts_button.grab_focus()
+	if districts_open: Speech.say(district_text.text)
+
+
 ## The same squad command a human boss's seat gives in co-op (StationApp),
 ## reached from the villa desk directly: claim the seat for as long as this
 ## lasts, so Session.seat_driver stands the ground war's AI aside exactly as
@@ -227,6 +268,7 @@ func _leave_squad_mode() -> void:
 		s.seats.release(Roles.BOSS)
 		_claimed_boss = false
 	squad_mode = false
+	districts_open = false
 	sel_squad = null
 
 
@@ -239,8 +281,7 @@ func _squad_detail() -> void:
 	if q == null:
 		squad_label.text = "- (click a squad)"
 		return
-	var doing: String = q.tactic if q.tactic != "" else str(q.order.get("type", "hold"))
-	squad_label.text = "Selected: %s (%s, %d men, %s)" % [q.id, q.kind, q.men, doing]
+	squad_label.text = preload("res://scripts/ui/widgets/squad_card.gd").describe(s.ground.squad_view(q, "org"))
 
 
 func _squad_key(k: String) -> void:
@@ -258,14 +299,13 @@ func _squad_key(k: String) -> void:
 		"hold":
 			s.command(Roles.BOSS, "squad_order", {"id": sel_squad, "order": {"type": "hold"}})
 		"disband":
-			s.command(Roles.BOSS, "disband_squad", {"id": sel_squad})
-			sel_squad = null
+			perform_action("disband_squad", {"id": sel_squad}, Roles.BOSS)
 
 
 ## Click: pick one of ours. Right-click: the order that fits the spot - a
 ## stash (guard it), an enemy squad (go after it), or anywhere else (patrol).
 func _on_map_click(button: int, p: Vector2) -> void:
-	if not squad_mode:
+	if not squad_mode or districts_open:
 		return
 	if button == MOUSE_BUTTON_LEFT:
 		var d = Py.min_by(_my_squads(), func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
@@ -274,7 +314,7 @@ func _on_map_click(button: int, p: Vector2) -> void:
 		return
 	if button != MOUSE_BUTTON_RIGHT or sel_squad == null:
 		return
-	var enemy = Py.min_by(s.ground.squads.filter(func(q): return q.faction != "org"), func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
+	var enemy = Py.min_by(s.ground.visible_to("org").filter(func(q): return q.faction != "org"), func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
 	var stash = Py.min_by(s.stash_net.stashes if s.stash_net != null else [], func(o): return PyMath.hypot(o.x - p.x, o.y - p.y))
 	var o := {}
 	if enemy != null and PyMath.hypot(enemy.x - p.x, enemy.y - p.y) < 500:

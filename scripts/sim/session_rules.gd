@@ -368,8 +368,12 @@ func _delivered(job: Jobs.Job, pay: int, af: Airfield, hot: bool) -> Dictionary:
 	for it in job.items:
 		if it.label != "Fuel drum":
 			lb += it.weight_lb
-	return {"job_id": job.id, "pay": pay, "dest": af.code, "hot": hot, "good": good, "lb": lb,
+	var data := {"job_id": job.id, "pay": pay, "dest": af.code, "hot": hot, "good": good, "lb": lb,
 		"agency": job.agency, "origin": job.origin, "weapons": not job.weapons.is_empty()}
+	if job.employer_serial > 0:
+		data["employer_stage"] = job.employer_stage
+		data["employer_serial"] = job.employer_serial
+	return data
 
 
 ## A hot load being counted out on a bush/shady strip. Police arriving = raid.

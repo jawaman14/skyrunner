@@ -42,6 +42,53 @@ func _key(k: int, down: bool) -> void:
 	Input.parse_input_event(ev)
 
 
+func test_interaction_wall_occlusion_and_activation_recheck() -> void:
+	var root := Node3D.new()
+	_tree().root.add_child(root)
+	var w := Walker.new().setup(World.new())
+	root.add_child(w)
+	w.position = Vector3(0, 100, 0)
+	w.set_physics_process(false)
+	var area := Area3D.new()
+	area.position = Vector3(0, 101.65, -2)
+	area.collision_layer = 4
+	area.collision_mask = 0
+	area.set_meta("action", "jobs")
+	var target_shape := CollisionShape3D.new()
+	var sphere := SphereShape3D.new()
+	sphere.radius = 1.0
+	target_shape.shape = sphere
+	area.add_child(target_shape)
+	root.add_child(area)
+	var wall := StaticBody3D.new()
+	wall.position = Vector3(0, 101.65, -1)
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(2, 2, 0.2)
+	shape.shape = box
+	wall.add_child(shape)
+	root.add_child(wall)
+	await _frames(3)
+	check(w.reach.overlaps_area(area), "proximity/facing alone would allow this through-wall interaction")
+	w._update_focus()
+	check(w.focus == null, "solid wall blocks selection")
+	shape.disabled = true
+	await _frames(3)
+	w._update_focus()
+	check(w.focus == area, "open passage permits selection")
+	var uses := []
+	w.used.connect(func(action, _area): uses.append(action))
+	shape.disabled = false
+	await _frames(3)
+	w.use()
+	check(uses.is_empty(), "a wall appearing after selection blocks activation")
+	shape.disabled = true
+	await _frames(3)
+	w.use()
+	check_eq(uses, ["jobs"], "unobstructed activation succeeds once")
+	root.free()
+
+
 func _stand_before(w: Walker, area: Area3D) -> void:
 	var p := area.global_position
 	var back: Vector3 = area.get_parent().global_transform.basis.z.normalized()  # buildings face local -z
@@ -179,6 +226,9 @@ func test_the_phone_reaches_the_desk_and_the_crew_from_anywhere() -> void:
 	await _frames(3)
 	_key(KEY_T, false)
 	check(m.visible, "T takes the phone out")
+	check(m.page == "home", "it opens on the home screen, apps in a grid")
+	m.key("1")
+	check(m.page == "contacts", "1 opens Contacts")
 	var acts: Array = m.rows.map(func(r): return r[0])
 	check("desk" in acts, "the desk is in the phone book: %s" % [acts])
 	if s.payroll != null:
@@ -195,6 +245,34 @@ func test_the_phone_reaches_the_desk_and_the_crew_from_anywhere() -> void:
 	m.close()
 	app.free()
 	s.dispose()
+
+func test_incoming_phone_is_the_same_queue_on_foot_and_in_the_cockpit() -> void:
+	var app := _app({"seed": 9, "map_seed": MapCity.SEED, "location": "HAR", "family": true, "humans": {Roles.BOSS: "Owner"}})
+	var s := app.s
+	s.family.offer("loan")
+	var call_id: int = s.phone_calls.pending()[0].id
+	var event := InputEventKey.new()
+	event.keycode = KEY_T
+	event.pressed = true
+	event.shift_pressed = true
+	app._unhandled_input(event)
+	var menu: PhoneMenu = app.menus.phone
+	check(menu.visible and int(menu.rows[0][3]) == call_id, "cockpit phone shows the authoritative call")
+	menu.close()
+	app._toggle_on_foot()
+	await _frames(3)
+	event.shift_pressed = false
+	app._unhandled_input(event)
+	check(menu.visible and int(menu.rows[0][3]) == call_id, "on-foot phone shows the same call")
+	menu.list.select(0)
+	menu.key("enter")
+	check(s.phone_calls.pending().is_empty(), "answer consumes that call once")
+	check(app.talk != null, "answer routes into the existing Family conversation")
+	check(not app.walker.look_enabled, "walker stops to take the call")
+	check(not s.family.offers.is_empty(), "answer has not accepted the economic offer")
+	app.free()
+	s.dispose()
+
 
 ## The phone's taxi: pick somewhere, pay the fare, and the world runs ahead while you ride; you are
 ## put down at the other end.
@@ -545,4 +623,40 @@ func test_the_stairs_to_the_boss_office_can_be_climbed() -> void:
 	_key(KEY_W, false)
 	w.free()
 	club.free()
+	s.dispose()
+
+
+## The phone's apps: ESC steps back to the home screen, Bank shows the money, Messages the banners, Radio tunes, Jobs puts a waypoint down.
+func test_the_phone_apps() -> void:
+	var app := _app({"seed": 9, "location": "HAR", "trade": true, "logistics": true})
+	var s := app.s
+	var m: PhoneMenu = app.menus["phone"]
+	m.open()
+	m.key("5")
+	check(m.page == "bank" and m.list.row_count() >= 1 and m.list.cell(0, 0).contains("In hand"), "Bank: the money in hand first")
+	m.close()
+	check(m.visible and m.page == "home", "ESC goes back to the home screen, not away")
+	app.notify.push("Phone", "Test message", "phone")
+	m.key("2")
+	check(m.page == "messages" and m.list.row_count() >= 1 and m.list.cell(0, 0).contains("Test message"), "Messages: the newest banner first")
+	m.close()
+	if app.radio != null and not app.radio.stations.is_empty():
+		app.radio.state_path = "user://zz_test_phone_radio.cfg"
+		m.key("6")
+		m.list.select(0)
+		m.key("enter")
+		check(app.radio.on and app.radio.idx == 0, "Radio: ENTER tunes to the station")
+		app.radio.power(false)
+		DirAccess.remove_absolute(app.radio.state_path)
+		m.close()
+	var job := Jobs.Job.new(Jobs.new_id(), "test", "cargo", "HAR", "VAL", [], 100, {})
+	s.active_jobs.append(job)
+	m.key("4")
+	check(m.page == "jobs" and m.list.row_count() == 1, "Jobs: the job you took")
+	m.list.select(0)
+	m.key("enter")
+	check(app.waypoint != null and not m.visible, "ENTER on it puts a waypoint down and the phone away")
+	var val := World.airfield("VAL")
+	check((app.waypoint as Vector2).distance_to(Vector2(val.x, val.y)) < 2000.0, "at the job's strip")
+	app.free()
 	s.dispose()

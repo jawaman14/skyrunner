@@ -218,7 +218,12 @@ func test_the_hud_the_hangar_and_the_desk_show_it() -> void:
 			idx = i
 	menu.list.select(idx)
 	menu.key("enter")
-	check(not a.work.is_empty(), "ENTER starts the work")
+	check(a.work.is_empty(), "review does not start or charge work")
+	menu.key("right")
+	for frame in 3:
+		await Engine.get_main_loop().process_frame
+	menu.key("enter")
+	check(not a.work.is_empty(), "confirmed review starts the work")
 	menu.key("enter")
 	check(a.work.is_empty(), "and again stops it")
 	menu.queue_free()
@@ -231,6 +236,13 @@ func test_the_hud_the_hangar_and_the_desk_show_it() -> void:
 	check_eq(app.list.row_count(), 2, "an engine row and an airframe row")
 	app.list.select(0)
 	app._key("enter")
+	# Service actions now show the shared consequence preview before commit.
+	if app.review != null:
+		for frame in 3:
+			await Engine.get_main_loop().process_frame
+		app.review._answered(true)
+		for frame in 3:
+			await Engine.get_main_loop().process_frame
 	check(not a.work.is_empty() and a.work.parts == ["engine"], "ENTER repairs the engine")
 	app._key("s")
 	check(a.work.is_empty(), "S stops the work")

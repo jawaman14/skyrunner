@@ -70,6 +70,7 @@ const ARRIVE_MARGIN_M := 30.0  ## how far off a strip a stopped aircraft still c
 var phase := "parked"  ## parked | flying | crashed | busted
 var location = START_FIELD
 var messages: Array = []  ## [[t, text]]
+var phone_calls := PhoneCalls.new()  ## one authoritative incoming queue for all phone surfaces
 var active_jobs: Array = []
 var boards := {}
 var jsbsim_root := ""
@@ -205,6 +206,8 @@ const SYSTEMS := ["ground_war", "agency", "island", "trade", "logistics", "payro
 
 const APPROACH_JOIN_M := 9000.0  ## the autopilot's join point, out along the runway's centreline
 const APPROACH_FINAL_M := 5000.0  ## and its final fix: 3 degrees down from here is the runway end
+const AUTOPILOT_HOLD_LOOKAHEAD_M := 4000.0  ## the plain hold looks this far along the heading for ground to clear
+const AUTOPILOT_HOLD_CLEARANCE_M := 120.0  ## ... and climbs to this much above the highest of it
 const AUTOPILOT_MIN_ROUTE_M := 3000.0  ## closer than this isn't worth engaging the navigate leg for
 const AUTOPILOT_HOT_DARK_SUSPICION := 50.0  ## a hot leg goes dark once suspicion's at least this, even without a tip or a wanted level yet
 
@@ -481,6 +484,9 @@ func unlocked(key: String) -> bool:
 
 
 func refresh_board(code: String) -> void:
+	if story != null and story.employment != null and story.employment.active():
+		boards[code] = story.employment.board(self, code)
+		return
 	var af := World.airfield(code)
 	if af.kind == "foreign":
 		boards[code] = island.board(af) if island != null else []

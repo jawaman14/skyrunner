@@ -46,6 +46,16 @@ func test_pilot_app_flies_a_frame_and_opens_menus() -> void:
 	jm.list.select(1)
 	jm.key("enter")
 	check(not s.active_jobs.is_empty(), "job accepted from the menu")
+	var accepted: Jobs.Job = s.active_jobs[0]
+	for i in jm.rows.size():
+		if jm.rows[i] != null and jm.rows[i][0] == "active" and jm.rows[i][1] == accepted:
+			jm.list.select(i)
+			break
+	jm.key("enter")
+	var repeat_enter := T.key(KEY_ENTER)
+	repeat_enter.echo = true
+	app._unhandled_input(repeat_enter)
+	check(s.active_jobs.has(accepted), "holding Enter cannot confirm dropping a job")
 	jm.close()
 	app._toggle_menu("l")
 	var lm: LoadMenu = app.menus["l"]
@@ -56,6 +66,95 @@ func test_pilot_app_flies_a_frame_and_opens_menus() -> void:
 	lm._set_fuel(s.loadout.mass.fuel_capacity_lb() * 0.5)
 	check_near(s.fm.fuel_lb(), s.loadout.mass.fuel_capacity_lb() * 0.5, 1.0, "fuel preset")
 	lm.close()
+	# Tutorial key caps must call the same session actions as the keyboard.
+	Tutorial.new().attach(s)
+	app._frame = 9
+	app._process(1.0 / 30)
+	check(app.tutorial_panel != null and app.tutorial_panel.visible, "tutorial panel shown")
+	var lesson: String = s.tutorial.current()[0]
+	var skip_button := app.tutorial_panel.foot.get_child(0) as Button
+	check(skip_button != null and skip_button.custom_minimum_size.y >= UIStyle.TOUCH_MIN, "skip is a touch-sized button")
+	check_eq(skip_button.focus_mode, Control.FOCUS_NONE, "the tutorial chips never take keyboard focus, so Tab and Enter reach the game")
+	skip_button.pressed.emit()
+	check(s.tutorial.done.has(lesson), "clicking skip completes the current lesson")
+	var off_button := app.tutorial_panel.foot.get_child(1) as Button
+	off_button.pressed.emit()
+	check(not s.tutorial.enabled and not app.tutorial_panel.visible, "clicking off hides the pilot tutorial immediately")
+	app.queue_free()
+	app.free()
+	s.dispose()
+
+
+func test_air_camera_look_uses_right_drag_without_changing_mouse_yoke() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	var right := InputEventMouseButton.new()
+	right.button_index = MOUSE_BUTTON_RIGHT
+	right.pressed = true
+	app._update_camera(s.state, 1.0 / 30.0)
+	var centered_camera := app.cam.global_basis
+	app._input(right)
+	check(not app._air_look_active, "right drag does not look around while parked")
+	s.state.on_ground = false
+	app.mouse_yoke = true
+	app._input(right)
+	check(app._air_look_active, "right drag starts an airborne camera look")
+	var motion := InputEventMouseMotion.new()
+	motion.relative = Vector2(40, -20)
+	app._input(motion)
+	check(app._air_look_yaw != 0.0 and app._air_look_pitch != 0.0, "drag moves camera yaw and pitch")
+	app._update_camera(s.state, 1.0 / 30.0)
+	check(not app.cam.global_basis.is_equal_approx(centered_camera), "camera transform responds to the drag")
+	check(app.mouse_yoke, "camera look leaves the Y mouse-yoke toggle unchanged")
+	right.pressed = false
+	app._input(right)
+	check(not app._air_look_active, "releasing right mouse ends the camera look")
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	app.queue_free()
+	app.free()
+	s.dispose()
+
+
+func test_pause_menu_blocks_air_camera_look_even_when_hosted_game_keeps_running() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	s.state.on_ground = false
+	app.open_pause()
+	app.paused = false  # hosted sessions remain live behind the modal
+	check(not app._air_camera_look_allowed(), "pause modal blocks camera capture while the hosted sim runs")
+	var right := InputEventMouseButton.new()
+	right.button_index = MOUSE_BUTTON_RIGHT
+	right.pressed = true
+	app._input(right)
+	check(not app._air_look_active, "right drag cannot capture behind the pause menu")
+	app.close_pause()
+	app.queue_free()
+	app.free()
+	s.dispose()
+
+
+func test_tower_camera_pitch_uses_the_yawed_view_right_axis() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	var af: Airfield = s.world.nearest_airfield(s.state.x, s.state.y)[0]
+	s.state.x = af.x
+	s.state.y = af.y
+	s.state.alt = s.world.airfield_elev(af) + 24.0
+	s.state.on_ground = false
+	app.cam_mode = "tower"
+	app._air_look_yaw = PI / 2.0
+	app._air_look_pitch = 0.0
+	app._update_camera(s.state, 1.0 / 30.0)
+	var level_basis := app.cam.global_basis
+	app._air_look_pitch = 0.35
+	app._update_camera(s.state, 1.0 / 30.0)
+	check(not app.cam.global_basis.is_equal_approx(level_basis), "tower view pitches around its yawed horizontal right axis")
 	app.queue_free()
 	app.free()
 	s.dispose()
@@ -65,6 +164,7 @@ func test_station_screens_for_every_seat() -> void:
 	var s := Session.new({"seed": 9, "location": "FRM", "mode": Roles.VERSUS, "features": Session.SANDBOX_FEATURES + ["hq"]})
 	s.update(1.0 / 30)
 	for role in [Roles.COPILOT, Roles.SPOTTER, Roles.BOAT, Roles.CONTROLLER, Roles.BOSS, Roles.CHIEF]:
+		Tutorial.new().attach(s)
 		var st := StationApp.new()
 		_tree().root.add_child(st)
 		st.setup(LocalLink.new(s, role), role, s.world)
@@ -73,6 +173,22 @@ func test_station_screens_for_every_seat() -> void:
 		check(st.title.text != "" and not st.title.text.begins_with("Connecting"), role + ": " + st.title.text)
 		for key in ["down", "right", "left", "up"]:
 			st._key(key)
+		if s.tutorial.desk_current(role) == null:
+			check(st.tutorial_panel != null and not st.tutorial_panel.visible, role + " has no desk lesson")
+			st.free()
+			continue
+		check(st.tutorial_panel != null and st.tutorial_panel.visible, role + " tutorial shown")
+		var lesson: String = s.tutorial.desk_current(role)[0]
+		var skip_button := st.tutorial_panel.foot.get_child(0) as Button
+		skip_button.pressed.emit()
+		check(s.tutorial.desk_done.get(role, {}).has(lesson), role + " skip goes through the station command")
+		# Off is also available when the desk has another lesson; a completed desk hides the panel.
+		s.tutorial.desk_done[role].erase(lesson)
+		st._process(1.0 / 30)
+		var off_button := st.tutorial_panel.foot.get_child(st.tutorial_panel.foot.actions().find("off")) as Button
+		off_button.pressed.emit()
+		st._process(1.0 / 30)
+		check(not s.tutorial.enabled and not st.tutorial_panel.visible, role + " off goes through the station command")
 		st.free()
 	s.dispose()
 
@@ -145,14 +261,31 @@ func test_data_table_keyboard_skips_sections() -> void:
 
 
 func test_hud_regions_never_overlap_at_any_size() -> void:
-	var s := Session.new({"seed": 4})
+	var s := Session.new({"seed": 4, "airframe": true})
 	s.update(1.0 / 30)
 	var hud := Hud.new()
 	_tree().root.add_child(hud)
 	hud.setup(s)
+	s.state.stall_warning = true
+	s.state.on_ground = false
+	s.state.fuel_lb = 10
+	s.state.ias_kts = 200
+	s.fm.controls.flaps = 1
+	s.police.case().bust_meter = 20
+	s.police.case().rival_meter = 20
+	s.autopilot.engaged = true
+	s.copilot = "ai"
+	s.pumping = true
+	s.weather = {"sky": "storm", "wind_dir": 123, "wind_kt": 18, "moon": 0.5}
+	if s.airframe != null:
+		s.airframe.fail_until = s.time + 100
+	hud.pulse = 140
+	hud.refresh()
 	for sz in [Vector2(1024, 768), Vector2(1280, 720), Vector2(1920, 1080), Vector2(2560, 1080)]:
 		hud.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		hud.size = sz
+		await _tree().process_frame
+		await _tree().process_frame
 		var names: Array = hud.zones.keys()
 		for i in names.size():
 			var a: Rect2 = hud.zones[names[i]].get_rect()
@@ -162,6 +295,56 @@ func test_hud_regions_never_overlap_at_any_size() -> void:
 				var b: Rect2 = hud.zones[names[j]].get_rect()
 				check(not a.intersects(b), "%s and %s overlap at %s" % [names[i], names[j], sz])
 	hud.free()
+	s.dispose()
+
+
+func test_hud_prioritises_active_operations_and_explains_load_limits() -> void:
+	var s := Session.new({"seed": 4})
+	s.update(1.0 / 30)
+	s.auto_kick = false
+	s.copilot = ""
+	var hud := Hud.new()
+	_tree().root.add_child(hud)
+	hud.setup(s)
+	hud.refresh()
+	check(not hud.chips.ap.visible and not hud.chips.crew.visible, "inactive AP and crew do not compete with aircraft state")
+	check(not hud.chip_groups.OPERATIONS.visible, "empty operation group disappears")
+	check(hud.chips.xpdr.visible and hud.chips.cam.visible, "aircraft state stays available")
+	s.autopilot.engaged = true
+	s.pumping = true
+	hud.pulse = 140
+	hud.refresh()
+	check(hud.chips.ap.visible and hud.chips.pump.visible and hud.chip_groups.OPERATIONS.visible, "active operations appear")
+	check(hud.chips.pulse.visible and hud.chip_groups.ALERTS.visible, "shaking is an alert")
+	s.state.on_ground = false
+	hud.refresh()
+	check(hud.tiles.fuel.sub.text.begins_with("Est."), "endurance is labelled as an estimate")
+	var item := Loadout.Item.new(99999, "Test load", "cargo", s.spec.mtow_lb * 2, 0)
+	s.loadout.add(item)
+	s.loadout.assignment[item.id] = 0
+	hud.refresh()
+	check("OVERWEIGHT" in hud.tiles.wb.text, "authoritative load limits are explained")
+	s.scanner_log.append([s.time - 12, "Patrol reported near the docks"])
+	hud.refresh()
+	check("12s ago" in hud.intel.text and "NOT CONFIRMED" in hud.intel.text, "scanner reports show age and uncertainty")
+	hud.free()
+	s.dispose()
+
+
+func test_map_reports_do_not_reveal_live_or_delayed_positions() -> void:
+	var s := Session.new({"seed": 4})
+	s.update(1.0 / 30)
+	s.time = 100
+	s.intel["reported-only"] = [80.0, 123.0, 456.0, "scanner"]
+	s.intel["delayed-only"] = [110.0, 999.0, 999.0, "spotter@HAR"]
+	var map := Minimap.new()
+	map.s = s
+	var contacts := map.known_contacts()
+	check_eq(contacts["reported-only"].x, 123.0, "reported position retained")
+	check_eq(contacts["reported-only"].age, 20.0, "report age retained")
+	check_eq(contacts["reported-only"].source, "scanner", "report source retained")
+	check(not contacts.has("delayed-only"), "delayed intel remains hidden")
+	map.free()
 	s.dispose()
 
 

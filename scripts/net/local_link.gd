@@ -8,6 +8,8 @@ var role: String
 var error = null
 var last_result := [true, ""]
 var acks := {}
+var previews := {}
+var capabilities := ["action_previews"]
 var ticks := true  ## false: someone else runs the session (split-screen demo)
 var _seq := 0
 
@@ -22,6 +24,12 @@ func send_command(cmd: String, args := {}) -> int:
 	last_result = sess.command(role, cmd, args)
 	_seq += 1
 	acks[_seq] = last_result
+	return _seq
+
+
+func request_preview(name: String, args := {}) -> int:
+	_seq += 1
+	previews[_seq] = sess.describe_action(role, name, args)
 	return _seq
 
 
@@ -45,3 +53,7 @@ func alive() -> bool:
 
 func close() -> void:
 	pass
+
+
+func cancel_preview(sequence: int) -> void:
+	previews.erase(sequence)

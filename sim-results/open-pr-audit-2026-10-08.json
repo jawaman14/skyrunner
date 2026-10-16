@@ -1,0 +1,1683 @@
+{
+  "reviewed_at": "2026-10-08",
+  "code_head": "4ec3e0d92070457cbca8f278444d4ce3d715fe51",
+  "prs": [
+    {
+      "number": 253,
+      "title": "Add desktop gameplay recordings and update README and player docs",
+      "url": "https://github.com/jawaman14/skyrunner/pull/253",
+      "draft": true,
+      "base": "codex/first-aircraft-milestone",
+      "head": "codex/gameplay-recordings",
+      "sha": "4ec3e0d92070457cbca8f278444d4ce3d715fe51",
+      "files": [
+        "README.md",
+        "docs/ASSET_PROVENANCE.md",
+        "docs/FEATURES.md",
+        "docs/GAMEPLAY_RECORDINGS.md",
+        "docs/GUIDE.md",
+        "docs/PROJECT_STATUS.md",
+        "docs/ROADMAP.md",
+        "docs/media/coast-logistics.jpg",
+        "docs/media/coast-logistics.mp4",
+        "docs/media/flight-police.jpg",
+        "docs/media/flight-police.mp4",
+        "docs/media/interface.jpg",
+        "docs/media/interface.mp4",
+        "docs/media/manifest.json",
+        "docs/media/opening.jpg",
+        "docs/media/opening.mp4",
+        "docs/media/services.jpg",
+        "docs/media/services.mp4",
+        "docs/media/turf-war.jpg",
+        "docs/media/turf-war.mp4",
+        "tools/demo.gd",
+        "tools/employment_tour.gd",
+        "tools/ground_tour.gd",
+        "tools/record_gameplay.ps1",
+        "tools/services_tour.gd",
+        "tools/ui_tour.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 252,
+      "title": "Show the first aircraft ownership milestone in career guidance and journal",
+      "url": "https://github.com/jawaman14/skyrunner/pull/252",
+      "draft": true,
+      "base": "codex/employer-smuggling-route",
+      "head": "codex/first-aircraft-milestone",
+      "sha": "229d1bb80695dd420db771f603cb19f424bc4a52",
+      "files": [
+        "docs/EMPLOYED_OPENING.md",
+        "scripts/sim/employment_opening.gd",
+        "scripts/sim/session_ops.gd",
+        "scripts/sim/story.gd",
+        "tests/test_employment_opening.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 251,
+      "title": "fix: teach the first smuggling route through an unpoliced strip",
+      "url": "https://github.com/jawaman14/skyrunner/pull/251",
+      "draft": true,
+      "base": "codex/employed-pilot-opening",
+      "head": "codex/employer-smuggling-route",
+      "sha": "0d02807d71657d03a1835db2cbc1c91e158a5b8d",
+      "files": [
+        "docs/EMPLOYED_OPENING.md",
+        "docs/PLAYER_DIRECTION_DELIVERY.md",
+        "scripts/sim/employment_opening.gd",
+        "tests/test_employment_opening.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 250,
+      "title": "feat: start new stories flying a legitimate employer's aircraft",
+      "url": "https://github.com/jawaman14/skyrunner/pull/250",
+      "draft": true,
+      "base": "codex/gameplay-inspiration",
+      "head": "codex/employed-pilot-opening",
+      "sha": "a1027ae693a4a4f89a0252784cdee6224fb051b2",
+      "files": [
+        "docs/EMPLOYED_OPENING.md",
+        "docs/PLAYER_DIRECTION_DELIVERY.md",
+        "docs/ROADMAP.md",
+        "scripts/game/pilot_app.gd",
+        "scripts/main.gd",
+        "scripts/net/dedicated_server.gd",
+        "scripts/sim/action_descriptions.gd",
+        "scripts/sim/employment_opening.gd",
+        "scripts/sim/employment_opening.gd.uid",
+        "scripts/sim/jobs.gd",
+        "scripts/sim/session.gd",
+        "scripts/sim/session_ops.gd",
+        "scripts/sim/session_rules.gd",
+        "scripts/sim/session_state.gd",
+        "scripts/sim/story.gd",
+        "scripts/station/station_app.gd",
+        "scripts/ui/hangar_menu.gd",
+        "tests/test_dedicated.gd",
+        "tests/test_employment_opening.gd",
+        "tools/employed_smoke.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 249,
+      "title": "Record player direction and remaining delivery coverage",
+      "url": "https://github.com/jawaman14/skyrunner/pull/249",
+      "draft": true,
+      "base": "codex/controls-ux",
+      "head": "codex/gameplay-inspiration",
+      "sha": "f349320bff513170940981568e22f9a2e769f5c2",
+      "files": [
+        "docs/EMPIRE_MILESTONE.md",
+        "docs/GAMEPLAY_INSPIRATION.md",
+        "docs/PLAYER_DIRECTION.md",
+        "docs/PLAYER_DIRECTION_DELIVERY.md",
+        "docs/ROADMAP.md"
+      ],
+      "checks": [
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 248,
+      "title": "Improve controls navigation and accessible hardware calibration",
+      "url": "https://github.com/jawaman14/skyrunner/pull/248",
+      "draft": true,
+      "base": "codex/costa-brava-rebuild",
+      "head": "codex/controls-ux",
+      "sha": "1bd3aca771b0b3c8c0d2afda3f2459a0704c7176",
+      "files": [
+        "docs/CONTROLS_UX_AUDIT.md",
+        "scripts/game/pilot_app.gd",
+        "scripts/ui/controls_menu.gd",
+        "tests/test_modal_menu_input.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 247,
+      "title": "feat: rebuild Costa Brava settlements with period architecture",
+      "url": "https://github.com/jawaman14/skyrunner/pull/247",
+      "draft": true,
+      "base": "codex/gameplay-feature-audit",
+      "head": "codex/costa-brava-rebuild",
+      "sha": "0d5a8f0a643a3e4c126dad7cf1d40f1c4c639122",
+      "files": [
+        "docs/ASSET_PROVENANCE.md",
+        "docs/COSTA_BRAVA_REBUILD.md",
+        "docs/ROADMAP.md",
+        "docs/screenshots/costa-rebuild-2026-10-08-city-overview.png",
+        "docs/screenshots/costa-rebuild-2026-10-08-old-town.png",
+        "docs/screenshots/costa-rebuild-2026-10-08-port.png",
+        "scripts/render/city.gd",
+        "scripts/render/city_dress.gd",
+        "scripts/render/period_architecture.gd",
+        "scripts/render/period_architecture.gd.uid",
+        "scripts/render/terrain_mesh.gd",
+        "scripts/sim/costa_brava_plan.gd",
+        "scripts/sim/costa_brava_plan.gd.uid",
+        "scripts/sim/map_city.gd",
+        "scripts/sim/map_layout.gd",
+        "shaders/period_architecture.gdshader",
+        "shaders/period_architecture.gdshader.uid",
+        "shaders/terrain_splat.gdshader",
+        "sim-results/costa-rebuild-balance-2026-10-08.json",
+        "sim-results/costa-rebuild-validation-2026-10-08.json",
+        "tests/test_city_map.gd",
+        "tests/test_costa_brava_plan.gd",
+        "tests/test_downtown_dress.gd",
+        "tools/costa_review.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 246,
+      "title": "docs: audit jobs, gameplay systems and multiplayer coverage",
+      "url": "https://github.com/jawaman14/skyrunner/pull/246",
+      "draft": true,
+      "base": "codex/battle-removal-finalization",
+      "head": "codex/gameplay-feature-audit",
+      "sha": "ad45107ba9400e2d77fa5a1b0b0f6dda8a4d4bb7",
+      "files": [
+        "docs/GAMEPLAY_FEATURE_AUDIT_2026-10-08.md"
+      ],
+      "checks": [
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 245,
+      "title": "fix: release surviving squads when combatants are removed",
+      "url": "https://github.com/jawaman14/skyrunner/pull/245",
+      "draft": true,
+      "base": "codex/faction-ai-commitments",
+      "head": "codex/battle-removal-finalization",
+      "sha": "529b4a82218c10c423ae2bbe6b6835938113e546",
+      "files": [
+        "docs/BATTLE_FINALIZATION_2026-10-08.md",
+        "docs/EMPIRE_MILESTONE.md",
+        "docs/PROJECT_STATUS.md",
+        "scripts/sim/ground.gd",
+        "tests/test_ground.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 244,
+      "title": "fix: retain live escorts and clear reassigned police stakeouts",
+      "url": "https://github.com/jawaman14/skyrunner/pull/244",
+      "draft": true,
+      "base": "codex/battle-debrief-history",
+      "head": "codex/faction-ai-commitments",
+      "sha": "c45ddd20257debe177cbd7a86b4930c83f4070d2",
+      "files": [
+        "docs/FACTION_AI_AUDIT_2026-10-08.md",
+        "scripts/sim/ground.gd",
+        "sim-results/faction-ai-balance-2026-10-08.json",
+        "tests/test_ground.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 243,
+      "title": "docs: plan coastal art gameplay profiling and release acceptance",
+      "url": "https://github.com/jawaman14/skyrunner/pull/243",
+      "draft": true,
+      "base": "codex/battle-debrief-history",
+      "head": "codex/plan-coastal-release",
+      "sha": "89e0311c45a47cb599fe34e7b26e84fc8a477088",
+      "files": [
+        "docs/COASTAL_RELEASE_IMPLEMENTATION.md"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 242,
+      "title": "docs: plan empire dashboard order outcomes and operational debriefs",
+      "url": "https://github.com/jawaman14/skyrunner/pull/242",
+      "draft": true,
+      "base": "codex/battle-debrief-history",
+      "head": "codex/plan-empire-feedback",
+      "sha": "9f71ec8de64cbfaf398bf05a610df2a53e61a847",
+      "files": [
+        "docs/EMPIRE_FEEDBACK_IMPLEMENTATION.md"
+      ],
+      "checks": [
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 241,
+      "title": "docs: plan remaining Costa Brava access and movement work",
+      "url": "https://github.com/jawaman14/skyrunner/pull/241",
+      "draft": true,
+      "base": "codex/battle-debrief-history",
+      "head": "codex/plan-physical-access",
+      "sha": "5d3a736bfc38ad411c40ee4ed753149a6b8e66f0",
+      "files": [
+        "docs/PHYSICAL_ACCESS_IMPLEMENTATION.md"
+      ],
+      "checks": [
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 240,
+      "title": "feat: retain own-unit battle accounts in command views",
+      "url": "https://github.com/jawaman14/skyrunner/pull/240",
+      "draft": true,
+      "base": "codex/district-command-summary",
+      "head": "codex/battle-debrief-history",
+      "sha": "eecbe903c56e8f8b7d224b5d1c4ed36b90d2d042",
+      "files": [
+        "docs/EMPIRE_MILESTONE.md",
+        "docs/GUIDE.md",
+        "scripts/sim/ground.gd",
+        "scripts/sim/strategic_save.gd",
+        "scripts/station/station_app.gd",
+        "scripts/ui/hq_menu.gd",
+        "scripts/ui/widgets/battle_report.gd",
+        "tests/test_battle_report.gd",
+        "tests/test_ground.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 239,
+      "title": "feat: explain district control costs and collection at command desks",
+      "url": "https://github.com/jawaman14/skyrunner/pull/239",
+      "draft": true,
+      "base": "codex/hq-visible-orders",
+      "head": "codex/district-command-summary",
+      "sha": "52594ef4a2a5c8c9ed86c6f2a37c14254d6fda8a",
+      "files": [
+        "docs/GUIDE.md",
+        "scripts/sim/ground.gd",
+        "scripts/station/station_app.gd",
+        "scripts/ui/hq_menu.gd",
+        "scripts/ui/widgets/district_summary.gd",
+        "tests/test_district_summary.gd",
+        "tests/test_ground.gd",
+        "tests/test_hq_action_review.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 238,
+      "title": "fix: restrict HQ targeting to observed squads",
+      "url": "https://github.com/jawaman14/skyrunner/pull/238",
+      "draft": true,
+      "base": "codex/checked-access-detours",
+      "head": "codex/hq-visible-orders",
+      "sha": "761fe6934b0f2fcbe400f644a41458d197413b29",
+      "files": [
+        "scripts/sim/ground.gd",
+        "scripts/ui/hq_menu.gd",
+        "tests/test_ground.gd",
+        "tests/test_hq_action_review.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 237,
+      "title": "fix: use validated local detours for checked vehicle access",
+      "url": "https://github.com/jawaman14/skyrunner/pull/237",
+      "draft": true,
+      "base": "codex/squad-command-detail",
+      "head": "codex/checked-access-detours",
+      "sha": "c43f864807de89dcd1fe23c61ed35f9acf5e36f8",
+      "files": [
+        "docs/EMPIRE_MILESTONE.md",
+        "docs/LOGISTICS_ROUTE_BASELINE.md",
+        "docs/ROADMAP.md",
+        "scripts/sim/site_access.gd",
+        "sim-results/connector-balance-2026-10-07.json",
+        "sim-results/loading-access-2026-10-07.json",
+        "tests/test_site_access.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 236,
+      "title": "feat: share squad condition travel and upkeep command detail",
+      "url": "https://github.com/jawaman14/skyrunner/pull/236",
+      "draft": true,
+      "base": "codex/logistics-loading-endpoints",
+      "head": "codex/squad-command-detail",
+      "sha": "720109e13e3561e795ffa866f4e55f7be13267cb",
+      "files": [
+        "docs/EMPIRE_MILESTONE.md",
+        "docs/GUIDE.md",
+        "docs/ROADMAP.md",
+        "scripts/sim/ground.gd",
+        "scripts/station/station_app.gd",
+        "scripts/ui/hq_menu.gd",
+        "scripts/ui/widgets/squad_card.gd",
+        "tests/test_ground.gd",
+        "tests/test_hq_action_review.gd",
+        "tests/test_squad_card.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 235,
+      "title": "feat: map authored logistics loading endpoints for checked access",
+      "url": "https://github.com/jawaman14/skyrunner/pull/235",
+      "draft": true,
+      "base": "codex/ground-intelligence-boundaries",
+      "head": "codex/logistics-loading-endpoints",
+      "sha": "df46175a536c38c4be72a6c463645584e631aebf",
+      "files": [
+        "docs/LOGISTICS_ROUTE_BASELINE.md",
+        "scripts/sim/logistics.gd",
+        "tests/test_logistics.gd",
+        "tools/logistics_routes.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 234,
+      "title": "fix: withhold unobserved ground fight intelligence",
+      "url": "https://github.com/jawaman14/skyrunner/pull/234",
+      "draft": true,
+      "base": "codex/race-menu-feedback",
+      "head": "codex/ground-intelligence-boundaries",
+      "sha": "ed5870fd8fa0365c3a9d25a599f48733ab35d0d8",
+      "files": [
+        "docs/EMPIRE_MILESTONE.md",
+        "scripts/sim/ground.gd",
+        "tests/test_ground.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 233,
+      "title": "fix: retain race menu refusals and course selection",
+      "url": "https://github.com/jawaman14/skyrunner/pull/233",
+      "draft": true,
+      "base": "codex/debris-cleanup-lifetime",
+      "head": "codex/race-menu-feedback",
+      "sha": "910421f9aa4ddcede76e03392f3e7c23cd246cde",
+      "files": [
+        "scripts/ui/race_menu.gd",
+        "tests/test_game_menus.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 232,
+      "title": "fix: make debris expiry safe after scene removal",
+      "url": "https://github.com/jawaman14/skyrunner/pull/232",
+      "draft": true,
+      "base": "codex/campaign-dialogue-polish",
+      "head": "codex/debris-cleanup-lifetime",
+      "sha": "d592214f23ef17a95e9bb4fdbb3f85e6a4c1422c",
+      "files": [
+        "docs/CAMPAIGN_POLISH_2026-10-07.md",
+        "docs/DESIGN.md",
+        "docs/PROJECT_STATUS.md",
+        "docs/ROADMAP.md",
+        "scripts/render/fx.gd",
+        "sim-results/campaign-polish-2026-10-07.json",
+        "tests/test_effects.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 231,
+      "title": "feat: polish Costa Brava contact dialogue and epilogue",
+      "url": "https://github.com/jawaman14/skyrunner/pull/231",
+      "draft": true,
+      "base": "codex/campaign-guidance",
+      "head": "codex/campaign-dialogue-polish",
+      "sha": "4ddf8a7a47813a4237d48de412534c20a1de44af",
+      "files": [
+        "dialogue/buyers.dialogue",
+        "dialogue/casino.dialogue",
+        "dialogue/casino_file.dialogue",
+        "dialogue/crew.dialogue",
+        "dialogue/dealer.dialogue",
+        "dialogue/family.dialogue",
+        "dialogue/general.dialogue",
+        "dialogue/lawyer.dialogue",
+        "dialogue/psych.dialogue",
+        "docs/CAMPAIGN_POLISH_2026-10-07.md",
+        "docs/DESIGN.md",
+        "scripts/game/talk.gd",
+        "tests/test_talk.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 230,
+      "title": "feat: add persistent Costa Brava chapter guidance",
+      "url": "https://github.com/jawaman14/skyrunner/pull/230",
+      "draft": true,
+      "base": "codex/campaign-outcome-polish",
+      "head": "codex/campaign-guidance",
+      "sha": "5f52534ed55bd88bbb4ca38b92240d4f32bcdcdd",
+      "files": [
+        "scripts/game/pilot_app.gd",
+        "scripts/net/snapshot.gd",
+        "scripts/ui/phone_menu.gd",
+        "tests/test_phone_calls.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 229,
+      "title": "fix: report actual Costa Brava chapter outcomes",
+      "url": "https://github.com/jawaman14/skyrunner/pull/229",
+      "draft": true,
+      "base": "codex/coastal-infrastructure-assets",
+      "head": "codex/campaign-outcome-polish",
+      "sha": "de2815b39e24c2f552ad9886e388ec2096d943c4",
+      "files": [
+        "scripts/sim/island.gd",
+        "scripts/sim/story.gd",
+        "tests/test_story.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 228,
+      "title": "feat: add coastal period infrastructure and reconcile asset queue",
+      "url": "https://github.com/jawaman14/skyrunner/pull/228",
+      "draft": true,
+      "base": "codex/har-workshop-assets",
+      "head": "codex/coastal-infrastructure-assets",
+      "sha": "8900e1d470d021632376f27fc9baeb6e970e119d",
+      "files": [
+        "docs/ASSET_COVERAGE.md",
+        "docs/ASSET_PROVENANCE.md",
+        "docs/COASTAL_ASSET_VALIDATION_2026-10-07.md",
+        "docs/ROADMAP.md",
+        "docs/ROADMAP_HISTORY_2026-10.md",
+        "scripts/render/buildings.gd",
+        "scripts/render/port_dress.gd",
+        "tools/coastal_benchmark.gd",
+        "tools/workshop_preview.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 227,
+      "title": "feat: add period workshop equipment to HAR hangar",
+      "url": "https://github.com/jawaman14/skyrunner/pull/227",
+      "draft": true,
+      "base": "main",
+      "head": "codex/har-workshop-assets",
+      "sha": "98a001af8254fe251a9ee133493b4a187ad60c31",
+      "files": [
+        "assets/props/README.md",
+        "docs/ASSET_PROVENANCE.md",
+        "scripts/render/buildings.gd",
+        "tools/workshop_preview.gd"
+      ],
+      "checks": [
+        {
+          "name": "smoke-linux",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-windows",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "smoke-macos",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "dedicated server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 1/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 2/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "test 3/3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "export",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "reviews": []
+    }
+  ],
+  "reproductions": {
+    "routes": {
+      "pairs": 99,
+      "loading_reachable": 13,
+      "loading_blocked": 86,
+      "legacy_centres_blocked": 99,
+      "categories": {
+        "villa_footprint": 17,
+        "quarry_shed": 1,
+        "no_authored_loading": 9,
+        "disconnected": 30,
+        "no_nearby_access": 29
+      }
+    },
+    "network": {
+      "duplicate_sequence_queue_length": 2,
+      "oversize_line_bytes": 1048577,
+      "remaining_buffer_bytes": 0
+    },
+    "chapter": {
+      "requested_chapter": 1,
+      "actual_chapter": 0,
+      "title": "On the payroll"
+    }
+  },
+  "focused_tests": {
+    "ground": {
+      "passed": 30,
+      "failed": 0
+    }
+  }
+}

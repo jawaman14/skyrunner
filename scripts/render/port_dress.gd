@@ -36,16 +36,7 @@ static func shore_y(world: World, x: float) -> float:
 
 ## The piers' positions: [[x, y_shore], ...], from the map's harbour, west to east.
 static func piers(world: World) -> Array:
-	var out := []
-	var x := MapCity.HARBOUR_X.x + 260.0
-	var i := 0
-	while x < MapCity.HARBOUR_X.y - 200.0:
-		var y := shore_y(world, x)
-		if world.ground(x, y + 14.0) > 0.5:  # solid quay behind the edge
-			out.append([x, y, i])
-		x += PIER_EVERY_M
-		i += 1
-	return out
+	return SiteLayout.dock_sites(world)
 
 
 static func build(world: World, q: Quality) -> Node3D:
@@ -54,10 +45,18 @@ static func build(world: World, q: Quality) -> Node3D:
 	if not ENABLED or not q.shaded or world.map.map_seed != MapCity.SEED:
 		return root
 	var s := TILE_M / 2.5
+	var dressed := false
 	for p in piers(world):
 		var x: float = p[0]
 		var y: float = p[1]
 		var n: int = p[2]
+		if not dressed:
+			var equipment := Buildings.Kit.new("coastal-mooring")
+			var equipment_x := x + TILE_M * 0.5 - 0.5
+			var equipment_y := y + 8.0
+			Buildings.mooring_set(equipment, Vector3(equipment_x, world.ground(equipment_x, equipment_y), -equipment_y))
+			root.add_child(equipment.finish())
+			dressed = true
 		# the pier: tiles running south from the quay
 		for t in PIER_LEN:
 			var tile := ModelLib.wrapped(KIT + "structure-platform-dock", s, 0.0)

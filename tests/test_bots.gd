@@ -189,3 +189,73 @@ func test_autorunner_completes_a_flight() -> void:
 	check_eq(ar.bot.outcome if ar.bot else null, "landed")
 	check(s.money > money, "paid: %s -> %s" % [money, s.money])
 	s.dispose()
+
+## F3 in the middle of a flight: the AI used to do nothing unless the aircraft was parked.
+func test_autorunner_takes_over_a_flight_in_progress() -> void:
+	var s := _sess({"seed": 5, "location": "HAR", "features": []})
+	s.police.frozen = true
+	var ar := AutoRunner.new(s, false)
+	var job = ar._pick()
+	check(job != null and s.accept_job(job) == null, "a job is on board")
+	var af := World.airfield("HAR")
+	s.spawn_airborne(af.x + 3000.0, af.y - 1000.0, 70.0, 450.0, 95.0)
+	s.log.departed_from = "HAR"
+	var dt := 1.0 / 30
+	var c = ar.step(dt)
+	check(ar.bot != null and ar.bot.phase == "enroute", "the AI adopted the flight")
+	check(c != null, "and is flying it")
+	var dest := World.airfield(job.dest)
+	var d0 := Py.dist2([s.state.x, s.state.y], [dest.x, dest.y])
+	while s.time < 200.0:
+		s.update(dt, null, ar.step(dt))
+	var d1 := Py.dist2([s.state.x, s.state.y], [dest.x, dest.y])
+	check(d1 < d0 or ar.bot.phase in ["approach", "flare", "rollout", "done"], "it makes progress to the destination: %s -> %s" % [d0, d1])
+	check(s.phase != "crashed", "and does not crash")
+	s.dispose()
+
+
+func test_autorunner_takes_over_a_take_off_run() -> void:
+	var s := _sess({"seed": 5, "location": "HAR", "features": []})
+	s.police.frozen = true
+	var ar := AutoRunner.new(s, false)
+	var job = ar._pick()
+	check(job != null and s.accept_job(job) == null, "a job is on board")
+	var dt := 1.0 / 30
+	while s.parked and s.time < 60.0:  # the human opens the throttle: no longer parked
+		var inp := ControlMapper.InputFrame.new()
+		inp.throttle_axis = 1.0
+		inp.held["throttle_up"] = true
+		s.update(dt, inp, null)
+	check(not s.parked, "rolling, not parked")
+	var took_off := false
+	while s.time < 200.0 and not took_off:
+		s.update(dt, null, ar.step(dt))
+		took_off = not s.state.on_ground and s.state.agl > 8.0
+	check(ar.bot != null, "the AI took over")
+	check(took_off, "and flew it off the runway")
+	s.dispose()
+
+
+func test_hot_route_penalty_is_deterministic_and_optional() -> void:
+	var w := World.new()
+	var from := [-12000.0, -12000.0]
+	var to := [12000.0, 12000.0]
+	var plain: Array = RoutePlanner.plan_route(w, from, to)
+	check(not plain.is_empty(), "a route exists")
+	# a zone on the plain route itself, so the test doesn't depend on where this terrain's cheapest line runs
+	var mid: Array = plain[plain.size() / 2]
+	var zones: Array = [{"x": mid[0], "y": mid[1], "radius": 4000.0}]
+	var detoured: Array = RoutePlanner.plan_route(w, from, to, 6.0, 1.5, 1500.0, zones)
+	var replay: Array = RoutePlanner.plan_route(w, from, to, 6.0, 1.5, 1500.0, zones)
+	check(not detoured.is_empty())
+	check_eq(detoured, replay, "radar penalties are deterministic")
+	check(detoured != plain, "an explicit radar zone changes only opted-in routing")
+	check_eq(RoutePlanner.plan_route(w, from, to, 6.0, 1.5, 1500.0, []), plain, "no zones: the plain route, unchanged")
+	var inside := func(route: Array) -> int:
+		var n := 0
+		for p in route:
+			if PyMath.hypot(float(p[0]) - float(mid[0]), float(p[1]) - float(mid[1])) < 4000.0:
+				n += 1
+		return n
+	check(inside.call(detoured) < inside.call(plain), "the detour spends fewer waypoints inside the zone (%d < %d)" % [inside.call(detoured), inside.call(plain)])
+

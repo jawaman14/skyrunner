@@ -245,10 +245,20 @@ func test_the_dealer_screen_buys_sells_and_drives() -> void:
 	m.setup(s)
 	m.browse()
 	check(m.lot_rows.size() == Dealership.CATALOGUE.size(), "the whole lot is listed")
-	m.key("enter")  # the first row: the hatch
+	m.key("enter")  # the first row: review the hatch
+	check_eq(s.dealer.owned.size(), 0, "review spends nothing")
+	m.key("right")
+	for frame in 3:
+		await Engine.get_main_loop().process_frame
+	m.key("enter")
 	check_eq(s.dealer.owned.size(), 1, "bought from the lot")
 	m.key("right")
 	m.key("s")
+	check_eq(s.dealer.owned.size(), 1, "sale review keeps the vehicle")
+	m.key("right")
+	for frame in 3:
+		await Engine.get_main_loop().process_frame
+	m.key("enter")
 	check_eq(s.dealer.owned.size(), 0, "sold from the list of yours")
 	m.key("a")
 	check(s.dealer.auto, "A hands the fleet to the AI")
@@ -267,11 +277,11 @@ func test_the_dealer_talks_to_any_seat() -> void:
 		link.send_command(n, a)
 		return link.last_result)
 	check(st.dealer and st.dl_price("van") == 14000 and st.dl_can("van"), "the state reads the lot")
-	check(st.buy_vehicle("van") and st.dl_trucks == 1, "buys a van through the command")
+	check((await st.buy_vehicle("van")) and st.dl_trucks == 1, "buys a van through the command")
 	check(st.dl_fleet_line.contains("1 truck"), "and describes the fleet: %s" % st.dl_fleet_line)
-	check(st.buy_vehicle("fast") and s.stash_net.haul_ms == 15.0, "a second truck")
-	check(st.sell_truck() and st.dl_trucks == 1, "sells the newest")
-	check(st.toggle_fleet_auto() and s.dealer.auto and st.dl_auto, "hands the fleet to the AI")
+	check((await st.buy_vehicle("fast")) and s.stash_net.haul_ms == 15.0, "a second truck")
+	check((await st.sell_truck()) and st.dl_trucks == 1, "sells the newest")
+	check((await st.toggle_fleet_auto()) and s.dealer.auto and st.dl_auto, "hands the fleet to the AI")
 	s.money = 100
 	st.refresh()
 	check(not st.dl_can("armoured"), "and cannot afford the armoured truck")

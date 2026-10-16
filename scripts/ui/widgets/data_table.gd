@@ -21,7 +21,7 @@ func setup(columns_: Array) -> DataTable:
 	hide_root = true
 	column_titles_visible = true
 	select_mode = Tree.SELECT_ROW
-	focus_mode = Control.FOCUS_CLICK
+	focus_mode = Control.FOCUS_ALL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_horizontal_enabled = false

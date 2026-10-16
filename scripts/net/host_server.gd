@@ -24,6 +24,11 @@ extends Node
 
 const DEFAULT_PORT := 47800
 const MAX_LINE := 1 << 20
+const MAX_LINES_PER_POLL := 64
+const MAX_PENDING_COMMANDS := 64
+const MAX_COMMAND_QUEUE := 1024
+const MAX_ACKS := 256
+const INPUT_TIMEOUT_MS := 1000
 const SNAPSHOT_HZ := 20.0
 const HELLO_TIMEOUT_MS := 10000
 const VOICE_FRAMES_PER_S := 40  ## a talker sends 25 a second; more than this is dropped
@@ -42,6 +47,11 @@ class Conn:
 	var v := 3
 	var joined := false
 	var t0 := 0
+	var command_high_water := 0
+	var pending_commands := {}
+	var command_acks := {}
+	var input_time := -1
+	var seat_generation := 0
 
 
 var tcp := TCPServer.new()
@@ -50,7 +60,7 @@ var mode := Roles.COOP
 var world_seed := 7
 var conns: Array = []
 var clients := {}  ## role -> Conn
-var inbox: Array = []  ## [role, seq, name, args]
+var inbox: Array = []  ## [role, seq, name, args, originating connection, seat generation]
 var sticks := {}  ## role -> [roll, pitch, throttle]
 var sess = null  ## the Session the seats belong to (set by attach or the first pump)
 var chat_log: Array = []  ## [from, role, side, text, to]
@@ -65,6 +75,7 @@ var password := ""  ## a dedicated server's: a hello without it is refused ("" =
 var log_fn: Callable = Callable()  ## called with a line of text for joins, leaves and refusals (the dedicated server prints them)
 var host_name := "host"
 var announce := true  ## the LAN beacon says where this game is (the menu switches it)
+var advert_name := ""  ## the name the beacon shows ("" = "<host name>'s game"; a dedicated server shows its own name)
 var _keyed := {}  ## talker token -> {t0, n, sec, last} (when the key went down; frames this second)
 var _seats_rev := -1
 var _seats_t := 0.0
@@ -107,15 +118,20 @@ static func line(msg: Dictionary) -> PackedByteArray:
 
 ## Pull complete lines out of a connection's buffer.
 static func read_lines(peer: StreamPeerTCP, buf: PackedByteArray) -> Array:
-	var n := peer.get_available_bytes()
+	var n := mini(peer.get_available_bytes(), maxi(0, MAX_LINE + 1 - buf.size()))
 	if n > 0:
 		var r := peer.get_partial_data(n)
 		if r[0] == OK:
 			buf.append_array(r[1])
+	return extract_lines(buf)
+
+
+## Leave an oversized frame buffered so the caller can close it before parsing.
+static func extract_lines(buf: PackedByteArray) -> Array:
 	var out := []
-	while true:
+	while out.size() < MAX_LINES_PER_POLL:
 		var i := buf.find(10)
-		if i < 0:
+		if i < 0 or i > MAX_LINE:
 			break
 		out.append(buf.slice(0, i).get_string_from_utf8())
 		var rest := buf.slice(i + 1)
@@ -255,6 +271,8 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		err = "The host isn't ready yet."
 	elif role != "" and not Roles.valid(role):
 		err = "No such role %s." % role
+	elif role != "" and mode == Roles.CAMPAIGN and not Roles.MODE_ROLES[Roles.CAMPAIGN].has(role):  # the campaign has four seats; the other desks are not part of it
+		err = "The campaign has no %s seat (pilot, copilot, spotter, boat)." % role
 	elif v == 2 and role == "":
 		err = "Protocol v2 needs a role."
 	elif password != "" and str(hello.get("password", "")) != password:
@@ -287,7 +305,7 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		if role != "":
 			room.claim(pid, role)  # (a seat asked for on the way in; if it is taken they simply have none yet)
 		c.joined = true
-		c.peer.put_data(line({"t": "welcome", "role": "", "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION, "phase": "room"}))
+		c.peer.put_data(line({"t": "welcome", "capabilities": ["action_previews"], "role": "", "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION, "phase": "room"}))
 		_room_rev = -1
 		return
 	# a returning player takes back the seat held for them
@@ -303,19 +321,36 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		c.role = role
 		clients[role] = c
 	c.joined = true
-	c.peer.put_data(line({"t": "welcome", "role": c.role, "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION}))
+	c.peer.put_data(line({"t": "welcome", "capabilities": ["action_previews"], "role": c.role, "mode": mode, "seed": world_seed, "token": c.token, "v": Snapshot.PROTOCOL_VERSION}))
 	_log("%s joined%s (%d here)" % [name, (" as " + c.role) if c.role != "" else " (no seat yet)", conns.filter(func(x): return x.joined).size()])
 	_seats_rev = -1  # everyone gets the new roster
 
 
 func _message(c: Conn, msg: Dictionary) -> void:
+	if sess == null and msg.get("t") == "preview_request":
+		c.peer.put_data(line({"t": "preview", "seq": int(msg.get("seq", 0)), "role": c.role, "action": ActionDescriptions.unavailable(str(msg.get("name", "")), {}, "Game not started; preview unavailable.")}))
+		return
 	if sess == null:
 		_room_message(c, msg)
+		return
+	if msg.get("t") == "preview_request":
+		var name := str(msg.get("name", "")).substr(0, 32)
+		var raw: Dictionary = msg.get("args", {}) if msg.get("args") is Dictionary else {}
+		var args := {}
+		for key in raw.keys().slice(0, 8):
+			args[str(key).substr(0, 32)] = raw[key]
+		var action: Dictionary = sess.describe_action(c.role, name, args)
+		c.peer.put_data(line({"t": "preview", "seq": int(msg.get("seq", 0)), "role": c.role, "action": action}))
 		return
 	match msg.get("t"):
 		"claim":
 			var role := str(msg.get("role", ""))
+			if mode == Roles.CAMPAIGN and not Roles.MODE_ROLES[Roles.CAMPAIGN].has(role):  # a later claim may not reach the desks the hello refuses
+				c.peer.put_data(line({"t": "claim_failed", "msg": "The campaign has no %s seat (pilot, copilot, spotter, boat)." % role}))
+				return
+			c.seat_generation += 1
 			if c.role != "":
+				_clear_input(c)
 				sess.seats.release(c.role)
 				clients.erase(c.role)
 				c.role = ""
@@ -331,6 +366,8 @@ func _message(c: Conn, msg: Dictionary) -> void:
 			return
 		"release":
 			if c.role != "":
+				c.seat_generation += 1
+				_clear_input(c)
 				sess.seats.release(c.role)
 				clients.erase(c.role)
 				sticks.erase(c.role)
@@ -351,23 +388,39 @@ func _message(c: Conn, msg: Dictionary) -> void:
 			c.peer.put_data(line({"t": "ack", "seq": int(msg.get("seq", 0)), "ok": false, "msg": "Claim a seat first."}))
 		return
 	if msg.get("t") == "cmd" and msg.get("args", {}) is Dictionary:
+		var seq := int(msg.get("seq", 0))
+		if c.command_acks.has(seq):
+			c.peer.put_data(line(c.command_acks[seq]))
+			return
+		if c.pending_commands.has(seq):
+			return
+		if seq <= c.command_high_water:
+			c.peer.put_data(line({"t": "ack", "seq": seq, "ok": false, "msg": "Expired or invalid command sequence; command not executed."}))
+			return
+		c.command_high_water = seq
+		if c.pending_commands.size() >= MAX_PENDING_COMMANDS or inbox.size() >= MAX_COMMAND_QUEUE:
+			_complete_command(c, seq, false, "Command queue full; command not executed.")
+			return
 		var args := {}
 		var raw: Dictionary = msg.get("args", {})
 		for k in raw.keys().slice(0, 8):
 			args[str(k).substr(0, 32)] = raw[k]
-		inbox.append([c.role, int(msg.get("seq", 0)), str(msg.get("name", "")).substr(0, 32), args])
+		c.pending_commands[seq] = true
+		inbox.append([c.role, seq, str(msg.get("name", "")).substr(0, 32), args, c, c.seat_generation])
 	elif msg.get("t") == "input" and c.role == Roles.PILOT:
 		var st := {}
 		for k in ["roll", "pitch", "throttle", "rudder", "brake"]:
 			var x = msg.get(k, 0.0)
 			st[k] = clampf(float(x), -1.0 if k in ["roll", "pitch", "rudder"] else 0.0, 1.0) if (x is float or x is int) else 0.0
 		sess.remote_stick = st
+		c.input_time = Time.get_ticks_msec()
 	elif msg.get("t") == "input" and c.role == Roles.INTERCEPTOR:
 		var v := []
 		for k in ["roll", "pitch", "throttle"]:  # latest stick position wins; no queueing, no acks
 			var x = msg.get(k, 0.0)
 			v.append(clampf(float(x), -1.0, 1.0) if (x is float or x is int) else 0.0)
 		sticks[c.role] = v
+		c.input_time = Time.get_ticks_msec()
 
 
 func _drop(c: Conn) -> void:
@@ -377,12 +430,25 @@ func _drop(c: Conn) -> void:
 	if sess == null and room != null and c.joined:
 		room.remove(public_id(c.token))
 	if c.joined and c.role != "" and clients.get(c.role) == c:
+		_clear_input(c)
 		clients.erase(c.role)
 		sticks.erase(c.role)
 		if sess != null:
 			sess.seats.release(c.role, true)  # held for them: the token takes it back
 		_seats_rev = -1
 	c.peer.disconnect_from_host()
+
+
+## Neutralize expired controls without changing seat ownership or issuing AI orders.
+func _clear_input(c: Conn) -> void:
+	c.input_time = -1
+	if sess == null:
+		return
+	if c.role == Roles.PILOT:
+		sess.remote_stick = {}
+	elif c.role == Roles.INTERCEPTOR:
+		sticks.erase(c.role)
+		sess.set_pilot_input(c.role, 0.0, 0.0, 0.0)
 
 
 ## A chat line: to everyone, or to one side's players (and the host, who sees
@@ -463,6 +529,19 @@ func kick(token: String, ban := true) -> bool:
 	return false
 
 
+## The LAN beacon (owner, 12 Oct: it always belongs to the server node, the dedicated server included): one Announcer child that lives and dies
+## with this server, whoever hosts it. Calling this again returns the same one.
+func ensure_beacon() -> LanDiscovery.Announcer:
+	for child in get_children():
+		if child is LanDiscovery.Announcer and not child.is_queued_for_deletion():
+			return child
+	var ann := LanDiscovery.Announcer.new()
+	add_child(ann)
+	ann.start(func(): return {} if not announce else {"name": advert_name if advert_name != "" else "%s's game" % host_name, "port": port, "mode": mode,
+		"players": roster().size() - (1 if dedicated else 0), "locked": locked})
+	return ann
+
+
 ## Who is at the table: [{token, name, role, host}], the host first.
 func roster() -> Array:
 	var out := [{"token": "host", "id": "host", "name": host_name, "role": host_role, "host": true}]
@@ -487,22 +566,41 @@ func _send(role: String, msg: Dictionary) -> void:
 		c.peer.put_data(line(msg))
 
 
+## Deduplication is connection-scoped. Reconnects never replay pending mutations.
+func _complete_command(c: Conn, seq: int, ok: bool, message: String) -> void:
+	c.pending_commands.erase(seq)
+	var ack := {"t": "ack", "seq": seq, "ok": ok, "msg": message}
+	c.command_acks[seq] = ack
+	while c.command_acks.size() > MAX_ACKS:
+		c.command_acks.erase(c.command_acks.keys()[0])
+	if conns.has(c) and c.peer.get_status() == StreamPeerTCP.STATUS_CONNECTED:
+		c.peer.put_data(line(ack))
+
+
 # ------------------------------------------------------------ game side
 ## Apply joins/leaves and queued commands. Call from the game loop.
 func pump(sess_: Session) -> void:
 	sess = sess_
 	sess.seats.tick(sess.time)
 	var now := Time.get_ticks_msec() / 1000.0
+	for c in conns:
+		if c.input_time >= 0 and Time.get_ticks_msec() - c.input_time > INPUT_TIMEOUT_MS:
+			_clear_input(c)
 	if sess.seats.rev != _seats_rev or now - _seats_t > 1.0:
 		_seats_rev = sess.seats.rev
 		_seats_t = now
 		_broadcast_seats()
 	for role in sticks:
 		sess.set_pilot_input(role, sticks[role][0], sticks[role][1], sticks[role][2])
-	for m in inbox:
+	var batch := inbox.slice(0, MAX_PENDING_COMMANDS)
+	inbox = inbox.slice(batch.size())
+	for m in batch:
+		var c: Conn = m[4]
+		if not conns.has(c) or clients.get(m[0]) != c or c.role != m[0] or c.seat_generation != m[5]:
+			_complete_command(c, m[1], false, "Seat changed or disconnected; command not executed.")
+			continue
 		var r: Array = sess.command(m[0], m[2], m[3])
-		_send(m[0], {"t": "ack", "seq": m[1], "ok": r[0], "msg": r[1]})
-	inbox.clear()
+		_complete_command(c, m[1], bool(r[0]), str(r[1]))
 
 
 func publish(sess: Session, force := false) -> void:

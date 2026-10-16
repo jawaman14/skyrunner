@@ -6,14 +6,14 @@ extends Node
 ##   godot -- --unlocks open                 # open world: every faction and mechanic from the start
 ##   godot -- --tutorial                     # the tutorial: lessons as you play, tips when things happen
 ##   godot -- --chapter 4                    # the story, skipping ahead to chapter 4 (1982)
-##   godot -- --mode campaign                # the tutorial campaign: Palmetto Cay, the classic island
+##   godot -- --mode campaign                # four flying lessons on Costa Brava
 ##   godot -- --mode coop                    # host: friends join as co-pilot / spotter
 ##   godot -- --mode versus                  # host: a friend runs the task-force desk
 ##   godot -- --police                       # play the task force against AI runners
 ##   godot -- --players 6                    # seats and rule layers for a table of six
 ##   godot -- --watch --graphics low         # the AI flies the career; you watch
 ##   godot -- --map city                     # Costa Brava, the city coast (the default for new games)
-##   godot -- --map 42                       # a generated island (0 = the classic one)
+##   godot -- --map 42                       # a generated island (positive seeds only)
 ##   godot -- --shot out.png --frames 90     # render N frames, save a screenshot, quit
 ##   godot --headless -- --smoke 600         # run N frames of a new game, print SMOKE OK, quit (CI)
 ##
@@ -21,7 +21,7 @@ extends Node
 
 var _finder: LanDiscovery.Finder = null  ## listens for games on the network (the multiplayer menu's list)
 var _mp: MultiplayerMenu = null
-var save_dir := "user://"  ## the tests point it elsewhere so they never touch a player's saves
+var save_dir := SavePaths.DIR  ## the tests point it elsewhere so they never touch a player's saves
 
 var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1,
 	"players": 0, "layer": 0, "graphics": "high", "watch": false, "shot": "", "frames": 90, "hour": -1.0,
@@ -57,8 +57,9 @@ func _ready() -> void:
 	start()
 
 
-func show_lobby() -> void:
+func show_lobby(notice := "") -> void:
 	var lobby := Lobby.new()
+	lobby.startup_notice = notice
 	add_child(lobby)
 	lobby.multiplayer_requested.connect(func(): open_mp())
 	lobby.room_requested.connect(func(opts):
@@ -75,25 +76,37 @@ func show_lobby() -> void:
 func _host_extras(server) -> void:
 	if server == null:
 		return
+	_host_beacon(server)
+	for child in get_children():
+		if child is VoiceChat and child.server == server and not child.is_queued_for_deletion():
+			return
 	add_child(VoiceChat.new().attach_host(server))  # push-to-talk radio voice for the table
-	var ann := LanDiscovery.Announcer.new()
-	add_child(ann)
-	ann.start(func(): return {} if not server.announce else {"name": "%s's game" % server.host_name, "port": server.port, "mode": server.mode, "players": server.roster().size(), "locked": server.locked})
+
+## Available in the waiting room as well as the running game. Server ownership
+## makes cancellation close the beacon without leaving a stale lobby advert.
+func _host_beacon(server: HostServer) -> LanDiscovery.Announcer:
+	return server.ensure_beacon()
 
 
 ## The host's waiting room: listen now, show the room, and when the host starts, build the game with the server that is already
 ## listening (its players have chosen their seats).
 func _open_room() -> void:
+	var map_error := PlayableMaps.error(int(args["map"]))
+	if map_error != "":
+		show_lobby(map_error)
+		return
 	var server := HostServer.new()
 	server.password = str(args["password"])
 	add_child(server)
-	var mode: String = "versus" if args["mode"] == "versus" else "coop"
+	# the waiting room hosts any table the game has: co-op, versus, the campaign, or a task-force (police) table (owner, 12 Oct)
+	var mode: String = args["mode"] if args["mode"] in [Roles.VERSUS, Roles.CAMPAIGN, Roles.POLICE] else Roles.COOP
 	var err = server.start_room(args["port"], mode, "*", args["seed"], str(args["name"]))
 	if err:
 		push_warning(str(err))
 		server.queue_free()
 		show_lobby()
 		return
+	_host_beacon(server)
 	var room := RoomScreen.new()
 	add_child(room)
 	room.setup(server, null)
@@ -160,7 +173,7 @@ func _leave(to: String) -> void:
 		get_tree().quit()
 		return
 	for c in get_children():
-		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient or c is VoiceChat or c is LanDiscovery.Announcer or c is MultiplayerMenu or c is RoomScreen or c is HostDesk:
+		if c is PilotApp or c is StationApp or c is HostServer or c is RemoteSeat or c is NetClient or c is VoiceChat or c is LanDiscovery.Announcer or c is MultiplayerMenu or c is RoomScreen or c is SeatPicker or c is HostDesk:
 			remove_child(c)
 			c.queue_free()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -175,6 +188,10 @@ func _leave(to: String) -> void:
 func start() -> void:
 	if args["connect"] != "":
 		_join()
+		return
+	var map_error := PlayableMaps.error(int(args["map"]))
+	if map_error != "":
+		show_lobby(map_error)
 		return
 	var features = null
 	if args["players"] or args["layer"]:
@@ -192,23 +209,26 @@ func start() -> void:
 		var desk := StationApp.new()
 		add_child(desk)
 		desk.setup(LocalLink.new(ps, Roles.CONTROLLER), Roles.CONTROLLER, ps.world)
+		_after_start(ps)
 		return
 	var mode: String = args["mode"]
-	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and features == null
-	var save := save_dir + ("campaign.json" if mode == Roles.CAMPAIGN else ("story.json" if story else "save.json"))
+	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and mode != Roles.POLICE and features == null
+	if save_dir == SavePaths.DIR:
+		SavePaths.migrate()  # an old player's loose save files move into the folder once
+	var save := save_dir + SavePaths.file_name(mode, story)
+	if not args["new"]:
+		var save_error := PlayableMaps.error(int(args["map"]), Session.read_save(save))
+		if save_error != "":
+			show_lobby(save_error)
+			return
 	if args["new"] and FileAccess.file_exists(save):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(save))
-	var opts := {"seed": args["seed"], "mode": mode, "ai_law_upgrades": true, "ground_war": true, "chronicle": true, "agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true, "races": true, "airframe": true, "casino": true, "dealership": true, "psychedelics": true, "fog": true}  # the AI chief shops as forfeiture comes in
-	if story:  # the chapters build the rest as they open (Story.CHAPTERS)
-		for k in Session.SYSTEMS:
-			opts.erase(k)
-		opts["career"] = true
-	elif mode != Roles.CAMPAIGN and features == null:
-		opts["money"] = Session.OPEN_FLOAT  # open mode: everything live at once, so a float (a new game only)
-	if args["map"] >= 0:  # --map 0 = classic island, --map N = generated island N
-		opts["map_seed"] = args["map"]
-	elif not FileAccess.file_exists(save):
-		opts["map_seed"] = MapCity.SEED  # a new game starts on the city coast; old saves keep their island
+	var opts: Dictionary = GameSetup.police(int(args["seed"]), int(args["map"])) if mode == Roles.POLICE else GameSetup.options(mode, int(args["seed"]), story)  # the one shared builder (scripts/net/game_setup.gd)
+	if features != null:
+		opts.erase("money")  # a layer-plan game has its own start; the open-mode float is for the plain open game
+	var ms := GameSetup.map_seed(int(args["map"]), FileAccess.file_exists(save))  # a new game starts on the city coast; an old save keeps its island
+	if ms >= 0:
+		opts["map_seed"] = ms
 	if features != null:
 		opts["features"] = features
 	var fresh := not FileAccess.file_exists(save)
@@ -221,10 +241,9 @@ func start() -> void:
 	if mode == Roles.CAMPAIGN:
 		Campaign.from_dict(Session.read_save(save).get("campaign")).attach(sess)
 	elif story:
-		var st := Story.from_dict(Session.read_save(save).get("story"))
+		var st := Story.new_employed() if fresh else Story.from_dict(Session.read_save(save).get("story"))
 		st.attach(sess)
-		while st.index + 1 < args["chapter"] and not st.completed_all:  # --chapter N: skip ahead
-			st.advance()
+		st.select_chapter(int(args["chapter"]))
 	# the tutorial: asked for, or still on in this save
 	var tut = Session.read_save(save).get("tutorial")
 	if args["tutorial"] or (tut is Dictionary and bool(tut.get("on", false)) and not args["new"]):
@@ -247,6 +266,7 @@ func start() -> void:
 		var err = server.start(args["port"], mode if mode != Roles.SOLO else Roles.COOP)
 		if err:
 			sess.say(err)
+			server.queue_free()
 			server = null
 		else:
 			sess.say("Hosting on port %d: friends join with --connect YOUR_IP:%d (--role pick to choose a seat; the AI plays every seat nobody takes)" % [server.port, server.port])
@@ -259,6 +279,7 @@ func start() -> void:
 		add_child(desk)
 		desk.setup(sess, server, host_seat)
 		_host_extras(server)
+		_after_start(sess)
 		return
 	var app := PilotApp.new()
 	add_child(app)
@@ -267,10 +288,7 @@ func start() -> void:
 	_host_extras(server)
 	if args["hour"] >= 0:
 		app.scene.set_hour(args["hour"])
-	if args["shot"] != "":
-		_shoot(app)
-	elif args["smoke"] > 0:
-		_smoke(sess)
+	_after_start(sess)
 
 
 ## Remote seat: a 3D view for the police pilot (and the co-pilot with --seat3d),
@@ -316,10 +334,11 @@ func _enter_game(link: NetClient, role: String) -> void:
 	picker.seated.connect(func(r):
 		picker.queue_free()
 		_seat(link, r), CONNECT_ONE_SHOT)
+	picker.cancelled.connect(func(): _leave("lobby"), CONNECT_ONE_SHOT)
 
 
 func _seat(link: NetClient, role: String) -> void:
-	add_child(VoiceChat.new().attach_client(link))
+	_client_voice(link)
 	if role in [Roles.INTERCEPTOR, Roles.PILOT] or (role == Roles.COPILOT and args["seat3d"]):
 		var seat := RemoteSeat.new()
 		add_child(seat)
@@ -328,19 +347,40 @@ func _seat(link: NetClient, role: String) -> void:
 		var st := StationApp.new()
 		add_child(st)
 		st.setup(link, role)
+	_after_start(null)  # a joined seat has no session of its own
+
+func _client_voice(link: NetClient) -> VoiceChat:
+	for child in get_children():
+		if child is VoiceChat and child.link == link and not child.is_queued_for_deletion():
+			return child
+	var voice := VoiceChat.new().attach_client(link)
+	add_child(voice)
+	return voice
 
 
 ## Run a new game for a while and quit (the release smoke test in CI): the
 ## output is checked for SCRIPT ERROR, and the game has to reach the end.
-func _smoke(sess: Session) -> void:
+## --shot and --smoke end the run the same way on every entry path (owner, 12 Oct): the pilot's game, the host desk, the offline task-force desk and a joined seat.
+## `sess` is null for a joined seat (the session lives on the host).
+func _after_start(sess) -> void:
+	if args["shot"] != "":
+		_shoot()
+	elif args["smoke"] > 0:
+		_smoke(sess)
+
+
+func _smoke(sess) -> void:
 	for f in args["smoke"]:
 		await get_tree().process_frame
-	print("SMOKE OK %s t=%.1fs phase=%s money=%s" % [Beta.version(), sess.time, sess.phase, sess.money])
+	if sess == null:
+		print("SMOKE OK %s (remote seat)" % Beta.version())
+	else:
+		print("SMOKE OK %s t=%.1fs phase=%s money=%s" % [Beta.version(), sess.time, sess.phase, sess.money])
 	get_tree().quit()
 
 
 ## Render a few frames and save a screenshot (docs, CI smoke tests).
-func _shoot(app: PilotApp) -> void:
+func _shoot() -> void:
 	for f in args["frames"]:
 		await get_tree().process_frame
 	await RenderingServer.frame_post_draw

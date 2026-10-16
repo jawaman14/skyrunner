@@ -267,7 +267,7 @@ func test_side_goals_pay_once_and_are_never_needed() -> void:
 	check_eq(t.money, n + 2000, "the side goal paid its bonus")
 	t.story.tick(t)
 	check_eq(t.money, n + 2000, "once")
-	check(t.story.objective_lines().any(func(l): return str(l).contains("optional: +$2,000")), "and the card says it is optional")
+	check(t.story.objective_lines().any(func(l): return str(l).contains("optional before chapter ends: +$2,000")), "and the card says it is optional")
 	check(m > 0, "")
 	s.dispose()
 	t.dispose()
@@ -285,3 +285,146 @@ func test_the_hearings_count_cold_minutes_in_a_row() -> void:
 	s.story.tick(s)
 	check_eq(s.story.progress["case_cold"], 0.0, "a hot case starts the hour again")
 	s.dispose()
+
+
+func test_intercepted_shipments_do_not_complete_the_island() -> void:
+	var s := _story(Story.index_of("Isla Soberana"))
+	s.bus.emit("island_shipment", s.time, "caught", ["runner"], {"delivered_lb": 0.0})
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "Isla Soberana")
+	s.bus.emit("island_shipment", s.time, "partial", ["runner"], {"delivered_lb": 2.0})
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "The House")
+	s.dispose()
+
+
+func test_failed_evacuation_is_recorded_and_saved() -> void:
+	var s := _story(Story.index_of("The House"))
+	s.bus.emit("casino_out", s.time, "lost", ["runner"], {"evacuated": false})
+	check(s.story.outcomes.has("casino_out"))
+	check_eq(s.story.progress.get("casino_out", 0), 0)
+	var restored := Story.from_dict(s.story.to_dict())
+	check_eq(restored.outcomes, s.story.outcomes)
+	check(restored.objective_lines().any(func(l): return "[missed]" in l))
+	s.dispose()
+
+
+func test_chapter_history_keeps_guidance_after_advancement() -> void:
+	var s := _story()
+	s.story.advance()
+	check_eq(s.story.history.size(), 1)
+	check_eq(s.story.history[0].title, "Square Grouper")
+	var restored := Story.from_dict(s.story.to_dict())
+	check_eq(restored.history, s.story.history)
+	check("1,200" in restored.guidance())
+	check("Square Grouper" in restored.journal_text())
+	s.dispose()
+
+
+func test_laundering_without_ownership_does_not_buy_a_stake() -> void:
+	var s := _story(Story.index_of("The House"))
+	s.casino.laundered = 100.0
+	s.casino.stake = 0.0
+	s.story.tick(s)
+	check_eq(s.story.progress.get("casino_stake", 0), 0)
+	s.dispose()
+
+
+func test_unavailable_family_notice_is_not_repeated_while_collecting_cash() -> void:
+	var s := _story(Story.index_of("Family Business"))
+	s.family.gone = true
+	s.money = 0
+	s.story.tick(s)
+	var count := s.messages.size()
+	s.story.tick(s)
+	check_eq(s.messages.size(), count, "waiver does not spam the event feed")
+	check_eq(s.story.progress.get("family_deal", 0), 0, "no fabricated transaction")
+	check(s.story.outcomes.has("family_deal"))
+	s.dispose()
+
+
+## The debug skip (Ctrl+F5) moves to the next chapter each time, leaves the employed opening first, and finishes the story at the end.
+func test_debug_skip_walks_through_the_chapters_to_the_end() -> void:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "career": true, "save_path": "user://test_debug_skip.json"})
+	var st := Story.new_employed()
+	st.attach(s)
+	var last := 0
+	var steps := 0
+	while not st.completed_all and steps < 40:
+		st.debug_skip_chapter()
+		steps += 1
+		if not st.completed_all:
+			check(st.chapter.num >= last, "never goes backwards: %d after %d" % [st.chapter.num, last])
+			last = st.chapter.num
+	check(st.completed_all, "and the last skip finishes the story")
+	check(last >= Story.CHAPTERS.size() - 1, "having passed through the chapters (reached %d)" % last)
+	s.dispose()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://test_debug_skip.json"))
+
+
+## Goal checks are forgiving at the start and sparing later (owner, 12 Oct): chapter 1 needs 150 lb and $2,500, chapter 2 $2,000 home, and from chapter 3 no chapter
+## asks for more than two required goals, except The House (stake, laundering, then getting out) and The Company (a job, the guns, then the General's fate, which is only offered after both), whose three goals are chains.
+func test_goal_checks_are_forgiving_early_and_sparing_later() -> void:
+	var targets := {}
+	for o in Story.CHAPTERS[0][4]:
+		targets[o[0]] = o[2]
+	check_eq(targets["weed_lb"], 150, "chapter 1: 150 lb")
+	check_eq(targets["trade_earned"], 2500, "chapter 1: $2,500")
+	var home := 0
+	for o in Story.CHAPTERS[1][4]:
+		if o[0] == "cash_home":
+			home = o[2]
+	check_eq(home, 2000, "chapter 2: $2,000 home")
+	for i in range(2, Story.CHAPTERS.size()):
+		var required := 0
+		for o in Story.CHAPTERS[i][4]:
+			if not (o.size() > 3 and o[3]):
+				required += 1
+		if Story.CHAPTERS[i][1] == "The House":
+			check_eq(required, 3, "The House keeps exactly its three chained goals (stake, laundering, getting out)")
+		elif Story.CHAPTERS[i][1] == "The Company":
+			check_eq(required, 3, "The Company keeps its three chained goals (a job, the guns, then the General's fate)")
+		else:
+			check(required <= 2, "%s asks for %d required goals (limit 2)" % [Story.CHAPTERS[i][1], required])
+
+
+## The early game is gentle: the police suspicion multiplier is 0.1 in chapters 1-2 (and the employed opening), 0.5 in chapter 3, 1 from chapter 4.
+func test_the_police_pace_follows_the_chapter() -> void:
+	check_eq(Story.early_police_scale(0), 0.1)
+	check_eq(Story.early_police_scale(1), 0.1)
+	check_eq(Story.early_police_scale(2), 0.5)
+	check_eq(Story.early_police_scale(3), 1.0)
+	check_eq(Story.early_police_scale(11), 1.0)
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "career": true, "save_path": "user://test_police_pace.json"})
+	var st := Story.new_employed()
+	st.attach(s)
+	check_eq(s.police.suspicion_scale, 0.1, "the employed opening is as gentle as chapter 1")
+	st.select_chapter(3)
+	check_eq(s.police.suspicion_scale, 0.5, "chapter 3")
+	st.select_chapter(6)
+	check_eq(s.police.suspicion_scale, 1.0, "chapter 6")
+	PoliceSystem.EARLY_PACE = false
+	st._set_police_pace(0)
+	check_eq(s.police.suspicion_scale, 1.0, "the switch off leaves full strength")
+	PoliceSystem.EARLY_PACE = true
+	s.dispose()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://test_police_pace.json"))
+
+
+## What a radar sighting adds is scaled: the same dark flight in radar range gains a tenth of the suspicion in chapter 1.
+func test_a_sighting_in_chapter_one_adds_a_tenth_of_the_suspicion() -> void:
+	var gained := []
+	for scale in [1.0, 0.1]:
+		var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "ground_war": false})
+		s.police.suspicion_scale = scale
+		var af := World.airfield("HAR")
+		s.spawn_airborne(af.x + 6000.0, af.y, 90.0, 400.0, 95.0)
+		s.transponder = false
+		for i in 60 * 30:
+			var inp := ControlMapper.InputFrame.new()
+			inp.throttle_axis = 0.8
+			s.update(1.0 / 30, inp, null)
+		gained.append(s.police.case("runner").suspicion)
+		s.dispose()
+	check(gained[0] > 5.0, "a dark minute in radar range builds suspicion at full strength: %s" % gained[0])
+	check(gained[1] < gained[0] * 0.3, "and a tenth as much with the early-game scale: %s against %s" % [gained[1], gained[0]])

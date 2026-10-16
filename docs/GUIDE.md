@@ -47,11 +47,11 @@ Run the game with no arguments and the **lobby** opens. It sets the same things 
 | Choice | What it is |
 |---|---|
 | **Solo** | You are the pilot; the AI plays every other seat. |
-| **Tutorial (Palmetto Cay)** | The original four-chapter campaign on the classic island: mail runs, a favour for Manny, airdrops, the long legs. |
+| **Flying lessons (Costa Brava)** | Four flying lessons on Costa Brava: mail runs, a favour for Manny, airdrops, the long legs. |
 | **Co-op: friends crew for you** | You host; friends take the co-pilot, spotter, boat, boss, lieutenant or fixer seats. |
 | **Versus** | Humans on both sides; the AI fills the empty seats. |
 | **Unlocks: Story / Open** | *Story* (the default): twelve chapters, 1979 to 1988, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
-| **Map** | Costa Brava, the city coast (default); the classic island; or a generated island by number. |
+| **Map** | Costa Brava, the city coast (default); or a generated island by positive seed. |
 | **Tutorial box** | Lessons that finish when you do the thing, and tips when something new happens. |
 | **Multiplayer** | Host a game with a waiting room, or look for games on your network (also **F4** in game). |
 
@@ -182,13 +182,27 @@ footer, which is also clickable), ESC closes.
 | F2 | Move the time of day on three hours |
 | Esc | Release the mouse, then the pause menu |
 
-**The phone (T)** rings whoever you would otherwise have to walk or fly to: Manny's hiring hall, the buyers, your lawyer,
-the Family, the General's aide, the desk (the boss's orders, and the squads when there is a war), **the track** (races), **the
-collectors** (the rackets), dispatch (logistics) and **a taxi** (a ride, fare up front, to the aircraft, the desk, the job board,
-the hangar or a stash house). Only the systems switched on appear.
+**The phone (T on foot, Shift+T in the cockpit)** is a handset with apps (arrows and **Enter**, or **1–7**; **Esc** goes back):
+**Contacts** rings whoever you would otherwise have to walk or fly to (Manny's hiring hall, the buyers, your lawyer, the Family,
+the General's aide, the Collective, the car lot, the casino, the desk, **the track**, **the collectors**, dispatch and **a taxi**;
+only the systems switched on appear, and a new number is marked NEW); **Messages** keeps what the phone has buzzed with;
+**Map** opens the chart; **Jobs** lists the jobs you have taken and **Enter** puts a waypoint on one; **Bank** shows the money in
+hand, in each stash house and aboard; **Radio** tunes the dial; **Settings** is the pause menu. A call is a chat on the handset:
+their lines on the left, your answers on the right. Offers (the Family's) buzz in as notifications with the keys that answer them.
+
+When a human-run organisation receives a Family offer, the same event rings the
+phone for 20 seconds. Open **T** on foot or **Shift+T** in the cockpit, select
+the **INCOMING** row, and press **Enter** to answer or **D** to decline the call.
+Answering opens the usual Family conversation; it does not accept or pay for
+the offer. Declining or missing the call leaves the offer available through the
+ordinary Family contact until the offer itself expires. Recent answered,
+declined and missed calls appear above the contact list. Calls and their expiry
+times survive saving/loading; unanswered calls are not recreated on load.
 
 **The car.** A parked car stands beside the aircraft. **E** at it gets you in; W / S throttle and brake, A / D steer, Space
-handbrake, **E** to get out. The road is fast; anywhere else is a crawl. In the car: **R** radio on / off, **, .** (or **[ ]**)
+handbrake, **E** to get out. The road is fast; anywhere else is a crawl. It has weight: the pedals and the wheel take a moment,
+a hard turn at speed slides, the handbrake kicks the tail out. The dashboard shows the speed, revs, gear, the pedals, the G
+forces, the radio and an arrow to your waypoint (set one on the chart, **M**, or from the phone's Jobs). In the car: **R** radio on / off, **, .** (or **[ ]**)
 tune. The radio plays real broadcasts from 1979–86 from Miami and around the Caribbean, always on the air by the sim clock.
 Your own recordings go in `user://radio/`.
 
@@ -198,6 +212,7 @@ Your own recordings go in `user://radio/`.
 |---|---|
 | F1 | Help (the key list) |
 | F2 | Advance the time of day |
+| Ctrl+F2 | Developer access overlay: functional footprints, entrances, approaches, loading areas, connector candidates and collision shapes |
 | F3 | Hand the aircraft to the AI (so you can sit at another desk) / take it back |
 | F4 | The multiplayer menu: games on your network, the table (mute, remove, seats, chat), voice settings |
 | F6 | Performance overlay |
@@ -282,6 +297,11 @@ The **job board** at each strip lists work: passengers and cargo for money, **ho
 to a boat, **gun runs**, and fuel drums (fly them to a strip to start a cache). A job shows its pay, weight and distance and,
 for a strip, the estimated landing roll against the strip length, so a trap shows red. Hot jobs and gun runs raise **heat**.
 
+How you fly changes the pay: late is 40% of it, fragile cargo broken by a landing over 400 fpm halves it, an unhappy
+VIP (bank over 45° or a landing over 300 fpm) takes 30% off, and a touchdown under 150 fpm adds 10%. Contraband is
+paid at the street price on the day it lands. Dropping a job pays nothing; at its origin it goes back on the board.
+Details: DESIGN 46.
+
 ### 5.3 The police and the heat (DESIGN 3, 4)
 
 The task force never sees your true position. It has **radar sites** (each turns at its own rate; detection falls with range
@@ -359,6 +379,24 @@ does not fire first and prefers arrests). Who holds the streets moves the market
 
 **Veterans.** Squads learn from fights they survive: Green, Blooded, Veteran, Elite, each with more fire per man, steadier
 nerve and dearer upkeep. **Field orders** on foot (Z X C V) give the nearest squad of yours a quick order.
+
+**Command detail.** Select one of your squads at the HQ map or a command seat to
+see strength, rank, weapons, ammunition, morale, order/state and per-minute upkeep.
+The destination is the final point of its current route, not a guaranteed arrival
+or checked-access promise. No active route is shown explicitly. Older remote peers
+label missing destination/cost detail unavailable. Player orders are distinguished
+from standing/AI orders; this does not introduce new automatic spending rules.
+Exact fight records require both participants to be observed; coarse shots-fired
+news does not grant exact enemy positions.
+
+**District overview.** At the HQ squad map press **D**, or choose District
+overview, to read all four markets. It shows modeled influence, the direction
+since the last control tick, your people/upkeep and currently observed threats.
+No sightings does not establish an empty or safe district. The collection amount
+is an estimate under the current policy, not a guaranteed payment; exactly half
+the street pays zero. Squeeze raises collections but reduces your hold and heats
+the case. Press **D** to return to the same selected squad. Remote command seats
+show the same district summaries; law seats do not receive your collection data.
 
 **Guns and arsenals.** The organisation, the task force and Los Cuervos each hold weapons (pistols, rifles, machine guns,
 RPGs) and ammunition. Gun runs bring crates in: sell them at the street price or keep them for your soldiers. Whatever the
@@ -583,3 +621,52 @@ the stash: truck it home (**Shift+H**). *Wages unpaid:* pay them, or people talk
 | Change the keys | **F8** |
 
 For flags and building, see the [README](../README.md). For every system's rules and numbers, [DESIGN.md](DESIGN.md).
+
+### Conversations
+
+Use Up/Down and Enter to choose an answer, including choices beyond nine; 1–9 remain shortcuts. Answers wrap and scroll, and Leave/Back or Escape closes the conversation. While a command is pending, further choices are blocked. Remote success waits for both the matching host acknowledgement and an updated view. If the result is unknown, inspect the current state before trying again: the game does not automatically resend the action.
+
+### Reviewing purchases and services
+
+Hangar aircraft/gear purchases and repairs, and dealer vehicle purchases/sales, open a consequence review. Cancel is selected initially. Choose the action explicitly, then confirm; Escape cancels. Costs and ongoing insurance/repair charges are shown. If stock, pricing or availability changes during review, inspect the action again before committing. Accepted truck orders describe dispatch, not immediate delivery.
+
+### Stash interiors
+
+All eight stash types have an open storage interior. Walk to the workbench and use the Storage / logistics prompt to open logistics with that stash selected as the source. Stock, cash and orders remain authoritative simulation data. Burned sites show an unavailable label and reject storage access; their exit remains open. Decorative papers and furniture do not add inventory.
+
+### Station map layers
+
+Use the map’s Operations, People / logistics and Intelligence switches to reduce clutter. Reports keep their source, age and uncertainty; switching a layer on does not reveal additional information. Hidden markers do not select or dispatch entities. The selected-entity card and order outcomes remain on the desk.
+
+### Reviewing station and logistics actions
+
+Supported committing actions request their consequences from the host before you confirm. Cancel is selected first. Confirmation rechecks the preview; if stock or cost changes, review the new consequences again. A preview timeout, disconnect or seat change sends no command. Older hosts show “Preview unavailable”; their existing commands remain available through explicit confirmation and host validation. After sending, acknowledgement and refreshed state appear separately in the order outcomes.
+
+### Reviewing bulk transport
+
+Cash collection and goods delivery rounds show their ordered stops before commitment.
+Cash at later stops is an estimate until pickup; limited goods are divided in stop order.
+Armoury relocation moves weapons, excludes ammunition and changes its location on arrival.
+Cancel leaves stock unchanged. Confirm checks current consequences again; a changed
+preview requires another review. Trucks still incur fuel costs and travel risks.
+
+### Dialogue action reviews
+
+Supported purchases, sales, transfers, repairs and job commitments made through
+conversation use the same host consequence review as menus. Escape cancels the
+review and returns its result to the conversation. Leaving or removing the
+conversation while reviewing sends no command. A confirmed command still waits
+for its correlated acknowledgement and refreshed state before success narration.
+Other conversation actions retain their existing host validation and result handling.
+
+### Developer access diagnostics
+
+Ctrl+F2 shows site entrances, footprints and loading areas. Cyan/yellow connector
+paths passed the primary-footprint and terrain/deck checks; orange candidates
+show their failure or remaining verification reason. Checked access legs are not
+proof of an end-to-end public-road route or complete scenery collision. Remote
+locations retain separate access requirements rather than acquiring a new road.
+
+### Recent battle accounts
+
+The HQ district overview and ground-command station show recent completed accounts for your own squads, comparing strength and ammunition and recording final morale/state. Combat losses may include wounded; strength changes can also include custody. Enemy losses and causal factors are not guessed. Up to sixteen recent own-unit accounts are displayed; older peers may not provide reports.
