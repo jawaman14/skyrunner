@@ -85,6 +85,81 @@ func test_pilot_app_flies_a_frame_and_opens_menus() -> void:
 	s.dispose()
 
 
+func test_air_camera_look_uses_right_drag_without_changing_mouse_yoke() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	var right := InputEventMouseButton.new()
+	right.button_index = MOUSE_BUTTON_RIGHT
+	right.pressed = true
+	app._update_camera(s.state, 1.0 / 30.0)
+	var centered_camera := app.cam.global_basis
+	app._input(right)
+	check(not app._air_look_active, "right drag does not look around while parked")
+	s.state.on_ground = false
+	app.mouse_yoke = true
+	app._input(right)
+	check(app._air_look_active, "right drag starts an airborne camera look")
+	var motion := InputEventMouseMotion.new()
+	motion.relative = Vector2(40, -20)
+	app._input(motion)
+	check(app._air_look_yaw != 0.0 and app._air_look_pitch != 0.0, "drag moves camera yaw and pitch")
+	app._update_camera(s.state, 1.0 / 30.0)
+	check(not app.cam.global_basis.is_equal_approx(centered_camera), "camera transform responds to the drag")
+	check(app.mouse_yoke, "camera look leaves the Y mouse-yoke toggle unchanged")
+	right.pressed = false
+	app._input(right)
+	check(not app._air_look_active, "releasing right mouse ends the camera look")
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	app.queue_free()
+	app.free()
+	s.dispose()
+
+
+func test_pause_menu_blocks_air_camera_look_even_when_hosted_game_keeps_running() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	s.state.on_ground = false
+	app.open_pause()
+	app.paused = false  # hosted sessions remain live behind the modal
+	check(not app._air_camera_look_allowed(), "pause modal blocks camera capture while the hosted sim runs")
+	var right := InputEventMouseButton.new()
+	right.button_index = MOUSE_BUTTON_RIGHT
+	right.pressed = true
+	app._input(right)
+	check(not app._air_look_active, "right drag cannot capture behind the pause menu")
+	app.close_pause()
+	app.queue_free()
+	app.free()
+	s.dispose()
+
+
+func test_tower_camera_pitch_uses_the_yawed_view_right_axis() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	var af: Airfield = s.world.nearest_airfield(s.state.x, s.state.y)[0]
+	s.state.x = af.x
+	s.state.y = af.y
+	s.state.alt = s.world.airfield_elev(af) + 24.0
+	s.state.on_ground = false
+	app.cam_mode = "tower"
+	app._air_look_yaw = PI / 2.0
+	app._air_look_pitch = 0.0
+	app._update_camera(s.state, 1.0 / 30.0)
+	var level_basis := app.cam.global_basis
+	app._air_look_pitch = 0.35
+	app._update_camera(s.state, 1.0 / 30.0)
+	check(not app.cam.global_basis.is_equal_approx(level_basis), "tower view pitches around its yawed horizontal right axis")
+	app.queue_free()
+	app.free()
+	s.dispose()
+
+
 func test_station_screens_for_every_seat() -> void:
 	var s := Session.new({"seed": 9, "location": "FRM", "mode": Roles.VERSUS, "features": Session.SANDBOX_FEATURES + ["hq"]})
 	s.update(1.0 / 30)

@@ -431,3 +431,53 @@ func test_the_plain_hold_looks_along_the_heading() -> void:
 	s._autopilot_hold()
 	check(s.autopilot.alt_target >= best_peak + Session.AUTOPILOT_HOLD_CLEARANCE_M - 1.0, "it targets the ridge ahead (%s) plus the clearance: %s" % [best_peak, s.autopilot.alt_target])
 	s.dispose()
+
+
+func test_ai_pilot_takes_over_without_stale_autopilot() -> void:
+	var s := _sess()
+	_airborne(s)
+	s.command(Roles.PILOT, "autopilot", {"on": true})
+	check(s.autopilot.engaged, "autopilot starts engaged")
+	s.seats.release(Roles.PILOT)
+	check_eq(s.seats.who(Roles.PILOT), "ai", "AI takes the pilot seat")
+	check(not s.autopilot.engaged, "AI handoff disconnects the old autopilot mode")
+	s.dispose()
+
+
+func test_ai_controls_do_not_cancel_its_own_autopilot() -> void:
+	var s := _sess()
+	_airborne(s)
+	s.seats.release(Roles.PILOT)
+	s.autopilot.engage(s.state, s.fm.controls.elevator)  # AI uses it during a solo airdrop
+	var inp := ControlMapper.InputFrame.new()
+	inp.held["roll_left"] = true  # host input must not override the AI seat
+	var ai := FlightModel.Controls.make({"aileron": 0.25, "throttle": 0.8})
+	s.update(1.0 / 30.0, inp, ai)
+	check(s.autopilot.engaged, "host stick input does not disconnect an AI-owned autopilot")
+	check_near(s.fm.controls.aileron, 0.25, 0.01, "AI controls win this frame")
+	s.dispose()
+
+
+func test_ai_pilot_takes_midflight_job_without_waiting_for_the_ramp() -> void:
+	var s := _sess({"trade": true})
+	_airborne(s)
+	s.active_jobs.append(Jobs.Job.new(Jobs.new_id(), "test", "cargo", "HAR", "PNR", [], 100, {}))
+	s.seats.release(Roles.PILOT)
+	var ai := AutoRunner.new(s)
+	var controls := ai.step(1.0 / 30.0)
+	check(controls != null, "AI supplies flight controls immediately after F3 in midair")
+	check(ai.bot != null, "AI starts a flight plan while airborne")
+	if ai.bot != null:
+		check_eq(ai.bot.phase, "enroute", "midflight takeover skips taxi and takeoff")
+		check_eq(ai.bot.legs.back().code, "PNR", "AI continues the active job")
+	s.dispose()
+
+
+func test_ai_pilot_takes_midflight_aircraft_home_without_a_job() -> void:
+	var s := _sess()
+	_airborne(s)
+	s.seats.release(Roles.PILOT)
+	var ai := AutoRunner.new(s)
+	check(ai.step(1.0 / 30.0) != null, "AI does not leave an airborne aircraft without controls")
+	check(ai.bot != null and ai.bot.legs.back().kind == "land", "AI plans a landing when no job is active")
+	s.dispose()

@@ -15,7 +15,7 @@ This section describes **this checkout**. Run `godot --headless --script res://t
 | Field | Source value | Meaning / source |
 |---|---|---|
 | Version | 0.9.0-beta.1 | project.godot |
-| Declared automated tests | 1157 methods in 146 test files | Compiled source inventory; this is not a test result |
+| Declared automated tests | 1177 methods in 146 test files | Compiled source inventory; this is not a test result |
 | Flying tutorial | 4 Costa Brava chapters | Campaign.CHAPTERS |
 | Main story | 12 chapters | Story.CHAPTERS; distinct from the tutorial |
 | Configured exports | Linux, Windows, macOS | Export presets; build/manual acceptance is recorded below |
@@ -144,4 +144,3 @@ records performed and unperformed checks, known diagnostics and review findings.
 Use `tools/test.sh` for a full sharded run and record its three shard totals in
 this file and the dated roadmap history. Focused PR evidence belongs in the PR
 body and roadmap. Do not replace a verified count with a source estimate.
-
