@@ -96,7 +96,7 @@ func test_used_asset_notices_ship_in_every_export() -> void:
 	var notices := ["assets/fonts/OFL-KaushanScript.txt", "assets/fonts/OFL-Monoton.txt",
 		"assets/models/kenney/LICENSE.txt", "assets/models/kaykit/city/LICENSE.txt",
 		"assets/models/quaternius/downtown_city/LICENSE.txt", "assets/models/quaternius/README.txt",
-		"assets/audio/kenney_ui/LICENSE.txt", "assets/fx/kenney_particles/LICENSE.txt", "assets/props/README.md"]
+		"assets/audio/kenney_ui/LICENSE.txt", "assets/fx/kenney_particles/LICENSE.txt", "assets/props/README.md", "assets/models/airfield/README.md"]
 	var config := ConfigFile.new()
 	check_eq(config.load("res://export_presets.cfg"), OK)
 	for section in config.get_sections():
