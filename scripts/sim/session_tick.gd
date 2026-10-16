@@ -6,6 +6,9 @@ extends SessionOps
 func update(dt: float, inp: ControlMapper.InputFrame = null, bot_controls: FlightModel.Controls = null) -> void:
 	time += dt
 	phone_calls.tick(time)
+	if Jobs.ISLAND_BOARD and time >= _stock_next:
+		_stock_next = time + 60.0
+		stock_island_boards()
 	if inp == null:
 		inp = ControlMapper.InputFrame.new()
 	if runner_active():
@@ -222,14 +225,6 @@ func _police_outcome(what: String) -> void:
 		var fine := 500 if not transponder else 0
 		money -= fine
 		say("Police forced you down and searched the aircraft: clean." + (" Fined $%d for no transponder." % fine if fine else ""))
-	elif what == "hijacked":
-		var lost := active_jobs.filter(func(j): return j.hot())
-		for j in lost:
-			active_jobs.erase(j)
-			loadout.remove_job(j.id)
-		fm.apply_loadout(loadout)
-		say("Rivals forced you to jettison the goods!")
-		bus.emit("hijacked", time, "", ["runner"], {"jobs": lost.map(func(j): return j.id)})
 
 
 func _maritime_event(kind: String, data: Dictionary) -> void:

@@ -73,6 +73,8 @@ var messages: Array = []  ## [[t, text]]
 var phone_calls := PhoneCalls.new()  ## one authoritative incoming queue for all phone surfaces
 var active_jobs: Array = []
 var boards := {}
+var board_at := {}  ## strip code -> sim time its board was dealt (Jobs.ISLAND_BOARD)
+var _stock_next := 0.0
 var jsbsim_root := ""
 var save_path := ""
 var mode := Roles.SOLO
@@ -484,6 +486,7 @@ func unlocked(key: String) -> bool:
 
 
 func refresh_board(code: String) -> void:
+	board_at[code] = time
 	if story != null and story.employment != null and story.employment.active():
 		boards[code] = story.employment.board(self, code)
 		return

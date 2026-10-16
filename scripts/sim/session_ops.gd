@@ -38,6 +38,15 @@ func accept_job(job: Jobs.Job):
 
 
 ## Shared read-only gate for accepting work, used by both previews and execution.
+## Every other strip keeps a board that outlives your visits, so the job board can show the whole island. Dealt by the sim, never by a menu.
+func stock_island_boards() -> void:
+	if not Jobs.ISLAND_BOARD or _employed_opening():
+		return
+	for af in world.airfields:
+		if af.code != location and af.kind != "foreign" and not board_is_fresh(af.code):
+			refresh_board(af.code)
+
+
 func accept_job_reason(job: Jobs.Job) -> String:
 	if story != null and story.employment != null and story.employment.active():
 		if job.employer_stage != story.employment.stage or job.employer_serial <= story.employment.last_completed or job.employer_serial >= story.employment.next_serial:
