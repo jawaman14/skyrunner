@@ -169,6 +169,7 @@ static func lots(b: Dictionary, i: int) -> Array:
 			# the model's origin is wherever its kit put it: stand its base centre on the lot's centre
 			var origin := Vector3(cx, ground, -cy) - basis * Vector3(m.centre.x, m.centre.y, m.centre.z)
 			var colour := base_colour.lerp(CityRender.PALETTE[rng.randi() % CityRender.PALETTE.size()], 0.2)
+			colour = CityRender.district_colour(b, colour)
 			colour.a = 1.0
 			out.append({"kit": m.kit, "name": m.name, "xf": Transform3D(basis, origin), "colour": colour, "roof": ground + sy * m.dim.y})
 	return out
@@ -287,3 +288,4 @@ static func build(boxes: Array, q: Quality) -> Node3D:
 			mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 			node.add_child(mmi)
 	return root
+

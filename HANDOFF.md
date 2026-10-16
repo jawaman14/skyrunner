@@ -39,6 +39,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | **Codex task** | When back: the QA lane (full suite and goldens on #376, #377 and the merged #372; the key audit; the 720p desk check), review of Claude's PRs, and the turf-war branch. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
+**Map scenery draft (Codex, 14 Oct), #373:** Airport/docks, rural, HQ/casino/city, terrain/sidewalk and Miami street details are pushed. First Vice City-inspired follow-on: Club Tropicana planted arrival beds and entrance canopy; Hotel Cielo outer-court planting; deeper cafe window/menu/striped awning. Six raised beds add matching solid collision inside existing pavement, clear of the central approaches and casino drive. Local focused checks: 13/13, including access, footprint and <400 triangles per bed. Declared inventory stays 1,157. Pinned capture on 8e49e41 succeeded; inspected daylight/evening club, casino exterior and cafe. Visual inspection caught the club bed/car overlap; beds moved toward the facade with a new car-clearance assertion. Full local checks retain the baseline ActionReview.COMMANDS error under 4.6.3. Next: inspect corrected club captures and latest CI; broader storefront continuity and waterfront streets remain future slices. Other baton tasks above remain active.
+
 ## Taking over (checklist for the incoming AI)
 
 1. Read the MCP collaboration board, verify your checkout, then `git fetch origin`, `git status` and
@@ -438,3 +440,4 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 - **Left open:** 38 PRs, mostly drafts stacked on each other (36 conflict into `main`). The largest gameplay stacks are logistics loading
   endpoints and the employed-pilot opening. Its own records are in `docs/PR_INTEGRATION_2026-10-08.md`,
   `docs/OPEN_PR_AUDIT_2026-10-08.md` and the other dated docs, plus each PR body.
+
