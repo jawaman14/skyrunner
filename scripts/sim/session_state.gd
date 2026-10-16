@@ -134,6 +134,9 @@ var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets:
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
+var brng: PyRandom  ## the island boards' draws (Jobs.ISLAND_BOARD, seed + 149): dealing a board for a strip you have not visited moves no other stream
+var barng: PyRandom  ## ... their gun runs (seed + 151)
+var bagrng: PyRandom  ## ... and the Company's offers (seed + 157)
 var ai_law_upgrades := false  ## the AI chief buys law upgrades as money comes in (live play; off in sims and tests)
 var urng: PyRandom  ## upgrade draws (spoiled tips, leaks), off the parity streams
 var _ai_buy_t := 0.0

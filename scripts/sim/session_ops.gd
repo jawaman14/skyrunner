@@ -40,11 +40,23 @@ func accept_job(job: Jobs.Job):
 ## Shared read-only gate for accepting work, used by both previews and execution.
 ## Every other strip keeps a board that outlives your visits, so the job board can show the whole island. Dealt by the sim, never by a menu.
 func stock_island_boards() -> void:
-	if not Jobs.ISLAND_BOARD or _employed_opening():
+	if not Jobs.ISLAND_BOARD or _first_missions():
 		return
+	# deal them on their own streams: refresh_board reads rng, arng and the Company's rng, so swap those three for the duration
+	var saved_rng := rng
+	var saved_arng := arng
+	var saved_agency_rng = agency.rng if agency != null else null
+	rng = brng
+	arng = barng
+	if agency != null:
+		agency.rng = bagrng
 	for af in world.airfields:
 		if af.code != location and af.kind != "foreign" and not board_is_fresh(af.code):
 			refresh_board(af.code)
+	rng = saved_rng
+	arng = saved_arng
+	if agency != null:
+		agency.rng = saved_agency_rng
 
 
 func accept_job_reason(job: Jobs.Job) -> String:
@@ -450,7 +462,10 @@ func buy_or_switch(key: String):
 ## After a crash or bust.
 func respawn() -> void:
 	var code = log.departed_from if log.departed_from else START_FIELD
-	if phase == "busted":
+	if _first_missions():  # back at the airport the failed job started from (a bust while unloading has no departure on this log)
+		if not active_jobs.is_empty():
+			code = active_jobs[0].origin
+	elif phase == "busted":
 		code = START_FIELD
 	for j in active_jobs:
 		if j.boat_id:
@@ -461,6 +476,8 @@ func respawn() -> void:
 	loadout = Loadout.new(spec, loadout.mass, loadout.mass.fuel_capacity_lb() * 0.5, Py.truthy(copilot))
 	police.reset()
 	spawn_at(code)
+	if _first_missions():
+		refresh_board(code)  # the employer offers the cargo again
 
 
 ## Get out and swing the tail round: the bush pilot's answer to a runway too
