@@ -6,6 +6,7 @@
     "test_fixture_isolation.gd",
     "test_hq.gd",
     "test_rng.gd",
+    "test_save_paths.gd",
     "test_strategic.gd"
   ],
   "simulation": [
@@ -16,6 +17,7 @@
     "test_analyst.gd",
     "test_arsenal.gd",
     "test_autopilot.gd",
+    "test_autopilot_approach.gd",
     "test_autopilot_unit.gd",
     "test_beta.gd",
     "test_bots.gd",
@@ -34,6 +36,8 @@
     "test_fixer.gd",
     "test_flight_dynamics.gd",
     "test_fuel.gd",
+    "test_game_setup.gd",
+    "test_host_loop.gd",
     "test_island.gd",
     "test_keyboard_flight.gd",
     "test_loadout.gd",
@@ -127,6 +131,7 @@
     "test_frontend.gd",
     "test_host_services.gd",
     "test_lan_and_table.gd",
+    "test_lobby_fields.gd",
     "test_multiplayer_menu.gd",
     "test_net.gd",
     "test_pause_menu.gd",

@@ -71,20 +71,41 @@ func known_radar_zones() -> Array:
 	return zones
 
 
-func _autopilot_navigate() -> void:
-	var af := _autopilot_target()
-	if af == null or PyMath.hypot(af.x - state.x, af.y - state.y) < AUTOPILOT_MIN_ROUTE_M:
-		autopilot.engage(state, fm.controls.elevator)
+## Engage the plain course-and-altitude hold, but never at an altitude the ground ahead would meet: engaged just after lift-off (a few metres up,
+## still climbing) it used to hold that height and fly into the trees or the next hill. The target is the current altitude or, if higher,
+## the highest ground within AUTOPILOT_HOLD_LOOKAHEAD_M along the heading plus AUTOPILOT_HOLD_CLEARANCE_M, so it climbs to clear.
+func _autopilot_hold() -> void:
+	autopilot.engage(state, fm.controls.elevator)
+	var h := deg_to_rad(state.heading)
+	var peak := world.ground(state.x, state.y)
+	var d := 250.0
+	while d <= AUTOPILOT_HOLD_LOOKAHEAD_M:
+		peak = maxf(peak, world.ground(state.x + sin(h) * d, state.y + cos(h) * d))  # heading is degrees from north: east is sin, north is cos
+		d += 250.0
+	var safe := peak + AUTOPILOT_HOLD_CLEARANCE_M
+	if safe > autopilot.alt_target:
+		autopilot.alt_target = safe
+
+
+func _autopilot_navigate(dest = null) -> void:
+	## `dest`: null for the usual target (a job's airfield), or [x, y] for the player's own waypoint.
+	var af: Airfield = _autopilot_target() if dest == null else null
+	var tx: float = af.x if af != null else (float(dest[0]) if dest != null else 0.0)
+	var ty: float = af.y if af != null else (float(dest[1]) if dest != null else 0.0)
+	if (af == null and dest == null) or PyMath.hypot(tx - state.x, ty - state.y) < AUTOPILOT_MIN_ROUTE_M:
+		_autopilot_hold()
 		say("Autopilot ON: nowhere worth routing to from here - holding %s ft, heading %s" % [Py.f(state.alt / FT, 0), Py.f(state.heading, 0)])
 		return
 	var hot := carrying_hot()
 	var wps: Array
 	if hot:
-		wps = RoutePlanner.plan_route(world, [state.x, state.y], [af.x, af.y], 6.0, 1.5, 1500.0, known_radar_zones())
+		wps = RoutePlanner.plan_route(world, [state.x, state.y], [tx, ty], 6.0, 1.5, 1500.0, known_radar_zones())
 		var c := police.case("runner")
 		transponder = not (c.wanted > 0 or c.tipped or c.suspicion >= AUTOPILOT_HOT_DARK_SUSPICION)
-	else:
+	elif af != null:
 		wps = _approach_route(af)
+	else:
+		wps = [[tx, ty]]  # a waypoint: a straight leg, at a height that clears the ground along it
 	var peak := world.ground(state.x, state.y)
 	var prev: Array = [state.x, state.y]
 	for wp in wps:
@@ -99,31 +120,86 @@ func _autopilot_navigate() -> void:
 		if wps.size() > 2:  # the descent legs must clear the ground they cross, whatever the glide path says
 			wps[1][2] = maxf(float(wps[1][2]), maxf(world.ground(wps[1][0], wps[1][1]), world.ground(wps[2][0], wps[2][1])) + 90.0)
 	autopilot.engage_route(state, wps, peak + margin, fm.controls.elevator)
-	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name, "low over the ground" if hot else "joining the approach",
+	autopilot.to_point = af == null
+	autopilot.terrain_aware = not hot
+	say("Autopilot ON, heading for %s: %s, %s, %s ft." % [af.name if af != null else "your waypoint (%s km)" % Py.f(PyMath.hypot(tx - state.x, ty - state.y) / 1000.0, 1), "low over the ground" if hot else ("joining the approach" if af != null else "straight there"),
 		"squawking" if transponder else "transponder off", Py.f((peak + margin) / FT, 0)])
+
+
+## The height above the field that the autopilot's final actually flies at `d` metres out from the threshold: a straight
+## line from 30 m at the threshold to the final fix's altitude (3 degrees over APPROACH_FINAL_M, plus 15 m), which is a
+## little under 3 degrees. This is the route `_approach_route` builds, so the clearance check below uses the same numbers.
+static func route_height_at(d: float) -> float:
+	var at_fix := APPROACH_FINAL_M * tan(deg_to_rad(3.0)) + 15.0
+	return 30.0 + (at_fix - 30.0) * d / APPROACH_FINAL_M
+
+
+## True if the way in to runway end `end` clears the terrain and trees: both the 3-degree path (4.5 for a bush or shady
+## strip) 10 m over the threshold that tools/strip_audit.gd checks, out to 3 km, and the final the autopilot actually
+## flies (route_height_at) out to its 5 km fix, whichever is lower, since the route is what meets the obstacle. A false end is one of the
+## "one-way strips" of docs/STRIPS.md (QRY and PNR end 0), where a route that flew the final would meet the pit wall
+## or the tree line.
+func approach_end_clear(af: Airfield, end: int) -> bool:
+	var deg := 4.5 if af.kind in ["bush", "shady"] else 3.0
+	var th: Array = af.threshold(end)
+	var sgn := 1.0 if end == 1 else -1.0  ## the way out along the extended centreline from this threshold
+	var elev := world.airfield_elev(af)
+	var half := af.width * 0.5 + 12.0
+	return way_in_clear(elev, deg, func(d: float) -> float:
+		return world.obstacle_top(th[0] + sgn * af.ux * d, th[1] + sgn * af.uy * d, half))
+
+
+## The rule on its own, so it can be tested without a map: `top_at(d)` is the obstacle height (m) d metres out from the
+## threshold. Every 30 m out to the final fix (APPROACH_FINAL_M), the route's own height must be at or above it; out to 3 km
+## the lower of that and the audit line (10 m over the threshold at `deg`, as tools/strip_audit.gd checks) must be.
+static func way_in_clear(elev: float, deg: float, top_at: Callable) -> bool:
+	var d := 30.0
+	while d <= APPROACH_FINAL_M:
+		var line := route_height_at(d)
+		if d <= 3000.0:
+			line = minf(line, 10.0 + d * tan(deg_to_rad(deg)))
+		if elev + line < float(top_at.call(d)):
+			return false
+		d += 30.0
+	return true
+
+
+## Which of the runway ends to come in on, given how far each final fix is from the aircraft and whether each end's
+## final is clear: the nearer of the clear ends, or the nearer of both when neither (or both) is.
+static func _choose_end(dists: Array, clear: Array) -> int:
+	var best := -1
+	for end in dists.size():
+		if clear[end] and (best < 0 or dists[end] < dists[best]):
+			best = end
+	if best >= 0:
+		return best
+	return 0 if dists[0] <= dists[1] else 1
 
 
 ## A legal leg to `af`: a join on the extended centreline of the runway end it comes at, then down a 3-degree
 ## path to a final fix and along the runway at 30 m. [x, y, alt_m] each (the first altitude is set by the caller
-## to the cruise altitude). Which end: whichever puts the join nearer the aircraft, so it never overflies the field
-## to turn back onto it. Close in (less than the join's distance), it goes straight to the final fix.
+## to the cruise altitude). Which end: the nearer one whose final is clear of terrain and trees (approach_end_clear),
+## so a one-way strip is approached from its open end; otherwise whichever puts the join nearer the aircraft, so it
+## never overflies the field to turn back onto it. Close in (less than the join's distance), it goes straight to
+## the final fix.
 func _approach_route(af: Airfield) -> Array:
 	var elev := world.airfield_elev(af)
-	var best: Array = []
-	var best_d := INF
+	var ends: Array = []
+	var dists: Array = []
+	var clear: Array = []
 	for end in [0, 1]:
 		var th: Array = af.threshold(end)
 		var sgn := -1.0 if end == 0 else 1.0  ## the way out along the extended centreline from this threshold
 		var fix := [th[0] + sgn * af.ux * APPROACH_FINAL_M, th[1] + sgn * af.uy * APPROACH_FINAL_M]
-		var d := PyMath.hypot(fix[0] - state.x, fix[1] - state.y)
-		if d < best_d:
-			best_d = d
-			best = [th, sgn, fix]
+		ends.append([th, sgn, fix])
+		dists.append(PyMath.hypot(fix[0] - state.x, fix[1] - state.y))
+		clear.append(approach_end_clear(af, end))
+	var best: Array = ends[_choose_end(dists, clear)]
 	var th2: Array = best[0]
 	var sg: float = best[1]
 	var fix2: Array = best[2]
 	var join := [th2[0] + sg * af.ux * APPROACH_JOIN_M, th2[1] + sg * af.uy * APPROACH_JOIN_M]
-	var final_alt := elev + APPROACH_FINAL_M * tan(deg_to_rad(3.0)) + 15.0
+	var final_alt := elev + route_height_at(APPROACH_FINAL_M)
 	var route: Array = []
 	if PyMath.hypot(join[0] - state.x, join[1] - state.y) > APPROACH_JOIN_M * 0.6:
 		route.append([join[0], join[1], final_alt + 200.0])
@@ -163,6 +239,9 @@ func _autopilot_target() -> Airfield:
 
 func seat_driver(role: String, human: bool) -> void:
 	match role:
+		Roles.PILOT:
+			if not human:
+				autopilot.disengage()
 		Roles.COPILOT:
 			if human:
 				_ai_defaults[role] = copilot if copilot != "human" else _ai_defaults.get(role)

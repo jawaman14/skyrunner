@@ -17,6 +17,9 @@ extends RefCounted
 const LOCKS := ["guns", "role_soldier", "role_mule"]
 
 ## [year, title, briefing, opens, goals [[key, text, target]]]
+## Goal checks (owner, 12 Oct): forgiving in chapters 1-2 (150 lb and $2,500; $2,000 home) and sparing from chapter 3: at most two required goals per chapter,
+## the rest optional. The House is the one chapter with three required goals: stake, laundering and getting out are a chain (getting out only happens after the
+## laundering sets off the uprising), so none of them can be optional.
 const CHAPTERS := [
 	[1979, "Square Grouper",
 		"San Telmo, 1979. The Cessna is half the bank's, the charters don't cover the fuel,\n"
@@ -24,8 +27,8 @@ const CHAPTERS := [
 		+ "Buy it at the bush strips, fly it into our stash houses, and hire a kid or two\n"
 		+ "to sell it on the corners [Phone > Manny Ortega]. Low money, low risk - for now.",
 		["trade", "payroll", "chronicle"],
-		[["weed_lb", "Fly 300 lb of marijuana into our stash houses", 300], ["dealers", "Put a street dealer on a corner", 1],
-			["trade_earned", "Make $4,000 from the trade", 4000]]],
+		[["weed_lb", "Fly 150 lb of marijuana into our stash houses", 150], ["dealers", "Put a street dealer on a corner", 1],
+			["trade_earned", "Make $2,500 from the trade", 2500]]],
 	[1980, "The Connection",
 		"The boatlift brings a hundred thousand people across the straits, and a few of them
 "
@@ -37,7 +40,7 @@ const CHAPTERS := [
 "
 		+ "A dealership will sell you vans for the trucks and a car of your own [phone].",
 		["logistics", "dealership"],
-		[["cash_home", "Truck or fly $3,000 of street money home", 3000],
+		[["cash_home", "Truck or fly $2,000 of street money home", 2000],
 			["connected", "Get the call from the Colombian connection", 1],
 			["dealership_buy", "Buy a vehicle at the dealership", 1, true, 2000]]],
 	[1980, "Blotter",
@@ -272,6 +275,7 @@ func attach(s) -> void:
 	sess = s
 	s.story = self
 	s.bus.subscribe("*", _on_event)
+	_set_police_pace(0)
 	if employment != null and employment.active():
 		if employment.loaner:
 			s.owned.erase(EmploymentOpening.AIRCRAFT)
@@ -293,7 +297,18 @@ func attach(s) -> void:
 	s.say("CHAPTER %d (%d): %s" % [index + 1, chapter.year, chapter.title])
 
 
+## The police case's suspicion multiplier for chapter index `i` (chapter i + 1): gentle in chapters 1-2, half in 3, full after.
+static func early_police_scale(i: int) -> float:
+	return 0.1 if i < 2 else (0.5 if i == 2 else 1.0)
+
+
+func _set_police_pace(i: int) -> void:
+	if sess != null and sess.police != null:
+		sess.police.suspicion_scale = Story.early_police_scale(i) if PoliceSystem.EARLY_PACE else 1.0
+
+
 func _open(i: int, announce: bool) -> void:
+	_set_police_pace(i)
 	var names := []
 	for key in CHAPTERS[i][3]:
 		opened[key] = true
@@ -506,6 +521,17 @@ func select_chapter(number: int) -> void:
 		advance()
 	while index + 1 < number and not completed_all:
 		advance()
+
+
+## Debug (Ctrl+F5 in the pilot app): skip to the next chapter, as --chapter N does at the start, so a chapter can be tested without playing the ones before it.
+## From the employed opening the first skip leaves the opening; at the last chapter it finishes the story.
+func debug_skip_chapter() -> void:
+	if completed_all:
+		return
+	if employment != null and employment.active():
+		advance()
+		return
+	advance()
 
 
 func advance() -> void:
