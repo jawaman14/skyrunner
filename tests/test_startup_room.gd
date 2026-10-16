@@ -4,8 +4,13 @@ extends TestCase
 const Main = preload("res://scripts/main.gd")
 
 class Entry extends Main:
+	var after_calls: Array = []  ## what --smoke / --shot would have done (they quit the program: here they are only recorded)
 	func _ready() -> void:
 		pass
+	func _smoke(sess) -> void:
+		after_calls.append(["smoke", sess])
+	func _shoot() -> void:
+		after_calls.append(["shot", null])
 
 var _entry: Entry
 var _session: Session
@@ -156,3 +161,83 @@ func _pump(server: HostServer, link: NetClient, done: Callable) -> bool:
 		if done.call(): return true
 		OS.delay_msec(5)
 	return false
+
+## The owner's 12 Oct answer: the waiting room hosts the campaign and a task-force (police) table too.
+func test_the_room_hosts_a_campaign_table() -> void:
+	_entry.args["mode"] = Roles.CAMPAIGN
+	_entry._open_room()
+	var server := _child(HostServer) as HostServer
+	check(server != null and server.room != null, "the room opened")
+	if server == null or server.room == null: return
+	check_eq(server.room.mode, Roles.CAMPAIGN, "as a campaign table")
+	check(not server.room.available(Roles.BOSS), "the campaign is the pilot's crew: no boss seat")
+	check(server.room.available(Roles.COPILOT), "but a co-pilot")
+	(_child(RoomScreen) as RoomScreen)._start()
+	var pilot := _child(PilotApp) as PilotApp
+	check(pilot != null, "Start opens the pilot's game")
+	if pilot == null: return
+	_session = pilot.s
+	check(_session.campaign != null, "with the campaign attached")
+	check_eq(_session.mode, Roles.CAMPAIGN)
+
+
+func test_the_room_hosts_a_police_table() -> void:
+	_entry.args["mode"] = Roles.POLICE
+	_entry._open_room()
+	var server := _child(HostServer) as HostServer
+	check(server != null and server.room != null, "the room opened")
+	if server == null or server.room == null: return
+	check_eq(server.room.mode, Roles.POLICE, "as a task-force table")
+	check(not server.room.available(Roles.PILOT), "no pilot's seat")
+	check(server.room.available(Roles.CONTROLLER), "but a controller's desk")
+
+
+## --smoke and --shot work on every entry path (owner, 12 Oct), not only the pilot's: the pilot's game, a host at a desk, the offline task-force desk.
+func test_smoke_ends_the_run_on_the_pilots_game() -> void:
+	_entry.args["smoke"] = 2
+	_entry.args["mode"] = Roles.COOP
+	_entry._open_room()
+	(_child(RoomScreen) as RoomScreen)._start()
+	var pilot := _child(PilotApp) as PilotApp
+	check(pilot != null)
+	if pilot != null: _session = pilot.s
+	check_eq(_entry.after_calls.size(), 1, "one end-of-run call")
+	if _entry.after_calls.size() == 1:
+		check_eq(_entry.after_calls[0][0], "smoke")
+		check(_entry.after_calls[0][1] is Session, "with the session")
+
+
+func test_smoke_ends_the_run_when_the_host_took_a_desk() -> void:
+	_entry.args["smoke"] = 2
+	_entry.args["mode"] = Roles.COOP
+	_entry._open_room()
+	var server := _child(HostServer) as HostServer
+	check(server != null and server.room != null)
+	if server == null or server.room == null: return
+	check_eq(server.room.claim(Room.HOST, Roles.BOSS), "", "the host takes the boss's desk")
+	(_child(RoomScreen) as RoomScreen)._start()
+	var desk := _child(HostDesk) as HostDesk
+	check(desk != null, "a host desk, not the pilot's 3D seat")
+	if desk != null: _session = desk.sess
+	check_eq(_entry.after_calls.size(), 1, "the run still ends")
+	if _entry.after_calls.size() == 1:
+		check_eq(_entry.after_calls[0][0], "smoke")
+
+
+func test_smoke_ends_the_run_on_the_offline_task_force_desk_and_a_shot_wins_over_smoke() -> void:
+	_entry.args["police"] = true
+	_entry.args["smoke"] = 3
+	_entry.start()
+	check_eq(_entry.after_calls.size(), 1)
+	if _entry.after_calls.size() == 1:
+		check_eq(_entry.after_calls[0][0], "smoke")
+		check(_entry.after_calls[0][1] is Session)
+	_entry.after_calls.clear()
+	_entry.args["shot"] = "x.png"
+	_entry._after_start(null)
+	check_eq(_entry.after_calls[0][0], "shot", "a screenshot request wins over smoke")
+	_entry.after_calls.clear()
+	_entry.args["shot"] = ""
+	_entry.args["smoke"] = 0
+	_entry._after_start(null)
+	check(_entry.after_calls.is_empty(), "neither flag: the run goes on")

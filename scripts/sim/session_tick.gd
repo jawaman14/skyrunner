@@ -36,7 +36,7 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 	var pilot_aft: bool = kicker == "pilot" and kick_queue > 0
 	if pilot_aft:
 		inp = ControlMapper.InputFrame.new()  # nobody at the controls
-	elif autopilot.engaged and (_any_held(inp, ["pitch_up", "pitch_down", "roll_left", "roll_right"]) or inp.stick != null):
+	elif bot_controls == null and autopilot.engaged and (_any_held(inp, ["pitch_up", "pitch_down", "roll_left", "roll_right"]) or inp.stick != null):
 		autopilot.disengage()
 		say("Autopilot disconnected")
 	var controls := mapper.update(dt, inp, state)
@@ -46,7 +46,7 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 		controls = autopilot.update(dt, state, controls)
 		if autopilot.arrived:
 			autopilot.arrived = false
-			say("Autopilot: over the field - your controls for the approach.")
+			say("Autopilot: over your waypoint - holding course and altitude." if autopilot.to_point else "Autopilot: over the field - your controls for the approach.")
 	elif hand_tremor != Vector2.ZERO:
 		# a frightened pilot's hands (Nerves): only on human hands, never the bot or the autopilot
 		controls = controls.copy()

@@ -15,13 +15,16 @@ extends RefCounted
 ## Run it:  godot --headless --path . --script res://scripts/net/dedicated.gd -- --port 47800 --mode coop --unlocks open
 ## See docs/SERVER.md (Google Cloud, Docker, systemd).
 
-const DT := 1.0 / 30.0
+const DT := HostLoop.DT
 const AUTOSAVE_S := 120.0
 const DEFAULTS := {
 	"port": 47800, "bind": "*", "seed": 1, "mode": "coop", "unlocks": "open", "name": "Skyrunner server", "password": "", "max_players": 16,
-	"save": "user://dedicated.json", "autosave": AUTOSAVE_S, "autopilot": true, "lan": false, "seconds": -1.0, "stop_file": "", "map": -1, "quiet": false,
+	"save": SavePaths.DIR + "dedicated.json", "autosave": AUTOSAVE_S, "autopilot": true, "lan": false, "seconds": -1.0, "stop_file": "", "map": -1, "quiet": false,
+	"chapter": 0, "watch": false,
 }
-const MODES := ["coop", "versus", "police"]
+const MODES := ["coop", "versus", "police", "campaign"]  # campaign: the four-chapter tutorial campaign (Campaign), hosted for remote seats
+## `chapter` N (story games): start on chapter N, as --chapter does for the game. `watch`: the AI plays the aircraft whenever nobody holds the pilot's seat, as --watch does
+## (the same thing `autopilot` already does on a server; kept as an alias so the two entry points take the same flags).
 
 var cfg := {}
 var sess: Session = null
@@ -30,7 +33,7 @@ var bot: AutoRunner = null
 var t := 0.0  ## server seconds
 var lines: Array = []  ## the log, newest last (tests read it; the script prints it)
 var print_log := true
-var _acc := 0.0
+var _loop := HostLoop.new()  ## the shared fixed-step loop
 var _save_t := 0.0
 var _stop_t := 0.0
 var _had_players := false
@@ -75,6 +78,9 @@ static func parse(args: Array, env := {}) -> Dictionary:
 	if int(c.map) == 0:
 		err = PlayableMaps.CLASSIC_REMOVED
 	c["max_players"] = clampi(int(c.max_players), 1, 64)
+	c["chapter"] = clampi(int(c.chapter), 0, Story.CHAPTERS.size())
+	if bool(c.watch):
+		c["autopilot"] = true
 	return {"cfg": c, "error": err}
 
 
@@ -97,19 +103,8 @@ func _init(cfg_: Dictionary) -> void:
 func session_options() -> Dictionary:
 	var c := cfg
 	if str(c.mode) == "police":  # a task-force desk for remote players against AI runners
-		var po := {"mode": Roles.POLICE, "seed": int(c.seed), "map_seed": int(c.map) if int(c.map) >= 0 else MapCity.SEED, "ground_war": true, "chronicle": true,
-			"agency": true, "family": true, "island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true,
-			"races": true, "airframe": true, "casino": true, "dealership": true, "psychedelics": true, "career": true, "fog": true, "money": Session.OPEN_FLOAT}
-		return po
-	var o := {"seed": int(c.seed), "mode": str(c.mode), "ai_law_upgrades": true, "ground_war": true, "chronicle": true, "agency": true, "family": true,
-		"island": true, "court": true, "payroll": true, "trade": true, "logistics": true, "renown": true, "rackets": true, "races": true, "airframe": true,
-		"casino": true, "dealership": true, "psychedelics": true, "fog": true}
-	if str(c.unlocks) == "story":
-		for k in Session.SYSTEMS:
-			o.erase(k)
-		o["career"] = true
-	else:
-		o["money"] = Session.OPEN_FLOAT
+		return GameSetup.police(int(c.seed), int(c.map))
+	var o := GameSetup.options(str(c.mode), int(c.seed), str(c.unlocks) == "story" and str(c.mode) != Roles.CAMPAIGN)
 	o["map_seed"] = int(c.map) if int(c.map) >= 0 else MapCity.SEED
 	return o
 
@@ -125,10 +120,13 @@ func start() -> String:
 		opts.erase("map_seed")
 	opts["save_path"] = save
 	var fresh := not FileAccess.file_exists(save)
+	var story: Story = null
 	sess = Session.load_or_new(save, opts)
-	if str(cfg.unlocks) == "story" and str(cfg.mode) != "police":
-		var st := Story.new_employed() if fresh else Story.from_dict(Session.read_save(save).get("story"))
-		st.attach(sess)
+	if str(cfg.mode) == Roles.CAMPAIGN:
+		Campaign.from_dict(Session.read_save(save).get("campaign")).attach(sess)
+	elif str(cfg.unlocks) == "story" and str(cfg.mode) != "police":
+		story = Story.new_employed() if fresh else Story.from_dict(Session.read_save(save).get("story"))
+		story.attach(sess)
 	for role in sess.seats.seats.keys():  # a session starts with its pilot's seat the local player's: nobody is local on a server
 		if sess.seats.who(role) == "human" and str(sess.seats.seats[role].token) == "":
 			sess.seats.release(role)
@@ -142,6 +140,8 @@ func start() -> String:
 	var err = srv.start(int(cfg.port), str(cfg.mode), str(cfg.bind), int(cfg.seed))
 	if err:
 		return str(err)
+	if story != null:  # only now: advancing a chapter saves, and a server that could not listen must not rewrite the save
+		story.select_chapter(int(cfg.chapter))
 	note("%s listening on port %d: %s, %s, seed %d%s (%s)" % [cfg.name, srv.port, cfg.mode, cfg.unlocks, int(cfg.seed), ", password set" if str(cfg.password) != "" else ", no password",
 		"new game" if fresh else "loaded %s" % save])
 	return ""
@@ -159,19 +159,7 @@ func note(text: String) -> void:
 ## One step of the server: the network, the AI pilot, the session, the snapshots, the saves. Call with the frame's delta.
 ## Returns true when the server is done (the time limit, or a stop file).
 func step(delta: float) -> bool:
-	_acc += delta
-	var n := 0
-	while _acc >= DT and n < 5:
-		_acc -= DT
-		n += 1
-		srv.pump(sess)
-		_pilot_seat()
-		var remote: bool = sess.seats.human(Roles.PILOT) and sess.seats.seats[Roles.PILOT].token != ""
-		var bc = bot.step(DT) if bot != null else (sess.remote_controls() if remote else null)
-		sess.update(DT, null, bc)
-		t += DT
-	if n == 5:
-		_acc = 0.0  # a slow machine drops time rather than spiralling
+	_loop.advance(delta, _step)
 	srv.publish(sess)
 	_autosave(delta)
 	if str(cfg.stop_file) != "":
@@ -185,15 +173,21 @@ func step(delta: float) -> bool:
 	return float(cfg.seconds) > 0.0 and t >= float(cfg.seconds)
 
 
+## One fixed step: the network, the AI pilot, the session.
+func _step(step_dt: float) -> void:
+	srv.pump(sess)
+	_pilot_seat()
+	var remote: bool = sess.seats.human(Roles.PILOT) and sess.seats.seats[Roles.PILOT].token != ""
+	var bc = bot.step(step_dt) if bot != null else (sess.remote_controls() if remote else null)
+	sess.update(step_dt, null, bc)
+	t += step_dt
+
+
 ## The AI flies whenever nobody holds the pilot's seat; a player who takes it flies from their own machine.
 func _pilot_seat() -> void:
 	if str(cfg.mode) == "police" or not bool(cfg.autopilot):
 		return
-	var who := sess.seats.who(Roles.PILOT)
-	if who == "ai" and bot == null:
-		bot = AutoRunner.new(sess)
-	elif who != "ai" and bot != null:
-		bot = null
+	bot = HostLoop.ai_pilot(sess, bot)
 
 
 func players() -> int:

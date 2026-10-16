@@ -786,8 +786,8 @@ The game had grown a dozen systems, all on from the first minute. The story (`st
 
 | Chapter | Year | Opens | Goals |
 |---|---|---|---|
-| Square Grouper | 1979 | trade (grass only), payroll, the papers | 300 lb of grass landed, a dealer on a corner, $4,000 from the trade |
-| The Connection | 1980 | logistics, the dealership | $3,000 of street money home; the Colombian connection calls; *side goal:* buy a vehicle (+$2,000) |
+| Square Grouper | 1979 | trade (grass only), payroll, the papers | 150 lb of grass landed, a dealer on a corner, $2,500 from the trade |
+| The Connection | 1980 | logistics, the dealership | $2,000 of street money home; the Colombian connection calls; *side goal:* buy a vehicle (+$2,000) |
 | Blotter | 1980 | the Sunrise Collective (acid for grass) | 150 lb of grass traded for acid, 20 sheets sold; the lab is taken at the end |
 | Cocaine Cowboys | 1981 | the street war, gun runs and gun sales, soldiers | 60 lb of cocaine flown home, 8 weapons in the armoury; *side goal:* a truck with real cover or steel (+$3,000) |
 | Family Business | 1982 | the Moretti family | a deal with them (offer, loan or bulk sale); $30,000 in spendable cash |
@@ -837,7 +837,7 @@ already smuggling. It opens with a prelude, labelled EMPLOYMENT in the briefing 
 - `Session.unlocked(key)` answers the finer locks: guns (gun runs, gun buys and sales), and which roles the hiring hall offers (soldiers, mules).
 - **Goals.** Goals are read from the event bus (`job_delivered` now says which good, how many pounds, whose job and where from; `cash_home`; `bulk_sale`; `island_shipment`) or from state: dealers on corners, the connection, the armoury, money, net worth.
 - **Softlocks.** A faction that's gone first (the Commission trial convicts the Morettis; the Company is burned or hangs us out) satisfies its chapter, so the story can't strand you.
-- **Saves and entry points.** The story is saved in `story.json`, and loading rebuilds every system its chapters opened. `--chapter N` skips ahead.
+- **Saves and entry points.** The story is saved in `saves/story.json` (one folder, one file per mode: `open`, `story`, `campaign`, `police`, `dedicated`; `SavePaths` migrates old loose files once), and loading rebuilds every system its chapters opened. `--chapter N` skips ahead.
 - **Open mode.** `--unlocks open`, or the lobby's Unlocks: Open, has everything from the first minute, cocaine included. A new open game starts with a $10,000 float (`Session.OPEN_FLOAT`, Benny Ruiz fronts it; the story starts on $3,000). BALANCE entry 34: at $3k the safe dips below zero in the worst tenth of runs, from $10k it doesn't, and more up front mostly buys a bigger war.
 
 **Pacing** (BALANCE §7, 40 AI runs of 12 hours with the street war on from 1981; a flight every 15 minutes rolls the tactical sweep's odds, `AirRisk`):

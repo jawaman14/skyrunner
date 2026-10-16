@@ -255,3 +255,229 @@ func test_too_close_falls_back_to_a_plain_hold() -> void:
 	check(s.autopilot.waypoints.is_empty(), "nothing close enough is worth routing to")
 	check_near(s.autopilot.hdg_target, h0, 1.0, "just holds the heading it was on")
 	s.dispose()
+
+
+## Engaged just after lift-off (a few metres up, still climbing) the hold used to freeze that height and fly into the ground ahead.
+func test_engaged_just_after_lift_off_climbs_to_clear_the_ground_ahead() -> void:
+	var s := _sess({"features": []})
+	var ar := AutoRunner.new(s, false)
+	var dt := 1.0 / 30
+	while s.time < 300.0:
+		var c = ar.step(dt)
+		if ar.bot != null and ar.bot.phase == "climb":
+			break
+		s.update(dt, null, c)
+	check(not s.state.on_ground and s.state.agl < 30.0, "just airborne: %s m up" % s.state.agl)
+	var r: Array = s.command(Roles.PILOT, "autopilot", {})
+	check(r[0] and s.autopilot.engaged, "engaged")
+	check(s.autopilot.alt_target > s.state.alt + 50.0, "it targets a safe height, not the %s m it is at: %s" % [s.state.alt, s.autopilot.alt_target])
+	_fly(s, 30.0, 1.0)
+	check(s.phase != "crashed" and not s.state.on_ground, "still flying 30 s later")
+	check(s.state.alt > 60.0, "and has climbed: %s" % s.state.alt)
+	s.dispose()
+
+
+## A far fix behind used to be flown away from for 1.2-3.5 km before the turn back; now it is a plain bank-limited 180.
+func test_a_far_fix_behind_is_turned_to_directly() -> void:
+	var s := _sess({"features": []})
+	_airborne(s, 70.0)
+	var x0: float = s.state.x
+	var y0: float = s.state.y
+	var hdg: float = deg_to_rad(250.0)
+	var far := [x0 + sin(hdg) * 15000.0, y0 + cos(hdg) * 15000.0]
+	s.autopilot.engage_route(s.state, [far], s.state.alt, s.fm.controls.elevator)
+	var ahead_max := 0.0
+	for i in 150 * 30:
+		var inp := ControlMapper.InputFrame.new()
+		inp.throttle_axis = 0.8
+		s.update(1.0 / 30, inp, null)
+		ahead_max = maxf(ahead_max, (s.state.x - x0) * sin(deg_to_rad(70.0)) + (s.state.y - y0) * cos(deg_to_rad(70.0)))
+	var bearing_now: float = PilotBot.bearing(s.state.x, s.state.y, far[0], far[1])
+	check(absf(Py.wrap180(bearing_now - s.state.heading)) < 25.0, "after the turn it points at the fix: heading %s, bearing %s" % [s.state.heading, bearing_now])
+	check(ahead_max < 2600.0, "it never flew on away from it for long: max %s m ahead" % ahead_max)
+	check(PyMath.hypot(far[0] - s.state.x, far[1] - s.state.y) < 15000.0 - 3000.0, "and is closing on it")
+	s.dispose()
+
+
+## With a waypoint set, U flies there (it used to hold course and ignore it); U again is off.
+func test_u_with_a_waypoint_flies_to_it_and_then_holds() -> void:
+	var s := _sess({"features": []})
+	_airborne(s, 70.0)
+	var wp := [s.state.x + 6000.0, s.state.y + 2500.0]
+	var r: Array = s.command(Roles.PILOT, "autopilot", {"waypoint": wp})
+	check(r[0] and s.autopilot.engaged, "engaged")
+	check(not s.autopilot.waypoints.is_empty() and s.autopilot.to_point, "routing to the waypoint, not holding course")
+	var arrived_msg := false
+	for i in 220 * 30:
+		var inp := ControlMapper.InputFrame.new()
+		inp.throttle_axis = 0.8
+		s.update(1.0 / 30, inp, null)
+		if not arrived_msg and not s.messages.is_empty() and "over your waypoint" in str(s.messages.back()[1]):
+			arrived_msg = true
+	check(arrived_msg, "it announced the arrival over the waypoint")
+	check(s.autopilot.engaged and s.autopilot.waypoints.is_empty(), "and then holds course and altitude")
+	check(PyMath.hypot(wp[0] - s.state.x, wp[1] - s.state.y) < 9000.0 and s.phase != "crashed", "still flying near it")
+	s.dispose()
+
+
+func test_u_again_while_routing_to_a_waypoint_switches_it_off() -> void:
+	var s := _sess({"features": []})
+	_airborne(s, 70.0)
+	var wp := [s.state.x + 6000.0, s.state.y + 2500.0]
+	s.command(Roles.PILOT, "autopilot", {"waypoint": wp})
+	_fly(s, 5.0)
+	check(s.autopilot.engaged and not s.autopilot.waypoints.is_empty(), "still routing")
+	s.command(Roles.PILOT, "autopilot", {"waypoint": wp})
+	check(not s.autopilot.engaged, "U again switches it off")
+	s.dispose()
+
+
+func test_u_without_a_waypoint_still_holds_course() -> void:
+	var s := _sess({"features": []})
+	_airborne(s, 70.0)
+	s.command(Roles.PILOT, "autopilot", {})
+	check(s.autopilot.engaged and s.autopilot.waypoints.is_empty() and not s.autopilot.to_point, "no waypoint: the plain hold, as before")
+	s.dispose()
+
+
+## Engaged slow (a pull-up that bled the speed away) with the pilot's throttle low: the autopilot adds power and gets the speed back
+## instead of holding the height into a stall.
+func test_engaged_slow_it_adds_power_and_recovers_speed() -> void:
+	var s := _sess({"features": []})
+	var af := World.airfield("HAR")
+	s.spawn_airborne(af.x + 3000.0, af.y - 1000.0, 70.0, 700.0, 52.0)
+	s.log.departed_from = "HAR"
+	s.command(Roles.PILOT, "autopilot", {})
+	var slow_min: float = s.autopilot.min_ias_kts
+	check(s.state.ias_kts < slow_min + 8.0, "starts slow: %s kt against a minimum of %s" % [s.state.ias_kts, slow_min])
+	_fly(s, 60.0, 0.2)
+	check(s.phase != "crashed" and not s.state.on_ground, "still flying a minute later")
+	check(s.state.ias_kts > slow_min, "and back above the minimum speed: %s kt" % s.state.ias_kts)
+	s.dispose()
+
+
+## Low over rising ground the hold may climb harder than the cruise rate.
+func test_a_hold_far_below_its_target_climbs_faster_than_cruise_rate() -> void:
+	var s := _sess({"features": []})
+	_airborne(s)
+	s.command(Roles.PILOT, "autopilot", {})
+	s.autopilot.alt_target = s.state.alt + 400.0
+	var best := 0.0
+	for i in 20 * 30:
+		var inp := ControlMapper.InputFrame.new()
+		inp.throttle_axis = 1.0
+		s.update(1.0 / 30, inp, null)
+		best = maxf(best, s.state.vs_fpm)
+	check(best > 650.0, "it climbed at more than 600 fpm: best %s" % best)
+	s.dispose()
+
+
+## Routed and low (just off the ground): it climbs straight ahead and does not turn towards the next fix until it is higher.
+func test_a_routed_climb_out_does_not_turn_while_low() -> void:
+	var s := _sess({"features": []})
+	var af := World.airfield("HAR")
+	var ground: float = s.world.ground(af.x, af.y)
+	s.spawn_airborne(af.x, af.y, 70.0, ground + 25.0, 85.0)
+	s.log.departed_from = "HAR"
+	var hdg0: float = s.state.heading
+	var behind := [af.x - sin(deg_to_rad(hdg0)) * 15000.0, af.y - cos(deg_to_rad(hdg0)) * 15000.0]  # the fix is straight behind: a turn would start at once
+	s.autopilot.engage_route(s.state, [behind], ground + 600.0, s.fm.controls.elevator)
+	var turned_while_low := false
+	for i in 12 * 30:
+		var inp := ControlMapper.InputFrame.new()
+		inp.throttle_axis = 1.0
+		s.update(1.0 / 30, inp, null)
+		if s.state.agl < 140.0 and absf(Py.wrap180(s.state.heading - hdg0)) > 12.0:
+			turned_while_low = true
+	check(not turned_while_low, "no turn below 140 m above the ground")
+	check(s.phase != "crashed", "and it did not crash")
+	s.dispose()
+
+
+## Pine Ridge sits on a plateau: leaving it for Harbor the ground ahead rises faster than a gentle climb. The old autopilot flew into it 32 s out.
+func test_leaving_pine_ridge_for_the_hub_clears_the_rising_ground() -> void:
+	var s := _sess({"trade": true})
+	var from := World.airfield("PNR")
+	s.active_jobs.append(Jobs.Job.new(Jobs.new_id(), "test", "cargo", "PNR", "HAR", [], 100, {}))
+	var hdg: float = from.heading if (s.approach_end_clear(from, 1) or not s.approach_end_clear(from, 0)) else Py.wrap180(from.heading + 180.0)
+	s.spawn_airborne(from.x, from.y, hdg, 312.0, 80.0)  # 312 m up over the strip, as the sweep starts it
+	s.log.departed_from = "PNR"
+	s.command(Roles.PILOT, "autopilot", {})
+	s.command(Roles.PILOT, "autopilot", {})
+	_fly(s, 90.0, 0.8)
+	check(s.phase != "crashed" and not s.state.on_ground, "still flying 90 s after leaving Pine Ridge for Harbor")
+	s.dispose()
+
+
+## The plain hold looks AHEAD along the heading (east is sin, north is cos), not sideways: aimed at the highest ground near Pine Ridge it targets
+## that ground plus the clearance.
+func test_the_plain_hold_looks_along_the_heading() -> void:
+	var s := _sess({"features": []})
+	var from := World.airfield("PNR")
+	var best_h := 0.0
+	var best_peak := -1e9
+	for k in 36:
+		var hr := deg_to_rad(float(k) * 10.0)
+		var pk := -1e9
+		var d := 250.0
+		while d <= Session.AUTOPILOT_HOLD_LOOKAHEAD_M:
+			pk = maxf(pk, s.world.ground(from.x + sin(hr) * d, from.y + cos(hr) * d))
+			d += 250.0
+		if pk > best_peak:
+			best_peak = pk
+			best_h = float(k) * 10.0
+	s.spawn_airborne(from.x, from.y, best_h, 150.0, 90.0)  # 150 m above the strip, aimed at the highest ground within 4 km
+	s.log.departed_from = "FRM"
+	s._autopilot_hold()
+	check(s.autopilot.alt_target >= best_peak + Session.AUTOPILOT_HOLD_CLEARANCE_M - 1.0, "it targets the ridge ahead (%s) plus the clearance: %s" % [best_peak, s.autopilot.alt_target])
+	s.dispose()
+
+
+func test_ai_pilot_takes_over_without_stale_autopilot() -> void:
+	var s := _sess()
+	_airborne(s)
+	s.command(Roles.PILOT, "autopilot", {"on": true})
+	check(s.autopilot.engaged, "autopilot starts engaged")
+	s.seats.release(Roles.PILOT)
+	check_eq(s.seats.who(Roles.PILOT), "ai", "AI takes the pilot seat")
+	check(not s.autopilot.engaged, "AI handoff disconnects the old autopilot mode")
+	s.dispose()
+
+
+func test_ai_controls_do_not_cancel_its_own_autopilot() -> void:
+	var s := _sess()
+	_airborne(s)
+	s.seats.release(Roles.PILOT)
+	s.autopilot.engage(s.state, s.fm.controls.elevator)  # AI uses it during a solo airdrop
+	var inp := ControlMapper.InputFrame.new()
+	inp.held["roll_left"] = true  # host input must not override the AI seat
+	var ai := FlightModel.Controls.make({"aileron": 0.25, "throttle": 0.8})
+	s.update(1.0 / 30.0, inp, ai)
+	check(s.autopilot.engaged, "host stick input does not disconnect an AI-owned autopilot")
+	check_near(s.fm.controls.aileron, 0.25, 0.01, "AI controls win this frame")
+	s.dispose()
+
+
+func test_ai_pilot_takes_midflight_job_without_waiting_for_the_ramp() -> void:
+	var s := _sess({"trade": true})
+	_airborne(s)
+	s.active_jobs.append(Jobs.Job.new(Jobs.new_id(), "test", "cargo", "HAR", "PNR", [], 100, {}))
+	s.seats.release(Roles.PILOT)
+	var ai := AutoRunner.new(s)
+	var controls := ai.step(1.0 / 30.0)
+	check(controls != null, "AI supplies flight controls immediately after F3 in midair")
+	check(ai.bot != null, "AI starts a flight plan while airborne")
+	if ai.bot != null:
+		check_eq(ai.bot.phase, "enroute", "midflight takeover skips taxi and takeoff")
+		check_eq(ai.bot.legs.back().code, "PNR", "AI continues the active job")
+	s.dispose()
+
+
+func test_ai_pilot_takes_midflight_aircraft_home_without_a_job() -> void:
+	var s := _sess()
+	_airborne(s)
+	s.seats.release(Roles.PILOT)
+	var ai := AutoRunner.new(s)
+	check(ai.step(1.0 / 30.0) != null, "AI does not leave an airborne aircraft without controls")
+	check(ai.bot != null and ai.bot.legs.back().kind == "land", "AI plans a landing when no job is active")
+	s.dispose()
