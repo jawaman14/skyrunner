@@ -117,6 +117,28 @@ func test_pursuer_closes_and_busts() -> void:
 	check_eq(out, {"runner": "busted"})
 
 
+## Owner, 14 Oct: rival smugglers chase, but they can never take the cargo from the air.
+func test_a_rival_on_your_tail_never_takes_the_cargo_from_the_air() -> void:
+	var ps := PoliceSystem.new(world, _rng(2))
+	ps.case("runner").wanted = 1
+	var rival := ps.spawn_rival([0.0, -6000.0], "runner")
+	var x := 0.0
+	var y := -6000.0
+	var t := 0.0
+	var outcomes := []
+	for i in 2400:  # two minutes, a rival parked on the aircraft the whole time
+		t += 0.05
+		rival.x = x + 40.0
+		rival.y = y
+		var sig := SensorNet.Signature.new("runner", x, y, 900, 900 - world.ground(x, y), 0.0, 0.0)
+		var out: Dictionary = ps.tick(0.05, t, [PoliceSystem.Target.new(sig, true)])
+		if out.has("runner"):
+			outcomes.append(out["runner"])
+			break
+	check(not outcomes.has("hijacked"), "the rival is close for two minutes and still takes nothing: %s" % [outcomes])
+	check_eq(ps.case("runner").rival_meter, 0.0, "and the old hijack meter never fills")
+
+
 func test_clean_aircraft_is_released() -> void:
 	var ps := PoliceSystem.new(world, _rng(1))
 	ps.case("runner").wanted = 1
