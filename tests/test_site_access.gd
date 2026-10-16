@@ -40,6 +40,26 @@ func test_connector_uses_nearby_connected_road_after_dead_end() -> void:
 	check(not access.checked_vehicle_route(graph,Vector2.ZERO,Vector2(500,0)).reachable, "fallback cannot cross unbridged water")
 
 
+func test_connector_may_share_a_connected_road_node_but_not_an_isolated_one() -> void:
+	var world := _world()
+	var access := SiteAccess.new(world, [])
+	var from := Vector2(0, 0)
+	var to := Vector2(160, 0)
+	# Each endpoint's nearest node is its own disconnected dead end; one connected road node is within 120 m of both.
+	var graph := RoadGraph.new([[[0,10],[0,20]], [[160,10],[160,20]], [[80,60],[80,500]]])
+	var route := access.checked_vehicle_route(graph, from, to)
+	check(route.reachable, "a connected road node near both endpoints is a valid shared access")
+	check(route.points.has(Vector2(80,60)), "the trip passes through that road node")
+	# The same geometry with a node that has no road edges must stay unreachable.
+	var isolated := RoadGraph.new([[[0,10],[0,20]], [[160,10],[160,20]], [[80,60],[80,60]]])
+	check(not access.checked_vehicle_route(isolated, from, to).reachable, "an isolated shared node is not a road journey")
+	# A node whose only road edge runs through a building has no usable road either (the access legs stay clear).
+	var blocked_world := _world()
+	var building := SiteLayout.record(blocked_world, "on-the-road", "stash", SiteLayout.frame(Vector2(80, 200), 0), Vector3(10, 3, 10))
+	var blocked := SiteAccess.new(blocked_world, [building])
+	var cut := RoadGraph.new([[[0,10],[0,20]], [[160,10],[160,20]], [[80,60],[80,500]]])
+	check(blocked.checked_vehicle_route(cut, from, to).reachable == false, "a shared node whose every edge is blocked is not a road journey")
+
 func test_vehicle_loading_leg_uses_checked_building_detour() -> void:
 	var world := _world()
 	var obstacle := SiteLayout.record(world, "loading-wall", "stash", SiteLayout.frame(Vector2(8, 0), 0), Vector3(4, 3, 4))
