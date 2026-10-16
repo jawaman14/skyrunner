@@ -3,9 +3,14 @@ extends SessionState
 ## Layer 2 of 6 of the Session: the rules (busts, raids, deliveries, grading), the ground war and the court and payroll
 ## command wrappers.
 
+## The employed opening (the first missions): failing one must never end the game or cost money (owner, 14 Oct) - the pilot is back at an airport and flies the cargo again.
+func _first_missions() -> bool:
+	return story != null and story.employment != null and story.employment.active()
+
+
 func _crash(reason: String) -> void:
 	phase = "crashed"
-	var fee := maxi(2500, int(spec.price * 0.12))
+	var fee := 0 if _first_missions() else maxi(2500, int(spec.price * 0.12))
 	money -= fee
 	var lost := active_jobs.size()
 	last_outcome = "CRASH: %s. Repairs -$%s." % [reason, Py.money(fee)] + (" %d job(s) lost." % lost if lost else "")
@@ -14,6 +19,12 @@ func _crash(reason: String) -> void:
 
 
 func _bust(how: String) -> void:
+	if _first_missions():
+		phase = "busted"  # no arrest, no fine, no seizure: the same airport, the same cargo, another try
+		last_outcome = "FORCED DOWN (%s). Nothing is lost; try the flight again." % how
+		say(last_outcome)
+		bus.emit("forced_down", time, "", ["runner", "law"], {"how": how})  # not "busted": the market and renown punish that, and a first-mission retry must cost nothing
+		return
 	if agency != null and agency.quash(how):
 		return  # friends in Washington
 	if logistics != null:
