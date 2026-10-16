@@ -102,6 +102,24 @@ func test_refusing_the_company_order_costs_agency_support_and_wins_mob_support()
 	s.dispose()
 
 
+## Owner, 16 Oct: the General's fate is an optional goal (the two-goal rule stays), but the chapter must not close before the order is put to the player.
+func test_the_company_chapter_waits_for_the_order_and_the_player_may_walk_away() -> void:
+	var s := _story(Story.index_of("The Company"))
+	s.story.progress["agency_jobs"] = 1.0
+	s.story.progress["guns_to_company"] = 4.0
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "The Company", "both required goals are done, but the chapter waits for the order")
+	var trust_before: float = s.agency.trust
+	check(s.story.choose_general("declined"), "the player may walk away")
+	check_eq(s.agency.trust, trust_before, "walking away changes nothing else")
+	check(not s.story.choose_general("remove"), "and a decision cannot be changed afterwards")
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "Kingpin", "the chapter closes once the order is answered")
+	check(s.story.chapter.briefing.contains("turned the Company down"), "and the next chapter says so")
+	check_eq(Story.from_dict(s.story.to_dict()).company_decision, "declined", "the decision survives a save")
+	s.dispose()
+
+
 func test_chapters_open_the_game_in_order() -> void:
 	var s := _story()
 	s.trade.stock.marijuana = 250.0  # grass held the 1979 way: one pool
@@ -363,7 +381,7 @@ func test_debug_skip_walks_through_the_chapters_to_the_end() -> void:
 
 
 ## Goal checks are forgiving at the start and sparing later (owner, 12 Oct): chapter 1 needs 150 lb and $2,500, chapter 2 $2,000 home, and from chapter 3 no chapter
-## asks for more than two required goals, except The House (stake, laundering, then getting out) and The Company (a job, the guns, then the General's fate, which is only offered after both), whose three goals are chains.
+## asks for more than two required goals, except The House, whose three goals are a chain (stake, laundering, then getting out).
 func test_goal_checks_are_forgiving_early_and_sparing_later() -> void:
 	var targets := {}
 	for o in Story.CHAPTERS[0][4]:
@@ -382,8 +400,6 @@ func test_goal_checks_are_forgiving_early_and_sparing_later() -> void:
 				required += 1
 		if Story.CHAPTERS[i][1] == "The House":
 			check_eq(required, 3, "The House keeps exactly its three chained goals (stake, laundering, getting out)")
-		elif Story.CHAPTERS[i][1] == "The Company":
-			check_eq(required, 3, "The Company keeps its three chained goals (a job, the guns, then the General's fate)")
 		else:
 			check(required <= 2, "%s asks for %d required goals (limit 2)" % [Story.CHAPTERS[i][1], required])
 

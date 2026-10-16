@@ -98,7 +98,7 @@ const CHAPTERS := [
 		+ "product north, sell him guns - and pray nobody ever holds the hearings.",
 		["agency"],
 		[["agency_jobs", "Fly a job for the Company", 1], ["guns_to_company", "Sell the Company 4 guns", 4],
-			["general_choice", "Choose the General's fate", 1]]],
+			["general_choice", "Choose the General's fate", 1, true, 0]]],
 	[1986, "Kingpin",
 		"The mandatory minimums pass, the Commission trial starts in New York, and every\n"
 		+ "faction on the coast wants what's ours. Build it big enough that it doesn't\n"
@@ -196,7 +196,7 @@ var history: Array = []  ## completed chapter briefings and actual outcomes
 var opened := {}  ## every system and lock opened so far
 var completed_all := false
 var show_briefing := true
-var company_decision := ""  ## remove | spare | skipped: the Company order at the end of Chapter 9
+var company_decision := ""  ## remove | spare | declined | skipped: the Company order at the end of Chapter 9 (declined: the player walked away; skipped: the Company cut us loose)
 var _last_t := -1.0  ## the clock at the last tick (for the goals that count minutes)
 var sess = null
 var _chapter: Campaign.Chapter = null
@@ -226,6 +226,9 @@ var chapter: Campaign.Chapter:
 					briefing += "\nThe Moretti-backed government now controls Isla Soberana. Containers clear more often, but the Family takes its cut."
 				elif company_decision == "spare":
 					briefing += "\nThe General still grants passage, but the Company has withdrawn its protection. The Morettis remember you refused Washington."
+				elif company_decision == "declined":
+					briefing += "
+You turned the Company down without taking a side. The General remains in power, and Washington stops calling."
 				elif company_decision == "skipped":
 					briefing += "\nThe Company cut you loose before the order came. The General remains in power and the island route stays open."
 			if index == 0 and employment != null:
@@ -264,9 +267,12 @@ func company_choice_ready() -> bool:
 
 
 func choose_general(decision: String) -> bool:
-	if not company_choice_ready() or decision not in ["remove", "spare"]:
+	if not company_choice_ready() or decision not in ["remove", "spare", "declined"]:
 		return false
 	company_decision = decision
+	if decision == "declined":
+		sess.say("You tell the Company's man you will think about it. He says Washington does not wait, and he does not call again.")
+		return true
 	progress["general_choice"] = 1.0
 	if decision == "remove":
 		sess.island.controller = "mob"
@@ -544,9 +550,11 @@ func tick(s) -> void:
 		if o.optional and progress.get(o.key, 0.0) >= o.target and not progress.has(paid):
 			progress[paid] = 1.0
 			s.money += o.bonus
-			s.say("Side goal done: %s. +$%s." % [o.text, Py.money(o.bonus)])
+			s.say("Side goal done: %s. +$%s." % [o.text, Py.money(o.bonus)] if o.bonus > 0 else "Side goal done: %s." % o.text)
 	if not Py.all(ch.objectives, func(o): return o.optional or outcomes.has(o.key) or progress.get(o.key, 0.0) >= o.target):
 		return
+	if company_choice_ready():
+		return  # the Company's order is put to the player before the chapter closes (they may walk away)
 	s.say("Chapter %d complete: %s!" % [ch.num, ch.title])
 	advance()
 

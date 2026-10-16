@@ -636,6 +636,7 @@ func _show_company_choice() -> void:
 	dialog.dialog_text = "The Company orders you to assassinate General Ibarra.\n\nCarry it out: the Moretti-backed government takes the island. Containers clear more often, but the Family takes a $4,000 port cut. The Company rewards you, and the operation adds exposure.\n\nSpare him: the Morettis respect your refusal and the General grants better passage. The Company loses trust, adds scrutiny and ends its protection."
 	dialog.add_button("Carry out the assassination", false, "remove")
 	dialog.add_button("Spare the General", false, "spare")
+	dialog.add_button("Walk away", false, "declined")
 	dialog.get_ok_button().hide()
 	dialog.custom_action.connect(func(action: String):
 		s.story.choose_general(action)
