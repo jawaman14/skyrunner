@@ -25,6 +25,7 @@ const HELD := {
 	"throttle_up": {"keys": [KEY_R, KEY_PAGEUP], "axes": [[JOY_AXIS_TRIGGER_RIGHT, 1.0]]},
 	"throttle_down": {"keys": [KEY_F, KEY_PAGEDOWN], "axes": [[JOY_AXIS_TRIGGER_LEFT, 1.0]]},
 	"brake": {"keys": [KEY_B, KEY_SPACE], "buttons": [JOY_BUTTON_LEFT_SHOULDER]},
+	"reverse": {"keys": [KEY_BACKSPACE]},
 	"trim_up": {"keys": [KEY_BRACKETRIGHT], "buttons": [JOY_BUTTON_DPAD_RIGHT]},
 	"trim_down": {"keys": [KEY_BRACKETLEFT], "buttons": [JOY_BUTTON_DPAD_LEFT]},
 }
@@ -38,7 +39,7 @@ const PRESSED := {
 const LABELS := {
 	"pitch_up": "Pitch up (pull)", "pitch_down": "Pitch down (push)", "roll_left": "Roll left", "roll_right": "Roll right",
 	"yaw_left": "Rudder left", "yaw_right": "Rudder right", "throttle_up": "Throttle up", "throttle_down": "Throttle down",
-	"brake": "Brakes", "trim_up": "Trim nose up", "trim_down": "Trim nose down", "flaps_down": "Flaps down",
+	"brake": "Brakes", "reverse": "Back up (slowly, stopped on a strip)", "trim_up": "Trim nose up", "trim_down": "Trim nose down", "flaps_down": "Flaps down",
 	"flaps_up": "Flaps up", "throttle_cut": "Throttle cut", "throttle_full": "Full throttle",
 }
 
