@@ -239,6 +239,9 @@ func _autopilot_target() -> Airfield:
 
 func seat_driver(role: String, human: bool) -> void:
 	match role:
+		Roles.PILOT:
+			if not human:
+				autopilot.disengage()
 		Roles.COPILOT:
 			if human:
 				_ai_defaults[role] = copilot if copilot != "human" else _ai_defaults.get(role)
