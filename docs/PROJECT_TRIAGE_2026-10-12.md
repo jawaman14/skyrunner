@@ -204,3 +204,45 @@ Questions for the owner:
 * Questions 8-10 (12 October, second round): **the LAN beacon always belongs to the server node, the dedicated server included** (8a); **one flow: the waiting room only, the lobby's "open remote seats" box goes** (9a); **one saves folder with one file per mode, with a migration of existing saves** (10a).
 * The pilot app's frame step (12 October): **fixed 30 Hz with the picture smoothed between steps, as its own task** (not per-frame, not 60 Hz).
 * The server pin and the local `.mcp.json` (12 October): **both**: the game's committed pin moves to the current skyrunner-mcp `main`, and the local `.mcp.json` points at a clean server checkout.
+
+## 10. Every open item on 12 October, one line each
+**A historical snapshot, as of 17:15 AEST on 12 October 2026** (the end of the day's merges and closings; the list changes as work lands, so check `github_merge_queue` for the live state). Taken from `github_pr_triage` and `github_issue_list` that morning (37 open pull requests and 5 open issues) and then updated for what was merged or closed during the day (ticked items). Everything that is not listed here is merged (complete) or closed (not needed). Categories: **ready** (done, waiting for the other agent's exact-head review), **keep** (still valid, needs a sync or an owner call), **in question** (the owner or an agent must decide), **retire?** (superseded or stale).
+
+### Open issues
+* [ ] **#326** owner: release gates, decisions and design epics. keep (the owner's page; never ticked by an agent).
+* [ ] **#327** agents: the work queue index. keep.
+* [ ] **#328** Claude queue. keep (ticked from this document: #80, #82, #87).
+* [ ] **#329** Codex queue. keep (ticked: #83).
+* [ ] **#345** owner playtest of 12 October (checklist). keep (autopilot, F3, goals, police pace done or in review; tutorials by phase, air camera look, slow reverse, tyre wear on dirt, key audit are Codex's QA lane).
+
+### Ready: done, awaiting Codex's exact-head review (usage returns 4:11 PM)
+* [x] **#350** early police pace (BALANCE item 53 added). merged 12 Oct as `7bba55a5` after Codex's exact-head approval.
+* [ ] **#357** dedicated server: campaign, `--chapter`, `--watch`, voice relay (Codex bot's two findings fixed; the third is the follow-up "resuming a partial campaign"). ready.
+* [x] **#358** the waiting room hosts campaign and police tables. merged 12 Oct as `4d33bf31`.
+* [x] **#359** lobby game name, password, port, join roles. merged 12 Oct as `da326f1f`.
+* [ ] **#360** `--smoke` and `--shot` on every entry path. ready.
+* [x] **#361** docs: the owner's second round of answers. merged 12 Oct as `391718d1`.
+* [x] **#362** pin skyrunner-mcp `1b8edfd` (43 tools). merged 12 Oct as `ae35929b` (Codex asked for one README fix, done).
+* [ ] **#363** the LAN beacon always belongs to the server node. ready.
+* [ ] **#364** one hosting flow: the waiting room. ready.
+* [x] **#365** one saves folder with a migration. merged 12 Oct as `cc7d6769`.
+
+### Keep: valid drafts that need a sync or a decision
+* [ ] **#321** score rows 15-22 (draft). keep: the owner's ruling is recorded; merge after review.
+* [x] **#320** joint working plan. closed 12 Oct on the owner's instruction (superseded by `docs/PIPELINE.md` and `docs/CLAUDE_ROLE_HANDOFF.md`).
+* [ ] **#304** docs about the employed opening. keep: still valid.
+* [ ] **#339** pipeline discussion draft. keep: unanswered questions.
+* [x] **#340** docs: which MCP server and how an agent joins. closed 12 Oct on the owner's instruction (covered by `tools/mcp/README.md` and the server's `COLLABORATION.md`).
+* [ ] **#338** first pass by the local model (a test). retire?: a Bonsai draft; the better of the two duplicates, #337, was closed.
+* [ ] **#336** `tools/local_llm` worker. keep: conflicts; needed by the local-model tools' reviewers; sync.
+* [ ] **#335** relay script and MCP client. keep: conflicts; the on-disk MCP version of the relay.
+* [ ] **#334** chapter-goal source audit. keep: docs; conflicts.
+* [ ] **#333** scripts for the human release gates. keep: docs; conflicts (Codex's lane).
+* [ ] **#332** `sync_shared --baton theirs`. keep: conflicts.
+* [ ] **#323** and **#319** strip trials and the STRIPS.md regeneration (#88). keep: wait for the owner's strip decision (#326).
+* [ ] **#305** a road node shared by both connector endpoints. keep: conflicts.
+* [ ] **#303** P05 action-preview reference screen. keep: UX/UI is Codex's lane.
+* [ ] **#300** screenshot matrix and lobby shortcuts. keep: conflicts.
+
+### Stale stack: salvaged, then closed (owner, 12 Oct: "salvage then close")
+* [x] **#244, #247, #253, #265, #267, #268, #269, #272, #274, #275, #276**: all eleven closed with a comment each. Salvaged onto current main first: the period land vehicles (**#367**, from #269) and the Costa Brava rebuild with period architecture (**#368**, draft, from #247; it changes the map and needs the owner's decision and Codex's QA). Not salvaged (the branches stay on origin): the loading-approach and road fixes (#265, #267, #268, #275), the Moretti club (#274), the route performance change (#272), the escort and stakeout fix (#244), the recordings (#253: videos go to YouTube) and the loading-access diagnostics (#276).
