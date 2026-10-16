@@ -788,10 +788,25 @@ func _unhandled_key_input(_ev: InputEvent) -> void:
 	pass
 
 
+## Why the right-button camera look is unavailable right now ("" when it is available).
+func _air_look_block_reason() -> String:
+	if s == null or s.state == null or s.state.on_ground:
+		return "you are on the ground"
+	if on_foot:
+		return "you are on foot"
+	if paused or pause_menu != null:
+		return "the game is paused"
+	if _active_menu() != null or controls_menu != null or pack_menu != null:
+		return "a menu is open"
+	if _map_open():
+		return "the chart is open"
+	if s.narrative != null and s.narrative.show_briefing:
+		return "the briefing is up (press Enter)"
+	return ""
+
+
 func _air_camera_look_allowed() -> bool:
-	return s != null and s.state != null and not s.state.on_ground and not on_foot and not paused and pause_menu == null \
-		and _active_menu() == null and controls_menu == null and pack_menu == null and not _map_open() \
-		and (s.narrative == null or not s.narrative.show_briefing)
+	return _air_look_block_reason() == ""
 
 
 func _end_air_camera_look() -> void:
@@ -814,6 +829,8 @@ func _input(ev: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 			get_viewport().set_input_as_handled()
 			return
+		if ev.pressed and s != null and not on_foot and _air_look_block_reason() != "":
+			s.say("Camera look: not now, %s." % _air_look_block_reason())  # say why instead of doing nothing
 		if not ev.pressed and _air_look_active:
 			_end_air_camera_look()
 			get_viewport().set_input_as_handled()

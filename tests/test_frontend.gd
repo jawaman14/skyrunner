@@ -97,6 +97,8 @@ func test_air_camera_look_uses_right_drag_without_changing_mouse_yoke() -> void:
 	var centered_camera := app.cam.global_basis
 	app._input(right)
 	check(not app._air_look_active, "right drag does not look around while parked")
+	check_eq(app._air_look_block_reason(), "you are on the ground", "and the reason is the ground")
+	check(not s.messages.is_empty() and "Camera look: not now, you are on the ground" in str(s.messages.back()[1]), "the refusal says why on the message line")
 	s.state.on_ground = false
 	app.mouse_yoke = true
 	app._input(right)
