@@ -105,7 +105,7 @@ func _runner_rows(ss: Dictionary) -> Array:
 			"detail": "$5,000: they lose strength and turf on tonight's route; +12 heat, the task force opens a violence file; ends any truce",
 			"state": str(rv.band)})
 		out.append({"key": "truce", "label": "Offer %s a truce" % rv.name, "order": "truce", "args": {},
-			"detail": "3 nights: they stay off your route and stop hijacking, for 15% of your takings. The stronger they are, the likelier they refuse.",
+			"detail": "3 nights: they stay off your route, for 15% of your takings. The stronger they are, the likelier they refuse.",
 			"state": ("%d nights left" % int(rv.truce_nights)) if rv.truce_nights else ("they want blood" if rv.grudge else "-")})
 		out.append({"key": "tip_off", "label": "Sell their route to the police", "order": "tip_off", "args": {},
 			"detail": "their run tonight is as good as flagged; a friend in the task force loses 4 evidence on you. If they're busted they may work out who talked.",

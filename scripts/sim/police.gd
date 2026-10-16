@@ -282,7 +282,6 @@ var detections := {}
 var _launches: Array = []
 var _sweep_acc := SWEEP_INTERVAL_S
 var _serial := 0
-var _rival_spawned := {}
 var _flight_time := {}
 var now := 0.0
 var aerostat_ready_t = null
@@ -392,7 +391,6 @@ func reset(keep_wanted := false, tid := "runner") -> void:
 			if u.target_id == tid:
 				u.target_id = null
 				u.state = "return"
-	_rival_spawned.erase(tid)
 	_flight_time[tid] = 0.0
 
 
@@ -473,17 +471,6 @@ func patrol_spares(zones: Array, reserve := 1) -> Array:
 		out.append(z)
 		i += 1
 	return out
-
-
-func spawn_rival(near: Array, target_id: String) -> Pursuer:
-	var ang := rng.uniform(0, 2 * PI)
-	var x: float = near[0] + 5000 * cos(ang)
-	var y: float = near[1] + 5000 * sin(ang)
-	_serial += 1
-	var u := Pursuer.new("rival", x, y, world.ground(x, y) + 250, 0.0, [x, y], {
-		"speed": UNIT_TYPES["rival"][0] * KT * 0.6, "id": "Rival-%d" % _serial, "target_id": target_id})
-	units.append(u)
-	return u
 
 
 func dispatch(unit_id: String, target_id = null, point = null):
@@ -791,14 +778,7 @@ func tick(dt: float, now_: float, targets: Array) -> Dictionary:
 			outcomes[tid] = "busted" if t.hot else "clean"
 			_close_case(tid, t.hot)
 			continue
-		# rivals
-		if (features.has("rivals") and t.hot and t.value > 2000 and not _rival_spawned.has(tid)
-				and _flight_time[tid] > 45 and tid == "runner"):
-			_rival_spawned[tid] = true
-			if rng.random() < 0.6:
-				spawn_rival([t.sig.x, t.sig.y], tid)
-				events.append("Rival smugglers inbound. They will chase you, but they cannot take the cargo.")
-		# Rival smugglers chase and can be shot, but they never take the cargo from the air (owner, 14 Oct): the old rival meter and the "hijacked" outcome are gone.
+		# No rival aircraft follows a flight and nobody takes cargo from the air (owner, 14 and 17 Oct); ground cargo is fought for on the road (GroundWar).
 	return outcomes
 
 

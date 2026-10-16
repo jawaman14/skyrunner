@@ -49,8 +49,6 @@ const RULES := {
 	# the rival cartel (Los Cuervos): a third, AI-run outfit fighting you for turf
 	"rivals": true,
 	"rival_market": 0.3,  # payout lost in a zone at full rival control
-	"rival_hijack_base": 0.2,  # hijack chance when you meet them on the same route
-	"rival_hijack_k": 0.3,  # ... plus this much at full rival strength
 	"hit_cost": 5000,
 	"truce_share": 0.15,  # of your takings, per night of truce
 	"truce_nights": 3,
@@ -824,20 +822,12 @@ class Season:
 				break
 		rv.zone = zone
 		rv.runs = 0 if rv.strength < 10 else (2 if rv.strength > 70 else 1)
-		var hijack := 0.0
-		if rv.truce_nights == 0 and rv.runs > 0 and not o.lie_low:
-			if zone == o.route:
-				hijack = rules["rival_hijack_base"] + rules["rival_hijack_k"] * rv.strength / 100.0 + (0.15 if rv.grudge > 0 else 0.0)
-			elif rv.grudge > 0:
-				hijack = 0.1  # they come looking for you
-			if rv.hit:
-				hijack *= 0.5
 		plan["rival_zone"] = zone
 		plan["rival_runs"] = rv.runs
 		plan["rival_tipped"] = rv.tipped
 		plan["gang_unit"] = law.gang_unit
 		plan["truce"] = rv.truce_nights > 0
-		plan["hijack_p"] = hijack
+		plan["hijack_p"] = 0.0  # rivals never take cargo by air (owner, 17 Oct)
 		# a truce is an iterated prisoner's dilemma: it holds while the future is worth
 		# more than one betrayal. Opportunists defect as the season runs out.
 		if on("rival_tempers") and rv.truce_nights > 0 and not o.lie_low:
