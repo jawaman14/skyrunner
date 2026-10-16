@@ -43,7 +43,7 @@ func accept_job_reason(job: Jobs.Job) -> String:
 		if job.employer_stage != story.employment.stage or job.employer_serial <= story.employment.last_completed or job.employer_serial >= story.employment.next_serial:
 			return "Complete the current employer assignment first."
 	if not parked or location != job.origin:
-		return "You need to be parked at the job's origin."
+		return "Fly to %s and park there to take this job." % World.airfield(job.origin).name
 	if job.hot() and not features.has("contraband"):
 		return "Not that kind of pilot. Yet."
 	var seats := spec.seat_count() - (1 if copilot else 0)

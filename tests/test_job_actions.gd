@@ -86,6 +86,32 @@ func test_job_menu_confirms_cancels_and_reports_actions() -> void:
 	s.dispose()
 
 
+## Owner, 14 Oct: the board shows every job on the island, not only this strip's. A job elsewhere can be read but not taken from here.
+func test_job_menu_lists_jobs_from_other_strips_and_says_where_to_fly() -> void:
+	var s := _session()
+	var near := _job(s)
+	var item := Loadout.Item.new(987657, "Far cargo", "cargo", 20, 987656)
+	var far := Jobs.Job.new(987656, "Far delivery", "cargo", "FRM", "HAR", [item], 300, {})
+	s.boards["FRM"] = [far]
+	var menu := JobMenu.new()
+	Engine.get_main_loop().root.add_child(menu)
+	menu.setup(s)
+	menu.open()
+	var kinds := menu.rows.filter(func(r): return r != null).map(func(r): return r[0])
+	check(kinds.has("board") and kinds.has("far"), "the board lists this strip's job and the other strip's job")
+	var row := menu.rows.find_custom(func(r): return r != null and r[1] == far)
+	check(row >= 0, "the far job has a row")
+	menu.list.select(row)
+	menu._show_detail()
+	check(menu.action_button.disabled, "it cannot be accepted from here")
+	var reason := str(s.job_action(Roles.PILOT, "accept_job", far.id).disabled_reason)
+	check(("Fly to " + World.airfield("FRM").name) in reason, "and the reason names the strip to fly to: %s" % reason)
+	check(not s.active_jobs.has(far) and s.active_jobs.is_empty(), "nothing was accepted")
+	check(s.job_action(Roles.PILOT, "accept_job", near.id).enabled, "this strip's own job is still takeable")
+	menu.free()
+	s.dispose()
+
+
 func test_stale_menu_selection_cannot_accept_an_unavailable_job() -> void:
 	var s := _session()
 	var job := _job(s)
