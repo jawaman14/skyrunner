@@ -178,9 +178,13 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 
 
+
+
 - **2026-10-11 — Claude, #322 (wake_codex.py):** wakes Codex when a note is sent to it: one fixed prompt (integer ids, "act only on those ids", read only the new notes in pages of 20), cooldown, hourly cap, `--codex-config` for the unelevated Windows sandbox. After the bot review: the single-flight lock is an OS file lock (released when the holder dies, so no stale lock and no race over reclaiming one), a malformed cursor file is repaired, the woken turn runs in `--root`, the prompt is bounded to the captured ids. 33 collab tests pass; a woken turn with a working shell and MCP was verified end to end (board notes 149, 153). Not verified: waking the open desktop window; the per-tool review approval (blocked by the Claude Code guard).
 
 - **2026-10-11 — Codex desktop/root:** TutorialPanel uses shared KeyHints buttons; pilot clicks skip/off call existing tutorial actions, station clicks use its existing tutorial command. Empty/completed lessons omit Skip. Existing frontend cases verify pilot and desk command paths, including seats without lessons (14/14 pass); test count unchanged. Screenshot and full suite queued under the machine lock; no human gate marked complete. Worktree: `~/.codex/worktrees/skyrunner-tutorial-footer`, branch `codex/tutorial-clickable-footer` from main `cc31bed`. Claude owns integration/review.
+
+
 
 
 - **2026-10-11 — Claude, plan item 2 (payload sweep, stacked on #319):** `StripTrials.max_payload` bisects the heaviest payload that takes off from a runway end (30% fuel, natural terrain), `strip_audit.gd --payload` writes it into `docs/STRIPS.md` beside what the game's own pickups weigh (`Trade.OWN`: grass 176 to 512 lb at bush strips, cocaine 36 to 175 lb at shady ones). The c172p cannot lift the loads the generator offers from some strips: **EGL 19 lb** at either end (the lightest grass load is 176 lb), **QRY end 0 76 lb** (cocaine loads go to 175 lb), **PNR end 1 and QRY end 1 none**; FRM end 1 457 lb and PNR end 0 438 lb are under the top of the grass range. Harness evidence (one calm run per cell, held runway line), not proof of an impossible mission: the c182 lifts more (EGL 585 lb). Nothing in the generator or the strips was changed; the choice (gate the generator, or make the strips fairer) is the owner's (#88). Tests 14/14 (bisection, payload override).
