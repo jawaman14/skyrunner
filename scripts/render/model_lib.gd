@@ -13,7 +13,7 @@ extends RefCounted
 ## Los Cuervos in bandoliers and work clothes (m, a, c), the task force in
 ## uniform and plain clothes (j, i), SWAT in black (r); the Family in dark
 ## suits. Cars: a white sports coupe for the organisation, pickups and SUVs for
-## Los Cuervos, black-and-whites for the police, a luxury SUV for the Family.
+## Los Cuervos, black-and-whites for the police, a long luxury saloon for the Family.
 
 static var ENABLED := true
 
@@ -143,12 +143,16 @@ static func weapon(tier: String, mul := 1.0) -> Node3D:
 ## A squad's vehicle, facing -Z, wheels on the ground.
 static func car(faction: String, kind: String) -> Node3D:
 	var k := "truck" if kind == "truck" else "car"
-	var path: String = "cars/" + CARS.get(faction, CARS.civilian)[k]
-	return wrapped(path, fit_scale(path, CAR_LEN[k]))
+	return vehicle(str(CARS.get(faction, CARS.civilian)[k]), CAR_LEN[k])
 
 
-## Any car of Kenney's Car Kit by file name (the dealership's), `length` metres bumper to bumper, facing -Z.
+## Existing dealership keys select original period vehicles; other kit names still load as before.
 static func vehicle(file: String, length: float) -> Node3D:
+	if not ENABLED:
+		return null
+	var period := PeriodVehicles.build(file, length)
+	if period != null:
+		return period
 	var path := "cars/" + file
 	return wrapped(path, fit_scale(path, length))
 
@@ -206,3 +210,4 @@ static func palm_mesh(variant: int, height: float) -> Array:
 	if mesh == null:
 		return []
 	return [mesh, height / maxf(0.01, mesh.get_aabb().size.y)]  # the raw mesh: a MultiMesh ignores the scene's transforms
+
