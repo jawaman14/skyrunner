@@ -139,6 +139,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+
+
 - **2026-10-12 — Codex, pilot controls audit (#345):** On `codex/controls-audit`, corrected F1's waypoint autopilot path, conditional cockpit shortcuts and rebindable voice description; F8 distinguishes F3 AI handoff from U autopilot and lists F4. The durable on-foot movement map is in `docs/GUIDE.md` §4.3. Verification evidence is in PR #369. Remaining human checks: rendered desk hints, 720p layout and control feel. Next: exact-head review, then #345 tutorials/camera.
 - **2026-10-15 - Claude (taking over Codex's #372 while Codex is unavailable), review fixes:** Merged current main into the branch (conflicts were HANDOFF's Log and the generated status inventory, both kept/regenerated). Gated the first-landing migration to saves from before the landing lessons: Tutorial.to_dict writes landing_v and ttach() migrates only a save without it, so a current save that skipped take-off while parked is not marked landed (new test; tutorial 22/22). Not done, deliberately: air camera look for a guest in the pilot seat - that seat is RemoteSeat, not PilotApp, so it is a feature extension for a later change, recorded here as the follow-up. #345 slow reverse and dirt take-off tyre wear are still open. No #326 human gate was run or marked passed.
 
@@ -174,10 +176,18 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   question for a separate decision. Not done from #82: a locked planner result, forward-intercept constants and
   heading-aware scoring (they would change ordinary-field behaviour). #80/#82 stay open.
 
+
+
+
+
 - **2026-10-11 — Claude, #322 (wake_codex.py):** wakes Codex when a note is sent to it: one fixed prompt (integer ids, "act only on those ids", read only the new notes in pages of 20), cooldown, hourly cap, `--codex-config` for the unelevated Windows sandbox. After the bot review: the single-flight lock is an OS file lock (released when the holder dies, so no stale lock and no race over reclaiming one), a malformed cursor file is repaired, the woken turn runs in `--root`, the prompt is bounded to the captured ids. 33 collab tests pass; a woken turn with a working shell and MCP was verified end to end (board notes 149, 153). Not verified: waking the open desktop window; the per-tool review approval (blocked by the Claude Code guard).
 
 - **2026-10-11 — Codex desktop/root:** TutorialPanel uses shared KeyHints buttons; pilot clicks skip/off call existing tutorial actions, station clicks use its existing tutorial command. Empty/completed lessons omit Skip. Existing frontend cases verify pilot and desk command paths, including seats without lessons (14/14 pass); test count unchanged. Screenshot and full suite queued under the machine lock; no human gate marked complete. Worktree: `~/.codex/worktrees/skyrunner-tutorial-footer`, branch `codex/tutorial-clickable-footer` from main `cc31bed`. Claude owns integration/review.
 
+
+
+
+- **2026-10-11 — Claude, plan item 2 (payload sweep, stacked on #319):** `StripTrials.max_payload` bisects the heaviest payload that takes off from a runway end (30% fuel, natural terrain), `strip_audit.gd --payload` writes it into `docs/STRIPS.md` beside what the game's own pickups weigh (`Trade.OWN`: grass 176 to 512 lb at bush strips, cocaine 36 to 175 lb at shady ones). The c172p cannot lift the loads the generator offers from some strips: **EGL 19 lb** at either end (the lightest grass load is 176 lb), **QRY end 0 76 lb** (cocaine loads go to 175 lb), **PNR end 1 and QRY end 1 none**; FRM end 1 457 lb and PNR end 0 438 lb are under the top of the grass range. Harness evidence (one calm run per cell, held runway line), not proof of an impossible mission: the c182 lifts more (EGL 585 lb). Nothing in the generator or the strips was changed; the choice (gate the generator, or make the strips fairer) is the owner's (#88). Tests 14/14 (bisection, payload override).
 - **2026-10-11 — Claude, STRIPS.md from the per-end trials (#88):** On `claude/strips-from-trials` from main `e01feb4`.
   `tools/strip_audit.gd --bot` now runs `scripts/balance/strip_trials.gd` for every strip end, aircraft and load (216 trials,
   about 15 minutes under the machine lock) instead of the `Feasibility` sweep whose takeoff scoring counted a glide into the

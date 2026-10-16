@@ -39,6 +39,26 @@ Aircraft c172p, c182 at light, half, max load, one calm run per cell. Key under 
 | ISL Cayo Largo | 0 | 070 | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✗ |
 | ISL Cayo Largo | 1 | 250 | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✗ |
 
+## Largest payload that took off, per runway end
+
+Natural terrain, map seed 100000, 30% fuel. Each value is a **sampled lower bound** from a 5-step bisection of the payload room (so within room/32, about 19 lb for the Cessna 172, of the true limit; it assumes a heavier payload never helps), and the cell says the lightest payload tried that failed. Every sample and run is in `STRIPS_PAYLOAD.json` next to this report. `none` = it cannot take off even empty.
+
+- **Our own grass** (bales, at bush strips): 176 to 512 lb a load.
+- **The connection** (kilo brick crates, at shady strips): 36 to 175 lb a load.
+
+| strip | end | c172p | c182 |
+|---|---|---|---|
+| HAR San Telmo Intl | 0 | >= 609 lb (all the room) | >= 1040 lb (all the room) |
+| HAR San Telmo Intl | 1 | >= 609 lb (all the room) | >= 1040 lb (all the room) |
+| FRM Finca Morales | 0 | >= 609 lb (all the room) | >= 1040 lb (all the room) |
+| FRM Finca Morales | 1 | >= 457 lb (failed at 476) | >= 1040 lb (all the room) |
+| EGL Mesa del Aguila | 0 | >= 19 lb (failed at 38) | >= 585 lb (failed at 618) |
+| EGL Mesa del Aguila | 1 | >= 19 lb (failed at 38) | >= 585 lb (failed at 618) |
+| PNR La Selva | 0 | >= 438 lb (failed at 457) | >= 845 lb (failed at 878) |
+| PNR La Selva | 1 | none | none |
+| QRY Old Quarry | 0 | >= 76 lb (failed at 95) | >= 618 lb (failed at 650) |
+| QRY Old Quarry | 1 | none | none |
+
 ## Reading the results
 
 - **The trial marks.** T is a takeoff from that end, L a landing on that end, flown by the pilot bot on the runway line

@@ -104,6 +104,34 @@ func test_the_summary_table_marks_each_trial_and_each_end() -> void:
 	check_eq(StripTrials.mark(rs[4]), "?")
 
 
+## The bisection finds the largest passing payload and records every sample, so a non-monotone result can be audited.
+func test_bisect_max_finds_the_threshold_and_handles_the_ends() -> void:
+	var at_0_4 := StripTrials.bisect_max(func(x): return x <= 0.4, 6)
+	check_near(at_0_4.max, 0.4, 0.02, "threshold 0.4: %s" % at_0_4.max)
+	check(at_0_4.samples.size() >= 4 and at_0_4.samples[0][0] == 0.0 and at_0_4.samples[1][0] == 1.0)
+	check_eq(StripTrials.bisect_max(func(x): return true).max, 1.0, "everything passes: the full payload")
+	check_eq(StripTrials.bisect_max(func(x): return false).max, -1.0, "not even empty: reported as -1")
+	var calls := []
+	StripTrials.bisect_max(func(x):
+		calls.append(x)
+		return false)
+	check_eq(calls.size(), 1, "an empty failure stops at once")
+
+
+## A payload override changes the weight the trial flies at, and is recorded.
+func test_a_payload_override_loads_the_aircraft_and_is_recorded() -> void:
+	StripTrials.use_map(MapCity.SEED, false)
+	var empty := StripTrials.takeoff("c172p", "HAR", "light", 0, [0.3, 0.0])
+	var loaded := StripTrials.takeoff("c172p", "HAR", "light", 0, [0.3, 0.5])
+	check(loaded.weight_lb > empty.weight_lb + 100.0, "%.0f lb vs %.0f lb" % [loaded.weight_lb, empty.weight_lb])
+	check_eq(loaded.fuel_frac, 0.3)
+	check_eq(loaded.payload_frac, 0.5)
+	check_eq(empty.status, "pass")
+	var heavy := StripTrials.max_payload("c172p", "HAR", 0, 0.3, 1)
+	check_eq(heavy.max_payload_frac, 1.0, "the hub takes the full payload: " + str(heavy.samples))
+	check(heavy.max_payload_lb > 100.0 and heavy.payload_room_lb >= heavy.max_payload_lb)
+
+
 ## A bounce, or a go-around that touches first, must not be reported as the final touchdown.
 func test_touchdown_log_keeps_the_first_and_the_final_touchdown() -> void:
 	var tdlog := StripTrials.TouchdownLog.new()
