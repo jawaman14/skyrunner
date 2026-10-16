@@ -138,6 +138,22 @@ func _war(seed := 3, ai := false) -> Session:
 	return s
 
 
+## Codex's review of #378: police count half in a district's total, so they count half in its share too (a share is never above 1).
+func test_territory_shares_add_up_to_one_and_police_count_half() -> void:
+	var s := _war()
+	var g := s.ground
+	var area: Dictionary = Territories.records(g.world.map)[0]
+	var id := str(area.get("id", ""))
+	var key := Territories.key(g.world.map, id)
+	g.territory_control[key] = {"org": 0.0, "rival": 0.0, "police": 10.0}
+	check_near(g.territory_share(id, "police"), 1.0, 0.000001, "police alone hold all of it, not more")
+	g.territory_control[key] = {"org": 10.0, "rival": 10.0, "police": 20.0}
+	var total := g.territory_share(id, "org") + g.territory_share(id, "rival") + g.territory_share(id, "police")
+	check_near(total, 1.0, 0.000001, "the three shares add up to one")
+	check_near(g.territory_share(id, "police"), 1.0 / 3.0, 0.000001, "twenty police count as ten, one third of the thirty")
+	s.dispose()
+
+
 func _squad(g: GroundWar, f: String, at: Vector2, loadout: Dictionary, kind := "foot") -> GroundWar.Squad:
 	var q = g.recruit(f, kind, at, false)
 	var n := 0

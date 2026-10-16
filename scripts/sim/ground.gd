@@ -271,7 +271,8 @@ func territory_share(id: String, faction: String) -> float:
 	if c.is_empty():
 		return -1.0
 	var total: float = float(c.get("org", 0.0)) + float(c.get("rival", 0.0)) + 0.5 * float(c.get("police", 0.0))
-	return float(c.get(faction, 0.0)) / total if total > 1.0 else -1.0
+	var mine: float = 0.5 * float(c.get("police", 0.0)) if faction == "police" else float(c.get(faction, 0.0))  # police count half in the total, so half in the share
+	return mine / total if total > 1.0 else -1.0
 
 
 func seed_territories_from_markets() -> void:

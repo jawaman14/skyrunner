@@ -157,6 +157,46 @@ func test_a_pulled_over_truck_loses_exactly_the_time_it_was_held() -> void:
 		check_near(held, old, 0.1, "and the timer model agrees (road %s): %.2f vs %.2f" % [road, held, old])
 
 
+## Codex's review of #378: rerouting a truck that is already on the road changes its route, duration and progress.
+func test_an_in_progress_reroute_keeps_the_position_and_progress_and_rebuilds_the_duration() -> void:
+	Agent.ENABLED = true
+	var net := StashNet.new([{"id": "s", "name": "S", "x": 4000.0, "y": 3000.0, "strip": "HAR"}], PyRandom.new())
+	var t := StashNet.Truck.new()
+	t.job_id = 7
+	t.stash = "s"
+	t.x1 = 4000.0
+	t.y1 = 3000.0
+	t.route = PackedVector2Array([Vector2(0, 0), Vector2(2500, 0), Vector2(2500, 2000), Vector2(4000, 3000)])
+	t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / StashNet.TRUCK_MS
+	t.start_agent()
+	net.trucks.append(t)
+	var now := 0.0
+	while now < StashNet.TRUCK_LOAD_S + 100.0:  # loaded, then 100 s down the road
+		now += 1.0 / 30.0
+		net.update(1.0 / 30.0, now, [])
+	var before: Array = t.pos(now)
+	var s_before: float = t.agent.s
+	var dur_before := t.dur
+	var detour := PackedVector2Array([Vector2(before[0], before[1]), Vector2(before[0] + 300.0, before[1] + 2500.0), Vector2(4000, 3000)])
+	check(t.reroute(detour), "a one-leg delivery can be rerouted underway")
+	var after: Array = t.pos(now)
+	check_near(after[0], before[0], 0.01, "the truck has not jumped (x)")
+	check_near(after[1], before[1], 0.01, "the truck has not jumped (y)")
+	check_near(t.agent.s, s_before, 0.01, "its progress along the road is kept")
+	check(t.route[0] == Vector2(0, 0), "the road already driven is kept at the front of the route")
+	check(t.route[t.route.size() - 1].is_equal_approx(Vector2(4000, 3000)), "and the route still ends at the stash")
+	check_near(t.dur, t.lead_s() + RoadGraph.length(t.route) / t.agent.speed_ms(), 0.0001, "the duration is rebuilt from the new route")
+	check(not is_equal_approx(t.dur, dur_before), "and differs from the old plan")
+	var delivered := -1.0
+	while now < 3000.0 and delivered < 0.0:
+		now += 1.0 / 30.0
+		for r in net.update(1.0 / 30.0, now, []):
+			if r[1] == "delivered":
+				delivered = now
+	check(delivered > 0.0, "the rerouted truck still arrives")
+	check_near(delivered, t.t0 + t.dur, 1.0, "when the new duration says it should: %.1f vs %.1f" % [delivered, t.t0 + t.dur])
+
+
 func test_the_trucks_fields_stay_readable_for_the_war() -> void:
 	Agent.ENABLED = true
 	var t := StashNet.Truck.new()
