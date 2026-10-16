@@ -69,6 +69,7 @@ func show_lobby(notice := "") -> void:
 	lobby.start.connect(func(opts):
 		lobby.queue_free()
 		args.merge(opts, true)
+		args["host"] = false  # the lobby has no host box: a --host from the command line applies to that launch only, not to every game started from the lobby afterwards
 		start())
 
 

@@ -138,6 +138,16 @@ func test_an_older_save_with_no_sim_section_loads_as_before() -> void:
 	t.dispose()
 
 
+## Rivals no longer hijack from the air, so nothing decays the old meter: a save made before must not leave it (and the HUD bar) stuck.
+func test_an_older_save_with_a_rival_meter_loads_it_as_zero() -> void:
+	var s := Session.new(_opts())
+	var d := StrategicSave.capture(s)
+	d["case"]["rival_meter"] = 60.0
+	StrategicSave.restore(s, d)
+	check_eq(s.police.rival_meter, 0.0, "the meter from an old save is dropped")
+	s.dispose()
+
+
 func _world_opts() -> Dictionary:
 	var o := _opts()
 	o.merge({"family": true, "island": true, "agency": true, "chronicle": true, "rackets": true, "renown": true, "races": true}, true)
