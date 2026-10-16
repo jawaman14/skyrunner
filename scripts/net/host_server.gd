@@ -271,6 +271,8 @@ func _hello(c: Conn, hello: Dictionary) -> void:
 		err = "The host isn't ready yet."
 	elif role != "" and not Roles.valid(role):
 		err = "No such role %s." % role
+	elif role != "" and mode == Roles.CAMPAIGN and not Roles.MODE_ROLES[Roles.CAMPAIGN].has(role):  # the campaign has four seats; the other desks are not part of it
+		err = "The campaign has no %s seat (pilot, copilot, spotter, boat)." % role
 	elif v == 2 and role == "":
 		err = "Protocol v2 needs a role."
 	elif password != "" and str(hello.get("password", "")) != password:
@@ -343,6 +345,9 @@ func _message(c: Conn, msg: Dictionary) -> void:
 	match msg.get("t"):
 		"claim":
 			var role := str(msg.get("role", ""))
+			if mode == Roles.CAMPAIGN and not Roles.MODE_ROLES[Roles.CAMPAIGN].has(role):  # a later claim may not reach the desks the hello refuses
+				c.peer.put_data(line({"t": "claim_failed", "msg": "The campaign has no %s seat (pilot, copilot, spotter, boat)." % role}))
+				return
 			c.seat_generation += 1
 			if c.role != "":
 				_clear_input(c)
