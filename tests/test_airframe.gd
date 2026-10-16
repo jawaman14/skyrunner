@@ -14,6 +14,36 @@ class FixedRng extends PyRandom:
 		return v
 
 
+## Owner, 12 Oct: taking off from dirt should slowly wear the tyres, not crash the aircraft.
+func test_a_fast_roll_on_dirt_wears_the_airframe_but_asphalt_does_not() -> void:
+	var s := _session()
+	var a := s.airframe.of()
+	var dirt: Airfield = null
+	var paved: Airfield = null
+	for af in s.world.airfields:
+		if af.surface == "dirt" and dirt == null:
+			dirt = af
+		if af.surface == "asphalt" and paved == null:
+			paved = af
+	check(dirt != null and paved != null, "the map has a dirt and an asphalt strip")
+	var fs := FlightModel.FlightState.new()
+	fs.on_ground = true
+	fs.gs_kts = 40.0
+	fs.x = paved.x
+	fs.y = paved.y
+	var before := float(a.airframe)
+	s.airframe.update(60.0, fs)
+	check_eq(float(a.airframe), before, "a minute of rolling on asphalt costs nothing")
+	fs.x = dirt.x
+	fs.y = dirt.y
+	s.airframe.update(60.0, fs)
+	check_near(before - float(a.airframe), 0.7 * Airframe.ROLL_WEAR_PER_MIN, 0.01, "a minute on dirt wears the airframe")
+	fs.gs_kts = 3.0
+	var mid := float(a.airframe)
+	s.airframe.update(60.0, fs)
+	check_eq(float(a.airframe), mid, "creeping along does not")
+
+
 func after_each() -> void:
 	Airframe.ENABLED = true
 	if _sess != null:
