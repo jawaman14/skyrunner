@@ -130,6 +130,7 @@ const DESK_LESSONS := {
 
 ## [id, text] - shown once, when their moment comes (see _tips)
 const TIPS := {
+	"radar": "The police have noticed you. Radar cannot see you below about 45 m above the ground (a little higher the farther you are from it) or behind hills; patrols and helicopters also spot you by eye out to about 4 km, less in fog, rain or cloud. Fly low and behind terrain, turn the transponder off only below the radar floor, and watch the detector: it shows who is painting you. A tethered balloon on the coast sees low flyers.",
 	"wanted": "You're WANTED. Break contact: low, behind hills, into cloud or rain; lose them over the sea. Landing dirty at a watched strip ends it.",
 	"fuel": "Fuel under a quarter. Land and refuel (L), or pump the ferry tank (V) if you carry one.",
 	"busted": "Busted. With a court in the game it's a case now: SHIFT+L talks to your lawyer - bail, motions, a plea or a deal.",
@@ -390,6 +391,8 @@ func tick(s) -> void:
 	# the tips
 	if s.police.wanted > 0:
 		_show("wanted")
+	elif s.police.suspicion > 5.0 and not s.parked:
+		_show("radar")  # the first time they notice you, before it is a chase: how to stay unseen
 	if s.state != null and not s.parked and s.loadout != null:
 		var cap: float = s.loadout.mass.fuel_capacity_lb()
 		if cap > 0.0 and s.state.fuel_lb < cap * 0.25:
