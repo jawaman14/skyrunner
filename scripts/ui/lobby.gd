@@ -19,10 +19,12 @@ var map_ob: OptionButton
 var new_cb: CheckBox
 var watch_cb: CheckBox
 var tutorial_cb: CheckBox
-var host_cb: CheckBox
 var addr: LineEdit
 var role_ob: OptionButton
 var name_le: LineEdit
+var host_name_le: LineEdit  ## the name a hosted game shows (the server's name, and the host's own at the table)
+var password_le: LineEdit
+var port_box: SpinBox
 var plan_lbl: Label
 var go_btn: Button
 var startup_notice := ""
@@ -31,7 +33,7 @@ var hints: KeyHints
 const MODES := [["Solo", "solo"], ["Flying lessons (Costa Brava)", "campaign"], ["Co-op: friends crew for you", "coop"],
 	["Versus: friends run the task force", "versus"], ["Task-force desk vs AI runners", "police"]]
 const UNLOCKS := [["Story: Costa Brava 1979-1989", "story"], ["Open: every faction and mechanic", "open"]]
-const JOIN_ROLES := ["", "copilot", "spotter", "boat", "boss", "lieutenant", "controller", "interceptor", "cutter", "chief", "patrol"]
+const JOIN_ROLES := ["", "copilot", "spotter", "boat", "boss", "lieutenant", "fixer", "mechanic", "controller", "interceptor", "cutter", "chief", "patrol", "analyst", "undercover"]
 
 
 func _ready() -> void:
@@ -102,18 +104,30 @@ func _ready() -> void:
 		map_box.value = randi_range(1, 99999))
 	mrow.add_child(roll)
 	_row(g, "Map", mrow)
+	host_name_le = LineEdit.new()
+	host_name_le.placeholder_text = "Skyrunner game"
+	host_name_le.tooltip_text = "The name your game shows to players on the network"
+	_row(g, "Game name", host_name_le)
+	password_le = LineEdit.new()
+	password_le.placeholder_text = "none: anyone on the network can join"
+	password_le.secret = true
+	_row(g, "Password", password_le)
+	port_box = SpinBox.new()
+	port_box.min_value = 1
+	port_box.max_value = 65535
+	port_box.value = 47800
+	port_box.tooltip_text = "The port friends connect to when you host"
+	_row(g, "Port", port_box)
 	var flags := HBoxContainer.new()
 	new_cb = CheckBox.new()
 	new_cb.text = "New game (ignore save)"
 	watch_cb = CheckBox.new()
 	watch_cb.text = "Watch the AI fly"
-	host_cb = CheckBox.new()
-	host_cb.text = "Open remote seats"
 	tutorial_cb = CheckBox.new()
 	tutorial_cb.text = "Tutorial"
 	tutorial_cb.tooltip_text = "Lessons that finish when you do the thing, and tips when something new happens. F10 skips a step."
 	tutorial_cb.button_pressed = not bool(ControlsConfig.settings().tutorial_seen)  # on for a first game
-	for c in [new_cb, watch_cb, host_cb, tutorial_cb]:
+	for c in [new_cb, watch_cb, tutorial_cb]:
 		flags.add_child(c)
 	v.add_child(flags)
 	var pp := PanelContainer.new()
@@ -133,7 +147,7 @@ func _ready() -> void:
 	v.add_child(go_btn)
 	var room_btn := Button.new()
 	room_btn.text = "Host a multiplayer game: open a waiting room where friends pick their seats"
-	room_btn.pressed.connect(func(): room_requested.emit(_opts()))
+	room_btn.pressed.connect(func(): room_requested.emit(_room_opts()))
 	v.add_child(room_btn)
 	v.add_child(HSeparator.new())
 	v.add_child(UIStyle.caption("Join a game"))
@@ -193,10 +207,23 @@ func _plan() -> void:
 
 
 func _opts() -> Dictionary:
-	return {"mode": MODES[mode_ob.selected][1] if MODES[mode_ob.selected][1] != "police" else "solo",
+	var o := {"mode": MODES[mode_ob.selected][1] if MODES[mode_ob.selected][1] != "police" else "solo",
 		"police": MODES[mode_ob.selected][1] == "police", "players": int(players.value) if players.value > 1 else 0,
 		"graphics": graphics_ob.get_item_text(graphics_ob.selected), "seed": int(seed_box.value), "new": new_cb.button_pressed,
-		"watch": watch_cb.button_pressed, "tutorial": tutorial_cb.button_pressed, "unlocks": UNLOCKS[unlocks_ob.selected][1], "host": host_cb.button_pressed, "map": [MapCity.SEED, int(map_box.value)][map_ob.selected]}
+		"watch": watch_cb.button_pressed, "tutorial": tutorial_cb.button_pressed, "unlocks": UNLOCKS[unlocks_ob.selected][1], "map": [MapCity.SEED, int(map_box.value)][map_ob.selected], "password": password_le.text, "port": int(port_box.value)}
+	if host_name_le.text.strip_edges() != "":
+		o["name"] = host_name_le.text.strip_edges()  # blank keeps the game's own default name
+	return o
+
+
+## What "Host a multiplayer game" opens the waiting room with: the same options, but a task-force desk is a hosted police table (mode police), not the offline desk
+## the Fly button starts (which is mode solo with the police flag).
+func _room_opts() -> Dictionary:
+	var o := _opts()
+	if MODES[mode_ob.selected][1] == "police":
+		o["mode"] = "police"
+		o["police"] = false
+	return o
 
 
 func _go() -> void:

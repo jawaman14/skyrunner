@@ -6,6 +6,7 @@
     "test_fixture_isolation.gd",
     "test_hq.gd",
     "test_rng.gd",
+    "test_save_paths.gd",
     "test_strategic.gd"
   ],
   "simulation": [
@@ -130,6 +131,7 @@
     "test_frontend.gd",
     "test_host_services.gd",
     "test_lan_and_table.gd",
+    "test_lobby_fields.gd",
     "test_multiplayer_menu.gd",
     "test_net.gd",
     "test_pause_menu.gd",
