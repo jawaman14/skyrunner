@@ -271,6 +271,10 @@ func _maritime_event(kind: String, data: Dictionary) -> void:
 	elif kind == "bale_seized":
 		police.score["bales_seized"] += 1
 		law_say("%s recovered a floating bale" % data["cutter"])
+	elif kind == "bale_collected" and job:
+		say("%s: bale aboard (%d)." % [data["boat"], data["count"]])
+	elif kind == "boat_running" and job:
+		say("%s: %d bale(s) aboard, running for the cove." % [data["boat"], data["count"]])
 	elif kind == "bale_splash" and job:
 		say("Splash - bale in the water.")
 	elif kind == "bale_lost" and job:
