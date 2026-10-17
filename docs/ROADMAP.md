@@ -72,7 +72,8 @@ The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than 
 4. **Not locked in:** every other layer (flying, the ground, the desks) stays open; **delegating a flight costs money**
    (a hired pilot flies it with the existing bot).
 5. **Reputation is trust with each crew** (accepted table: Morettis up means Los Cuervos down; Los Cuervos up means the
-   Morettis and the street dealers down; the Company up means the Sunrise Collective down a little); lost shipments cost
+   Morettis and the street dealers down; the Company up means the Sunrise Collective down a little; the Collective up
+   means the Company down a little; the street dealers up means Los Cuervos down a little); lost shipments cost
    trust, and a crew without trust buys elsewhere.
 
 Who: Claude the beat, the unlock, the takeover state, delegation and trust; Codex the dialogue and the scene.
