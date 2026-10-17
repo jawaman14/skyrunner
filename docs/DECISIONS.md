@@ -46,3 +46,6 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-29 | 2026-10-18 | Codex's woken turns may write the board folder (sandbox writable root), no full access | done | wake watcher command (local) |
 | D-30 | 2026-10-18 | Keep a decisions ledger and check it in the tests (this file) | done | PIPELINE.md |
 | D-31 | open | The hub approach on natural terrain (HAR end 0); flight skill in the story's goals; the AI knowledge policy; the engine (Godot or Unity); what survives Rafa's death | open | #326 |
+| D-32 | open | Which of the 52 design epics to do first, and which to drop | open | #326 |
+| D-33 | open | Whether the wake tool may spend Codex quota unattended (it does today, at the owner's earlier instruction) | open | #326 |
+| D-34 | 2026-10-13 | Presentation layers: stingers, the player's own colours and tag, claiming a won zone with graffiti (gameplay; the layer draws it), systems reacting to each other, per-year stations, wordless with a pause-menu legend | planned | ROADMAP: Next: presentation layers (owner's pick) |

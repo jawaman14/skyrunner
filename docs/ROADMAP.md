@@ -1,7 +1,7 @@
 # Roadmap
 
 Current queue, rewritten 18 October 2026. The 12 October text is in git history (PR #370); the 9 October text is kept in
-[ROADMAP_HISTORY_2026-10-09.md](ROADMAP_HISTORY_2026-10-09.md); older progress is in
+git history (`git show 40bf0d44:docs/ROADMAP.md`); older progress is in
 [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md). Live state of every PR and issue is in
 `github_merge_queue` and [PROJECT_TRIAGE_2026-10-12.md](PROJECT_TRIAGE_2026-10-12.md); generated facts are in
 [PROJECT_STATUS.md](PROJECT_STATUS.md). Every owner decision and where its work is tracked: [DECISIONS.md](DECISIONS.md)

@@ -73,7 +73,9 @@ breaks, original fictional tracks only.
 2. **Player faction:** the player chooses their own colours and tag. AI factions get stakeholder designs so the player can
    read who is who at a glance.
 3. **Zones:** a zone is yours only after you win it, and then you must graffiti it to claim it. The graffiti is a visual
-   indicator of ownership, added by the player, not an automatic change.
+   indicator of ownership, added by the player, not an automatic change. **Claiming is gameplay, not presentation:** the
+   simulation records the claim (a player action after the win, with its own rules and tests), and the graffiti layer
+   only draws what the simulation says. Everything else in this file stays read-only.
 4. **Dynamic between systems:** the economy, factions and turf war react to each other, not as separate signals.
 5. **Per year, per station:** the music and look are accurate to each year. New genres bring new stations, and a genre
    that takes over a station replaces the one it displaces. A playlist of tracks for these is being collated for the
