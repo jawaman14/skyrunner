@@ -154,6 +154,23 @@ func test_territory_shares_add_up_to_one_and_police_count_half() -> void:
 	s.dispose()
 
 
+## Codex's second review of #378: the patrol choice must use the corrected share too: police go where the organisation holds ground, not where they already dominate.
+func test_police_patrol_the_district_the_organisation_holds_not_one_they_dominate() -> void:
+	var s := _war()
+	var g := s.ground
+	var records: Array = Territories.records(g.world.map)
+	check(records.size() >= 2, "the map has at least two districts")
+	for r: Dictionary in records:
+		g.territory_control[Territories.key(g.world.map, str(r.get("id", "")))] = {"org": 0.0, "rival": 0.0, "police": 0.0}
+	var held: Dictionary = records[0]
+	var ruled: Dictionary = records[1]
+	g.territory_control[Territories.key(g.world.map, str(held.get("id", "")))] = {"org": 10.0, "rival": 0.0, "police": 10.0}
+	g.territory_control[Territories.key(g.world.map, str(ruled.get("id", "")))] = {"org": 4.0, "rival": 0.0, "police": 20.0}
+	var order: Dictionary = g._patrol_order("police", Territories.center_of(held))
+	check_eq(str(order.get("territory", "")), str(held.get("id", "")), "police patrol the district the organisation holds")
+	s.dispose()
+
+
 func _squad(g: GroundWar, f: String, at: Vector2, loadout: Dictionary, kind := "foot") -> GroundWar.Squad:
 	var q = g.recruit(f, kind, at, false)
 	var n := 0
