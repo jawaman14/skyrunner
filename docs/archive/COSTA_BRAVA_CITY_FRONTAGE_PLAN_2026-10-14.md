@@ -1,6 +1,6 @@
 # Costa Brava city frontage implementation plan
 
-Design: [Costa Brava city frontage and street life](../specs/2026-10-14-costa-brava-city-frontage-design.md)
+Design: [Costa Brava city frontage and street life](COSTA_BRAVA_CITY_FRONTAGE_DESIGN_2026-10-14.md)
 
 ## Scope
 
