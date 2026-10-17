@@ -148,6 +148,24 @@ These were finished in part, dropped from the 12 October list, or never written 
 - **Stale PRs:** #321 (28 behind main), #305 (waits on the strip decision, now made), #370 (superseded by this rewrite).
 - **Local housekeeping:** scratch worktrees under `.claude-worktrees` and terrain cache backups.
 
+## The design epics, in order (owner, 18 October)
+
+Agreed by Claude and Codex and accepted by the owner (D-48; the full table is on #326). One item at a time, each as its
+smallest slice with a screenshot, starting once the queue above has landed:
+
+1. First-session playtest protocol (#172), with #155 as its chapter 1-4 tutorial audit and #157 as a local log only. It runs
+   first and may reorder the rest.
+2. Readability and accessibility (#138, #156).
+3. Cockpit clutter (#142).
+4. One event model and interruption policy (#120, #151), shared by the feed and the phone's Messages.
+5. Contextual lessons and first-use hints as one system (#134, #148).
+6. Failure fairness (#165), with #164's assists as explicit settings.
+7. "Why did that happen" reasons (#147, #173).
+
+Then Tier 2 with the story, map and presentation layers (#163, #133/#132, #130/#131, #168, #161, #166, #167,
+#140/#141/#143/#159, #144/#149, #171) and Tier 3 later. Nine issues (#125, #137, #154, #129, #135, #128, #127, #121, #126)
+are foundations, not done: each gets a gap audit before it is scheduled. #169 is deferred.
+
 ## Human release gates and owner decisions (#326)
 
 - **Gates only a person can pass:** exported Windows and macOS walkthroughs; physical controller and four-resolution visual

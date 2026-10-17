@@ -46,7 +46,8 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-29 | 2026-10-18 | Codex's woken turns may write the board folder (sandbox writable root), no full access | done | wake watcher command (local) |
 | D-30 | 2026-10-18 | Keep a decisions ledger and check it in the tests (this file) | done | PIPELINE.md |
 | D-31 | open | The hub approach on natural terrain (HAR end 0); flight skill in the story's goals; the AI knowledge policy; the engine (Godot or Unity); what survives Rafa's death | superseded | D-35, D-36, D-37, D-38, D-39 |
-| D-32 | 2026-10-18 | The 52 design epics: the agents rank them by value and effort and post the order on #326 for the owner to veto | planned | #326 |
+| D-32 | 2026-10-18 | The 52 design epics: the agents rank them by value and effort and post the order on #326 for the owner to veto | done | #326 |
+| D-48 | 2026-10-18 | The owner accepted the agreed epic order without a veto (Tier 1: #172 with #155, #138/#156, #142, #120/#151, #134/#148, #165 with #164, #147/#173; the nine foundations get a gap audit; #169 deferred) | planned | ROADMAP: The design epics, in order (owner, 18 October) |
 | D-33 | 2026-10-18 | The wake tool keeps starting Codex turns unattended (the local watcher runs with `--max-per-hour 40`; the checked-in default is 6) | done | wake watcher (local) |
 | D-35 | 2026-10-18 | When Rafa dies, half his empire survives: half the stashes (the least known), half the crew, the trucks that were parked, a quarter of his cash | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
 | D-36 | 2026-10-18 | The AI police and rivals know only what a human in their seat would see (radar, sightings, tips, informants) | planned | ROADMAP: After that: the four product steps |
