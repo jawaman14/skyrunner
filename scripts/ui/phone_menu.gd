@@ -18,7 +18,7 @@ extends GameMenu
 ## Arrows move, ENTER opens, the number keys open an app straight from the home screen, ESC goes back (and from the
 ## home screen puts the phone away). Picking a contact (or Map, or Settings) puts the phone away and emits
 ## `called(action)`; the pilot app does the rest, the same call the shortcut keys make. In a story, G (or the button
-## on the home screen) opens the chapter guide over the phone, read aloud.
+## on the home screen) opens the chapter guide over the phone.
 
 signal called(action: String)
 signal waypoint_to(world: Vector2)
@@ -94,9 +94,7 @@ func _build() -> void:
 		elif list.visible:
 			list.grab_focus()
 		if s.story != null:
-			campaign_text.text = s.story.journal_text()
-			if campaign_scroll.visible:
-				Speech.say(campaign_text.text, true))
+			campaign_text.text = s.story.journal_text())
 	content.add_child(campaign_button)
 	campaign_scroll = ScrollContainer.new()
 	campaign_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

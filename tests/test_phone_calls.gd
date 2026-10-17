@@ -208,10 +208,6 @@ func test_campaign_guide_opens_with_real_mouse_input_and_reads_aloud() -> void:
 	viewport.add_child(_menu)
 	_menu.open()
 	for i in 3: await Engine.get_main_loop().process_frame
-	var old_enabled := Speech.enabled
-	var old_speaker: Callable = Speech.speaker
-	Speech.enabled = true
-	Speech.speaker = func(_text, _interrupt): pass
 	var position := _menu.campaign_button.global_position + _menu.campaign_button.size / 2.0
 	var motion := InputEventMouseMotion.new()
 	motion.position = position
@@ -228,9 +224,6 @@ func test_campaign_guide_opens_with_real_mouse_input_and_reads_aloud() -> void:
 	check(_menu.campaign_scroll.visible, "mouse opens guidance")
 	check("Square Grouper" in _menu.campaign_text.text, "chapter text shown")
 	check(not _menu.list.visible, "contacts hidden")
-	check(not Speech.spoken.is_empty(), "guidance read aloud")
-	Speech.enabled = old_enabled
-	Speech.speaker = old_speaker
 	_menu.free()
 	_menu = null
 	viewport.free()

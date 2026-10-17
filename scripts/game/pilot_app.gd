@@ -184,7 +184,6 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	var look := ControlsConfig.settings()
 	s.keyboard_assist = bool(look.assist)
 	UIStyle.set_palette(look.palette)
-	Speech.set_enabled(bool(look.speak))
 	screen_filter = ScreenFilter.new()
 	add_child(screen_filter)
 	screen_filter.set_mode(look.filter)
@@ -1442,8 +1441,6 @@ func _process(delta: float) -> void:
 		var ch: Campaign.Chapter = camp.chapter
 		briefing.text = "%s  -  %d  -  %s\n\n%s\n\n%s\n\nContinue: %s" % ["EMPLOYMENT" if ch.num == 0 else "CHAPTER %d" % ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
 			"\n".join(camp.objective_lines()), ", ".join(PRESS_KEYS.keys().map(func(code): return OS.get_keycode_string(code))) + " / controller Accept"]
-		if not briefing_panel.visible:
-			Speech.say(briefing.text, true)
 		briefing_panel.visible = true
 		if _pressed.has("confirm"):
 			camp.show_briefing = false

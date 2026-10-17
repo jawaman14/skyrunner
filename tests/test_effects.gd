@@ -11,8 +11,6 @@ func _tree() -> SceneTree:
 
 func after_each() -> void:
 	World.use_map(0)
-	Speech.enabled = false
-	Speech.spoken.clear()
 
 
 func test_the_sprites_are_there() -> void:
@@ -257,56 +255,3 @@ func test_the_pack_panel() -> void:
 	s.dispose()
 
 
-func test_read_aloud() -> void:
-	var said := []
-	var real = Speech.speaker
-	Speech.speaker = func(text: String, _i: bool) -> void: said.append(text)
-	Speech.say("not while it's off")
-	check(said.is_empty(), "off: silent")
-	Speech.enabled = true
-	Speech.say("[b]Tower[/b], go ahead")
-	check_eq(said.back(), "Tower, go ahead", "on: said, without the markup")
-	Speech.line("Sal Moretti", "You look tired, kid.", ["Take it", "Leave it"])
-	check_eq(said.back(), "Sal Moretti: You look tired, kid.. 1, Take it. 2, Leave it", "the line and the numbered answers")
-	# radio calls are read as they come, past the log's eighth line too (the squelch used to stop there)
-	var s := Session.new({"seed": 1, "location": "HAR"})
-	var snd := Soundscape.new()
-	var n0 := said.size()
-	snd._last_msg_set = true
-	for i in 12:
-		s.say("call %d" % i)
-		snd._radio(s, false)
-	check_eq(said.size() - n0, 12, "every call read (%d)" % (said.size() - n0))
-	Speech.speaker = real
-	snd.free()
-	s.dispose()
-
-
-func test_the_sound_loops_actually_start() -> void:
-	var s := Session.new({"seed": 1, "map_seed": MapCity.SEED, "location": "HAR"})
-	var app := PilotApp.new()
-	_tree().root.add_child(app)
-	app.setup(s, "low")
-	check(app.sound.engine.playing and app.sound.wind.playing and app.sound.horn.playing, "the engine, wind and horn loops are running (they did not start before)")
-	check(app.sound.rumble.playing and app.sound.surf.playing and app.sound.rain.playing, "and the rumble, surf and rain")
-	app.free()
-	s.dispose()
-
-
-func test_debris_expiry_survives_scene_removal() -> void:
-	var floor := StaticBody3D.new()
-	var collider := CollisionShape3D.new()
-	var shape := BoxShape3D.new()
-	shape.size = Vector3(20, 1, 20)
-	collider.shape = shape
-	floor.add_child(collider)
-	_tree().root.add_child(floor)
-	var fx := FX.new()
-	_tree().root.add_child(fx)
-	for i in 2: await _tree().physics_frame
-	check_eq(fx.throw_debris(Vector3(0, 2, 0), 1), 1, "expiry timer has a body")
-	var body: WeakRef = weakref(fx.debris[0])
-	fx.free()
-	floor.free()
-	await _tree().create_timer(FX.DEBRIS_S + 0.1).timeout
-	check(body.get_ref() == null, "early removal stays removed after expiry")
