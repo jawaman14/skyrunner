@@ -47,6 +47,44 @@ func test_lots_stay_inside_the_building_and_near_its_height() -> void:
 				check(kits.has("commercial"), "towers are commercial")
 
 
+## Owner, 18 Oct: "building assets overlapping" in town. A lot's model was fitted to the lot before it was turned to face
+## the street, so a quarter turn laid its long side across a narrow lot and the next lot's model (1,714 pairs, up to 10 m).
+func test_the_models_of_one_building_do_not_overlap_each_other_or_leave_it() -> void:
+	var worst := 0.0
+	var outside := 0.0
+	var boxes := _boxes(400)
+	for i in boxes.size():
+		var b: Dictionary = boxes[i]
+		var foot := Rect2(float(b.x) - float(b.w) / 2, float(b.y) - float(b.d) / 2, float(b.w), float(b.d))
+		var rects := []
+		for lot in CityDress.lots(b, i):
+			var r := _footprint(CityDress._load([lot.kit, lot.name]), lot.xf)
+			for o in rects:
+				if r.intersects(o):
+					var x: Rect2 = r.intersection(o)
+					worst = maxf(worst, minf(x.size.x, x.size.y))
+			var spill := foot.merge(r)
+			outside = maxf(outside, maxf(spill.size.x - foot.size.x, spill.size.y - foot.size.y))
+			rects.append(r)
+	check(worst < 0.5, "no two models of a building overlap (worst %.1f m)" % worst)
+	check(outside < 1.0, "and none spills out of its footprint (worst %.1f m)" % outside)
+
+
+## A model's footprint in the game's frame (x east, y north) under transform `xf`.
+func _footprint(m: Dictionary, xf: Transform3D) -> Rect2:
+	var c: Vector3 = m.centre
+	var d: Vector3 = m.dim
+	var pts := []
+	for sx in [-0.5, 0.5]:
+		for sz in [-0.5, 0.5]:
+			var p := xf * Vector3(c.x + sx * d.x, c.y, c.z + sz * d.z)
+			pts.append(Vector2(p.x, -p.z))
+	var r := Rect2(pts[0], Vector2.ZERO)
+	for q in pts:
+		r = r.expand(q)
+	return r
+
+
 func test_a_box_is_cut_into_lots_by_its_size_and_the_same_box_always_the_same() -> void:
 	var small := CityDress.lots(_bld("res", 22.0, 22.0, 10.0), 1)
 	var big := CityDress.lots(_bld("res", 44.0, 44.0, 10.0), 1)
