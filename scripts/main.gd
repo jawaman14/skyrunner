@@ -301,7 +301,7 @@ func _join() -> void:
 		args["password"] = a.substr(0, at)
 		a = a.substr(at + 1)
 	var i := a.rfind(":")
-	var host := a.substr(0, i) if i > 0 else "127.0.0.1"
+	var host := a.substr(0, i) if i > 0 else (a if i < 0 else "127.0.0.1")  # "host" alone is the host; ":port" alone is this machine
 	var port := int(a.substr(i + 1)) if i >= 0 else HostServer.DEFAULT_PORT
 	var link := NetClient.new()
 	add_child(link)

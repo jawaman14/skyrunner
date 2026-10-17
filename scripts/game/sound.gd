@@ -461,8 +461,7 @@ func _process(dt: float) -> void:
 	_world_sounds(s)
 
 
-## The radio: a squelch when a call comes in, and the call read aloud when
-## that's on. (The log keeps only the last 8 lines: compare the newest.)
+## The radio: a squelch when a call comes in. (The log keeps only the last 8 lines: compare the newest.)
 func _radio(s, flying: bool) -> void:
 	var newest = s.messages.back() if not s.messages.is_empty() else null
 	if newest == _last_msg:
@@ -471,7 +470,6 @@ func _radio(s, flying: bool) -> void:
 		if flying and radio != null:
 			radio.stream = squelch()
 			radio.play()
-		Speech.say(str(newest[1]))
 	_last_msg = newest
 	_last_msg_set = true
 

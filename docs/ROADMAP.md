@@ -2,8 +2,8 @@
 
 Current queue, rewritten 18 October 2026. The 12 October text is in git history (PR #370); the 9 October text is kept in
 git history (`git show 40bf0d44:docs/ROADMAP.md`); older progress is in
-[ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md). Live state of every PR and issue is in
-`github_merge_queue` and [PROJECT_TRIAGE_2026-10-12.md](PROJECT_TRIAGE_2026-10-12.md); generated facts are in
+[ROADMAP_HISTORY_2026-10.md](archive/ROADMAP_HISTORY_2026-10.md). Live state of every PR and issue is in
+`github_merge_queue` and [PROJECT_TRIAGE_2026-10-12.md](archive/PROJECT_TRIAGE_2026-10-12.md); generated facts are in
 [PROJECT_STATUS.md](PROJECT_STATUS.md). Every owner decision and where its work is tracked: [DECISIONS.md](DECISIONS.md)
 (read it first when rewriting this file).
 
@@ -59,7 +59,7 @@ change a sim outcome or draw on a sim RNG stream.
 
 ## Story: the uncle and the boss's seat (owner, 12 October; not built)
 
-Recorded in [PROJECT_TRIAGE_2026-10-12.md §8.5](PROJECT_TRIAGE_2026-10-12.md) and HANDOFF; missing from the 12 October roadmap.
+Recorded in [PROJECT_TRIAGE_2026-10-12.md §8.5](archive/PROJECT_TRIAGE_2026-10-12.md) and HANDOFF; missing from the 12 October roadmap.
 The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than life, with a darkness you can't place.
 
 1. **Chapter 1-2:** name the employer as Rafa in the employed opening; two or three dialogue beats in chapter 2 as he
@@ -165,6 +165,42 @@ smallest slice with a screenshot, starting once the queue above has landed:
 Then Tier 2 with the story, map and presentation layers (#163, #133/#132, #130/#131, #168, #161, #166, #167,
 #140/#141/#143/#159, #144/#149, #171) and Tier 3 later. Nine issues (#125, #137, #154, #129, #135, #128, #127, #121, #126)
 are foundations, not done: each gets a gap audit before it is scheduled. #169 is deferred.
+
+## Working structure (owner, 18 October)
+
+The owner changed the structure (D-52): Claude and Codex each do their own work end to end, including merging it, instead
+of Codex being mainly the approver. They hand each other coding jobs through the board. **In effect from 18 October (08:50,
+the owner's word), written into AGENTS.md and PIPELINE.md by #408:**
+
+1. The other agent's review is mandatory only for risk-class PRs, defined in AGENTS.md "Working mode: dual work": saves
+   (`StrategicSave`, save formats), a new random draw or RNG stream, goldens or frozen fixtures, the `Session` layers
+   (`scripts/sim/session_*.gd`), the flight model, or balance numbers, and any PR whose author asks. Every other PR its
+   author merges on green CI with every thread answered.
+2. Codex still finishes the reviews it owes on the risk-class PRs, then joins the discussion on the board: which jobs it
+   wants and which it will not take. The split below is Claude's draft.
+3. The open PRs are finished together: Claude merges its low-risk PRs, Codex reviews the risk-class ones and runs the QA lane.
+
+Claude's draft split, for the discussion:
+
+| Lane | Claude | Codex |
+|---|---|---|
+| Systems | heat steps 2-3, the rival depot raid, the AI knowledge audit, Rafa's takeover state and the trust table, flight-skill goals, saves | the Heat app and the station map lines on top of those |
+| Story | beats, unlocks, the takeover | dialogue and scenes for Rafa, briefings and debriefings |
+| Map | layers L0 to L5 (data, build tool, map audit), the HAR approach | L6 to L10 (site layouts, asset catalogue, props), the walk and drive checks |
+| UX epics | the data behind "why did that happen" (#147, #173), failure fairness (#165) | #172 protocol, #138/#156, #142, #120/#151, #134/#148 |
+| Presentation | hooks in the sim | music, graffiti, signage, vehicles, scenery |
+| QA | fixes | sweeps, full suites, balance runs, goldens |
+| Merging | each merges its own work on green CI; a risk-class PR (saves, RNG streams, goldens or frozen fixtures, the Session layers, the flight model, balance) is reviewed by the other first | the same |
+
+## Map redesign (owner, 18 October; planned)
+
+The owner asked for the map to be rebuilt from the ground up with what we have learnt. The plan is
+[MAP_REDESIGN.md](MAP_REDESIGN.md): constraints first (strips and their approach volumes, then terrain shaped for them,
+water, one district map, roads with classes and real city streets), then parcels, a site manifest with access checks, an
+asset catalogue, props and presentation hooks, all baked by one build tool and checked by one map audit. It starts after
+the map PRs in the queue land (#373, #374, #378, #396, #402, #404), as a new region beside the current one; the owner
+approves the layout sketch (step 0) and the screenshots (step 6), and playtests before the old map is retired. Four
+owner questions are open in its section 7.
 
 ## Human release gates and owner decisions (#326)
 

@@ -244,7 +244,6 @@ func _toggle_districts() -> void:
 	districts_open = not districts_open
 	refresh()
 	districts_button.grab_focus()
-	if districts_open: Speech.say(district_text.text)
 
 
 ## The same squad command a human boss's seat gives in co-op (StationApp),

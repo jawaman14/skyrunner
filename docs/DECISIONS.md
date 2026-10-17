@@ -57,6 +57,13 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-40 | 2026-10-18 | Claude captures screenshots of #373 (scenery) and #374 (period vehicles) for the owner to approve before they merge | done | #373, #374 |
 | D-41 | 2026-10-18 | The owner approved #374's period vehicles from the screenshots ("Approve") | in-pr | #374 |
 | D-42 | 2026-10-18 | The owner approved #373's scenery redesign from the screenshots ("Approve") | in-pr | #373 |
+| D-43 | 2026-10-18 | Plan a map redesign from the ground up, using what we have learnt (roads, strips, systems, where buildings and assets go) | planned | ROADMAP: Map redesign (owner, 18 October; planned) |
+| D-44 | 2026-10-18 | The redesign keeps Costa Brava's geography and rebuilds it properly | planned | ROADMAP: Map redesign (owner, 18 October; planned) |
+| D-45 | 2026-10-18 | Enterable sites: the club, the stashes you load at, the hangar and the customs house; every other building stays solid | planned | ROADMAP: Map redesign (owner, 18 October; planned) |
+| D-46 | 2026-10-18 | Valle Verde becomes a small town with its own streets | planned | ROADMAP: Map redesign (owner, 18 October; planned) |
+| D-47 | 2026-10-18 | Fix the city's building models that overlap each other | done | #407 |
 | D-49 | 2026-10-18 | Give Codex more of the workload: the review queue first, then the gap audits, the playtest protocol (#172), QA, the Heat app and map lines, Rafa's dialogue, housekeeping (board note 511) | planned | #329 |
 | D-50 | 2026-10-18 | Widen the wake tool's sandbox so a woken Codex can commit and push in the skyrunner .git and its own skyrunner-* worktrees | done | wake watcher (local) |
+| D-52 | 2026-10-18 | Change the working structure: each agent does its own work end to end and may approve and merge it; Codex stops being only an approver; the two assign each other coding jobs on the board. Codex first wraps up what it has left in its current role, then the two discuss the split and the owner is told which jobs go to whom. At 08:50 the owner said to switch now and finish the open PRs together | in-pr | ROADMAP: Working structure (owner, 18 October) |
+| D-51 | 2026-10-18 | Clean up all the repository's documents, including the README: dated reports to docs/archive/, a docs index, links fixed | in-pr | #408 |
 | D-34 | 2026-10-13 | Presentation layers: stingers, the player's own colours and tag, claiming a won zone with graffiti (gameplay; the layer draws it), systems reacting to each other, per-year stations, wordless with a pause-menu legend | planned | ROADMAP: Next: presentation layers (owner's pick) |

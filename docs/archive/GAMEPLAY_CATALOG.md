@@ -1,6 +1,6 @@
 ﻿# Game feature, mechanic, and function catalog
 
-This catalog covers the current `codex/turf-war-expansion` working tree. It combines a map of player-facing systems with a searchable index of every top-level GDScript function in `scripts/`. Gameplay behavior and design rationale are detailed in [FEATURES.md](FEATURES.md), [DESIGN.md](DESIGN.md), and [GUIDE.md](GUIDE.md).
+This catalog covers the current `codex/turf-war-expansion` working tree. It combines a map of player-facing systems with a searchable index of every top-level GDScript function in `scripts/`. Gameplay behavior and design rationale are detailed in [FEATURES.md](../FEATURES.md), [DESIGN.md](../DESIGN.md), and [GUIDE.md](../GUIDE.md).
 
 ## Features and mechanics
 

@@ -32,6 +32,8 @@ func refresh() -> void:
 	if not markets.is_empty():
 		var ids: Array = markets.map(func(m): return str(m.market))
 		list.select_near(ids.find(keep_id) if ids.has(keep_id) else maxi(0, keep))
+	if markets.is_empty():
+		list.section("No streets held yet: the collectors work the markets the organisation holds.")
 	footer.text = "Tribute so far $%s; ransoms $%s. Over half the street to be paid by it. Squeezing pays 2x and the street resents it." % [Py.money(int(v.get("collected", 0))), Py.money(int(v.get("ransom_cash", 0)))]
 	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "terms", "enter"], ["A", "ransom them", "a"], ["F", "put them on the payroll", "f"], ["G", "let them go", "g"], ["ESC", "back", "esc"]])
 

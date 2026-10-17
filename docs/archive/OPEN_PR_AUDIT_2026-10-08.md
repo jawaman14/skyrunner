@@ -2,7 +2,7 @@
 
 Reviewed all **27 open PRs, #227–#253**: current GitHub base/head SHAs, changed-file inventories, descriptions, checks and submitted reviews; relevant code diffs, tests and planning documents; targeted desktop reproductions at `4ec3e0d` (the #253 stack). This is a source/integration audit with selected reproductions, not an exhaustive human gameplay walkthrough or approval of every changed line. No gameplay was changed or PR merged during this review.
 
-All 27 are drafts and technically mergeable against their current bases. No submitted GitHub reviews were returned. All 27 now have eight successful latest-head checks; #253 finished during this review. This does not establish approval, human acceptance or compatibility after retargeting to main. Exact SHAs and check snapshots are retained in [the audit data](../sim-results/open-pr-audit-2026-10-08.json).
+All 27 are drafts and technically mergeable against their current bases. No submitted GitHub reviews were returned. All 27 now have eight successful latest-head checks; #253 finished during this review. This does not establish approval, human acceptance or compatibility after retargeting to main. Exact SHAs and check snapshots are retained in [the audit data](../../sim-results/open-pr-audit-2026-10-08.json).
 
 ## Findings that require work
 
