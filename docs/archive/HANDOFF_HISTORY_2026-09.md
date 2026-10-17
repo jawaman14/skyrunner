@@ -1,6 +1,6 @@
 # Current handoff
 
-The authoritative current state is [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
+The authoritative current state is [docs/PROJECT_STATUS.md](../PROJECT_STATUS.md).
 Its source inventory is generated; regenerate with `godot --headless --script res://tools/project_status.gd -- --write` after source changes. Passing runs and human gates remain separately recorded.
 Historical handoff notes below are retained for provenance and are not current
 test or feature claims.
@@ -8,7 +8,7 @@ test or feature claims.
 # Update 2026-10-03: everything below the line was written on 2026-09-28; this is what changed since
 
 **Where things are.** `main` has all of the work stacked since the cloud handoff (PRs #1-#38, merged bottom-up
-as merge commits). Tests: see [PROJECT_STATUS.md](docs/PROJECT_STATUS.md); this historical note is retained for provenance. CI was green on the recorded baseline
+as merge commits). Tests: see [PROJECT_STATUS.md](../PROJECT_STATUS.md); this historical note is retained for provenance. CI was green on the recorded baseline
 (tests, exports, smoke). The balance re-fly (K3) that item 1 below describes was finished (BALANCE entry 35) and
 the playtest list's first wave was done (pause menu, runway/landing fixes, roads, autopilot routing, crew).
 
@@ -53,7 +53,7 @@ Read these with this file:
 ## Current state
 - **Beta 0.9.0-beta.1.** Pure GDScript on Godot 4.7.2: no GDExtension, no JSBSim library. The game's
   own 6-DOF model (`scripts/sim/flight/`) reads JSBSim-format XML as data.
-- **Tests:** historical handoff count; see [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for current verified evidence.
+- **Tests:** historical handoff count; see [PROJECT_STATUS.md](../PROJECT_STATUS.md) for current verified evidence.
 - **CI** (`.github/workflows/skyrunner-beta.yml`) runs on `main`, pull requests and manual dispatch:
   - tests;
   - exports for Linux, Windows and macOS (universal, ad-hoc signed);
