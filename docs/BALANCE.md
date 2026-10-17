@@ -333,7 +333,7 @@ Ablations: equilibrium win rate with one mechanic switched off (baseline 51.7%).
 | logistics | $35,629 / $58,197 / $76,189 | $90,428 | $10,200 | 0 |
 | payroll | $62,863 / $70,477 / $76,839 | $70,477 | $27,700 | 0 |
 | trade | $54,214 / $77,031 / $94,392 | $96,950 | $10,200 | 0 |
-| war | $25,461 / $47,942 / $89,173 | $69,134 | $7,072 | 0 |
+| war | $21,428 / $39,882 / $72,798 | $59,099 | $8,411 | 0 |
 | air | $5,965 / $18,070 / $26,711 | $49,191 | $9,681 | 0 |
 | noair | $10,045 / $21,348 / $31,919 | $54,930 | $8,926 | 0 |
 
@@ -351,7 +351,7 @@ The trade (career: grass first; the organisation's AI buying a load when the sta
 
 Logistics (the trade configuration with stock and cash in the stash houses, trucked by the organisation's AI): money p50 $58,197 against $77,031 without; $12,763 still out in the stashes, on the road and in the bags at the end; $428 of cash and 83 lb of product lost to roadblocks, hijacks and raids a run.
 
-The street war (all systems plus the war, the organisation's AI commanding): money p50 $47,942 against $67,409 without; $4,355 recruiting, $1,688 on rifles, $2,166 upkeep a run; 14.6 firefights a run, men lost 5.3 of ours, 7.8 of Los Cuervos', 19.0 police, 18.3 arrested (both outfits); 2.0 squads of ours at the end against 3.2 of Los Cuervos' and 7.4 police; 0.5 stash houses burned; suspicion p50 0, p90 0.
+The street war (all systems plus the war, the organisation's AI commanding): money p50 $39,882 against $67,409 without; $4,712 recruiting, $1,839 on rifles, $1,995 upkeep a run; 11.5 firefights a run, men lost 5.0 of ours, 5.3 of Los Cuervos', 13.9 police, 14.9 arrested (both outfits); 1.8 squads of ours at the end against 4.1 of Los Cuervos' and 7.6 police; 0.7 stash houses burned; suspicion p50 0, p90 0.
 
 Air risk (all systems with logistics, the street war and the court; 80 seeds x 3 hours): money p50 $18,070 with each flight rolling the tactical sweep's odds, against $21,348 for the same systems at a fixed income. A run flew 17.7 flights (paid $6,000 each when they counted), with 0.60 busts, 0.68 crashes, $0 in fines, $1,687 in repairs and 4 minutes held by the court; the pilot stayed on the ground 0.0 times with the police tipped off.
 
