@@ -125,7 +125,7 @@ static func _strip_specs() -> Array:
 			[0.5, 20.0]],
 		["QRY", "Old Quarry", 10500.0, 1700.0, 0.0, 240.0, 18.0, null, "dirt", "shady",
 			{"setting": "pit", "haul_road": 0}, "pit", 1400.0, [120.0, 600.0]],
-		["EGL", "Mesa del Aguila", -7500.0, 8800.0, 90.0, 280.0, 18.0, null, "dirt", "bush", {"setting": "plateau"}, "plateau", 3500.0,
+		["EGL", "Mesa del Aguila", -7500.0, 8800.0, 90.0, 560.0, 18.0, null, "dirt", "bush", {"setting": "plateau"}, "plateau", 3500.0,
 			[950.0, 1600.0]],
 		["PNR", "La Selva", 4700.0, 8200.0, 90.0, 380.0, 18.0, null, "gravel", "bush", {"tree_lines": true}, "flat", 1800.0,
 			[150.0, 650.0]],
