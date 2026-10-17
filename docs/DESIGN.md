@@ -776,6 +776,8 @@ AI sells whatever its dealers can't move in two hours to the best buyer.
 
 **Junctions.** The city shader draws a street grid every 110 m. The street furniture now puts a traffic light at every third crossing of that grid inside the urban land use, not only where the arterial roads meet, so downtown reads as a town of blocks rather than a handful of highways. That gives 26 sets of lights on Costa Brava.
 
+**Commercial frontage.** Low-rise shop lots may carry a restrained, street-facing awning detail from the commercial kit. It is visual-only, deterministic and batched with the nearby building models. The scope and references are in the [city-frontage design](superpowers/specs/2026-10-14-costa-brava-city-frontage-design.md); the implementation sequence is in [the plan](superpowers/plans/2026-10-14-costa-brava-city-frontage-plan.md).
+
 ## 21. The story: Costa Brava, 1979-1989, and the open mode
 
 *Direction (§0): a new story will open with the player employed by a legitimate air service, sliding into smuggling

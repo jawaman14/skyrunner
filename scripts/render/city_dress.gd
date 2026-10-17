@@ -287,5 +287,79 @@ static func build(boxes: Array, q: Quality) -> Node3D:
 			mmi.visibility_range_end_margin = FADE_M
 			mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 			node.add_child(mmi)
+		var awnings := _frontage_awnings(boxes, idx, shadows, reach)
+		if awnings.get_child_count() > 0:
+			node.add_child(awnings)
+		else:
+			awnings.free()
+	return root
+
+
+## Customer-facing awnings on a sparse selection of low-rise shop lots. Each
+## instance uses the lot's street-facing transform and is batched in its building
+## chunk; it adds no collision, interaction, map data or simulation randomness.
+static func _frontage_awnings(boxes: Array, indices: Array, shadows: int, reach: float) -> Node3D:
+	var root := Node3D.new()
+	root.name = "shop-frontages"
+	var placements: Dictionary = {"detail-awning": [], "detail-awning-wide": []}
+	var rng := RandomNumberGenerator.new()
+	for index in indices:
+		var i: int = index
+		var b: Dictionary = boxes[i]
+		if str(b.get("style", "")) != "shop" or float(b.get("h", 0.0)) > 14.0 or DowntownDress.marks.has(i):
+			continue
+		var shop_lots := lots(b, i)
+		for lot_index in shop_lots.size():
+			rng.seed = 15731 + i * 7919 + lot_index * 104729
+			if rng.randf() >= 0.55:
+				continue
+			var lot: Dictionary = shop_lots[lot_index]
+			if str(lot.kit) != "commercial":
+				continue
+			var building_value: Variant = _load([str(lot.kit), str(lot.name)])
+			if not (building_value is Dictionary):
+				continue
+			var building: Dictionary = building_value
+			var frontage_width: float = float(building.dim.x) * lot.xf.basis.x.length()
+			var part := "detail-awning-wide" if frontage_width >= 8.0 else "detail-awning"
+			var awning_value: Variant = _load(["commercial", part])
+			if not (awning_value is Dictionary):
+				continue
+			var awning: Dictionary = awning_value
+			var awning_scale: float = minf(frontage_width * 0.82 / maxf(float(awning.dim.x), 0.01), 5.0)
+			var yaw := atan2(lot.xf.basis.z.x, lot.xf.basis.z.z)
+			var basis := Basis(Vector3.UP, yaw).scaled(Vector3.ONE * awning_scale)
+			var facade: Vector3 = lot.xf * Vector3(
+				building.centre.x,
+				building.centre.y + minf(building.dim.y * 0.28, 3.5 / maxf(0.01, lot.xf.basis.y.length())),
+				building.centre.z + building.dim.z * 0.5
+			)
+			# Align the canopy's back edge to the facade. The mesh's local +Z points
+			# into the street; its bottom remains near the shop's first floor.
+			var mount := Vector3(awning.centre.x, awning.centre.y, awning.centre.z - awning.dim.z * 0.5)
+			var xf := Transform3D(basis, facade - basis * mount)
+			(placements[part] as Array).append(xf)
+	for part in placements:
+		var transforms: Array = placements[part]
+		if transforms.is_empty():
+			continue
+		var asset_value: Variant = _load(["commercial", part])
+		if not (asset_value is Dictionary):
+			continue
+		var asset: Dictionary = asset_value
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = asset.mesh
+		mm.instance_count = transforms.size()
+		for i in transforms.size():
+			mm.set_instance_transform(i, transforms[i])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.name = part
+		mmi.multimesh = mm
+		mmi.cast_shadow = shadows
+		mmi.visibility_range_end = reach + FADE_M
+		mmi.visibility_range_end_margin = FADE_M
+		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		root.add_child(mmi)
 	return root
 
