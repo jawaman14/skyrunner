@@ -17,6 +17,7 @@ var seed_box: SpinBox
 var map_box: SpinBox
 var map_ob: OptionButton
 var new_cb: CheckBox
+var slot_ob: OptionButton  ## which save to use (owner, 18 Oct): SavePaths.SLOTS slots per mode, each described
 var watch_cb: CheckBox
 var tutorial_cb: CheckBox
 var addr: LineEdit
@@ -64,18 +65,26 @@ func _ready() -> void:
 	mode_ob = OptionButton.new()
 	for m in MODES:
 		mode_ob.add_item(m[0])
-	mode_ob.item_selected.connect(func(_i): _plan())
+	mode_ob.item_selected.connect(func(_i):
+		_plan()
+		_slots())
 	_row(g, "Mode", mode_ob)
 	unlocks_ob = OptionButton.new()
 	for u in UNLOCKS:
 		unlocks_ob.add_item(u[0])
 	unlocks_ob.tooltip_text = "Story: grass in 1979, the connection, Los Cuervos, the Family, the court, the island and the Company open one chapter at a time.\nOpen: all of it from the first minute."
+	unlocks_ob.item_selected.connect(func(_i): _slots())
 	_row(g, "Unlocks", unlocks_ob)
+	slot_ob = OptionButton.new()
+	slot_ob.tooltip_text = "Which save to play. Each mode has its own slots; tick New game to start the chosen slot over."
+	_row(g, "Save slot", slot_ob)
 	players = SpinBox.new()
 	players.min_value = 1
 	players.max_value = 9
 	players.value = 1
-	players.value_changed.connect(func(_v): _plan())
+	players.value_changed.connect(func(_v):
+		_plan()
+		_slots())
 	_row(g, "Players at the table", players)
 	graphics_ob = OptionButton.new()
 	for q in ["high", "medium", "low"]:
@@ -180,6 +189,7 @@ func _ready() -> void:
 	addr.text_submitted.connect(func(_t): _join())
 	name_le.text_submitted.connect(func(_t): _join())
 	_plan()
+	_slots()
 	if startup_notice != "":
 		plan_lbl.text = startup_notice
 	go_btn.grab_focus.call_deferred()
@@ -206,10 +216,32 @@ func _plan() -> void:
 	plan_lbl.text = plan.describe()
 
 
+## Fill the save slot list for the chosen mode and unlocks, keeping the chosen slot.
+func _slots() -> void:
+	if slot_ob == null:
+		return
+	var keep := maxi(0, slot_ob.selected)
+	slot_ob.clear()
+	var mode: String = MODES[mode_ob.selected][1]
+	if mode == "police":
+		slot_ob.add_item("The task-force desk is not saved")
+		slot_ob.disabled = true
+		return
+	slot_ob.disabled = false
+	var file_mode: String = Roles.CAMPAIGN if mode == Roles.CAMPAIGN else Roles.SOLO
+	# the same rule as Main.start: a story save only for a plain game (no table of players, which plays a layer plan)
+	var story: bool = UNLOCKS[unlocks_ob.selected][1] == "story" and file_mode == Roles.SOLO and int(players.value) <= 1
+	for n in range(1, SavePaths.SLOTS + 1):
+		var path: String = SavePaths.DIR + SavePaths.file_name(file_mode, story, n)
+		slot_ob.add_item(SavePaths.describe(path, n))
+	slot_ob.select(mini(keep, SavePaths.SLOTS - 1))
+
+
 func _opts() -> Dictionary:
 	var o := {"mode": MODES[mode_ob.selected][1] if MODES[mode_ob.selected][1] != "police" else "solo",
 		"police": MODES[mode_ob.selected][1] == "police", "players": int(players.value) if players.value > 1 else 0,
 		"graphics": graphics_ob.get_item_text(graphics_ob.selected), "seed": int(seed_box.value), "new": new_cb.button_pressed,
+		"slot": maxi(0, slot_ob.selected) + 1 if slot_ob != null else 1,
 		"watch": watch_cb.button_pressed, "tutorial": tutorial_cb.button_pressed, "unlocks": UNLOCKS[unlocks_ob.selected][1], "map": [MapCity.SEED, int(map_box.value)][map_ob.selected], "password": password_le.text, "port": int(port_box.value)}
 	if host_name_le.text.strip_edges() != "":
 		o["name"] = host_name_le.text.strip_edges()  # blank keeps the game's own default name
