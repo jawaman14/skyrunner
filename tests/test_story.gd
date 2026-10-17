@@ -55,6 +55,71 @@ func test_the_goals_count_what_happens() -> void:
 	s.dispose()
 
 
+func test_the_company_choice_changes_faction_support_and_port_control() -> void:
+	var s := _story(Story.index_of("The Company"))
+	s.story.progress["agency_jobs"] = 1.0
+	s.story.progress["guns_to_company"] = 4.0
+	check(s.story.company_choice_ready(), "the choice opens after both Company jobs")
+	var trust_before: float = s.agency.trust
+	var respect_before: float = s.family.respect
+	var odds_before: float = s.island.ship_odds()[0]
+	check(s.story.choose_general("remove"), "the Agency order can be accepted")
+	check_eq(s.story.company_decision, "remove")
+	check_eq(s.island.controller, "mob", "the Morettis take the port")
+	check(s.family.respect > respect_before, "the Morettis gain influence and regard us better")
+	check(s.agency.trust > trust_before, "the Company rewards compliance")
+	check(s.island.ship_odds()[0] < odds_before, "Mob-controlled customs makes our containers safer")
+	s.money = 100000
+	var expected_cost := int(100 * Island.PRICE_PER_LB * s.island.price_mult * s.econ.wholesale("cocaine")) + Island.SHIP_FREIGHT + 4000
+	check_eq(s.island.ship("ship", 100), "", "the Mob-controlled port accepts a container")
+	check_eq(100000 - s.money, expected_cost, "the port takes its fee")
+	check_eq(Story.from_dict(s.story.to_dict()).company_decision, "remove", "the branch survives a story save")
+	var island_save := StrategicSave.capture(s)
+	var restored := _story(Story.index_of("The Company"))
+	StrategicSave.restore(restored, island_save)
+	check_eq(restored.island.controller, "mob", "island control survives a strategic save")
+	s.story.tick(s)
+	check(s.story.chapter.briefing.contains("Moretti-backed government"), "the next chapter reflects the island takeover")
+	s.dispose()
+	restored.dispose()
+
+
+func test_refusing_the_company_order_costs_agency_support_and_wins_mob_support() -> void:
+	var s := _story(Story.index_of("The Company"))
+	s.story.progress["agency_jobs"] = 1.0
+	s.story.progress["guns_to_company"] = 4.0
+	var trust_before: float = s.agency.trust
+	var respect_before: float = s.family.respect
+	s.agency.protected_until = s.time + 1000.0
+	check(s.story.choose_general("spare"), "the order can be refused")
+	check_eq(s.island.controller, "general", "the General remains in power")
+	check(s.family.respect > respect_before, "the Morettis value our independence")
+	check(s.agency.trust < trust_before, "the Company loses trust")
+	check(s.agency.protected_until <= s.time, "the Company withdraws its protection")
+	check(not s.story.choose_general("spare"), "a saved choice cannot be changed")
+	s.story.tick(s)
+	check(s.story.chapter.briefing.contains("Company has withdrawn"), "the next chapter reflects the broken Agency tie")
+	s.dispose()
+
+
+## Owner, 16 Oct: the General's fate is an optional goal (the two-goal rule stays), but the chapter must not close before the order is put to the player.
+func test_the_company_chapter_waits_for_the_order_and_the_player_may_walk_away() -> void:
+	var s := _story(Story.index_of("The Company"))
+	s.story.progress["agency_jobs"] = 1.0
+	s.story.progress["guns_to_company"] = 4.0
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "The Company", "both required goals are done, but the chapter waits for the order")
+	var trust_before: float = s.agency.trust
+	check(s.story.choose_general("declined"), "the player may walk away")
+	check_eq(s.agency.trust, trust_before, "walking away changes nothing else")
+	check(not s.story.choose_general("remove"), "and a decision cannot be changed afterwards")
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "Kingpin", "the chapter closes once the order is answered")
+	check(s.story.chapter.briefing.contains("turned the Company down"), "and the next chapter says so")
+	check_eq(Story.from_dict(s.story.to_dict()).company_decision, "declined", "the decision survives a save")
+	s.dispose()
+
+
 func test_chapters_open_the_game_in_order() -> void:
 	var s := _story()
 	s.trade.stock.marijuana = 250.0  # grass held the 1979 way: one pool
@@ -168,6 +233,7 @@ func test_no_softlocks_when_a_faction_is_gone() -> void:
 	s.agency.hung_out = true
 	s.story.tick(s)
 	check_eq(s.story.chapter.title, "Kingpin", "the Company cut us loose: on to the end")
+	check_eq(s.story.company_decision, "skipped", "no assassination order remains after the Company abandons us")
 	s.dispose()
 
 
