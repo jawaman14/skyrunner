@@ -29,7 +29,7 @@ const LESSONS := [
 	["second_flight_load", "", "Load and fuel for the next flight",
 		"Before your second flight, press L. Use Route +30 min for the active job; the route tile shows fuel and reserve.\nPlace heavy cargo near the centre of gravity and keep the CG dot in its envelope. Deliveries unload on landing; wait if told.", "after_first_landing"],
 	["deliver", "", "Deliver",
-		"Fly to the job's destination: the HUD shows its bearing and distance, M the big map.\nLand, stop on the strip, and the job pays out."],
+		"Fly to the job's destination: the HUD shows its bearing and distance, M the big map.\nLand and stop on the strip and the job pays out. A hot load (grass, cocaine) unloads first: stay parked until it is off."],
 	["transponder", "", "Seen and unseen",
 		"N switches the transponder. Squawking looks legitimate; flying dark hides you only\nbelow the radar floor - a squawk that vanishes is suspicious. The detector shows who paints you."],
 	["grass", "trade", "Your own product",
