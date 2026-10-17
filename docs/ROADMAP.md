@@ -2,8 +2,8 @@
 
 Current queue, rewritten 18 October 2026. The 12 October text is in git history (PR #370); the 9 October text is kept in
 git history (`git show 40bf0d44:docs/ROADMAP.md`); older progress is in
-[ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md). Live state of every PR and issue is in
-`github_merge_queue` and [PROJECT_TRIAGE_2026-10-12.md](PROJECT_TRIAGE_2026-10-12.md); generated facts are in
+[ROADMAP_HISTORY_2026-10.md](archive/ROADMAP_HISTORY_2026-10.md). Live state of every PR and issue is in
+`github_merge_queue` and [PROJECT_TRIAGE_2026-10-12.md](archive/PROJECT_TRIAGE_2026-10-12.md); generated facts are in
 [PROJECT_STATUS.md](PROJECT_STATUS.md). Every owner decision and where its work is tracked: [DECISIONS.md](DECISIONS.md)
 (read it first when rewriting this file).
 
@@ -59,7 +59,7 @@ change a sim outcome or draw on a sim RNG stream.
 
 ## Story: the uncle and the boss's seat (owner, 12 October; not built)
 
-Recorded in [PROJECT_TRIAGE_2026-10-12.md §8.5](PROJECT_TRIAGE_2026-10-12.md) and HANDOFF; missing from the 12 October roadmap.
+Recorded in [PROJECT_TRIAGE_2026-10-12.md §8.5](archive/PROJECT_TRIAGE_2026-10-12.md) and HANDOFF; missing from the 12 October roadmap.
 The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than life, with a darkness you can't place.
 
 1. **Chapter 1-2:** name the employer as Rafa in the employed opening; two or three dialogue beats in chapter 2 as he

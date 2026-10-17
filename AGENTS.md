@@ -62,19 +62,21 @@ machine-wide Godot lock (skyrunner-mcp #1), so jobs from either agent queue inst
 the same lock. Say on the board when you start and finish a long one, and reuse CI results for a SHA instead of
 rerunning them locally.
 
-**Lanes** ([docs/AGENT_WORK_SPLIT.md](docs/AGENT_WORK_SPLIT.md), tracker [docs/AI_WORK_ALLOCATION.md](docs/AI_WORK_ALLOCATION.md)):
+**Lanes** (from the 11 October work split, archived in [docs/archive/AGENT_WORK_SPLIT.md](docs/archive/AGENT_WORK_SPLIT.md)):
 Tier A (Session layers, RNG, goldens, saves, sim and map geometry, flight, balance) is Claude Code's. Tier B
 (bounded UI/gameplay behind a stable interface) is either, with the other reviewing. Tier C (repeated UI
 patterns, isolated tests, docs, CI tooling, issue triage) is Codex's. A Tier C task that needs a new random draw,
 a golden, a save-format change or a `scripts/sim/session_*.gd` edit stops and says so in the PR. Neither agent
-can mark a human release gate passed; those are recorded in `docs/PROJECT_STATUS.md` with a build SHA.
+can mark a human release gate passed; those are recorded in `docs/PROJECT_STATUS.md` with a build SHA. Since 12 October Codex also
+leads UX/UI and dialogue (Claude reviews) and runs the QA lane: sims, full suites, sweeps and balance runs.
 
 **MCP server:** it lives in its own repository, [skyrunner-mcp](https://github.com/jawaman14/skyrunner-mcp);
 this repo only holds the pinned launcher (`tools/mcp/`, `.mcp.json`). Server changes go there, then bump the pin
 in `tools/mcp/launch.py` in a reviewed commit.
 
 Pure GDScript on Godot 4.7.2. No native code, no plug-ins to build. See README.md for the game,
-docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the baton.
+docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the baton, and
+docs/README.md for every document; dated reports and old plans are in docs/archive/ (records, not instructions).
 
 ## Owner decisions: the ledger (owner, 18 October 2026)
 

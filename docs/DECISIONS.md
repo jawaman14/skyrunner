@@ -64,4 +64,5 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-47 | 2026-10-18 | Fix the city's building models that overlap each other | done | #407 |
 | D-49 | 2026-10-18 | Give Codex more of the workload: the review queue first, then the gap audits, the playtest protocol (#172), QA, the Heat app and map lines, Rafa's dialogue, housekeeping (board note 511) | planned | #329 |
 | D-50 | 2026-10-18 | Widen the wake tool's sandbox so a woken Codex can commit and push in the skyrunner .git and its own skyrunner-* worktrees | done | wake watcher (local) |
+| D-51 | 2026-10-18 | Clean up all the repository's documents, including the README: dated reports to docs/archive/, a docs index, links fixed | in-pr | #408 |
 | D-34 | 2026-10-13 | Presentation layers: stingers, the player's own colours and tag, claiming a won zone with graffiti (gameplay; the layer draws it), systems reacting to each other, per-year stations, wordless with a pause-menu legend | planned | ROADMAP: Next: presentation layers (owner's pick) |
