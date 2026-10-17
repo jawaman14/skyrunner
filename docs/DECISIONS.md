@@ -45,7 +45,13 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-28 | 2026-10-18 | Fix the workflow audit's findings | in-pr | #398 |
 | D-29 | 2026-10-18 | Codex's woken turns may write the board folder (sandbox writable root), no full access | done | wake watcher command (local) |
 | D-30 | 2026-10-18 | Keep a decisions ledger and check it in the tests (this file) | done | PIPELINE.md |
-| D-31 | open | The hub approach on natural terrain (HAR end 0); flight skill in the story's goals; the AI knowledge policy; the engine (Godot or Unity); what survives Rafa's death | open | #326 |
-| D-32 | open | Which of the 52 design epics to do first, and which to drop | open | #326 |
-| D-33 | open | Whether the wake tool may spend Codex quota unattended (it does today, at the owner's earlier instruction) | open | #326 |
+| D-31 | open | The hub approach on natural terrain (HAR end 0); flight skill in the story's goals; the AI knowledge policy; the engine (Godot or Unity); what survives Rafa's death | superseded | D-35, D-36, D-37, D-38, D-39 |
+| D-32 | 2026-10-18 | The 52 design epics: the agents rank them by value and effort and post the order on #326 for the owner to veto | planned | #326 |
+| D-33 | 2026-10-18 | The wake tool keeps starting Codex turns unattended (up to 40 an hour) | done | wake watcher (local) |
+| D-35 | 2026-10-18 | When Rafa dies, half his empire survives: half the stashes (the least known), half the crew, the trucks that were parked, a quarter of his cash | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
+| D-36 | 2026-10-18 | The AI police and rivals know only what a human in their seat would see (radar, sightings, tips, informants) | planned | ROADMAP: After that: the four product steps |
+| D-37 | 2026-10-18 | HAR: flatten the hill on the approach to runway end 0 so both ends work | planned | ROADMAP: Forgotten or half done (found 18 October) |
+| D-38 | 2026-10-18 | Flight skill (landings, short strips, approaches) gives optional bonus goals in the story; it never blocks a chapter | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
+| D-39 | 2026-10-18 | Stay on Godot; the Unity proposal is dropped | done | #326 |
+| D-40 | 2026-10-18 | Claude captures screenshots of #373 (scenery) and #374 (period vehicles) for the owner to approve before they merge | planned | #373, #374 |
 | D-34 | 2026-10-13 | Presentation layers: stingers, the player's own colours and tag, claiming a won zone with graffiti (gameplay; the layer draws it), systems reacting to each other, per-year stations, wordless with a pause-menu legend | planned | ROADMAP: Next: presentation layers (owner's pick) |
