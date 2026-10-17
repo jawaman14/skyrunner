@@ -112,6 +112,19 @@ class Truck:
 			return m
 		return 0.0
 
+	## Reroute an active one-leg delivery without moving the driver's current position or resetting progress.
+	func reroute(path: PackedVector2Array) -> bool:
+		if agent == null or not legs.is_empty() or not agent.reroute(path):
+			return false
+		route = agent.route
+		dur = lead_s() + RoadGraph.length(route) / agent.speed_ms()
+		return true
+
+	func remaining_route() -> PackedVector2Array:
+		if agent == null:
+			return route
+		return agent.remaining_route()
+
 	func pos(now: float) -> Array:
 		if agent != null:
 			return [agent.x, agent.y]
