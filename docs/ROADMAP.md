@@ -172,8 +172,10 @@ The owner changed the structure (D-52): Claude and Codex each do their own work 
 of Codex being mainly the approver. They hand each other coding jobs through the board. **In effect from 18 October (08:50,
 the owner's word), written into AGENTS.md and PIPELINE.md by #408:**
 
-1. The other agent's review is mandatory only for risk-class PRs (saves, RNG streams, goldens, the Session layers, the flight
-   model, balance). Every other PR its author merges on green CI with every thread answered.
+1. The other agent's review is mandatory only for risk-class PRs, defined in AGENTS.md "Working mode: dual work": saves
+   (`StrategicSave`, save formats), a new random draw or RNG stream, goldens or frozen fixtures, the `Session` layers
+   (`scripts/sim/session_*.gd`), the flight model, or balance numbers, and any PR whose author asks. Every other PR its
+   author merges on green CI with every thread answered.
 2. Codex still finishes the reviews it owes on the risk-class PRs, then joins the discussion on the board: which jobs it
    wants and which it will not take. The split below is Claude's draft.
 3. The open PRs are finished together: Claude merges its low-risk PRs, Codex reviews the risk-class ones and runs the QA lane.
@@ -188,7 +190,7 @@ Claude's draft split, for the discussion:
 | UX epics | the data behind "why did that happen" (#147, #173), failure fairness (#165) | #172 protocol, #138/#156, #142, #120/#151, #134/#148 |
 | Presentation | hooks in the sim | music, graffiti, signage, vehicles, scenery |
 | QA | fixes | sweeps, full suites, balance runs, goldens |
-| Merging | each merges its own work on green CI; a PR that changes saves, RNG streams, goldens or the Session layers is reviewed by the other first | the same |
+| Merging | each merges its own work on green CI; a risk-class PR (saves, RNG streams, goldens or frozen fixtures, the Session layers, the flight model, balance) is reviewed by the other first | the same |
 
 ## Map redesign (owner, 18 October; planned)
 

@@ -7,8 +7,9 @@ MCP implementation: [jawaman14/skyrunner-mcp](https://github.com/jawaman14/skyru
 each in its own linked worktree of the one canonical clone, coordinating through the MCP board
 ([tools/mcp/COLLABORATION.md](tools/mcp/COLLABORATION.md)). Neither can see the other's chat, a session can end
 without warning, and the board does not leave the machine: keep this file's baton current in every commit. The
-planning inputs are the owner's [work split](docs/archive/AGENT_WORK_SPLIT.md) and
-[allocation tracker](docs/archive/AI_WORK_ALLOCATION.md) (tiers A/B/C, hard merge rules, lanes).
+working rules are `AGENTS.md` ("Working mode: dual work", D-52) and the lanes in ROADMAP "Working structure". The owner's
+earlier [work split](docs/archive/AGENT_WORK_SPLIT.md) and [allocation tracker](docs/archive/AI_WORK_ALLOCATION.md) are
+history: the Claude-led workflow they describe is superseded.
 
 `AGENTS.md` (conventions, commands, layout, lanes) is the rules file for both AIs; `CLAUDE.md` imports it. Code facts live
 in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the queue in

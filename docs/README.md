@@ -1,6 +1,7 @@
 # Skyrunner documentation
 
-Every document in the repository, and what it is for. Dated reports, audits, and planning snapshots that are no longer
+Every document of the project's own documentation, and what it is for: the root files, `docs/`, and the guides that sit
+next to the code or assets they describe (listed at the end). Dated reports, audits, and planning snapshots that are no longer
 current are in [archive/](archive/). They are kept as records, not as instructions.
 
 ## Playing
@@ -56,3 +57,13 @@ current are in [archive/](archive/). They are kept as records, not as instructio
 | [ASSET_COVERAGE.md](ASSET_COVERAGE.md) | Which parts of the asset bible are in the game |
 | [LIBRARIES.md](LIBRARIES.md) | The open-source libraries and art used or considered |
 | [img/](img/), [video/](video/) | Screenshots and demo videos |
+
+## Next to the code and the assets
+
+| Document | What it is |
+|---|---|
+| [../tools/mcp/COLLABORATION.md](../tools/mcp/COLLABORATION.md) | The board protocol for Claude and Codex (the full text is in the skyrunner-mcp repository) |
+| [../assets/radio/README.md](../assets/radio/README.md) | The real 1979-86 radio excerpts, their sources and licence terms |
+| [../assets/props/README.md](../assets/props/README.md) | The prop models and where they come from |
+| [../README.md](../README.md), [../CLAUDE.md](../CLAUDE.md) | The project README, and the file that imports AGENTS.md |
+| `addons/*/LICENSE*`, `assets/**/LICENSE.txt` | The licence of each add-on and art pack, kept beside it |
