@@ -7,17 +7,18 @@ extends RefCounted
 ## World.use_layout() makes one current (one island per process).
 
 var id := "classic"
+var region_id := "classic"  ## stable campaign/save namespace for this playable map
 var map_seed := 0  ## 0 = classic
 var terrain_seed := 7
 var params = null  ## Terrain.generate_custom params, null for the classic generator
 var airfields: Array = []
 var zone_centre := {}
 var zone_fields := {}
+var territories: Array = []  ## authored local turf areas; empty layouts use market-level fallback areas
 var aerostat_pos := [1500.0, -14800.0]
 ## name -> {kind, name, x, y, heading, zone}: org (the organisation's villa),
 ## law (task-force HQ), rival (the cartel's compound). Sited on first use.
 var hqs := {}
-var extra_trees := []  ## unused hook for decorative planting
 var post := false  ## MapCity: a GDScript post-pass reshapes and replants the generated terrain
 var land_use := PackedByteArray()  ## MapCity land-use class per terrain cell (empty on other maps)
 var bridges: Array = []  ## [{road: index into roads, from: metres, to: metres}] where a road crosses water
