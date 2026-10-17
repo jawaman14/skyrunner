@@ -270,9 +270,7 @@ func territory_share(id: String, faction: String) -> float:
 	var c: Dictionary = territory_control.get(key, {})
 	if c.is_empty():
 		return -1.0
-	var total: float = float(c.get("org", 0.0)) + float(c.get("rival", 0.0)) + 0.5 * float(c.get("police", 0.0))
-	var mine: float = 0.5 * float(c.get("police", 0.0)) if faction == "police" else float(c.get(faction, 0.0))  # police count half in the total, so half in the share
-	return mine / total if total > 1.0 else -1.0
+	return _control_share(c, faction)
 
 
 func seed_territories_from_markets() -> void:
@@ -1425,9 +1423,9 @@ func _control(dt: float) -> void:
 
 
 static func _control_share(values: Dictionary, faction: String) -> float:
-	var total: float = values.org + values.rival + 0.5 * values.police
+	var total: float = float(values.get("org", 0.0)) + float(values.get("rival", 0.0)) + 0.5 * float(values.get("police", 0.0))
 	if total <= 1.0: return -1.0
-	return (0.5 * float(values.police) if faction == "police" else float(values.get(faction, 0.0))) / total
+	return (0.5 * float(values.get("police", 0.0)) if faction == "police" else float(values.get(faction, 0.0))) / total
 
 
 ## Public modeled influence, own deployment/cost and currently observed threats.
@@ -1456,15 +1454,11 @@ func district_view(viewer: String) -> Array:
 
 ## Los Cuervos' share of the streets in market m (0..1), from who's out there.
 func rival_share(m: String) -> float:
-	var c: Dictionary = control[m]
-	var tot: float = c.org + c.rival + 0.5 * c.police
-	return c.rival / tot if tot > 1.0 else -1.0
+	return _control_share(control[m], "rival")
 
 
 func org_share(m: String) -> float:
-	var c: Dictionary = control[m]
-	var tot: float = c.org + c.rival + 0.5 * c.police
-	return c.org / tot if tot > 1.0 else -1.0
+	return _control_share(control[m], "org")
 
 
 ## The turf the markets see: the season's (or the default) nudged by the streets.
