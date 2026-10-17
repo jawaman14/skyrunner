@@ -166,6 +166,16 @@ Then Tier 2 with the story, map and presentation layers (#163, #133/#132, #130/#
 #140/#141/#143/#159, #144/#149, #171) and Tier 3 later. Nine issues (#125, #137, #154, #129, #135, #128, #127, #121, #126)
 are foundations, not done: each gets a gap audit before it is scheduled. #169 is deferred.
 
+## Map redesign (owner, 18 October; planned)
+
+The owner asked for the map to be rebuilt from the ground up with what we have learnt. The plan is
+[MAP_REDESIGN.md](MAP_REDESIGN.md): constraints first (strips and their approach volumes, then terrain shaped for them,
+water, one district map, roads with classes and real city streets), then parcels, a site manifest with access checks, an
+asset catalogue, props and presentation hooks, all baked by one build tool and checked by one map audit. It starts after
+the map PRs in the queue land (#373, #374, #378, #396, #402, #404), as a new region beside the current one; the owner
+approves the layout sketch (step 0) and the screenshots (step 6), and playtests before the old map is retired. Four
+owner questions are open in its section 7.
+
 ## Human release gates and owner decisions (#326)
 
 - **Gates only a person can pass:** exported Windows and macOS walkthroughs; physical controller and four-resolution visual
