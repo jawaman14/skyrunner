@@ -1441,3 +1441,55 @@ asks of the pilot (from Codex's 8 October audit, PR #246, checked against the co
 At the job's origin it goes back on the board; anywhere else it is dumped. Accepting re-checks location, parking,
 permission, capacity and payment, but not whether the load plan is safe: the loading screen's weight and balance is
 the pilot's job (§5.1).
+
+## 48. The case file: heat you can see and answer (design, 18 Oct 2026; not built)
+
+Owner, 18 Oct: make heat and the law interactive. Step 1 of the agreed order (then the police search and the ladder down,
+then patterns, escalation, corruption and ground chases). Today most heat is a hidden number that bites: a stash at heat 55
+or more is raided on a 30% roll each minute (`session_rules.gd`, AI task force), and the pilot's case is live suspicion only.
+
+**Four kinds of heat, each cooling at its own rate.**
+
+| Heat | Where it lives | Rises with | Cools |
+|---|---|---|---|
+| Pilot | `PoliceSystem.Case` (exists: suspicion, wanted) plus a new slow `evidence` score | sightings, a lost squawk, seized trucks, busts | evidence slowly (hours); suspicion as today |
+| Aircraft | new, per owned tail number | being seen dark or wanted in it | parked in a hangar; faster after a repaint |
+| Stash | `StashNet` stash `heat` (exists; known at 30) | deliveries, seizures | as today (1.5 a minute, the stash works' rate) |
+| District | new, per market or territory | seizures, fights, raids there | slowly, faster with no incidents |
+
+A hot aircraft makes the pilot's suspicion rise faster when it is seen (the tail number is known); a hot district makes
+patrols and checkpoints more likely there. Each kind is a separate dial, so the player can park a hot aircraft and fly a
+clean one, or empty a hot stash.
+
+**Investigations in stages.** Each target the task force pursues (a stash, the pilot) gets a case file that moves through
+stages on timers instead of a hidden roll:
+
+1. **Lead:** a stash becomes known (heat 30, as today) or the pilot's evidence passes a first mark.
+2. **Surveillance:** after a few minutes with heat still high, a stakeout (a van across the street, a plane on the ramp).
+3. **Warrant:** after the surveillance time, if heat is still above the line, a warrant with a countdown.
+4. **Action:** when the countdown ends, the raid or the arrest at the next landing at a watched strip.
+
+If heat falls below the line during surveillance, the case is dropped. A raid on an empty stash finds nothing, cools it,
+and voids the warrant.
+
+**Counter-moves at each stage.**
+- **Move the product:** empty the stash before the warrant runs out (the logistics trucks already do this).
+- **Lie low:** no deliveries, so heat decays and the case can drop at surveillance.
+- **The lawyer:** challenge a warrant for a fee; a chance to void it, better with a better lawyer (the court's tiers).
+- **A warning:** the lookout (exists) or a cop on the payroll shows the stage and the countdown; without one the player
+  sees only what a phone call or the scanner gives.
+- **A decoy:** a decoy run draws the surveillance away for a while.
+
+**What the player sees.** A **Heat** app on the phone (Codex): one row per case with the target, the stage, what the
+police have, and the time to the next stage when a warning source knows it; the four heat dials. Messages at each stage
+change ("A van has been parked across from the Quarry shed for an hour.").
+
+**Rules.** Behind a static switch `Investigation.ENABLED` registered in `Switches.PARITY` (off: the old raid roll).
+Every random draw (warrant challenge, stakeout noticed) on its own stream, `seed + 163`. Saved in `StrategicSave` (case
+stage, timers, aircraft and district heat). Tests first: a stash at heat moves Lead to Surveillance to Warrant to Raid on
+time; lying low drops a case at surveillance; emptying the stash makes the raid find nothing; a lawyer can void a warrant;
+the switch off keeps the old behaviour. Raids become predictable, so stash losses should fall: a strategic and tactical
+balance run and a BALANCE entry go with it.
+
+**Not in step 1:** the police search pattern, scanner chatter and the ladder down (step 2); pattern detection,
+escalation by agency, corruption and ground chases (step 3).
