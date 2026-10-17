@@ -68,8 +68,8 @@ func setup(offer: Dictionary, note := "Paused") -> PauseMenu:
 		_add(v, "Controls (F8)", func(): chosen.emit("controls"))
 	v.add_child(HSeparator.new())
 	if offer.get("lobby", false):
-		_add(v, "Quit to lobby", func(): _ask("lobby", "Quit to the lobby?%s" % (" The game is saved first." if offer.get("save", false) else ""), "Quit"))
-	_add(v, "Quit to desktop", func(): _ask("desktop", "Quit to the desktop?%s" % (" The game is saved first." if offer.get("save", false) else ""), "Quit"))
+		_add(v, "Quit to lobby", func(): _ask("lobby", "Quit to the lobby?%s" % _quit_note(), "Quit"))
+	_add(v, "Quit to desktop", func(): _ask("desktop", "Quit to the desktop?%s" % _quit_note(), "Quit"))
 	confirm = ConfirmBox.new().setup("", "Yes", "No")
 	confirm.answered.connect(func(yes: bool):
 		var a := _pending
@@ -92,6 +92,11 @@ func _add(v: VBoxContainer, text: String, cb: Callable) -> Button:
 	v.add_child(b)
 	buttons.append(b)
 	return b
+
+
+## What quitting does to the game: saved first, or (no save file, e.g. a sandbox start) lost.
+func _quit_note() -> String:
+	return " The game is saved first." if _offer.get("save", false) else " This game has no save file: everything since it started is lost."
 
 
 func _ask(action: String, text: String, yes: String) -> void:

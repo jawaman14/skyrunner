@@ -16,6 +16,7 @@ const MODEL_PACKS := {
 	"res://assets/models/kenney/pirate": [72, "glb"],
 	"res://assets/models/kaykit/city": [41, "gltf"],
 	"res://assets/models/quaternius/downtown_city": [3, "gltf"],
+	"res://assets/models/airfield": [8, "glb"],
 }
 ## Every file with extension `ext` under `dir`, recursively.
 func _files(dir: String, ext: String) -> Array:
