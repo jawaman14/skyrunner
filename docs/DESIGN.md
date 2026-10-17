@@ -1443,3 +1443,13 @@ asks of the pilot (from Codex's 8 October audit, PR #246, checked against the co
 At the job's origin it goes back on the board; anywhere else it is dumped. Accepting re-checks location, parking,
 permission, capacity and payment, but not whether the load plan is safe: the loading screen's weight and balance is
 the pilot's job (§5.1).
+
+## 47. Turf territories, tactical choices and threatened routes
+
+`Territories` gives each `MapLayout` a stable region ID and local districts. Costa Brava's region is `costa-brava` and its first ten districts are San Telmo Centro, Barrio Chino, the Docks, Airport Coast, Rio Negro Estuary, Valle Verde, La Selva, Sierra del Aguila, Old Quarry and Smuggler's Cove. Boundaries use the authored city/terrain layout; uncovered positions resolve to the nearest district. Classic and generated maps use a four-area fallback based on their existing market centres. A future playable map can supply its own `region_id` and district records.
+
+The key is `<region_id>/<district_id>`. District presence decays and accumulates from squads; fights add local influence. The existing `control`, `market_at`, `org_share`, `rival_share`, economy markets and rackets policies remain the broad-market contract. Older saves without districts seed them from their saved market totals; saves with districts restore them only into the matching region. The war snapshot includes district names, parent markets, centres and faction control.
+
+NPC commit/withdraw decisions use each squad's range-adjusted `fire_at`, cover, morale and nearby friendly support. Territory patrol targets score local opposition and strategic tags. Explicit human orders remain in charge. A truck with an active one-leg delivery checks its remaining route every 30 seconds; if a materially lower-risk path exists through the faction-aware road graph, its driver changes route without losing position or progress. The organization focuses escorts on valuable or exposed loads. Police and rival route choices read the truck's current route. These choices preserve seizure and combat outcome rules.
+
+The new behavior is gated by `Territories.ENABLED`; it draws no additional randomness. Initial verification: Godot 4.7.2 import passed, the full suite passed 898/898, Costa Brava smoke printed `SMOKE OK`, and the 200-seed live war balance run completed. The suite emitted analyst string-formatting and freed-lambda-capture errors alongside its zero-failure summary; investigate those logs before treating the run as fully clean. Not yet: a 2D territory overlay, balance calibration for district control, and authoring another distinct playable region.

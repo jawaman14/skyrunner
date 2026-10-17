@@ -132,6 +132,11 @@ static func street_yaw(x: float, y: float) -> float:
 	return atan2(dir.x, -dir.y)  # Godot z is -y
 
 
+## True when `yaw` turns a model a quarter turn (to face a street to the east or west): its width then runs north-south.
+static func quarter_turn(yaw: float) -> bool:
+	return absf(sin(yaw)) > 0.5
+
+
 ## The lots of building `b` (index `i`, which seeds the choices): [{kit, name, xf, colour, roof}], deterministic.
 ## `roof` is the world y of the top of the model, for the shader's neon strip.
 static func lots(b: Dictionary, i: int) -> Array:
@@ -153,17 +158,20 @@ static func lots(b: Dictionary, i: int) -> Array:
 		for iz in nz:
 			var role := _role(style, float(b.h), rng)
 			var target_h: float = float(b.h) * (rng.randf_range(0.85, 1.1) if style == "tower" else rng.randf_range(0.7, 1.15))
-			var spec = _pick(role, cw, cd, target_h, rng)
-			if spec == null:
-				continue
-			var m: Dictionary = spec
-			var s := minf(cw * FILL / maxf(0.01, m.dim.x), cd * FILL / maxf(0.01, m.dim.z))
-			var sx := minf(cw * FILL / maxf(0.01, m.dim.x), s * 1.3)
-			var sz := minf(cd * FILL / maxf(0.01, m.dim.z), s * 1.3)
-			var sy := clampf(target_h / maxf(0.01, m.dim.y), 0.8 * s, 1.35 * s)
 			var cx: float = float(b.x) + (ix + 0.5 - nx * 0.5) * cw
 			var cy: float = float(b.y) + (iz + 0.5 - nz * 0.5) * cd
 			var yaw := street_yaw(cx, cy)
+			# the lot as the model sees it: a quarter turn puts the model's width along the lot's depth
+			var fw := cd if quarter_turn(yaw) else cw
+			var fd := cw if quarter_turn(yaw) else cd
+			var spec = _pick(role, fw, fd, target_h, rng)
+			if spec == null:
+				continue
+			var m: Dictionary = spec
+			var s := minf(fw * FILL / maxf(0.01, m.dim.x), fd * FILL / maxf(0.01, m.dim.z))
+			var sx := minf(fw * FILL / maxf(0.01, m.dim.x), s * 1.3)
+			var sz := minf(fd * FILL / maxf(0.01, m.dim.z), s * 1.3)
+			var sy := clampf(target_h / maxf(0.01, m.dim.y), 0.8 * s, 1.35 * s)
 			var basis := Basis(Vector3.UP, yaw) * Basis.from_scale(Vector3(sx, sy, sz))
 			var ground: float = float(b.z) - SINK
 			# the model's origin is wherever its kit put it: stand its base centre on the lot's centre
@@ -301,6 +309,35 @@ static func build(boxes: Array, q: Quality) -> Node3D:
 static func _frontage_awnings(boxes: Array, indices: Array, shadows: int, reach: float) -> Node3D:
 	var root := Node3D.new()
 	root.name = "shop-frontages"
+	var placements := _awning_placements(boxes, indices)
+	for part in placements:
+		var transforms: Array = placements[part]
+		if transforms.is_empty():
+			continue
+		var asset_value: Variant = _load(["commercial", part])
+		if not (asset_value is Dictionary):
+			continue
+		var asset: Dictionary = asset_value
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = asset.mesh
+		mm.instance_count = transforms.size()
+		for i in transforms.size():
+			mm.set_instance_transform(i, transforms[i])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.name = part
+		mmi.multimesh = mm
+		mmi.cast_shadow = shadows
+		mmi.visibility_range_end = reach + FADE_M
+		mmi.visibility_range_end_margin = FADE_M
+		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		root.add_child(mmi)
+	return root
+
+
+## Where the awnings go: part name -> world transforms, one per chosen shop lot (read by the test, since a headless
+## MultiMesh keeps no transforms).
+static func _awning_placements(boxes: Array, indices: Array) -> Dictionary:
 	var placements: Dictionary = {"detail-awning": [], "detail-awning-wide": []}
 	var rng := RandomNumberGenerator.new()
 	for index in indices:
@@ -339,27 +376,5 @@ static func _frontage_awnings(boxes: Array, indices: Array, shadows: int, reach:
 			var mount := Vector3(awning.centre.x, awning.centre.y, awning.centre.z - awning.dim.z * 0.5)
 			var xf := Transform3D(basis, facade - basis * mount)
 			(placements[part] as Array).append(xf)
-	for part in placements:
-		var transforms: Array = placements[part]
-		if transforms.is_empty():
-			continue
-		var asset_value: Variant = _load(["commercial", part])
-		if not (asset_value is Dictionary):
-			continue
-		var asset: Dictionary = asset_value
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.mesh = asset.mesh
-		mm.instance_count = transforms.size()
-		for i in transforms.size():
-			mm.set_instance_transform(i, transforms[i])
-		var mmi := MultiMeshInstance3D.new()
-		mmi.name = part
-		mmi.multimesh = mm
-		mmi.cast_shadow = shadows
-		mmi.visibility_range_end = reach + FADE_M
-		mmi.visibility_range_end_margin = FADE_M
-		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
-		root.add_child(mmi)
-	return root
+	return placements
 

@@ -47,6 +47,67 @@ func test_lots_stay_inside_the_building_and_near_its_height() -> void:
 				check(kits.has("commercial"), "towers are commercial")
 
 
+## Owner, 18 Oct: "building assets overlapping" in town. A lot's model was fitted to the lot before it was turned to face
+## the street, so a quarter turn laid its long side across a narrow lot and the next lot's model (1,714 pairs, up to 10 m).
+func test_the_models_of_one_building_do_not_overlap_each_other_or_leave_it() -> void:
+	var worst := 0.0
+	var outside := 0.0
+	var boxes := _boxes(400)
+	for i in boxes.size():
+		var b: Dictionary = boxes[i]
+		var foot := Rect2(float(b.x) - float(b.w) / 2, float(b.y) - float(b.d) / 2, float(b.w), float(b.d))
+		var rects := []
+		for lot in CityDress.lots(b, i):
+			var r := _footprint(CityDress._load([lot.kit, lot.name]), lot.xf)
+			for o in rects:
+				if r.intersects(o):
+					var x: Rect2 = r.intersection(o)
+					worst = maxf(worst, minf(x.size.x, x.size.y))
+			var spill := foot.merge(r)
+			outside = maxf(outside, maxf(spill.size.x - foot.size.x, spill.size.y - foot.size.y))
+			rects.append(r)
+	check(worst < 0.5, "no two models of a building overlap (worst %.1f m)" % worst)
+	check(outside < 1.0, "and none spills out of its footprint (worst %.1f m)" % outside)
+
+
+## A model's footprint in the game's frame (x east, y north) under transform `xf`.
+func _footprint(m: Dictionary, xf: Transform3D) -> Rect2:
+	var c: Vector3 = m.centre
+	var d: Vector3 = m.dim
+	var pts := []
+	for sx in [-0.5, 0.5]:
+		for sz in [-0.5, 0.5]:
+			var p := xf * Vector3(c.x + sx * d.x, c.y, c.z + sz * d.z)
+			pts.append(Vector2(p.x, -p.z))
+	var r := Rect2(pts[0], Vector2.ZERO)
+	for q in pts:
+		r = r.expand(q)
+	return r
+
+
+## The shop awnings (#373) ride on the lots' own transforms, so after the lot fit was corrected (#407) each canopy must still
+## stand on its own building: within a few metres of the box's footprint, and never on another building's side of the street.
+func test_shop_awnings_stay_at_their_own_building() -> void:
+	var boxes := _boxes(400)
+	var idx := range(boxes.size())
+	var placements := CityDress._awning_placements(boxes, idx)
+	var placed := 0
+	var worst := 0.0
+	for part in placements:
+		for xf in placements[part]:
+			var at: Vector3 = (xf as Transform3D).origin
+			var nearest := 1e9
+			for b in boxes:
+				# how far the point is outside the building's footprint (0 inside)
+				var dx := maxf(absf(at.x - float(b.x)) - float(b.w) / 2.0, 0.0)
+				var dy := maxf(absf(-at.z - float(b.y)) - float(b.d) / 2.0, 0.0)
+				nearest = minf(nearest, sqrt(dx * dx + dy * dy))
+			worst = maxf(worst, nearest)
+			placed += 1
+	check(placed > 0, "some shop lots got an awning (%d)" % placed)
+	check(worst < 6.0, "every awning is within 6 m of its own building's footprint (worst %.1f m)" % worst)
+
+
 func test_a_box_is_cut_into_lots_by_its_size_and_the_same_box_always_the_same() -> void:
 	var small := CityDress.lots(_bld("res", 22.0, 22.0, 10.0), 1)
 	var big := CityDress.lots(_bld("res", 44.0, 44.0, 10.0), 1)
@@ -91,6 +152,8 @@ func test_build_draws_models_near_and_boxes_far_in_chunks() -> void:
 		for n in c.get_children():
 			if n is StaticBody3D:
 				continue  # the collision
+			if n.name == "shop-frontages":
+				continue  # the awnings (#373): their own test below
 			var mmi := n as MultiMeshInstance3D
 			if mmi.name == "buildings":
 				boxes_drawn += mmi.multimesh.instance_count

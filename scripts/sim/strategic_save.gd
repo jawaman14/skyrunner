@@ -28,7 +28,7 @@ const TRADE := ["stock", "connected", "appetite", "sold", "landed", "earned", "s
 	"_sales_acc"]
 const ECON := ["walk", "fuel_walk", "scarcity", "glut", "busts", "events", "news", "storm", "law_kit", "_t", "_now"]
 const MARKET := ["supply", "demand", "disruption", "source", "news", "why", "_last_news", "_demand_events", "_t", "_now"]
-const ISLAND := ["relations", "passage_until", "status", "status_until", "price_mult", "airport_heat", "port_heat", "crackdown_until",
+const ISLAND := ["relations", "controller", "passage_until", "status", "status_until", "price_mult", "airport_heat", "port_heat", "crackdown_until",
 	"inspections_until", "shipments", "delivered", "caught", "intercepts", "next_mules", "next_ship", "rival_shipped", "rival_caught",
 	"_rival_t", "last", "_serial", "_t", "_event_t", "_mig_t"]
 const ISLAND_INTS := ["n", "cost", "value", "mules"]
@@ -154,6 +154,8 @@ static func _capture_nights(n: NightDirector) -> Dictionary:
 
 static func _capture_war(g: GroundWar) -> Dictionary:
 	var out := SaveVars.capture(g, WAR + WAR_PLAIN)
+	out["territory_region"] = g.world.map.region_id
+	out["territory_control"] = g.territory_control.duplicate(true)
 	var cmd := {}
 	for f in g.commanders:
 		var c: GroundWar.Commander = g.commanders[f]
@@ -244,7 +246,7 @@ static func restore(s: Session, d: Dictionary) -> void:
 		var c = s.police.case("runner")
 		c.suspicion = float(d.case.get("suspicion", 0.0))
 		c.bust_meter = float(d.case.get("bust_meter", 0.0))
-		c.rival_meter = float(d.case.get("rival_meter", 0.0))
+		c.rival_meter = 0.0  # nothing fills or decays this any more (no air hijack): an old save must not leave the HUD bar stuck
 	if s.court != null and d.get("court") is Dictionary:
 		s.court.case_ = d.court.get("case")
 		s.court.history = d.court.get("history", [])
@@ -341,6 +343,15 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 static func _restore_war(g: GroundWar, d: Dictionary) -> void:
 	SaveVars.restore(g, d, WAR, WAR_INTS)
 	SaveVars.restore(g, d, WAR_PLAIN)
+	var saved_region := str(d.get("territory_region", ""))
+	var saved_control = d.get("territory_control", {})
+	if saved_region == g.world.map.region_id and saved_control is Dictionary:
+		for id in g.territory_control:
+			if saved_control.has(id) and saved_control[id] is Dictionary:
+				for faction in ["org", "rival", "police"]:
+					g.territory_control[id][faction] = float(saved_control[id].get(faction, 0.0))
+	else:
+		g.seed_territories_from_markets()
 	var cmd: Dictionary = d.get("commanders", {})
 	for f in cmd:
 		if g.commanders.has(f):
