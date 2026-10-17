@@ -391,8 +391,11 @@ func _world_marks(font: Font) -> void:
 				draw_line(tq, to, Color(col, 0.35), 1.0)
 				if big:  # the destination, named
 					draw_arc(to, 6.0, 0, TAU, 14, Color(col, 0.8), 1.5)
-					var sh_to = s.stash_net.get_stash(t.stash)
-					_label(font, to + Vector2(9, 12), "> %s" % (str(sh_to.name) if sh_to != null else "stash"), 10, col)
+					var dest_name := str(info.get("to", "stash"))  # a convoy: its endpoint's name (HQ, the buyer, a stash)
+					if info.get("kind", "load") == "load":  # a plain load: truck_info gives the stash id, so look the name up
+						var sh_to = s.stash_net.get_stash(t.stash)
+						dest_name = str(sh_to.name) if sh_to != null else "stash"
+					_label(font, to + Vector2(9, 12), "> %s" % dest_name, 10, col)
 			draw_circle(tq, 3.5, col)
 	for b in s.maritime.boats:
 		if b.kind == "gofast" and b.state != "delivered":

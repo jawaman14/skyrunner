@@ -91,8 +91,8 @@ func _back_up(dt: float) -> void:
 	if s == null or not (s.on_ground or was) or s.gs_kts > BACK_UP_MAX_KTS or fm.controls.throttle > 0.05:
 		return
 	var h := deg_to_rad(s.heading)
-	var nx: float = s.x - cos(h) * BACK_UP_MS * dt
-	var ny: float = s.y + sin(h) * BACK_UP_MS * dt
+	var nx: float = s.x - sin(h) * BACK_UP_MS * dt  # the nose points along (sin h, cos h): backwards is the opposite
+	var ny: float = s.y - cos(h) * BACK_UP_MS * dt
 	if world.airfield_at(nx, ny, 40.0) == null or world.is_water(nx, ny):
 		return
 	_backing = true

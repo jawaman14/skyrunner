@@ -26,8 +26,10 @@ func test_backspace_creeps_the_aircraft_backwards_when_stopped_on_the_strip() ->
 	inp.held["reverse"] = true
 	for i in 90:
 		s.update(1.0 / 30, inp)
-	var back: float = -((s.state.x - x0) * cos(h) - (s.state.y - y0) * sin(h))
+	var back: float = -((s.state.x - x0) * sin(h) + (s.state.y - y0) * cos(h))  # along the nose (sin h, cos h), reversed
+	var side: float = (s.state.x - x0) * cos(h) - (s.state.y - y0) * sin(h)
 	check(back > 3.0 and back < 6.0, "three seconds backs up about 4.5 m: %.2f" % back)
+	check(absf(side) < 0.3, "straight back, not sideways (%.2f m off the line)" % side)
 	var x1: float = s.state.x
 	var y1: float = s.state.y
 	for i in 30:

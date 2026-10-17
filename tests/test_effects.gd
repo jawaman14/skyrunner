@@ -255,3 +255,31 @@ func test_the_pack_panel() -> void:
 	s.dispose()
 
 
+func test_the_sound_loops_actually_start() -> void:
+	var s := Session.new({"seed": 1, "map_seed": MapCity.SEED, "location": "HAR"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	check(app.sound.engine.playing and app.sound.wind.playing and app.sound.horn.playing, "the engine, wind and horn loops are running (they did not start before)")
+	check(app.sound.rumble.playing and app.sound.surf.playing and app.sound.rain.playing, "and the rumble, surf and rain")
+	app.free()
+	s.dispose()
+
+
+func test_debris_expiry_survives_scene_removal() -> void:
+	var floor := StaticBody3D.new()
+	var collider := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(20, 1, 20)
+	collider.shape = shape
+	floor.add_child(collider)
+	_tree().root.add_child(floor)
+	var fx := FX.new()
+	_tree().root.add_child(fx)
+	for i in 2: await _tree().physics_frame
+	check_eq(fx.throw_debris(Vector3(0, 2, 0), 1), 1, "expiry timer has a body")
+	var body: WeakRef = weakref(fx.debris[0])
+	fx.free()
+	floor.free()
+	await _tree().create_timer(FX.DEBRIS_S + 0.1).timeout
+	check(body.get_ref() == null, "early removal stays removed after expiry")
