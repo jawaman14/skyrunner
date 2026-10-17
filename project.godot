@@ -34,5 +34,4 @@ rain_wet={
 
 [audio]
 
-general/text_to_speech=true
 driver/enable_input=true

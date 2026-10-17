@@ -16,7 +16,7 @@ Status legend: **[done]** in the code now · **[planned]** historical proposals 
 
 The owner's answers to a gameplay questionnaire (recorded by Codex in PR #249) set the target the rest of this
 document grows towards. They take precedence over conflicting older plans, including the deferrals in
-[EMPIRE_MILESTONE.md](EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
+[EMPIRE_MILESTONE.md](archive/EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
 say what exists. The delivery order is in [ROADMAP.md](ROADMAP.md).
 
 **The core experience: build an empire from nothing.** Mount & Blade: Warband is the principal reference. The
