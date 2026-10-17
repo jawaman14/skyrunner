@@ -6,7 +6,7 @@ loop is earn, invest, expand, attract pressure, defend, recover and expand again
 Flying remains useful; delegation is a progression reward.
 
 **Superseded in part (8 October 2026).** The owner's later answers are in
-[DESIGN.md §0](DESIGN.md#0-where-the-game-is-heading-owner-approved-direction-8-october-2026) and win where they
+[DESIGN.md §0](../DESIGN.md#0-where-the-game-is-heading-owner-approved-direction-8-october-2026) and win where they
 disagree with this page. In particular, co-op *and* competitive play (2–16 players, organisation/rival/police)
 are part of the intended first full experience, so competitive modes are no longer deferred; multiplayer racing
 and the hidden informant remain separate proposals. The product order there (early rise, automation, faction
