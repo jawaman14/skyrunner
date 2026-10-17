@@ -48,6 +48,22 @@ func test_the_boat_reports_each_bale_and_when_it_runs_for_the_cove() -> void:
 	check_eq(int(counts.get("boat_running", -1)), 1, "with the load it carries")
 
 
+## Owner, 17 Oct: the go-fast's destination reaches every desk's map: the pickup on its way out, the cove with the load.
+func test_the_snapshot_says_where_the_go_fast_is_going() -> void:
+	var s := Session.new({"seed": 3, "map_seed": MapCity.SEED, "location": "HAR"})
+	s.police.frozen = true
+	var spot: Array = [s.maritime.cove[0] + 2000.0, s.maritime.cove[1]]
+	var boat := s.maritime.new_gofast(spot, 77)
+	var row: Dictionary = Snapshot.build(s, Roles.COPILOT).boats[0]
+	check_eq(row.get("dest_name", ""), "pickup", "on its way out: the pickup")
+	check_near(float(row.dest[0]), float(spot[0]), 1.0, "at the rendezvous")
+	boat.cargo = [1]
+	boat.state = "running"
+	row = Snapshot.build(s, Roles.COPILOT).boats[0]
+	check_eq(row.get("dest_name", ""), "cove", "with the load: the cove")
+	s.dispose()
+
+
 func test_the_gate_lets_the_copilot_crew_but_not_fly() -> void:
 	var s := T.sess(5)
 	T.idle(s, 0.3)
