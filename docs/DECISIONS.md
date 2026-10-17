@@ -57,4 +57,6 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-40 | 2026-10-18 | Claude captures screenshots of #373 (scenery) and #374 (period vehicles) for the owner to approve before they merge | done | #373, #374 |
 | D-41 | 2026-10-18 | The owner approved #374's period vehicles from the screenshots ("Approve") | in-pr | #374 |
 | D-42 | 2026-10-18 | The owner approved #373's scenery redesign from the screenshots ("Approve") | in-pr | #373 |
+| D-49 | 2026-10-18 | Give Codex more of the workload: the review queue first, then the gap audits, the playtest protocol (#172), QA, the Heat app and map lines, Rafa's dialogue, housekeeping (board note 511) | planned | #329 |
+| D-50 | 2026-10-18 | Widen the wake tool's sandbox so a woken Codex can commit and push in the skyrunner .git and its own skyrunner-* worktrees | done | wake watcher (local) |
 | D-34 | 2026-10-13 | Presentation layers: stingers, the player's own colours and tag, claiming a won zone with graffiti (gameplay; the layer draws it), systems reacting to each other, per-year stations, wordless with a pause-menu legend | planned | ROADMAP: Next: presentation layers (owner's pick) |
