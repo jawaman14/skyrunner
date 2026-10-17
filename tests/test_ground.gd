@@ -196,6 +196,24 @@ func test_a_rival_ambush_on_a_lone_truck_is_fought_out_before_the_truck_is_lost(
 	s.dispose()
 
 
+## Review of #387: a truck seized (or delivered) while its roadside fight is on must not leave the guard squad behind.
+func test_a_truck_that_leaves_the_road_mid_fight_ends_the_roadside_fight() -> void:
+	var s := _war()
+	var g := s.ground
+	var ab := _ambushed_truck(s, {"rifle": 2})
+	var t = ab[0]
+	var raider = ab[1]
+	g.truck_contacts()
+	check(g._roadside.has(t.job_id), "the roadside fight is on")
+	s.stash_net.trucks.erase(t)  # a police helicopter overhead takes it (StashNetwork.update)
+	g.truck_contacts()
+	check(not g._roadside.has(t.job_id), "the fight is forgotten")
+	check(g.fights.is_empty(), "and closed")
+	check(not g.squads.any(func(q): return q.id == "D-4242"), "the guard leaves the map")
+	check(raider.fight == null and raider.state != "fighting", "the raiders stop fighting")
+	s.dispose()
+
+
 func test_a_rival_ambush_that_breaks_leaves_the_truck_to_drive_on() -> void:
 	var s := _war()
 	var g := s.ground
