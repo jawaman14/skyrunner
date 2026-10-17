@@ -138,6 +138,39 @@ func _war(seed := 3, ai := false) -> Session:
 	return s
 
 
+## Codex's review of #378: police count half in a district's total, so they count half in its share too (a share is never above 1).
+func test_territory_shares_add_up_to_one_and_police_count_half() -> void:
+	var s := _war()
+	var g := s.ground
+	var area: Dictionary = Territories.records(g.world.map)[0]
+	var id := str(area.get("id", ""))
+	var key := Territories.key(g.world.map, id)
+	g.territory_control[key] = {"org": 0.0, "rival": 0.0, "police": 10.0}
+	check_near(g.territory_share(id, "police"), 1.0, 0.000001, "police alone hold all of it, not more")
+	g.territory_control[key] = {"org": 10.0, "rival": 10.0, "police": 20.0}
+	var total := g.territory_share(id, "org") + g.territory_share(id, "rival") + g.territory_share(id, "police")
+	check_near(total, 1.0, 0.000001, "the three shares add up to one")
+	check_near(g.territory_share(id, "police"), 1.0 / 3.0, 0.000001, "twenty police count as ten, one third of the thirty")
+	s.dispose()
+
+
+## Codex's second review of #378: the patrol choice must use the corrected share too: police go where the organisation holds ground, not where they already dominate.
+func test_police_patrol_the_district_the_organisation_holds_not_one_they_dominate() -> void:
+	var s := _war()
+	var g := s.ground
+	var records: Array = Territories.records(g.world.map)
+	check(records.size() >= 2, "the map has at least two districts")
+	for r: Dictionary in records:
+		g.territory_control[Territories.key(g.world.map, str(r.get("id", "")))] = {"org": 0.0, "rival": 0.0, "police": 0.0}
+	var held: Dictionary = records[0]
+	var ruled: Dictionary = records[1]
+	g.territory_control[Territories.key(g.world.map, str(held.get("id", "")))] = {"org": 10.0, "rival": 0.0, "police": 10.0}
+	g.territory_control[Territories.key(g.world.map, str(ruled.get("id", "")))] = {"org": 4.0, "rival": 0.0, "police": 20.0}
+	var order: Dictionary = g._patrol_order("police", Territories.center_of(held))
+	check_eq(str(order.get("territory", "")), str(held.get("id", "")), "police patrol the district the organisation holds")
+	s.dispose()
+
+
 func _squad(g: GroundWar, f: String, at: Vector2, loadout: Dictionary, kind := "foot") -> GroundWar.Squad:
 	var q = g.recruit(f, kind, at, false)
 	var n := 0

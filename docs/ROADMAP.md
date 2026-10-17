@@ -190,3 +190,5 @@ closed with a pointer to [#326](https://github.com/jawaman14/skyrunner/issues/32
 already-implemented work must not create duplicate systems. Keep issues needing human playtests, physical controllers, rights
 decisions or two real machines unresolved until their evidence exists. Publishing a draft PR is not integration or proof of
 release acceptance.
+
+- **Turf expansion (Codex, branch codex/turf-war-expansion):** `Territories` adds map-scoped district IDs while retaining the four economy markets as parent rollups. Costa Brava has ten authored areas; classic/generated maps use their current market centres. Ground control, squad decisions and exposed one-leg truck routes read the local layer. Stable region IDs allow later maps to bring their own districts. Initial local verification passed (898 tests, Costa Brava smoke, and a 200-seed war balance run); the balance run shifts the war economy and losses and needs interpretation before tuning. Not yet: a visible territory map, balance calibration for district control, and authored content for an additional region.
