@@ -147,8 +147,16 @@ static func _runner(sess: Session, role: String) -> Dictionary:
 	var boats := []
 	for b in sess.maritime.boats:
 		if b.kind == "gofast":
-			boats.append({"id": b.id, "x": _r(b.x), "y": _r(b.y), "heading": _r(b.heading), "state": b.state,
-				"cargo": b.cargo.size()})
+			var row := {"id": b.id, "x": _r(b.x), "y": _r(b.y), "heading": _r(b.heading), "state": b.state,
+				"cargo": b.cargo.size()}
+			# where it is going (owner, 17 Oct: waypoints for the logistics on the map): the pickup, then the cove with the load
+			if b.state in ["running", "fleeing"] and not b.cargo.is_empty():
+				row["dest"] = [_r(float(b.home[0])), _r(float(b.home[1]))]
+				row["dest_name"] = "cove"
+			elif b.state in ["to_rendezvous", "waiting"] and b.goal != null:
+				row["dest"] = [_r(float(b.goal[0])), _r(float(b.goal[1]))]
+				row["dest_name"] = "pickup"
+			boats.append(row)
 	out["boats"] = boats
 	var bales := []
 	for b in sess.maritime.bales:

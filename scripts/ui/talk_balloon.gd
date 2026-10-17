@@ -227,7 +227,6 @@ func _next(id: String) -> void:
 		b.pressed.connect(choose.bind(i))
 		choices.add_child(b)
 	hint.text = "UP/DOWN, 1-%d reply   ESC hang up" % _answers.size() if not _answers.is_empty() else "ENTER next   ESC hang up"
-	Speech.line(line.character if line.text != "" else "", line.text, _answers.map(func(r): return str(r.text)))
 	# keep the thread's height sensible: the answers take what they need, the thread the rest
 	var room: float = panel.get_viewport().get_visible_rect().size.y - 48.0 if panel.get_viewport() != null else 700.0
 	panel.offset_top = -minf(250.0 + 150.0 + 44.0 * _answers.size(), room)

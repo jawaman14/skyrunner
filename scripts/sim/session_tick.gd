@@ -68,6 +68,8 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 	if airframe != null:
 		controls = airframe.limit(controls)  # a rough or failed engine, or the cowling off for a repair
 	fm.controls = controls
+	if inp.held.has("reverse"):
+		_back_up(dt)
 	var s := fm.step(dt, world.ground)
 	state = s
 	if s.valid:
@@ -79,6 +81,24 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 		_crew_work(dt, s)
 	if phase == "parked" and not unloading.is_empty():
 		_unload_tick(dt)
+
+
+## Backspace: creep backwards at BACK_UP_MS, only stopped on a strip with the engine at idle (owner, 12 Oct: a way out when stuck).
+func _back_up(dt: float) -> void:
+	var s := state
+	var was := _backing  # a fresh spawn takes a step to settle onto its wheels
+	_backing = false
+	if s == null or not (s.on_ground or was) or s.gs_kts > BACK_UP_MAX_KTS or fm.controls.throttle > 0.05:
+		return
+	var h := deg_to_rad(s.heading)
+	var nx: float = s.x - sin(h) * BACK_UP_MS * dt  # the nose points along (sin h, cos h): backwards is the opposite
+	var ny: float = s.y - cos(h) * BACK_UP_MS * dt
+	if world.airfield_at(nx, ny, 40.0) == null or world.is_water(nx, ny):
+		return
+	_backing = true
+	fm.spawn(nx, ny, s.heading, world.ground(nx, ny), loadout)
+	fm.controls = FlightModel.Controls.make({"brake": 1.0})
+	state = fm.state()
 
 
 static func _any_held(inp: ControlMapper.InputFrame, keys: Array) -> bool:
@@ -251,6 +271,10 @@ func _maritime_event(kind: String, data: Dictionary) -> void:
 	elif kind == "bale_seized":
 		police.score["bales_seized"] += 1
 		law_say("%s recovered a floating bale" % data["cutter"])
+	elif kind == "bale_collected" and job:
+		say("%s: bale aboard (%d)." % [data["boat"], data["count"]])
+	elif kind == "boat_running" and job:
+		say("%s: %d bale(s) aboard, running for the cove." % [data["boat"], data["count"]])
 	elif kind == "bale_splash" and job:
 		say("Splash - bale in the water.")
 	elif kind == "bale_lost" and job:

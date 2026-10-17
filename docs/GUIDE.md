@@ -218,7 +218,7 @@ Your own recordings go in `user://radio/`.
 | F4 | The multiplayer menu: games on your network, the table (mute, remove, seats, chat), voice settings |
 | F6 | Performance overlay |
 | F7 | The radio on / off in the aircraft (`,` and `.` tune): the same real 1979-86 broadcasts as the car's, on one dial |
-| F8 | Controls and settings: rebind keys and axes, read-aloud, the colour-safe palette |
+| F8 | Controls and settings: rebind keys and axes, the colour-safe palette |
 | F9 | Screen filter: off, VHS, colour-blindness simulations |
 | F10 / Shift+F10 | Skip the tutorial step / tutorial on or off |
 | F12 | Feedback bundle (a zip of what happened, to send back) |
@@ -571,8 +571,8 @@ orders. F10 skips a step.
 
 ### 5.21 Accessibility and display
 
-**F8** has the colour-safe palette (Okabe–Ito-style colours that stay apart under protanopia, deuteranopia and tritanopia) and
-read-aloud in the operating system's voice. **F9** cycles the VHS filter and the colour-blindness simulations. The UI scales with
+**F8** has the colour-safe palette (Okabe–Ito-style colours that stay apart under protanopia, deuteranopia and tritanopia). **F9** cycles the VHS filter and the colour-blindness
+simulations. The UI scales with
 the window (tested 1024×768 to 2560×1080). Graphics presets low / medium / high (`--graphics`, or the pause menu).
 
 ---
