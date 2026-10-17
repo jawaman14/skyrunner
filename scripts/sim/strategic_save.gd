@@ -66,6 +66,8 @@ static func capture(s: Session) -> Dictionary:
 		for x in s.stash_net.stashes:
 			st[x.id] = {"heat": x.heat, "intel": x.intel, "burned": x.burned, "works": x.get("works", {}).duplicate()}
 		d["stashes"] = st
+	if s.investigation != null:
+		d["investigation"] = s.investigation.to_dict()
 	if s.logistics != null:
 		var l: Logistics = s.logistics
 		d["logistics"] = {"stock": l.stock.duplicate(true), "cash": l.cash.duplicate(true), "cash_since": l.cash_since.duplicate(true),
@@ -196,6 +198,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 	s.phone_calls.tick(s.time)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
+	if s.investigation != null:
+		s.investigation.load_dict(d.get("investigation", {}))  # an older save has no case files: the task force starts afresh
 	if s.stash_net != null and d.get("stashes") is Dictionary:
 		for id in d.stashes:
 			var st = s.stash_net.get_stash(str(id))

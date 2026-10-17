@@ -246,10 +246,15 @@ func _update_stashes(dt: float) -> void:
 	# the AI task force raids a stash it knows is busy
 	if police.controller == "ai" and time >= _stash_ai_t and ground == null:
 		_stash_ai_t = time + 60.0
-		for st in stash_net.known():
-			if not st.burned and st.heat >= 55.0 and urng.random() < 0.3:
-				_raid(st.id)
-				break
+		if Investigation.ENABLED and investigation != null:
+			for id in investigation.update(time, stash_net):  # the case files: lead, surveillance, warrant, raid (DESIGN §48)
+				_raid(id)
+			_case_messages()
+		else:
+			for st in stash_net.known():
+				if not st.burned and st.heat >= 55.0 and urng.random() < 0.3:
+					_raid(st.id)
+					break
 
 
 ## The markets move: police and rival traffic near each market, the rivals'
@@ -281,6 +286,35 @@ func _update_economy(dt: float) -> void:
 		_news_seen = econ.news.size()
 
 
+## What the street sees of the case files: a stakeout is noticed; a warrant only where a lookout is posted.
+func _case_messages() -> void:
+	for ev in investigation.events:
+		var st = stash_net.get_stash(str(ev[1]))
+		if st == null:
+			continue
+		match str(ev[0]):
+			"surveillance":
+				say("A van has been parked across from %s for a while. Someone is watching it." % st.name)
+				law_say("Surveillance on %s." % st.name)
+			"warrant":
+				law_say("Warrant signed for %s: the raid goes in in %d minutes." % [st.name, int(Investigation.WARRANT_S / 60.0)])
+				if payroll != null and payroll.workers.any(func(w): return w.outfit == "org" and w.role == "lookout" and w.assigned == "stash-" + str(st.id)):
+					say("The lookout at %s: the task force has a warrant. %d minutes to clear it out, or get the lawyer on it." % [st.name, int(Investigation.WARRANT_S / 60.0)])
+			"dropped":
+				law_say("The case on %s went cold." % st.name)
+	investigation.events.clear()
+
+
+## Nothing left to find: the case files' raid on a stash the crew already emptied (DESIGN §48).
+func _stash_empty(id: String) -> bool:
+	if logistics == null or not logistics.stock.has(id):
+		return false
+	for g in logistics.stock[id]:
+		if float(logistics.stock[id][g]) > 0.0:
+			return false
+	return float(logistics.cash.get(id, 0.0)) <= 0.0
+
+
 func _raid(id: String):
 	if payroll != null and stash_net.get_stash(id) != null and not stash_net.get_stash(id).burned and payroll.lookout_warns(id):
 		# the lookout saw them coming: the product was gone before the door came in
@@ -290,6 +324,14 @@ func _raid(id: String):
 		law_funds += 500.0
 		law_say("Raid on %s: empty. Somebody warned them." % ls.name)
 		say("The lookout at %s saw the raid coming: the product was moved. The house is cold for now." % ls.name)
+		bus.emit("raid_foiled", time, "", ["runner", "law"], {"stash": id})
+		return null
+	if Investigation.ENABLED and investigation != null and _stash_empty(id):
+		var es: Dictionary = stash_net.get_stash(id)
+		es.heat = 0.0
+		es.intel = float(es.get("intel", 0.0)) * 0.5
+		law_say("Raid on %s: nothing there." % es.name)
+		say("The task force raided %s and found it empty. The house is cold for now." % es.name)
 		bus.emit("raid_foiled", time, "", ["runner", "law"], {"stash": id})
 		return null
 	var why := stash_net.raid(id)
