@@ -119,7 +119,7 @@ skyrunner/                         the game repo (this checkout is Codex's dirty
   AGENTS.md  CLAUDE.md  HANDOFF.md the rules, project notes, and the durable branch checkpoint (every PR logs in HANDOFF)
   docs/PIPELINE.md                 the pipeline map and the 11 Oct retrospective
   docs/COLLABORATION_SCORE.md      the owner's ledger
-  docs/CLAUDE_ROLE_HANDOFF.md      this file
+  docs/archive/CLAUDE_ROLE_HANDOFF.md      this file
   tools/collab/                    sync_shared, run_locked, board_status, notify, wake_codex, dashboard, (PR #335: relay_reviews, mcp_client)
   tools/local_llm/                 (PR #336) worker.py, alerts.py, README.md
   tools/mcp/                       the pinned launcher, JOIN.md (PR #340), COLLABORATION.md
