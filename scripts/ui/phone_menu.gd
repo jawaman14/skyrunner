@@ -23,14 +23,25 @@ extends GameMenu
 signal called(action: String)
 signal waypoint_to(world: Vector2)
 
+## The phone as the hub (owner, 18 Oct; the system map's proposal): [page, name, colour, glyph]. Work, People and Empire
+## gather what used to be Jobs, Contacts and Bank; Guide and Help bring the chapter guide and the F1 sheet in.
 const APPS := [
-	["contacts", "Contacts", Color(0.3, 0.85, 0.45)],
-	["messages", "Messages", Color(0.35, 0.65, 1.0)],
-	["map", "Map", Color(1.0, 0.55, 0.25)],
-	["jobs", "Jobs", Color(0.95, 0.8, 0.3)],
-	["bank", "Bank", Color(0.45, 0.9, 0.85)],
-	["radio", "Radio", Color(0.95, 0.4, 0.7)],
-	["settings", "Settings", Color(0.65, 0.65, 0.72)],
+	["work", "Work", Color(0.95, 0.8, 0.3), "jobs"],
+	["contacts", "People", Color(0.3, 0.85, 0.45), "contacts"],
+	["empire", "Empire", Color(0.45, 0.9, 0.85), "bank"],
+	["map", "Map", Color(1.0, 0.55, 0.25), "map"],
+	["messages", "Messages", Color(0.35, 0.65, 1.0), "messages"],
+	["guide", "Guide", Color(0.85, 0.7, 1.0), "guide"],
+	["help", "Help", Color(0.8, 0.8, 0.5), "help"],
+	["radio", "Radio", Color(0.95, 0.4, 0.7), "radio"],
+	["settings", "Settings", Color(0.65, 0.65, 0.72), "settings"],
+]
+## People, in groups: each contact's action, by group.
+const GROUPS := [
+	["Crew and business", ["crew", "buyers", "dealer", "logistics", "rackets", "desk"]],
+	["Law and politics", ["lawyer", "family", "general"]],
+	["Leisure", ["casino", "track", "psych"]],
+	["Rides", ["taxi"]],
 ]
 const W := 380.0
 const H := 540.0
@@ -46,6 +57,8 @@ var _tiles: Array = []
 var _sel := 0
 var _info: Label
 var _jobs: Array = []
+var _work: Array = []  ## the Work page's rows: [kind, payload] - "board", "job" (a Job), or "" for a heading
+var _empire: Array = []  ## the Empire page's rows: an action to call, or "" for a line
 var _call_ids: Array = []  ## the ringing calls last drawn: a new one refreshes the phone
 var history_label: Label  ## Contacts: the last few calls, answered, declined or missed
 var campaign_scroll: ScrollContainer  ## the chapter guide (G, or its button on the home screen), over any app
@@ -108,7 +121,7 @@ func _build() -> void:
 		icon.custom_minimum_size = Vector2(64, 64)
 		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		var glyph := AppGlyph.new()
-		glyph.kind = str(a[0])
+		glyph.kind = str(a[3])
 		glyph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon.add_child(glyph)
@@ -161,6 +174,12 @@ class AppGlyph:
 				draw_circle(c + Vector2(0, r * 0.5), r * 0.22, ink)
 				for k in 3:
 					draw_arc(c + Vector2(0, r * 0.5), r * (0.55 + 0.4 * k), deg_to_rad(-140), deg_to_rad(-40), 12, ink, 3.0, true)
+			"guide":
+				draw_rect(Rect2(c - Vector2(r * 0.9, r * 0.8), Vector2(r * 1.8, r * 1.6)), ink)
+				for k in 3:
+					draw_line(c + Vector2(-r * 0.55, -r * 0.35 + k * r * 0.38), c + Vector2(r * 0.55, -r * 0.35 + k * r * 0.38), Color(1, 1, 1, 0.85), 3.0)
+			"help":
+				draw_string(UIStyle.mono(), c + Vector2(-r, r * 0.7), "?", HORIZONTAL_ALIGNMENT_CENTER, r * 2, int(r * 2.2), ink)
 			"settings":
 				for k in 8:
 					var a := TAU * k / 8.0
@@ -177,6 +196,21 @@ func _style_tiles() -> void:
 		for st in ["normal", "hover", "pressed", "focus"]:
 			b.add_theme_stylebox_override(st, UIStyle.box(col if on else col.darkened(0.35), 18, Color(1, 1, 1, 0.85) if on else Color(0, 0, 0, 0), 3 if on else 0, Vector4(0, 0, 0, 0)))
 		b.add_theme_color_override("font_color", Color(0.04, 0.04, 0.06))
+
+
+## The phone book in its groups: a heading row ["", "Leisure", ""] before each group that has anyone in it.
+func grouped_contacts() -> Array:
+	var all := contacts()
+	var out := []
+	for g in GROUPS:
+		var members := all.filter(func(r): return str(r[0]) in g[1])
+		if not members.is_empty():
+			out.append(["", str(g[0]), ""])
+			out.append_array(members)
+	for r in all:  # anyone a group does not name still gets called
+		if not GROUPS.any(func(g): return str(r[0]) in g[1]):
+			out.append(r)
+	return out
 
 
 ## Who is on the phone book this game: only the systems that are switched on.
@@ -219,13 +253,19 @@ func open() -> void:
 		open_app("contacts")
 
 
-## Open one of the apps (or do what it does at once: Map and Settings put the phone away).
+## Open one of the apps (or do what it does at once: Map, Help and Settings put the phone away; Guide opens the chapter guide).
 func open_app(id: String) -> void:
 	match id:
-		"map", "settings":
+		"map", "settings", "help":
 			page = "home"
 			super.close()
 			called.emit(id)
+			return
+		"guide":
+			if s.story != null:
+				campaign_button.pressed.emit()
+			else:
+				show_feedback("No story in this game: there is no chapter guide.", false)
 			return
 	page = id
 	campaign_scroll.visible = false
@@ -264,7 +304,7 @@ func refresh() -> void:
 	rows = []
 	for call in s.phone_calls.pending():
 		rows.append([str(call.action), str(call.from), "RINGING: Enter to answer, D to decline", int(call.id)])
-	rows.append_array(contacts())
+	rows.append_array(grouped_contacts())
 	_call_ids = s.phone_calls.pending().map(func(call): return int(call.id))
 	var recent: Array[Dictionary] = s.phone_calls.history().filter(func(call): return call.state != "pending")
 	history_label.text = "\n".join(recent.slice(-3).map(func(call): return "%s: %s. Call back from the book." % [str(call.state).capitalize(), str(call.from)]))
@@ -280,8 +320,12 @@ func refresh() -> void:
 	match page:
 		"contacts":
 			title.text = "Contacts"
+			title.text = "People"
 			for r in rows:
-				list.add_row([("INCOMING  " if r.size() > 3 else ("NEW  " if fresh.has(r[0]) else "")) + str(r[1])])
+				if str(r[0]) == "" and r.size() <= 3:
+					list.section(str(r[1]))
+				else:
+					list.add_row([("INCOMING  " if r.size() > 3 else ("NEW  " if fresh.has(r[0]) else "")) + str(r[1])])
 			if rows.is_empty():
 				footer.text = "Nobody to call yet."
 			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "answer / call", "enter"], ["D", "decline", "d"], ["ESC", "back", "esc"]])
@@ -290,19 +334,32 @@ func refresh() -> void:
 			for m in _messages():
 				list.add_row([m])
 			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
-		"jobs":
-			title.text = "Jobs"
+		"work":
+			title.text = "Work"
 			_jobs = s.active_jobs.slice(0, 12)
+			_work = []
+			list.section("The job board")
+			_work.append(["", null])
+			list.add_row(["Open the job board"])
+			_work.append(["board", null])
+			list.section("My jobs: ENTER puts a waypoint on one")
+			_work.append(["", null])
 			for j in _jobs:
 				list.add_row(["%s%s   $%s" % ["HOT " if j.hot() else "", j.dest_label(), Py.money(j.payout)]])
+				_work.append(["job", j])
 			if _jobs.is_empty():
-				footer.text = "No jobs taken. The board is J at a strip's hangar."
-			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "waypoint", "enter"], ["ESC", "back", "esc"]])
-		"bank":
-			title.text = "Bank"
-			for line in _bank_lines():
-				list.add_row([line])
-			hints.set_hints([["ESC", "back", "esc"]])
+				footer.text = "No jobs taken yet."
+			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "open / waypoint", "enter"], ["ESC", "back", "esc"]])
+		"empire":
+			title.text = "Empire"
+			_empire = []
+			for part in _empire_parts():
+				list.section(str(part[0]))
+				_empire.append("")
+				for item in part[1]:
+					list.add_row([str(item[0])])
+					_empire.append(str(item[1]))
+			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "open", "enter"], ["ESC", "back", "esc"]])
 		"radio":
 			title.text = "Radio"
 			if radio != null:
@@ -343,6 +400,32 @@ func _messages() -> Array:
 	return out
 
 
+## The Empire page: [heading, [[line, action or ""], ...]] for money, the fleet and the turf.
+func _empire_parts() -> Array:
+	var money := []
+	for line in _bank_lines():
+		money.append([line, ""])
+	if s.logistics != null:
+		money.append(["Dispatch: move product and cash", "logistics"])
+	var fleet := [["Flying the %s" % s.spec.name, ""]]
+	if s.owned.size() > 1:
+		fleet.append(["Aircraft owned: %d" % s.owned.size(), ""])
+	if s.airframe != null:
+		var v: Dictionary = s.airframe.view(false)
+		fleet.append(["Engine %s, airframe %s" % [v.get("engine", "?"), v.get("airframe", "?")], ""])
+	if s.dealer != null:
+		fleet.append(["The car lot: cars, vans and trucks", "dealer"])
+	var parts := [["Money", money], ["Fleet", fleet]]
+	var turf := []
+	if s.rackets != null:
+		turf.append(["The collectors: the streets we hold", "rackets"])
+	if s.nights != null or s.ground != null:
+		turf.append(["The desk: orders and squads", "desk"])
+	if not turf.is_empty():
+		parts.append(["Turf", turf])
+	return parts
+
+
 func _bank_lines() -> Array:
 	var out := ["In hand: $%s" % Py.money(s.money)]
 	if s.logistics != null:
@@ -368,8 +451,8 @@ func _update_info() -> void:
 		_info.text = str(rows[i][2])
 	elif page == "radio" and radio != null and i >= 0 and i < radio.stations.size():
 		_info.text = str(radio.stations[i].blurb)
-	elif page == "jobs" and i >= 0 and i < _jobs.size():
-		var j = _jobs[i]
+	elif page == "work" and i >= 0 and i < _work.size() and str(_work[i][0]) == "job":
+		var j = _work[i][1]
 		var tl = j.time_left(s.time)
 		_info.text = "%s%s" % [j.dest_label(), ("  -  %d:%02d left" % [int(tl / 60), int(fposmod(tl, 60))]) if tl != null else ""]
 
@@ -423,6 +506,8 @@ func key(k: String) -> void:
 					if i < 0 or i >= rows.size():
 						return
 					var action: String = rows[i][0]
+					if action == "" and rows[i].size() <= 3:
+						return  # a group's heading
 					if rows[i].size() > 3:
 						var result: Array = s.command(Roles.PILOT, "phone_answer", {"id": rows[i][3]})
 						if not result[0]:
@@ -433,12 +518,21 @@ func key(k: String) -> void:
 					page = "home"
 					super.close()
 					called.emit(action)
-				"jobs":
-					if i >= 0 and i < _jobs.size():
-						var xy: Array = s.job_xy(_jobs[i])
+				"work":
+					if i < 0 or i >= _work.size() or str(_work[i][0]) == "":
+						return
+					page = "home"
+					super.close()
+					if str(_work[i][0]) == "board":
+						called.emit("job_board")
+					else:
+						var xy: Array = s.job_xy(_work[i][1])
 						waypoint_to.emit(Vector2(float(xy[0]), float(xy[1])))
+				"empire":
+					if i >= 0 and i < _empire.size() and str(_empire[i]) != "":
 						page = "home"
 						super.close()
+						called.emit(str(_empire[i]))
 				"radio":
 					if radio != null and i >= 0 and i < radio.stations.size():
 						radio.idx = i

@@ -978,6 +978,13 @@ func _phone_call(action: String) -> void:
 			_map_toggle()
 		"settings":
 			open_pause()
+		"help":
+			help.visible = true
+		"job_board":
+			if not on_foot and s.parked:
+				_toggle_menu("j")
+			else:
+				s.say("The job board is at the strip: park the aircraft, or walk up to the board and press E.")
 		"desk":
 			_open("hq")
 		"logistics":

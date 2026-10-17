@@ -100,6 +100,57 @@ func test_expired_or_removed_offer_cannot_be_answered() -> void:
 	check(not s.command(Roles.PILOT, "phone_answer", {"id": call.id})[0])
 
 
+## Owner, 18 Oct: the phone as the hub. Nine apps in the proposal's order; People in groups with headings that do nothing;
+## Work opens the job board; Empire gathers the money, the fleet and the business contacts.
+func _hub() -> PhoneMenu:
+	var s := _live()
+	_menu = PhoneMenu.new()
+	Engine.get_main_loop().root.add_child(_menu)
+	_menu.setup(s)
+	_menu.open()
+	return _menu
+
+
+func test_the_hub_has_its_apps_in_order() -> void:
+	_hub()
+	var ids: Array = PhoneMenu.APPS.map(func(a): return a[0])
+	check_eq(ids, ["work", "contacts", "empire", "map", "messages", "guide", "help", "radio", "settings"])
+	_menu.key("2")
+	check_eq(_menu.page, "contacts", "2 opens People")
+
+
+func test_people_are_grouped_and_a_heading_calls_nobody() -> void:
+	var m := _hub()
+	m.open_app("contacts")
+	var headings: Array = m.rows.filter(func(r): return str(r[0]) == "" and r.size() <= 3).map(func(r): return str(r[1]))
+	check(headings.has("Law and politics"), "the Family sits under Law and politics: %s" % [headings])
+	var at_family: int = m.rows.map(func(r): return str(r[0])).find("family")
+	check(at_family > 0 and str(m.rows[at_family - 1][1]) in ["Law and politics", "Your lawyer"], "inside its group")
+	var called: Array = []
+	m.called.connect(func(a): called.append(a))
+	var h: int = m.rows.map(func(r): return str(r[1])).find("Law and politics")
+	m.list.select(h)
+	if m.list.selected_row() == h:
+		m.key("enter")
+		check(called.is_empty() and m.visible, "ENTER on a heading calls nobody and keeps the phone out")
+	else:
+		check(m.list.selected_row() != h, "a heading cannot be selected")
+
+
+func test_work_opens_the_job_board_and_empire_shows_the_money() -> void:
+	var m := _hub()
+	var called: Array = []
+	m.called.connect(func(a): called.append(a))
+	m.open_app("work")
+	m.list.select(1)
+	m.key("enter")
+	check_eq(called, ["job_board"], "Work's first row opens the job board")
+	m.open()
+	m.open_app("empire")
+	check(m._empire.size() == m.list.row_count(), "one action slot per row")
+	check(m._empire_parts()[0][1][0][0].begins_with("In hand: $"), "Empire opens on the money in hand")
+
+
 func test_phone_input_answers_once_and_refresh_preserves_contact_identity() -> void:
 	var s := _live()
 	_menu = PhoneMenu.new()
