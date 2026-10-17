@@ -265,6 +265,12 @@ var radio: RadioNet
 var controller := "ai"  ## ai | human
 var features := {"interceptors": true, "rivals": true}
 var suspicion_scale := 1.0  ## see EARLY_PACE
+var tail_heat_mult := 1.0  ## the runner's aircraft is known (Investigation, DESIGN §48): its sightings count for more
+
+
+## What a sighting of `c` is worth: the chapter's pace, and for the runner how known the aircraft is.
+func _scale(c: Case) -> float:
+	return suspicion_scale * (tail_heat_mult if c.target_id == "runner" else 1.0)
 var stock := {"heli": 1, "interceptor": 2, "cutter": 1}
 var units: Array = []
 var cases := {}
@@ -847,7 +853,7 @@ func _classify(t: Target, dt: float) -> void:
 				_squawk_code(c, sig)
 	# squawk lost while being tracked: the classic tell
 	if site_code and not sig.transponder and 0 < now - c.identified_t and now - c.identified_t < 20 and c.squawk:
-		c.suspicion = minf(100.0, c.suspicion + 50 * suspicion_scale)
+		c.suspicion = minf(100.0, c.suspicion + 50 * _scale(c))
 		_say("Center", "squawk %s lost at %s, primary only" % [c.squawk, site_code], null)
 		c.squawk = ""
 	if c.wanted:
@@ -870,7 +876,7 @@ func _classify(t: Target, dt: float) -> void:
 			# legitimate traffic doesn't let down into an unlit quarry or a farmer's field
 			c.odd_destination[af.code] = true
 			var bump := ODD_DESTINATION_SUSPICION if af.kind == "shady" else BUSH_DESTINATION_SUSPICION
-			c.suspicion = minf(100.0, c.suspicion + bump * suspicion_scale)
+			c.suspicion = minf(100.0, c.suspicion + bump * _scale(c))
 			if c.suspicion >= 100:
 				law_events.append("Track %s flagged: nobody legit lands at %s" % [alias(sig.id), af.name])
 				if controller == "ai":
@@ -899,7 +905,7 @@ func _classify(t: Target, dt: float) -> void:
 				c.drop_alerted = true
 				law_events.append("ALERT: possible airdrop pattern near %s,%s km" % [Py.f(sig.x / 1000, 1), Py.f(sig.y / 1000, 1)])
 				tips.append(Tip.new(now, sig.x, sig.y, 1500, "possible airdrop"))
-		c.suspicion += dt * rate * suspicion_scale
+		c.suspicion += dt * rate * _scale(c)
 		if c.suspicion >= 100:
 			c.suspicion = 100
 			events.append("%s has you. Police dispatched!" % site.name)
