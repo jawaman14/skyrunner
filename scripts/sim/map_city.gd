@@ -123,9 +123,9 @@ static func _strip_specs() -> Array:
 		["FRM", "Finca Morales", -1500.0, -2600.0, 0.0, 480.0, 20.0, null, "grass", "bush", {}, "flat", 700.0, [15.0, 260.0]],
 		["MGR", "Barra del Rio", -12600.0, -9400.0, 60.0, 340.0, 18.0, 3.0, "sand", "shady", {"setting": "beach"}, "beach", 700.0,
 			[0.5, 20.0]],
-		["QRY", "Old Quarry", 10500.0, 1700.0, 0.0, 240.0, 18.0, null, "dirt", "shady",
-			{"setting": "pit", "haul_road": 0}, "pit", 1400.0, [120.0, 600.0]],
-		["EGL", "Mesa del Aguila", -7500.0, 8800.0, 90.0, 280.0, 18.0, null, "dirt", "bush", {"setting": "plateau"}, "plateau", 3500.0,
+		["QRY", "Old Quarry", 10500.0, 1700.0, 0.0, 620.0, 18.0, null, "dirt", "shady",
+			{"setting": "pit", "haul_road": 0, "pin": [10704.1, 701.8, 110.0]}, "pit", 1400.0, [120.0, 600.0]],
+		["EGL", "Mesa del Aguila", -7500.0, 8800.0, 90.0, 560.0, 18.0, null, "dirt", "bush", {"setting": "plateau"}, "plateau", 3500.0,
 			[950.0, 1600.0]],
 		["PNR", "La Selva", 4700.0, 8200.0, 90.0, 380.0, 18.0, null, "gravel", "bush", {"tree_lines": true}, "flat", 1800.0,
 			[150.0, 650.0]],
@@ -140,6 +140,7 @@ static func _strip_specs() -> Array:
 static func generate() -> MapLayout:
 	var l := MapLayout.new()
 	l.id = "city"
+	l.region_id = "costa-brava"
 	l.map_seed = SEED
 	l.terrain_seed = TERRAIN_SEED
 	l.params = _params()
@@ -174,15 +175,33 @@ static func generate() -> MapLayout:
 			x = at[1]
 			y = at[2]
 			hdg = at[3]
+		var pin = s[10].get("pin")  # a fixed site: the search above still runs, so the shared random draws (and every later strip) stay as they were
+		if pin != null:
+			x = pin[0]
+			y = pin[1]
+			hdg = pin[2]
 		if s[11] == "plateau":
 			elev = snappedf(base.height64(x, y), 1.0)
 		var opts: Dictionary = s[10].duplicate()
+		opts.erase("pin")
 		if s[11] == "pit":
 			opts["haul_road"] = 1 if sin(deg_to_rad(hdg)) > 0 else 0  # the end facing east
 		placed.append(Airfield.new(s[0], s[1], x, y, hdg, s[5], s[6], elev, s[8], s[9], opts))
 	l.airfields = placed
 	l.zone_fields = {"west": ["FRM", "QRY", "MGR"], "north": ["EGL", "PNR"], "sea": ["COV", "ISL"]}
 	l.zone_centre = {"west": [-3500.0, -3000.0], "north": [1000.0, 8500.0], "sea": [13500.0, -11500.0]}
+	l.territories = [
+		{"id": "san-telmo-centro", "name": "San Telmo Centro", "market": "west", "center": Vector2(-650.0, -10000.0), "bounds": Rect2(-1700.0, -11000.0, 2100.0, 1900.0), "neighbors": ["barrio-chino", "the-docks", "airport-coast"], "tags": ["city", "commercial"]},
+		{"id": "barrio-chino", "name": "Barrio Chino", "market": "west", "center": Vector2(1250.0, -9700.0), "bounds": Rect2(400.0, -10500.0, 1900.0, 1500.0), "neighbors": ["san-telmo-centro", "valle-verde"], "tags": ["city", "residential", "stash-corridor"]},
+		{"id": "the-docks", "name": "The Docks", "market": "sea", "center": Vector2(-2900.0, -10850.0), "bounds": Rect2(-4500.0, -11900.0, 2800.0, 1900.0), "neighbors": ["san-telmo-centro", "airport-coast", "rio-negro-estuary"], "tags": ["port", "commercial", "logistics"]},
+		{"id": "airport-coast", "name": "Airport Coast", "market": "town", "center": Vector2(-6600.0, -10000.0), "bounds": Rect2(-9000.0, -11800.0, 4500.0, 3400.0), "neighbors": ["san-telmo-centro", "the-docks", "rio-negro-estuary", "valle-verde"], "tags": ["airfield", "logistics"]},
+		{"id": "rio-negro-estuary", "name": "Rio Negro Estuary", "market": "west", "center": Vector2(-11800.0, -6500.0), "bounds": Rect2(-16000.0, -8800.0, 7000.0, 5300.0), "neighbors": ["the-docks", "airport-coast", "valle-verde"], "tags": ["river", "mangrove", "remote"]},
+		{"id": "valle-verde", "name": "Valle Verde", "market": "west", "center": Vector2(1000.0, -4200.0), "bounds": Rect2(-9000.0, -8500.0, 18000.0, 6500.0), "neighbors": ["barrio-chino", "airport-coast", "rio-negro-estuary", "la-selva", "old-quarry"], "tags": ["rural", "farm", "airfield"]},
+		{"id": "la-selva", "name": "La Selva", "market": "north", "center": Vector2(4500.0, 7800.0), "bounds": Rect2(-3000.0, 0.0, 12000.0, 13500.0), "neighbors": ["valle-verde", "sierra-del-aguila", "old-quarry"], "tags": ["jungle", "remote", "stash-corridor"]},
+		{"id": "sierra-del-aguila", "name": "Sierra del Aguila", "market": "north", "center": Vector2(-7500.0, 8500.0), "bounds": Rect2(-12000.0, 0.0, 9000.0, 13500.0), "neighbors": ["valle-verde", "la-selva"], "tags": ["highland", "airfield", "remote"]},
+		{"id": "old-quarry", "name": "Old Quarry", "market": "west", "center": Vector2(10500.0, 1700.0), "bounds": Rect2(9000.0, -6500.0, 6500.0, 13000.0), "neighbors": ["valle-verde", "la-selva", "smugglers-cove"], "tags": ["industrial", "road-chokepoint"]},
+		{"id": "smugglers-cove", "name": "Smuggler's Cove", "market": "sea", "center": Vector2(11600.0, -9300.0), "bounds": Rect2(9000.0, -13000.0, 6500.0, 6500.0), "neighbors": ["old-quarry"], "tags": ["coastal", "boat-landing", "remote"]},
+	]
 	l.aerostat_pos = [5500.0, -13800.0]
 	var planned := load_roads()
 	l.roads = planned.get("roads", ROADS.duplicate(true))
