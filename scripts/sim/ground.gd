@@ -1141,6 +1141,13 @@ func truck_contacts() -> Array:
 	var out := []
 	if sess.stash_net == null:
 		return out
+	# a truck that left the road mid-fight (seized from the air, or delivered) ends its roadside fight: no guard is left behind
+	var live := {}
+	for t in sess.stash_net.trucks:
+		live[t.job_id] = true
+	for jid in _roadside.keys():
+		if not live.has(jid):
+			_end_roadside(jid)
 	# a decoy car pulled over: the checkpoint wastes its time on it
 	for d in squads:
 		if d.faction != "org" or d.tactic != "decoy" or d.state == "gone":
@@ -1217,6 +1224,26 @@ func truck_contacts() -> Array:
 				t.hold(TICK_S)
 				break
 	return out
+
+
+## Ends a roadside fight whose truck is gone: the fight closes without a result and the transient guard leaves the map.
+func _end_roadside(jid) -> void:
+	var rs: Dictionary = _roadside[jid]
+	_roadside.erase(jid)
+	var guard: Squad = rs.guard
+	var raider: Squad = rs.rival
+	var f = guard.fight
+	if f != null:
+		f.over = true
+		fights.erase(f)
+		if raider.fight == f:
+			raider.fight = null
+			raider.state = "holding"
+	raider.tactic = ""
+	raider.hidden = false
+	guard.fight = null
+	guard.state = "gone"
+	squads.erase(guard)
 
 
 ## The driver and a hand, as a squad, for the length of a roadside fight (not hired, not on the payroll, gone when it ends).
