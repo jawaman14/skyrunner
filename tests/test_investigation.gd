@@ -143,3 +143,27 @@ func test_in_a_game_flying_wanted_makes_the_police_count_sightings_higher() -> v
 	for i in 20:
 		s._update_stashes(60.0)
 	check(s.police.tail_heat_mult > 1.2, "the police know the aircraft (%.2f)" % s.police.tail_heat_mult)
+
+
+func test_a_hot_district_makes_roadblocks_likelier_and_cools() -> void:
+	var inv := Investigation.new()
+	check_eq(inv.district_risk("west"), 0.0, "a quiet district adds nothing")
+	inv.heat_district("west", Investigation.DISTRICT_RAIDED)
+	inv.heat_district("west", Investigation.DISTRICT_SEIZED)
+	check_near(inv.district_risk("west"), 40.0 / 400.0, 0.0001, "a raid and a seizure: +0.10 on the roadblock odds")
+	check_eq(inv.district_risk("north"), 0.0, "next door is quiet")
+	inv.cool_districts(20 * 60.0)
+	check_near(float(inv.district_heat["west"]), 30.0, 0.001, "it cools half a point a minute")
+	var back := Investigation.new()
+	back.load_dict(JSON.parse_string(JSON.stringify(inv.to_dict())))
+	check_near(float(back.district_heat["west"]), 30.0, 0.001, "and is saved")
+
+
+func test_in_a_game_a_raid_heats_its_district() -> void:
+	var s := _game()
+	var st: Dictionary = s.stash_net.live()[0]
+	st.heat = 80.0
+	s.logistics.stock[st.id]["cocaine"] = 10.0
+	s._raid(st.id)
+	check(st.burned, "the raid went in")
+	check(s.investigation.district_risk(str(st.zone)) > 0.0, "and the district is hotter")

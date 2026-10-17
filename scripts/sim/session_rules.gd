@@ -175,6 +175,8 @@ func _truck_out(job: Jobs.Job, af: Airfield) -> void:
 	var g := _grade(job)
 	var c := police.case("runner")
 	var risk := (0.15 if af.police else 0.0) + (0.1 if (c.tipped or c.wanted) else 0.0)
+	if Investigation.ENABLED and investigation != null and stash_net.get_stash(job.stash) != null:
+		risk += investigation.district_risk(str(stash_net.get_stash(job.stash).get("zone", "")))  # a hot district (DESIGN §48)
 	var t := stash_net.dispatch(job, af, time, g[0], risk)
 	if payroll != null:
 		var d: Array = payroll.driver_for(str(job.id))
@@ -201,6 +203,7 @@ func _update_stashes(dt: float) -> void:
 	if Investigation.ENABLED and investigation != null and state != null:
 		var c: PoliceSystem.Case = police.case("runner")
 		var af_here = World.AIRFIELD_BY_CODE.get(location) if parked else null
+		investigation.cool_districts(dt)
 		police.tail_heat_mult = investigation.update_tail(dt, str(aircraft_key), c.wanted > 0, c.detected_by != null and not transponder,
 			parked, af_here != null and bool(af_here.shop))
 	var results := stash_net.update(dt, time, police.units.filter(func(u): return u.faction() == "police"))
@@ -242,6 +245,8 @@ func _update_stashes(dt: float) -> void:
 				payroll.lose(t.driver, "arrested")
 				t.driver = ""
 			say("The truck to %s was stopped (%s). The load is gone." % [st.name, r[2]])
+			if Investigation.ENABLED and investigation != null:
+				investigation.heat_district(str(st.get("zone", "")), Investigation.DISTRICT_SEIZED)
 			law_say("Truck stopped on the road to %s: %d crates seized" % [st.name, t.items])
 			law_funds += 2000.0 + 300.0 * t.items
 			econ.record_seizure("guns" if not t.weapons.is_empty() else "cocaine", st.zone)
@@ -351,6 +356,8 @@ func _raid(id: String):
 		stash_net.trucks.erase(t)
 	law_funds += 2000.0 + 1500.0 * taken.size()
 	econ.record_seizure("cocaine", st.zone)
+	if Investigation.ENABLED and investigation != null:
+		investigation.heat_district(str(st.zone), Investigation.DISTRICT_RAIDED)
 	for t in taken:
 		_seize_weapons(t.weapons, "the truck at the door")
 	if Arsenal.REALISM and arsenals.has("org") and arsenals["org"].cache == id and not arsenals["org"].is_empty():

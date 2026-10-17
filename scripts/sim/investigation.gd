@@ -31,10 +31,16 @@ const TAIL_PARKED_MIN := 1.0  ## parked
 const TAIL_HANGAR_MIN := 3.0  ## parked at a field with a hangar
 const TAIL_MULT := 0.5  ## a fully known aircraft's sightings count 1.5 times
 const TAIL_KNOWN := 50.0
+## District heat (per map zone, 0..100): seizures and raids there; it cools DISTRICT_COOL_MIN a minute.
+const DISTRICT_SEIZED := 15.0
+const DISTRICT_RAIDED := 25.0
+const DISTRICT_COOL_MIN := 0.5
+const DISTRICT_RISK := 1.0 / 400.0  ## roadblock odds per point: a district at 100 adds 0.25
 
 var cases := {}  ## stash id -> {"stage": String, "since": float, "until": float}
 var events: Array = []  ## [stage or "dropped", stash id], for the session's messages; ["tail_known", aircraft key] too
 var tail_heat := {}  ## aircraft key -> heat 0..100
+var district_heat := {}  ## map zone -> heat 0..100
 var rng: PyRandom
 
 
@@ -95,6 +101,21 @@ func update_tail(dt: float, key: String, wanted: bool, tracked_dark: bool, parke
 	return tail_mult(key)
 
 
+## Something happened in `zone` (a truck seized, a stash raided): the streets there get hotter.
+func heat_district(zone: String, pts: float) -> void:
+	district_heat[zone] = clampf(float(district_heat.get(zone, 0.0)) + pts, 0.0, 100.0)
+
+
+func cool_districts(dt: float) -> void:
+	for z in district_heat.keys():
+		district_heat[z] = maxf(0.0, float(district_heat[z]) - DISTRICT_COOL_MIN * dt / 60.0)
+
+
+## What a hot district adds to a truck's roadblock odds there.
+func district_risk(zone: String) -> float:
+	return float(district_heat.get(zone, 0.0)) * DISTRICT_RISK
+
+
 func tail_mult(key: String) -> float:
 	return 1.0 + TAIL_MULT * float(tail_heat.get(key, 0.0)) / 100.0
 
@@ -130,12 +151,16 @@ func view(stash_net, now: float, warned := {}) -> Array:
 
 
 func to_dict() -> Dictionary:
-	return {"cases": cases.duplicate(true), "tail_heat": tail_heat.duplicate()}
+	return {"cases": cases.duplicate(true), "tail_heat": tail_heat.duplicate(), "district_heat": district_heat.duplicate()}
 
 
 func load_dict(d) -> void:
 	cases = {}
 	tail_heat = {}
+	district_heat = {}
+	if d is Dictionary and d.get("district_heat") is Dictionary:
+		for z in d.district_heat:
+			district_heat[str(z)] = clampf(float(d.district_heat[z]), 0.0, 100.0)
 	if d is Dictionary and d.get("tail_heat") is Dictionary:
 		for k in d.tail_heat:
 			tail_heat[str(k)] = clampf(float(d.tail_heat[k]), 0.0, 100.0)
