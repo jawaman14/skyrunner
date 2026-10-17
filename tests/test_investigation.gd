@@ -107,3 +107,16 @@ func test_with_the_switch_off_no_case_files_are_opened() -> void:
 	s._stash_ai_t = 0.0
 	s._update_stashes(1.0)
 	check(s.investigation.cases.is_empty(), "the old roll runs instead")
+
+
+func test_the_lawyer_challenges_a_warrant_from_the_game() -> void:
+	var s := _game()
+	var st: Dictionary = s.stash_net.live()[0]
+	var id := str(st.id)
+	check(not s.command(Roles.PILOT, "challenge_warrant", {"stash": id})[0], "no warrant, nothing to challenge")
+	s.investigation.cases[id] = {"stage": "warrant", "since": s.time, "until": s.time + 240.0}
+	var before := s.money
+	var r: Array = s.command(Roles.PILOT, "challenge_warrant", {"stash": id})
+	check(r[0], "the lawyer goes to the judge: %s" % [r])
+	check_eq(s.money, before - Investigation.CHALLENGE_FEE, "for his fee")
+	check(s.investigation.stage_of(id) in ["warrant", "surveillance"], "the warrant stands or goes back to surveillance")
