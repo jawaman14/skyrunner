@@ -622,8 +622,8 @@
     "field": "QRY",
     "fuel_frac": 0.3,
     "map_seed": 100000,
-    "max_payload_frac": 0.125,
-    "max_payload_lb": 76.125,
+    "max_payload_frac": 1.0,
+    "max_payload_lb": 609.0,
     "payload_room_lb": 609.0,
     "runs": [
       {
@@ -632,34 +632,9 @@
         "status": "pass"
       },
       {
-        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
-        "payload_frac": 1.0,
-        "status": "fail"
-      },
-      {
-        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
-        "payload_frac": 0.5,
-        "status": "fail"
-      },
-      {
-        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
-        "payload_frac": 0.25,
-        "status": "fail"
-      },
-      {
         "outcome": "3km",
-        "payload_frac": 0.125,
+        "payload_frac": 1.0,
         "status": "pass"
-      },
-      {
-        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
-        "payload_frac": 0.1875,
-        "status": "fail"
-      },
-      {
-        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
-        "payload_frac": 0.15625,
-        "status": "fail"
       }
     ],
     "samples": [
@@ -669,27 +644,7 @@
       ],
       [
         1.0,
-        false
-      ],
-      [
-        0.5,
-        false
-      ],
-      [
-        0.25,
-        false
-      ],
-      [
-        0.125,
         true
-      ],
-      [
-        0.1875,
-        false
-      ],
-      [
-        0.15625,
-        false
       ]
     ],
     "terrain": "natural"
@@ -701,74 +656,20 @@
     "field": "QRY",
     "fuel_frac": 0.3,
     "map_seed": 100000,
-    "max_payload_frac": 0.59375,
-    "max_payload_lb": 617.5,
+    "max_payload_frac": null,
+    "max_payload_lb": null,
     "payload_room_lb": 1040.0,
     "runs": [
       {
-        "outcome": "3km",
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
         "payload_frac": 0.0,
-        "status": "pass"
-      },
-      {
-        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
-        "payload_frac": 1.0,
         "status": "fail"
-      },
-      {
-        "outcome": "3km",
-        "payload_frac": 0.5,
-        "status": "pass"
-      },
-      {
-        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
-        "payload_frac": 0.75,
-        "status": "fail"
-      },
-      {
-        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
-        "payload_frac": 0.625,
-        "status": "fail"
-      },
-      {
-        "outcome": "3km",
-        "payload_frac": 0.5625,
-        "status": "pass"
-      },
-      {
-        "outcome": "3km",
-        "payload_frac": 0.59375,
-        "status": "pass"
       }
     ],
     "samples": [
       [
         0.0,
-        true
-      ],
-      [
-        1.0,
         false
-      ],
-      [
-        0.5,
-        true
-      ],
-      [
-        0.75,
-        false
-      ],
-      [
-        0.625,
-        false
-      ],
-      [
-        0.5625,
-        true
-      ],
-      [
-        0.59375,
-        true
       ]
     ],
     "terrain": "natural"
@@ -785,7 +686,7 @@
     "payload_room_lb": 609.0,
     "runs": [
       {
-        "outcome": "CRASH: Flew into terrain. Repairs -$2,500.",
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
         "payload_frac": 0.0,
         "status": "fail"
       }
