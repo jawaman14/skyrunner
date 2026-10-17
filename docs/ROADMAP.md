@@ -67,14 +67,17 @@ The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than 
 2. **Chapter 4 (Cocaine Cowboys):** after the first Los Cuervos incident a scripted beat: the player **hears** Rafa was
    killed by Los Cuervos (not witnessed). The turf war starts and the player **takes his seat**: the boss desk and its
    orders become the player's.
-3. **A crumbling empire:** the player starts smaller than Rafa ran it (which stashes, trucks, crew and money survive is
-   **an open owner decision**).
+3. **A crumbling empire** (owner, 18 Oct): half survives: half the stashes (the least known ones), half the crew, the
+   trucks that were parked, and a quarter of Rafa's cash.
 4. **Not locked in:** every other layer (flying, the ground, the desks) stays open; **delegating a flight costs money**
    (a hired pilot flies it with the existing bot).
 5. **Reputation is trust with each crew** (accepted table: Morettis up means Los Cuervos down; Los Cuervos up means the
    Morettis and the street dealers down; the Company up means the Sunrise Collective down a little; the Collective up
    means the Company down a little; the street dealers up means Los Cuervos down a little); lost shipments cost
    trust, and a crew without trust buys elsewhere.
+
+6. **Flight skill** (owner, 18 Oct): good landings, short strips and clean approaches give optional bonus goals (money or
+   reputation); they never block a chapter.
 
 Who: Claude the beat, the unlock, the takeover state, delegation and trust; Codex the dialogue and the scene.
 Order: with the rival depot raid, after the presentation layers, unless the owner moves it up.
@@ -110,8 +113,9 @@ stream, tests first, as a follow-up to #384/#387. Depends on #378 and #387 landi
 
 1. **Step 2, automation.** Conditional orders (stock thresholds) first, then task sequences. Workers follow instructions; AI
    never invents assignments. Needs a design note in `DESIGN.md` before any code.
-2. **Step 3, the rest.** Resolve the AI knowledge policy (below), then rivals' starting strengths and civilian jobs, demand and
-   prosperity. The escort and stakeout balance (#244, #98) can now be tuned.
+2. **Step 3, the rest.** The AI knowledge policy is decided (owner, 18 Oct): the AI police and rivals act only on what a
+   human in their seat would see (radar, sightings, tips, informants); audit where they read more today and fix it. Then
+   rivals' starting strengths and civilian jobs, demand and prosperity. The escort and stakeout balance (#244, #98) can now be tuned.
 3. **Logistics access (#241 series).** The 99 audited logistics pairs were blocked by grade, footprint and unauthored meeting
    points; the access stack (#265–#276) was closed unmerged on 12 October, and new work starts from `main`. Re-run
    `tools/logistics_routes.gd` for the current count. Never raise connector limits or restore straight-line fallbacks to make
@@ -128,6 +132,8 @@ These were finished in part, dropped from the 12 October list, or never written 
 - **Backspace reverse (#394):** no gamepad binding and no F1/GUIDE help line.
 - **Map destinations (#390):** only go-fast boats and stash trucks have destination lines. Squads, convoys and the station map
   (`station_map.gd`) do not; the AI pilot's route is announced (#391) but not drawn.
+- **HAR runway end 0** (owner, 18 Oct; D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain
+  change, re-bake, strip trials).
 - **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356), the pilot
   app does not. Its own task, needs render interpolation.
 - **Key audit (#345):** every key, which are still used, what the help text says. Not started.
@@ -142,17 +148,33 @@ These were finished in part, dropped from the 12 October list, or never written 
 - **Stale PRs:** #321 (28 behind main), #305 (waits on the strip decision, now made), #370 (superseded by this rewrite).
 - **Local housekeeping:** scratch worktrees under `.claude-worktrees` and terrain cache backups.
 
+## The design epics, in order (owner, 18 October)
+
+Agreed by Claude and Codex and accepted by the owner (D-48; the full table is on #326). One item at a time, each as its
+smallest slice with a screenshot, starting once the queue above has landed:
+
+1. First-session playtest protocol (#172), with #155 as its chapter 1-4 tutorial audit and #157 as a local log only. It runs
+   first and may reorder the rest.
+2. Readability and accessibility (#138, #156).
+3. Cockpit clutter (#142).
+4. One event model and interruption policy (#120, #151), shared by the feed and the phone's Messages.
+5. Contextual lessons and first-use hints as one system (#134, #148).
+6. Failure fairness (#165), with #164's assists as explicit settings.
+7. "Why did that happen" reasons (#147, #173).
+
+Then Tier 2 with the story, map and presentation layers (#163, #133/#132, #130/#131, #168, #161, #166, #167,
+#140/#141/#143/#159, #144/#149, #171) and Tier 3 later. Nine issues (#125, #137, #154, #129, #135, #128, #127, #121, #126)
+are foundations, not done: each gets a gap audit before it is scheduled. #169 is deferred.
+
 ## Human release gates and owner decisions (#326)
 
 - **Gates only a person can pass:** exported Windows and macOS walkthroughs; physical controller and four-resolution visual
   acceptance in both palettes; two-machine multiplayer with seat, action and voice, waiting room, LAN and guest seating;
   functional-site walk and drive; moving and dense-scene performance captures; radio recordings and third-party asset licensing.
-- **Decisions still open:** the hub approach on natural terrain (HAR end 0 has about 22 m more hill 1.2 km out); whether flight
-  skill (landing, strips, approach) belongs in the story's goals; which of the 52 design epics to do first; whether the wake tool
-  may spend Codex quota unattended; the **AI knowledge policy** (how much police and rival AI may see; needed before #244 is
-  balanced); the **engine question** (stay on Godot, or approve the one-week parity harness for a Unity move; the proposal is in
-  commit 3f5b6617, `docs/UNITY_MIGRATION_PLAN.md`, which is not on `main`).
-- **Decided:** strips (change them), the freeze (removed), #367 (closed for #374).
+- **Decisions still open:** none from this list; see [DECISIONS.md](DECISIONS.md) for every open row.
+- **Decided:** strips (change them), the freeze (removed), #367 (closed for #374); on 18 Oct the HAR hill (flatten it),
+  flight skill (optional bonus goals), the AI knowledge policy (only what a human would see), the engine (stay on Godot),
+  Rafa's empire (half survives), the 52 epics (the agents rank them), Codex's unattended turns (keep them).
 
 ## Open technical items
 
