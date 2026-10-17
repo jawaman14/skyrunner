@@ -29,15 +29,15 @@ const LESSONS := [
 	["second_flight_load", "", "Load and fuel for the next flight",
 		"Before your second flight, press L. Use Route +30 min for the active job; the route tile shows fuel and reserve.\nPlace heavy cargo near the centre of gravity and keep the CG dot in its envelope. Deliveries unload on landing; wait if told.", "after_first_landing"],
 	["deliver", "", "Deliver",
-		"Fly to the job's destination: the HUD shows its bearing and distance, M the big map.\nLand, stop on the strip, and the job pays out."],
+		"Fly to the job's destination: the HUD shows its bearing and distance, M the big map.\nLand and stop on the strip and the job pays out. A hot load (grass, cocaine) unloads first: stay parked until it is off."],
 	["transponder", "", "Seen and unseen",
 		"N switches the transponder. Squawking looks legitimate; flying dark hides you only\nbelow the radar floor - a squawk that vanishes is suspicious. The detector shows who paints you."],
 	["grass", "trade", "Your own product",
 		"Bush strips sell grass: the board lists our own loads (paid up front, into our stash).\nTake one and fly it to the stash's strip."],
 	["org_crew", "payroll", "The organisation runs itself",
-		"While you fly, the organisation hires and pays its own crew and raises its own squads -\nyou don't have to run HQ. SHIFT+W any time to see who's on the payroll and what they're doing."],
+		"While you fly, the organisation hires and pays its own crew and raises its own squads -\nyou don't have to run HQ. SHIFT+W in the aircraft (T, the phone, on foot) to see who's on the payroll and what they're doing."],
 	["dealer", "payroll", "Hire the street",
-		"SHIFT+W: Manny Ortega's hiring hall. Hire a street dealer - he sells what's in the stash,\ncorner by corner. Everyone on the payroll gets paid every 10 minutes."],
+		"SHIFT+W in the aircraft, or the phone (T) on foot: Manny Ortega's hiring hall. Hire a street dealer - he sells what's in the stash,\ncorner by corner. Everyone on the payroll gets paid every 10 minutes."],
 	["cash_home", "logistics", "Money has weight",
 		"SHIFT+H: logistics. Street money piles up in the stash where it's made; wages and loads\ncome out of the club's safe. Truck the cash home - or load it as cash bags (C) and fly it."],
 	["seller_cash", "logistics", "Cash on the strip",
@@ -130,6 +130,7 @@ const DESK_LESSONS := {
 
 ## [id, text] - shown once, when their moment comes (see _tips)
 const TIPS := {
+	"radar": "The police have noticed you. Radar cannot see you below about 45 m above the ground (a little higher the farther you are from it) or behind hills; patrols and helicopters also spot you by eye out to about 4 km, less in fog, rain or cloud. Fly low and behind terrain, turn the transponder off only below the radar floor, and watch the detector: it shows who is painting you. A tethered balloon on the coast sees low flyers.",
 	"wanted": "You're WANTED. Break contact: low, behind hills, into cloud or rain; lose them over the sea. Landing dirty at a watched strip ends it.",
 	"fuel": "Fuel under a quarter. Land and refuel (L), or pump the ferry tank (V) if you carry one.",
 	"busted": "Busted. With a court in the game it's a case now: SHIFT+L talks to your lawyer - bail, motions, a plea or a deal.",
@@ -390,6 +391,8 @@ func tick(s) -> void:
 	# the tips
 	if s.police.wanted > 0:
 		_show("wanted")
+	elif s.police.suspicion > 5.0 and not s.parked:
+		_show("radar")  # the first time they notice you, before it is a chase: how to stay unseen
 	if s.state != null and not s.parked and s.loadout != null:
 		var cap: float = s.loadout.mass.fuel_capacity_lb()
 		if cap > 0.0 and s.state.fuel_lb < cap * 0.25:

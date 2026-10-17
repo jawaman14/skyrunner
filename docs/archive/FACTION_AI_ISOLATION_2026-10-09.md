@@ -6,7 +6,7 @@ This completes the requested separation of PR #244's escort and stakeout correct
 
 Current-main source `a3f66fba1cb723f1b0dab3ef35b2cedc2adfb910`; Godot 4.7.2 stable on Windows x64. Forty paired seeds (1â€“40), three simulated hours each, the canonical `tools/live_balance.gd` war configuration. Four fresh-process variants: original source, escort correction alone, stakeout correction alone, both. The two individual corrections ran in isolated managed worktrees. All 160 runs completed without script/parse errors; known engine shutdown resource diagnostics remain. No speed, payout, weapon, route, hazard or AI-knowledge tuning was made.
 
-[Metadata, exact source hashes, summaries and paired differences](../sim-results/faction-ai-isolation-2026-10-09.json) link to four raw NDJSON files, forty seed-labelled rows each. Every raw row round-trips identically to its original result. Three zero-context patches retain the exact experimental differences; source fingerprints enforce the exact base. The earlier ten-seed unmerged-stack record remains a separate dated study; these figures use a current-main baseline.
+[Metadata, exact source hashes, summaries and paired differences](../../sim-results/faction-ai-isolation-2026-10-09.json) link to four raw NDJSON files, forty seed-labelled rows each. Every raw row round-trips identically to its original result. Three zero-context patches retain the exact experimental differences; source fingerprints enforce the exact base. The earlier ten-seed unmerged-stack record remains a separate dated study; these figures use a current-main baseline.
 
 ## Results
 

@@ -2,8 +2,9 @@
 
 **Bush flying, smuggling and the long arm of the law, on a fictional Caribbean coast, 1979-89.**
 
-You start as a bush pilot with half a Cessna and a fuel bill. You can end up as the organisation the coast
-answers to: the crews, the stash houses, the street war, the lawyers, the Family and the Company. Or you can
+You start as a hired pilot flying other people's cargo, with a fuel bill and a lot to learn. You can end up as the
+organisation the coast answers to: the crews, the stash houses, the street war, the lawyers, the Family and the
+Company. Or you can
 sit at the task force's desk and hunt that pilot down. Every seat is playable alone (the AI plays the rest) or
 with friends over the network.
 
@@ -17,6 +18,7 @@ exports it to Linux, Windows and macOS.
 | **Version** | 0.9.0-beta.1 |
 | **Engine** | Godot 4.7.2, GDScript only, Jolt physics |
 | **Status** | [PROJECT_STATUS.md](docs/PROJECT_STATUS.md): verified, pending and deferred work |
+| **Plans** | [ROADMAP.md](docs/ROADMAP.md): the work queue; [DECISIONS.md](docs/DECISIONS.md): the owner's decisions |
 
 | **Dusk on the boulevard** | **A firefight at the docks** | **The city at night** |
 |---|---|---|
@@ -64,7 +66,7 @@ keys, **F8** to rebind them, **F4** for the multiplayer menu.
   friends join as remote seats, with a password, saves, an AI pilot and a status probe.
 - **Costa Brava**, the default map: the port city of San Telmo (about 6,900 buildings), docks, an airport, a river
   and mangrove estuary, a farm plain, a jungle range, the cove and the cays. Or a generated island (`--map N`).
-- **Logistics and trade.** Product and cash are somewhere: trucked, flown, hijacked, stopped at checkpoints. Fuel
+- **Logistics and trade.** Product and cash are somewhere: trucked, flown, ambushed on the road, stopped at checkpoints. Fuel
   has a price. Dealers sell corner by corner, bulk buyers take lots, and the markets move with arrests, raids,
   rivals and storms.
 - **Hired hands.** Soldiers, drivers, mules, lookouts, accountants and pilots on a payroll, with wages, loyalty
@@ -150,16 +152,16 @@ parity fixtures and you never need it to build, play or test ([docs/PORTING.md](
 
 ## Docs
 
+[docs/README.md](docs/README.md) lists every document and what it is for. The ones most people need:
+
 - [docs/GUIDE.md](docs/GUIDE.md): the player's guide: every role, every mechanic and every key.
-- [docs/FEATURES.md](docs/FEATURES.md): the long feature reference (what the README used to list, system by system).
-- [docs/DESIGN.md](docs/DESIGN.md): roles, gadgets and counters, every system, the storyline, the ground war, the
-  seat model, voice and the waiting room.
-- [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md): design research for asymmetric versus play, hidden information and the
-  network protocol.
+- [docs/DESIGN.md](docs/DESIGN.md): how every system works, the story, the seats and the RNG streams.
+- [docs/DECISIONS.md](docs/DECISIONS.md) and [docs/ROADMAP.md](docs/ROADMAP.md): what the owner has decided and the
+  work queue.
 - [docs/BALANCE.md](docs/BALANCE.md): the balance report, with a numbered entry for every change.
-- [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/REVIEW_2026-10.md](docs/REVIEW_2026-10.md): what is done and the work queue.
-- [docs/LIBRARIES.md](docs/LIBRARIES.md): the open-source libraries and art used or considered.
 - Demo videos in [docs/video/](docs/video/): the UI, the on-foot tour, the city, the ground war and a bust.
+
+Dated reports and old plans are in [docs/archive/](docs/archive/).
 
 ## Licences
 
