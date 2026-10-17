@@ -94,6 +94,7 @@ func _init(opts := {}) -> void:
 	director = AISmuggler.Director.new(_rng(seed + 21))
 	mapper = ControlMapper.new()
 	autopilot = Autopilot.new()
+	autopilot.ground_fn = func(x: float, y: float) -> float: return world.ground(x, y)
 	log = FlightLog.new()
 	squawk = "N%d%s" % [rng.randint(100, 999), rng.choice(Array("ABCDEFGHJK".split("")))]
 	copilot = "human" if humans.has(Roles.COPILOT) else null

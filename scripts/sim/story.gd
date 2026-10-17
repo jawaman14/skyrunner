@@ -17,6 +17,9 @@ extends RefCounted
 const LOCKS := ["guns", "role_soldier", "role_mule"]
 
 ## [year, title, briefing, opens, goals [[key, text, target]]]
+## Goal checks (owner, 12 Oct): forgiving in chapters 1-2 (150 lb and $2,500; $2,000 home) and sparing from chapter 3: at most two required goals per chapter,
+## the rest optional. The House is the one chapter with three required goals: stake, laundering and getting out are a chain (getting out only happens after the
+## laundering sets off the uprising), so none of them can be optional.
 const CHAPTERS := [
 	[1979, "Square Grouper",
 		"San Telmo, 1979. The Cessna is half the bank's, the charters don't cover the fuel,\n"
@@ -24,8 +27,8 @@ const CHAPTERS := [
 		+ "Buy it at the bush strips, fly it into our stash houses, and hire a kid or two\n"
 		+ "to sell it on the corners [Phone > Manny Ortega]. Low money, low risk - for now.",
 		["trade", "payroll", "chronicle"],
-		[["weed_lb", "Fly 300 lb of marijuana into our stash houses", 300], ["dealers", "Put a street dealer on a corner", 1],
-			["trade_earned", "Make $4,000 from the trade", 4000]]],
+		[["weed_lb", "Fly 150 lb of marijuana into our stash houses", 150], ["dealers", "Put a street dealer on a corner", 1],
+			["trade_earned", "Make $2,500 from the trade", 2500]]],
 	[1980, "The Connection",
 		"The boatlift brings a hundred thousand people across the straits, and a few of them
 "
@@ -37,7 +40,7 @@ const CHAPTERS := [
 "
 		+ "A dealership will sell you vans for the trucks and a car of your own [phone].",
 		["logistics", "dealership"],
-		[["cash_home", "Truck or fly $3,000 of street money home", 3000],
+		[["cash_home", "Truck or fly $2,000 of street money home", 2000],
 			["connected", "Get the call from the Colombian connection", 1],
 			["dealership_buy", "Buy a vehicle at the dealership", 1, true, 2000]]],
 	[1980, "Blotter",
@@ -94,7 +97,8 @@ const CHAPTERS := [
 		+ "Central America that Congress won't pay for. Fly his crates south, bring his\n"
 		+ "product north, sell him guns - and pray nobody ever holds the hearings.",
 		["agency"],
-		[["agency_jobs", "Fly a job for the Company", 1], ["guns_to_company", "Sell the Company 4 guns", 4]]],
+		[["agency_jobs", "Fly a job for the Company", 1], ["guns_to_company", "Sell the Company 4 guns", 4],
+			["general_choice", "Choose the General's fate", 1, true, 0]]],
 	[1986, "Kingpin",
 		"The mandatory minimums pass, the Commission trial starts in New York, and every\n"
 		+ "faction on the coast wants what's ours. Build it big enough that it doesn't\n"
@@ -192,6 +196,7 @@ var history: Array = []  ## completed chapter briefings and actual outcomes
 var opened := {}  ## every system and lock opened so far
 var completed_all := false
 var show_briefing := true
+var company_decision := ""  ## remove | spare | declined | skipped: the Company order at the end of Chapter 9 (declined: the player walked away; skipped: the Company cut us loose)
 var _last_t := -1.0  ## the clock at the last tick (for the goals that count minutes)
 var sess = null
 var _chapter: Campaign.Chapter = null
@@ -216,6 +221,16 @@ var chapter: Campaign.Chapter:
 					o.bonus = int(g[4])
 				goals.append(o)
 			var briefing: String = c[2]
+			if c[1] == "Kingpin":
+				if company_decision == "remove":
+					briefing += "\nThe Moretti-backed government now controls Isla Soberana. Containers clear more often, but the Family takes its cut."
+				elif company_decision == "spare":
+					briefing += "\nThe General still grants passage, but the Company has withdrawn its protection. The Morettis remember you refused Washington."
+				elif company_decision == "declined":
+					briefing += "
+You turned the Company down without taking a side. The General remains in power, and Washington stops calling."
+				elif company_decision == "skipped":
+					briefing += "\nThe Company cut you loose before the order came. The General remains in power and the island route stays open."
 			if index == 0 and employment != null:
 				briefing = "The company has crossed into smuggling. Until you buy your own aircraft, the Cessna remains company property. Benny Ruiz introduces the growers: buy grass, fly it into stash houses, and set up your first dealer through Phone > Manny Ortega.\n" + "A loaned aircraft is use of company equipment, not ownership. Your savings and first purchase remain yours."
 			_chapter = Campaign.Chapter.new(index + 1, c[0], c[1], briefing, [], [], goals)
@@ -223,7 +238,7 @@ var chapter: Campaign.Chapter:
 
 
 func to_dict() -> Dictionary:
-	return {"index": index, "progress": progress, "done": completed_all, "outcomes": outcomes, "outcome_status": outcome_status, "history": history, "employment": employment.to_dict() if employment != null else null, "v": 5}
+	return {"index": index, "progress": progress, "done": completed_all, "company_decision": company_decision, "outcomes": outcomes, "outcome_status": outcome_status, "history": history, "employment": employment.to_dict() if employment != null else null, "v": 5}
 
 
 static func from_dict(d) -> Story:
@@ -239,10 +254,42 @@ static func from_dict(d) -> Story:
 	if d.get("employment") is Dictionary:
 		st.employment = EmploymentOpening.from_dict(d.employment)
 	st.completed_all = bool(d.get("done", false))
+	st.company_decision = str(d.get("company_decision", ""))
 	st.outcomes = d.get("outcomes", {}).duplicate()
 	st.outcome_status = d.get("outcome_status", {}).duplicate()
 	st.history = d.get("history", []).duplicate(true)
 	return st
+
+
+func company_choice_ready() -> bool:
+	return chapter.title == "The Company" and company_decision == "" \
+		and progress.get("agency_jobs", 0.0) >= 1.0 and progress.get("guns_to_company", 0.0) >= 4.0
+
+
+func choose_general(decision: String) -> bool:
+	if not company_choice_ready() or decision not in ["remove", "spare", "declined"]:
+		return false
+	company_decision = decision
+	if decision == "declined":
+		sess.say("You tell the Company's man you will think about it. He says Washington does not wait, and he does not call again.")
+		return true
+	progress["general_choice"] = 1.0
+	if decision == "remove":
+		sess.island.controller = "mob"
+		sess.island.relations = 20.0
+		sess.agency.trust = minf(100.0, sess.agency.trust + 20.0)
+		sess.agency.exposure = minf(100.0, sess.agency.exposure + 8.0)
+		sess.family.respect = minf(100.0, sess.family.respect + 10.0)
+		sess.say("The General is gone. The Moretti-backed government takes Isla Soberana; the Company protects the operation for now.")
+	else:
+		sess.island.relations = minf(100.0, sess.island.relations + 15.0)
+		sess.agency.trust = maxf(0.0, sess.agency.trust - 25.0)
+		sess.agency.exposure = minf(100.0, sess.agency.exposure + 12.0)
+		sess.agency.protected_until = minf(sess.agency.protected_until, sess.time)
+		sess.family.respect = minf(100.0, sess.family.respect + 25.0)
+		sess.say("You refuse the order. The General keeps the island; the Morettis back your independence, and the Company pulls its protection.")
+	sess.save()
+	return true
 
 
 ## The index of the chapter titled `title` (the chapters are found by name so that adding one does not break the code that waits on another).
@@ -272,6 +319,7 @@ func attach(s) -> void:
 	sess = s
 	s.story = self
 	s.bus.subscribe("*", _on_event)
+	_set_police_pace(0)
 	if employment != null and employment.active():
 		if employment.loaner:
 			s.owned.erase(EmploymentOpening.AIRCRAFT)
@@ -293,7 +341,18 @@ func attach(s) -> void:
 	s.say("CHAPTER %d (%d): %s" % [index + 1, chapter.year, chapter.title])
 
 
+## The police case's suspicion multiplier for chapter index `i` (chapter i + 1): gentle in chapters 1-2, half in 3, full after.
+static func early_police_scale(i: int) -> float:
+	return 0.1 if i < 2 else (0.5 if i == 2 else 1.0)
+
+
+func _set_police_pace(i: int) -> void:
+	if sess != null and sess.police != null:
+		sess.police.suspicion_scale = Story.early_police_scale(i) if PoliceSystem.EARLY_PACE else 1.0
+
+
 func _open(i: int, announce: bool) -> void:
+	_set_police_pace(i)
 	var names := []
 	for key in CHAPTERS[i][3]:
 		opened[key] = true
@@ -461,8 +520,9 @@ func tick(s) -> void:
 				s.say("Word from the capital: the General's colonels are meeting. It may be time to be somewhere else.")
 	if s.agency != null and (not s.agency.active() or s.agency.hung_out) and chapter.title == "The Company" and progress.get("agency_jobs", 0.0) < 99.0:
 		var newly_waived := false
-		for k in ["agency_jobs", "guns_to_company"]:
+		for k in ["agency_jobs", "guns_to_company", "general_choice"]:
 			newly_waived = _waive(k, "The Company cut us loose before this work was completed.") or newly_waived
+		company_decision = "skipped"
 		if newly_waived:
 			s.say("The Company has cut us loose. So much for friends in Washington - the story moves on.")
 	_put("bank", float(s.money))
@@ -490,9 +550,11 @@ func tick(s) -> void:
 		if o.optional and progress.get(o.key, 0.0) >= o.target and not progress.has(paid):
 			progress[paid] = 1.0
 			s.money += o.bonus
-			s.say("Side goal done: %s. +$%s." % [o.text, Py.money(o.bonus)])
+			s.say("Side goal done: %s. +$%s." % [o.text, Py.money(o.bonus)] if o.bonus > 0 else "Side goal done: %s." % o.text)
 	if not Py.all(ch.objectives, func(o): return o.optional or outcomes.has(o.key) or progress.get(o.key, 0.0) >= o.target):
 		return
+	if company_choice_ready():
+		return  # the Company's order is put to the player before the chapter closes (they may walk away)
 	s.say("Chapter %d complete: %s!" % [ch.num, ch.title])
 	advance()
 
@@ -506,6 +568,17 @@ func select_chapter(number: int) -> void:
 		advance()
 	while index + 1 < number and not completed_all:
 		advance()
+
+
+## Debug (Ctrl+F5 in the pilot app): skip to the next chapter, as --chapter N does at the start, so a chapter can be tested without playing the ones before it.
+## From the employed opening the first skip leaves the opening; at the last chapter it finishes the story.
+func debug_skip_chapter() -> void:
+	if completed_all:
+		return
+	if employment != null and employment.active():
+		advance()
+		return
+	advance()
 
 
 func advance() -> void:

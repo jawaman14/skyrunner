@@ -55,6 +55,71 @@ func test_the_goals_count_what_happens() -> void:
 	s.dispose()
 
 
+func test_the_company_choice_changes_faction_support_and_port_control() -> void:
+	var s := _story(Story.index_of("The Company"))
+	s.story.progress["agency_jobs"] = 1.0
+	s.story.progress["guns_to_company"] = 4.0
+	check(s.story.company_choice_ready(), "the choice opens after both Company jobs")
+	var trust_before: float = s.agency.trust
+	var respect_before: float = s.family.respect
+	var odds_before: float = s.island.ship_odds()[0]
+	check(s.story.choose_general("remove"), "the Agency order can be accepted")
+	check_eq(s.story.company_decision, "remove")
+	check_eq(s.island.controller, "mob", "the Morettis take the port")
+	check(s.family.respect > respect_before, "the Morettis gain influence and regard us better")
+	check(s.agency.trust > trust_before, "the Company rewards compliance")
+	check(s.island.ship_odds()[0] < odds_before, "Mob-controlled customs makes our containers safer")
+	s.money = 100000
+	var expected_cost := int(100 * Island.PRICE_PER_LB * s.island.price_mult * s.econ.wholesale("cocaine")) + Island.SHIP_FREIGHT + 4000
+	check_eq(s.island.ship("ship", 100), "", "the Mob-controlled port accepts a container")
+	check_eq(100000 - s.money, expected_cost, "the port takes its fee")
+	check_eq(Story.from_dict(s.story.to_dict()).company_decision, "remove", "the branch survives a story save")
+	var island_save := StrategicSave.capture(s)
+	var restored := _story(Story.index_of("The Company"))
+	StrategicSave.restore(restored, island_save)
+	check_eq(restored.island.controller, "mob", "island control survives a strategic save")
+	s.story.tick(s)
+	check(s.story.chapter.briefing.contains("Moretti-backed government"), "the next chapter reflects the island takeover")
+	s.dispose()
+	restored.dispose()
+
+
+func test_refusing_the_company_order_costs_agency_support_and_wins_mob_support() -> void:
+	var s := _story(Story.index_of("The Company"))
+	s.story.progress["agency_jobs"] = 1.0
+	s.story.progress["guns_to_company"] = 4.0
+	var trust_before: float = s.agency.trust
+	var respect_before: float = s.family.respect
+	s.agency.protected_until = s.time + 1000.0
+	check(s.story.choose_general("spare"), "the order can be refused")
+	check_eq(s.island.controller, "general", "the General remains in power")
+	check(s.family.respect > respect_before, "the Morettis value our independence")
+	check(s.agency.trust < trust_before, "the Company loses trust")
+	check(s.agency.protected_until <= s.time, "the Company withdraws its protection")
+	check(not s.story.choose_general("spare"), "a saved choice cannot be changed")
+	s.story.tick(s)
+	check(s.story.chapter.briefing.contains("Company has withdrawn"), "the next chapter reflects the broken Agency tie")
+	s.dispose()
+
+
+## Owner, 16 Oct: the General's fate is an optional goal (the two-goal rule stays), but the chapter must not close before the order is put to the player.
+func test_the_company_chapter_waits_for_the_order_and_the_player_may_walk_away() -> void:
+	var s := _story(Story.index_of("The Company"))
+	s.story.progress["agency_jobs"] = 1.0
+	s.story.progress["guns_to_company"] = 4.0
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "The Company", "both required goals are done, but the chapter waits for the order")
+	var trust_before: float = s.agency.trust
+	check(s.story.choose_general("declined"), "the player may walk away")
+	check_eq(s.agency.trust, trust_before, "walking away changes nothing else")
+	check(not s.story.choose_general("remove"), "and a decision cannot be changed afterwards")
+	s.story.tick(s)
+	check_eq(s.story.chapter.title, "Kingpin", "the chapter closes once the order is answered")
+	check(s.story.chapter.briefing.contains("turned the Company down"), "and the next chapter says so")
+	check_eq(Story.from_dict(s.story.to_dict()).company_decision, "declined", "the decision survives a save")
+	s.dispose()
+
+
 func test_chapters_open_the_game_in_order() -> void:
 	var s := _story()
 	s.trade.stock.marijuana = 250.0  # grass held the 1979 way: one pool
@@ -168,6 +233,7 @@ func test_no_softlocks_when_a_faction_is_gone() -> void:
 	s.agency.hung_out = true
 	s.story.tick(s)
 	check_eq(s.story.chapter.title, "Kingpin", "the Company cut us loose: on to the end")
+	check_eq(s.story.company_decision, "skipped", "no assassination order remains after the Company abandons us")
 	s.dispose()
 
 
@@ -293,3 +359,88 @@ func test_unavailable_family_notice_is_not_repeated_while_collecting_cash() -> v
 	check_eq(s.story.progress.get("family_deal", 0), 0, "no fabricated transaction")
 	check(s.story.outcomes.has("family_deal"))
 	s.dispose()
+
+
+## The debug skip (Ctrl+F5) moves to the next chapter each time, leaves the employed opening first, and finishes the story at the end.
+func test_debug_skip_walks_through_the_chapters_to_the_end() -> void:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "career": true, "save_path": "user://test_debug_skip.json"})
+	var st := Story.new_employed()
+	st.attach(s)
+	var last := 0
+	var steps := 0
+	while not st.completed_all and steps < 40:
+		st.debug_skip_chapter()
+		steps += 1
+		if not st.completed_all:
+			check(st.chapter.num >= last, "never goes backwards: %d after %d" % [st.chapter.num, last])
+			last = st.chapter.num
+	check(st.completed_all, "and the last skip finishes the story")
+	check(last >= Story.CHAPTERS.size() - 1, "having passed through the chapters (reached %d)" % last)
+	s.dispose()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://test_debug_skip.json"))
+
+
+## Goal checks are forgiving at the start and sparing later (owner, 12 Oct): chapter 1 needs 150 lb and $2,500, chapter 2 $2,000 home, and from chapter 3 no chapter
+## asks for more than two required goals, except The House, whose three goals are a chain (stake, laundering, then getting out).
+func test_goal_checks_are_forgiving_early_and_sparing_later() -> void:
+	var targets := {}
+	for o in Story.CHAPTERS[0][4]:
+		targets[o[0]] = o[2]
+	check_eq(targets["weed_lb"], 150, "chapter 1: 150 lb")
+	check_eq(targets["trade_earned"], 2500, "chapter 1: $2,500")
+	var home := 0
+	for o in Story.CHAPTERS[1][4]:
+		if o[0] == "cash_home":
+			home = o[2]
+	check_eq(home, 2000, "chapter 2: $2,000 home")
+	for i in range(2, Story.CHAPTERS.size()):
+		var required := 0
+		for o in Story.CHAPTERS[i][4]:
+			if not (o.size() > 3 and o[3]):
+				required += 1
+		if Story.CHAPTERS[i][1] == "The House":
+			check_eq(required, 3, "The House keeps exactly its three chained goals (stake, laundering, getting out)")
+		else:
+			check(required <= 2, "%s asks for %d required goals (limit 2)" % [Story.CHAPTERS[i][1], required])
+
+
+## The early game is gentle: the police suspicion multiplier is 0.1 in chapters 1-2 (and the employed opening), 0.5 in chapter 3, 1 from chapter 4.
+func test_the_police_pace_follows_the_chapter() -> void:
+	check_eq(Story.early_police_scale(0), 0.1)
+	check_eq(Story.early_police_scale(1), 0.1)
+	check_eq(Story.early_police_scale(2), 0.5)
+	check_eq(Story.early_police_scale(3), 1.0)
+	check_eq(Story.early_police_scale(11), 1.0)
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "career": true, "save_path": "user://test_police_pace.json"})
+	var st := Story.new_employed()
+	st.attach(s)
+	check_eq(s.police.suspicion_scale, 0.1, "the employed opening is as gentle as chapter 1")
+	st.select_chapter(3)
+	check_eq(s.police.suspicion_scale, 0.5, "chapter 3")
+	st.select_chapter(6)
+	check_eq(s.police.suspicion_scale, 1.0, "chapter 6")
+	PoliceSystem.EARLY_PACE = false
+	st._set_police_pace(0)
+	check_eq(s.police.suspicion_scale, 1.0, "the switch off leaves full strength")
+	PoliceSystem.EARLY_PACE = true
+	s.dispose()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://test_police_pace.json"))
+
+
+## What a radar sighting adds is scaled: the same dark flight in radar range gains a tenth of the suspicion in chapter 1.
+func test_a_sighting_in_chapter_one_adds_a_tenth_of_the_suspicion() -> void:
+	var gained := []
+	for scale in [1.0, 0.1]:
+		var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "ground_war": false})
+		s.police.suspicion_scale = scale
+		var af := World.airfield("HAR")
+		s.spawn_airborne(af.x + 6000.0, af.y, 90.0, 400.0, 95.0)
+		s.transponder = false
+		for i in 60 * 30:
+			var inp := ControlMapper.InputFrame.new()
+			inp.throttle_axis = 0.8
+			s.update(1.0 / 30, inp, null)
+		gained.append(s.police.case("runner").suspicion)
+		s.dispose()
+	check(gained[0] > 5.0, "a dark minute in radar range builds suspicion at full strength: %s" % gained[0])
+	check(gained[1] < gained[0] * 0.3, "and a tenth as much with the early-game scale: %s against %s" % [gained[1], gained[0]])

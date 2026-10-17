@@ -20,7 +20,6 @@ const ENDURANCE_S := {"heli": 900.0, "interceptor": 1200.0, "rival": 1e9}  # the
 const CALLSIGNS := {"heli": "Hawk", "interceptor": "Falcon", "rival": "Rival", "cutter": "Cutter"}
 
 const BUST_RANGE_M := 350.0
-const RIVAL_RANGE_M := 250.0
 const SIGHT_RANGE_M := 4500.0
 const LANDING_BUST_RANGE_M := 2500.0
 const SWEEP_INTERVAL_S := 1.0
@@ -33,6 +32,9 @@ const PRIMARY_RATE_NEAR := 3.0
 const INBOUND_LOW_MULT := 2.5
 const DROP_PATTERN_RATE := 3.0
 const SUSPICION_DECAY := 3.0
+## The early game is gentle (owner, 12 Oct): the suspicion a sighting adds is multiplied by `suspicion_scale`, which the story sets per chapter
+## (0.1 in chapters 1-2, 0.5 in chapter 3, 1 after). Off, or with no story, it stays 1. No random draws.
+static var EARLY_PACE := true
 var decay_mult := 1.0  ## < 1 when the runner has a name (Renown.heat_mult): the famous are watched
 const ODD_DESTINATION_SUSPICION := 100.0  ## shady strips: nobody legit goes there
 const BUSH_DESTINATION_SUSPICION := 30.0  ## farm and bush strips get honest traffic too
@@ -262,6 +264,7 @@ var rng: PyRandom
 var radio: RadioNet
 var controller := "ai"  ## ai | human
 var features := {"interceptors": true, "rivals": true}
+var suspicion_scale := 1.0  ## see EARLY_PACE
 var stock := {"heli": 1, "interceptor": 2, "cutter": 1}
 var units: Array = []
 var cases := {}
@@ -634,7 +637,7 @@ func predict_destination(sig: SensorNet.Signature, origin = null):
 
 
 # ---------------------------------------------------- main tick
-## Advance the task force. Returns {target_id: "busted" | "clean" | "hijacked"}.
+## Advance the task force. Returns {target_id: "busted" | "clean"}.
 func tick(dt: float, now_: float, targets: Array) -> Dictionary:
 	if frozen:
 		return {}
@@ -794,15 +797,8 @@ func tick(dt: float, now_: float, targets: Array) -> Dictionary:
 			_rival_spawned[tid] = true
 			if rng.random() < 0.6:
 				spawn_rival([t.sig.x, t.sig.y], tid)
-				events.append("Rival smugglers inbound! Don't let them close in.")
-		var rclose := Py.any(seen_by.get("rival:" + tid, []), func(u): return u.dist_to(t.sig) < RIVAL_RANGE_M)
-		c.rival_meter = minf(100.0, c.rival_meter + 14 * dt) if rclose else maxf(0.0, c.rival_meter - 10 * dt)
-		if c.rival_meter >= 100:
-			c.rival_meter = 0.0
-			for u in units:
-				if u.faction() == "rival" and u.target_id == tid:
-					u.state = "return"
-			outcomes[tid] = "hijacked"
+				events.append("Rival smugglers inbound. They will chase you, but they cannot take the cargo.")
+		# Rival smugglers chase and can be shot, but they never take the cargo from the air (owner, 14 Oct): the old rival meter and the "hijacked" outcome are gone.
 	return outcomes
 
 
@@ -851,7 +847,7 @@ func _classify(t: Target, dt: float) -> void:
 				_squawk_code(c, sig)
 	# squawk lost while being tracked: the classic tell
 	if site_code and not sig.transponder and 0 < now - c.identified_t and now - c.identified_t < 20 and c.squawk:
-		c.suspicion = minf(100.0, c.suspicion + 50)
+		c.suspicion = minf(100.0, c.suspicion + 50 * suspicion_scale)
 		_say("Center", "squawk %s lost at %s, primary only" % [c.squawk, site_code], null)
 		c.squawk = ""
 	if c.wanted:
@@ -874,7 +870,7 @@ func _classify(t: Target, dt: float) -> void:
 			# legitimate traffic doesn't let down into an unlit quarry or a farmer's field
 			c.odd_destination[af.code] = true
 			var bump := ODD_DESTINATION_SUSPICION if af.kind == "shady" else BUSH_DESTINATION_SUSPICION
-			c.suspicion = minf(100.0, c.suspicion + bump)
+			c.suspicion = minf(100.0, c.suspicion + bump * suspicion_scale)
 			if c.suspicion >= 100:
 				law_events.append("Track %s flagged: nobody legit lands at %s" % [alias(sig.id), af.name])
 				if controller == "ai":
@@ -903,7 +899,7 @@ func _classify(t: Target, dt: float) -> void:
 				c.drop_alerted = true
 				law_events.append("ALERT: possible airdrop pattern near %s,%s km" % [Py.f(sig.x / 1000, 1), Py.f(sig.y / 1000, 1)])
 				tips.append(Tip.new(now, sig.x, sig.y, 1500, "possible airdrop"))
-		c.suspicion += dt * rate
+		c.suspicion += dt * rate * suspicion_scale
 		if c.suspicion >= 100:
 			c.suspicion = 100
 			events.append("%s has you. Police dispatched!" % site.name)

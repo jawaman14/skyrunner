@@ -12,11 +12,17 @@ const GRID := 513
 const CELL := SIZE_M / (GRID - 1)
 const HALF := SIZE_M / 2
 
-static var layout: MapLayout = MapLayout.classic()
+static var layout: MapLayout = _initial_layout()
 static var AIRFIELDS: Array = layout.airfields
 static var AIRFIELD_BY_CODE: Dictionary = _by_code()
 static var _terrain_cache := {}
 static var _layouts := {}  ## map seed -> MapLayout (the city's post-pass data lives on it)
+
+
+static func _initial_layout() -> MapLayout:
+	var initial := MapLayout.classic()
+	_validate_layout(initial)
+	return initial
 
 var seed: int
 var airfields: Array = AIRFIELDS
@@ -30,12 +36,18 @@ var _site_records: Array = []
 ## Make a map current: airfields, HQ zones, aerostat and HQ sites all follow it.
 ## One island per process (the balance workers and tests use the classic one).
 static func use_layout(l: MapLayout) -> void:
+	_validate_layout(l)
 	layout = l
 	AIRFIELDS = l.airfields
 	AIRFIELD_BY_CODE = _by_code()
 	HQ.ZONE_CENTRE = l.zone_centre
 	HQ.ZONE_FIELDS = l.zone_fields
 	SensorNet.AEROSTAT_POS = l.aerostat_pos
+
+
+static func _validate_layout(l: MapLayout) -> void:
+	var error := Territories.validate(l)
+	assert(error.is_empty(), "Invalid map territory catalog: " + error)
 
 
 ## The map for a seed: 0 = the classic island, MapCity.SEED the city coast,
