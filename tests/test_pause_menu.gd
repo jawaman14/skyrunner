@@ -41,6 +41,16 @@ func _free(app: PilotApp, s: Session) -> void:
 	s.dispose()
 
 
+## Workflow audit, 18 Oct: quitting a game with no save file says what is lost.
+func test_quitting_without_a_save_file_warns_that_progress_is_lost() -> void:
+	var saved := PauseMenu.new().setup({"save": true})
+	check(saved._quit_note().contains("saved first"), "a saved game says it is saved first")
+	var unsaved := PauseMenu.new().setup({"save": false})
+	check(unsaved._quit_note().contains("no save file"), "a game with no save file says it is lost: %s" % unsaved._quit_note())
+	saved.free()
+	unsaved.free()
+
+
 func test_esc_pauses_and_resumes_instead_of_quitting() -> void:
 	var r := _app()
 	var app: PilotApp = r[0]
