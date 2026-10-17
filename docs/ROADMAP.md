@@ -166,15 +166,17 @@ Then Tier 2 with the story, map and presentation layers (#163, #133/#132, #130/#
 #140/#141/#143/#159, #144/#149, #171) and Tier 3 later. Nine issues (#125, #137, #154, #129, #135, #128, #127, #121, #126)
 are foundations, not done: each gets a gap audit before it is scheduled. #169 is deferred.
 
-## Working structure (owner, 18 October; to be agreed)
+## Working structure (owner, 18 October)
 
-The owner asked to change the structure (D-52): Claude and Codex each do their own work end to end, including approving
-and merging it, instead of Codex being mainly the approver. They hand each other coding jobs through the board. The order:
+The owner changed the structure (D-52): Claude and Codex each do their own work end to end, including merging it, instead
+of Codex being mainly the approver. They hand each other coding jobs through the board. **In effect from 18 October (08:50,
+the owner's word), written into AGENTS.md and PIPELINE.md by #408:**
 
-1. **Codex wraps up its current role first:** the review queue (board notes 511 and 522), #373 committed and synced, #374
-   synced, the superseded PRs closed.
-2. **Then the discussion** on the board: each agent says which jobs it wants and what it will not take.
-3. **Then the rule change** in AGENTS.md and PIPELINE.md, as a reviewed PR; until it merges, the old review rule stands.
+1. The other agent's review is mandatory only for risk-class PRs (saves, RNG streams, goldens, the Session layers, the flight
+   model, balance). Every other PR its author merges on green CI with every thread answered.
+2. Codex still finishes the reviews it owes on the risk-class PRs, then joins the discussion on the board: which jobs it
+   wants and which it will not take. The split below is Claude's draft.
+3. The open PRs are finished together: Claude merges its low-risk PRs, Codex reviews the risk-class ones and runs the QA lane.
 
 Claude's draft split, for the discussion:
 
