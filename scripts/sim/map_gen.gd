@@ -130,6 +130,7 @@ static func generate(map_seed: int) -> MapLayout:
 	rng.seed(map_seed)
 	var l := MapLayout.new()
 	l.id = "gen-%d" % map_seed
+	l.region_id = l.id
 	l.map_seed = map_seed
 	l.terrain_seed = 1000 + map_seed
 	var params := _params(rng)
