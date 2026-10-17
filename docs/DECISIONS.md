@@ -30,7 +30,7 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-13 | 2026-10-14 | Only ground cargo can be stolen, in a firefight; first missions are free and can be retried at the same airport | done | #377, #376 |
 | D-14 | 2026-10-16 | Outages: either agent takes over the other's work without asking | done | memory, board |
 | D-15 | 2026-10-16 | Remove read-aloud (text to speech) | in-pr | #385 |
-| D-16 | 2026-10-16 | The General's choice is optional; keep the two-goal rule | in-pr | #378 |
+| D-16 | 2026-10-16 | The General's choice is optional; keep the two-goal rule | done | #378 (merged 18 Oct, 2ea0842e) |
 | D-17 | 2026-10-16 | Persistent island-wide job boards | in-pr | #383 |
 | D-18 | 2026-10-17 | Remove the rival aircraft and the hijack | in-pr | #388 |
 | D-19 | 2026-10-17 | Rival depot raid: stolen cargo goes to a depot at the rival HQ; a tip-off; a raid costs casualties, heat, a grudge and upkeep; success returns everything | planned | ROADMAP: Then: the rival depot raid |
