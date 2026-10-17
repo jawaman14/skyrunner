@@ -54,6 +54,7 @@ const LAW_NODES := ["sniffer_dogs", "passenger_profiling", "container_xray"]
 var sess
 var rng: PyRandom
 var relations := 50.0  ## 0..100: the General's regard for the organisation
+var controller := "general"  ## general | mob: who controls Isla Soberana after the Company chapter
 var passage_until := -1.0  ## safe passage bought: the MiGs look the other way
 var status := "calm"  ## calm | purge | hurricane | shortage | boatlift
 var status_until := -1.0
@@ -167,6 +168,9 @@ func ship_odds() -> Array:
 	if runner_has("false_bottoms"):
 		p /= 2.0
 		why.append("false bottoms /2")
+	if controller == "mob":
+		p *= 0.5
+		why.append("Moretti port control /2")
 	var fam = sess.family
 	if fam != null and fam.docks_until > sess.time:
 		var k := 0.5 if fam.docks_honest else 2.0
@@ -213,7 +217,8 @@ func ship(method: String, amount: int) -> String:
 		if sess.time < next_ship:
 			return "No container space on the freighter for %d min." % int(ceil((next_ship - sess.time) / 60.0))
 		var lb := clampi(amount, 100, 1200)
-		var cost := int(lb * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine")) + SHIP_FREIGHT
+		var port_fee := 4000 if controller == "mob" else 0
+		var cost := int(lb * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine")) + SHIP_FREIGHT + port_fee
 		if sess.money < cost:
 			return "Need $%s." % Py.money(cost)
 		sess.money -= cost
@@ -449,7 +454,7 @@ func _rival_trade() -> void:
 	var g = sess.ground
 	if g == null or not open() or status == "hurricane" or g.commanders.rival.cash < 15000.0:
 		return
-	var cost: float = 500 * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine") + SHIP_FREIGHT
+	var cost: float = 500 * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine") + SHIP_FREIGHT + (4000 if controller == "mob" else 0)
 	g.commanders.rival.cash -= cost
 	var p := 0.08 * (1.0 + port_heat / 100.0) * (2.0 if law_has("container_xray") else 1.0) * (2.0 if inspections_until > sess.time else 1.0)
 	rival_shipped += 1
