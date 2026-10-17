@@ -71,11 +71,14 @@ static func build(boxes: Array, q: Quality) -> Node3D:
 		var b: Dictionary = boxes[i]
 		var m: Node3D = ps.instantiate()
 		var bb := ModelLib.bounds(m)
-		var s := clampf(minf(float(b.w) * FILL / maxf(0.01, bb.size.x), float(b.d) * FILL / maxf(0.01, bb.size.z)), 0.5, 1.5)
+		var yaw := CityDress.street_yaw(b.x, b.y)
+		var fw: float = float(b.d) if CityDress.quarter_turn(yaw) else float(b.w)  # turned a quarter: width along the depth
+		var fd: float = float(b.w) if CityDress.quarter_turn(yaw) else float(b.d)
+		var s := clampf(minf(fw * FILL / maxf(0.01, bb.size.x), fd * FILL / maxf(0.01, bb.size.z)), 0.5, 1.5)
 		var sy := clampf(float(b.h) / maxf(0.01, bb.size.y), 0.8 * s, 1.35 * s)
 		var pivot := Node3D.new()
 		pivot.name = "%s-%d" % [marks[i], i]
-		var basis := Basis(Vector3.UP, CityDress.street_yaw(b.x, b.y)) * Basis.from_scale(Vector3(s, sy, s))
+		var basis := Basis(Vector3.UP, yaw) * Basis.from_scale(Vector3(s, sy, s))
 		var centre := Vector3(bb.get_center().x, bb.position.y, bb.get_center().z)
 		pivot.transform = Transform3D(basis, Vector3(b.x, float(b.z) - SINK, -float(b.y)) - basis * centre)
 		pivot.add_child(m)

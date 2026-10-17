@@ -356,7 +356,9 @@ func _rival_turf(zone: String, d: float) -> void:
 	if ss != null and ss.rival != null and ss.rival.turf.has(zone):
 		ss.rival.turf[zone] = clampf(ss.rival.turf[zone] + d, 0.05, 0.9)
 	if sess.ground != null and sess.ground.control.has(zone):
-		sess.ground.control[zone]["rival"] *= 0.5 if d < 0 else 1.5
+		var multiplier := 0.5 if d < 0 else 1.5
+		sess.ground.control[zone]["rival"] *= multiplier
+		sess.ground.adjust_territories(zone, "rival", multiplier)
 
 
 func _news(side: String, good: bool, public: bool, text: String) -> void:
