@@ -76,6 +76,13 @@ in `tools/mcp/launch.py` in a reviewed commit.
 Pure GDScript on Godot 4.7.2. No native code, no plug-ins to build. See README.md for the game,
 docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the baton.
 
+## Owner decisions: the ledger (owner, 18 October 2026)
+
+Every owner decision goes into [docs/DECISIONS.md](docs/DECISIONS.md) in the session it is made, with where its work is
+tracked (a `ROADMAP: <section>` or a PR/issue); `tests/test_docs.gd` fails a row with no tracker. Read the ledger before
+planning or rewriting the roadmap (Claude's SessionStart hook prints the open rows). Before a session's final report,
+check the owner's messages for decisions not yet in it. Work items also go on #328 (Claude) or #329 (Codex).
+
 ## Commands
 ```bash
 GODOT=$(./tools/get_godot.sh)                 # pinned 4.7.2 into .tools/ (Linux); elsewhere use your own 4.7.2
