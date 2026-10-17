@@ -140,6 +140,7 @@ static func _strip_specs() -> Array:
 static func generate() -> MapLayout:
 	var l := MapLayout.new()
 	l.id = "city"
+	l.region_id = "costa-brava"
 	l.map_seed = SEED
 	l.terrain_seed = TERRAIN_SEED
 	l.params = _params()
@@ -189,6 +190,18 @@ static func generate() -> MapLayout:
 	l.airfields = placed
 	l.zone_fields = {"west": ["FRM", "QRY", "MGR"], "north": ["EGL", "PNR"], "sea": ["COV", "ISL"]}
 	l.zone_centre = {"west": [-3500.0, -3000.0], "north": [1000.0, 8500.0], "sea": [13500.0, -11500.0]}
+	l.territories = [
+		{"id": "san-telmo-centro", "name": "San Telmo Centro", "market": "west", "center": Vector2(-650.0, -10000.0), "bounds": Rect2(-1700.0, -11000.0, 2100.0, 1900.0), "neighbors": ["barrio-chino", "the-docks", "airport-coast"], "tags": ["city", "commercial"]},
+		{"id": "barrio-chino", "name": "Barrio Chino", "market": "west", "center": Vector2(1250.0, -9700.0), "bounds": Rect2(400.0, -10500.0, 1900.0, 1500.0), "neighbors": ["san-telmo-centro", "valle-verde"], "tags": ["city", "residential", "stash-corridor"]},
+		{"id": "the-docks", "name": "The Docks", "market": "sea", "center": Vector2(-2900.0, -10850.0), "bounds": Rect2(-4500.0, -11900.0, 2800.0, 1900.0), "neighbors": ["san-telmo-centro", "airport-coast", "rio-negro-estuary"], "tags": ["port", "commercial", "logistics"]},
+		{"id": "airport-coast", "name": "Airport Coast", "market": "town", "center": Vector2(-6600.0, -10000.0), "bounds": Rect2(-9000.0, -11800.0, 4500.0, 3400.0), "neighbors": ["san-telmo-centro", "the-docks", "rio-negro-estuary", "valle-verde"], "tags": ["airfield", "logistics"]},
+		{"id": "rio-negro-estuary", "name": "Rio Negro Estuary", "market": "west", "center": Vector2(-11800.0, -6500.0), "bounds": Rect2(-16000.0, -8800.0, 7000.0, 5300.0), "neighbors": ["the-docks", "airport-coast", "valle-verde"], "tags": ["river", "mangrove", "remote"]},
+		{"id": "valle-verde", "name": "Valle Verde", "market": "west", "center": Vector2(1000.0, -4200.0), "bounds": Rect2(-9000.0, -8500.0, 18000.0, 6500.0), "neighbors": ["barrio-chino", "airport-coast", "rio-negro-estuary", "la-selva", "old-quarry"], "tags": ["rural", "farm", "airfield"]},
+		{"id": "la-selva", "name": "La Selva", "market": "north", "center": Vector2(4500.0, 7800.0), "bounds": Rect2(-3000.0, 0.0, 12000.0, 13500.0), "neighbors": ["valle-verde", "sierra-del-aguila", "old-quarry"], "tags": ["jungle", "remote", "stash-corridor"]},
+		{"id": "sierra-del-aguila", "name": "Sierra del Aguila", "market": "north", "center": Vector2(-7500.0, 8500.0), "bounds": Rect2(-12000.0, 0.0, 9000.0, 13500.0), "neighbors": ["valle-verde", "la-selva"], "tags": ["highland", "airfield", "remote"]},
+		{"id": "old-quarry", "name": "Old Quarry", "market": "west", "center": Vector2(10500.0, 1700.0), "bounds": Rect2(9000.0, -6500.0, 6500.0, 13000.0), "neighbors": ["valle-verde", "la-selva", "smugglers-cove"], "tags": ["industrial", "road-chokepoint"]},
+		{"id": "smugglers-cove", "name": "Smuggler's Cove", "market": "sea", "center": Vector2(11600.0, -9300.0), "bounds": Rect2(9000.0, -13000.0, 6500.0, 6500.0), "neighbors": ["old-quarry"], "tags": ["coastal", "boat-landing", "remote"]},
+	]
 	l.aerostat_pos = [5500.0, -13800.0]
 	var planned := load_roads()
 	l.roads = planned.get("roads", ROADS.duplicate(true))
