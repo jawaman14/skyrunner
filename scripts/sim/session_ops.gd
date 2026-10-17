@@ -51,7 +51,8 @@ func stock_island_boards() -> void:
 	if agency != null:
 		agency.rng = bagrng
 	for af in world.airfields:
-		if af.code != location and af.kind != "foreign" and not board_is_fresh(af.code):
+		# the strip you are parked at ages too: a pilot who waits past the TTL finds a new board (in the air the current strip's board is the one you left)
+		if (af.code != location or parked) and af.kind != "foreign" and not board_is_fresh(af.code):
 			refresh_board(af.code)
 	rng = saved_rng
 	arng = saved_arng

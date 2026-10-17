@@ -137,6 +137,28 @@ func test_the_sim_keeps_a_board_at_every_strip_and_deals_it_afresh_after_a_while
 	Switches.restore(saved)
 
 
+## Codex's review of #383: the strip you are parked at is dealt afresh once its board passes the TTL, on the board stream.
+func test_a_pilot_parked_at_a_strip_finds_a_new_board_after_the_ttl() -> void:
+	var s := _session()
+	check(s.parked, "parked at the start strip")
+	var here: String = s.location
+	var before: Array = s.boards[here].map(func(j): return j.id)
+	s.stock_island_boards()
+	check_eq(s.boards[here].map(func(j): return j.id), before, "a fresh board stays")
+	var stream: Array = s.rng.get_state()
+	s.time += Jobs.BOARD_TTL_S + 1.0
+	s.stock_island_boards()
+	check(s.boards[here].map(func(j): return j.id) != before, "a stale board at the strip you are parked at is dealt afresh")
+	check(s.board_is_fresh(here), "and is fresh again")
+	check_eq(s.rng.get_state(), stream, "without touching the main random stream")
+	s.phase = "flying"
+	var in_air: Array = s.boards[here].map(func(j): return j.id)
+	s.time += Jobs.BOARD_TTL_S + 1.0
+	s.stock_island_boards()
+	check_eq(s.boards[here].map(func(j): return j.id), in_air, "in the air the board of the strip you left is not dealt under you")
+	s.dispose()
+
+
 func test_stale_menu_selection_cannot_accept_an_unavailable_job() -> void:
 	var s := _session()
 	var job := _job(s)
