@@ -4,7 +4,8 @@ Current queue, rewritten 18 October 2026. The 12 October text is in git history 
 [ROADMAP_HISTORY_2026-10-09.md](ROADMAP_HISTORY_2026-10-09.md); older progress is in
 [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md). Live state of every PR and issue is in
 `github_merge_queue` and [PROJECT_TRIAGE_2026-10-12.md](PROJECT_TRIAGE_2026-10-12.md); generated facts are in
-[PROJECT_STATUS.md](PROJECT_STATUS.md).
+[PROJECT_STATUS.md](PROJECT_STATUS.md). Every owner decision and where its work is tracked: [DECISIONS.md](DECISIONS.md)
+(read it first when rewriting this file).
 
 ## Product direction (owner, 8 October 2026)
 
@@ -77,6 +78,25 @@ The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than 
 Who: Claude the beat, the unlock, the takeover state, delegation and trust; Codex the dialogue and the scene.
 Order: with the rival depot raid, after the presentation layers, unless the owner moves it up.
 
+## Heat and the law (owner, 18 October)
+
+Agreed order (owner, 18 Oct). Each step: a design note first, its own switch, its own RNG stream, tests first, a balance run.
+
+1. **Case files and kinds of heat** (in progress). Design #400 (DESIGN §48); the stash case files (lead, surveillance,
+   warrant, raid; lying low drops a case; an emptied stash is raided for nothing) are built on `claude/heat-case-file`.
+   Still to do in step 1: the lawyer's warrant challenge as a command; pilot evidence, aircraft heat (per tail number)
+   and district heat; the phone Heat app (Codex); the balance run and BALANCE entry.
+2. **The police search and the ladder down.** Helicopters search outward from the last known position; checkpoints on
+   likely escape roads; dispatch chatter on the scanner; visible ways to cool off from wanted (break line of sight, go
+   under cloud, swap the transponder code, hide the aircraft in a hangar, change aircraft or repaint).
+3. **Patterns, escalation, corruption, ground chases.** Habitual routes and hours raise the risk and draw roadblocks and
+   radar pickets (pattern exposure from the HQ season, in live play); new agencies at heat thresholds (state police, the
+   DEA, a military radar picket); paid cops who warn and can be flipped by Internal Affairs, crew loyalty and leaks, the
+   accountant slowing the RICO case; a stopped truck or a raid nearby becomes a short car or foot chase.
+
+Who: Claude the simulation of every step; Codex the Heat app, the HUD and the in-world look (the presentation layers'
+"heat in the look").
+
 ## Then: the rival depot raid
 
 Owner's decided design (17 October; saved in memory and on the board): stolen cargo and weapons go to a **rival depot at the
@@ -107,6 +127,8 @@ These were finished in part, dropped from the 12 October list, or never written 
 - **Backspace reverse (#394):** no gamepad binding and no F1/GUIDE help line.
 - **Map destinations (#390):** only go-fast boats and stash trucks have destination lines. Squads, convoys and the station map
   (`station_map.gd`) do not; the AI pilot's route is announced (#391) but not drawn.
+- **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356), the pilot
+  app does not. Its own task, needs render interpolation.
 - **Key audit (#345):** every key, which are still used, what the help text says. Not started.
 - **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
 - **Job board (#383):** remote desks still get only the current strip's board; boards are not saved (a load redeals once).
