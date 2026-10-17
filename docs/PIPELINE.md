@@ -14,8 +14,8 @@ person can do (the human release gates and the decisions in #326). This file is 
 | 4 | Sync `main` into the branch | the author | `sync_shared.py` (`--baton theirs` for a PR that is not the holder; #332) | minutes | 12 branches 39 commits behind: every PR collides on HANDOFF, the status count and the lanes |
 | 5 | CI | automatic | `github_pr_wait` | about 10 minutes | none |
 | 6 | Bot review (arrives minutes after CI) | automatic | `review_packet.py` shows unanswered threads | minutes | threads left unanswered blocked merges; several valid P1/P2 findings went unseen until the packet existed |
-| 7 | Other-agent review of the exact head | the reviewer | `github_pr_review` | one wake | **the main stall:** Codex's desktop session acts only when the owner prompts it, and a woken turn cannot call the review tool (approval policy never) |
-| 8 | Merge | the integrator (Claude) | `github_pr_merge` (needs green CI on the head and every thread replied) | seconds | waiting on step 7 |
+| 7 | Other-agent review of the exact head (**risk-class PRs only since 18 Oct, D-52**; see AGENTS.md) | the reviewer | `github_pr_review` | one wake | **the main stall:** Codex's desktop session acts only when the owner prompts it, and a woken turn cannot call the review tool (approval policy never) |
+| 8 | Merge | the author (since 18 Oct, D-52; before that the integrator, Claude) | `github_pr_merge` (needs green CI on the head and every thread replied) | seconds | waiting on step 7 |
 | 9 | Notes for the owner | the integrator | one comment on #326 per merge, a summary at the end | seconds | did not exist |
 
 ## What went wrong on 11 October, with the evidence

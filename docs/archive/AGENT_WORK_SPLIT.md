@@ -109,7 +109,7 @@ git checkout -b chore/agents-md
 git mv CLAUDE.md AGENTS.md
 sed -i '1s/.*/# Skyrunner: notes for coding agents (Claude Code and Codex)/' AGENTS.md
 printf '@AGENTS.md\n' > CLAUDE.md
-sed -i 's/\[CLAUDE.md\](CLAUDE.md)/[AGENTS.md](AGENTS.md)/' README.md
+sed -i 's/\[CLAUDE.md\](../../CLAUDE.md)/[AGENTS.md](../../AGENTS.md)/' README.md
 sed -i 's/`CLAUDE.md`: commands/`AGENTS.md`: commands/' HANDOFF.md
 git add AGENTS.md CLAUDE.md README.md HANDOFF.md
 git commit -m "docs: make AGENTS.md the shared agent rules file"
@@ -143,7 +143,7 @@ The history already lives in ROADMAP_HISTORY_2026-10.md and PROJECT_STATUS.md, s
 # Roadmap
 
 What's left to do, in order. One feature branch and PR per slice; evidence goes in the PR body.
-Verified state: [PROJECT_STATUS.md](PROJECT_STATUS.md). History: [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md).
+Verified state: [PROJECT_STATUS.md](../PROJECT_STATUS.md). History: [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md).
 Lane: **C** = Claude Code (local), **X** = Codex (cloud), **H** = human.
 
 ## Queue

@@ -11,6 +11,9 @@ const OPEN_FLOAT := 10000  ## open mode's start: every system live from the firs
 const START_FIELD := "HAR"
 const OFF_FIELD_MAX_GS_KTS := 15.0
 const GEAR_MARGIN := 1.25  ## the gear holds to this multiple of its rated sink rate; between 1x and 1.25x is a hard landing
+const BACK_UP_MS := 1.5  ## Backspace on the ramp: m/s backwards
+const BACK_UP_MAX_KTS := 2.0
+var _backing := false
 const WINGTIP_STRIKE_ROLL_DEG := 18.0  ## on the ground: a Cessna's wingtip is about 1.8 m up, half a span out
 ## The graded ground beside a strip (Terrain._shape_fields levels it out to 50 m) is part of the field for the
 ## "ran off" check, so a rollout that drifts onto the shoulder is a scare, not a crash. Pits and cliffs get none.

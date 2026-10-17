@@ -16,7 +16,7 @@ Status legend: **[done]** in the code now · **[planned]** historical proposals 
 
 The owner's answers to a gameplay questionnaire (recorded by Codex in PR #249) set the target the rest of this
 document grows towards. They take precedence over conflicting older plans, including the deferrals in
-[EMPIRE_MILESTONE.md](EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
+[EMPIRE_MILESTONE.md](archive/EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
 say what exists. The delivery order is in [ROADMAP.md](ROADMAP.md).
 
 **The core experience: build an empire from nothing.** Mount & Blade: Warband is the principal reference. The
@@ -1451,5 +1451,57 @@ The key is `<region_id>/<district_id>`. District presence decays and accumulates
 NPC commit/withdraw decisions use each squad's range-adjusted `fire_at`, cover, morale and nearby friendly support. Territory patrol targets score local opposition and strategic tags. Explicit human orders remain in charge. A truck with an active one-leg delivery checks its remaining route every 30 seconds; if a materially lower-risk path exists through the faction-aware road graph, its driver changes route without losing position or progress. The organization focuses escorts on valuable or exposed loads. Police and rival route choices read the truck's current route. These choices preserve seizure and combat outcome rules.
 
 The new behavior is gated by `Territories.ENABLED`; it draws no additional randomness. Initial verification: Godot 4.7.2 import passed, the full suite passed 898/898, Costa Brava smoke printed `SMOKE OK`, and the 200-seed live war balance run completed. The suite emitted analyst string-formatting and freed-lambda-capture errors alongside its zero-failure summary; investigate those logs before treating the run as fully clean. Not yet: a 2D territory overlay, balance calibration for district control, and authoring another distinct playable region.
+
+## 48. The case file: heat you can see and answer (design, 18 Oct 2026; not built)
+
+Owner, 18 Oct: make heat and the law interactive. Step 1 of the agreed order (then the police search and the ladder down,
+then patterns, escalation, corruption and ground chases). Today most heat is a hidden number that bites: a stash at heat 55
+or more is raided on a 30% roll each minute (`session_rules.gd`, AI task force), and the pilot's case is live suspicion only.
+
+**Four kinds of heat, each cooling at its own rate.**
+
+| Heat | Where it lives | Rises with | Cools |
+|---|---|---|---|
+| Pilot | `PoliceSystem.Case` (exists: suspicion, wanted) plus a new slow `evidence` score | sightings, a lost squawk, seized trucks, busts | evidence slowly (hours); suspicion as today |
+| Aircraft | new, per owned tail number | being seen dark or wanted in it | parked in a hangar; faster after a repaint |
+| Stash | `StashNet` stash `heat` (exists; known at 30) | deliveries, seizures | as today (1.5 a minute, the stash works' rate) |
+| District | new, per market or territory | seizures, fights, raids there | slowly, faster with no incidents |
+
+A hot aircraft makes the pilot's suspicion rise faster when it is seen (the tail number is known); a hot district makes
+patrols and checkpoints more likely there. Each kind is a separate dial, so the player can park a hot aircraft and fly a
+clean one, or empty a hot stash.
+
+**Investigations in stages.** Each target the task force pursues (a stash, the pilot) gets a case file that moves through
+stages on timers instead of a hidden roll:
+
+1. **Lead:** a stash becomes known (heat 30, as today) or the pilot's evidence passes a first mark.
+2. **Surveillance:** after a few minutes with heat still high, a stakeout (a van across the street, a plane on the ramp).
+3. **Warrant:** after the surveillance time, if heat is still above the line, a warrant with a countdown.
+4. **Action:** when the countdown ends, the raid or the arrest at the next landing at a watched strip.
+
+If heat falls below the line during surveillance, the case is dropped. A raid on an empty stash finds nothing, cools it,
+and voids the warrant.
+
+**Counter-moves at each stage.**
+- **Move the product:** empty the stash before the warrant runs out (the logistics trucks already do this).
+- **Lie low:** no deliveries, so heat decays and the case can drop at surveillance.
+- **The lawyer:** challenge a warrant for a fee; a chance to void it, better with a better lawyer (the court's tiers).
+- **A warning:** the lookout (exists) or a cop on the payroll shows the stage and the countdown; without one the player
+  sees only what a phone call or the scanner gives.
+- **A decoy:** a decoy run draws the surveillance away for a while.
+
+**What the player sees.** A **Heat** app on the phone (Codex): one row per case with the target, the stage, what the
+police have, and the time to the next stage when a warning source knows it; the four heat dials. Messages at each stage
+change ("A van has been parked across from the Quarry shed for an hour.").
+
+**Rules.** Behind a static switch `Investigation.ENABLED` registered in `Switches.PARITY` (off: the old raid roll).
+Every random draw (warrant challenge, stakeout noticed) on its own stream, `seed + 163`. Saved in `StrategicSave` (case
+stage, timers, aircraft and district heat). Tests first: a stash at heat moves Lead to Surveillance to Warrant to Raid on
+time; lying low drops a case at surveillance; emptying the stash makes the raid find nothing; a lawyer can void a warrant;
+the switch off keeps the old behaviour. Raids become predictable, so stash losses should fall: a strategic and tactical
+balance run and a BALANCE entry go with it.
+
+**Not in step 1:** the police search pattern, scanner chatter and the ladder down (step 2); pattern detection,
+escalation by agency, corruption and ground chases (step 3).
 
 **Island boards** (`Jobs.ISLAND_BOARD`, a parity switch). Every strip keeps a board that outlives your visits, so the job board can show the whole island: `Session.stock_island_boards` deals each other strip's board from `update()` (at the first tick, then once a minute), a board lives `Jobs.BOARD_TTL_S` (30 sim minutes) and is dealt afresh when stale, and arriving at a strip keeps its fresh board instead of rerolling it. The employed opening deals its own board and is left alone. The extra draws sit on their own streams (`brng` seed + 149, gun runs `barng` seed + 151, the Company's offers `bagrng` seed + 157), swapped in only while the boards are dealt, so nothing else moves. Accepting a job still needs the pilot parked at its origin.
