@@ -52,6 +52,7 @@ func setup(world_: World, q: Quality) -> WorldScene:
 		add_child(n)
 		field_lights.append(n.get_node("lights"))
 		add_child(Buildings.airfield_site(world, af))
+		add_child(AirfieldDress.build(world, af, q))  # windsock, beacon, bowser, chocks, anchors, taxi lights (own models)
 	for k in world.map.hqs:
 		add_child(Buildings.hq(world, world.map.hqs[k]))
 	if not world.map.foreign.is_empty():

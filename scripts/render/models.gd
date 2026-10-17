@@ -158,8 +158,9 @@ static func build_airfield(world: World, af: Airfield, q: Quality) -> Node3D:
 			lights.box(e[0], e[1], z + 0.9, 0.4, 0.4, 0.25, [0.2, 1.0, 0.3])
 	# the buildings are Buildings.airfield_site (walkable, with colliders)
 	var ws: Array = p.call(-L * 0.7, -W - 12)
-	mb.box(ws[0], ws[1], z + 3, 0.2, 0.2, 6, [0.6, 0.6, 0.6])
-	mb.box(ws[0] + 1.2, ws[1], z + 5.8, 2.4, 0.5, 0.5, orange)
+	if not AirfieldDress.has_windsock():  # AirfieldDress draws the modelled windsock instead
+		mb.box(ws[0], ws[1], z + 3, 0.2, 0.2, 6, [0.6, 0.6, 0.6])
+		mb.box(ws[0] + 1.2, ws[1], z + 5.8, 2.4, 0.5, 0.5, orange)
 	var root := Node3D.new()
 	root.name = "af-" + af.code
 	# the runway numbers, painted flat, readable from the approach

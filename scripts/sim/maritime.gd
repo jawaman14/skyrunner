@@ -310,6 +310,8 @@ func _gofast(b: Boat, dt: float, floating: Array) -> void:
 	if b.state == "collecting":
 		if mine.is_empty():
 			b.state = "running" if not b.cargo.is_empty() else "waiting"
+			if b.state == "running":
+				events.append(["boat_running", {"boat": b.id, "job_id": b.job_id, "count": b.cargo.size()}])
 			return
 		var tgt: Bale = Py.min_by(mine, func(bl): return PyMath.hypot(bl.x - b.x, bl.y - b.y))
 		var d := b.steer(dt, world, [tgt.x, tgt.y], 0.6)
@@ -319,7 +321,7 @@ func _gofast(b: Boat, dt: float, floating: Array) -> void:
 				b.work_t = 0.0
 				tgt.state = "collected"
 				b.cargo.append(tgt.id)
-				events.append(["bale_collected", {"boat": b.id, "job_id": b.job_id, "bale": tgt.id}])
+				events.append(["bale_collected", {"boat": b.id, "job_id": b.job_id, "bale": tgt.id, "count": b.cargo.size()}])
 	elif b.state == "running":
 		if b.steer(dt, world, cove) < 80:
 			_deliver(b)
