@@ -1,7 +1,7 @@
 # Project status
 
 This file is the single status reference. Update it when a release or verified
-baseline changes; historical counts belong in `docs/ROADMAP_HISTORY_2026-10.md`.
+baseline changes; historical counts belong in `docs/archive/ROADMAP_HISTORY_2026-10.md`.
 It separates implemented work from evidence so a feature is not advertised as
 human-tested merely because source code exists.
 
@@ -36,7 +36,7 @@ This section describes **this checkout**. Run `godot --headless --script res://t
 
 ## Faction-AI diagnostic evidence
 
-The [forty-seed isolation study](FACTION_AI_ISOLATION_2026-10-09.md) records 160 runs across baseline, escort-only, stakeout-only and combined variants. Stakeout cleanup increases mean arrests and burned stashes. Escort neutrality is limited to a stand-in without cargo trucks. PR #244 and issue #98 remain open; this record changes no gameplay or tuning.
+The [forty-seed isolation study](archive/FACTION_AI_ISOLATION_2026-10-09.md) records 160 runs across baseline, escort-only, stakeout-only and combined variants. Stakeout cleanup increases mean arrests and burned stashes. Escort neutrality is limited to a stand-in without cargo trucks. PR #244 and issue #98 remain open; this record changes no gameplay or tuning.
 
 ## Feature state
 
@@ -68,7 +68,7 @@ command deduplication, stale-input neutralization and seat-generation checks.
 race feedback/selection and fight privacy. Each is squash-merged separately;
 superseded originals are closed with replacement links. The exact post-merge
 tree passes 1,002 tests, isolated desktop smoke and hygiene. See the
-[integration/disposition record](PR_INTEGRATION_2026-10-08.md) for evidence and
+[integration/disposition record](archive/PR_INTEGRATION_2026-10-08.md) for evidence and
 remaining drafts. Main's eight CI jobs pass, including exports and all three
 desktop smoke jobs. Final focused checks pass: save 33, parity 14 and export
 filters two. The save process returned a nonzero native cleanup exit after its
@@ -110,7 +110,7 @@ access legs and 37 without nearby checked access. These are nominal simulation
 endpoints, not proof that physical loading areas are unusable. Fix and validate
 loading/meet connectors before switching dispatch to checked routes; replacing
 the router alone would block this entire audited set. See
-`tools/logistics_routes.gd` and `docs/LOGISTICS_ROUTE_BASELINE.md`.
+`tools/logistics_routes.gd` and `docs/archive/LOGISTICS_ROUTE_BASELINE.md`.
 PR #223 adds a verified macOS bundle/launch
 job and satisfies issue #176's CI gate. RoutePlanner still lacks the known-radar
 cost layer required by #87; broader crew-demand criteria in #81 remain pending.
@@ -138,7 +138,7 @@ additional aircraft and cloud deployment.
 
 ## Updating
 
-The dated [post-integration verification report](VALIDATION_2026-10-07.md)
+The dated [post-integration verification report](archive/VALIDATION_2026-10-07.md)
 records performed and unperformed checks, known diagnostics and review findings.
 
 Use `tools/test.sh` for a full sharded run and record its three shard totals in

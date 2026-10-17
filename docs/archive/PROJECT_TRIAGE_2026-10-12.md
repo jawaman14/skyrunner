@@ -36,10 +36,10 @@ means a merged PR or a passing test, and is stated per row.
 
 | Item | Why | Suggestion |
 |---|---|---|
-| #99 Design audit "reconcile human roles and campaign status" | One-off document task; superseded by `docs/PROJECT_STATUS.md` and `docs/AGENT_WORK_SPLIT.md` | Close as done by those documents (unverified that nothing is missing). |
+| #99 Design audit "reconcile human roles and campaign status" | One-off document task; superseded by `docs/PROJECT_STATUS.md` and `docs/archive/AGENT_WORK_SPLIT.md` | Close as done by those documents (unverified that nothing is missing). |
 | #118, #139, #158, #174 "program" issues (execution order of #80-#117, #120-#138, #140-#157, #159-#173) | Ordering lists, not work. Already closed. | Keep closed; the order lives in #326 section 3. |
 | 16 dated one-off docs: `docs/*_2026-10-0x.md` (ACCESS_VALIDATION, COMMAND_DOMAIN_MIGRATION, COVERAGE_MATRIX, FACTION_AI_ISOLATION, NETWORK_SERVICE_LIFECYCLE, OPEN_PR_AUDIT, PR_INTEGRATION, SHARED_SEAT_SCREEN, STARTUP_FAILURE, TEST_FIXTURE_AUDIT, TEST_LANES, VALIDATION, WORKER_MAP_PORT, REVIEW_2026-10, HANDOFF_HISTORY, ROADMAP_HISTORY) | Point-in-time evidence from the overhaul; nobody reads them to play or build. | Move to `docs/archive/` in one PR (no content change) so `docs/` shows living documents only. |
-| `docs/OPEN_PR_AUDIT_2026-10-08.md`, `docs/PR_INTEGRATION_2026-10-08.md` | Describe PRs that are now merged or superseded. | Archive. |
+| `docs/archive/OPEN_PR_AUDIT_2026-10-08.md`, `docs/archive/PR_INTEGRATION_2026-10-08.md` | Describe PRs that are now merged or superseded. | Archive. |
 | #100 Arena polish: lap counter, betting, player races, club interior, race gates; #117 player races, laps, betting | `races.gd`, `casino*.gd` (about 1,050 lines) already exist; polish for a side activity. | Owner decision: keep as a side feature, or freeze. |
 | #115 emergent campaign director, #116 hidden informant role, #113 fog of war, #114 crew relationships | Large programs on top of an unfinished base: described in detail in section 8. `docs/BACKLOG.md` already says #113 is mostly done (close), #115 partly done (chronicle and events; deferred), #116 deferred. | Owner decision after the first-hour work (section 8 has the proposed first slice of each). |
 | #86 pathfinding with ambushes, #87 radar-aware evasion | Radar-aware routing was restored (#295, #297); ambush awareness has no code. | Close #87 as done by #295 (unverified: check the evasion path in `RoutePlanner`); #86 stays a feature. |
@@ -96,7 +96,7 @@ Done on 12 October: #337 closed as superseded by #338. Checked and kept open: #3
 
 1. The "complete and unlikely to change" list (section 1) is accepted; open PRs that are superseded are closed (done so far: #337, a smaller duplicate of #338).
 2. GitHub work goes through the MCP so the agents do not overwrite each other. When Claude takes over Codex's work it is noted on the PR and the board, and the
-   handoff documents exist (`docs/CLAUDE_ROLE_HANDOFF.md`, `docs/PIPELINE.md`, `HANDOFF.md`).
+   handoff documents exist (`docs/archive/CLAUDE_ROLE_HANDOFF.md`, `docs/PIPELINE.md`, `HANDOFF.md`).
 3. The local model reads finished documents as a first-pass reviewer (unclear passages and missing links only); Claude checks every point against the repository.
 4. Videos go to YouTube; new photos and videos are needed. The roughly 940 asset files stay and are checked for fit to the era. Generated results stay, with better display.
 5. The empire layer follows the start of Mount & Blade (section 5).
@@ -229,7 +229,7 @@ Questions for the owner:
 
 ### Keep: valid drafts that need a sync or a decision
 * [ ] **#321** score rows 15-22 (draft). keep: the owner's ruling is recorded; merge after review.
-* [x] **#320** joint working plan. closed 12 Oct on the owner's instruction (superseded by `docs/PIPELINE.md` and `docs/CLAUDE_ROLE_HANDOFF.md`).
+* [x] **#320** joint working plan. closed 12 Oct on the owner's instruction (superseded by `docs/PIPELINE.md` and `docs/archive/CLAUDE_ROLE_HANDOFF.md`).
 * [ ] **#304** docs about the employed opening. keep: still valid.
 * [ ] **#339** pipeline discussion draft. keep: unanswered questions.
 * [x] **#340** docs: which MCP server and how an agent joins. closed 12 Oct on the owner's instruction (covered by `tools/mcp/README.md` and the server's `COLLABORATION.md`).
