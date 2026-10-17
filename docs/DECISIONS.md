@@ -54,4 +54,5 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-38 | 2026-10-18 | Flight skill (landings, short strips, approaches) gives optional bonus goals in the story; it never blocks a chapter | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
 | D-39 | 2026-10-18 | Stay on Godot; the Unity proposal is dropped | done | #326 |
 | D-40 | 2026-10-18 | Claude captures screenshots of #373 (scenery) and #374 (period vehicles) for the owner to approve before they merge | planned | #373, #374 |
+| D-41 | 2026-10-18 | The owner approved #374's period vehicles from the screenshots ("Approve") | in-pr | #374 |
 | D-34 | 2026-10-13 | Presentation layers: stingers, the player's own colours and tag, claiming a won zone with graffiti (gameplay; the layer draws it), systems reacting to each other, per-year stations, wordless with a pause-menu legend | planned | ROADMAP: Next: presentation layers (owner's pick) |
