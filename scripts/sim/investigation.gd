@@ -23,9 +23,18 @@ const WARRANT_AFTER_S := 360.0
 const WARRANT_S := 240.0
 const CHALLENGE_FEE := 1500
 const STAGES := ["lead", "surveillance", "warrant"]
+## Aircraft heat (per tail number, 0..100): points a minute.
+const TAIL_WANTED_MIN := 4.0  ## flown while wanted
+const TAIL_DARK_MIN := 1.0  ## tracked flying dark (no transponder)
+const TAIL_COOL_MIN := 0.3  ## anywhere else
+const TAIL_PARKED_MIN := 1.0  ## parked
+const TAIL_HANGAR_MIN := 3.0  ## parked at a field with a hangar
+const TAIL_MULT := 0.5  ## a fully known aircraft's sightings count 1.5 times
+const TAIL_KNOWN := 50.0
 
 var cases := {}  ## stash id -> {"stage": String, "since": float, "until": float}
-var events: Array = []  ## [stage or "dropped", stash id], for the session's messages
+var events: Array = []  ## [stage or "dropped", stash id], for the session's messages; ["tail_known", aircraft key] too
+var tail_heat := {}  ## aircraft key -> heat 0..100
 var rng: PyRandom
 
 
@@ -65,6 +74,31 @@ func update(now: float, stash_net) -> Array:
 	return raids
 
 
+## The aircraft's heat over `dt` seconds: up while wanted or tracked dark, down otherwise (fastest in a hangar). Returns
+## the multiplier the police give its sightings.
+func update_tail(dt: float, key: String, wanted: bool, tracked_dark: bool, parked: bool, hangar: bool) -> float:
+	var h := float(tail_heat.get(key, 0.0))
+	var before := h
+	var per_min := 0.0
+	if wanted:
+		per_min = TAIL_WANTED_MIN
+	elif tracked_dark:
+		per_min = TAIL_DARK_MIN
+	elif parked:
+		per_min = -(TAIL_HANGAR_MIN if hangar else TAIL_PARKED_MIN)
+	else:
+		per_min = -TAIL_COOL_MIN
+	h = clampf(h + per_min * dt / 60.0, 0.0, 100.0)
+	tail_heat[key] = h
+	if before < TAIL_KNOWN and h >= TAIL_KNOWN:
+		events.append(["tail_known", key])
+	return tail_mult(key)
+
+
+func tail_mult(key: String) -> float:
+	return 1.0 + TAIL_MULT * float(tail_heat.get(key, 0.0)) / 100.0
+
+
 ## A lawyer's challenge to the warrant on `id`: a chance (better with a better lawyer, tier 0..3) to have it thrown out,
 ## which sends the case back to surveillance. Returns true when it is thrown out.
 func challenge(id: String, tier: int, now: float) -> bool:
@@ -96,11 +130,15 @@ func view(stash_net, now: float, warned := {}) -> Array:
 
 
 func to_dict() -> Dictionary:
-	return {"cases": cases.duplicate(true)}
+	return {"cases": cases.duplicate(true), "tail_heat": tail_heat.duplicate()}
 
 
 func load_dict(d) -> void:
 	cases = {}
+	tail_heat = {}
+	if d is Dictionary and d.get("tail_heat") is Dictionary:
+		for k in d.tail_heat:
+			tail_heat[str(k)] = clampf(float(d.tail_heat[k]), 0.0, 100.0)
 	if d is Dictionary and d.get("cases") is Dictionary:
 		for id in d.cases:
 			var c = d.cases[id]

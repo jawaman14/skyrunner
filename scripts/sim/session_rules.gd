@@ -198,6 +198,11 @@ func _truck_out(job: Jobs.Job, af: Airfield) -> void:
 func _update_stashes(dt: float) -> void:
 	if stash_net == null:
 		return
+	if Investigation.ENABLED and investigation != null and state != null:
+		var c: PoliceSystem.Case = police.case("runner")
+		var af_here = World.AIRFIELD_BY_CODE.get(location) if parked else null
+		police.tail_heat_mult = investigation.update_tail(dt, str(aircraft_key), c.wanted > 0, c.detected_by != null and not transponder,
+			parked, af_here != null and bool(af_here.shop))
 	var results := stash_net.update(dt, time, police.units.filter(func(u): return u.faction() == "police"))
 	if ground != null:
 		ground.update(dt)
@@ -289,6 +294,9 @@ func _update_economy(dt: float) -> void:
 ## What the street sees of the case files: a stakeout is noticed; a warrant only where a lookout is posted.
 func _case_messages() -> void:
 	for ev in investigation.events:
+		if str(ev[0]) == "tail_known":
+			say("Word is the task force has your tail number. Every sighting of this aircraft counts for more; a hangar cools it off.")
+			continue
 		var st = stash_net.get_stash(str(ev[1]))
 		if st == null:
 			continue

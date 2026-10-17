@@ -120,3 +120,26 @@ func test_the_lawyer_challenges_a_warrant_from_the_game() -> void:
 	check(r[0], "the lawyer goes to the judge: %s" % [r])
 	check_eq(s.money, before - Investigation.CHALLENGE_FEE, "for his fee")
 	check(s.investigation.stage_of(id) in ["warrant", "surveillance"], "the warrant stands or goes back to surveillance")
+
+
+func test_a_known_tail_number_heats_up_and_cools_in_a_hangar() -> void:
+	var inv := Investigation.new()
+	check_near(inv.tail_mult("c172p"), 1.0, 0.001, "a clean aircraft")
+	var m := inv.update_tail(15 * 60.0, "c172p", true, false, false, false)
+	check(m > 1.25, "fifteen minutes wanted: its sightings count for more (%.2f)" % m)
+	check(inv.events.any(func(e): return e[0] == "tail_known"), "and the player hears the tail number is known")
+	var parked := inv.update_tail(5 * 60.0, "c172p", false, false, true, false)
+	var hangar := Investigation.new()
+	hangar.tail_heat = {"c172p": inv.tail_heat["c172p"] + 5.0 * Investigation.TAIL_PARKED_MIN}
+	var in_hangar := hangar.update_tail(5 * 60.0, "c172p", false, false, true, true)
+	check(in_hangar < parked, "a hangar cools it faster than a ramp")
+	check_near(inv.tail_mult("pa28"), 1.0, 0.001, "another aircraft is clean")
+
+
+func test_in_a_game_flying_wanted_makes_the_police_count_sightings_higher() -> void:
+	var s := _game()
+	s.police.case("runner").wanted = 1
+	s.phase = "flying"
+	for i in 20:
+		s._update_stashes(60.0)
+	check(s.police.tail_heat_mult > 1.2, "the police know the aircraft (%.2f)" % s.police.tail_heat_mult)
