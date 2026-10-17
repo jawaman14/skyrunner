@@ -56,6 +56,27 @@ change a sim outcome or draw on a sim RNG stream.
 4. **City pulse:** the economy sets the rhythm, each faction gets a motif, consequences give a directional stinger.
 5. **Heat in the look:** streetlight flicker, more patrols, darker clothing as heat rises.
 
+## Story: the uncle and the boss's seat (owner, 12 October; not built)
+
+Recorded in [PROJECT_TRIAGE_2026-10-12.md §8.5](PROJECT_TRIAGE_2026-10-12.md) and HANDOFF; missing from the 12 October roadmap.
+The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than life, with a darkness you can't place.
+
+1. **Chapter 1-2:** name the employer as Rafa in the employed opening; two or three dialogue beats in chapter 2 as he
+   reveals his business (talk scenes, `scripts/game/talk.gd`).
+2. **Chapter 4 (Cocaine Cowboys):** after the first Los Cuervos incident a scripted beat: the player **hears** Rafa was
+   killed by Los Cuervos (not witnessed). The turf war starts and the player **takes his seat**: the boss desk and its
+   orders become the player's.
+3. **A crumbling empire:** the player starts smaller than Rafa ran it (which stashes, trucks, crew and money survive is
+   **an open owner decision**).
+4. **Not locked in:** every other layer (flying, the ground, the desks) stays open; **delegating a flight costs money**
+   (a hired pilot flies it with the existing bot).
+5. **Reputation is trust with each crew** (accepted table: Morettis up means Los Cuervos down; Los Cuervos up means the
+   Morettis and the street dealers down; the Company up means the Sunrise Collective down a little); lost shipments cost
+   trust, and a crew without trust buys elsewhere.
+
+Who: Claude the beat, the unlock, the takeover state, delegation and trust; Codex the dialogue and the scene.
+Order: with the rival depot raid, after the presentation layers, unless the owner moves it up.
+
 ## Then: the rival depot raid
 
 Owner's decided design (17 October; saved in memory and on the board): stolen cargo and weapons go to a **rival depot at the
@@ -92,6 +113,7 @@ These were finished in part, dropped from the 12 October list, or never written 
 - **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached.
   Not part of the game, listed so it is not lost.
 - **Quarry west end and PNR end 1:** one-way by design (terrain or trees in the climb-out); keep documented in `STRIPS.md`.
+- **The uncle story (Rafa Quintero) was missing from the roadmap:** now its own section above.
 - **Docs to update:** HANDOFF and DESIGN (the strip pin option, the pit constants, `CACHE_VERSION` 3, the RNG stream table for
   the island boards); `docs/ROADMAP.md` itself was stale on 9 and 12 October.
 - **Stale PRs:** #321 (28 behind main), #305 (waits on the strip decision, now made), #370 (superseded by this rewrite).
