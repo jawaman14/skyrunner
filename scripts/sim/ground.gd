@@ -185,6 +185,7 @@ var fights_total := 0  ## firefights started (the balance tool)
 var lost_men := {"org": 0, "rival": 0, "police": 0}  ## killed or wounded in firefights  ## what the war has cost the organisation (the desk, the balance tool)
 var commanders := {}
 var control := {}  ## market -> faction -> squad-men presence (decaying)
+var territory_control := {}  ## region/territory -> faction -> local presence (decaying)
 var _control_trends := {}  ## presentation-only change in public influence since last tick
 var events: Array = []  ## [side ("runner" | "law" | "both"), text]
 var stakeouts := {}  ## stash id -> police squad id
@@ -227,6 +228,9 @@ func _init(sess_, rng_: PyRandom, frng_: PyRandom) -> void:
 		commanders[f] = c
 	for m in Economy.MARKETS:
 		control[m] = {"org": 0.0, "rival": 0.0, "police": 0.0}
+	if Territories.ENABLED:
+		for id in Territories.territory_ids(world.map):
+			territory_control[id] = {"org": 0.0, "rival": 0.0, "police": 0.0}
 
 
 # ================================================================ helpers
@@ -252,7 +256,78 @@ func of(f: String) -> Array:
 	return squads.filter(func(q): return q.faction == f and q.state != "gone")
 
 
+func territory_at(position: Vector2) -> Dictionary:
+	return Territories.at(world.map, position)
+
+
+func territory_key_at(position: Vector2) -> String:
+	var area := territory_at(position)
+	return Territories.key(world.map, str(area.get("id", "")))
+
+
+func territory_share(id: String, faction: String) -> float:
+	var key := Territories.key(world.map, id)
+	var c: Dictionary = territory_control.get(key, {})
+	if c.is_empty():
+		return -1.0
+	var total: float = float(c.get("org", 0.0)) + float(c.get("rival", 0.0)) + 0.5 * float(c.get("police", 0.0))
+	var mine: float = 0.5 * float(c.get("police", 0.0)) if faction == "police" else float(c.get(faction, 0.0))  # police count half in the total, so half in the share
+	return mine / total if total > 1.0 else -1.0
+
+
+func seed_territories_from_markets() -> void:
+	if not Territories.ENABLED:
+		return
+	var grouped := _territories_by_market()
+	for market in grouped:
+		var areas: Array = grouped[market]
+		var source: Dictionary = control.get(market, {})
+		for area: Dictionary in areas:
+			var key := Territories.key(world.map, str(area.get("id", "")))
+			if not territory_control.has(key):
+				territory_control[key] = {"org": 0.0, "rival": 0.0, "police": 0.0}
+			for faction in ["org", "rival", "police"]:
+				territory_control[key][faction] = float(source.get(faction, 0.0)) / maxf(1.0, float(areas.size()))
+
+
+func _territories_by_market() -> Dictionary:
+	var grouped := {}
+	for area: Dictionary in Territories.records(world.map):
+		var market := str(area.get("market", "town"))
+		if not grouped.has(market):
+			grouped[market] = []
+		grouped[market].append(area)
+	return grouped
+
+
+func adjust_territories(market: String, faction: String, multiplier: float) -> void:
+	if not Territories.ENABLED:
+		return
+	for area: Dictionary in _territories_by_market().get(market, []):
+		var key := Territories.key(world.map, str(area.get("id", "")))
+		if territory_control.has(key):
+			territory_control[key][faction] *= multiplier
+
+
+func decision_odds(a: Squad, b: Squad) -> float:
+	if not Territories.ENABLED:
+		return odds(a, b)
+	var sa := a.men * a.men * fire_at(a, b) / maxf(0.2, cover(a))
+	var sb := b.men * b.men * fire_at(b, a) / maxf(0.2, cover(b))
+	for friend: Squad in of(a.faction):
+		if friend != a and friend.fight == null and friend.state != "routed" and friend.pos().distance_to(a.pos()) <= 600.0:
+			sa += 0.2 * friend.men * friend.men * fire(friend) / maxf(0.2, cover(friend))
+	for friend: Squad in of(b.faction):
+		if friend != b and friend.fight == null and friend.state != "routed" and friend.pos().distance_to(b.pos()) <= 600.0:
+			sb += 0.2 * friend.men * friend.men * fire(friend) / maxf(0.2, cover(friend))
+	return sa / maxf(0.01, sb)
+
+
 static func market_at(x: float, y: float) -> String:
+	if Territories.ENABLED:
+		var area := Territories.at(World.layout, Vector2(x, y))
+		if not area.is_empty():
+			return str(area.get("market", "town"))
 	var best := "town"
 	var bd := INF
 	for m in Economy.MARKETS:
@@ -457,6 +532,19 @@ func route(f: String, a: Vector2, b: Vector2) -> PackedVector2Array:
 	return graph.route(a, b, _penalty(f))
 
 
+func route_cost(f: String, path: PackedVector2Array) -> float:
+	var cost := 0.0
+	var penalty := _penalty(f) if SMART_ROUTES else Callable()
+	for i in range(1, path.size()):
+		var a: Vector2 = path[i - 1]
+		var b: Vector2 = path[i]
+		var run := a.distance_to(b)
+		cost += run
+		if penalty.is_valid():
+			cost += maxf(0.0, float(penalty.call(a, b, run)))
+	return cost
+
+
 func _penalty(f: String) -> Callable:
 	var zones := []  ## [centre, radius, cost in metres]
 	if f != "police":
@@ -565,6 +653,10 @@ func field_order(f: String, at: Vector2, what: String) -> Array:
 func _target_xy(o: Dictionary):
 	if o.has("x") and o.has("y"):
 		return Vector2(float(o.x), float(o.y))
+	if o.has("territory"):
+		var area := Territories.get_area(world.map, str(o.territory))
+		if not area.is_empty():
+			return Territories.center_of(area)
 	if o.has("stash") and sess.stash_net != null:
 		var st = sess.stash_net.get_stash(str(o.stash))
 		if st != null:
@@ -595,6 +687,18 @@ func _beat(m: String) -> Vector2:
 	if near.is_empty():
 		return graph.nodes[graph.nearest(cv)] if graph.nodes.size() > 0 else cv
 	return near[rng.randint(0, near.size() - 1)]
+
+
+func _territory_beat(id: String) -> Vector2:
+	var area := Territories.get_area(world.map, id)
+	if area.is_empty():
+		return Vector2.ZERO
+	var centre := Territories.center_of(area)
+	var near: Array = []
+	for i in graph.road_nodes:
+		if graph.nodes[i].distance_to(centre) < 1400.0:
+			near.append(graph.nodes[i])
+	return near[0] if not near.is_empty() else centre
 
 
 ## The nearest good cover: jungle, mangrove or the barrio (a coarse search).
@@ -771,7 +875,7 @@ func _arrived(q: Squad) -> void:
 		_breach(q)
 	elif t == "patrol_zone" and not q.human:
 		# walk the beat: somewhere else in the market next
-		go(q, _beat(str(q.order.get("market", "town"))))
+		go(q, _territory_beat(str(q.order.territory)) if q.order.has("territory") else _beat(str(q.order.get("market", "town"))))
 
 
 # ================================================================ firefights
@@ -817,10 +921,10 @@ func _contacts() -> void:
 				var perp: Squad = b if cop == a else a
 				if perp.tactic != "ambush" and perp.hidden and not (cop == a and a_sees or cop == b and b_sees):
 					continue  # they never saw him
-				if perp.tactic != "ambush" and odds(cop, perp) >= 2.5 and not _will_fight(perp, cop):
+				if perp.tactic != "ambush" and decision_odds(cop, perp) >= 2.5 and not _will_fight(perp, cop):
 					_surrender(perp, cop)
 					continue
-				if perp.tactic == "melt" or (perp.faction != "police" and odds(perp, cop) < 0.5 and perp.tactic != "ambush"):
+				if perp.tactic == "melt" or (perp.faction != "police" and decision_odds(perp, cop) < 0.5 and perp.tactic != "ambush"):
 					if safe_zone(perp):
 						continue  # melted into the crowd: they walk past
 			_open(a, b)
@@ -830,7 +934,7 @@ func _contacts() -> void:
 func _will_fight(perp: Squad, cop: Squad) -> bool:
 	if perp.tactic == "ambush":
 		return true
-	if odds(perp, cop) >= 0.7:
+	if decision_odds(perp, cop) >= 0.7:
 		return true
 	return not safe_zone(perp) and frng.random() < 0.3
 
@@ -916,7 +1020,7 @@ func _rounds(step: float) -> void:
 		for q in [a, b]:
 			if q.tactic in ["harass", "ambush"] and q.rounds >= 2 and q.faction != "police" and q.men > 0:
 				var other: Squad = b if q == a else a
-				if odds(q, other) < 1.5 or q.tactic == "harass":
+				if decision_odds(q, other) < 1.5 or q.tactic == "harass":
 					_break_off(q, f, "hit and run")
 		if f.over:
 			continue
@@ -1038,6 +1142,9 @@ func _rout(q: Squad, f: Fight) -> void:
 	if winner.faction != "police" and q.faction != "police":
 		var m := market_at(f.x, f.y)
 		control[m][winner.faction] += 60.0 * winner.men
+		var area_key := territory_key_at(Vector2(f.x, f.y))
+		if territory_control.has(area_key):
+			territory_control[area_key][winner.faction] += 60.0 * winner.men
 	if winner.faction == "org" and q.faction == "rival" and q.men > 0 and sess.rackets != null:
 		sess.rackets.capture(q)  # some of the beaten are taken
 	_record_battle(f, "Routed: " + q.id)
@@ -1300,9 +1407,15 @@ func _control(dt: float) -> void:
 	for m in control:
 		for f in control[m]:
 			control[m][f] *= k
+	for id in territory_control:
+		for f in territory_control[id]:
+			territory_control[id][f] *= k
 	for q in squads:
 		if q.state != "gone":
 			control[market_at(q.x, q.y)][q.faction] += q.men * dt / 60.0
+			var id := territory_key_at(Vector2(q.x, q.y))
+			if territory_control.has(id):
+				territory_control[id][q.faction] += q.men * dt / 60.0
 	for market in control:
 		_control_trends[market] = {}
 		for faction in HOSTILE:
@@ -1409,7 +1522,7 @@ func _think_org() -> void:
 	# outgunned: melt away
 	for q in mine:
 		for c in cops:
-			if c.pos().distance_to(q.pos()) < 900.0 and odds(q, c) < 0.7 and q.tactic != "melt":
+			if c.pos().distance_to(q.pos()) < 900.0 and decision_odds(q, c) < 0.7 and q.tactic != "melt":
 				order(q, {"type": "melt"})
 				_log("org", "%s melts away from %s" % [q.id, c.id])
 				break
@@ -1418,7 +1531,7 @@ func _think_org() -> void:
 	for c in cops:
 		if c.order.get("type", "") == "raid" and c.route.size() >= 2 and not mine.is_empty():
 			var best = _pick(mine, func(q): return strength(q) - q.pos().distance_to(c.pos()) / 1000.0)
-			if best != null and odds(best, c) >= 0.6:
+			if best != null and decision_odds(best, c) >= 0.6:
 				var at := graph.chokepoint(c.route, 600.0)
 				order(best, {"type": "ambush", "x": at.x, "y": at.y})
 				mine.erase(best)
@@ -1428,8 +1541,12 @@ func _think_org() -> void:
 		for t in sess.stash_net.trucks:
 			if mine.is_empty():
 				break
+			if Territories.ENABLED and sess.logistics != null and t.pay < 12000 and sess.logistics.route_risk(t) < 500.0:
+				continue
 			if not squads.any(func(q): return q.faction == "org" and int(q.order.get("job_id", -1)) == t.job_id):
-				var e = _pick(mine, func(q): return -Vector2(t.x0, t.y0).distance_to(q.pos()) + (5000.0 if q.kind != "foot" else 0.0))
+				var truck_pos: Array = t.pos(sess.time)
+				var truck_at := Vector2(float(truck_pos[0]), float(truck_pos[1]))
+				var e = _pick(mine, func(q): return -q.pos().distance_to(truck_at) + (5000.0 if q.kind != "foot" else 0.0))
 				if e != null:
 					order(e, {"type": "escort", "job_id": t.job_id})
 					mine.erase(e)
@@ -1452,15 +1569,14 @@ func _think_org() -> void:
 	for c in cops.filter(func(c): return c.tactic == "checkpoint"):
 		if mine.is_empty():
 			break
-		var h = _pick(mine, func(q): return odds(q, c))
-		if h != null and odds(h, c) >= 0.8 and rng.random() < 0.3:
+		var h = _pick(mine, func(q): return decision_odds(q, c))
+		if h != null and decision_odds(h, c) >= 0.8 and rng.random() < 0.3:
 			order(h, {"type": "harass", "x": c.x, "y": c.y})
 			mine.erase(h)
 	# the rest hold the street where Los Cuervos push hardest
 	for q in mine:
 		if q.order.get("type", "hold") == "hold" or q.route.size() < 2 and q.order.get("type", "") == "patrol_zone":
-			var m := _contested("org")
-			order(q, {"type": "patrol_zone", "market": m})
+			order(q, _patrol_order("org", q.pos()))
 	# guerrilla doctrine: a small war, and only as big as Los Cuervos make it -
 	# rebuild past a reserve, while we have no squad or they outnumber us
 	var need := of("org").size() < ORG_MIN_SQUADS or of("rival").size() > of("org").size()
@@ -1475,11 +1591,12 @@ func _think_org() -> void:
 ## its stashes when the odds are good, hold their own turf.
 func _think_rival() -> void:
 	var mine := _free("rival")
-	var orgs := visible_to("rival").filter(func(q): return q.faction == "org")
-	var cops := visible_to("rival").filter(func(q): return q.faction == "police")
+	var visible := visible_to("rival")
+	var orgs := visible.filter(func(q): return q.faction == "org")
+	var cops := visible.filter(func(q): return q.faction == "police")
 	for q in mine.duplicate():
 		for c in cops:
-			if c.pos().distance_to(q.pos()) < 900.0 and odds(q, c) < 0.8:
+			if c.pos().distance_to(q.pos()) < 900.0 and decision_odds(q, c) < 0.8:
 				order(q, {"type": "melt"})
 				mine.erase(q)
 				break
@@ -1488,7 +1605,7 @@ func _think_rival() -> void:
 			if mine.is_empty() or rng.random() > 0.5:
 				break
 			var r = mine[0]
-			var route := graph.route(Vector2(t.x0, t.y0), Vector2(t.x1, t.y1))
+			var route: PackedVector2Array = t.remaining_route() if t.route.size() >= 2 else graph.route(Vector2(t.x0, t.y0), Vector2(t.x1, t.y1))
 			var at := graph.chokepoint(route, 1000.0)
 			order(r, {"type": "ambush", "x": at.x, "y": at.y})
 			mine.erase(r)
@@ -1505,8 +1622,7 @@ func _think_rival() -> void:
 				mine.erase(a)
 	for q in mine:
 		if q.order.get("type", "hold") == "hold":
-			var m := _contested("rival")
-			order(q, {"type": "patrol_zone", "market": m})
+			order(q, _patrol_order("rival", q.pos()))
 	_recruit_ai("rival", commanders.rival.cash > 8000)
 
 
@@ -1556,9 +1672,10 @@ func _think_police() -> void:
 			if tails.has(t.job_id) or squads.any(func(q): return q.faction == "police" and q.tactic == "checkpoint" and int(q.order.get("job_id", -1)) == t.job_id):
 				continue
 			if rng.random() < 0.5:
-				var route := graph.route(Vector2(t.x0, t.y0), Vector2(t.x1, t.y1))
+				var route: PackedVector2Array = t.remaining_route() if t.route.size() >= 2 else graph.route(Vector2(t.x0, t.y0), Vector2(t.x1, t.y1))
 				var p: Array = t.pos(sess.time)
-				var ahead := RoadGraph.along(route, clampf(Vector2(p[0], p[1]).distance_to(Vector2(t.x0, t.y0)) + 1500.0, 0.0, RoadGraph.length(route)))
+				var travelled := 0.0 if t.agent != null and t.agent.current() != null else Vector2(p[0], p[1]).distance_to(Vector2(t.x0, t.y0))
+				var ahead := RoadGraph.along(route, clampf(travelled + 1500.0, 0.0, RoadGraph.length(route)))
 				var q = _pick(mine, func(q): return -q.pos().distance_to(ahead))
 				if q != null and q.pos().distance_to(ahead) / q.speed() < (1.0 - t.frac(sess.time)) * t.dur:
 					order(q, {"type": "checkpoint", "x": ahead.x, "y": ahead.y, "job_id": t.job_id})
@@ -1572,8 +1689,7 @@ func _think_police() -> void:
 		mine.erase(q)
 	for q in mine:
 		if q.order.get("type", "hold") == "hold":
-			var m := _contested("police")
-			order(q, {"type": "patrol_zone", "market": m})
+			order(q, _patrol_order("police", q.pos()))
 	var swat := arsenal("police") != null and (int(arsenal("police").stock.mg) > 0 or int(arsenal("police").stock.rifle) >= 8)
 	_recruit_ai("police", sess.law_funds > 6000.0, "truck" if swat and officers_down > 0 else "car")
 
@@ -1620,6 +1736,35 @@ func _contested(f: String) -> String:
 	return best
 
 
+func _contested_territory(f: String, from: Vector2) -> Dictionary:
+	var best: Dictionary = {}
+	var best_score := -INF
+	for area: Dictionary in Territories.records(world.map):
+		var key := Territories.key(world.map, str(area.get("id", "")))
+		var own := maxf(0.0, territory_share(key, f))
+		var hostile := maxf(0.0, territory_share(key, "org")) if f == "police" else maxf(0.0, territory_share(key, "rival" if f == "org" else "org"))
+		if f == "police":
+			hostile = maxf(hostile, territory_share(key, "rival"))
+		var tags: Array = area.get("tags", [])
+		var strategic := 0.0
+		for tag in ["port", "logistics", "stash-corridor", "airfield"]:
+			if tag in tags:
+				strategic += 0.04
+		var score := hostile - own + strategic - Territories.center_of(area).distance_to(from) / 50000.0
+		if score > best_score:
+			best_score = score
+			best = area
+	return best
+
+
+func _patrol_order(f: String, from: Vector2) -> Dictionary:
+	if Territories.ENABLED:
+		var area := _contested_territory(f, from)
+		if not area.is_empty():
+			return {"type": "patrol_zone", "territory": str(area.id), "market": str(area.market)}
+	return {"type": "patrol_zone", "market": _contested(f)}
+
+
 func _pick(arr: Array, score: Callable):
 	var best = null
 	var bs := -INF
@@ -1656,6 +1801,14 @@ func squad_view(q: Squad, viewer: String) -> Dictionary:
 
 func snapshot(viewer: String) -> Dictionary:
 	var vis := visible_to(viewer)
+	var areas := {}
+	if Territories.ENABLED:
+		for area: Dictionary in Territories.records(world.map):
+			var key := Territories.key(world.map, str(area.get("id", "")))
+			var c: Dictionary = territory_control.get(key, {})
+			var center := Territories.center_of(area)
+			areas[key] = {"name": area.get("name", area.get("id", "")), "market": area.get("market", "town"),
+				"center": [center.x, center.y], "control": c.duplicate(true)}
 	# Exact fight positions and participant IDs require both participants to be
 	# observed. Public shots-fired news is a separate, coarser report.
 	var observed_fights := fights.filter(func(f): return vis.has(f.a) and vis.has(f.b))
@@ -1664,6 +1817,7 @@ func snapshot(viewer: String) -> Dictionary:
 		"fights": observed_fights.map(func(f): return {"id": f.id, "x": snappedf(f.x, 1.0), "y": snappedf(f.y, 1.0),
 			"a": f.a.id, "b": f.b.id, "cas": f.cas.duplicate(), "age": snappedf(sess.time - f.t0, 0.1)}),
 		"control": control.duplicate(true),
+		"region": world.map.region_id, "territories": areas,
 		"districts": district_view(viewer),
 		"battle_reports": battle_history(viewer),
 		"commander": {"ai": commanders[viewer].ai, "log": commanders[viewer].log.slice(-6).map(func(l): return l[1]),
