@@ -410,7 +410,9 @@ func _rival_hit(weight: float, why: String) -> void:
 		return
 	g.commanders.rival.cash = maxf(0.0, g.commanders.rival.cash - 2500.0 * weight)
 	for m in g.control:
-		g.control[m]["rival"] *= 1.0 - 0.15 * weight
+		var multiplier := 1.0 - 0.15 * weight
+		g.control[m]["rival"] *= multiplier
+		g.adjust_territories(m, "rival", multiplier)
 	sess.law_funds += 1500.0 * weight
 	sess.law_say("Los Cuervos hit on %s: cash seized, their corners raided" % why)
 
