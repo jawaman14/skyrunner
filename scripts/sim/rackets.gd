@@ -100,6 +100,7 @@ func collect() -> int:
 		parts.append("%s $%s" % [m, Py.money(k)])
 		if policy[m] == "squeeze":
 			g.control[m]["org"] *= SQUEEZE_RESENT
+			g.adjust_territories(m, "org", SQUEEZE_RESENT)
 			heat += SQUEEZE_HEAT
 	rounds += 1
 	if total > 0:

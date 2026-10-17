@@ -170,6 +170,19 @@ Release gates and the owner's decisions are never merged or ticked by an agent.
 **Standing owner rule this rests on**: recorded in `HANDOFF.md` under Owner decisions (11 October, afternoon), in the owner's words:
 "you dont need to discuss with me what needs to be merged or not that is you and codex job to see if its ready too".
 
+## Owner decisions: the ledger (18 October)
+
+The uncle storyline (decided 12 October) was lost: it went into HANDOFF.md's log and the triage document but never into
+the roadmap or an issue, HANDOFF's decision log stopped being kept after 12 October, the 12 October roadmap refresh (#370)
+was never merged, and the 18 October rewrite was built from the agents' recent context instead of from the record. Two
+other 12 October decisions were lost the same way (the 3D pilot app's fixed step, the crew trust table).
+
+- Every owner decision goes into [DECISIONS.md](DECISIONS.md) in the session it is made, with where its work is tracked
+  (a roadmap section that exists, or a PR or issue). `tests/test_docs.gd` checks every row.
+- A roadmap rewrite starts from DECISIONS.md: every row that is not done or superseded must have its place.
+- Decisions that need work also go on the agent's queue issue (#328 Claude, #329 Codex), so they travel with the
+  repository and survive an agent's context being summarised.
+
 ## Rules that keep it moving
 
 1. One wake path, never paused: the watcher stays on (cooldown and an hourly cap stop storms). A woken turn reads only new notes.
