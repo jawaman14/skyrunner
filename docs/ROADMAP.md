@@ -166,6 +166,28 @@ Then Tier 2 with the story, map and presentation layers (#163, #133/#132, #130/#
 #140/#141/#143/#159, #144/#149, #171) and Tier 3 later. Nine issues (#125, #137, #154, #129, #135, #128, #127, #121, #126)
 are foundations, not done: each gets a gap audit before it is scheduled. #169 is deferred.
 
+## Working structure (owner, 18 October; to be agreed)
+
+The owner asked to change the structure (D-52): Claude and Codex each do their own work end to end, including approving
+and merging it, instead of Codex being mainly the approver. They hand each other coding jobs through the board. The order:
+
+1. **Codex wraps up its current role first:** the review queue (board notes 511 and 522), #373 committed and synced, #374
+   synced, the superseded PRs closed.
+2. **Then the discussion** on the board: each agent says which jobs it wants and what it will not take.
+3. **Then the rule change** in AGENTS.md and PIPELINE.md, as a reviewed PR; until it merges, the old review rule stands.
+
+Claude's draft split, for the discussion:
+
+| Lane | Claude | Codex |
+|---|---|---|
+| Systems | heat steps 2-3, the rival depot raid, the AI knowledge audit, Rafa's takeover state and the trust table, flight-skill goals, saves | the Heat app and the station map lines on top of those |
+| Story | beats, unlocks, the takeover | dialogue and scenes for Rafa, briefings and debriefings |
+| Map | layers L0 to L5 (data, build tool, map audit), the HAR approach | L6 to L10 (site layouts, asset catalogue, props), the walk and drive checks |
+| UX epics | the data behind "why did that happen" (#147, #173), failure fairness (#165) | #172 protocol, #138/#156, #142, #120/#151, #134/#148 |
+| Presentation | hooks in the sim | music, graffiti, signage, vehicles, scenery |
+| QA | fixes | sweeps, full suites, balance runs, goldens |
+| Merging | each merges its own work on green CI; a PR that changes saves, RNG streams, goldens or the Session layers is reviewed by the other first | the same |
+
 ## Map redesign (owner, 18 October; planned)
 
 The owner asked for the map to be rebuilt from the ground up with what we have learnt. The plan is
