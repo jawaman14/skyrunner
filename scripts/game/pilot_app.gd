@@ -612,6 +612,7 @@ var _wp_beacon: MeshInstance3D = null
 var car_dash: CarDash = null  ## the dashboard, shown while driving
 var radio: CarRadio = null  ## the radio: the cockpit's (F7) and the car's (R); silent on foot
 var talk: TalkBalloon = null  ## a conversation on screen (the Family, the General's aide)
+var company_choice_dialog: AcceptDialog = null
 var _offers_seen := {}
 var _was_on_island := false
 var _court_stage := ""
@@ -631,6 +632,27 @@ func open_talk(name: String, title := "start") -> TalkBalloon:
 	if talk != null:
 		talk.finished.connect(func(): talk = null)
 	return talk
+
+
+func _show_company_choice() -> void:
+	var dialog := AcceptDialog.new()
+	dialog.title = "The Company - An Order from Washington"
+	dialog.dialog_text = "The Company orders you to assassinate General Ibarra.\n\nCarry it out: the Moretti-backed government takes the island. Containers clear more often, but the Family takes a $4,000 port cut. The Company rewards you, and the operation adds exposure.\n\nSpare him: the Morettis respect your refusal and the General grants better passage. The Company loses trust, adds scrutiny and ends its protection."
+	dialog.add_button("Carry out the assassination", false, "remove")
+	dialog.add_button("Spare the General", false, "spare")
+	dialog.add_button("Walk away", false, "declined")
+	dialog.get_ok_button().hide()
+	dialog.custom_action.connect(func(action: String):
+		s.story.choose_general(action)
+		paused = false
+		company_choice_dialog = null
+		dialog.queue_free())
+	dialog.canceled.connect(func(): dialog.call_deferred("popup_centered"))
+	dialog.close_requested.connect(func(): dialog.call_deferred("popup_centered"))
+	company_choice_dialog = dialog
+	paused = true
+	ui.add_child(dialog)
+	dialog.popup_centered()
 
 
 ## Word that someone wants to talk, and the aide on the ramp when you land on the island.
@@ -1410,6 +1432,9 @@ func _process(delta: float) -> void:
 			camp.show_briefing = false
 			briefing_panel.visible = false
 		_pressed.clear()
+	elif s.story != null and s.story.company_choice_ready():
+		if company_choice_dialog == null:
+			_show_company_choice()
 	elif not paused:
 		if _player_key != s.aircraft_key:
 			_build_player()

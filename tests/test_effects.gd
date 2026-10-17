@@ -116,8 +116,11 @@ func test_debris_lands_on_the_ground() -> void:
 	for i in 60:
 		fx.throw_debris(Vector3(0, 1, 0), 1)
 	check(fx.debris.filter(func(b): return is_instance_valid(b) and not b.is_queued_for_deletion()).size() <= FX.MAX_DEBRIS, "capped")
+	var first_chunk: WeakRef = weakref(fx.debris[0])
 	fx.queue_free()
 	floor.queue_free()
+	await _tree().create_timer(FX.DEBRIS_S + 0.1).timeout
+	check(first_chunk.get_ref() == null, "debris is released after its parent and cleanup timer finish")
 
 
 func test_the_seat_lights_fires_where_things_burn() -> void:
