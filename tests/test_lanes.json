@@ -46,6 +46,7 @@
     "test_nights.gd",
     "test_pathfinding.gd",
     "test_physics.gd",
+    "test_playtest_tool.gd",
     "test_police.gd",
     "test_psychedelics.gd",
     "test_rackets.gd",
