@@ -33,12 +33,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Dual work (owner, 18 October, D-52): each agent owns assigned work end to end; coordinate through the shared MCP board and use separate linked worktrees. Codex owns reviews, UX/UI, dialogue and QA. |
-| **Task** | Codex is drafting Rafa's dialogue for chapters 1-4 from board assignment #511 item 6. `dialogue/rafa.dialogue` is a content draft; Claude's story beat, unlock and takeover work will call these entry points later. |
-| **Branches / PRs** | `codex/rafa-dialogue` is based on local `origin/main` at `939b4e0b`; draft PR and CI are pending. Other assignments and open PRs are tracked on the MCP board. |
-| **Next step** | Complete full-suite and documentation/status checks, publish the draft PR, then coordinate the entry-point hookup after Claude's scene work lands. |
-| **Codex task** | Finish board assignment #511 item 6 (Rafa dialogue chapters 1-4); preserve the remaining #511 queue in the board. |
-| **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
+| **Holder** | Dual work (owner decision D-52, 18 October 2026): each of the two AI agents (Claude, Codex) owns its work end to end, including merging low-risk PRs on green CI; the other agent reviews risk-class PRs (saves, RNG, goldens, Session layers, flight model, balance). Codex owns UX/UI, dialogue and QA; Claude owns simulation. Work is coordinated on the MCP board in separate linked worktrees. |
+| **Task** | Claude is moving the game from a transport sim to an empire game. Design note 51 (stock, ownership and the money loop) is PR #433; its first build slice is stock lots with grade, age and provenance plus a save migration. |
+| **Branches / PRs** | Open PRs #429 (court: the pilot is never held on arrest, risk class, needs Codex review), #430 (Ctrl+F6 test menu), #431 (dealership list no longer wraps), #432 (ledger rows D-62 to D-64), #433 (design note 51). Issues: #426 playtest batch, #427 stock rework, #428 pilot never held. #425 already fixed main's switches.gd parse error. |
+| **Next step** | Get #429 to Codex for review; merge #430 to #433 on green CI; start the stock lots slice after #433 lands; then orders and the pickup person. |
+| **Codex task** | Board notes 552 to 557: boss desk redesign, gun dealer scenes and dialogue, review #429, hands-on dealership and autopilot (starter airport to Finca Morales) checks, build the ledger screen after the design note. |
+| **Watch out** | Codex's review bot is out of usage, so reviews come from Codex on the board. Regenerating docs/PROJECT_STATUS.md conflicts the next PR: merge main, run godot --headless --import, then project_status.gd -- --write and --check. Local full-suite failures on main: test_core_parity (job board and take-off goldens), test_costa_brava_plan, test_police; CI decides. Run only one Godot job at a time (Windows memory is tight). |
 
 ## Taking over (checklist for the incoming AI)
 
