@@ -18,6 +18,23 @@ func test_every_control_with_a_pad_binding_has_a_pad_glyph() -> void:
 	check(with_pad >= 5, "several controls have a pad binding (%d)" % with_pad)
 
 
+func test_binding_text_omits_the_device_already_shown_as_a_glyph() -> void:
+	ControlsConfig.ensure()
+	var pad_text := ControlsGlyphs.other_device_bindings("throttle_up", "pad")
+	var keyboard_text := ControlsGlyphs.other_device_bindings("throttle_up", "keyboard")
+	var helper := ControlsConfig.helper()
+	var key_labels: Array[String] = []
+	for ev in InputMap.action_get_events(ControlsConfig.action("throttle_up")):
+		if ev is InputEventKey:
+			key_labels.append(helper.get_label_for_input(ev))
+	check(key_labels.all(func(label): return pad_text.contains(label)), "pad glyph leaves the keyboard bindings readable")
+	check(not pad_text.contains("Trigger"), "pad glyph does not repeat its trigger binding")
+	check(keyboard_text.contains("Trigger"), "keyboard glyph leaves the pad binding readable")
+	check(key_labels.all(func(label): return not keyboard_text.contains(label)), "keyboard glyph does not repeat its key bindings")
+	var no_pad_binding := ControlsGlyphs.other_device_bindings("throttle_cut", "pad")
+	check(no_pad_binding == ControlsConfig.describe("throttle_cut"), "controls without a pad glyph keep all binding text")
+
+
 func test_without_a_display_server_there_are_no_key_cap_glyphs() -> void:
 	check(not ControlsGlyphs.drawable(), "a headless run cannot draw them")
 	check(ControlsGlyphs.texture("brake") == null, "so a control gives no glyph texture")

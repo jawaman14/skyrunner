@@ -14,6 +14,7 @@ var _invoker: WeakRef
 var panel: PanelContainer
 var status: Label
 var key_rows := {}  ## action -> the Label showing its bindings
+var key_glyphs := {}  ## action -> the reserved glyph slot beside its bindings
 var axis_rows := {}  ## control -> {desc: Label, bar: ProgressBar, tune: Label}
 var palette_btn: Button
 var waiting_key := ""  ## an action waiting for its new key or button
@@ -25,6 +26,7 @@ func _ready() -> void:
 	_palette = UIStyle.palette
 	_invoker = weakref(get_viewport().gui_get_focus_owner()) if get_viewport().gui_get_focus_owner() != null else null
 	ControlsConfig.ensure()
+	ControllerIcons.input_type_changed.connect(_on_input_type_changed)
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.theme = UIStyle.theme()
@@ -98,13 +100,23 @@ func _ready() -> void:
 	kg.add_theme_constant_override("h_separation", 12)
 	flight.add_child(kg)
 	for n in ControlsConfig.names():
-		kg.add_child(_named(n))
+		kg.add_child(UIStyle.label(ControlsConfig.LABELS[n], 15))
+		var binding := HBoxContainer.new()
+		binding.add_theme_constant_override("separation", 6)
+		var glyph := TextureRect.new()
+		glyph.custom_minimum_size = Vector2(32, 32)
+		glyph.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		glyph.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		binding.add_child(glyph)
 		var l := UIStyle.label("", 15, UIStyle.WHITE)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		kg.add_child(l)
+		binding.add_child(l)
+		kg.add_child(binding)
 		kg.add_child(_btn("Rebind", func(): _rebind(n)))
 		key_rows[n] = l
+		key_glyphs[n] = glyph
 
 	var foot := HBoxContainer.new()
 	foot.add_theme_constant_override("separation", 12)
@@ -118,24 +130,6 @@ func _ready() -> void:
 	foot.add_child(_btn("Save and close", close))
 	_refresh()
 	palette_btn.grab_focus.call_deferred()
-
-
-## A control's name with its glyph in front: the key cap while the keyboard was used last, the button of the connected
-## pad (Xbox, PlayStation, Switch...) after a pad button (Controller Icons, MIT; the glyphs are CC0).
-func _named(n: String) -> Control:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
-	var tex = ControlsGlyphs.texture(n)
-	if tex != null:
-		var glyph := TextureRect.new()
-		glyph.texture = tex
-		glyph.custom_minimum_size = Vector2(32, 32)
-		glyph.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		glyph.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(glyph)
-	row.add_child(UIStyle.label(ControlsConfig.LABELS[n], 15))
-	return row
 
 
 ## Each tab scrolls independently and follows keyboard/controller focus.
@@ -162,13 +156,19 @@ func _btn(text: String, cb: Callable) -> Button:
 
 
 func _refresh() -> void:
+	var device := "pad" if ControllerIcons.get_last_input_type() == ControllerIcons.InputType.CONTROLLER else "keyboard"
 	for n in key_rows:
-		key_rows[n].text = "press a key or button ..." if waiting_key == n else ControlsConfig.describe(n)
+		key_glyphs[n].texture = ControlsGlyphs.texture(n)
+		key_rows[n].text = "press a key or button ..." if waiting_key == n else ControlsGlyphs.other_device_bindings(n, device)
 	for c in axis_rows:
 		var b: FlightAxes.Binding = ControlsConfig.axes.bindings[c]
 		axis_rows[c].desc.text = "move it ..." if capturing == c else ControlsConfig.axes.describe(c)
 		axis_rows[c].tune.text = "dz %.2f  expo %.1f" % [b.deadzone, b.expo]
 	palette_btn.text = "Colours: %s" % ("colour-safe" if UIStyle.palette == "safe" else "neon")
+
+
+func _on_input_type_changed(_input_type, _controller: int) -> void:
+	_refresh()
 
 
 func _rebind(n: String) -> void:

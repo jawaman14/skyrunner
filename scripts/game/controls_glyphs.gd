@@ -38,3 +38,18 @@ static func resolved(control: String, device: String) -> Texture:
 	ControlsConfig.ensure()
 	var icons := (Engine.get_main_loop() as SceneTree).root.get_node(AUTOLOAD)
 	return icons.parse_path(ControlsConfig.action(control), icons.InputType.CONTROLLER if device == "pad" else icons.InputType.KEYBOARD_MOUSE)
+
+
+## Text bindings left beside the glyph for the active device. This avoids spelling out the same key/button twice while
+## keeping bindings for the other device visible. `device` is explicit so this stays deterministic in tests.
+static func other_device_bindings(control: String, device: String) -> String:
+	ControlsConfig.ensure()
+	var helper := ControlsConfig.helper()
+	var pad_active := device == "pad"
+	var labels: Array[String] = []
+	for ev in InputMap.action_get_events(ControlsConfig.action(control)):
+		var is_pad := ev is InputEventJoypadButton or ev is InputEventJoypadMotion
+		if is_pad == pad_active:
+			continue
+		labels.append(helper.get_label_for_input(ev))
+	return ", ".join(labels) if not labels.is_empty() else "-"
