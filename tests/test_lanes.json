@@ -7,9 +7,13 @@
     "test_hq.gd",
     "test_rng.gd",
     "test_save_paths.gd",
+<<<<<<< HEAD
     "test_stock_lot.gd",
     "test_affinity.gd",
     "test_pickup_order.gd",
+=======
+    "test_stock_value.gd",
+>>>>>>> origin/claude/stock-value
     "test_strategic.gd"
   ],
   "simulation": [
