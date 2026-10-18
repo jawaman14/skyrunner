@@ -5,7 +5,12 @@ extends TestCase
 ## prosecutor's tools; the lawyer's conversation.
 
 
+func before_each() -> void:
+	Court.PILOT_FREE = false  # the bail, custody and prison process; the free pilot has its own tests at the end
+
+
 func after_each() -> void:
+	Court.PILOT_FREE = true
 	World.use_map(0)
 
 
@@ -378,3 +383,34 @@ func test_off_means_the_old_bust() -> void:
 	check(s.money < 10000 and s.phase == "busted", "a fine and the impound, as before")
 	s.dispose()
 	Court.ENABLED = true
+
+
+func test_the_free_pilot_is_never_held() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.money = 60000
+	var c := _arrest(s)
+	check_eq(c.stage, "pretrial", "no bail hearing")
+	check(not s.court.holding(), "the pilot is not held")
+	check_eq(c.bail_posted, "lawyer", "the lawyer attends")
+	check(s.command(Roles.PILOT, "confirm")[0], "back to work at once")
+	c.trial_at = s.time
+	c.evidence = 100.0
+	c.lawyer = "public"
+	var m0 := s.money
+	s.court.update(0.1)
+	check(s.court.case_ == null or s.court.case_.stage != "prison", "a verdict never sends the pilot inside")
+	check(not s.court.holding() and s.phase != "custody", "and never holds them")
+	check(s.money <= m0, "the verdict is paid in money")
+	s.dispose()
+
+
+func test_the_free_pilot_does_not_become_a_fugitive_when_away() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	var c := _arrest(s)
+	s.location = Island.CODE
+	c.trial_at = s.time
+	s.court.update(0.1)
+	check(s.court.case_ == null or s.court.case_.stage != "fugitive", "the lawyer appears; no warrant for missing a trial")
+	s.dispose()

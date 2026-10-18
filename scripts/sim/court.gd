@@ -36,6 +36,9 @@ extends RefCounted
 ## ask (live play: court: true). Without it a bust is the old fine and impound.
 
 static var ENABLED := true
+## The pilot is never held (owner, 18 Oct, D-64): the lawyer attends, play goes on, and the case ends in money, forfeiture and
+## heat. Only caught workers wait (Payroll.JAIL_S). Off restores bail, custody and prison for the tests of that process.
+static var PILOT_FREE := true
 
 const BAIL_DECIDE_S := 90.0
 const PRETRIAL_S := 1200.0
@@ -91,7 +94,7 @@ func stage() -> String:
 
 ## The pilot is held (in custody, or inside): no flying.
 func holding() -> bool:
-	return case_ != null and case_.stage in ["bail", "custody", "prison"]
+	return not PILOT_FREE and case_ != null and case_.stage in ["bail", "custody", "prison"]
 
 
 ## The police bring the pilot in. Replaces the old flat fine.
@@ -116,11 +119,11 @@ func arrest(how: String) -> void:
 		case_.evidence = minf(100.0, float(case_.evidence) + 15.0)
 		if case_.stage == "fugitive":
 			_charge("bail_jumping")
-		case_.stage = "custody"
-		case_.bail_posted = ""
+		case_.stage = "pretrial" if PILOT_FREE else "custody"
+		case_.bail_posted = "lawyer" if PILOT_FREE else ""
 		case_.trial_at = sess.time + 300.0
 		_hot_charges(hot_lb, armed)
-		_say("Arrested again while the case is open: bail revoked, back to custody. Trial in 5 min.",
+		_say("Arrested again while the case is open: the case is reopened, heavier. Trial in 5 min.",
 			"The pilot is back in custody - bail revoked (%s)" % how)
 		return
 	_serial += 1
@@ -154,6 +157,16 @@ func arrest(how: String) -> void:
 	sess.police.score["busts"] += 1
 	sess.law_funds += 3000.0  # the aircraft impounded, the cash on board
 	sess.police.reset(false)
+	if PILOT_FREE:
+		case_.stage = "pretrial"  # no bail hearing, no custody: the lawyer attends in the pilot's place
+		case_.bail_posted = "lawyer"
+		case_.bail = 0
+		_say("Arrested (%s). Charged: %s. %s takes the case; you are free to go back to work. Trial in %d min." % [how, charge_names(),
+			lawyer().name, int(ceil((case_.trial_at - sess.time) / 60.0))], "ARREST: %s (%s). %s. Before %s." % [sess.squawk, how, charge_names(), j.name])
+		sess.bus.emit("arrested", sess.time, how, ["runner", "law"], {"case": case_.id})
+		if prosecutor_ai:
+			_prosecutor_opening()
+		return
 	_say("Arrested (%s). Charged: %s. Bail hearing before %s (%s): bail set at $%s." % [how, charge_names(), j.name, j.known,
 		Py.money(int(case_.bail))], "ARREST: %s (%s). %s. Before %s." % [sess.squawk, how, charge_names(), j.name])
 	sess.bus.emit("arrested", sess.time, how, ["runner", "law"], {"case": case_.id})
@@ -484,7 +497,7 @@ func offer_plea(lenient := false) -> String:
 
 
 func _prosecutor_opening() -> void:
-	if flight_risk() and rng.random() < 0.7:
+	if not PILOT_FREE and flight_risk() and rng.random() < 0.7:
 		no_bail()
 	if sess.law_funds > 8000.0 and int(case_.witnesses) < 2:
 		immunity()
@@ -523,7 +536,7 @@ func _trial() -> void:
 	# a no-show: on the island, or anywhere the marshals can't reach
 	var s = sess.state
 	var away: bool = sess.location == Island.CODE or (s != null and Island.in_airspace(s.x, s.y))
-	if case_.stage == "pretrial" and away:
+	if case_.stage == "pretrial" and away and not PILOT_FREE:
 		case_.stage = "fugitive"
 		_charge("bail_jumping")
 		sess.police.case("runner").wanted = true
@@ -552,15 +565,15 @@ func _trial() -> void:
 func _sentence(how: String, years: float, fine: int) -> void:
 	case_.verdict = how
 	case_.years = years
-	var mins := clampf(years * MIN_PER_YEAR, 0.0, MAX_PRISON_MIN)
+	var mins := 0.0 if PILOT_FREE else clampf(years * MIN_PER_YEAR, 0.0, MAX_PRISON_MIN)
 	var k := mini(maxi(0, sess.money), fine + int(maxi(0, sess.money) * (0.3 if how == "convicted" else 0.1)))
 	sess.money -= k
 	sess.law_funds += float(k) * 0.8
-	if how == "convicted" and sess.aircraft_key != "c172p":
+	if how == "convicted" and sess.aircraft_key != "c172p" and (not PILOT_FREE or years >= 8.0):
 		sess._switch_aircraft("c172p", 0.5)  # forfeited; a used Skyhawk waits when you get out
 	sess.police.score["convictions"] = int(sess.police.score.get("convictions", 0)) + 1
 	if mins < 1.0:
-		_say("%s: %s years, served as time already done. -$%s." % [how.capitalize(), Py.f(years, 1), Py.money(k)], "The pilot %s: %s years" % [how, Py.f(years, 1)])
+		_say(("%s: %s years the lawyer has settled off the books. -$%s." if PILOT_FREE else "%s: %s years, served as time already done. -$%s.") % [how.capitalize(), Py.f(years, 1), Py.money(k)], "The pilot %s: %s years" % [how, Py.f(years, 1)])
 		_close(how)
 		return
 	case_.stage = "prison"
