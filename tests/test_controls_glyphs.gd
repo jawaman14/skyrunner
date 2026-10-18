@@ -27,10 +27,12 @@ func test_binding_text_omits_the_device_already_shown_as_a_glyph() -> void:
 	for ev in InputMap.action_get_events(ControlsConfig.action("throttle_up")):
 		if ev is InputEventKey:
 			key_labels.append(helper.get_label_for_input(ev))
-	check(key_labels.all(func(label): return pad_text.contains(label)), "pad glyph leaves the keyboard bindings readable")
+	var pad_labels := pad_text.split(", ", false)
+	var keyboard_labels := keyboard_text.split(", ", false)
+	check(key_labels.all(func(label): return pad_labels.has(label)), "pad glyph leaves the keyboard bindings readable")
 	check(not pad_text.contains("Trigger"), "pad glyph does not repeat its trigger binding")
 	check(keyboard_text.contains("Trigger"), "keyboard glyph leaves the pad binding readable")
-	check(key_labels.all(func(label): return not keyboard_text.contains(label)), "keyboard glyph does not repeat its key bindings")
+	check(key_labels.all(func(label): return not keyboard_labels.has(label)), "keyboard glyph does not repeat its key bindings")
 	var no_pad_binding := ControlsGlyphs.other_device_bindings("throttle_cut", "pad")
 	check(no_pad_binding == ControlsConfig.describe("throttle_cut"), "controls without a pad glyph keep all binding text")
 
