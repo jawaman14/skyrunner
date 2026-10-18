@@ -7,6 +7,8 @@
     "test_hq.gd",
     "test_rng.gd",
     "test_save_paths.gd",
+    "test_stock_lot.gd",
+    "test_affinity.gd",
     "test_strategic.gd"
   ],
   "simulation": [
