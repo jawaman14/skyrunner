@@ -20,7 +20,7 @@ const PARITY := [
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
 ## options ask for it, so a parity session never builds it. Each has its own tests that flip it.
 const OPT_IN := [
-	"Court.ENABLED", "Orders.ENABLED", "Family.ENABLED", "Island.ENABLED", "Payroll.ENABLED", "Trade.ENABLED", "Races.ENABLED",
+	"Court.ENABLED", "Family.ENABLED", "Island.ENABLED", "Payroll.ENABLED", "Trade.ENABLED", "Races.ENABLED",
 	"Rackets.ENABLED", "Renown.ENABLED", "StashWorks.ENABLED", "CityDress.ENABLED", "ModelLib.ENABLED",
 	"Scenery.ENABLED", "GroundWar.ENGAGEMENT", "GroundWar.SMART_ROUTES", "GroundWar.VETERANS",
 	"Logistics.ROUNDS", "Tactical.PYTHON", "RadioNet.REALISM", "Analyst.ENABLED", "Casino.ENABLED", "Casino.REVOLUTION", "Airframe.ENABLED", "Undercover.ENABLED", "PortDress.ENABLED", "AirfieldDress.ENABLED", "DowntownDress.ENABLED",
@@ -33,6 +33,7 @@ static func snapshot() -> Dictionary:
 	return {"SensorNet.REALISM": SensorNet.REALISM, "Economy.REALISM": Economy.REALISM,
 		"Arsenal.REALISM": Arsenal.REALISM, "GroundWar.ENABLED": GroundWar.ENABLED,
 		"Chronicle.ENABLED": Chronicle.ENABLED, "Agency.ENABLED": Agency.ENABLED,
+		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Orders.ENABLED": Orders.ENABLED}
 		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Jobs.ISLAND_BOARD": Jobs.ISLAND_BOARD}
 
 static func restore(state: Dictionary) -> void:
@@ -49,6 +50,7 @@ static func restore(state: Dictionary) -> void:
 	Agency.ENABLED = state["Agency.ENABLED"]
 	Agent.ENABLED = state["Agent.ENABLED"]
 	Fuel.ENABLED = state["Fuel.ENABLED"]
+	Orders.ENABLED = state["Orders.ENABLED"]
 	Jobs.ISLAND_BOARD = state["Jobs.ISLAND_BOARD"]
 
 static func parity_off() -> Dictionary:
@@ -61,6 +63,7 @@ static func parity_off() -> Dictionary:
 	Agency.ENABLED = false
 	Agent.ENABLED = false
 	Fuel.ENABLED = false
+	Orders.ENABLED = false
 	Jobs.ISLAND_BOARD = false
 	return previous
 
@@ -74,4 +77,5 @@ static func parity_on() -> void:
 	Agency.ENABLED = true
 	Agent.ENABLED = true
 	Fuel.ENABLED = true
+	Orders.ENABLED = true
 	Jobs.ISLAND_BOARD = true

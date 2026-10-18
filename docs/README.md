@@ -34,6 +34,7 @@ current are in [archive/](archive/). They are kept as records, not as instructio
 | [ROADMAP.md](ROADMAP.md) | The work queue, in order |
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | What is verified, pending and deferred, with a generated source inventory |
 | [MAP_REDESIGN.md](MAP_REDESIGN.md) | The plan to rebuild the Costa Brava map from the ground up |
+| [LOOP_IDEAS.md](LOOP_IDEAS.md) | Eight proposed additions to the product and money loop, for the owner to choose from |
 | [PRESENTATION_LAYERS.md](PRESENTATION_LAYERS.md) | The owner's ideas for music, fashion, graffiti, and city pulse |
 | [BACKLOG.md](BACKLOG.md) | The register of open issues and PRs |
 
