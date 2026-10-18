@@ -38,12 +38,34 @@ func accept_job(job: Jobs.Job):
 
 
 ## Shared read-only gate for accepting work, used by both previews and execution.
+## Every other strip keeps a board that outlives your visits, so the job board can show the whole island. Dealt by the sim, never by a menu.
+func stock_island_boards() -> void:
+	if not Jobs.ISLAND_BOARD or _first_missions():
+		return
+	# deal them on their own streams: refresh_board reads rng, arng and the Company's rng, so swap those three for the duration
+	var saved_rng := rng
+	var saved_arng := arng
+	var saved_agency_rng = agency.rng if agency != null else null
+	rng = brng
+	arng = barng
+	if agency != null:
+		agency.rng = bagrng
+	for af in world.airfields:
+		# the strip you are parked at ages too: a pilot who waits past the TTL finds a new board (in the air the current strip's board is the one you left)
+		if (af.code != location or parked) and af.kind != "foreign" and not board_is_fresh(af.code):
+			refresh_board(af.code)
+	rng = saved_rng
+	arng = saved_arng
+	if agency != null:
+		agency.rng = saved_agency_rng
+
+
 func accept_job_reason(job: Jobs.Job) -> String:
 	if story != null and story.employment != null and story.employment.active():
 		if job.employer_stage != story.employment.stage or job.employer_serial <= story.employment.last_completed or job.employer_serial >= story.employment.next_serial:
 			return "Complete the current employer assignment first."
 	if not parked or location != job.origin:
-		return "You need to be parked at the job's origin."
+		return "Fly to %s and park there to take this job." % World.airfield(job.origin).name
 	if job.hot() and not features.has("contraband"):
 		return "Not that kind of pilot. Yet."
 	var seats := spec.seat_count() - (1 if copilot else 0)

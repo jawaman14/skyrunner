@@ -117,26 +117,28 @@ func test_pursuer_closes_and_busts() -> void:
 	check_eq(out, {"runner": "busted"})
 
 
-## Owner, 14 Oct: rival smugglers chase, but they can never take the cargo from the air.
-func test_a_rival_on_your_tail_never_takes_the_cargo_from_the_air() -> void:
+## Owner, 14 and 17 Oct: no rival aircraft follows a flight and nothing is taken from the air.
+func test_no_rival_aircraft_follows_a_hot_flight_and_nothing_is_taken_from_the_air() -> void:
 	var ps := PoliceSystem.new(world, _rng(2))
 	ps.case("runner").wanted = 1
-	var rival := ps.spawn_rival([0.0, -6000.0], "runner")
-	var x := 0.0
 	var y := -6000.0
 	var t := 0.0
 	var outcomes := []
-	for i in 2400:  # two minutes, a rival parked on the aircraft the whole time
+	var rivals := 0
+	for i in 4800:  # four minutes of a hot, valuable flight, long past the old trigger (45 s)
+		y += 40 * 0.05
 		t += 0.05
-		rival.x = x + 40.0
-		rival.y = y
-		var sig := SensorNet.Signature.new("runner", x, y, 900, 900 - world.ground(x, y), 0.0, 0.0)
-		var out: Dictionary = ps.tick(0.05, t, [PoliceSystem.Target.new(sig, true)])
+		var sig := SensorNet.Signature.new("runner", 0.0, y, 900, 900 - world.ground(0.0, y), 0.0, 40.0)
+		var target := PoliceSystem.Target.new(sig, true)
+		target.value = 10000
+		var out: Dictionary = ps.tick(0.05, t, [target])
+		rivals = maxi(rivals, ps.units.filter(func(u): return u.faction() == "rival").size())
 		if out.has("runner"):
 			outcomes.append(out["runner"])
 			break
-	check(not outcomes.has("hijacked"), "the rival is close for two minutes and still takes nothing: %s" % [outcomes])
-	check_eq(ps.case("runner").rival_meter, 0.0, "and the old hijack meter never fills")
+	check_eq(rivals, 0, "no rival aircraft is ever sent after the flight")
+	check(not outcomes.has("hijacked"), "and nothing is taken from the air: %s" % [outcomes])
+	check_eq(ps.case("runner").rival_meter, 0.0, "the old hijack meter stays at zero")
 
 
 func test_clean_aircraft_is_released() -> void:

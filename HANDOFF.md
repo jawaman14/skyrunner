@@ -186,6 +186,17 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 - **2026-10-11 — Codex desktop/root:** TutorialPanel uses shared KeyHints buttons; pilot clicks skip/off call existing tutorial actions, station clicks use its existing tutorial command. Empty/completed lessons omit Skip. Existing frontend cases verify pilot and desk command paths, including seats without lessons (14/14 pass); test count unchanged. Screenshot and full suite queued under the machine lock; no human gate marked complete. Worktree: `~/.codex/worktrees/skyrunner-tutorial-footer`, branch `codex/tutorial-clickable-footer` from main `cc31bed`. Claude owns integration/review.
 
+- **2026-10-11 — Claude, STRIPS.md from the per-end trials (#88):** On `claude/strips-from-trials` from main `e01feb4`.
+  `tools/strip_audit.gd --bot` now runs `scripts/balance/strip_trials.gd` for every strip end, aircraft and load (216 trials,
+  about 15 minutes under the machine lock) instead of the `Feasibility` sweep whose takeoff scoring counted a glide into the
+  ground as a pass; new `--terrain natural|classic` (natural by default, what the game flies) and `--loads`. `docs/STRIPS.md` is
+  regenerated: `... strip_audit.gd -- --bot --aircraft c172p,c182 --out docs/STRIPS.md`. Read from the table: QRY and PNR are one-way,
+  light-load strips (land on end 1, take off from end 0; PNR also at half load); no takeoff passes from end 1; EGL takes off at
+  light load only. **Separate finding:** the Cessna 182 at max load fails the landing on every field, including HAR (nose-over
+  prop strike), so that is a heavy-aircraft landing problem, not a strip one. Whether the job generator should avoid sending
+  loads a strip cannot take is still the owner's decision. Windows Godot 4.7.2 under the machine lock: strip_trials 12/12.
+  #88 stays open.
+
 - **2026-10-11 — Claude, collaboration docs (owner: Claude leads):** AGENTS.md and this file now say
   simultaneous mode instead of relay, who leads, the canonical clone (the board is per clone: a second clone on
   the same machine had its own empty board), note format, authority and one heavy Godot job at a time. Docs only;
