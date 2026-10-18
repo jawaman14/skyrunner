@@ -326,10 +326,10 @@ func tamper() -> String:
 	if rng.random() < 0.35:
 		_charge("obstruction")
 		case_.evidence = minf(100.0, float(case_.evidence) + 20.0)
-		if case_.stage == "pretrial":
+		if case_.stage == "pretrial" and not PILOT_FREE:
 			case_.stage = "custody"
 			case_.bail_posted = ""
-		_say("The witness went to the FBI instead: obstruction of justice added, bail revoked.",
+		_say("The witness went to the FBI instead: obstruction of justice added%s." % ("" if PILOT_FREE else ", bail revoked"),
 			"A witness in the pilot's case reports being threatened: obstruction charged, bail revoked")
 	else:
 		case_.witnesses = int(case_.witnesses) - 1
@@ -566,14 +566,18 @@ func _sentence(how: String, years: float, fine: int) -> void:
 	case_.verdict = how
 	case_.years = years
 	var mins := 0.0 if PILOT_FREE else clampf(years * MIN_PER_YEAR, 0.0, MAX_PRISON_MIN)
-	var k := mini(maxi(0, sess.money), fine + int(maxi(0, sess.money) * (0.3 if how == "convicted" else 0.1)))
+	var share := 0.3 if how == "convicted" else 0.1
+	if PILOT_FREE and how == "convicted" and years >= 8.0:
+		share = 0.45  # the aircraft stays with a free pilot; the forfeiture is taken in cash
+	var k := mini(maxi(0, sess.money), fine + int(maxi(0, sess.money) * share))
 	sess.money -= k
 	sess.law_funds += float(k) * 0.8
-	if how == "convicted" and sess.aircraft_key != "c172p" and (not PILOT_FREE or years >= 8.0):
+	if how == "convicted" and sess.aircraft_key != "c172p" and not PILOT_FREE:
 		sess._switch_aircraft("c172p", 0.5)  # forfeited; a used Skyhawk waits when you get out
 	sess.police.score["convictions"] = int(sess.police.score.get("convictions", 0)) + 1
 	if mins < 1.0:
 		_say(("%s: %s years the lawyer has settled off the books. -$%s." if PILOT_FREE else "%s: %s years, served as time already done. -$%s.") % [how.capitalize(), Py.f(years, 1), Py.money(k)], "The pilot %s: %s years" % [how, Py.f(years, 1)])
+		sess.bus.emit("sentenced", sess.time, how, ["runner", "law"], {"years": years})
 		_close(how)
 		return
 	case_.stage = "prison"
@@ -597,6 +601,10 @@ func update(dt: float) -> void:
 	if case_ == null:
 		return
 	var now: float = sess.time
+	if PILOT_FREE and str(case_.stage) == "bail":  # a case saved before the pilot was free: no bond is charged
+		case_.stage = "pretrial"
+		case_.bail_posted = "lawyer"
+		case_.bail = 0
 	match str(case_.stage):
 		"bail":
 			if now >= float(case_.bail_by):

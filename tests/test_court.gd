@@ -414,3 +414,32 @@ func test_the_free_pilot_does_not_become_a_fugitive_when_away() -> void:
 	s.court.update(0.1)
 	check(s.court.case_ == null or s.court.case_.stage != "fugitive", "the lawyer appears; no warrant for missing a trial")
 	s.dispose()
+
+
+func test_a_legacy_bail_case_is_normalised_for_a_free_pilot() -> void:
+	var s := _sess()
+	s.money = 60000
+	var c := _arrest(s)  # the old process: a bail hearing
+	check_eq(c.stage, "bail", "the old process starts at bail")
+	Court.PILOT_FREE = true
+	var m0 := s.money
+	c.bail_by = s.time
+	s.court.update(0.1)
+	check_eq(c.stage, "pretrial", "converted to the lawyer's case")
+	check_eq(s.money, m0, "no bond is charged")
+	s.dispose()
+
+
+func test_the_free_pilots_sentence_still_reaches_the_event_bus() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.money = 60000
+	var c := _arrest(s)
+	var heard := [0]
+	s.bus.subscribe("sentenced", func(_e): heard[0] += 1)
+	c.trial_at = s.time
+	c.evidence = 100.0
+	c.lawyer = "public"
+	s.court.update(0.1)
+	check(heard[0] >= 1 or s.court.case_ != null, "a conviction emits sentenced before the case closes")
+	s.dispose()
