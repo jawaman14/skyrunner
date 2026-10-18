@@ -1566,3 +1566,94 @@ four rifle crates by tonight".
 **Costs to watch:** a save migration (`Arsenal.ammo` becomes a count per type; keep the total for old saves), new random draws on their
 own streams behind switches, and a BALANCE entry per stage, because the ground war's economy and losses are sensitive to arms (the
 turf expansion's 200-seed run already shifted them).
+
+
+## 51. Stock, ownership and the money loop (owner, 18 October 2026; a proposal, not built)
+
+The game began as transport: a job named a cargo and a client, and the pilot was paid to fly it. It is now an empire game
+(sections 0 and 46), and flying is one activity among several. This section says whose cargo it is at each stage, where stock
+comes from, how it is held and sold, and which systems act on it. The owner's brief (D-63, #427): "doesn't make sense flying hot
+cargo: do you keep it to bring to your warehouse, or are you flying it for other people? When I get my own stock to buy upfront,
+rework the whole of logistics and stock with the new game in mind." The flow chart is
+<https://claude.ai/artifact/KspRDvP3ptvHZMr9AmhmRU>; the reference games are summarised in section 51.7.
+
+### 51.1 Three kinds of run
+
+| Kind | Whose cargo | Pays | Hot means |
+|---|---|---|---|
+| **Contract** | the client's | a fee on delivery; never enters your stock | the client's risk; it adds nothing to your case |
+| **Own stock** | yours, bought upfront or made | the margin when sold | your risk: it draws heat, case files and raids and can be seized |
+| **Delegated** | yours, flown by a hired pilot or truck | the margin minus the hire (D-10) | the same as own stock, plus the hire's chance of being caught |
+
+The existing job board is the contract kind. It stays as steady income in the early game (chapters 1 and 2) and as a fallback, and
+shrinks in importance as stock opens. "Hot" stops meaning "contraband a client pays you to fly"; it means "stock that is yours and
+can be taken".
+
+### 51.2 Where stock comes from
+
+1. **Ordered from a contact** (a crew or dealer: the Morettis, Los Cuervos, the Sunrise Collective, Manny's dealers). You place an
+   order and pay upfront at the market-board price (section 49), then **collect it in person** from a named person at a place
+   within a window. A late pickup loses the lot or costs trust. This is the same flow as the gun dealer (section 50, D-61), which
+   replaces the job menu's "sell / keep guns" toggle.
+2. **Imported** through the port, Isla Soberana or a cove drop.
+3. **Produced** at your own stash works and rackets; output waits at the site until collected.
+4. **Taken from rivals** by a raid on their depot (D-19); marked as stolen.
+
+### 51.3 What a lot is
+
+Stock is a list of lots, not a count per good. A lot carries: the good, the weight, a **grade** (0 to 1), its **age**, its
+**provenance** (where it came from) and whether it is hot. Grade moves price and which buyers will take it (the Family and the
+casino pay for high grades; corners take low ones). Cutting a lot raises margin and costs a crew's trust and a buyer's repeat
+orders. Age lowers value for goods that spoil (grass dries, acid degrades, guns age), so stock is not simply hoarded. Provenance
+makes stolen stock traceable: sold in the wrong district, its owner finds out. The existing totals (`Logistics.total`, the trade
+stock) stay as derived sums so the market and the street keep working.
+
+### 51.4 Where it is held and moved
+
+| Place | Holds | Exposure |
+|---|---|---|
+| Warehouse | most | raided first; case-file stages lead, surveillance, warrant, raid (section 48) |
+| Hidden stash | little | slow to be found |
+| Aircraft or truck | what it carries | traced by tail number or plate; exposed to radar, patrols and rival ambushes while it moves |
+
+A **stock ledger** on the boss desk lists every lot: place, grade, age, heat, and what it would sell for now.
+
+### 51.5 Selling and cleaning the cash
+
+Lots sell to buyers' orders (section 49) and to street dealers on corners your crew holds. Sales come in as **dirty cash**, a
+balance apart from `Session.money`. Only clean cash buys stock. The casino or a front turns dirty into clean:
+
+- a **weekly clean-deposit cap**, so a big dirty balance cannot be cleaned at once;
+- **fronts bought upfront in tiers**, each with a throughput cap that rises with the price;
+- a **delay** before cleaned cash arrives;
+- over-cap deposits and a large dirty balance raise case-file heat.
+
+The shape is borrowed from Schedule I; the prices and caps are set by balance runs in this game's money, not copied.
+
+### 51.6 What else acts on stock
+
+Heat and the case files (section 48) attach to stock you own, in a building and on the move; client cargo adds nothing. Trust with
+each crew (D-11) rises when you order from them and falls with their enemies; lost shipments cost trust and a crew without trust
+sells elsewhere. Rivals can take stock to a depot you can raid. Police act only on what a human in their seat would see (D-36).
+Delegation costs money (D-10). When the pilot is arrested the lawyer takes the hit and the pilot is never held (D-64); caught
+workers do serve their time. Crew members get pairwise relationships (hate, friendship, love) that change who will work together,
+and a racket in a hot district must be closed or risks a raid.
+
+### 51.7 What the reference games contribute
+
+A fact-checked read of Empire of Sin, Mount & Blade, Schedule I and Tropico (secondary sources only) found: crew relationships and
+rackets that close under police suspicion (Empire of Sin); a capped, tiered, delayed laundering loop and dealers on a revenue
+share (Schedule I); a second currency for rank (Mount & Blade's influence); and objectives against deadlines (Tropico). It found
+nothing reliable on manager-UI patterns or on Mount & Blade's trade loop, so the boss desk is our own design. Schedule I's numbers
+come from early-access guides and are not used here.
+
+### 51.8 Order of work (ROADMAP "Stock, ownership and the money loop")
+
+1. This note. 2. Stock lots (grade, age, provenance) behind a switch, with a save migration. 3. Orders and the pickup person, and
+the gun dealer on the same flow. 4. Places and the ledger. 5. Laundering with fronts. 6. Crew relationships and rackets under
+heat. 7. A second currency ("standing") and chapter objectives, only after the owner decides what standing unlocks. 8. The boss
+desk screens (Codex). Each slice has its own static switch registered in `scripts/sim/switches.gd`, its own RNG stream, tests
+first, and a BALANCE entry; slices that touch saves or random draws are reviewed by the other agent.
+
+**Open for the owner:** where the pickup happens (a fixed spot or the contact comes to a stash), the warehouse cap (a count, a
+weight, or floor space you buy), what standing unlocks, and whether the job board is limited to chapters 1 and 2.
