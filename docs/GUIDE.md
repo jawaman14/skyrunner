@@ -126,6 +126,7 @@ Every flight key and gamepad button can be rebound (**F8**). The keys below are 
 | G / T | Flaps down / up |
 | [ / ] | Pitch trim |
 | B or Space | Brakes |
+| Backspace | Back up slowly (1.5 m/s) when stopped with the throttle at idle, on an airfield; a way out when stuck |
 | Y | Mouse yoke on / off (mouse position is the stick) |
 | C | Camera: chase, cockpit, tower |
 | M | The big map (the island chart); the round radar in the corner turns with your nose, `+` / `-` change its range, Shift+M holds north up |
