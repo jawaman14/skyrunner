@@ -241,7 +241,7 @@ The owner asked for the top 500 repositories tagged [godot](https://github.com/t
 | [MenacingMecha/godot-psx-style-demo](https://github.com/MenacingMecha/godot-psx-style-demo) | 739 | GDScript | MIT | The same, with materials and a demo | MIT |
 | [ahopness/GodotRetro](https://github.com/ahopness/GodotRetro) | 803 | GLSL | NOASSERTION | Retro compositor effects | Licence is unclear |
 | [hugemenace/resonate](https://github.com/hugemenace/resonate) | 240 | GDScript | MIT | Music and sound management: pooling, crossfades | For the radio, stingers and per-district music (#167) |
-| [nlaha/godot-midi](https://github.com/nlaha/godot-midi) | 147 | C++ | MIT | Playing MIDI for era music at small size | Check it is pure GDScript and the licensing of any tunes |
+| [nlaha/godot-midi](https://github.com/nlaha/godot-midi) | 147 | C++ | MIT | Playing MIDI for era music at small size | Assessed: native GDExtension for rhythm games. Skip |
 | [kyzfrintin/Godot-Mixing-Desk](https://github.com/kyzfrintin/Godot-Mixing-Desk) | 673 | GDScript | MIT | Adaptive and procedural music (stingers) | Godot 3.3, so ideas only |
 | [ikbencasdoei/godot-voip](https://github.com/ikbencasdoei/godot-voip) | 211 | Rust | MIT | Voice chat | We have our own voice layer; compare quality and latency |
 | [cloudofoz/godot-smashthemesh](https://github.com/cloudofoz/godot-smashthemesh) | 497 | GDScript | MIT | Breaking meshes into fragments | Crash and explosion effects; check cost |
@@ -298,6 +298,17 @@ licence and the code that matters. Nothing was run and nothing is added to the g
 | [hugemenace/resonate](https://github.com/hugemenace/resonate) | A sound manager (pooled players, 2D and 3D, polyphony) and a music manager with stemmed tracks and crossfades; MIT; now maintained by Widgit Gaming | **Prototype when the presentation layers start** | Stems and crossfades are what per-district music and the stingers in D-34 need, and it is pure GDScript. The game's sounds are synthesised in `scripts/game/sound.gd` and the car radio plays recorded excerpts, so it would sit beside them, not replace them |
 | [Yogoda/ZoneLoadingSystem](https://github.com/Yogoda/ZoneLoadingSystem) | Loading and unloading zones by trigger areas | **Skip** | Godot 3 and unmaintained. Our chunked MultiMeshes already handle the city |
 | [grazianobolla/godot-monke-net](https://github.com/grazianobolla/godot-monke-net) | Client-authoritative multiplayer with prediction and interpolation | **Skip** | C#, and it needs the author's fork of Godot. Our host service and snapshots are our own |
+
+Six more were read afterwards:
+
+| Repository | What it is | Verdict | Why |
+|---|---|---|---|
+| [HungryProton/proton_trail](https://github.com/HungryProton/proton_trail) | One 256-line GDScript node that draws a 3D trail; MIT; last change 2023 | **Borrow** | Small enough to vendor with its licence, or to rewrite, for contrails, wingtip vapour and tyre smoke in the effects layer. Not needed until that work starts |
+| [Inspiaaa/ThemeGen](https://github.com/Inspiaaa/ThemeGen) | One GDScript file that builds a `Theme` from code, with semantic colours and light and dark variations; MIT | **Skip, idea only** | `UIStyle` already builds our themes in code; the semantic-colour variations are the same idea as our accessibility palettes |
+| [zijcht/godot-game-settings](https://github.com/zijcht/godot-game-settings) | A settings framework with ready-made components, its own save file and a glyph database; MIT; Godot 4.5 | **Skip** | It would replace our settings, controls and pause menus rather than add to them. Its glyph database overlaps `controller_icons` |
+| [ikbencasdoei/godot-voip](https://github.com/ikbencasdoei/godot-voip) | Voice chat; MIT; last change August 2024 | **Skip** | It ships native code (an Opus extension); we have our own radio-style voice layer in pure GDScript |
+| [nlaha/godot-midi](https://github.com/nlaha/godot-midi) | MIDI import and playback for rhythm games; MIT | **Skip** | A native GDExtension built for rhythm games; not pure GDScript |
+| [GDQuest/GDScript-formatter](https://github.com/GDQuest/GDScript-formatter) | A Rust formatter and linter for GDScript | **Skip** | A native binary to download in CI, which is a supply-chain addition; `gdscript-toolkit` already covers the job |
 
 **Next, in this order, if the owner agrees:** (1) read the road generator's intersection code while writing L5 (no project change);
 (2) one `controller_icons` prototype slice behind `KeyHints`, with a screenshot; (3) write the dither banding pass for the screen filter;
