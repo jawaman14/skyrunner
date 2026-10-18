@@ -14,7 +14,7 @@ extends RefCounted
 ## The switches the parity tests turn off: Godot-only rules that change what the Python game did.
 const PARITY := [
 	"SensorNet.REALISM", "Economy.REALISM", "Arsenal.REALISM", "GroundWar.ENABLED", "Chronicle.ENABLED",
-	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED",
+	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Investigation.ENABLED",
 ]
 
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
@@ -23,7 +23,7 @@ const OPT_IN := [
 	"Court.ENABLED", "Family.ENABLED", "Island.ENABLED", "Payroll.ENABLED", "Trade.ENABLED", "Races.ENABLED",
 	"Rackets.ENABLED", "Renown.ENABLED", "StashWorks.ENABLED", "CityDress.ENABLED", "ModelLib.ENABLED",
 	"Scenery.ENABLED", "GroundWar.ENGAGEMENT", "GroundWar.SMART_ROUTES", "GroundWar.VETERANS",
-	"Logistics.ROUNDS", "Tactical.PYTHON", "RadioNet.REALISM", "Analyst.ENABLED", "Casino.ENABLED", "Casino.REVOLUTION", "Airframe.ENABLED", "Undercover.ENABLED", "PortDress.ENABLED", "DowntownDress.ENABLED",
+	"Logistics.ROUNDS", "Tactical.PYTHON", "RadioNet.REALISM", "Analyst.ENABLED", "Casino.ENABLED", "Casino.REVOLUTION", "Airframe.ENABLED", "Undercover.ENABLED", "PortDress.ENABLED", "AirfieldDress.ENABLED", "DowntownDress.ENABLED",
 	"CasinoBuilding.ENABLED", "Dealership.ENABLED", "Psychedelics.ENABLED", "Territories.ENABLED", "PoliceSystem.EARLY_PACE",
 ]
 
@@ -33,7 +33,8 @@ static func snapshot() -> Dictionary:
 	return {"SensorNet.REALISM": SensorNet.REALISM, "Economy.REALISM": Economy.REALISM,
 		"Arsenal.REALISM": Arsenal.REALISM, "GroundWar.ENABLED": GroundWar.ENABLED,
 		"Chronicle.ENABLED": Chronicle.ENABLED, "Agency.ENABLED": Agency.ENABLED,
-		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED}
+		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED,
+		"Investigation.ENABLED": Investigation.ENABLED}
 
 static func restore(state: Dictionary) -> void:
 	# Validate the complete snapshot before changing any switch.
@@ -49,6 +50,7 @@ static func restore(state: Dictionary) -> void:
 	Agency.ENABLED = state["Agency.ENABLED"]
 	Agent.ENABLED = state["Agent.ENABLED"]
 	Fuel.ENABLED = state["Fuel.ENABLED"]
+	Investigation.ENABLED = state["Investigation.ENABLED"]
 
 static func parity_off() -> Dictionary:
 	var previous := snapshot()
@@ -60,6 +62,7 @@ static func parity_off() -> Dictionary:
 	Agency.ENABLED = false
 	Agent.ENABLED = false
 	Fuel.ENABLED = false
+	Investigation.ENABLED = false
 	return previous
 
 
@@ -72,3 +75,4 @@ static func parity_on() -> void:
 	Agency.ENABLED = true
 	Agent.ENABLED = true
 	Fuel.ENABLED = true
+	Investigation.ENABLED = true

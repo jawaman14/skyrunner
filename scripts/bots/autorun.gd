@@ -21,6 +21,26 @@ func _init(s: Session, prefer_hot_ := true) -> void:
 	prefer_hot = prefer_hot_
 
 
+## Tell the human where the AI pilot is taking them (owner, 17 Oct): the first thing the AI says when it takes a flight.
+func _announce(legs: Array, no_job := false) -> void:
+	var s := sess
+	if legs.is_empty() or s.state == null:
+		return
+	var first: PilotBot.Leg = legs[0]
+	var last: PilotBot.Leg = legs.back()
+	var to_first := PyMath.hypot(first.x - s.state.x, first.y - s.state.y) / 1000.0
+	var to_last := PyMath.hypot(last.x - s.state.x, last.y - s.state.y) / 1000.0
+	var home: String = World.airfield(str(last.code)).name if last.code != null else "base"
+	if first.kind == "drop":
+		s.say("AI pilot: flying to the drop point (%.1f km), then back to %s." % [to_first, home])
+	elif no_job:
+		s.say("AI pilot: no job aboard, landing at the nearest field, %s (%.1f km)." % [home, to_last])
+	elif last.code != null:
+		s.say("AI pilot: flying to %s (%.0f km)." % [home, to_last])
+	else:
+		s.say("AI pilot: flying to a waypoint (%.1f km)." % to_first)
+
+
 ## The AI takes the controls part-way through a flight: fly the active job, or land at the nearest field when there is no job.
 ## On the ground with a job, PilotBot plans departure from the aircraft's current position.
 func _adopt_flight() -> void:
@@ -40,6 +60,7 @@ func _adopt_flight() -> void:
 		bot.pitch_base = s.state.pitch
 		bot._set_phase("enroute")
 	flights += 1
+	_announce(legs, s.active_jobs.is_empty())
 
 
 func _pick():
@@ -104,4 +125,5 @@ func step(dt: float) -> FlightModel.Controls:
 	s.set_fuel(PilotBot.plan_fuel_lb(s, legs))
 	bot = PilotBot.new(s, legs)
 	flights += 1
+	_announce(legs)
 	return bot.step(dt)

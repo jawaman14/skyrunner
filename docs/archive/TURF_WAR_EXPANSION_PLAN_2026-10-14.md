@@ -8,7 +8,7 @@
 
 **Tech Stack:** Godot 4.7.2, pure GDScript, existing `MapLayout`, `RoadGraph`, `GroundWar`, `Logistics`, `StashNet.Truck` and `Agent` systems.
 
-**Spec:** `docs/superpowers/specs/2026-10-14-turf-war-expansion-design.md`
+**Spec:** `docs/archive/TURF_WAR_EXPANSION_DESIGN_2026-10-14.md`
 
 ## Global Constraints
 
