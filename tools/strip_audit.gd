@@ -3,7 +3,10 @@ extends SceneTree
 ## roster can use it for, and (with --bot) whether the pilot bot can take off from and land on it, end by end.
 ##
 ##   godot --headless --path . --script res://tools/strip_audit.gd -- [--map city|N] [--terrain natural|classic] [--bot]
-##       [--aircraft c172p,c182] [--loads light,half,max] [--out docs/STRIPS.md]
+##       [--aircraft c172p,c182] [--loads light,half,max] [--payload] [--out docs/STRIPS.md]
+##
+## --payload adds the heaviest payload that takes off from each end of the strips that matter for the loads the game offers
+## (a bisection per cell, about 7 trials each), at 30% fuel.
 ##
 ## The terrain is the natural pass by default, the one the game flies; classic is the generator the balance numbers
 ## were first measured on. The bot trials are scripts/balance/strip_trials.gd (a forced runway end, a straight
@@ -52,12 +55,14 @@ const NOTES := """## Reading the results
 
 var world: World
 var flags: Array = []  ## [code, text]
+var payload_results: Array = []  ## every max_payload result of --payload, written beside the report as JSON
 
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var map_seed := MapCity.SEED
 	var bot := false
+	var payload := false
 	var keys: Array = ["c172p"]
 	var loads: Array = ["light", "half", "max"]
 	var natural := true
@@ -70,6 +75,8 @@ func _initialize() -> void:
 				map_seed = MapCity.SEED if args[i] == "city" else int(args[i])
 			"--bot":
 				bot = true
+			"--payload":
+				payload = true
 			"--aircraft":
 				i += 1
 				keys = Array(args[i].split(","))
@@ -104,6 +111,8 @@ func _initialize() -> void:
 	lines.append("")
 	if bot:
 		lines.append_array(_bot_section(keys, loads))
+	if payload:
+		lines.append_array(_payload_section(keys, natural, map_seed))
 	lines.append_array(_notes(bot, natural, map_seed, keys, loads).split("
 "))
 	lines.append("")
@@ -121,6 +130,12 @@ func _initialize() -> void:
 		if f != null:
 			f.store_string(text)
 			print("wrote ", path)
+		if not payload_results.is_empty():
+			var jpath := path.get_basename() + "_PAYLOAD.json"
+			var jf := FileAccess.open(jpath, FileAccess.WRITE)
+			if jf != null:
+				jf.store_string(JSON.stringify(payload_results, "  "))
+				print("wrote ", jpath)
 	quit()
 
 
@@ -242,6 +257,53 @@ func _bot_section(keys: Array, loads: Array) -> Array:
 	return ["## Pilot bot trials, per runway end", "",
 		"Aircraft %s at %s load, one calm run per cell. Key under Reading the results." % [", ".join(keys), ", ".join(loads)], "",
 		StripTrials.summary_table(results, fields, keys, loads), ""]
+
+
+## The largest payload (lb) that took off from each end, from StripTrials.max_payload, next to what the game's own pickups
+## weigh (Trade.OWN: a bale is lb[0..1], a load is n[0..1] of them, at the strip kinds in "at"). Each cell is a sampled lower
+## bound: a 5-step bisection of the payload room, so within room/32 of the true limit, and it assumes a heavier payload never
+## helps. Every sample and run is kept in the JSON beside the report so that assumption can be audited.
+func _payload_section(keys: Array, natural: bool, map_seed: int) -> Array:
+	var out := ["## Largest payload that took off, per runway end", "",
+		"%s terrain, map seed %d, 30%% fuel. Each value is a **sampled lower bound** from a 5-step bisection of the payload room (so within room/32, about 19 lb for the Cessna 172, of the true limit; it assumes a heavier payload never helps), and the cell says the lightest payload tried that failed. Every sample and run is in `STRIPS_PAYLOAD.json` next to this report. `none` = it cannot take off even empty." % ["Natural" if natural else "Classic", map_seed], ""]
+	for g in Trade.OWN:
+		var o: Dictionary = Trade.OWN[g]
+		out.append("- **%s** (%s, at %s strips): %.0f to %.0f lb a load." % [o.title, o.label.to_lower() + "s", ", ".join(o["at"]),
+			o["n"][0] * o["lb"][0], o["n"][1] * o["lb"][1]])
+	out.append("")
+	var head := "| strip | end |"
+	var rule := "|---|---|"
+	for k in keys:
+		head += " %s |" % k
+		rule += "---|"
+	out.append(head)
+	out.append(rule)
+	for code in ["HAR", "FRM", "EGL", "PNR", "QRY"]:
+		var af := World.airfield(code)
+		for end in [0, 1]:
+			var cells := []
+			for k in keys:
+				var r := StripTrials.max_payload(k, code, end, 0.3, 5)
+				r["terrain"] = "natural" if natural else "classic"
+				r["map_seed"] = map_seed
+				payload_results.append(r)
+				cells.append(_payload_cell(r))
+			out.append("| %s %s | %d | %s |" % [code, af.name, end, " | ".join(cells)])
+	out.append("")
+	return out
+
+
+## "at least X lb (failed at Y lb)", "at least X lb (all the room)", or "none".
+static func _payload_cell(r: Dictionary) -> String:
+	if r.max_payload_lb == null:
+		return "none"
+	var failed := INF
+	for sample in r.samples:
+		if not sample[1]:
+			failed = minf(failed, float(sample[0]))
+	if failed == INF:
+		return ">= %.0f lb (all the room)" % r.max_payload_lb
+	return ">= %.0f lb (failed at %.0f)" % [r.max_payload_lb, failed * float(r.payload_room_lb)]
 
 
 ## The notes for this run: the envelope paragraph only for the configuration it was measured on, else a line saying it is left out.
