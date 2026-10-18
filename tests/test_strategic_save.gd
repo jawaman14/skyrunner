@@ -38,6 +38,20 @@ func _hire(s: Session, role: String, n: int) -> Array:
 	return ids
 
 
+func test_roadside_guard_is_not_saved_as_a_permanent_squad() -> void:
+	var s := Session.new(_opts())
+	_quiet(s)
+	var truck := StashNet.Truck.new()
+	truck.job_id = 4242
+	var guard: GroundWar.Squad = s.ground._truck_guard(truck, s.ground.hq("org"))
+	check_eq(guard.id, "D-4242", "the truck's temporary guard exists during the fight")
+	var data := StrategicSave.capture(s)
+	var saved: Array = data.squads.list
+	check_eq(saved.filter(func(row): return row.id == guard.id).size(), 0,
+		"a saved game does not turn the temporary guard into a permanent squad")
+	s.dispose()
+
+
 func test_a_save_keeps_the_organisation() -> void:
 	var o := _opts()
 	o["save_path"] = PATH

@@ -3,6 +3,8 @@ extends RefCounted
 ## Job board generation.
 
 static var _next_id := 1
+static var ISLAND_BOARD := true  ## every strip keeps a board that outlives your visits (Session.stock_island_boards); the parity tests turn it off
+const BOARD_TTL_S := 1800.0  ## how long a strip's board stays before it is dealt again
 
 const PASSENGER_NAMES := ["Hiker", "Surveyor", "Doctor", "Tourist", "Fisherman", "Geologist", "Photographer",
 	"Ranger", "Honeymooner", "Mechanic", "Priest", "Journalist"]

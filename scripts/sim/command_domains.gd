@@ -36,6 +36,7 @@ static func handlers() -> Dictionary:
 		"boat_goto": Callable(AIR, "_cmd_boat_goto"),
 		"confirm": Callable(AIR, "_cmd_confirm"),
 		"hq": Callable(ORG, "_cmd_hq"),
+		"challenge_warrant": Callable(GROUND, "_cmd_challenge_warrant"),
 		"chat": Callable(ORG, "_cmd_chat"),
 		"radio_channel": Callable(ORG, "_cmd_radio_channel"),
 		"launch": Callable(AIR, "_cmd_launch"),

@@ -103,6 +103,7 @@ $GODOT --headless --import                    # after adding scripts/assets (ref
 godot --headless --script res://tools/project_status.gd -- --write  # refresh source facts after adding tests/chapters/exports
 $GODOT --path . -- --unlocks open             # play, open mode
 $GODOT --headless --path . -- --unlocks open --watch --new --smoke 1800   # CI's headless smoke run
+$GODOT --headless --path . --script res://tools/playtest.gd -- --seed 3 --seconds 900 --every 300   # a repeatable playtest digest (the AI flies; same seed, same digest)
 $GODOT --headless --script res://scripts/balance/cli.gd -- feasibility|tactical|strategic|report [--seeds N --workers N --n N]
 $GODOT --headless --script res://tools/regen_flight_golden.gd   # after a deliberate flight-model change
 $GODOT --headless --script res://tools/bake_terrain.gd          # after a terrain generator change

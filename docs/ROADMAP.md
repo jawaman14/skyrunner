@@ -79,6 +79,12 @@ The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than 
 6. **Flight skill** (owner, 18 Oct): good landings, short strips and clean approaches give optional bonus goals (money or
    reputation); they never block a chapter.
 
+7. **The boss layer** (owner, 18 Oct; D-58): when the player takes the seat, the game turns to organising: choosing the crew, the
+   routes and the orders, and delivering is optional, by a crew pilot or by the player. Flying cargo becomes one part of the
+   logistics system, not the focus. Before the takeover the player flies the cargo themselves and meets each mechanic one chapter
+   at a time (the flights, the load planner, the stash and trucks, the street, the law, the court), so the boss's seat is
+   understood when it arrives. This sets what delegation (D-10) and the orders (D-59) are for.
+
 Who: Claude the beat, the unlock, the takeover state, delegation and trust; Codex the dialogue and the scene.
 Order: with the rival depot raid, after the presentation layers, unless the owner moves it up.
 
@@ -201,6 +207,35 @@ asset catalogue, props and presentation hooks, all baked by one build tool and c
 the map PRs in the queue land (#373, #374, #378, #396, #402, #404), as a new region beside the current one; the owner
 approves the layout sketch (step 0) and the screenshots (step 6), and playtests before the old map is retired. Four
 owner questions are open in its section 7.
+
+## Product and money loop ideas (owner asked 18 October; for decision)
+
+The owner asked what could make the loop more dynamic and fun. [LOOP_IDEAS.md](LOOP_IDEAS.md) says where it is flat today and
+proposes eight additions: a market board with buyers' orders and deadlines, cover cargo, dirty money with a clock, a readable
+calendar, a deal that moves mid-flight, price wars, investments with a return, and comeback valves. The owner answered (18 Oct,
+D-58 to D-60): deadlines follow demand, the boss layer organises while flying is optional, and to begin as seen fit.
+
+- **Built (the simulation half of addition 1, #419):** `Orders` and the market board data in `Trade.view`, with tests; DESIGN section 49.
+- **Still to do for addition 1:** the market board and the order call on the phone (Codex, UX lane); a BALANCE entry for the premium
+  payouts (the live balance run with and without orders, see BALANCE).
+- **Not started:** additions 2 to 8, in the order of LOOP_IDEAS section 2 (cover cargo next, then the calendar).
+
+## Arms and ammunition (owner, 18 October; planned)
+
+The owner's direction (D-61): **ammunition is a cargo** that is moved and traded, priced by the usual factors; **weapons move as
+crates of each type**, which differ in their specs; the **more powerful weapons are in shorter supply** and the weaker ones plentiful;
+and all of it ties into the ground and turf war. The design, grounded in `arsenal.gd`, `ground.gd`, `foot_combat.gd` and
+`logistics.gd`, is [DESIGN.md section 50](DESIGN.md). Four stages, each its own PR with a balance run:
+
+1. **Crates and the scarcity ladder.** A crate holds one type; each type has its own supply and price (pistols plentiful, rifles
+   common, machine guns scarce, RPGs rare); gun runs and buyers follow the ladder. (Claude)
+2. **Ammunition as a good.** Rounds per weapon type, in crates, bought, trucked and stored; squads draw the rounds of the weapons
+   they carry. (Claude)
+3. **The war uses it.** Fights consume rounds, a dry district's ammunition price climbs, a squad without rounds stops firing, and
+   holding a port or road changes who can resupply. (Claude, with the turf work)
+4. **The screens.** The pack and logistics menus, and the market board (it already carries guns; ammunition joins it). (Codex)
+
+Order: after the buyers' orders (D-59) land; each stage needs a BALANCE entry because the war economy is sensitive to it.
 
 ## Human release gates and owner decisions (#326)
 

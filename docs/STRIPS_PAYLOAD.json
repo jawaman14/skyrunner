@@ -1,0 +1,1051 @@
+[
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 0,
+    "field": "HAR",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 1.0,
+    "max_payload_lb": 609.0,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 1.0,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 0,
+    "field": "HAR",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 1.0,
+    "max_payload_lb": 1040.0,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 1.0,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 1,
+    "field": "HAR",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 1.0,
+    "max_payload_lb": 609.0,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 1.0,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 1,
+    "field": "HAR",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 1.0,
+    "max_payload_lb": 1040.0,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 1.0,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 0,
+    "field": "FRM",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 1.0,
+    "max_payload_lb": 609.0,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 1.0,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 0,
+    "field": "FRM",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 1.0,
+    "max_payload_lb": 1040.0,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 1.0,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 1,
+    "field": "FRM",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 0.75,
+    "max_payload_lb": 456.75,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Hit trees. Repairs -$2,500.",
+        "payload_frac": 1.0,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.5,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.75,
+        "status": "pass"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: the CG passed 1.1 m below an obstacle top",
+        "payload_frac": 0.875,
+        "status": "fail"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: the CG passed 0.4 m below an obstacle top",
+        "payload_frac": 0.8125,
+        "status": "fail"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: the CG passed 0.3 m below an obstacle top",
+        "payload_frac": 0.78125,
+        "status": "fail"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        false
+      ],
+      [
+        0.5,
+        true
+      ],
+      [
+        0.75,
+        true
+      ],
+      [
+        0.875,
+        false
+      ],
+      [
+        0.8125,
+        false
+      ],
+      [
+        0.78125,
+        false
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 1,
+    "field": "FRM",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 1.0,
+    "max_payload_lb": 1040.0,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 1.0,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 0,
+    "field": "EGL",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 0.03125,
+    "max_payload_lb": 19.03125,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 1.0,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 0.5,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 0.25,
+        "status": "fail"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: lifted off 273 m along, past the 255 m of strip ahead of the start of the run; lifted off beside the strip, not over it",
+        "payload_frac": 0.125,
+        "status": "fail"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: lifted off 266 m along, past the 255 m of strip ahead of the start of the run; lifted off beside the strip, not over it",
+        "payload_frac": 0.0625,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.03125,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        false
+      ],
+      [
+        0.5,
+        false
+      ],
+      [
+        0.25,
+        false
+      ],
+      [
+        0.125,
+        false
+      ],
+      [
+        0.0625,
+        false
+      ],
+      [
+        0.03125,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 0,
+    "field": "EGL",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 0.5625,
+    "max_payload_lb": 585.0,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 1.0,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.5,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.75,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.625,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.5625,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.59375,
+        "status": "fail"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        false
+      ],
+      [
+        0.5,
+        true
+      ],
+      [
+        0.75,
+        false
+      ],
+      [
+        0.625,
+        false
+      ],
+      [
+        0.5625,
+        true
+      ],
+      [
+        0.59375,
+        false
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 1,
+    "field": "EGL",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 0.03125,
+    "max_payload_lb": 19.03125,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 1.0,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 0.5,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 0.25,
+        "status": "fail"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: lifted off 273 m along, past the 255 m of strip ahead of the start of the run; lifted off beside the strip, not over it",
+        "payload_frac": 0.125,
+        "status": "fail"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: lifted off 266 m along, past the 255 m of strip ahead of the start of the run; lifted off beside the strip, not over it",
+        "payload_frac": 0.0625,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.03125,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        false
+      ],
+      [
+        0.5,
+        false
+      ],
+      [
+        0.25,
+        false
+      ],
+      [
+        0.125,
+        false
+      ],
+      [
+        0.0625,
+        false
+      ],
+      [
+        0.03125,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 1,
+    "field": "EGL",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 0.5625,
+    "max_payload_lb": 585.0,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 1.0,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.5,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.75,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.625,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.5625,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.59375,
+        "status": "fail"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        false
+      ],
+      [
+        0.5,
+        true
+      ],
+      [
+        0.75,
+        false
+      ],
+      [
+        0.625,
+        false
+      ],
+      [
+        0.5625,
+        true
+      ],
+      [
+        0.59375,
+        false
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 0,
+    "field": "PNR",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 0.71875,
+    "max_payload_lb": 437.71875,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Hit trees. Repairs -$2,500.",
+        "payload_frac": 1.0,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.5,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Hit trees. Repairs -$2,500.",
+        "payload_frac": 0.75,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.625,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.6875,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.71875,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        false
+      ],
+      [
+        0.5,
+        true
+      ],
+      [
+        0.75,
+        false
+      ],
+      [
+        0.625,
+        true
+      ],
+      [
+        0.6875,
+        true
+      ],
+      [
+        0.71875,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 0,
+    "field": "PNR",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 0.8125,
+    "max_payload_lb": 845.0,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: the CG passed 0.2 m below an obstacle top",
+        "payload_frac": 1.0,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.5,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.75,
+        "status": "pass"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: the CG passed 0.2 m below an obstacle top",
+        "payload_frac": 0.875,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.8125,
+        "status": "pass"
+      },
+      {
+        "outcome": "reached 3 km but the run was not valid: the CG passed 0.0 m below an obstacle top",
+        "payload_frac": 0.84375,
+        "status": "fail"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        false
+      ],
+      [
+        0.5,
+        true
+      ],
+      [
+        0.75,
+        true
+      ],
+      [
+        0.875,
+        false
+      ],
+      [
+        0.8125,
+        true
+      ],
+      [
+        0.84375,
+        false
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 1,
+    "field": "PNR",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": null,
+    "max_payload_lb": null,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 0.0,
+        "status": "fail"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        false
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 1,
+    "field": "PNR",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": null,
+    "max_payload_lb": null,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.0,
+        "status": "fail"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        false
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 0,
+    "field": "QRY",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 0.125,
+    "max_payload_lb": 76.125,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 1.0,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 0.5,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 0.25,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.125,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 0.1875,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$2,500.",
+        "payload_frac": 0.15625,
+        "status": "fail"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        false
+      ],
+      [
+        0.5,
+        false
+      ],
+      [
+        0.25,
+        false
+      ],
+      [
+        0.125,
+        true
+      ],
+      [
+        0.1875,
+        false
+      ],
+      [
+        0.15625,
+        false
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 0,
+    "field": "QRY",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": 0.59375,
+    "max_payload_lb": 617.5,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "3km",
+        "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 1.0,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.5,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.75,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.625,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.5625,
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.59375,
+        "status": "pass"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        true
+      ],
+      [
+        1.0,
+        false
+      ],
+      [
+        0.5,
+        true
+      ],
+      [
+        0.75,
+        false
+      ],
+      [
+        0.625,
+        false
+      ],
+      [
+        0.5625,
+        true
+      ],
+      [
+        0.59375,
+        true
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c172p",
+    "empty_weight_lb": 1791.0,
+    "end": 1,
+    "field": "QRY",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": null,
+    "max_payload_lb": null,
+    "payload_room_lb": 609.0,
+    "runs": [
+      {
+        "outcome": "CRASH: Flew into terrain. Repairs -$2,500.",
+        "payload_frac": 0.0,
+        "status": "fail"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        false
+      ]
+    ],
+    "terrain": "natural"
+  },
+  {
+    "aircraft": "c182",
+    "empty_weight_lb": 2060.0,
+    "end": 1,
+    "field": "QRY",
+    "fuel_frac": 0.3,
+    "map_seed": 100000,
+    "max_payload_frac": null,
+    "max_payload_lb": null,
+    "payload_room_lb": 1040.0,
+    "runs": [
+      {
+        "outcome": "CRASH: Flew into terrain. Repairs -$10,200.",
+        "payload_frac": 0.0,
+        "status": "fail"
+      }
+    ],
+    "samples": [
+      [
+        0.0,
+        false
+      ]
+    ],
+    "terrain": "natural"
+  }
+]

@@ -265,6 +265,12 @@ var radio: RadioNet
 var controller := "ai"  ## ai | human
 var features := {"interceptors": true, "rivals": true}
 var suspicion_scale := 1.0  ## see EARLY_PACE
+var tail_heat_mult := 1.0  ## the runner's aircraft is known (Investigation, DESIGN §48): its sightings count for more
+
+
+## What a sighting of `c` is worth: the chapter's pace, and for the runner how known the aircraft is.
+func _scale(c: Case) -> float:
+	return suspicion_scale * (tail_heat_mult if c.target_id == "runner" else 1.0)
 var stock := {"heli": 1, "interceptor": 2, "cutter": 1}
 var units: Array = []
 var cases := {}
@@ -282,7 +288,6 @@ var detections := {}
 var _launches: Array = []
 var _sweep_acc := SWEEP_INTERVAL_S
 var _serial := 0
-var _rival_spawned := {}
 var _flight_time := {}
 var now := 0.0
 var aerostat_ready_t = null
@@ -392,7 +397,6 @@ func reset(keep_wanted := false, tid := "runner") -> void:
 			if u.target_id == tid:
 				u.target_id = null
 				u.state = "return"
-	_rival_spawned.erase(tid)
 	_flight_time[tid] = 0.0
 
 
@@ -473,17 +477,6 @@ func patrol_spares(zones: Array, reserve := 1) -> Array:
 		out.append(z)
 		i += 1
 	return out
-
-
-func spawn_rival(near: Array, target_id: String) -> Pursuer:
-	var ang := rng.uniform(0, 2 * PI)
-	var x: float = near[0] + 5000 * cos(ang)
-	var y: float = near[1] + 5000 * sin(ang)
-	_serial += 1
-	var u := Pursuer.new("rival", x, y, world.ground(x, y) + 250, 0.0, [x, y], {
-		"speed": UNIT_TYPES["rival"][0] * KT * 0.6, "id": "Rival-%d" % _serial, "target_id": target_id})
-	units.append(u)
-	return u
 
 
 func dispatch(unit_id: String, target_id = null, point = null):
@@ -791,14 +784,7 @@ func tick(dt: float, now_: float, targets: Array) -> Dictionary:
 			outcomes[tid] = "busted" if t.hot else "clean"
 			_close_case(tid, t.hot)
 			continue
-		# rivals
-		if (features.has("rivals") and t.hot and t.value > 2000 and not _rival_spawned.has(tid)
-				and _flight_time[tid] > 45 and tid == "runner"):
-			_rival_spawned[tid] = true
-			if rng.random() < 0.6:
-				spawn_rival([t.sig.x, t.sig.y], tid)
-				events.append("Rival smugglers inbound. They will chase you, but they cannot take the cargo.")
-		# Rival smugglers chase and can be shot, but they never take the cargo from the air (owner, 14 Oct): the old rival meter and the "hijacked" outcome are gone.
+		# No rival aircraft follows a flight and nobody takes cargo from the air (owner, 14 and 17 Oct); ground cargo is fought for on the road (GroundWar).
 	return outcomes
 
 
@@ -847,7 +833,7 @@ func _classify(t: Target, dt: float) -> void:
 				_squawk_code(c, sig)
 	# squawk lost while being tracked: the classic tell
 	if site_code and not sig.transponder and 0 < now - c.identified_t and now - c.identified_t < 20 and c.squawk:
-		c.suspicion = minf(100.0, c.suspicion + 50 * suspicion_scale)
+		c.suspicion = minf(100.0, c.suspicion + 50 * _scale(c))
 		_say("Center", "squawk %s lost at %s, primary only" % [c.squawk, site_code], null)
 		c.squawk = ""
 	if c.wanted:
@@ -870,7 +856,7 @@ func _classify(t: Target, dt: float) -> void:
 			# legitimate traffic doesn't let down into an unlit quarry or a farmer's field
 			c.odd_destination[af.code] = true
 			var bump := ODD_DESTINATION_SUSPICION if af.kind == "shady" else BUSH_DESTINATION_SUSPICION
-			c.suspicion = minf(100.0, c.suspicion + bump * suspicion_scale)
+			c.suspicion = minf(100.0, c.suspicion + bump * _scale(c))
 			if c.suspicion >= 100:
 				law_events.append("Track %s flagged: nobody legit lands at %s" % [alias(sig.id), af.name])
 				if controller == "ai":
@@ -899,7 +885,7 @@ func _classify(t: Target, dt: float) -> void:
 				c.drop_alerted = true
 				law_events.append("ALERT: possible airdrop pattern near %s,%s km" % [Py.f(sig.x / 1000, 1), Py.f(sig.y / 1000, 1)])
 				tips.append(Tip.new(now, sig.x, sig.y, 1500, "possible airdrop"))
-		c.suspicion += dt * rate * suspicion_scale
+		c.suspicion += dt * rate * _scale(c)
 		if c.suspicion >= 100:
 			c.suspicion = 100
 			events.append("%s has you. Police dispatched!" % site.name)

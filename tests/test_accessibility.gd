@@ -81,6 +81,9 @@ func test_screen_filters() -> void:
 		if f.mode != "off":
 			check(f.rect.material is ShaderMaterial and f.rect.material.shader != null, "%s has its shader" % f.mode)
 	check_eq(seen.back(), "off", "cycles back to off")
+	f.set_mode("ps2")
+	check(f.rect.visible and f.rect.material.shader.code.contains("bayer4"), "the PS2 look has its dither shader")
+	check_eq(int(f.rect.material.get_shader_parameter("bits")), 6, "six bits a channel by default")
 	f.set_mode("deuteranopia")
 	check_eq(f.rect.material.get_shader_parameter("type"), 3, "GATO's deuteranopia")
 	f.set_mode("bogus")

@@ -29,7 +29,7 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-12 | 2026-10-12 | The 3D pilot app gets a fixed 30 Hz step with the picture smoothed between steps, as its own task | planned | ROADMAP: Forgotten or half done (found 18 October) |
 | D-13 | 2026-10-14 | Only ground cargo can be stolen, in a firefight; first missions are free and can be retried at the same airport | done | #377, #376 |
 | D-14 | 2026-10-16 | Outages: either agent takes over the other's work without asking | done | memory, board |
-| D-15 | 2026-10-16 | Remove read-aloud (text to speech) | in-pr | #385 |
+| D-15 | 2026-10-16 | Remove read-aloud (text to speech) | done | #385 |
 | D-16 | 2026-10-16 | The General's choice is optional; keep the two-goal rule | done | #378 (merged 18 Oct, 2ea0842e) |
 | D-17 | 2026-10-16 | Persistent island-wide job boards | in-pr | #383 |
 | D-18 | 2026-10-17 | Remove the rival aircraft and the hijack | in-pr | #388 |
@@ -39,10 +39,10 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-22 | 2026-10-17 | #367's vehicles are replaced by #374 | done | #374 |
 | D-23 | 2026-10-17 | Next direction: the presentation layers (music, fashion, graffiti, city pulse) | planned | ROADMAP: Next: presentation layers (owner's pick) |
 | D-24 | 2026-10-17 | Playtest fixes: clearer chapter 1 goals, boat updates and map lines, the AI pilot says where it goes, a radar tip, dirt wears the airframe, a slow reverse, the unloading step | in-pr | #390, #391, #392, #393, #394, #395 |
-| D-25 | 2026-10-18 | The phone is the hub (Work, People, Empire, Map, Messages, Guide, Help, Radio, Settings) | in-pr | #401 |
+| D-25 | 2026-10-18 | The phone is the hub (Work, People, Empire, Map, Messages, Guide, Help, Radio, Settings) | done | #401 |
 | D-26 | 2026-10-18 | Pick which save to use (save slots) | in-pr | #399 |
 | D-27 | 2026-10-18 | Heat and the law rework, in three steps in order: case files and kinds of heat; the police search and the ladder down; patterns, escalation, corruption, ground chases | in-pr | ROADMAP: Heat and the law (owner, 18 October) |
-| D-28 | 2026-10-18 | Fix the workflow audit's findings | in-pr | #398 |
+| D-28 | 2026-10-18 | Fix the workflow audit's findings | done | #398 |
 | D-29 | 2026-10-18 | Codex's woken turns may write the board folder (sandbox writable root), no full access | done | wake watcher command (local) |
 | D-30 | 2026-10-18 | Keep a decisions ledger and check it in the tests (this file) | done | PIPELINE.md |
 | D-31 | open | The hub approach on natural terrain (HAR end 0); flight skill in the story's goals; the AI knowledge policy; the engine (Godot or Unity); what survives Rafa's death | superseded | D-35, D-36, D-37, D-38, D-39 |
@@ -65,5 +65,14 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-49 | 2026-10-18 | Give Codex more of the workload: the review queue first, then the gap audits, the playtest protocol (#172), QA, the Heat app and map lines, Rafa's dialogue, housekeeping (board note 511) | planned | #329 |
 | D-50 | 2026-10-18 | Widen the wake tool's sandbox so a woken Codex can commit and push in the skyrunner .git and its own skyrunner-* worktrees | done | wake watcher (local) |
 | D-52 | 2026-10-18 | Change the working structure: each agent does its own work end to end and may approve and merge it; Codex stops being only an approver; the two assign each other coding jobs on the board. Codex first wraps up what it has left in its current role, then the two discuss the split and the owner is told which jobs go to whom. At 08:50 the owner said to switch now and finish the open PRs together | in-pr | ROADMAP: Working structure (owner, 18 October) |
-| D-51 | 2026-10-18 | Clean up all the repository's documents, including the README: dated reports to docs/archive/, a docs index, links fixed | in-pr | #408 |
+| D-53 | 2026-10-18 | Queue tests and simulations behind the machine-wide Godot lock so an agent can line them up and carry on (skyrunner-mcp #10, merged), and bump the server pin | in-pr | #410 |
+| D-57 | 2026-10-18 | Look into what can be added to the product and money loop to make the gameplay more dynamic and fun | planned | ROADMAP: Product and money loop ideas (owner asked 18 October; for decision) |
+| D-58 | 2026-10-18 | The boss layer: after the takeover (D-35) the player organises the empire and delivering is optional, by a crew pilot or by themselves; flying cargo becomes part of the logistics system, not the main focus; before it the player flies the cargo and learns each mechanic chapter by chapter, so the boss's seat is understood when it comes | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
+| D-59 | 2026-10-18 | Deadlines follow demand: a night's work, or 10 to 20 minutes when the street is hungry | in-pr | #419 |
+| D-60 | 2026-10-18 | Begin the loop additions as seen fit: first the market board and buyers' orders | in-pr | #419 |
+| D-61 | 2026-10-18 | Ammunition is a cargo that is moved and traded, priced by the usual factors; weapons move as crates of each type, which differ in specs; the more powerful weapons are in shorter supply and the weaker ones plentiful; all of it ties into the ground and turf war | planned | ROADMAP: Arms and ammunition (owner, 18 October; planned) |
+| D-51 | 2026-10-18 | Clean up all the repository's documents, including the README: dated reports to docs/archive/, a docs index, links fixed | done | #408 |
+| D-54 | 2026-10-18 | Read the GitHub godot topic's repositories and list any whose names or descriptions could help; assess the list for implementation afterwards | in-pr | #414, #415, #416 |
+| D-55 | 2026-10-18 | Do the godot-topic assessments in the order I think right (road junctions read, controller icons prototype, own dither pass, own playtest tool) and look at Terrain3D too | in-pr | #414, #415, #416 |
+| D-56 | 2026-10-18 | Merge the lower-risk open PRs on my own judgement while Codex is out of quota (it hit its usage limit until 12:40) | done | #412 |
 | D-34 | 2026-10-13 | Presentation layers: stingers, the player's own colours and tag, claiming a won zone with graffiti (gameplay; the layer draws it), systems reacting to each other, per-year stations, wordless with a pause-menu legend | planned | ROADMAP: Next: presentation layers (owner's pick) |
