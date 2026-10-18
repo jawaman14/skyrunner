@@ -202,6 +202,13 @@ the map PRs in the queue land (#373, #374, #378, #396, #402, #404), as a new reg
 approves the layout sketch (step 0) and the screenshots (step 6), and playtests before the old map is retired. Four
 owner questions are open in its section 7.
 
+## Product and money loop ideas (owner asked 18 October; for decision)
+
+The owner asked what could make the loop more dynamic and fun. [LOOP_IDEAS.md](LOOP_IDEAS.md) says where it is flat today and
+proposes eight additions: a market board with buyers' orders and deadlines, cover cargo, dirty money with a clock, a readable
+calendar, a deal that moves mid-flight, price wars, investments with a return, and comeback valves. The recommended first slice is
+the market board and the orders. Nothing is built; the owner chooses (the three questions at the end of the document).
+
 ## Human release gates and owner decisions (#326)
 
 - **Gates only a person can pass:** exported Windows and macOS walkthroughs; physical controller and four-resolution visual
