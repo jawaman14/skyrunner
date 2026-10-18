@@ -88,6 +88,14 @@ Pure GDScript on Godot 4.7.2. No native code, no plug-ins to build. See README.m
 docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the baton, and
 docs/README.md for every document; dated reports and old plans are in docs/archive/ (records, not instructions).
 
+## Session notes from Claude (18 October 2026)
+
+In-flight work and the next steps are in HANDOFF.md 'The baton'. Rules learned the hard way: run `tools/collab/run_locked.py import`
+in a fresh worktree before `status --write`; register new test files in `tests/test_lanes.json`; every new random draw gets its own
+stream behind a switch in `scripts/sim/switches.gd` (PARITY if a parity replay can enable the system); balance changes need a
+BALANCE entry (numbered in order; renumber on a merge conflict); keep line endings as the file has them; never switch a branch
+under a running suite, give long runs their own worktree.
+
 ## Owner decisions: the ledger (owner, 18 October 2026)
 
 Every owner decision goes into [docs/DECISIONS.md](docs/DECISIONS.md) in the session it is made, with where its work is
