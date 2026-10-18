@@ -26,6 +26,8 @@ const FAMILY := ["respect", "greed", "rico", "rat", "gone", "offers", "loan", "d
 const FAMILY_INTS := ["cost", "amount", "owed"]
 const TRADE := ["stock", "connected", "appetite", "sold", "landed", "earned", "street_sales", "last", "bulk_log", "_t", "_war_t",
 	"_sales_acc"]
+const ORDERS := ["open", "history", "_next_id", "_sample_t", "_prev"]
+const ORDERS_INTS := ["id"]
 const ECON := ["walk", "fuel_walk", "scarcity", "glut", "busts", "events", "news", "storm", "law_kit", "_t", "_now"]
 const MARKET := ["supply", "demand", "disruption", "source", "news", "why", "_last_news", "_demand_events", "_t", "_now"]
 const ISLAND := ["relations", "controller", "passage_until", "status", "status_until", "price_mult", "airport_heat", "port_heat", "crackdown_until",
@@ -107,6 +109,8 @@ static func _capture_world(s: Session, d: Dictionary) -> void:
 		d["family"] = SaveVars.capture(s.family, FAMILY)
 	if s.trade != null:
 		d["trade"] = SaveVars.capture(s.trade, TRADE)
+		if s.trade.orders != null:
+			d["orders"] = SaveVars.capture(s.trade.orders, ORDERS)
 	if s.econ != null:
 		d["econ"] = SaveVars.capture(s.econ, ECON)
 		if s.econ.market != null:
@@ -309,6 +313,8 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 		SaveVars.restore(s.family, d.family, FAMILY, FAMILY_INTS)
 	if s.trade != null and d.get("trade") is Dictionary:
 		SaveVars.restore(s.trade, d.trade, TRADE)
+		if s.trade.orders != null and d.get("orders") is Dictionary:
+			SaveVars.restore(s.trade.orders, d.orders, ORDERS, ORDERS_INTS)
 	if s.econ != null and d.get("econ") is Dictionary:
 		SaveVars.restore(s.econ, d.econ, ECON)
 		if s.econ.market != null and d.get("market") is Dictionary:
