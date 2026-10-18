@@ -212,8 +212,13 @@ owner questions are open in its section 7.
 
 The owner asked what could make the loop more dynamic and fun. [LOOP_IDEAS.md](LOOP_IDEAS.md) says where it is flat today and
 proposes eight additions: a market board with buyers' orders and deadlines, cover cargo, dirty money with a clock, a readable
-calendar, a deal that moves mid-flight, price wars, investments with a return, and comeback valves. The recommended first slice is
-the market board and the orders. Nothing is built; the owner chooses (the three questions at the end of the document).
+calendar, a deal that moves mid-flight, price wars, investments with a return, and comeback valves. The owner answered (18 Oct,
+D-58 to D-60): deadlines follow demand, the boss layer organises while flying is optional, and to begin as seen fit.
+
+- **Built (the simulation half of addition 1, #419):** `Orders` and the market board data in `Trade.view`, with tests; DESIGN section 49.
+- **Still to do for addition 1:** the market board and the order call on the phone (Codex, UX lane); a BALANCE entry for the premium
+  payouts (the live balance run with and without orders, see BALANCE).
+- **Not started:** additions 2 to 8, in the order of LOOP_IDEAS section 2 (cover cargo next, then the calendar).
 
 ## Arms and ammunition (owner, 18 October; planned)
 

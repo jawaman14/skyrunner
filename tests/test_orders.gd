@@ -117,6 +117,33 @@ func test_a_part_delivery_pays_on_the_part_and_a_missed_one_costs_trust() -> voi
 	s.dispose()
 
 
+func test_a_truck_that_settles_after_the_deadline_is_late() -> void:
+	var s := _sess()
+	_force(s, "family", "cocaine", 20.0, 1.3, 100.0)
+	s.time += 130.0  # past the deadline, before Trade's next minute check has run
+	var respect0: float = s.family.respect
+	var earned0: int = s.trade.earned
+	var plain := int(s.trade.quote("family", "cocaine").price * 20.0)
+	s.trade.settle("family", "cocaine", 20.0)
+	check_eq(s.trade.earned - earned0, plain, "paid the plain price, no premium")
+	check(s.trade.orders.open.is_empty(), "the order is gone")
+	check(s.family.respect < respect0 + Orders.DONE_TRUST, "and no completion trust (it was missed)")
+	check_eq(str(s.trade.orders.history.back().result), "missed", "recorded as missed")
+	s.dispose()
+
+
+func test_the_message_says_the_premium_is_above_the_buyers_usual_price() -> void:
+	var s := _sess()
+	var told := []
+	s.bus.subscribe("order_posted", func(e): told.append(e.text))
+	_until_posted(s)
+	check(not told.is_empty(), "an order was announced")
+	if not told.is_empty():
+		check(str(told[0]).contains("above his usual price"), "worded against the buyer's own price: %s" % told[0])
+		check(not str(told[0]).contains("street price"), "not against the street price")
+	s.dispose()
+
+
 func test_a_sale_to_another_buyer_or_good_does_not_touch_an_order() -> void:
 	var s := _sess()
 	_force(s, "family", "cocaine", 20.0, 1.3, 900.0)

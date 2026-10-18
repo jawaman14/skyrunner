@@ -1,8 +1,8 @@
 # The product and money loop: what could make it more dynamic and fun
 
 Written 18 October 2026 at the owner's request, from a read of `market.gd`, `trade.gd`, `logistics.gd`, `jobs.gd`, `chronicle.gd`,
-`family.gd` and the design sections 18, 19 and 22. **These are proposals for the owner to choose from; nothing here is decided or
-built.** The loop as it stands is on sheet 5 of the System Map: take a job, load, fly, land, the stash, trucks, dealers, cash home,
+`family.gd` and the design sections 18, 19 and 22. **These were proposals for the owner to choose from; the first slice (addition 1, the market board and
+the buyers' orders) is built in the simulation (#419) and the rest are not.** The loop as it stands is on sheet 5 of the System Map: take a job, load, fly, land, the stash, trucks, dealers, cash home,
 money, repeat.
 
 ## 1. Where the loop is flat today

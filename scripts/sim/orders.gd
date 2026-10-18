@@ -14,7 +14,7 @@ static var ENABLED := true
 const RUSH_S := [600.0, 1200.0]  ## 10 to 20 minutes
 const NIGHT_S := [2700.0, 4500.0]  ## a night's work: 45 to 75 minutes
 const RUSH_PRESSURE := 1.25  ## demand over supply in the buyer's market from which an order is a rush
-const PREMIUM := {"rush": [1.25, 1.40], "night": [1.10, 1.20]}  ## paid on top of the quote, on the pounds delivered in time
+const PREMIUM := {"rush": [1.25, 1.40], "night": [1.10, 1.20]}  ## paid on top of the buyer's own quote (not the street price), on the pounds delivered in time
 const EVERY_S := 900.0  ## about one new order this often while there is room for one
 const MAX_OPEN := 2
 const SHARE := [0.35, 0.7]  ## of the buyer's appetite cap
@@ -113,7 +113,7 @@ func _post(now: float) -> void:
 	trade.appetite[buyer][good] = maxf(float(trade.appetite[buyer][good]), qty)  # he has asked for it: there is room
 	var mins := int(round((float(o.due) - now) / 60.0))
 	var unit := "%d lb of %s" % [int(qty), good] if good != "guns" else "%d rifles" % int(qty)
-	var text := "%s want %s within %d minutes (%d%% on top of the street price)%s." % [b.name, unit, mins, int(round((float(o.premium) - 1.0) * 100.0)),
+	var text := "%s want %s within %d minutes (%d%% above his usual price)%s." % [b.name, unit, mins, int(round((float(o.premium) - 1.0) * 100.0)),
 		" - the street is hungry" if kind == "rush" else ""]
 	sess.say(text)
 	sess.bus.emit("order_posted", now, text, ["runner"], {"id": o.id, "buyer": buyer, "good": good, "qty": qty, "kind": kind})
@@ -122,8 +122,11 @@ func _post(now: float) -> void:
 ## A bulk sale to `buyer` of `qty` of `good` settled at `unit_price` a pound (a weapon): the premium on what the open order
 ## still wanted, in dollars (0 when none). Fills the order, and completes it when nothing is left.
 func on_settle(buyer: String, good: String, qty: float, unit_price: float) -> int:
-	for o in open:
+	for o in open.duplicate():
 		if o.buyer != buyer or o.good != good:
+			continue
+		if sess.time >= float(o.due):  # a truck that arrives after the deadline but before the next minute's check is late
+			_expire(o)
 			continue
 		var fill := minf(qty, float(o.left))
 		if fill <= 0.0:
