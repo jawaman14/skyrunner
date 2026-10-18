@@ -60,6 +60,7 @@ func _init(opts := {}) -> void:
 			arsenals["org"].side = "org"
 	if not world.map.stashes.is_empty():
 		stash_net = StashNet.new(world.map.stashes, _rng(seed + 41))
+		investigation = Investigation.new(_rng(seed + 163))
 	ai_law_upgrades = opts.get("ai_law_upgrades", false)
 	for key in SYSTEMS:
 		if opts.get(key, false):
