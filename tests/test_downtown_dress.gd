@@ -10,8 +10,12 @@ func after_each() -> void:
 
 
 func _boxes() -> Array:
-	World.use_map(MapCity.SEED)
-	return World.new().map.buildings.filter(func(b): return b.style != "crane")
+	# Legacy renderer coverage uses explicit tower fixtures. Costa Brava's
+	# rebuilt districts intentionally contain no generic skyscrapers.
+	var out := []
+	for i in 20:
+		out.append({"x": MapCity.CITY_C.x + i * 65, "y": MapCity.CITY_C.y, "z": 4.0, "w": 45.0, "d": 45.0, "h": 40.0 + i, "style": "tower"})
+	return out
 
 
 func test_the_tallest_towers_nearest_the_centre_are_picked() -> void:

@@ -168,6 +168,34 @@ static func _cmd_street_sweep(role: String, a: Dictionary, session: Session):
 	return err if err != "" else null
 
 
+## A lawyer challenges the task force's warrant on a stash (DESIGN §48): Investigation.CHALLENGE_FEE, and a chance to have
+## it thrown out (the case goes back to surveillance) that grows with the lawyer: the one on the pilot's case if there is
+## one, otherwise Arturo Vega's storefront practice.
+static func _cmd_challenge_warrant(role: String, a: Dictionary, session: Session):
+	if session.investigation == null or not Investigation.ENABLED:
+		return "No case files in this game."
+	var id := str(a.get("stash", ""))
+	var st = session.stash_net.get_stash(id) if session.stash_net != null else null
+	if st == null:
+		return "No such stash."
+	if session.investigation.stage_of(id) != "warrant":
+		return "There is no warrant on %s to challenge." % st.name
+	if session.money < Investigation.CHALLENGE_FEE:
+		return "The lawyer wants $%s up front." % Py.money(Investigation.CHALLENGE_FEE)
+	var key := "local"
+	if session.court != null and session.court.case_ != null:
+		key = str(session.court.case_.lawyer)
+	var tier: int = {"public": 0, "local": 1, "miami": 2, "family": 3}.get(key, 1)
+	session.money -= Investigation.CHALLENGE_FEE
+	var name: String = Court.LAWYERS[key].name if Court.LAWYERS.has(key) else "The lawyer"
+	if session.investigation.challenge(id, tier, session.time):
+		session.say("%s got the warrant on %s thrown out. They are still watching it." % [name.capitalize(), st.name])
+		session.law_say("The judge threw out the warrant on %s." % st.name)
+	else:
+		session.say("%s went to the judge about %s: the warrant stands." % [name.capitalize(), st.name])
+	return null
+
+
 static func _cmd_raid_stash(role: String, a: Dictionary, session: Session):
 	if session.stash_net == null:
 		return "No stash houses on this map."

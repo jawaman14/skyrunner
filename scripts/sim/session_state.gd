@@ -120,6 +120,7 @@ var econ: Economy  ## the markets: what each good is worth where (Economy)
 var _news_seen := 0
 var stash_net: StashNet = null  ## the organisation's stash houses (maps that have them)
 var _stash_ai_t := 0.0
+var investigation: Investigation = null  ## the task force's case files on the stashes (DESIGN §48)
 var arsenals := {}  ## "org" | "law" | "rival" -> Arsenal (Arsenal.REALISM)
 var seats: Seats  ## who holds each role: the AI, or a human (Seats)
 var _ai_defaults := {}  ## what each seat's AI was set to before a human took it

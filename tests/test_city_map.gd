@@ -49,7 +49,7 @@ func test_every_region_is_there() -> void:
 		census[c] = census.get(c, 0) + 1
 	for c in [MapCity.URBAN, MapCity.PORT, MapCity.MANGROVE, MapCity.SWAMP, MapCity.FARM, MapCity.JUNGLE, MapCity.SCRUB, MapCity.BEACH]:
 		check(census.get(c, 0) > 150, "%s: %d cells" % [MapCity.CLASS_NAMES[c], census.get(c, 0)])
-	check(w.map.buildings.size() > 2000, "a city: %d buildings" % w.map.buildings.size())
+	check(w.map.buildings.size() > 2000, "street-front period parcels: %d buildings" % w.map.buildings.size())
 	check(w.map.buildings.any(func(b): return b.style == "crane"), "cranes on the docks")
 	check(w.height(-1000, -11700) < -5, "the harbour basin is deep water")
 	# the river runs to the sea
@@ -61,13 +61,14 @@ func test_no_trees_on_the_roads_or_in_the_fields() -> void:
 	var w := _world()
 	var trees := w.terrain.get_trees()
 	var mask := MapCity.road_mask(w.map.roads)
+	var road_index := MapCity.RoadIndex.new(w.map.roads, 12.0)
 	var on_road := 0
 	var in_fields := 0
 	var in_town := 0
 	for k in trees.size() / 4:
 		var x: float = trees[k * 4]
 		var y: float = trees[k * 4 + 1]
-		if MapCity.on_road(mask, x, y) and MapCity.road_dist(w.map.roads, x, y) < 7.0:
+		if MapCity.on_road(mask, x, y) and road_index.dist(Vector2(x, y)) < 7.0:
 			on_road += 1  # a tree or a building on the carriageway
 		var cls := MapCity.at(w.map.land_use, x, y)
 		if cls == MapCity.FARM:

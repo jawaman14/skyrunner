@@ -33,11 +33,11 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Claude integrates and reviews; Codex is out of usage (owner, 16 Oct: Claude picks up Codex's work). Polish week: no new features, only polish, playtest fixes and human testing (owner, 12 Oct). Work is isolated in linked worktrees and coordinated on the MCP board. |
-| **Task** | Merged 12-15 Oct: #357 (dedicated server campaign/chapter/watch), #360, #363, #364's predecessors up to #365 (host service steps), #371 (visual capture matrix), #372 (phase tutorials, air camera look), #375 (AI/autopilot handoff). Open drafts: **#376** first missions cost nothing and can be retried, **#377** rivals cannot take cargo from the air, **#370** roadmap refresh and `docs/PRESENTATION_LAYERS.md`. Codex's open PRs, synced by Claude: **#369** controls help, **#373** scenery and sidewalks, **#374** period vehicles and Windows capture. |
-| **Branches / PRs** | Codex's turf-war expansion was never pushed: it is now on `codex/turf-war-expansion` (`8aee5bd`, 32 files, 82 commits behind main, no PR, needs a sync, the full suite and an owner decision under the feature freeze). Claude drafts waiting on a review: #364, #367 (vehicle geometry below the Asset Bible floor), #368 (owner decision). Old strip/road drafts #305, #319, #321, #323 wait on the owner's strip decision (#326). |
-| **Next step** | Merge #376 and #377 once reviewed; ground cargo theft by firefight and the warehouse raid; jobs from the whole island; the radar/visual-cue tutorial lesson; #345 slow reverse and dirt take-off tyre wear. Do not mark #326 human gates passed. |
-| **Codex task** | When back: the QA lane (full suite and goldens on #376, #377 and the merged #372; the key audit; the 720p desk check), review of Claude's PRs, and the turf-war branch. |
+| **Holder** | Dual work (owner, 18 October, D-52): each agent owns assigned work end to end; coordinate through the shared MCP board and use separate linked worktrees. Codex owns reviews, UX/UI, dialogue and QA. |
+| **Task** | Codex is drafting Rafa's dialogue for chapters 1-4 from board assignment #511 item 6. `dialogue/rafa.dialogue` is a content draft; Claude's story beat, unlock and takeover work will call these entry points later. |
+| **Branches / PRs** | `codex/rafa-dialogue` is based on local `origin/main` at `939b4e0b`; draft PR and CI are pending. Other assignments and open PRs are tracked on the MCP board. |
+| **Next step** | Complete full-suite and documentation/status checks, publish the draft PR, then coordinate the entry-point hookup after Claude's scene work lands. |
+| **Codex task** | Finish board assignment #511 item 6 (Rafa dialogue chapters 1-4); preserve the remaining #511 queue in the board. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
 ## Taking over (checklist for the incoming AI)
@@ -139,6 +139,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+- **2026-10-18 - Codex, Rafa dialogue draft (#511 item 6):** On `codex/rafa-dialogue` from `main` `939b4e0b`, added five independent entry points for the employment opening, three chapter-2 beats and chapter-4 off-screen death report. `test_talk` passes 12/12; full suite reports 1,214 passed and 4 failed (two core-parity golden tests and two police radar tests, whose files are unchanged from `origin/main`). Generated status is current at 1,218 methods / 149 files; `git diff --check` is clean. The entries are not hooked into the story until Claude's beat/takeover scene work calls them. Next: publish the requested draft PR and wait for exact-head CI/review.
 
 - **2026-10-17 - Codex, ground overlap integration:** `codex/roadside-turf-integration` combines #384's roadside firefight with #378's district/tactical work and the stacked #386 share refactor. The merge keeps both ground test additions and regenerates the project-status count. A new strategic-save regression exposed that the roadside driver guard was serialized as a permanent organisation squad although trucks and fights are not saved; guards are now tagged `roadside` and excluded from capture. The failing test was observed before the fix. Focused green tests and CI are pending the shared Godot machine lock; this branch is not ready for merge until they pass.
 
