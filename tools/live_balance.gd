@@ -41,6 +41,8 @@ var hours := 3.0
 
 
 func _initialize() -> void:
+	if OS.get_environment("NO_ORDERS") != "":  # the same run without buyers' orders, to measure what they add
+		Orders.ENABLED = false
 	var a := OS.get_cmdline_user_args()
 	if a.size() > 0:
 		seeds = int(a[0])

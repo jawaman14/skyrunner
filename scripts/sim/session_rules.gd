@@ -3,6 +3,11 @@ extends SessionState
 ## Layer 2 of 6 of the Session: the rules (busts, raids, deliveries, grading), the ground war and the court and payroll
 ## command wrappers.
 
+## A board is still good if it was dealt less than BOARD_TTL_S ago (always dealt afresh with the switch off, or in the employed opening).
+func board_is_fresh(code: String) -> bool:
+	return Jobs.ISLAND_BOARD and not _first_missions() and boards.has(code) and time - float(board_at.get(code, -1e9)) < Jobs.BOARD_TTL_S
+
+
 ## The employed opening (the first missions): failing one must never end the game or cost money (owner, 14 Oct) - the pilot is back at an airport and flies the cargo again.
 func _first_missions() -> bool:
 	return story != null and story.employment != null and story.employment.active()
@@ -162,7 +167,8 @@ func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
 	fm.apply_loadout(loadout)
 	police.reset(true)
 	log = FlightLog.new(fm.touchdowns)
-	refresh_board(af.code)
+	if not board_is_fresh(af.code):  # a board you saw from elsewhere is the one you find
+		refresh_board(af.code)
 	if delivered.is_empty() and hot_here.is_empty():
 		say("Parked at %s." % af.name)
 	bus.emit("landed", time, "", ["runner"], {"code": af.code})
