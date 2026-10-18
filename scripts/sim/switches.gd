@@ -14,7 +14,7 @@ extends RefCounted
 ## The switches the parity tests turn off: Godot-only rules that change what the Python game did.
 const PARITY := [
 	"SensorNet.REALISM", "Economy.REALISM", "Arsenal.REALISM", "GroundWar.ENABLED", "Chronicle.ENABLED",
-	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Jobs.ISLAND_BOARD",
+	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Orders.ENABLED", "Jobs.ISLAND_BOARD",
 ]
 
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
@@ -33,8 +33,8 @@ static func snapshot() -> Dictionary:
 	return {"SensorNet.REALISM": SensorNet.REALISM, "Economy.REALISM": Economy.REALISM,
 		"Arsenal.REALISM": Arsenal.REALISM, "GroundWar.ENABLED": GroundWar.ENABLED,
 		"Chronicle.ENABLED": Chronicle.ENABLED, "Agency.ENABLED": Agency.ENABLED,
-		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Orders.ENABLED": Orders.ENABLED}
-		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Jobs.ISLAND_BOARD": Jobs.ISLAND_BOARD}
+		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Orders.ENABLED": Orders.ENABLED,
+		"Jobs.ISLAND_BOARD": Jobs.ISLAND_BOARD}
 
 static func restore(state: Dictionary) -> void:
 	# Validate the complete snapshot before changing any switch.
