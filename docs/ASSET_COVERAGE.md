@@ -85,7 +85,7 @@ shader, street-lamp light pools, wind-sway vegetation and the VHS screen filter.
 5. Shoreline foam, boat wakes and propeller spray.
 6. Dithered fade at LOD changes instead of pop-in.
 7. Touchdown tyre smoke and skid marks.
-8. An optional PS2 screen-filter mode (slight blur, bloom, colour banding) beside the VHS one (`ScreenFilter.MODES`).
+8. An optional PS2 screen-filter mode (slight blur, bloom, colour banding) beside the VHS one (`ScreenFilter.MODES`). **Done (18 Oct):** `ScreenFilter` mode `ps2` (F9), `shaders/ps2_filter.gdshader`; screenshots `docs/img/ps2-filter-off.png` and `ps2-filter-on.png`.
 
 ### Suggested order
 
