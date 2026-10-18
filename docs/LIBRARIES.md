@@ -299,6 +299,12 @@ licence and the code that matters. Nothing was run and nothing is added to the g
 | [Yogoda/ZoneLoadingSystem](https://github.com/Yogoda/ZoneLoadingSystem) | Loading and unloading zones by trigger areas | **Skip** | Godot 3 and unmaintained. Our chunked MultiMeshes already handle the city |
 | [grazianobolla/godot-monke-net](https://github.com/grazianobolla/godot-monke-net) | Client-authoritative multiplayer with prediction and interpolation | **Skip** | C#, and it needs the author's fork of Godot. Our host service and snapshots are our own |
 
+Terrain3D (already on the main table as "cannot be swapped") was read again on 18 October at the owner's request:
+
+| Repository | What it is | Verdict | Why |
+|---|---|---|---|
+| [TokisanGames/Terrain3D](https://github.com/TokisanGames/Terrain3D) | A C++ GDExtension: geometric clipmap terrain split into regions (256 m at 1 m spacing by default, up to 65 km), sculpting, holes, 32 textures, foliage instancing, collision; MIT; active (17 October) | **Do not adopt; borrow the data model** | It is native code that every platform and the headless server would need, and the simulation reads the terrain (radar line of sight, landings, roads, the pit exit) from its own baked height grid, so two terrains would be two sources of truth. What it shows is the answer to our real limit: our grid is 513 x 513 over 32 km, so one cell is 62.5 m. A fine regional height layer over the coarse grid, read in pure GDScript, is now written into the map plan (`docs/MAP_REDESIGN.md`, the height patches) |
+
 Six more were read afterwards:
 
 | Repository | What it is | Verdict | Why |
