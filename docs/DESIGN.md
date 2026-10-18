@@ -1504,6 +1504,7 @@ balance run and a BALANCE entry go with it.
 **Not in step 1:** the police search pattern, scanner chatter and the ladder down (step 2); pattern detection,
 escalation by agency, corruption and ground chases (step 3).
 
+**Island boards** (`Jobs.ISLAND_BOARD`, a parity switch). Every strip keeps a board that outlives your visits, so the job board can show the whole island: `Session.stock_island_boards` deals each other strip's board from `update()` (at the first tick, then once a minute), a board lives `Jobs.BOARD_TTL_S` (30 sim minutes) and is dealt afresh when stale, and arriving at a strip keeps its fresh board instead of rerolling it. The employed opening deals its own board and is left alone. The extra draws sit on their own streams (`brng` seed + 149, gun runs `barng` seed + 151, the Company's offers `bagrng` seed + 157), swapped in only while the boards are dealt, so nothing else moves. Accepting a job still needs the pilot parked at its origin.
 
 ## 49. Buyers' orders: deadlines that follow demand (owner, 18 October 2026)
 
