@@ -24,6 +24,8 @@ const STORM_WEAR_PER_MIN := 0.10  ## airframe points, flying in a storm
 const HARD_FRACTION := 0.6  ## of the gear's limit: a touchdown harder than this does damage
 const HARD_POINTS := 14.0  ## airframe points for a touchdown at the limit (in proportion above HARD_FRACTION)
 const ROUGH_AIRFRAME := {"gravel": 0.4, "grass": 0.5, "dirt": 0.7, "sand": 0.8}  ## points per landing on that surface
+const ROLL_WEAR_PER_MIN := 3.0  ## times the landing figure above, a minute spent rolling fast on that surface (owner, 12 Oct: dirt wears the tyres instead of crashing you)
+const ROLL_MIN_KTS := 10.0
 const ENGINE_ROUGH_BELOW := 60.0
 const ENGINE_FAIL_BELOW := 30.0
 const FAIL_PER_MIN_AT_ZERO := 0.05
@@ -153,6 +155,14 @@ func update(dt: float, s) -> void:
 				sess.bus.emit("engine_failure", sess.time, "", ["runner"], {})
 		elif e < ENGINE_ROUGH_BELOW and fposmod(sess.time, 120.0) < dt:
 			sess.say("The engine is running rough (%s)." % band_of(e))
+	if s != null and s.on_ground and s.gs_kts > ROLL_MIN_KTS:
+		var af = sess.world.airfield_at(s.x, s.y)
+		var pts: float = float(ROUGH_AIRFRAME.get(af.surface, 0.0)) if af != null else 0.0
+		if pts > 0.0:
+			var before := band_of(float(a.airframe))
+			a.airframe = maxf(0.0, float(a.airframe) - pts * ROLL_WEAR_PER_MIN * dt / 60.0)
+			if band_of(float(a.airframe)) != before:
+				sess.say("The rough strip is wearing the tyres and gear (%s)." % band_of(float(a.airframe)))
 	if not work.is_empty():
 		_work(dt)
 

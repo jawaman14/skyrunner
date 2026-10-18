@@ -3,19 +3,22 @@ extends CanvasLayer
 ## A full-screen filter over the 3D view and the HUD (F9 cycles it):
 ##   vhs         an 80s tape look: gentle barrel, colour bleed, rolling scanlines
 ##               (Henrique Lacreta Alves' SimpleGodotCRTShader, MIT, addons/crt_shader)
+##   ps2         a PS2-era picture: slightly soft, a little bloom, banded colour hidden by an ordered dither
+##               (shaders/ps2_filter.gdshader, written for this project)
 ##   protanopia, deuteranopia, tritanopia, achromatopsia
 ##               *simulations* of colour vision deficiencies (GATO's colour
 ##               blindness shader, MPL-2.0, addons/gato_screen_filters), to check
 ##               that nothing depends on a colour alone. They don't help a
 ##               colour-blind player - the colour-safe palette does (F8).
 
-const MODES := ["off", "vhs", "protanopia", "deuteranopia", "tritanopia", "achromatopsia"]
-const LABELS := {"off": "no filter", "vhs": "VHS tape", "protanopia": "protanopia (simulated)",
+const MODES := ["off", "vhs", "ps2", "protanopia", "deuteranopia", "tritanopia", "achromatopsia"]
+const LABELS := {"off": "no filter", "vhs": "VHS tape", "ps2": "PS2 look", "protanopia": "protanopia (simulated)",
 	"deuteranopia": "deuteranopia (simulated)", "tritanopia": "tritanopia (simulated)", "achromatopsia": "achromatopsia (simulated)"}
 ## GATO's shader: its `type` uniform
 const CVD_TYPE := {"protanopia": 1, "deuteranopia": 3, "tritanopia": 5, "achromatopsia": 7}
 const CRT := "res://addons/crt_shader/CRTShader.gdshader"
 const CVD := "res://addons/gato_screen_filters/color_blindness.gdshader"
+const PS2 := "res://shaders/ps2_filter.gdshader"
 
 var mode := "off"
 var rect: ColorRect
@@ -34,10 +37,10 @@ func _init() -> void:
 func material_for(m: String) -> ShaderMaterial:
 	if m == "off":
 		return null
-	var key := "vhs" if m == "vhs" else "cvd"
+	var key := "vhs" if m == "vhs" else ("ps2" if m == "ps2" else "cvd")
 	if not _mats.has(key):
 		var mat := ShaderMaterial.new()
-		mat.shader = load(CRT if key == "vhs" else CVD)
+		mat.shader = load(CRT if key == "vhs" else (PS2 if key == "ps2" else CVD))
 		if key == "vhs":
 			# the demo's CRT is a strong look; a worn tape is subtler
 			mat.set_shader_parameter("BarrelPower", 1.03)
@@ -48,6 +51,10 @@ func material_for(m: String) -> ShaderMaterial:
 			mat.set_shader_parameter("scan_size", 1.0)
 			mat.set_shader_parameter("scanline_alpha", 0.88)
 			mat.set_shader_parameter("lines_velocity", 8.0)
+		if key == "ps2":  # the tuned look (the shader's own defaults are the same)
+			mat.set_shader_parameter("bits", 6)
+			mat.set_shader_parameter("blur", 0.6)
+			mat.set_shader_parameter("bloom", 0.18)
 		_mats[key] = mat
 	var mat: ShaderMaterial = _mats[key]
 	if key == "cvd":

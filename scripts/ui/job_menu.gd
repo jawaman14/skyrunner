@@ -156,6 +156,11 @@ func refresh() -> void:
 		_sep("Available here")
 	for j in board:
 		_row("board", j, af, est_w)
+	var far := _far_jobs()
+	if not far.is_empty():  # every job on the island, not only this strip's: the origin shows, and ENTER says where to fly
+		_sep("Elsewhere on the island  -  fly there to take them" if not board.is_empty() else "Nothing here. Elsewhere on the island  -  fly there to take them")
+	for j in far:
+		_row("far", j, World.airfield(j.origin), est_w)
 	if not s.active_jobs.is_empty():
 		_sep("Active jobs  -  ENTER reviews dropping")
 	for j in s.active_jobs:
@@ -167,6 +172,20 @@ func refresh() -> void:
 	footer.text = ""
 	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "selected action", "enter"], ["C", "keep job", "c"], ["LEFT/RIGHT", "market", "right"],
 		["G", "sell / keep guns", ""], ["L", "load & fuel", ""], ["ESC", "close", "esc"]])
+
+
+## The jobs on every other strip's board, nearest origin first.
+func _far_jobs() -> Array:
+	var here := World.airfield(s.location)
+	var out := []
+	for code in s.boards:
+		if code != s.location:
+			out.append_array(s.boards[code])
+	out.sort_custom(func(a: Jobs.Job, b: Jobs.Job) -> bool:
+		var fa := World.airfield(a.origin)
+		var fb := World.airfield(b.origin)
+		return PyMath.hypot(fa.x - here.x, fa.y - here.y) < PyMath.hypot(fb.x - here.x, fb.y - here.y))
+	return out
 
 
 func _sep(text: String) -> void:
@@ -185,11 +204,11 @@ func _row(kind: String, j: Jobs.Job, af: Airfield, est_w: float) -> void:
 		strip_col = UIStyle.CYAN
 	else:
 		var dst := World.airfield(j.dest)
-		var roll := s.spec.est_landing_roll(est_w + (j.weight_lb() if kind == "board" else 0.0), s.world.airfield_elev(dst))
+		var roll := s.spec.est_landing_roll(est_w + (j.weight_lb() if kind in ["board", "far"] else 0.0), s.world.airfield_elev(dst))
 		strip = "%.0f / %.0f m" % [dst.length, roll]
 		# a roll close to the strip length is the trap the board warns about
 		strip_col = UIStyle.RED if roll > 0.85 * dst.length else (UIStyle.AMBER if roll > 0.65 * dst.length else UIStyle.GREEN)
-	var tag := "HOT" if j.hot() else ("TAKEN" if kind == "active" else "")
+	var tag := "HOT" if j.hot() else ("TAKEN" if kind == "active" else (j.origin if kind == "far" else ""))
 	var col := Color(1, 0.62, 0.48) if j.hot() else Color(0.9, 0.92, 0.95)
 	list.add_row([tag, j.title, "$" + Py.money(j.payout), "%.0f lb" % j.weight_lb(), str(pax) if pax else "-",
 		"%.1f km" % dist, strip], {"color": col, "cell_colors": {6: strip_col, 0: UIStyle.RED if j.hot() else UIStyle.CAPTION}})
@@ -211,7 +230,7 @@ func _show_detail() -> void:
 	var j: Jobs.Job = rows[i][1]
 	if pending_drop != j.id:
 		pending_drop = -1
-	var command := "accept_job" if rows[i][0] == "board" else "drop_job"
+	var command := "accept_job" if rows[i][0] in ["board", "far"] else "drop_job"
 	var action: Dictionary = s.job_action(Roles.PILOT, command, j.id)
 	action_button.disabled = not action.enabled
 	action_button.text = "Confirm drop [Enter]" if pending_drop == j.id else str(action.label) + " [Enter]"
@@ -272,7 +291,7 @@ func key(k: String) -> void:
 			if i < 0 or rows[i] == null:
 				return
 			var job: Jobs.Job = rows[i][1]
-			var command := "accept_job" if rows[i][0] == "board" else "drop_job"
+			var command := "accept_job" if rows[i][0] in ["board", "far"] else "drop_job"
 			var action: Dictionary = s.job_action(Roles.PILOT, command, job.id)
 			if not action.enabled:
 				pending_drop = -1

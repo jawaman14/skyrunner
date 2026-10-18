@@ -3,6 +3,6 @@
 The server is maintained in [jawaman14/skyrunner-mcp](https://github.com/jawaman14/skyrunner-mcp).
 This game checkout contains only a launcher and connection test. Implementation, Python tests and the Godot introspection adapter belong in the server repository.
 
-Install uv, then enable the project's `.mcp.json` in Claude Code. The launcher sets `SKYRUNNER_ROOT` to this checkout and installs the server pinned at `1b8edfd6ca1c683c841b167fad7b25cadfa7852c`. Set `SKYRUNNER_GODOT` to your Godot executable if needed. Codex can use the same launcher in its MCP configuration. Never commit tokens.
+Install uv, then enable the project's `.mcp.json` in Claude Code. The launcher sets `SKYRUNNER_ROOT` to this checkout and installs the server pinned at `ec56c32691bb2edf4d7588e1c1ecf960f2fd0572`. Set `SKYRUNNER_GODOT` to your Godot executable if needed. Codex can use the same launcher in its MCP configuration. Never commit tokens.
 
 Follow [COLLABORATION.md](COLLABORATION.md) before editing. Server updates require independent Windows/Linux tests and a reviewed commit change in `launch.py`.

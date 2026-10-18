@@ -167,19 +167,13 @@ func _begin() -> void:
 	crews = []
 	for k in plan["crews"] + plan["decoys"]:
 		crews.append(_spawn_run(k >= plan["crews"]))
-	# the rival cartel flies tonight too; meet them on your route and they come for your load
+	# the rival cartel flies tonight too, but no rival aircraft follows yours and nobody takes your load from the air (owner, 17 Oct)
 	if plan.has("rival_zone"):
 		for k in plan["rival_runs"]:
 			var a := _spawn_run(false)
 			a.kind = "rival"
 			a.id = "Cuervo-%d" % sess.director.serial
 		ps.features.erase("rivals")
-		if season.rrng.random() < plan["hijack_p"] and not hot.is_empty():
-			var p: Array = sess.job_xy(hot[0])
-			ps.features["rivals"] = true
-			ps._rival_spawned["runner"] = true
-			ps.spawn_rival(p, "runner")
-			sess.say("Radio chatter in Spanish on the company frequency. Company tonight.")
 		if plan.get("rival_tipped"):
 			ps.add_tip(HQ.ZONE_CENTRE[plan["rival_zone"]][0], HQ.ZONE_CENTRE[plan["rival_zone"]][1], 4000,
 				"anonymous caller: a Cuervos plane moves tonight", "", null)
