@@ -9,6 +9,7 @@
     "test_save_paths.gd",
     "test_stock_lot.gd",
     "test_affinity.gd",
+    "test_pickup_order.gd",
     "test_strategic.gd"
   ],
   "simulation": [
