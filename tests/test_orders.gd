@@ -144,6 +144,17 @@ func test_the_message_says_the_premium_is_above_the_buyers_usual_price() -> void
 	s.dispose()
 
 
+func test_no_order_is_posted_while_the_ai_runs_the_organisation() -> void:
+	var s := _sess()
+	s.payroll.ai["org"] = true
+	check(s.trade.orders.org_is_ai(), "the AI is in the chair")
+	var seen := _until_posted(s, 300)
+	check(seen.is_empty(), "no order in five hours of an AI-run organisation")
+	s.payroll.ai["org"] = false
+	check(not _until_posted(s, 400).is_empty(), "and they come back when a boss takes the chair")
+	s.dispose()
+
+
 func test_a_sale_to_another_buyer_or_good_does_not_touch_an_order() -> void:
 	var s := _sess()
 	_force(s, "family", "cocaine", 20.0, 1.3, 900.0)
