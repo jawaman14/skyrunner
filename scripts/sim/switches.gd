@@ -14,7 +14,7 @@ extends RefCounted
 ## The switches the parity tests turn off: Godot-only rules that change what the Python game did.
 const PARITY := [
 	"SensorNet.REALISM", "Economy.REALISM", "Arsenal.REALISM", "GroundWar.ENABLED", "Chronicle.ENABLED",
-	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Investigation.ENABLED",
+	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Jobs.ISLAND_BOARD",
 ]
 
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
@@ -33,8 +33,8 @@ static func snapshot() -> Dictionary:
 	return {"SensorNet.REALISM": SensorNet.REALISM, "Economy.REALISM": Economy.REALISM,
 		"Arsenal.REALISM": Arsenal.REALISM, "GroundWar.ENABLED": GroundWar.ENABLED,
 		"Chronicle.ENABLED": Chronicle.ENABLED, "Agency.ENABLED": Agency.ENABLED,
-		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED,
-		"Investigation.ENABLED": Investigation.ENABLED}
+		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Orders.ENABLED": Orders.ENABLED}
+		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Jobs.ISLAND_BOARD": Jobs.ISLAND_BOARD}
 
 static func restore(state: Dictionary) -> void:
 	# Validate the complete snapshot before changing any switch.
@@ -50,7 +50,8 @@ static func restore(state: Dictionary) -> void:
 	Agency.ENABLED = state["Agency.ENABLED"]
 	Agent.ENABLED = state["Agent.ENABLED"]
 	Fuel.ENABLED = state["Fuel.ENABLED"]
-	Investigation.ENABLED = state["Investigation.ENABLED"]
+	Orders.ENABLED = state["Orders.ENABLED"]
+	Jobs.ISLAND_BOARD = state["Jobs.ISLAND_BOARD"]
 
 static func parity_off() -> Dictionary:
 	var previous := snapshot()
@@ -62,7 +63,8 @@ static func parity_off() -> Dictionary:
 	Agency.ENABLED = false
 	Agent.ENABLED = false
 	Fuel.ENABLED = false
-	Investigation.ENABLED = false
+	Orders.ENABLED = false
+	Jobs.ISLAND_BOARD = false
 	return previous
 
 
@@ -75,4 +77,5 @@ static func parity_on() -> void:
 	Agency.ENABLED = true
 	Agent.ENABLED = true
 	Fuel.ENABLED = true
-	Investigation.ENABLED = true
+	Orders.ENABLED = true
+	Jobs.ISLAND_BOARD = true

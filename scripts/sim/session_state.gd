@@ -76,6 +76,8 @@ var messages: Array = []  ## [[t, text]]
 var phone_calls := PhoneCalls.new()  ## one authoritative incoming queue for all phone surfaces
 var active_jobs: Array = []
 var boards := {}
+var board_at := {}  ## strip code -> sim time its board was dealt (Jobs.ISLAND_BOARD)
+var _stock_next := 0.0
 var jsbsim_root := ""
 var save_path := ""
 var mode := Roles.SOLO
@@ -136,6 +138,9 @@ var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets:
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
+var brng: PyRandom  ## the island boards' draws (Jobs.ISLAND_BOARD, seed + 149): dealing a board for a strip you have not visited moves no other stream
+var barng: PyRandom  ## ... their gun runs (seed + 151)
+var bagrng: PyRandom  ## ... and the Company's offers (seed + 157)
 var ai_law_upgrades := false  ## the AI chief buys law upgrades as money comes in (live play; off in sims and tests)
 var urng: PyRandom  ## upgrade draws (spoiled tips, leaks), off the parity streams
 var _ai_buy_t := 0.0
@@ -435,6 +440,8 @@ func enable_system(key: String, career := false) -> bool:
 			if trade != null or not Trade.ENABLED:
 				return false
 			trade = Trade.new(self, _rng(seed + 131), career)
+			if Orders.ENABLED:
+				trade.orders = Orders.new(self, trade, _rng(seed + 167))  # buyers' orders (own stream)
 		"logistics":
 			if logistics != null or trade == null or stash_net == null:
 				return false
@@ -488,6 +495,7 @@ func unlocked(key: String) -> bool:
 
 
 func refresh_board(code: String) -> void:
+	board_at[code] = time
 	if story != null and story.employment != null and story.employment.active():
 		boards[code] = story.employment.board(self, code)
 		return
