@@ -68,5 +68,4 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-53 | 2026-10-18 | Queue tests and simulations behind the machine-wide Godot lock so an agent can line them up and carry on (skyrunner-mcp #10, merged), and bump the server pin | in-pr | #410 |
 | D-51 | 2026-10-18 | Clean up all the repository's documents, including the README: dated reports to docs/archive/, a docs index, links fixed | done | #408 |
 | D-54 | 2026-10-18 | Read the GitHub godot topic's repositories and list any whose names or descriptions could help; assess the list for implementation afterwards | in-pr | #413 |
-| D-51 | 2026-10-18 | Clean up all the repository's documents, including the README: dated reports to docs/archive/, a docs index, links fixed | in-pr | #408 |
 | D-34 | 2026-10-13 | Presentation layers: stingers, the player's own colours and tag, claiming a won zone with graffiti (gameplay; the layer draws it), systems reacting to each other, per-year stations, wordless with a pause-menu legend | planned | ROADMAP: Next: presentation layers (owner's pick) |
