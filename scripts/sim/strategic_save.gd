@@ -92,6 +92,8 @@ static func capture(s: Session) -> Dictionary:
 	if s.ground != null:
 		var squads := []
 		for q: GroundWar.Squad in s.ground.squads:
+			if q.tag == "roadside":
+				continue  # trucks and in-progress fights do not survive a save
 			squads.append({"id": q.id, "faction": q.faction, "kind": q.kind, "men": q.men, "men0": q.men0, "loadout": q.loadout.duplicate(),
 				"ammo": q.ammo, "morale": q.morale, "tag": q.tag, "xp": q.xp, "x": q.x, "y": q.y, "hx": q.home.x, "hy": q.home.y})
 		d["squads"] = {"list": squads, "serial": s.ground._serial, "full": true}
