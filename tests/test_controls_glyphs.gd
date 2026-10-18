@@ -32,7 +32,8 @@ func test_binding_text_omits_the_device_already_shown_as_a_glyph() -> void:
 	check(key_labels.all(func(label): return pad_labels.has(label)), "pad glyph leaves the keyboard bindings readable")
 	check(not pad_text.contains("Trigger"), "pad glyph does not repeat its trigger binding")
 	check(keyboard_text.contains("Trigger"), "keyboard glyph leaves the pad binding readable")
-	check(key_labels.all(func(label): return not keyboard_labels.has(label)), "keyboard glyph does not repeat its key bindings")
+	check(not key_labels.is_empty() and not keyboard_labels.has(key_labels[0]), "keyboard glyph does not repeat the key it draws")
+	check(key_labels.slice(1).all(func(label): return keyboard_labels.has(label)), "a second key binding stays readable")
 	var no_pad_binding := ControlsGlyphs.other_device_bindings("throttle_cut", "pad")
 	check(no_pad_binding == ControlsConfig.describe("throttle_cut"), "controls without a pad glyph keep all binding text")
 
