@@ -1657,3 +1657,56 @@ first, and a BALANCE entry; slices that touch saves or random draws are reviewed
 
 **Open for the owner:** where the pickup happens (a fixed spot or the contact comes to a stash), the warehouse cap (a count, a
 weight, or floor space you buy), what standing unlocks, and whether the job board is limited to chapters 1 and 2.
+
+
+### 51.9 Draft parameters (first drafts by MiMo, reviewed; every number is a starting point for balance runs)
+
+**Fronts for laundering (51.5).** Prices and caps are drafts in this game's money (a job pays $500 to $5,000).
+
+| Tier | Front | Price | Weekly clean-deposit cap | Delay (game hours) | Heat per $1,000 over the cap |
+|---|---|---|---|---|---|
+| 1 | Laundromat | $2,000 | $1,500 | 24 | 10 |
+| 2 | Post office counter | $8,000 | $5,000 | 18 | 6 |
+| 3 | Car wash | $18,000 | $9,000 | 12 | 3 |
+| 4 | Restaurant | $40,000 | $14,000 | 6 | 1 |
+
+Review: the cap per dollar spent falls with the tier (0.75, 0.63, 0.50, 0.35), so a higher tier buys speed and low heat, not more
+cap for the money. That is acceptable if the point is to start cheap and grow, but the caps may need to rise faster than the
+prices. Tune in the laundering slice's balance run.
+
+**The pickup (51.2).** States of an order collected in person.
+
+| State | Entered when | Player sees | Leaves when | Failure cost |
+|---|---|---|---|---|
+| Ordered | the player pays upfront | confirmation, price paid, pickup place | the window opens | none (already paid) |
+| Window open | the order's window starts (10 to 20 game minutes) | countdown and a marker at the place | the player arrives, the window ends, or the player cancels | none |
+| At the place | the player reaches the place inside the window | a prompt to collect | the player collects, leaves, or the window ends | none |
+| Collected | the player takes the goods | the lot added to the chosen store, weight shown | terminal | none |
+| Late | the window ends before the player arrives | "too late" notice | the contact reopens orders after a cooldown | trust with the crew |
+| Intercepted | a rival acts on the pickup first | an ambush at the place | the order ends | the lot, or the cash paid |
+| Cancelled | the player aborts before collecting | the order voided | terminal | the cash paid (paid upfront) |
+
+A rival can wait at the place, tip the police, or buy the lot from the contact first.
+
+**Crew relationships (51.6).** Drafted effects; the percentages are placeholders.
+
+| Pair | Effect on jobs | When one is arrested | Loyalty |
+|---|---|---|---|
+| Hate | less pay together, more refusals | the partner may talk | lowers both |
+| Friend | steadier together | the partner's loyalty drops a little | raises both |
+| Love | the best pairing, a rare double-cross if one is hurt | the partner's loyalty drops sharply | strongly raises the loved one's |
+
+A worker card shows one short icon and one line ("Hates Rico: will not work a crew job with him").
+
+**Boss desk brief (for Codex, board note 552).** A full-screen top-down map of the island with district overlays; three zoom
+levels (island, district, close); drag-select workers and give them orders (guard, carry, collect, lie low); a drag-to-mark tool
+that claims an area, with a hatched border; a heat overlay per district from green to red; side panels for the stock ledger
+(section 51.4) and cash. Acceptance checks by eye: zoom cycles three levels without blank frames; three selected workers all take a
+carry order; a marked district keeps its border after closing and reopening; the heat overlay shows the hottest district red; the
+ledger and cash update within a second of a payout. Not research-backed (see 51.7): treat the layout as ours to design.
+
+**Autopilot (issue #426 item 5).** Proposal: U only turns the autopilot on (hold heading and altitude) and off; setting a
+destination is a separate action on the chart or the phone; opening the phone in flight engages hold and closing it restores the
+previous state. Edge cases to test: restoring a route after the phone closes; a route that finishes while the phone is open must
+not restart; a destination set while off must not engage anything. (MiMo suggested P for the destination key; P is the pause key
+in the aircraft, so the key is still to choose.)
