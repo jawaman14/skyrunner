@@ -6,9 +6,9 @@ extends RefCounted
 ## stash houses. The buildings drawn here are the obstacles in the physics
 ## tree list (MapCity.post), so what you see is what you hit.
 
-## Pastel deco: flamingo, mint, lilac, peach, cream, sea-foam, lemon (the shader adds trim and neon).
-const PALETTE := [Color(0.96, 0.7, 0.76), Color(0.68, 0.9, 0.8), Color(0.8, 0.72, 0.93), Color(0.99, 0.8, 0.64),
-	Color(0.97, 0.94, 0.88), Color(0.6, 0.86, 0.88), Color(0.97, 0.91, 0.66), Color(0.93, 0.87, 0.8)]
+## Sun-bleached plaster, ochre, dusty earth and faded paint (Asset Bible).
+const PALETTE := [Color(0.84, 0.79, 0.67), Color(0.73, 0.65, 0.46), Color(0.77, 0.72, 0.62), Color(0.67, 0.55, 0.43),
+	Color(0.88, 0.85, 0.75), Color(0.48, 0.59, 0.60), Color(0.59, 0.64, 0.49), Color(0.74, 0.66, 0.57)]
 
 static var _mat: ShaderMaterial
 static var _lamp_mat: StandardMaterial3D
@@ -19,6 +19,7 @@ static func city_material() -> ShaderMaterial:
 	if _mat == null:
 		_mat = ShaderMaterial.new()
 		_mat.shader = load("res://shaders/city.gdshader")
+		_mat.set_shader_parameter("neon", 0.0)
 		_mat.set_shader_parameter("noise_pack", TexGen.noise_pack())
 	return _mat
 
@@ -410,30 +411,6 @@ static func _props(world: World, roads: Array) -> Node3D:
 		for corner in [Vector2(7, 7), Vector2(-7, -7)]:
 			var p: Vector2 = c + corner
 			xfs.trafficlight_A.append(_prop_xf(world, p, atan2(corner.x, corner.y), KIT_SCALE.trafficlight_A))
-	# and where the town's painted street grid (terrain_splat.gdshader: 110 m blocks
-	# from the city's corner) crosses the arterials - every third crossing
-	var go: Vector2 = MapCity.CITY_C - MapCity.CITY_R
-	var k := 0
-	for r in roads:
-		for i in r.size() - 1:
-			var a := Vector2(r[i][0], r[i][1])
-			var b := Vector2(r[i + 1][0], r[i + 1][1])
-			for axis in [0, 1]:
-				var lo := minf(a[axis], b[axis])
-				var hi := maxf(a[axis], b[axis])
-				if hi - lo < 1.0:
-					continue
-				var line := ceilf((lo - go[axis]) / GRID_BLOCK) * GRID_BLOCK + go[axis]
-				while line <= hi:
-					var t := (line - a[axis]) / (b[axis] - a[axis])
-					var p := a.lerp(b, t)
-					if MapCity.at(world.map.land_use, p.x, p.y) == MapCity.URBAN:
-						k += 1
-						if k % 3 == 0:
-							var dir := (b - a).normalized()
-							var side := Vector2(-dir.y, dir.x) * (5.3 if k % 2 == 0 else -5.3)
-							xfs.trafficlight_A.append(_prop_xf(world, p + side + dir * 7.0, atan2(-dir.x, -dir.y), KIT_SCALE.trafficlight_A))
-					line += GRID_BLOCK
 	var order := ["firehydrant", "bench", "trash_A", "dumpster"]
 	var n := 0
 	for r in roads:
@@ -482,11 +459,11 @@ static func _palms(world: World, roads: Array, q: Quality) -> MultiMeshInstance3
 					# the cells beside the carriageway are ROAD: judge the neighbourhood a little further out
 					var nb: Vector2 = p + side * sgn * 18.0
 					var cls := MapCity.at(world.map.land_use, nb.x, nb.y)
-					if cls in [MapCity.URBAN, MapCity.PORT, MapCity.BEACH] and world.ground(p.x, p.y) > 0.5:
+					if cls in [MapCity.URBAN, MapCity.PORT, MapCity.BEACH] and p.y < MapCity.COAST_Y + 650.0 and world.ground(p.x, p.y) > 0.5:
 						spots.append(Vector3(p.x, world.ground(p.x, p.y), -p.y))
-				d += 28.0
+				d += 65.0
 	# the Nature Kit's palms (tall and bent, alternating), else the procedural one
-	var kit := [ModelLib.palm_mesh(0, 1.0), ModelLib.palm_mesh(1, 1.0)]
+	var kit := [[], []] if world.map.map_seed == MapCity.SEED else [ModelLib.palm_mesh(0, 1.0), ModelLib.palm_mesh(1, 1.0)]
 	var groups := [[], []]
 	for i in spots.size():
 		groups[i % 2 if not kit[1].is_empty() else 0].append(spots[i])

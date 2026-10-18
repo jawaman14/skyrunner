@@ -6,6 +6,9 @@ extends SessionOps
 func update(dt: float, inp: ControlMapper.InputFrame = null, bot_controls: FlightModel.Controls = null) -> void:
 	time += dt
 	phone_calls.tick(time)
+	if Jobs.ISLAND_BOARD and time >= _stock_next:
+		_stock_next = time + 60.0
+		stock_island_boards()
 	if inp == null:
 		inp = ControlMapper.InputFrame.new()
 	if runner_active():
