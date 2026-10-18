@@ -79,6 +79,12 @@ The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than 
 6. **Flight skill** (owner, 18 Oct): good landings, short strips and clean approaches give optional bonus goals (money or
    reputation); they never block a chapter.
 
+7. **The boss layer** (owner, 18 Oct; D-58): when the player takes the seat, the game turns to organising: choosing the crew, the
+   routes and the orders, and delivering is optional, by a crew pilot or by the player. Flying cargo becomes one part of the
+   logistics system, not the focus. Before the takeover the player flies the cargo themselves and meets each mechanic one chapter
+   at a time (the flights, the load planner, the stash and trucks, the street, the law, the court), so the boss's seat is
+   understood when it arrives. This sets what delegation (D-10) and the orders (D-59) are for.
+
 Who: Claude the beat, the unlock, the takeover state, delegation and trust; Codex the dialogue and the scene.
 Order: with the rival depot raid, after the presentation layers, unless the owner moves it up.
 
@@ -208,6 +214,23 @@ The owner asked what could make the loop more dynamic and fun. [LOOP_IDEAS.md](L
 proposes eight additions: a market board with buyers' orders and deadlines, cover cargo, dirty money with a clock, a readable
 calendar, a deal that moves mid-flight, price wars, investments with a return, and comeback valves. The recommended first slice is
 the market board and the orders. Nothing is built; the owner chooses (the three questions at the end of the document).
+
+## Arms and ammunition (owner, 18 October; planned)
+
+The owner's direction (D-61): **ammunition is a cargo** that is moved and traded, priced by the usual factors; **weapons move as
+crates of each type**, which differ in their specs; the **more powerful weapons are in shorter supply** and the weaker ones plentiful;
+and all of it ties into the ground and turf war. The design, grounded in `arsenal.gd`, `ground.gd`, `foot_combat.gd` and
+`logistics.gd`, is [DESIGN.md section 50](DESIGN.md). Four stages, each its own PR with a balance run:
+
+1. **Crates and the scarcity ladder.** A crate holds one type; each type has its own supply and price (pistols plentiful, rifles
+   common, machine guns scarce, RPGs rare); gun runs and buyers follow the ladder. (Claude)
+2. **Ammunition as a good.** Rounds per weapon type, in crates, bought, trucked and stored; squads draw the rounds of the weapons
+   they carry. (Claude)
+3. **The war uses it.** Fights consume rounds, a dry district's ammunition price climbs, a squad without rounds stops firing, and
+   holding a port or road changes who can resupply. (Claude, with the turf work)
+4. **The screens.** The pack and logistics menus, and the market board (it already carries guns; ammunition joins it). (Codex)
+
+Order: after the buyers' orders (D-59) land; each stage needs a BALANCE entry because the war economy is sensitive to it.
 
 ## Human release gates and owner decisions (#326)
 

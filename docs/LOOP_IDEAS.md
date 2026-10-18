@@ -53,7 +53,17 @@ does not have today.
 - **Lanes (D-52).** Claude takes the simulation of 1, 2, 3, 5, 6 and 8; Codex takes the screens (the market board, the order call,
   the calendar on the phone and radio, the investments menu) and the QA runs. Addition 4 is half and half.
 
-## 4. Questions for the owner
+## 4. The owner's answers (18 October)
+
+1. **How much by hand?** After the takeover (D-35) the player organises as the boss, and delivering is optional: a crew pilot, or
+   the player. Flying cargo becomes part of the logistics system, not the focus. Before the takeover the player flies the cargo and
+   learns the mechanics chapter by chapter (D-58).
+2. **Deadlines.** They follow demand: a night's work, or 10 to 20 minutes when the street is hungry (D-59).
+3. **Which first?** "Begin however you see fit" (D-60): the market board and buyers' orders went first (design section 49).
+
+Added the same day (D-61): ammunition as a cargo, and weapons as crates of each type with the powerful ones scarce (design section 50).
+
+### The questions as asked
 
 1. **How much should the player run by hand?** Today the AI boss collects and trucks by default. Should the orders and the market
    board make the player choose (more work, more depth), with the AI boss as a switch, or stay an extra for those who want it?

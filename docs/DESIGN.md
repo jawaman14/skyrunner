@@ -1,1528 +1,1567 @@
-# Skyrunner design: runners, kickers and the task force
-
-> This is the design document of the Godot game (the one game). It began life with the original
-> Python prototype, which is now kept only as the reference that generated the frozen parity
-> fixtures in `tests/fixtures/`; nothing in the Godot build needs it. Sections 10-12 cover what
-> the Godot build added.
-
-This is the plan for taking Skyrunner from a single-player bush-flying game to an
-asymmetric **traffickers vs. law enforcement** game. It supports solo play against AI,
-co-op crews, and team-vs-team multiplayer, and it follows a campaign that gets harder
-year by year.
-
-Status legend: **[done]** in the code now · **[planned]** historical proposals unless present in [ROADMAP.md](ROADMAP.md). Later decisions and verified code take precedence; the October review is a dated record, not the current queue.
-
-## 0. Where the game is heading (owner-approved direction, 8 October 2026)
-
-The owner's answers to a gameplay questionnaire (recorded by Codex in PR #249) set the target the rest of this
-document grows towards. They take precedence over conflicting older plans, including the deferrals in
-[EMPIRE_MILESTONE.md](archive/EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
-say what exists. The delivery order is in [ROADMAP.md](ROADMAP.md).
-
-**The core experience: build an empire from nothing.** Mount & Blade: Warband is the principal reference. The
-game starts small and personal, then the player takes on more complexity: personal action, recruitment, trade,
-relationships, conquest, command and the stories that emerge from them. Schedule I adds hands-on work, setting up
-a business and automating it. Cities: Skylines adds interconnected systems that the player diagnoses and manages;
-decorative city-building is not a goal. No activity is forced: a solo player delegates to AI, co-op players
-specialise, and a mature organisation can operate across every business area. There is no prescribed ratio of
-flying to management to combat.
-
-**The start [PR #296, awaiting merge].**
-- A new story begins with the player as a hired pilot for a legitimate aviation business (Costa Brava Air
-  Services), flying the employer's aircraft straight away.
-- The business slides into smuggling, and in the main story that becomes unavoidable: there is no permanent
-  legitimate-only branch.
-- Owning an aircraft is an earned milestone, not a starting gift. The draft's first price is $18,000 for the
-  employer's Cessna, uncalibrated.
-- The sandbox (open mode) remains a way to progress without the campaign. The four flying lessons and twelve
-  story chapters stay.
-
-**Economy and workers.**
-- *Economy:* interconnected. Civilian businesses provide jobs and supplies, residents create demand, disruption
-  reduces trade, and neighbourhood prosperity changes what is on offer. The formulas are not designed yet
-  [planned].
-- *Automation:* manual operation always remains possible; automation is earned with enough workers and resources
-  and with the player's own setup.
-  - Basic explicit assignments come first [partly done: payroll assignments, §17].
-  - Then repeatable conditional orders (e.g. restock below a threshold) and configured multi-step task sequences
-    [planned].
-- *Workers:* they follow instructions. Competence never means autonomous strategic spending or expansion. When
-  delegation fails, the preferred cause is the player's poor planning.
-- *Money:* it chiefly buys convenience, and the organisation's properties visibly develop as it grows [planned].
-
-**Turf, factions and the law.**
-- *Territory:* it pays for itself in income, safer routes, recruiting, services, influence and physical occupation.
-  Control can change through presence, negotiation, economic disruption, battles and important sites; the exact
-  rules are open.
-- *Turf war:* it arrives mainly later, or early if the player goes looking for it.
-- *Rivals:* they have recognisable leaders and goals, different starting strengths, and grow through the economy.
-  There is no automatic level-matching and no unearned catch-up money.
-- *Diplomacy and combat:* diplomacy shifts as the player's expansion threatens or displaces other factions. Combat
-  can be led in person, from nearby or remotely. Experienced crew are valuable, so retreating is a real decision.
-- *The police:* response escalates. Pressure is handled by laying low, changing routes, legitimate business, legal
-  measures or sacrificing operations. Travel stays relevant; upgrades, bribes and relationships (the Company, the
-  Family) improve access and security.
-
-**Loss and recovery [planned unless noted].**
-- *The player:* death does not end the game. The player respawns or recovers in hospital, paying a
-  situation-dependent mix of time, money, carried goods and equipment.
-- *The organisation:* while the player recovers, it carries on with only the last instructions it was given; AI
-  never invents new assignments.
-- *Workers:* they can be injured or permanently killed [partly done: jail and death in §17]. After a defeat, the
-  player rebuilds with the survivors.
-- *Aircraft and vehicles:* they can be lost, impounded or (rarely) destroyed. There are several ways to recover an
-  impounded one: fees, legal or faction help, physical retrieval.
-- *Terminal outcomes:* bankruptcy and imprisonment as game-enders are configurable.
-- *Discovered risk:* some risk is learned from experience and reports, with facts kept apart from uncertainty.
-
-**World and campaign.**
-- *The map:* a compact Costa Brava, with interiors where they serve gameplay. The visual target is stylised period
-  cinema; the weathered 1979–82 look (ASSET_BIBLE.md) works within that style. Functional structures and traffic
-  come before ornament.
-- *The campaign:* playing it is optional, and finishing it leaves the sandbox running.
-- *Unlocks:* business access opens through money, reputation and demonstrated activity, with campaign missions as
-  an alternative route to the same unlocks. No essential sandbox system is gated behind the campaign only
-  [planned; today the story gates systems by chapter, §21].
-
-**Multiplayer.**
-- *Modes:* co-operative and competitive play are both part of the first full experience, as separate modes for
-  2–16 players [the lobby already allows 16].
-- *Roles:* players take organisation, rival-faction or police roles. One person owns an organisation and assigns
-  responsibilities.
-- *Leaving:* when the leader leaves, the session halts; a lower-ranked player leaving does not halt it. An absent
-  leader's authority is never handed to AI or a deputy automatically [planned; today an empty seat falls back to AI,
-  §12].
-- *Separate proposals:* multiplayer racing and the hidden informant remain separate proposals.
-
-**Product order.**
-1. The early rise: employed start, the slide into smuggling, the first aircraft.
-2. Setup-driven automation.
-3. Faction competition and the civilian economy.
-4. Multiplayer teamwork and competition.
-
-Physical reliability (access, routes), command clarity and the regression gates are prerequisites inside every
-step. Network ownership contracts are specified early, so step 4 doesn't force a rewrite, but multiplayer features
-don't jump the queue. Don't silently change payroll, aircraft performance, combat authority or balance to reach
-these goals: each mechanical change needs explicit rules, save compatibility and evidence.
-
-**What to borrow from the references** (Codex's research note, PR #249; these are hypotheses to test in play):
-
-| Reference | Borrow | Don't copy |
-|---|---|---|
-| Mount & Blade (original → Bannerlord) | Personal skill that stays useful as the player becomes a commander. A good pilot can still save a shipment in person. Each multiplayer seat does real work (pilot, dispatcher, quartermaster, ground commander). | A bigger arsenal before the current weapons' trade-offs are legible |
-| Mount & Blade: War Sails | Geography matters: aircraft, road and boat access are strategically different | Naval combat |
-| Schedule I | Do a job by hand, understand it, then delegate it and handle the exceptions. Show each worker's assignment, load, destination and blocked reason. | Repetitive handling minigames or production recipes |
-| Cities: Skylines I and II | See a problem, pull an understandable lever, watch it improve. Show the supply chain: source stock, carrier, route, loading access, destination need. Clicking a blocked order highlights the obstacle. | A municipal simulator or costly cosmetic traffic |
-
-**Playtest questions** to answer with recorded human sessions:
-- After one flown run and one delegated run, can a player explain the trade-off?
-- Can they find why a delivery is blocked using only the map?
-- Do named crew and battle reports make losses matter?
-- Do two players each have useful work during one shipment?
-- Does a setback leave an understandable way to recover?
-
-**Open questions for the owner:**
-- The employer's details, the transition's stages, the pay and the first aircraft's price.
-- Recovery costs and time, what happens to inventory, and property seizure.
-- Impound rules.
-- Automation budgets, rule syntax and permission limits.
-- What counts as a "leader" in each mode, and how reconnect, resume and abandonment work.
-- The civilian-economy and district-control formulas.
-- Tone, personal skills and favourite locations.
-
----
-
-## 1. Pillars
-
-1. **The aircraft is the puzzle.** Weight, balance and fuel are one budget: every pound of
-   fuel is a pound of cargo you can't carry. The flight model flies the result honestly.
-2. **Information is the weapon.** Neither side sees the truth. Traffickers work from radar
-   warnings, scanner chatter and spotter calls. Police work from radar tracks, tips and
-   direction-finding fixes. Most of the game is about controlling what the other side knows.
-3. **Every tool has a counter.** Each gadget exists together with the thing that beats it
-   (see the matrix in §4). Balance comes from the pairs, not from raw stats.
-4. **Complexity arrives one year at a time.** The campaign adds one system per chapter, so
-   by 1986 you juggle all of them, but you learned each one alone.
-5. **From hired pilot to empire (§0).** You start flying someone else's aircraft and earn everything after it.
-   Flying stays worth doing, delegation is a reward you set up yourself, and losses (money, crew, aircraft) are
-   real but recoverable.
-
-## 2. Modes
-
-| Mode | Humans | AI fills | Status |
-|---|---|---|---|
-| **Solo runner** | Pilot | Police, optional AI co-pilot | [done] |
-| **Solo task force** | Controller | AI smuggler flights + boats | [done] |
-| **Co-op crew** | Pilot + co-pilot (+ spotter) | Police | [done] (co-pilot and spotter use the station client) |
-| **Versus** | Runner crew vs. controller (+ interceptor pilot) | Empty roles | [done]; controller and spotter use the station client; the interceptor pilot flies in a 3D seat (`RemoteSeat`) |
-| **Campaign** | Solo or co-op | Scripted threats per chapter | [done]: four flying tutorial chapters and twelve Costa Brava story chapters; former tutorial chapters 5–8 are retired |
-
-Any seat without a human is filled by AI, so the same match can be played by one person or a full table (the lobby
-and dedicated server allow up to 16). The direction (§0) adds separate co-op and competitive modes for 2–16
-players, with organisation, rival-faction and police sides [planned].
-
-## 3. Roles
-
-### Runner side
-
-| Role | Job | Sees | Status |
-|---|---|---|---|
-| **Pilot** | Flies. Transponder, flaps, autopilot. | Out the window, HUD, radar-detector light | [done] |
-| **Co-pilot / kicker** | Loads the aircraft (twice the loading speed), pumps ferry fuel, kicks bales out over drop zones, runs the radio scanner and calls the boat | Tactical map: own aircraft, boat, bales, intercepted police traffic, radar-warning status | [done] (station client + AI fallback) |
-| **Spotter** | Watches one airstrip from the ground. Reports police units and roadblocks near it. Can relocate (takes time). | Units within 5 km of the watched strip, reported with a delay | [done] (AI-driven reports; human uses the station client) |
-| **Boat captain** | Go-fast boat. Waits at the rendezvous, fishes bales out of the water, runs for the cove. | Surface picture around the boat | [done] AI; a human takes the seat at a 2D desk and right-clicks to send the go-fast |
-| **Fixer** | Books jobs, hires spotters, buys gear, manages heat and money between flights | Job boards, the crew, the Family | [done] (section 36) |
-| **Mechanic** | Field refuelling from caches, quick repairs at bush strips | The aircraft's true condition, the cost of the work | [done] (section 39) |
-
-### Law side
-
-| Role | Job | Sees | Status |
-|---|---|---|---|
-| **Controller** (radar/intel desk) | Reads the fused radar picture, classifies tracks, dispatches helicopters, interceptors and cutters, sets radio encryption, requests the aerostat | Radar tracks (with position noise, no identity for non-squawking targets), tips, DF bearings. Never the true runner position. | [done] (station client + AI fallback) |
-| **Interceptor pilot** | Flies the chase aircraft and makes the visual ID | Out the window, its own radar | AI [done]; human pilot [done] (`RemoteSeat`) |
-| **Coast Guard cutter** | Hunts boats and seizes floating bales | Surface radar | [done] AI; a human takes the seat at a 2D desk and sends the cutter |
-| **Analyst** | Works the informant network, fuel-purchase records and tail numbers | Tip feed | [done] (section 34) |
-| **Undercover agent** | Plants a tracking beacon on a runner aircraft on the ground | The strip the aircraft is parked at, the odds, their cover | [done] (section 35) |
-
-### Hidden role (versus, [planned])
-**The informant.** One runner-side player may secretly be working for the task force. They
-score if the crew gets busted and lose if they're caught leaking, so they have to sabotage
-quietly (a bad load plan, "forgetting" to pump fuel, calling the boat on an open channel).
-This is the social-deduction layer that gives crews a reason to watch each other.
-
-## 4. Gadgets and counters
-
-| Runner tool | What it does | Law counter | Counter to the counter |
-|---|---|---|---|
-| **Flying low** | Below the radar floor (≈45 m AGL + 9 m per km of range), and behind terrain, primary radar can't see you | **Aerostat radar** (tethered balloon at 2.5 km altitude: huge line of sight, low floor) | Stay out of its footprint; it's winched down in high wind or lightning [done] (HQ season) |
-| **Transponder off** | No secondary return, so no identity | An unidentified primary track builds suspicion fast | Keep squawking to look like legit traffic. But turning it *off* while tracked ("squawk lost") is a big red flag. |
-| **Transponder on** | You look like a normal charter | You're tracked the whole time you're in coverage; an informant tip names your tail | Only squawk on legit legs |
-| **Radar detector** ("fuzzbuster") | Warns when a radar illuminates you, and whether you're above its detection floor | No direct counter (passive) | – |
-| **Radio scanner** | Hears police dispatch in plain voice: unit, base, heading | **Encrypted radio** (controller toggle): dispatch becomes garbled static | Encryption slows coordination (dispatch delay +8 s) |
-| **Boat radio calls** | Needed to bring the boat to the drop point | **Direction finding**: every transmission gives the task force a bearing, and two stations give a fix | Keep calls short, call from a different spot than the drop, or pre-plan the rendezvous with no call (the boat waits longer, and waiting boats get spotted) |
-| **Ground spotters** | Early warning of police at your destination | **Informants**: a hired spotter may leak your destination (a tip with a 3 km circle) | Pay more for trusted spotters [planned], vary destinations |
-| **Ferry tanks** | Long runs from offshore, no fuel stops | **Fuel-purchase tracking**: buying ferry fuel at a police field raises a tip chance | Fuel caches at bush strips (fly the drums in first) |
-| **Airdrops to boats** | Never land with the goods | **Coast Guard cutters** and the "drop pattern" classifier (a slow, low track circling over water) | Drop fast, drop in the dark [planned], decoy boats [planned] |
-| **Decoy flights** [done] (the HQ season's decoy crews) | A clean aircraft flies the obvious route | Controller has limited units: committing to the decoy is the cost | – |
-
-**Resource limits keep the controller honest.** The task force starts with 1 helicopter,
-2 interceptors and 1 cutter, each with a launch delay and a fuel endurance. They're
-refuelled and recommitted at a base. The runner crew is always cheaper to field
-than the full response, which is how the side with less information stays viable.
-
-## 5. Systems
-
-### 5.1 Fuel is weight [done]
-- The flight model burns fuel from real tank locations, so the CG moves during the flight.
-- The HUD shows endurance and still-air range from the live fuel flow.
-- **Ferry bladder tanks** are cargo items (25 lb empty + fuel) that take up a cabin station.
-  Their fuel only reaches the engine if someone pumps it into the wing tanks. The co-pilot
-  pumps 60 lb/min; solo, the pilot can run the electric pump at 25 lb/min.
-- Buying fuel beyond wing-tank capacity at a police field has a chance to produce a tip.
-
-### 5.2 Loading takes time [done]
-- Every item moved on the ground takes `4 s + 0.02 s/lb` of crew time. Crew = pilot, plus
-  co-pilot, plus the ramp crew at hubs. Loading at a bush strip while the spotter reports
-  police inbound is the tension beat.
-
-### 5.3 Airdrops [done]
-- Droppable items (bales) are kicked out of the door by a crew member: 2 s per bale for the
-  co-pilot, 4 s for the pilot on autopilot. Above 130 kt the door can't be used.
-- Each bale is a ballistic object with drag (terminal velocity ≈ 35 m/s) that inherits the
-  aircraft's velocity. If it lands in the water, it floats and drifts. If it lands on land,
-  it's lost (ground drop zones with a pickup truck are [planned]).
-- The boat collects bales within 40 m (5 s each), then runs for the cove. The job pays per
-  bale delivered to the cove.
-- **Autopilot** (wing leveller + altitude hold) exists so a solo pilot can go aft and kick.
-
-### 5.4 Sensors and the track picture [done]
-- Every emitter and target produces a `Signature`: position, height above ground, speed,
-  transponder state, recent radio transmissions.
-- Sensors (ground radar, aerostat, unit eyeball/FLIR, direction-finding stations) turn
-  signatures into **tracks** with position noise and an age.
-- AI police steer to the **last known position**, not the truth. Break contact and they
-  search the last place they saw you.
-
-### 5.5 Radio [done]
-- One message log per channel (`police`, `runner`). Police dispatch is plain voice
-  unless encrypted. The runner scanner intercepts plain police messages. Runner
-  transmissions can be heard by DF stations.
-
-## 6. Storyline (the Costa Brava flying tutorial)
-
-**Decision (2026-10-03):** the campaign is four chapters, a tutorial that teaches one system at a time. The long game is the Costa Brava story (`Story.CHAPTERS`, DESIGN 25 and the later story sections). The former chapters 5 to 8 (The Balloon, Blue Water, The Leak, Last Run / Flip) are cut; the paragraphs below about them are the original pitch and are not planned.
-
-**Setting (updated 2026-10-07).** Costa Brava, the game's fictional coastal region,
-1979–1982 for these four flying lessons. The twelve-chapter Costa Brava story remains
-the long game. Classic island geometry is retained only for internal regression references.
-The tone draws on the era's documentaries and dramas about the South Florida
-smuggling boom and the Miami-based task forces sent to stop it (the *Cocaine Cowboys*
-documentaries, *Miami Vice*, *American Made*, *Blow*, *Air America*, *Narcos*). All characters
-and events here are original.
-
-**Protagonist.** *Jack "Dusty" Callahan*, a bush pilot who owes the bank for a tired
-Cessna 172. His sister *Rosa* runs the mail contract and is your first co-pilot. The fixer is
-*Manny Arce*, a charming boat dealer from Smuggler's Cove. The antagonist on the law side is
-*Special Agent Evelyn Hart*, who takes over the island's interdiction desk in 1983.
-
-| Ch. | Year | Title | Introduces | Objectives | Status |
-|---|---|---|---|---|---|
-| 1 | 1979 | **Mail Run** | Flying, W&B, short strips | Earn $5,000 legally, land at Mesa del Aguila | [done] |
-| 2 | 1980 | **A Favor for Manny** | Contraband, radar floors, flying low | Deliver one hot cargo without reaching wanted ★ | [done] |
-| 3 | 1981 | **Kickers** | Co-pilot, airdrops, boat rendezvous, radio calls | Drop 4 bales to the *Lady Luck*, 3 must reach the cove | [done] |
-| 4 | 1982 | **Long Legs** | Ferry tanks, fuel planning, offshore entry, fuel caches | Fly in from the south entry point with a ferry tank and make a drop | [done] |
-
-**Historical pitch, retired (not scheduled).** The task-force campaign (law side, 1983–1986) would replay the same years from Hart's desk:
-building the radar net, getting encryption budget approved, turning Callahan's spotters. In
-chapter 8 the two campaigns meet: the runner's "Flip" branch hands you Hart's desk for the
-final interdiction.
-
-**Historical difficulty pitch, not the current tutorial schedule.** Each chapter would raise the threat level: 1 radar site in 1979, plus
-interceptors in 1981, the aerostat and cutters in 1983, encryption and DF in 1984, informants
-in 1985. It also removes a crutch, such as a free loadmaster or a daytime-only schedule.
-
-## 7. Multiplayer architecture
-
-```
- Pilot's game (3D, Godot 4) ─────────────┐   authoritative Session (flight + AI + rules), 60 Hz
-   └─ listen server (HostServer, TCP) ───┤   snapshots 20 Hz, filtered per role (fog of war)
-                                         │
- Station clients (2D tactical UI) ◄──────┘   TCP, newline-delimited JSON
-   co-pilot · spotter · controller           commands -> Session.command(role, name, args)
-```
-
-- **Authoritative host.** The pilot's machine runs the only simulation. Remote players send
-  *commands* (validated against a per-role permission table) and receive *snapshots* built
-  for their side only. A controller snapshot contains radar tracks, never the true runner
-  position.
-- **Why TCP + JSON now:** zero dependencies, trivial to debug, and fine at 20 Hz on a LAN or a
-  decent WAN. Station UIs are map views, so a 100 ms delay is invisible there.
-- **Phase 3:** a remote *pilot* (interceptor or second runner) needs UDP with client-side
-  prediction of their own flight model (ENet through Godot's MultiplayerPeer), with the
-  server reconciling. Snapshots already carry sequence numbers for this.
-- **Dedicated server:** `Session` has no rendering dependency, so a headless server is the same
-  code minus the window (`godot --headless --script res://scripts/net/dedicated.gd`).
-- **The wire's safety contracts [done, October 2026, #259/#260]** (`host_server.gd`):
-  - *Bounded framing:* a line over 1 MiB closes the connection before it is parsed, and at most 64 lines are
-    handled per connection per poll.
-  - *Commands run at most once:* sequence numbers must rise per connection. A repeat gets the cached
-    acknowledgement (the last 256 are kept); an old or out-of-order sequence is refused unexecuted. At most 64
-    commands are pending per connection.
-  - *No stale seats:* a command queued before a seat change or disconnect is refused, not run under the new seat.
-  - *No stale sticks:* flight input not refreshed for one second is neutralised; ownership doesn't change.
-- **Read-only previews [done]:** a host advertises `action_previews` in its welcome. A client then asks
-  `preview_request` and gets the same `ActionDescriptions` result a local desk shows (consequence text, enabled or
-  disabled reason). Execution re-checks everything; a preview is never a reservation. Older hosts simply lack the
-  capability.
-- **Who may stop the game [planned, §0]:** when an organisation's leader leaves, the session halts; other players
-  leaving do not halt it. This replaces the current "empty seat becomes AI" rule for leaders only, once "leader"
-  is defined per mode.
-
-## 8. Balance notes and tuning knobs
-
-| Knob | Default | Effect |
-|---|---|---|
-| Radar floor | 45 m + 9 m/km | Lower = police stronger; tune per chapter |
-| Aerostat floor | 20 m + 3 m/km | Makes flying low necessary but not sufficient |
-| Suspicion rate | 8–33 %/s in coverage | How long a runner can clip radar coverage |
-| Bust time | ~4.5 s within 350 m | How close an interceptor must fly formation |
-| Encryption dispatch delay | +8 s | Cost of denying the scanner |
-| Spotter leak chance | 15% per hired spotter per job | Informant pressure |
-| Ferry-fuel tip chance | 25% at police fields | Pushes runners to caches |
-
-Balance target for versus: a competent crew completes about 55% of runs against a competent
-controller. The AI controller should land at about 70% for new players.
-
-## 9. Roadmap
-
-*Historical: the 2025–26 phase plan. The current queue is [ROADMAP.md](ROADMAP.md) and the direction is §0;
-items below marked as later phases are not commitments.*
-
-1. **Phase 1 [done]:** single-player core. Flight-model W&B, tight strips, jobs, radar/wanted, AI police.
-2. **Phase 2 [done] (framework):** roles and permissions, command API, event bus, sensors and
-   tracks, radio/scanner/DF, spotters and informants, transponder, radar detector, aerostat, ferry
-   tanks, loading time, autopilot, airdrops, boats and cutters, AI smuggler, controller mode,
-   campaign engine with chapters 1–4, listen server + station client, role-filtered snapshots.
-3. **Phase 3 [done] (seats, HQs, bots, balance):** remote 3D seats (co-pilot in the right seat; police
-   pilot flying a heli/interceptor with the AI units' envelope, fog-of-war visuals) over TCP with
-   interpolation; boss and chief HQ seats and a season of nights (`scripts/sim/hq.gd`, `nights.gd`); decoy
-   flights and contract crews; rule layers scaled by player count (`scripts/sim/layers.gd`); a pilot bot flying
-   the aircraft, HQ bots, and feasibility / tactical / strategic simulators that drove the balance changes
-   in [BALANCE.md](BALANCE.md); textured graphics with low/medium/high presets. Design reasoning:
-   [MULTIPLAYER.md](MULTIPLAYER.md).
-4. **Phase 4 (depth):** UDP snapshots with prediction, human-driven boats, night and FLIR, wind,
-   AEW patrol aircraft, fixer/mechanic roles, the hidden informant, planted beacons, persistent
-   career across chapters, chapters 5–8 and the task-force campaign, smarter runner bots.
-5. **Phase 5 (content):** bigger map (mainland coast + island chain), more aircraft (from the
-   JSBSim-format `L410`, `C130` data), audio, real 3D models, matchmaking and a dedicated server.
-
-## 10. What the Godot build added
-
-- **Engine.** Godot 4.7 (from 4.4), GDScript only: no GDExtension, so a stock editor opens, runs and exports it
-  to Linux, Windows and macOS. The simulation is in `scripts/sim/`; the Python-exact RNGs, maths and terrain
-  generator in `scripts/util/` stay bit-exact with the Python reference where the fixtures say so
-  ([PORTING.md](PORTING.md)). The flight model (`scripts/sim/flight/`, `FlightDynamics`) is the game's own: a
-  6-DOF rigid body at 120 Hz with quaternion attitude, reading JSBSim-format aircraft files as data (their
-  aerodynamic functions and tables, flight-control channels, mass and tanks, gear contacts, piston and
-  turboprop engines with propeller C_T/C_P tables and a constant-speed governor), spring-damper gear with
-  rolling, braking and side friction, the ISA atmosphere, wind and Gauss-Markov gusts. It replaced JSBSim
-  1.3.1, which the game used to link through a C++ extension. The C172's propeller carries calibration factors
-  (static rpm, ground roll, climb against the handbook): its stock tables left a 160 hp engine short.
-- **Realism layer.** Weather and moon, pattern of life, canary traps, rival tempers, spare-helicopter
-  patrols, nerves ([BALANCE.md](BALANCE.md) entries 14-19).
-- **Radar and radio** that behave like the real thing (`sensors.gd`, `comms.gd`): radar horizon, clutter,
-  MTI, scan rates, Pd, trails, Mode C, squawk codes and coverage; VHF line of sight, channels,
-  push-to-talk length, least-squares DF with an error ellipse, jamming.
-- **Upgrade trees** for both sides (`upgrades.gd`), paid from runner cash and task-force funds.
-- **Costa Brava**, the city coast and default map (`map_city.gd`): the port city of San Telmo, estuary,
-  farm plain, jungle range, quarry, cays; stash houses (`stashes.gd`) with trucked deliveries and raids.
-- **Markets** (`economy.gd`): prices per good per market, moved by rivals, police, seizures, gluts,
-  fuel, weather and the news.
-
-## 11. The ground war, gun running and arsenals
-
-- **Arsenals** (`arsenal.gd`): the organisation, the task force and Los Cuervos each hold weapons by
-  tier (pistols, rifles, machine guns, RPGs) and ammunition. Gun runs bring crates in; on delivery you
-  **sell** them at the street price or **stock** your own arsenal. Everything the police seize
-  (busted loads, trucks, raided stashes, lost firefights) goes into *their* arsenal and arms their
-  patrols.
-- **Squads** (`ground.gd`): gang soldiers, Los Cuervos' crews and police patrols, on foot, in cars and
-  in trucks, driving the city's roads (`road_graph.gd`). They guard stashes, escort trucks, set
-  checkpoints, patrol and raid. Where they meet, a firefight is resolved with Lanchester's square law
-  on each side's weapons, cover and morale. Squad-minutes in a zone move the turf, and turf moves the
-  markets and the season.
-- **Commanders.** Each faction's squads are run by an AI commander by default; a human
-  **lieutenant** (runner side) or **patrol commander** (law side) can take over at any time, and the
-  boss and chief set the budgets.
-- **On foot.** Out of the aircraft you can draw a weapon from your side's arsenal and shoot it out
-  with squads near you, who are simulated man by man inside a 300 m bubble.
-
-**What it costs** (section 24, BALANCE entry 29). The live-play simulator steps the war. The organisation's AI keeps a $30k reserve, raises a squad at most every 30 minutes (only when it has none or is outnumbered), and pays soldiers only for the squads it fields. With the war on, three hours end at $50.0k against $62.5k without it.
-
-## 12. Seats: every role AI until a human takes it
-
-Every role in every mode exists from the start and is run by the AI. Humans join mid-game and
-claim any free seat from the role picker; leaving (or dropping for more than 30 s) hands it back to
-the AI. The host's `Seats` table is the single place this happens. See [MULTIPLAYER.md](MULTIPLAYER.md)
-for the protocol, the roster and chat.
-
-## 13. The Agency, and the history the season runs through
-
-**The Company** (`scripts/sim/agency.gd`) is a covert intelligence agency running guns south to
-the Contras through the island's strips: a fourth player in the drug war, and the task force's most
-awkward opponent. It offers "southern front" arms flights on the shady strips' boards. Carrying its
-cargo, or for half an hour after a run, you're protected: a bust is quashed by a call from
-Washington ("national security"), and police checkpoints are told to wave your trucks through. A
-trusted organisation gets favours (crates of rifles, an informant "reassigned"). Every quash and
-flight leaves a trail; the task force can dig (V at the desk: subpoenas and bank records, cheaper
-the more cases were quashed) and at 100% exposure the hearings end it: no more protection, the
-task force gets the budget, and the organisation's pilots are named in the testimony.
-
-It is fiction inspired by the documented record, not a claim about real people:
-
-- the **Boland Amendments** (1982, and Boland II in 1984) barred U.S. funding for the Contras, and
-  the supply effort went private and covert
-  ([Boland Amendment](https://en.wikipedia.org/wiki/Boland_Amendment));
-- in October 1986 a Contra supply plane was shot down over Nicaragua and its surviving crewman
-  talked; the **Iran-Contra affair** broke that November
-  ([Iran-Contra affair](https://en.wikipedia.org/wiki/Iran%E2%80%93Contra_affair));
-- the Senate subcommittee chaired by John Kerry (the **Kerry Committee**, report 1989) found that
-  people involved in Contra supply networks were also involved in drug trafficking, and that U.S.
-  agencies were at times aware of it
-  ([Kerry Committee report](https://en.wikipedia.org/wiki/Kerry_Committee_report)).
-  Stronger claims made later (for example in the "Dark Alliance" series) remain disputed, and the
-  game doesn't rely on them.
-
-The **Chronicle** also runs a timeline of real headlines, one per stretch of play, in order: the
-1979 Dadeland mall shootout, the 1980 Mariel boatlift, Operation Greenback, the 1982 South Florida
-Task Force, the Boland Amendments, Customs' air-interdiction jets and Blackhawks, crack reaching
-the streets, the 1986 shoot-down, Iran-Contra, the 1986 Anti-Drug Abuse Act and the Kerry
-inquiry. Each moves something in the game: the task force's funds and arsenal, Los Cuervos'
-recruits, the markets, and the Agency's exposure.
-
-## 14. The Family, the Company's double game, and the research behind them
-
-**The Family** (`scripts/sim/family.gd`) is a fictional Cosa Nostra crime family, the Morettis,
-out of Tampa by way of New York. It runs the docks' union, casino count rooms, bookmakers and a
-loan-sharking book. The design rule is that **every helping hand might be a trap**:
-
-- Each offer carries a hidden `honest` flag and a *read* (what our people notice, e.g. "the
-  steward was seen at the federal building"). The read is right about four times in five, so
-  accepting is a judgement call.
-- The offers are: a loan (the con: the vig "changes" and the enforcers come), laundering through a
-  count room (the con: a skim and a wiretap), the union at the docks (the con: the Coast Guard gets
-  the schedule), a gun fence (the con: a buy-bust), a crew of the Family's soldiers (the con: a
-  stash sold to Los Cuervos) and a lawyer (the con: he reports to the prosecutor).
-- Honesty falls with greed, low respect and pressure. The task force's RICO case grows; past 60% a
-  made man may flip, and a family with a rat in it sells everyone out. At 100% the Commission
-  trial ends the Family, and what it knew about our stash houses goes into evidence.
-- Unasked, the Family also: levies a street tax on a rich organisation, sells rifles to Los
-  Cuervos too, puts a sergeant on the payroll who leaks raids, and moves in on a weak organisation's
-  stash.
-
-**Talking to them.** The offers can be taken with a key, or at a sit-down with Sal Moretti
-(`dialogue/family.dialogue`, run by Dialogue Manager): he pitches the offer in his own words, your man
-gives his read, and you can take it, turn it down, or **press him** - a second read, an independent
-roll just as likely right, for two points of respect. Two agreeing reads are right about 94% of the
-time; two that disagree are a coin toss. That makes asking a real decision. The tribute can be paid,
-refused or **stalled** (five more minutes, once, for five points of respect).
-
-**The Company's double game** (in `agency.gd`, on its own RNG stream):
-
-- The limited hangout: at high exposure it may give our names to the task force itself.
-- A stung flight: it hands a flight to the DEA. The notes may say "the contact changed at the last
-  minute", a hint that is right about three times in four.
-- "The check's in the mail": part of the pay is withheld.
-- Both sides: Los Cuervos' planes get waved through too.
-- Disinformation, both ways.
-- Brokering its cash through the Family's casinos.
-
-### What the research found, and where it went
-
-Fiction built on documented history. No real person appears in the game; events are reported as
-the papers did.
-
-| History | In the game |
-|---|---|
-| The CIA recruited mobsters (Giancana, Roselli, Trafficante) to kill Castro in 1960-63; it came out in the Church Committee hearings (1975); Roselli was later found in an oil drum in Biscayne Bay ([CIA plots on Castro](https://en.wikipedia.org/wiki/CIA_assassination_attempts_on_Fidel_Castro), [Mob Museum](https://themobmuseum.org/blog/mob-attempts-assassinate-castro/)) | The Company and the Family know each other: the Company's cash goes through the Family's casinos with us as go-between; the "drum_found" event (a witness silenced, the RICO case sets back) |
-| The Kerry report (1989): the State Department paid Contra "humanitarian" contracts to companies run by traffickers, including SETCO Air and a Costa Rican seafood firm, Frigorificos de Puntarenas, set up to launder drug money ([Kerry Committee](https://en.wikipedia.org/wiki/Kerry_Committee_report), [report text](https://archive.org/stream/KerryCommitteeReport/Kerry%20Committee%20Report_djvu.txt)) | Crates marked "humanitarian aid"; the "shrimp_front" laundering event; the 1989 headline raises the Agency's exposure |
-| A cocaine pilot flew out of Mena, Arkansas, flipped to become a DEA informant in 1983, flew a camera-rigged C-123 on a CIA-linked mission, and was shot dead in 1986 ([Barry Seal](https://en.wikipedia.org/wiki/Barry_Seal)) | The "pilot_flips" event; the 1986 headline (informants go quiet); the stung flight |
-| Norman's Cay, Bahamas: a private island with a 1,000 m strip, armed guards, dogs and radar, used as a transshipment base (1978-82) ([Norman's Cay](https://en.wikipedia.org/wiki/Norman%27s_Cay), [Carlos Lehder](https://en.wikipedia.org/wiki/Carlos_Lehder)) | The offshore pickup island (next phase) |
-| Operation Greenback (1980) followed the cash through the banks; the Opa-locka seizure; Great American Bank fell in 1982 ([Operation Greenback](https://en.wikipedia.org/wiki/Operation_Greenback)) | Headlines; laundering costs; the "bank_collapse" event |
-| 1986: a DEA probe of Eastern Airlines baggage handlers at Miami International, who moved cocaine past customs and dogs for years ([CS Monitor, 1986](https://www.csmonitor.com/1986/0214/aline.html)) | The 1986 headline tightens the airports; airport smuggling with bought handlers (next phase) |
-| The Pizza Connection trial (1985-87) and the Commission trial (1985-86, bosses convicted under RICO) ([Pizza Connection](https://en.wikipedia.org/wiki/Pizza_Connection_Trial), [Commission trial](https://en.wikipedia.org/wiki/Mafia_Commission_Trial)) | Both headlines raise the RICO case |
-| 1988: Noriega indicted in Miami for selling traffickers safe passage; his money sat in BCCI ([Manuel Noriega](https://en.wikipedia.org/wiki/Manuel_Noriega)) | The 1988 headline: laundering costs more |
-| Cuba, 1989: General Ochoa and Colonel de la Guardia were executed after a trial for arranging cocaine drops in Cuban waters, handed to speedboats for Florida ([Arnaldo Ochoa](https://en.wikipedia.org/wiki/Arnaldo_Ochoa)) | The island's corrupt officers and their purge (next phase) |
-
-Storylines and jobs these suggest, some of them built next:
-
-- **The island**: a Cuba-like offshore state with cheaper product, corrupt officers selling safe
-  passage in its waters, and its own politics. A purge can close the route overnight.
-- **Airport runs**: mules and bought baggage handlers at the international airport, against
-  customs, dogs and a crackdown after a scandal.
-- **Informant flights**: the DEA flips your pilot and wants photographs of the next pickup.
-- **The seafood front**: aid contracts that launder money until an inquiry reads the books.
-
-## 15. Isla Soberana: the island trade, the airport and the port
-
-An island republic about 23 km off San Telmo, beyond the map's southern edge (`scripts/sim/island.gd`,
-drawn by `scripts/render/island_render.gd`). Its strip (SOB) is landable but isn't one of the mainland's
-strips (`MapLayout.foreign`), so the mainland's boards, AI and police are unchanged. It is fiction
-inspired by the Ochoa affair (section 14): officers who sold cocaine drops in their waters until
-their own government tried them.
-
-- **Cheap product.** The island's board sells loads: a job with a price paid up front ($18/lb)
-  worth the street price home ($55/lb before the market). A defector wanting a ride north pays
-  well and costs the General's goodwill.
-- **Three routes home.**
-  - **Air:** the usual game, flown.
-  - **Mules:** four on the airliner (Shift+U, or U at the lieutenant's desk). Each is caught
-    independently; odds start at 10%.
-  - **A container:** 500 lb on the freighter (Shift+I / I). One roll; odds start at 8%.
-
-  Both are timed shipments, resolved on arrival against the odds then. So a crackdown ordered
-  after they left still counts.
-- **Where it lands.** With logistics on (live play, the dedicated server, the story from 1980), a
-  cleared container or a mule run pays nothing on arrival: its pounds go into the stash by the docks
-  and the airport (`logistics.site_at("HAR")`, Warehouse 7 by the port), or the nearest stash if
-  that one is burned, and warms that stash as any load arriving does. From there it's sold like any
-  other load (section 22). Without logistics the
-  old instant payout at the street price stays. BALANCE entry 30 has why: 500 lb sold at once, past
-  the dealers and the buyers' caps, paid $150k-$800k over a 12-hour story.
-
-  | Factor | Mule caught | Container found |
-  |---|---|---|
-  | Heat after a catch (decays) | x(1 + heat) | x(1 + heat) |
-  | Sniffer dogs (law) | x1.6 | x1.15 |
-  | Passenger profiling (law) | x1.4 | |
-  | Container X-ray (law) | | x1.7 |
-  | Crackdown / inspections (law, 30 min) | x1.8 | x1.5 |
-  | Trained mules / forged papers / baggage handlers (ours) | /1.25, /1.3, /2.2 | |
-  | False bottoms (ours) | | /2 |
-  | The Family's docks deal (honest / a rat) | | x0.5 / x2 |
-  | A boatlift swamping the Coast Guard | | x0.7 |
-
-  A caught mule may talk (unless her papers are forged). The desks show the odds and every factor.
-- **Sovereign airspace.** South of the territorial line the task force's aircraft break off and
-  won't re-acquire. The island's MiGs may intercept a plane that hasn't bought the General's
-  passage (a "landing fee").
-- **The island's politics.** Hurricanes hold the freighters and close the strip's board; shortages
-  raise prices; a glut drops them; a boatlift swamps the Coast Guard; the General's birthday. A
-  purge (random when relations are low, or the 1989 headline) closes the island: no loads, no
-  passage, and soldiers on the ramp for whoever lands.
-- **The General's aide.** Captain Ibarra (`dialogue/general.dialogue`) meets you on the ramp when
-  you land and answers the island frequency (Shift+G, G at the lieutenant's desk). He sells passage,
-  gives the island's news (and a warning when the General's friends are in danger - relations
-  under 40 are where purges happen), and takes orders for mules and containers, with customs' current
-  odds in the answer text. During a purge a stranger answers.
-
-## 16. The court: lawyers, bail, pleas and juries
-
-Without a court a bust is a fine and the impound. With one (`scripts/sim/court.gd`, `court: true`
-in live play, RNG seed + 107), a bust opens a federal case against the pilot. It is modelled on
-how 1980s South Florida drug cases ran, with invented lawyers and judges.
-
-| Stage | What happens | Choices |
-|---|---|---|
-| Arrest | Charges from the case: possession (any load), importation and trafficking (over 150 lb), a firearm (weapons aboard, or armed strip guards), conspiracy (a heavy case). Evidence is built from the load, the task force's suspicion, informants, an undercover agent, witnesses (arrested soldiers talk), and whether there was a chase. The load is seized as evidence. | - |
-| Bail hearing (90 s) | A judge is drawn: Pike (hard), Ruiz (by the book) or Dunne (lives well for a judge). Bail is $10k per charge weight × the judge × 1.5 for a flight risk (rich, or the General's friend). | Post it all (returned at trial), a bond (10%, gone), or custody. The prosecutor can ask for no bail. |
-| Pretrial (20 min) | On bail you fly; a new arrest revokes it (+15 evidence). In custody the aircraft sits and you can fast-forward. | Hire a lawyer; file motions (suppress, discovery, continuance); lean on a witness or pay the judge through the Family; take a plea; sign a cooperation deal. |
-| Trial | Conviction odds: logistic((evidence − 50)/12 + judge bias × 3 − lawyer skill × 2.2 + 0.25 per witness + jury noise). A close jury can hang (retrial in 10 min, evidence −10). | Skipping the trial on the island makes you a fugitive: failure to appear, a warrant, the bail forfeit. |
-| Sentence | Years from the charges × the judge (trafficking has a 10-year minimum after the 1986 act), 2 game minutes a year up to an hour. A fine plus 30% of the cash (80% to the task force), and the aircraft is forfeited. | One appeal (15% + 40% × the lawyer's skill to reverse); or wait it out. |
-
-**The lawyers.**
-
-| Lawyer | Cost | Skill | Notes |
-|---|---|---|---|
-| The public defender | free | 0.15 | |
-| Arturo Vega | $6,000 | 0.4 | |
-| Roy Kessler | $25,000 | 0.65 | |
-| Leonard Castellano | the Family's offer | 0.7 | If the Family's offer was a con, he works for the prosecutor: +1.5 on the trial's odds and worse pleas. |
-
-Skill drives three things:
-- **Suppression:** 10% + 50% × skill, +25% when the stop had no cause (a random landing check below 40% suspicion). Success takes 30 points off the evidence.
-- **The trial's odds** (the formula above).
-- **The appeal.**
-
-**Off the books.**
-- **Leaning on a witness** ($5,000 to the Family): 35% it becomes obstruction (+20 evidence, bail revoked); otherwise one witness fewer and −12 evidence.
-- **Paying Judge Dunne** ($20,000): 30% it's a sting (45% with an undercover agent), and Judge Pike takes the case; otherwise the judge leans your way.
-
-**Deals.**
-- **The plea:** the top charge at 45% of the years (30% on the second, lenient offer), more as the evidence grows.
-- **Cooperation:** a tenth of the time. In exchange every stash house gets +35 police intel, the Family's respect drops to 0 and its RICO case jumps, and the organisation's soldiers lose heart.
-
-**The task force's side** (controller's desk N W K D Y, or the AI prosecutor when nobody human
-sits the law's chair):
-- no bail;
-- immunity for a crewman ($4,000: +1 witness, +10 evidence);
-- the bank records (a civil forfeiture: 20% of the cash, 80% of it to the task force);
-- a conspiracy count (at 50% evidence);
-- a plea offer.
-
-**The lawyer's conversation** (`dialogue/lawyer.dialogue`, Shift+L, L at the desks) walks
-through all of it: the hearing, the case as he sees it (the exact odds once discovery is in),
-each option, the witness and the judge in lowered voices, the deal, and the appeal.
-
-## 17. Hired hands: the payroll, and NPCs in every system
-
-`scripts/sim/payroll.gd` (`payroll: true` in live play, RNG seed + 109). Both outfits, the
-organisation and Los Cuervos, hire people and pay them.
-
-| Role | Wage / payday | What they do | If lost |
-|---|---|---|---|
-| Soldier | $80 | Crew the ground war's squads. An outfit raises a squad only from soldiers on its payroll; events and the Family's lent crew are exempt. | Men lost in a fight are 40% arrested, 60% dead |
-| Driver | $100 | Takes a stash truck through the checkpoints; a sharp one talks his way past (skill × 40%). No driver hired means a street driver: triple fee, less loyal. | Arrested when the truck is stopped |
-| Mule | $60 | Flies the island's airliner run (a practised mule is harder to read: odds × (1.2 − 0.4 × skill)). Short of mules, street mules. | Arrested when caught at customs |
-| Lookout | $50 | Posted at a stash house, sees a raid coming (35% + 45% × skill; not if disloyal). The house comes up empty and cold. | - |
-| Accountant | $250 | Clean books cool the task force's case every payday (−4 × skill). A sour one skims 5% of the cash. | Knows the most (flip weight 1.5) |
-| Contract pilot | $300 | Flies a run of his own every 20 min: $2,400–3,600, less likely as the case heats up. | A bust: arrested (or dead) |
-
-**The labour market and loyalty.**
-- Candidates refresh every 10 minutes. Skill shows; loyalty shows only as a hint ("did two years
-  and never said a word" vs "asked a lot of questions about the money"), right about 80% of the time.
-- Hiring costs two wages up front.
-- Each payday pays the loyal first. Paid workers gain +0.02 loyalty; unpaid ones lose 0.25.
-- Under 0.35 loyalty, each payday brings a 15% chance of trouble:
-  - they skim $500–2,000;
-  - they walk off the job;
-  - they tip the task force (a stash house, the suspicion, weighted by what they know).
-- A bonus (a wage each) buys +0.1 loyalty.
-- A fired man with a grudge may talk.
-
-**The jailed.**
-- Arrested workers get their own cases (15 minutes).
-- A flip's chance is 35% × (1 − loyalty), which:
-  - halves if the outfit paid a $2,000 lawyer (and the crew sees you look after your own);
-  - doubles with the prosecutor's deal (A at the controller's desk);
-  - is 1.5× for street hires.
-- A flip gives up what he knows:
-  - for the organisation, stash-house intel and suspicion;
-  - for Los Cuervos, cash seized and their corners raided.
-- Otherwise the worker is convicted (gone) or released (back to work).
-
-**NPCs in every system.**
-- Los Cuervos' AI hires, pays (from the cartel's cash), loses and flips people the same way. It
-  sends containers of its own through Isla Soberana's customs every 20 minutes: a glut on the
-  street, or the task force's seizure.
-- The organisation's AI (when no human boss or lieutenant sits):
-  - hires to its needs (soldiers, drivers, lookouts per stash, mules for the island, an
-    accountant and a contract pilot when rich);
-  - posts lookouts at the hottest houses;
-  - pays lawyers for the jailed who know things;
-  - gives bonuses when the crew is sour;
-  - lays people off when the money runs out.
-
-The AI prosecutor and the Family were already NPCs in these systems (sections 14, 16).
-
-**The hiring hall** (`dialogue/crew.dialogue`, Shift+W / W): Manny Ortega shows four candidates
-with their skill, wage and the hint, and handles bonuses and lawyers for the jailed.
-
-
-## 18. The street: supply and demand, and the Company's pipeline
-
-Prices were a random walk with premiums (rivals, police, seizures, gluts, news). Under it there is now a street
-(`scripts/sim/market.gd`): for each hot good (cocaine, marijuana, guns) and each market, **supply** and **demand**
-(1 = normal); for each market a **disruption** of its distribution network; for each good an upstream
-**source**. The street price follows (demand / supply)^0.55, clamped to x0.55-x1.9. Supply relaxes toward
-source x (1 - 0.6 x disruption) in about 15 minutes. Demand recovers in about 40, networks heal in about
-25, the source in about 60.
-
-**What moves it** (the session's event bus):
-
-| Event | Effect |
-|---|---|
-| The pilot busted, a cooperation deal, an informant | the organisation's markets (its stash-house zones) lose their corners |
-| A worker arrested | a smaller hit to that outfit's markets |
-| A long sentence | the whole street goes quiet for a while (demand down) |
-| A stash house raided | that zone's network broken, its product off the street |
-| A truck or a go-fast seized | supply falls there |
-| A hijacked load | sold in Los Cuervos' strongest market |
-| A gunfight | corners close while it lasts; every man arrested or down is a dealer off the street |
-| A Los Cuervos container through customs | floods the docks |
-| Their plane busted | dries up their market |
-| The Commission trial | the Family's fall takes the town's network and its gun fence (guns short island-wide) |
-| A hurricane or a purge on the island | chokes the source: the island's wholesale price rises and its connection restocks slower |
-| A glut on the island | reaches the docks |
-| An airport crackdown | fewer mules get through: the town runs short |
-| The street's own news (own table) | spring break, a bad batch, a crusade, a new disco |
-
-The island's loads are now paid at today's street price when they land: mules in town, containers through the
-port in town. A dry street pays more; your own flood pays less. Los Cuervos' island loads earn at the street
-price too, so the market feeds the rival's war chest.
-
-**The Company's pipeline: cocaine north, guns south.** As the Kerry Committee described the Contra supply
-networks (section 14). Every 15 minutes, while the Agency is in business:
-1. Its contacts buy cocaine upstream (the island's wholesale rises a little).
-2. Its protected planes land it on one market's street: a flood, cheap cocaine there, which hurts the
-   organisation's cocaine trade.
-3. The proceeds buy guns off the street and out of the fences' hands, and buyers bid for what's left: guns get
-   dear in town and the west, which is good for our gun running and the fence.
-4. The war chest puts more southern-front flights on the boards, and "return legs": protected cocaine flights
-   north for us to fly.
-5. Every cycle leaves a trail (exposure). The task force sees the pattern: cocaine prices crash where the
-   unregistered flights land, and a buyer takes every gun. A hangout pauses it for an hour; the hearings end it.
-
-In the live simulator (BALANCE section 7), cocaine in town swings between about x0.64 and x1.7 of its usual price in
-a 3-hour run with everything on (x0.6-x1.4 without). Guns average x1.37 with the Company buying (x1.12
-without). It flies about 24 lots north and buys about 25 lots of guns per run.
-
-Its own RNG streams (the street: seed + 113; the pipeline: seed + 127). Off with `Economy.REALISM`, like the
-rest of the market, for the Python replays.
-
-
-## 19. The trade: stock, dealers, buyers, and grass before cocaine
-
-`scripts/sim/trade.gd`. The organisation now holds product: pounds of cocaine and marijuana in its stash houses.
-
-**Own loads.** The job boards offer our own loads alongside the courier work:
-- **Grass** at the bush strips (the farm): about $2 a pound, 200-500 lb a load. It's bulky, so weight and balance
-  bite.
-- **Cocaine** from the Colombian connection at the shady strips: about $22 a pound, 40-170 lb a load.
-
-Both are paid up front, flown to a stash strip, and go into the stash. A raid takes 30% of what's there.
-
-**The career** (live play, `career: true`). It starts with grass, the way the 1970s smugglers did: cheap, bulky,
-less heat. The Colombians only call once our dealers have sold 1,200 lb of grass, we've landed two tons of it in our stashes, or made $25,000 in the trade. Until then
-there's no cocaine work on the boards, no island trade, and no return legs for the Company.
-
-**Street sellers.** Dealers are a payroll role for both outfits (hire them from Manny).
-- They're posted to the outfit's corners: ours where our stash houses are, Los Cuervos' where they hold turf.
-- Each dealer moves 0.6 lb of cocaine or 5 lb of grass a minute, at the street price, scaled by skill.
-- Competition matters: each of the other outfit's dealers on the same corner takes 12%, and Los Cuervos' hold on
-  the market takes up to 40%.
-- Their sales put product on the market's street, so the price softens.
-- The police pick dealers up, more often where police are thick and for cocaine (the market's arrest hooks
-  follow).
-- A gunfight in their market can take them.
-- Los Cuervos' AI sends a squad at markets where two or more of ours sell and it holds a quarter of the turf.
-
-**Bulk buyers.** Talk to Benny Ruiz: SHIFT+B in the pilot seat, M at the boss's, lieutenant's or co-pilot's
-desk.
-
-| Buyer | Takes | Pays | And then |
-|---|---|---|---|
-| The Moretti family (respect 25+) | cocaine, grass, rifles | 72% / 80% of the town's street; the fence's price for rifles | sells the drugs on in town (more on its street); arms its crews against Los Cuervos (their cash suffers); respect +2 |
-| The Company (in business, not hung out) | cocaine, rifles | 85% of the north's street; 130% of the fence for rifles | cocaine into the pipeline's war chest and its next load north; rifles south (guns scarcer here); trust +, exposure + |
-| Los Cuervos | rifles | 120% of the fence | their armoury grows (they fight better, us included); guns in the west; our suspicion rises |
-
-Each buyer has only so much appetite (it refills over 30 minutes). With no boss in the chair, the organisation's
-AI sells whatever its dealers can't move in two hours to the best buyer.
-
-**The law.**
-- A street sweep (M on the law's desks, $2,500) picks up 45% of the dealers in the market under the mouse, ours and
-  theirs, and breaks the corner.
-- Following the money (T, $4,000) traces the Company's pipeline:
-  - it adds exposure;
-  - a quarter of the war chest is forfeited to the task force;
-  - it names the market where the next load lands.
-
-  Our bulk sales from the last hour are in the trail too (suspicion +4 each).
-
-**Balance** (BALANCE section 7, entry 27). The trade config ends at $72k cash plus about $20k of product
-(control $70k), with the Colombians calling after about 75 minutes.
-
-
-## 20. Sea fog, and the town's side streets
-
-**Sea fog.** Advection fog forms when warm, moist air drifts over cooler water on calm nights. A breeze or a storm clears it, and it can sit on a coast for hours.
-- **When it happens.** `Session.set_weather` rolls it on its own stream (`seed + 137`), but only when live play asks with `fog: true`. The replays and the balance sims never see it.
-- **The roll.** On a night that isn't stormy, with wind of 10 kt or less, there's a 30% chance of fog, with a density of 0.4-0.95. The HQ season's forecast can also set `fog` outright.
-- **The effect.**
-  - The crews' visual range is multiplied by `1 - 0.65 x density`.
-  - Above 0.75 the helicopters are grounded: no heli launches, since nobody flies a helicopter at night in 500 m visibility.
-  - The radar, the transponder and DF are unaffected. That is the point of the trade-off: in fog the runner can slip past eyes, but not a controller who is watching the scope.
-- **On screen.** Exponential fog (visibility about 3/density), about 2 km at 0.4 and 700 m at 0.8. It swallows the sky and is tinted pale grey by the sun or the town's glow.
-
-**Junctions.** The city shader draws a street grid every 110 m. The street furniture now puts a traffic light at every third crossing of that grid inside the urban land use, not only where the arterial roads meet, so downtown reads as a town of blocks rather than a handful of highways. That gives 26 sets of lights on Costa Brava.
-
-## 21. The story: Costa Brava, 1979-1989, and the open mode
-
-*Direction (§0): a new story will open with the player employed by a legitimate air service, sliding into smuggling
-before chapter 1 [PR #296: four opening flights, the employer's Cessna on loan, first ownership
-recorded in the journal]. Story unlocks are to gain sandbox alternatives through money, reputation and activity.*
-
-The game had grown a dozen systems, all on from the first minute. The story (`story.gd`) opens them one chapter at a time. A new player meets the trade before the war, the war before the Family, the Family before the court, and only then the island and the Company.
-
-| Chapter | Year | Opens | Goals |
-|---|---|---|---|
-| Square Grouper | 1979 | trade (grass only), payroll, the papers | 150 lb of grass landed, a dealer on a corner, $2,500 from the trade |
-| The Connection | 1980 | logistics, the dealership | $2,000 of street money home; the Colombian connection calls; *side goal:* buy a vehicle (+$2,000) |
-| Blotter | 1980 | the Sunrise Collective (acid for grass) | 150 lb of grass traded for acid, 20 sheets sold; the lab is taken at the end |
-| Cocaine Cowboys | 1981 | the street war, gun runs and gun sales, soldiers | 60 lb of cocaine flown home, 8 weapons in the armoury; *side goal:* a truck with real cover or steel (+$3,000) |
-| Family Business | 1982 | the Moretti family | a deal with them (offer, loan or bulk sale); $30,000 in spendable cash |
-| The Task Force | 1983 | the federal court | 3 hot loads delivered, the case under 60% |
-| Isla Soberana | 1984 | the island, mules | a load home from the island |
-| The House | 1984 | the Hotel Cielo | a stake, $15,000 through the cage, out alive when the government falls; *side goal:* win $2,000 at the tables (+$3,000) |
-| The Company | 1985 | the Agency | a job for the Company, 4 guns sold to it |
-| Kingpin | 1986 | (all open) | $65,000 in cash, stock and street money |
-| The Hearings | 1987 | - | the case under 50% for 30 minutes running; $40,000 in spendable cash |
-| Last Flight | 1988 | - | $90,000 in cash, stock and street money; the case under 50% for 20 minutes running; then the story is told |
-
-**Side goals (2026-10-03).** A goal can be optional (`[key, text, target, true, bonus]` in `Story.CHAPTERS`): it is never needed to finish the chapter, shows
-"(optional before chapter ends: +$X)" on the card, and pays its bonus once when met. **Blotter** (a new chapter, 1980) is the Collective's story (DESIGN 44) and is dark: when it is done
-the task force takes the lab, a bread van is found in a ravine, Nico Cozz is gone for six hours and the case against us grows by ten points. **The Hearings** and
-**Last Flight** are the endgame the title (1979-1989) promised: the Company's war ends in a subpoena, and the goals are a cold case (`case_cold`, counted in
-consecutive minutes under 50% suspicion, the clock resetting if it rises) and money. Saves carry `v: 4` with optional objective outcomes and chapter history (a version 2 save before Blotter moves up one chapter from
-Cocaine Cowboys on). The story's balance run (`tools/live_balance.gd -- 40 16 story`, 16 hours now) at 40 seeds: Blotter takes about two hours in the stand-in's hands, 95% reach
-The Task Force, 80% reach The Hearings, 55% reach Last Flight and 40% finish (BALANCE entry 50).
-
-**Campaign polish (7 October 2026).** Phone > Chapter guidance and history retains briefings and recorded outcomes. Successful island delivery, actual casino ownership and timely evacuation are distinct from interception or losing the house. Unavailable factions waive unfinished goals without fabricated counters. Last Flight keeps its wealth and consecutive clean-case goals; there is no compulsory finale flight. Validation evidence for this polish is in the pull requests that introduced it (#229, #230, #231); a human branch walkthrough is still pending.
-
-**The employed opening [done, October 2026]** (`employment_opening.gd`). A fresh story game no longer starts
-already smuggling. It opens with a prelude, labelled EMPLOYMENT in the briefing and journal, before chapter 1:
-
-| Stage | Title | What happens |
-|---|---|---|
-| 0 | On the payroll | Two ordinary supply deliveries for Costa Brava Air Services, flown in its Cessna (`c172p`), HAR ↔ VAL |
-| 1 | An unusual customer | One request for sealed cases and no questions: suspicious, but with no contraband flag |
-| 2 | No more pretending | One disclosed marijuana delivery. The route goes to the nearest bush or shady strip with at least 400 m of runway and no police presence, not a customs airport. You may postpone it, but there is no legitimate-only branch |
-
-- *Ownership:* the aircraft is on loan, not owned (the owned fleet starts empty). Buying it costs a provisional
-  **$18,000**, which applies only on this path; every other mode and every old save keeps the roster price. The
-  hangar preview and the purchase command use the same price (`Session.aircraft_purchase_price`). Buying
-  another aircraft returns the loan, and the Cessna is not free to take back. The first purchase is recorded in the
-  story journal.
-- *Pay:* the existing cargo and contraband formulas. There is no employer commission, wage or company-funded fuel
-  yet, and the price has not been pacing-tested [open].
-- *Compatibility:* only an explicit fresh story start opts in. `Story.new` and saves from before the opening keep
-  their chapters. `--chapter N` skips the prelude first (`Story.select_chapter`). Open mode and the four flying
-  lessons are unchanged. A saved unfinished employer flight is offered again after loading rather than restored
-  in flight, because saves are written parked (see `StrategicSave`).
-- *Still open:* unlocks by money, reputation and activity as an alternative to the campaign, the employer's
-  identity and pay structure, and a human walkthrough for pacing.
-
-**How it works**
-- `Session.enable_system(key)` builds a system mid-game. Each system has always had its own random stream, so one that arrives in 1983 behaves as it would have from the start.
-- `Session.unlocked(key)` answers the finer locks: guns (gun runs, gun buys and sales), and which roles the hiring hall offers (soldiers, mules).
-- **Goals.** Goals are read from the event bus (`job_delivered` now says which good, how many pounds, whose job and where from; `cash_home`; `bulk_sale`; `island_shipment`) or from state: dealers on corners, the connection, the armoury, money, net worth.
-- **Softlocks.** A faction that's gone first (the Commission trial convicts the Morettis; the Company is burned or hangs us out) satisfies its chapter, so the story can't strand you.
-- **Saves and entry points.** The story is saved in `saves/story.json` (one folder, one file per mode: `open`, `story`, `campaign`, `police`, `dedicated`; `SavePaths` migrates old loose files once), and loading rebuilds every system its chapters opened. `--chapter N` skips ahead.
-- **Open mode.** `--unlocks open`, or the lobby's Unlocks: Open, has everything from the first minute, cocaine included. A new open game starts with a $10,000 float (`Session.OPEN_FLOAT`, Benny Ruiz fronts it; the story starts on $3,000). BALANCE entry 34: at $3k the safe dips below zero in the worst tenth of runs, from $10k it doesn't, and more up front mostly buys a bigger war.
-
-**Pacing** (BALANCE §7, 40 AI runs of 12 hours with the street war on from 1981; a flight every 15 minutes rolls the tactical sweep's odds, `AirRisk`):
-
-| Chapter | Reached by the AI |
-|---|---|
-| 1980 | about 1 hour, every run |
-| 1981 | about 3 hours, every run |
-| 1983 | about 5.5 hours, 92% of runs |
-| 1985 | about 7 hours, 85% of runs |
-| 1986 | about 8.5 hours, 80% of runs |
-| The end | 62% of runs finish within 12 hours, at about 8 hours |
-
-The stand-in's flown runs count as the pilot's deliveries (every other one hot), as a player's jobs do. The island's product lands as stock (section 15), so it's sold at the street's pace, not paid on arrival; the Kingpin's goal went from $200k to $80k with it (BALANCE entry 30), then to $65k once the stand-in's flights could be busted or crash (entry 31: about 2 busts and 2 crashes a story, $8k in fines and $5k in repairs).
-
-A human who trucks the cash home without waiting for the AI's pickups goes faster.
-
-## 22. Logistics: stock and cash have places
-
-In the 1980s cocaine trade, the product and the money were both physical, heavy and exposed: a stash, a count house, cash in duffel bags, a courier. `logistics.gd` makes them so. It's an opt-in system (live play and the dedicated server ask for it; in the story it opens in 1980).
-
-**Where things are**
-- **Product** sits in a stash house: the one at the strip its load was bought for. `Trade.stock` becomes the total of all the stashes.
-- **Dealers** sell only what's in a stash in their own market. Their takings go into that stash's cash, not the safe.
-- **Island product** lands in the stash by the docks and the airport (Warehouse 7), or the nearest one if it's burned: containers and mules alike (section 15).
-- **Street money** stays in the stash until moved. The organisation's `money` is the club's safe (Club Tropicana, the HQ), which pays wages, loads, lawyers and upgrades.
-
-**Moving it**
-- **Trucks** (`move_goods`, `move_cash`, and a bulk sale) are StashNet trucks. They take the road graph, face roadblocks and the street war's checkpoints, tails and hijacks, can have escorts, and draw a payroll driver or a day driver.
-  - A seized truck forfeits everything to the task force: half the cash goes to its funds. It adds suspicion: +4 for cash (a laundering lead), +6/+10 for product.
-  - A hijacked truck's cash goes to Los Cuervos.
-- **Bulk sales** are trucked to the buyer's meet and settled there at that moment's quote. The cash, and anything the buyer wouldn't take, rides back to the stash on a second truck, which is exposed too.
-- **Cash bags.** $4,500 of street bills weighs about a pound. `load_cash` / `unload_cash` work at a stash's strip, or at the club's strip (HAR, whose bags go to the safe). The bags ride in the load planner as hot cargo, and a bust takes them.
-- **Sellers.** An own load is paid for from the bags aboard: the growers and the connection want cash on the strip.
-
-**The AI boss**
-- Collects any stash holding $1,000+ after 20 minutes, and batches past $8,000.
-- Sends one cash truck at a time, and past $3,000 when the safe can't meet the payroll.
-- Moves product at most every 10 minutes, to markets where it has dealers and no stock.
-
-**Balance** (BALANCE §7, entry 28). The trade configuration with logistics ends at $55.8k in the safe plus $10.4k still out, against $71.8k without: about 8% less, lost to money in transit and trucks lost (about $900 and 120 lb a run).
-
-**On the road** (balance entry 29):
-- **Drivers watch the road.** Police ahead on the route (a checkpoint, or a patrol that isn't busy) and the truck pulls over until they've gone or an escort arrives. Only a patrol that turns up right on top of it still catches it by surprise.
-- **Patrols and checkpoints differ.** A passing patrol pulls a truck over a quarter of the time, half if it's heading for a stash the police know; a checkpoint stops everything.
-- **Our own vans are quieter.** A van between our own places warms its stash a third as much as a load off an aircraft, and a cash truck to the club leaves nothing to tail.
-- **Losses are recorded by cause** (`lost_by`): seized, hijacked, raided, bust.
-
-**Seeing and guarding them**
-- **The maps.** The runner's maps (minimap and desks) colour our trucks by what they carry (`truck_info`): cash, product, guns, a buyer's lot, a load off an aircraft. Each has a line to its destination, and a ring when it has pulled over. The task force's map still shows plain dots.
-- **Escorts.** `escort_truck {job_id}` (pilot, boss, lieutenant; the panel's **Escort** button) orders the nearest free squad of ours to ride with the truck. A checkpoint then gets a fight instead of a search, and an ambush meets guns.
-
-**The Company collects** (`meet_pos`). It keeps no shop: its plane lands at the strip nearest the goods (never a police strip), the way the Contra supply flights did. Its lots take a short drive, not a run through Los Cuervos country to a hangar up north.
-
-**Guns** (`Logistics.send_guns`)
-- **One armoury, one place.** It's `Arsenal.cache` (a stash), or the club.
-- **Gun sales** (to the Morettis, the Company, Los Cuervos) are trucked from the armoury to the buyer's meet and settled there, rifle by rifle against the buyer's appetite. The cash, and whatever the buyer didn't want, rides back.
-- **`move_armoury`** trucks the whole rack to a stash or the club, and the cache moves when it arrives. While it's on the road, nothing is in the rack for the squads.
-- **Losses.** A seized gun truck goes into the police armoury (`_seize_weapons`); a hijacked one arms Los Cuervos.
-
-## 23. The tutorial (optional)
-
-`tutorial.gd` is a layer over any mode, not a mode of its own. A new player learns the game they chose, and the story's pacing does the rest.
-
-**Lessons**
-- Each lesson finishes on evidence that you did it:
-  - an event: `job_accepted`, `job_delivered` (with its good or the Company's flag), `cash_home`, `bulk_sale`, `island_shipment`;
-  - the state: airborne above 300 ft, a dealer on a corner, cash bags aboard, the transponder toggled;
-  - or a note from the seat's UI: the load planner opened, stepping out on foot, a talk opened.
-- The first lesson not yet done whose system is in the game is the one shown. So the list grows as the game does, and the panel counts only what can be taught now ("2/9").
-- In the story, a newly opened faction's lesson comes up when its chapter begins.
-- **Everything added since the first cut is taught too:** the phone, the starter car, the car radio, squad orders (Z/X/C/V), renown, the collectors, stash works, rounds, the arena (each waits for its system; `renown`, `rackets` and `races` are needs like `trade`). They finish on the thing itself: a menu opened (`menu_phone`, `menu_rackets`), the car entered, the radio on, the command succeeding (`field_order`, `stash_works`, `cash_round`/`goods_round`), a race run (`race_run`), a name of 40 points. A one-off tip says what to do with prisoners.
-- **The ending.** When the last lesson the game can teach is finished a closing card ("TUTORIAL COMPLETE - That's the tour") stays up 40 seconds (`Tutorial.GRADUATION_S`); new lessons appear later if more of the game opens up.
-
-**Tips.** Tips are one-off. They fire on the moment (wanted, fuel under a quarter, busted with a court, fog, storm, a payday the safe can't cover, a raid, a stopped truck, the connection) and stay on screen for 20 seconds.
-
-**Control and persistence**
-- F10 skips a lesson; SHIFT+F10 turns the tutorial off or on.
-- The lobby ticks the box for the first game only (`tutorial_seen` in `user://settings.cfg`).
-- Progress (lessons done, tips shown, on or off) is saved with the game.
-
-**The desks** (`DESK_LESSONS`)
-- **Their own lessons.** Every seat has its own, written in that desk's real keys:
-  - the boss: orders, K logistics, M buyers;
-  - the lieutenant: squads, raising them, W the hall, C the Family;
-  - the controller: launches, X raids, M sweeps, T the money, O RICO, L/P the airport and port, the prosecutor's keys;
-  - the chief: orders, the street;
-  - the patrol: squads, RICO;
-  - the co-pilot: the crew keys.
-- **Finishing.** A desk lesson finishes when that role's own command succeeds (`Session.command` tells the tutorial), so it works from a remote seat as well as a local one.
-- **Display.** The snapshot carries the seat's view, and the desk shows it over the map.
-- **Keys.** F10 and SHIFT+F10 go through the `tutorial` command, which every role may send.
-- **Saving.** Progress per role is saved with the game.
-
-## 24. What the street war costs
-
-The live-play simulator steps the war now (balance entry 29). It stands in for the police's cooling of the case with a tenth of `PoliceSystem.SUSPICION_DECAY`, since the war keeps them looking.
-
-**The first measurement.** The organisation's AI was a spendthrift:
-- It raised squads whenever it held $12k and bought rifles past $15k.
-- It paid eight soldiers whether or not it fielded a squad.
-- It hired a $2,000 lawyer for every corner dealer the war put in a cell.
-- The result: $26k after three hours against $58k without the war.
-
-**The guerrilla doctrine now applies to the money too:**
-- **Reserve.** $30k is kept before anything is spent on the war (`GroundWar.ORG_RESERVE`).
-- **Recruiting.** A squad at most every 30 minutes (`ORG_RECRUIT_S`), and only with no squad in the field or Los Cuervos outnumbering us.
-- **Soldiers.** Paid for the squads fielded plus one in reserve (`Payroll.needs`).
-- **Lawyers.** Only for the jailed who know a lot: the accountant, the contract pilots. Corner dealers talk a little more often as a result (0.7 flips a run).
-
-**Now:**
-- $50.0k against $62.5k over three hours: the war costs about a fifth.
-- Suspicion cools between the runs.
-- About 0.7 stash houses a run are burned.
-
-## 25. Renown (Mount & Blade's renown)
-
-How big your name is on the street. It is made of what the organisation does and is read off the event bus
-(`scripts/sim/renown.gd`; a session asks for it with `renown: true`, and the live game does):
-
-| Gains | | Losses (half of the same size) | |
-|---|---|---|---|
-| a load delivered | +3 | the pilot busted | -3 |
-| bales delivered | +2 | the pilot sentenced | -4 |
-| an island container through customs | +3 | a crash | -1.5 |
-| a raid foiled | +3 | a stash raided | -2 |
-| a jury lets the pilot walk | +6 | a truck hijacked / seized | -1.5 / -1 |
-| the case dropped from above | +4 | a flight hijacked | -1 |
-| a bulk sale | +1 to +5 by size | a boat seized | -1.5 |
-| the money home | +0.3 | one of our men takes the government's deal | -2 |
-
-It never goes below nothing. Five tiers (0 Nobody, 40 A name on the street, 120 Known, 300 Feared, 650 A legend); a
-tier going up is said ("RENOWN - Known. Better recruits (+6 skill), buyers pay +3.0%, and the task force cools 12%
-slower."). What a tier is worth:
-
-- the hiring hall: every candidate has +3 points of skill and +2 of loyalty a tier (no extra random draws: the
-  payroll's stream is the same, only the values shift);
-- the bulk buyers pay 1.5% more a tier;
-- the task force watches the famous: suspicion cools 6% slower a tier (`PoliceSystem.decay_mult`).
-
-The phone shows the tier and the score on its title line; a save keeps the score (`StrategicSave`). BALANCE entry
-(the list's "Renown"): a +0.5% to +3% effect on money, with the task force a little warmer, by design small.
-
-## 26. Veteran squads and the orders on the ground (Mount & Blade's troops and battle commands)
-
-**Experience** (`GroundWar.VETERANS`, `Squad.xp`). A fight a squad survives is worth 1, a fight it wins 2 (and
-breaking off from one is 1 for both). A squad that has lost half its men loses half its experience first: the
-good men are the ones who died. Four ranks:
-
-| Rank | Experience | Fire per man | Breaks at morale | Upkeep |
-|---|---|---|---|---|
-| Green | 0 | x1.00 | 0.30 | x1.00 |
-| Blooded | 4 | x1.07 | 0.26 | x1.25 |
-| Veteran | 10 | x1.14 | 0.22 | x1.50 |
-| Elite | 20 | x1.21 | 0.18 | x1.75 |
-
-A rank-up is said on the desk's message line ("S-2 is now veteran."), the desk's squad table shows the rank beside
-the men, and the save keeps the experience. Both sides learn: the rival's and the task force's squads rank up too.
-
-**Field orders.** On foot, with a ground war: **Z** hold, **X** come to me, **C** charge, **V** fall back. The order
-goes to the nearest squad of ours within 250 m (`GroundWar.field_order`; the command `field_order` is the pilot's,
-the boss's and the lieutenant's): *come* walks it to where you stand, *charge* sends it at the nearest rival or
-police squad it can see within 450 m of it (a hidden squad cannot be charged), *fall back* is the melt order (to
-cover, out of sight), *hold* stops it. A squad given an order is under a human's hand and the AI leaves it alone.
-
-## 27. The rackets: tribute, and the men we take (Mount & Blade's villages and prisoners)
-
-`scripts/sim/rackets.gd`, with a ground war and `rackets: true` (the live game); the phone's **The collectors**
-opens the menu, `rackets` is the boss's, the lieutenant's and the pilot's command.
-
-**Tribute.** Every 10 minutes the collectors go round the four markets (town, west, north, sea). A market in which
-the organisation holds more than half the street (`GroundWar.org_share`) pays `$160 x (share - 0.5) x 2`, so $160
-at full control, times the name you have (Renown's price multiple). Each market has terms, cycled with ENTER:
-
-| Terms | Pays | Costs |
-|---|---|---|
-| fair | the amount above | nothing |
-| squeeze | 2.2x | our hold there drops by 15% a round, and the case against us warms by 2 |
-| off | nothing | nothing |
-
-**Prisoners.** When one of our squads routs one of Los Cuervos', a third of what is left of it is taken (a squad of
-three or fewer gives nobody up). The menu's keys: **A** ransom them (Los Cuervos pay $350 a head, up to what cash
-they have; the men go back), **F** put them on the payroll (they come as soldiers: skill 0.3, loyalty 0.25, so a
-bad risk, at the street rate), **G** let them go (half a point of renown a man). Held men get away at one in eight
-every 10 minutes (a group under eight is guarded).
-
-The save keeps the terms, the prisoners and the total collected.
-
-## 28. Stash works (Mount & Blade's village improvements)
-
-`scripts/sim/stash_works.gd`. Two works at each live stash house, two levels each, bought from the safe in the
-logistics menu (the row "Build at the house in from"; the `stash_works` command is the boss's, the pilot's and the
-lieutenant's). The levels are kept on the stash (`works`), so a save keeps them and the stash net, the logistics view
-and the raid all read them where they stand.
-
-| Work | Level 1 | Level 2 | Does |
-|---|---|---|---|
-| Hidden vault | $2,500 | $6,000 | a raid carries off 35% less of what is inside, a level; the rest is spirited away to another house (cash straight to the safe) |
-| Guard post | $2,000 | $5,000 | traffic warms the house 20% less, and its heat cools 25% faster, a level |
-
-A burned house cannot be improved. `StashWorks.ENABLED` switches it off (every level then counts as 0).
-
-## 29. The arena (Mount & Blade's tournaments)
-
-`scripts/sim/races.gd`, `scripts/game/race_markers.gd`; the phone's **The track** lists the courses at the strip you
-are at (`race_enter` is the pilot's, the boss's and the lieutenant's command).
-
-| Course | Where | Gates | Par | Entry | Prize |
-|---|---|---|---|---|---|
-| Street race (the car) | a loop on the roads from the strip through the two nearest of the club and the stash houses and back (the nearer one alone if that would pass 10 km; 3 to 12 km in practice); needs a ground war | every 500 m, 24 m radius | length / 19 m/s | $70 | $700 |
-| Air circuit (the aircraft) | six gates 2.5 km from the strip, round and back to the first | 130 m radius, 180 m above the ground, 110 m tolerance up or down | length / 42 m/s | $140 | $1,400 |
-
-The first gate is the start: the clock begins when you cross it and the gates have to be taken in order (the next one
-is a glowing ring with a beam, the one after it a dim ring). A field of four rivals runs at par x 0.85 to 1.35 (their
-times come from a stream seeded by the session and the course, so the field is the same every time). Your place in
-the field is the prize: first the whole prize, second half, third a quarter, and renown +6 / +3 / +1. A course pays
-once an hour (after that it is for the glory). You are out, and the fee is gone, if you get out of the car mid-race,
-land from the circuit or take three times par. The save keeps what each course last paid and the winnings.
-`Races.ENABLED` switches it off.
-
-**The race chip and the book.** A chip on the HUD says where you are ("RACE  The Smuggler's Cove dash  gate 4/11  1:12.4
-par 4:42.0", or "take the start gate" before the clock runs). The track menu (the phone's *the track*) takes a bet on
-yourself: B cycles the stake ($0 / 100 / 200 / 300), N chooses a win (pays 3x the stake, the stake is not returned) or a
-place (top three, 1.5x). The stake is paid with the entry and is lost if you drop out. The book is only open on a race
-that is paying, a course that paid within the hour takes no bets, so betting cannot be a faster way to the same money.
-The save keeps the book's running total.
-
-## 30. Effects and lighting (the 2026-10-03 upgrade)
-
-**Fire** (`FX.burn`): three layers - an outer flame (Kenney `fire_01`), a white-hot core (`flame_04`) and embers that drift up
-(`spark_01`) - drawn additively at HDR brightness (the material's albedo is above 1, so the glow bloom catches it), a
-light that flickers (three beating sines, a phase of its own per fire) and a charred patch on the ground. The smoke is
-lit orange by the fire at its foot, then soot, then a thin grey veil: soft, so the flames show through it.
-
-**Blasts** (`FX.blast`): a one-frame white flash, a fast fireball and a slower rolling one, sparks, a dust ring flung along the
-ground, a shock ring racing out over it, a mushroom of smoke with a broader grey cap, debris, a scorch mark that stays
-45 s, and a light that spikes to 12 and fades over two seconds. Bullets that hit a wall or the ground throw sparks and dust
-(`FX.impact`). A blast nearby shakes the camera (`FX.shake_at`: up to 0.18 m of Camera3D offset, by size, distance and
-the 1.6 s after it).
-
-**Street lamps** (`StreetLights`): the town's lamp heads are glowing meshes, far too many to be lights, so a pool of
-OmniLights (5 on medium, 10 on high, none on low) follows the lamps within 90 m of the camera: warm sodium pools on the
-road and pavement at night.
-
-**The car's headlights**: two spot lights come on at night (the scene's night above 0.35) while you drive.
-
-## 31. Voice chat that works like a radio
-
-Push-to-talk voice between the people at the table (`scripts/net/voice_*.gd`, `radio_voice.gd`). **Hold ` to talk on your side's
-net; SHIFT + ` to the whole table** (rebindable in `user://voice.cfg`). It rides the host connection the seats already use: no new port.
-
-- **On the wire** (`VoiceCodec`): 8 kHz mono, 40 ms frames of 320 samples, mu-law (one byte a sample): 8 kB/s plus base64 in the
-  JSON line (about 11 kB/s per talker). `{t: voice, ch: net|all, s, d, end}` up; the host sends each listener
-  `{t: voice, from, id, role, ch, s, q, k, d, end}` with the quality they hear it at and what kind of hearing it is. The host drops
-  frames over 25 a second or a transmission over 30 s (a stuck key).
-- **Who hears whom** (`VoiceRouter`, on the host): the **net** is your side's seats (runners: pilot, co-pilot, boss, lieutenant,
-  spotter, boat; law: controller, chief, patrol, interceptor, cutter); the **table** is everyone, clear, always. On the net the
-  quality falls with distance and is zero past the VHF horizon or behind a hill (`RadioNet.can_hear`, the scanner's and DF
-  stations' own line-of-sight); the pilot and co-pilot are the aircraft (so altitude buys range), the desks are their
-  headquarters' masts, and seats with no place on the map (spotter, boat) are a flat 0.75.
-- **The other side listening in**: the law hears the runners' net once it owns **Intercept runner channels**, at 0.85 of the quality;
-  a runner hears the police net with the **scanner**, and it arrives **scrambled** when the task force has paid for encryption.
-  A runner transmission from the air is also a real runner transmission for DF: when the key comes up the DF stations take their
-  bearing (`Session.voice_transmitted`), a long call sharpening it like any other.
-- **The sound** (`RadioVoice`): a 300 Hz to 2.8 kHz band, a little crunch, hiss that grows as the signal weakens, dropouts at the edge
-  of range, a squelch click as a talker keys up and a burst of noise as they let go; a scrambled voice is spectrally inverted
-  (the rhythm of speech, none of the words). The effect slider in the settings runs from a clean voice to the full radio.
-- **Devices**: `VoiceChat` captures the microphone through a muted capture bus (project setting `audio/driver/enable_input`; the macOS build
-  declares the permission) and plays each talker through a generator; without a microphone it is a listener only. Settings
-  (microphone, key, volumes, effect strength, mutes) are in `user://voice.cfg`, never in a save.
-
-## 32. The multiplayer menu, the table and finding games
-
-**F4 in a game** (or the lobby's *Multiplayer* button) opens the multiplayer menu (`MultiplayerMenu`, opened by `Main.open_mp`), with three tabs:
-
-- **Games**: the games on your network (LAN discovery), double-click to join; or join by address with a seat and a name; and, when you
-  host, where your game is (the addresses a friend would type), whether it is **shown on the network**, and whether the table is **closed
-  to new players** (someone who held a seat can still come back).
-- **Table**: the roster (the host first, a dot for whoever is talking), **mute** anyone, **remove** anyone (the host: they are told, and cannot
-  rejoin this game), take a free seat or give yours back to the AI, and the table's chat (to everyone, or to your side).
-- **Voice**: voice chat on/off, the push-to-talk key (click, then press the key you want), the microphone, microphone and radio volumes, how
-  much radio is in your voice (0 clean ... 1 full), and a loop-back test with a level meter.
-
-**Finding games** (`LanDiscovery`): a hosting game (and the dedicated server) sends a small JSON beacon every two seconds by UDP broadcast to
-port 47801 (name, TCP port, mode, players, closed); the menu listens and forgets a game not heard from for 7 s. Joining still goes through the
-host's own port and seats: the beacon is only where the game is.
-
-**The host runs the table** (`HostServer`): `kick(id, ban)`, `locked`, `max_players` (16), `roster()`. Players are known to each other by a
-**public id** (a hash of their reconnect token; the token itself is only ever sent to its owner), which is what voice frames, mutes and kicks use.
-
-## 33. The waiting room: choosing roles before the game starts
-
-The lobby's **Host a multiplayer game** opens a **waiting room** instead of starting at once (`Room`, `RoomScreen`; `HostServer.start_room`).
-The host listens before the game exists; friends join (from the Multiplayer list, an address, or `--connect`) and see every seat by side
-(the runners, the task force) with who has it (a player or the AI). Each player takes one seat or gives it back, ticks **ready**, and chats;
-the host sees who is not ready and presses **Start the game** when everyone has a seat and is ready. Seats nobody took are the AI's.
-
-- **The host takes a seat too**: the pilot's (3D, the default) or a desk (a 2D station: `HostDesk` runs the session, serves the guests, and
-  the AI flies the aircraft until a guest takes the pilot's seat). The police pilot's 3D seat is for guests.
-- **Rules**: a co-op table is the runners only (the law is the AI); a task-force game has no pilot; one player a seat and one seat a
-  player; changing seat un-readies a guest; the host can remove a player or close the table.
-- **On the wire**: `welcome` carries `phase: room`; guests send `room_claim`, `room_release`, `ready`, `say`; the host broadcasts `room`
-  (mode, players, seats, whether it can start) when it changes, and `start {role}` when the game begins (`HostServer.begin` hands every
-  chosen seat to the session, and the guests go straight into theirs). A guest who joins a game that is already running gets the old seat
-  picker, so joining mid-game still works.
-
-
-## 34. The analyst: the desk every tip crosses
-
-The task force's analyst seat (`scripts/sim/analyst.gd`, `Roles.ANALYST`, behind `Analyst.ENABLED`). Without a player in it
-nothing changes: a tip goes straight to dispatch. With one, tips wait on the desk first (`PoliceSystem.add_tip` hands them
-to `Analyst.intake`; `release_tip` is what dispatch does with one):
-
-- **What arrives**: an informant's word, an undercover agent's leak, the fuel desk's note that a tail number bought ferry
-  fuel, an anonymous caller, and a double agent's plant. The sim knows which are real (`truth`); the desk does not.
-- **Verify** (V, 45 s): checks the source and the tail number; the verdict, *sound* or *doubtful*, is right 85% of the time.
-- **Forward** (F): to dispatch, where a helicopter goes up for it. A false lead costs the task force $1,000 in funds.
-- **Bin** (X): a real lead thrown away is a load that got through (counted as a miss).
-- **Stale**: a tip nobody touches goes to dispatch as it is after 150 s, and a desk holds at most 12 (the oldest is
-  forwarded). Handing the seat back forwards everything waiting.
-
-The seat is in the waiting room, the seat picker and the police-mode seat list like the others. The desk's dice are their own
-stream (seed + 909). Not saved: the desk is empty after a load.
-
-
-## 35. The undercover agent: a beacon on the parked aircraft
-
-The task force's agent seat (`scripts/sim/undercover.gd`, `Roles.UNDERCOVER`, behind `Undercover.ENABLED`). The AI chief never
-does this (the law upgrade "undercover" still leaks destinations by itself); it is a seat for a player.
-
-- **Plant** (P): only while the aircraft is parked at a strip. It works 75% of the time, 50% when a spotter of the runners'
-  watches that strip. A live beacon (25 minutes) puts the aircraft on the controller's picture wherever it flies, with a
-  25 m error, radar or no radar, transponder or none (`PoliceSystem.tick` reports it as source `BCN`).
-- **Fail** and the agent is burned: half the cover goes, the crew is told a stranger was seen at the tail, and the agent
-  lies low for 10 minutes. Cover regrows one point in 30 s; at zero the agent is blown for 20 minutes.
-- **The counter**: a runner with the bug sweep upgrade finds a fresh beacon half the time (the agent then lies low for 5
-  minutes). The seat's dice are their own stream (seed + 919).
-
-
-## 36. The fixer: the business between flights
-
-The organisation's business desk (`Roles.FIXER`, a runner-side seat open at a co-op table, in the waiting room and in the seat
-list). The pilot flies; the fixer does everything the pilot does on the ground that is not flying, from a 2D desk:
-
-- **Jobs** (the table): the board at the field the aircraft is parked at and the jobs in hand; ENTER books or drops one.
-- **Gear and spotters**: G the scanner, H the radar detector, F the ferry tank, S a spotter at this strip.
-- **The people**: W the hiring hall (Manny Ortega), C the Family (Sal Moretti's offers, Y / N / P at the desk), L the pilot's
-  lawyer, M the buyers (Benny Ruiz), K logistics (stock, cash and trucks).
-- **The picture**: the money, the heat (suspicion and wanted stars), the payroll and payday, the spotters watching, the
-  pilot's case, the Family's offers, the street and the island.
-
-The permission list is the pilot's business commands without the flying ones (no kick, pump, autopilot, transponder, squawk,
-turn around or call the boat). Nothing new in the sim: it is a desk over the commands that were already there, so the AI
-needs no stand-in (the pilot, or the AI boss, does the same things when nobody sits here).
-
-
-## 37. The docks (Kenney's Pirate Kit)
-
-`scripts/render/port_dress.gd` (`PortDress`, behind `PortDress.ENABLED`, off on the lowest graphics preset and on the other
-maps) puts wooden piers into San Telmo's harbour: along the basin's head, one every 170 m, six deck tiles running out from the
-water's edge, with crates, barrels and chests stacked at the foot and a rowboat or a small ship moored alongside. The positions
-come from the map and a hash of the pier's number (no random stream), so they are the same every time. Scenery only: nothing
-is solid. ![the docks](img/port-docks.png)
-
-
-## 38. Downtown landmarks (Quaternius's Downtown City MegaKit)
-
-`scripts/render/downtown_dress.gd` (`DowntownDress`, behind `DowntownDress.ENABLED`; off on the lowest preset) stands the kit's three
-finished brick-and-glass buildings (large, medium, small) on the footprints of the twelve tallest towers nearest the city's
-centre, instead of the Kenney lot models. The kit's buildings are real-scale and carry their own textured materials, so each is
-its own node, drawn within `CityDress`'s range; beyond it the tower's shader box is drawn as before. Footprints, heights and
-colliders are unchanged. The pack in the repository is cut down to those three buildings and their textures.
-![downtown landmarks](img/downtown-landmarks.png)
-
-
-## 39. Wear, repairs and the mechanic
-
-`scripts/sim/airframe.gd` (`Airframe`, behind `Airframe.ENABLED`; asked for with the session option `airframe: true`, which the
-game's own start sets) gives each aircraft you own an **engine** and an **airframe** condition, 0 to 100, on their own RNG
-stream (seed + 929).
-
-- **What wears.** The engine wears 0.12 points a minute in the air (about 7 an hour). The airframe wears on touchdowns harder
-  than 60 % of the gear's limit (up to 14 points at the limit), on gravel, grass, dirt and sand strips (0.4 to 0.8 a landing),
-  and in a storm (0.1 a minute).
-- **What it does.** Engine under 60: it runs rough and gives less power, down to 80 % at zero (the HUD says ENGINE ROUGH).
-  Engine under 30: it may quit in the air (up to 5 % a minute at zero) for 90 seconds, the throttle forced to idle, and then
-  catches again (ENGINE OUT). Airframe under 50: the gear collapses at a softer landing, down to 60 % of the limit
-  (AIRFRAME WEAK).
-- **Repairs** happen on the ground, over time and for money by the point (engine $30, airframe $20 at a hangar). A hangar (a
-  field with a shop, or a hub or regional strip) does 12 points a minute; a bush strip patches at 5 a minute at 1.5x the
-  price; a **mechanic** (a human in `Roles.MECHANIC`) does 24 a minute, anywhere, at 0.6x the price. The aircraft cannot take
-  off while the work is running (the cowling is off, the throttle held at idle); it stops by itself when the work is done, the
-  money runs out or the aircraft is moved. From the hangar menu (H) the service row starts and stops the work on both.
-- **What you see.** The pilot and everyone else read good / worn / poor / failing. The mechanic reads the numbers, the
-  chance it quits a minute, the power left and what the gear will take (his I key says it aloud), and haggles the farmer's drum
-  fuel 40 % cheaper at bush strips.
-- **The AI ground crew**: a bot (`AutoRunner`) has a worn aircraft (under 70) serviced at a hangar before it flies, and patched
-  at a bush strip only when it is under 40. The save keeps each aircraft's condition.
-
-The mechanic's desk: ↑ ↓ choose the part, Enter repairs it, B both, S stops the work, I inspects, F adds 10 % fuel.
-
-
-## 40. The Hotel Cielo: the Family's casino on Isla Soberana
-
-`scripts/sim/casino.gd` (`Casino`; behind `Casino.ENABLED` and `Casino.REVOLUTION`; `casino: true` in the session options, or the
-story chapter *The House*; needs the Family and the island). The Cielo is a business you do through a conversation with its
-manager, Lenny Vance (`dialogue/casino.dialogue`): Shift+K in the cockpit, X at the boss's, lieutenant's, co-pilot's and fixer's
-desks, or the phone. (Its physical form is section 41.) Its own RNG stream is seed + 939.
-
-- **The house** takes about $16,000 gross an hour, more with tourists (the island's weather and politics: a hurricane cuts it to
-  40 %, a boatlift lifts it 30 %, a headliner on the bill 50 %), less when the Lucky Palm leans on it. The General skims 6 to 14 %
-  (the less he likes you, the more) and the Family 12 %; the rest belongs to the owners. You buy a **stake** from the Family in
-  tenths, $9,000 a tenth, up to 40 %; your share builds up in the house's account to **collect**.
-- **The cage** is chips in, clean cheques out: street cash from any stash goes in and comes out in the safe minus the Family's 8 %
-  and the General's skim (14 to 22 % in all), up to $8,000 an hour. Besides the convenience (no truck to be stopped) it cleans the
-  money trail: the runner's case cools 1.5 points a thousand. Every dollar warms the house's **heat** (0.8 a thousand, cooling 0.25 a
-  minute), and heat becomes the task force's **case** (0.2 a minute at full heat).
-- **The General** can be paid ($3,000): his regard +8, the island's unrest -10, the heat -5.
-- **The Lucky Palm** (Dante Varga) leans on the house until bought out ($20,000, six hours of peace and +10 % take); at full pressure
-  it burns the kitchens: the house is dark for half an hour and 10 % of the account goes.
-- **The task force** (the controller's or chief's F key: `dialogue/casino_file.dialogue`): a wiretap in the counting room ($3,000,
-  +20 case), an audit (the commission has the cage's books for 30 minutes, +10 case, +25 if cash has gone through it), a raid
-  ($5,000, once the case is 50 %: the house is dark 30 minutes, 40 % of the owners' money forfeited to the task force, the Family's
-  respect -8). With no human at the desk the AI chief does it by itself when the heat passes 55. Trace-the-money finds the cage.
-- **The revolution** (Havana, 1959): the island's unrest rises 0.15 a minute, faster with the heat, a purge, a hurricane or a
-  shortage, slower the more the General likes you. At 100 the government falls (`Island.purge`, the island closed for an hour):
-  you have 20 minutes to **evacuate** with 70 % of your account and 40 % of what the stake would fetch, or the house falls with your
-  share in it (the Family's respect -20). Either way the house is seized and the island's new men are cool to you.
-- **In the story**, chapter 8 *The House* (1984) opens it: buy a stake, put $15,000 of street cash through the cage, and when both are
-  done the colonels meet and the uprising is set ten minutes out; get out alive and the chapter ends. If the Family is gone or the
-  house is seized first, the chapter does not strand you. Saves from before the chapter was added shift their chapter number.
-
-
-## 41. The tables
-
-`scripts/sim/casino_games.gd` (`CasinoGames`) holds the games a 1950s Havana casino dealt, with their real rules and the edge the real
-house had; `Casino.play` settles each hand against the player's money (the command `casino_play`, the pilot's alone, and only at
-the Hotel Cielo on Isla Soberana with the house open). Limits are $5 to $500 a bet. What the house wins from the player's losses is
-shared with our stake like the rest of the take (our tenth of the loss after the General's skim and the Family's cut goes into the
-account). The dice and cards come from their own stream (seed + 941) so a session replays.
-
-| Game | Rules | House edge (checked in `tests/test_casino_games.gd`) |
-|---|---|---|
-| Roulette | European, a single zero. Straight 35, split 17, street 11, corner 8, six line 5, dozen and column 2, red / black / even / odd / low / high 1 to 1 | 2.70 %, on every bet (37 numbers, 36 paid) |
-| Blackjack | Two decks, reshuffled at 26 cards; the dealer stands on every 17, looks under an ace or a ten; blackjack pays 3 to 2; double down on any two cards; no splitting or surrender. The table gives basic-strategy advice | about 0.7 % to 1 % with basic strategy |
-| Craps | Pass and don't pass (bar 12), free odds up to three times the line bet paid at true odds (6 to 5 on the 6 and 8, 3 to 2 on the 5 and 9, 2 to 1 on the 4 and 10; laid at the reverse) | pass 1.41 %, don't pass 1.36 % (1.4 % and 0.8 % with full odds) |
-| Baccarat | Punto banco, eight decks, the full third-card tableau; banker pays 0.95 to 1 (a 5 % commission), player 1 to 1, tie 8 to 1 | banker 1.06 %, player 1.24 %, tie 14.4 % |
-| Slot machines | Three reels of twenty stops (a seven, two bars, three each of bells, plums, oranges, lemons, cherries and two blanks); three sevens pay 450 for 1; cherries from the first reel pay 2 or 5 | 8.1 % (a return of 91.9 %, counted over all 8,000 stops) |
-
-
-## 42. The Hotel Cielo, walkable
-
-`scripts/render/casino_building.gd` (`CasinoBuilding`, behind `ENABLED`) builds the casino as a place, from `Buildings.Kit` boxes and
-cylinders, Kenney furniture and `Label3D` signs, in `IslandRender.build`. The models are 1950s Havana's: the Nacional's grand lobby, the
-Capri's compact floor, the Riviera's slab tower and rooftop sign, the Tropicana's open-air cabaret under concrete arches. It stands on the
-flat of the airfield, 75 m from the runway's centreline and 150 m along it (`site()`), its front (local -z) to the runway:
-
-| Part | What |
-|---|---|
-| Forecourt | pavement, a drive, a porte-cochere with a neon edge, a fountain, palms, the vertical blade sign (CIELO) |
-| Block | 68 x 46 m, 8 m ceiling; a glass curtain wall on mullions, pink stucco sides, a roof slab; a ring of neon in the ceiling |
-| Tower | eleven floors of ribbon windows over the back half, a penthouse, the HOTEL CIELO sign on the roof |
-| Lobby | reception, a bar with a back bar, sofas, palms; a screen wall with a wide opening onto the floor |
-| Mezzanine | the manager's office over the lobby (stairs, glass onto the floor, desk, safe): `casino_office` |
-| Floor | a red carpet round the pit; 3 roulette wheels, 4 blackjack tables, 2 craps tables, 5 banks of 8 slot machines; dealers and stools |
-| Cage | a counter behind a brass grille, three cashiers, a vault door: `casino_cage` |
-| Salon | a walled baccarat room with a red carpet and one oval table: `casino_baccarat` |
-| Courtyard | the Salon Bajo las Estrellas: a stage, round tables with candles, a dance floor, four concrete arches |
-
-The interaction points (`Kit.interact`) are `casino_roulette`, `casino_blackjack`, `casino_craps`, `casino_baccarat`, `casino_slots`,
-`casino_cage` and `casino_office`. `PilotApp._on_use` sends the tables to `CasinoMenu` (`scripts/ui/casino_menu.gd`: a `GameMenu` whose
-moves are `casino_play` commands on the pilot's seat, so the rules, the odds and the money are `Casino.play`'s) and the cage and the
-office to the manager's dialogue (`open_talk("casino")`, standing still). `Casino.at_tables()` still decides whether a seat is free:
-parked on the island with the house open. `PilotApp._casino_state` calls `CasinoBuilding.set_open` every fifteen frames: while the house
-trades the lamps and signs are lit; when it is shut, in revolt or seized (or the session has no casino) they go dark and a board across
-the door becomes solid.
-
-The island had no ground for the walker (`Walker.ground_body` is the mainland's height field, which stops at the edge of the map), so
-`CasinoBuilding.ground` lays one: a `HeightMapShape3D` at 5 m over the strip and 150 m beyond it, sampled from `World.ground` (the
-island's own heights and the runway's elevation). `IslandRender.build` adds it and the hotel together.
-
-Menus now pass any letter that is not J, L or H (which still toggle the job board, load planner and hangar) through to the open menu as
-`key("s")` and the like; the race menu's B and N had only worked by clicking their hints before.
-
-**The people** (`scripts/render/casino_crowd.gd`, `CasinoCrowd`): the staff (dealers, cashiers, the bartender, the receptionist, the
-bandsmen: about 20 posts recorded by `CasinoBuilding._figure`) sway at their posts with their arms working, and sixteen patrons stroll
-the aisles. The patrons walk a graph of open lanes (`NODES` and `EDGES`: the lobby, the gate to the floor, the lanes between the tables
-and the slot banks, the salon, the cage, the way out to the courtyard, the courtyard's lanes), pick a random node, take the
-breadth-first route, stand there four to fourteen seconds looking at the table or the stage, and go on. They are scenery: no
-colliders, no sim state, their own `RandomNumberGenerator`; the lights-out switch hides them.
-
-**The sound** (`Soundscape._casino_sounds`, synthesised like the rest): while the house trades, a 3D loop of the band in the
-courtyard (`casino_band`: a mambo at 124 BPM, Dm7 G7 Cmaj7 A7, tumbao bass, piano montuno, 3-2 clave, maracas) and a murmur on the floor
-(`casino_room`), both with short ranges (14 and 10 m units) so they are heard in and around the hotel; and a sound for every hand at
-a table: chips, or a rising arpeggio and coins for a slot win (a longer one from $2,000).
-
-**The felt is drawn** (`CasinoMenu.card_node`, `die_node`, `reel_node`, `pocket_node`, `_fill_stage`): the dealer's and your cards (the dealer's hole card face down
-until the hand is played), baccarat's two hands (a nought is shown as a ten), the two dice, the three reels and the roulette ball's pocket are pictures on the
-green, rebuilt on every refresh. The shoe deals ranks only, so a card's suit is dressed on (`suit_of`: the same card in the same place is always the same suit).
-
-
-## 43. The car dealership
-
-`scripts/sim/dealership.gd` (`Dealership`, `Session.dealer`, behind `ENABLED` and the `dealership` system; the story opens it with logistics)
-sells vehicles for the organisation's money. Nothing in it draws a random number except the checkpoint roll below, which has its own
-stream (seed + 947).
-
-| Use | Vehicles | What they do |
-|---|---|---|
-| drive | Sunrise Hatch $4,000, Harbor Coupe $6,500, Valley SUV $12,000, Marlin GT $21,000, Palmetto Limited $30,000 | the car the pilot drives on the ground: top road speed 23 to 34 m/s, cross-country 10 to 17, acceleration 8 to 13. The first car bought is the active one; `use_vehicle` switches (0 is the starter car). `Car.apply_spec` gives the car its numbers and its Kenney model; `PilotApp._dealer_sync` swaps the parked car when `Dealership.rev` changes |
-| haul | Courier Van $14,000, Steel Box Truck $24,000, Midnight Van $38,000, Ambulance Conversion $55,000, Armoured Truck $70,000 | the stash trucks. The fleet's best speed is the trucks' speed (`StashNet.haul_ms`, 9.5 to 15 m/s, in place of `TRUCK_MS` once a truck is owned), its best cover (`risk_mult`, up to 45% off the roadblock odds) and its best steel (`armour`, up to 60%: the chance a truck drives through the roadblock that would have seized it). A checkpoint or patrol that pulls a truck over (`GroundWar.truck_contacts`) is beaten by `Dealership.gets_past`, rolled once for each truck and stop |
-
-Owning costs insurance by the hour ($40 a car, $90 a truck); selling returns 55% of the price; ten vehicles at most. A car must be bought parked
-(it is delivered to the aircraft); a truck can be bought from anywhere.
-
-**The AI.** `Dealership.auto` lets the AI manage the fleet: every 15 minutes it buys the truck with the best gain in speed, cover and steel per
-$10,000 that it can pay for with $40,000 to spare, while one would improve the fleet. `AutoRunner` (the organisation's bot) switches it on; a
-player can toggle it with `fleet_auto` (the dealer screen's A key). It never buys cars for the pilot.
-
-**Commands** (`buy_vehicle`, `sell_vehicle`, `use_vehicle`, `fleet_auto`): the pilot's, and the boss's and the fixer's for the trucks. The pilot's
-screen is `DealerMenu` (the phone's "The dealership", or E at a showroom: `Buildings.showroom`, a glass-fronted dealer with four cars on the lot,
-at every hub and regional airfield). The boss's and fixer's desks reach the same lot by phone: **V** opens `dialogue/dealer.dialogue` (Marty Quintero, through
-`Talk.State`'s `dl_*` fields and the snapshot's `dealer` view, `Dealership.view_lite`): buy any car or truck, sell the newest, toggle the AI.
-
-Saved by `StrategicSave` (owned, active, spent, auto). `tests/test_dealership.gd` has 13 tests. BALANCE entry 48 (arithmetic only: the
-balance runs build no dealership).
-
-Also in this change: the flying tutorial is four chapters (see section 6) and the former chapters 5 to 8 are cut. Its player-facing geography is now Costa Brava.
-
-
-## 44. The Sunrise Collective: acid for grass
-
-`scripts/sim/psychedelics.gd` (`Psychedelics`, `Session.psych`, behind `ENABLED` and the `psychedelics` system; the story's 1980 chapter,
-*The Connection*, opens it with logistics and the dealership; needs the trade). **Fiction:** Nico Cozz and the Sunrise Collective are invented;
-they are a commune of chemists in the hills of the coast who make blotter acid and run the festival and campus circuit, in the spirit of the
-period's underground, not a portrait of any real person or group. Nothing in the game says how acid is made: the lab is a number that makes sheets.
-
-| Part | What |
-|---|---|
-| The barter | `barter(stash, lb)`: a van calls at a stash and takes grass; we get `lb / 100 x rate()` sheets (a sheet is a hundred doses). `rate()` is 2.4 per hundredweight, up to 25% better with trust, times the grass market over the circuit's mood, clamped to 0.6x to 1.6x |
-| The lab | makes 30 sheets an hour up to a shelf of 90; the Collective takes only 400 lb of grass a half hour |
-| The circuit | `sell(sheets)`: $325 a sheet x 0.8 x the scene, up to 40 sheets a half hour; each sheet adds 0.12 to the task force's suspicion |
-| The scene | a festival (x1.35), a campus crackdown (x0.7), a heatwave of concerts (x1.15), a bad batch on the street (x0.8): a 12% chance each ten minutes, own stream seed + 953 |
-| The raid | a 1.2% ten-minute chance plus 4% of the case's suspicion: the lab goes to ground for three hours, its stock is lost, trust falls 15; a van at a stash door adds 0.4 heat a hundredweight |
-| The AI | `auto` (the organisation's bot switches it on): trades the fullest stash's grass above 200 lb every half hour and sells what it holds |
-
-The talk is `dialogue/psych.dialogue` through `Talk.State`'s `ps_*` fields and the snapshot's `psych` view: **Shift+C** in the cockpit, **J** at the
-boss's and fixer's desks, the phone's "The Sunrise Collective". Commands: `acid_barter`, `acid_sell`, `acid_auto` (the pilot, the boss and the fixer). Saved by `StrategicSave`. `tests/test_psychedelics.gd` has 13 tests; BALANCE entry 49 (arithmetic only).
-
-Acid is a good in the logistics network: the sheets sit in the stash houses (`Logistics.goods()`), trucks carry them from stash to stash, a raid on a stash takes them
-and makes the street scarcer for a while (`RAID_SCARCITY`, decaying over two hours), and the street price walks (`WALK_VOL`) around the scene's mood. A sale leaves the
-money at the stash for a truck to bring home. Not yet: a lab on the map and a trip's effect on the screen.
-
-
-## 45. The dedicated server
-
-`DedicatedServer` (`scripts/net/dedicated_server.gd`, run by `scripts/net/dedicated.gd`) is a headless host: the same `HostServer` (protocol v3) with
-nobody in the host's seat (`HostServer.dedicated`), the pilot's seat released to the AI, and `AutoRunner` flying the aircraft until a player takes it
-(the hand-over `HostDesk` and `PilotApp` make). A fixed 30 Hz loop (`step`, five steps at most per frame) runs `pump`, the session and
-`publish`. Options are flags or `SKYRUNNER_*` environment variables (`parse`). What a server adds: a **password** (`HostServer.password`, the hello's `password`
-field; `NetClient.password`; `--password` and `password@host:port` on the client), a **status probe** (`{"t":"status"}` before any hello answers with the
-name, mode, player count, whether a password is set and the clock, and hangs up), a **log** (`log_fn`: joins, leaves, claims, refusals), **saves** (every
-`--autosave` seconds, when the last player leaves, and on a clean stop; the save is picked up on the next start, the story included), a **stop file**
-(Godot ignores SIGTERM: touch the file and the server saves and exits), and `--max-players`. `deploy/` has the Dockerfile and its SIGTERM-to-stop-file entrypoint,
-a compose file, a systemd unit and the Google Compute Engine scripts; `tools/server_probe.gd` is the probe (and `--join ROLE` takes a seat). CI runs the server from source
-and builds and runs the image. Operating it is `docs/SERVER.md`.
-
-An hour of server time takes about 100 s of one core and 140 MB. Soaking it found a bug in the AI pilot: `AutoRunner` accepted a load that did not fit even
-after the loadmaster re-planned it and then waited for the loading to finish for ever; it now puts the job back and never picks it again (`skipped`).
-
-## 46. Jobs and what they cost you
-
-Every flight starts as a job (`jobs.gd`, `Job.kind`: passenger, cargo, medical, contraband, fugitive or
-airdrop). Most come from a strip's board; other systems post their own. This table pulls together what each one
-asks of the pilot (from Codex's 8 October audit, PR #246, checked against the code).
-
-| Work | Where it comes from | What it asks / risks |
-|---|---|---|
-| Charters | Any board: 1–3 passengers, often with luggage; 30% are VIPs paying 1.4× | Seats. A VIP wants the bank under 45° and a soft landing. |
-| Cargo | Any board: mail, tools, fuel drums, generators, food, glass, lab samples | Weight, station limits and CG. Glass and samples are fragile and pay 1.3×. |
-| Medical | Boards, to bush strips | A deadline (about 0.55 min/km + 2.5 min, at least 4 min) and a fragile kit |
-| Contraband | Shady/bush boards once contraband is open (`No questions asked`) | Radar flags you, police chase, suspicion and informants (§3–5) |
-| Fugitive | Shady/bush boards | A wanted passenger: police are already looking |
-| Airdrops | Shady/bush boards with airdrops open | Bales kicked to a boat at sea; paid by bales landed (§5.3) |
-| Fuel caches | Hub/regional boards with ferry gear open | Drums to a bush strip; they stock a cache for your own runs |
-| Own stock | Trade purchases (§19), stash runs (§22) | Cash up front; the product sells at the destination |
-| Gun runs, the Company | Arsenal (§11), the Agency (§13) | Stock versus sale purpose, unlocks, political exposure |
-| Island work | Isla Soberana (§15): product, mules, defectors | Customs, weather, interception |
-
-**Grading on delivery** (`Session._grade`); the factors multiply:
-
-| Condition | Effect on pay |
-|---|---|
-| Contraband with market realism | Paid at the street price the day it lands (shown as ±%) |
-| Late (deadline passed) | ×0.4 |
-| Fragile cargo, touchdown over 400 fpm | ×0.5 (breakage) |
-| VIP, bank over 45° or touchdown over 300 fpm | ×0.7 |
-| Last touchdown under 150 fpm | ×1.1 (smooth landing bonus) |
-
-**Dropping a job** needs the aircraft parked. It unloads the job's cargo and cancels its boat, and pays nothing.
-At the job's origin it goes back on the board; anywhere else it is dumped. Accepting re-checks location, parking,
-permission, capacity and payment, but not whether the load plan is safe: the loading screen's weight and balance is
-the pilot's job (§5.1).
-
-## 47. Turf territories, tactical choices and threatened routes
-
-`Territories` gives each `MapLayout` a stable region ID and local districts. Costa Brava's region is `costa-brava` and its first ten districts are San Telmo Centro, Barrio Chino, the Docks, Airport Coast, Rio Negro Estuary, Valle Verde, La Selva, Sierra del Aguila, Old Quarry and Smuggler's Cove. Boundaries use the authored city/terrain layout; uncovered positions resolve to the nearest district. Classic and generated maps use a four-area fallback based on their existing market centres. A future playable map can supply its own `region_id` and district records.
-
-The key is `<region_id>/<district_id>`. District presence decays and accumulates from squads; fights add local influence. The existing `control`, `market_at`, `org_share`, `rival_share`, economy markets and rackets policies remain the broad-market contract. Older saves without districts seed them from their saved market totals; saves with districts restore them only into the matching region. The war snapshot includes district names, parent markets, centres and faction control.
-
-NPC commit/withdraw decisions use each squad's range-adjusted `fire_at`, cover, morale and nearby friendly support. Territory patrol targets score local opposition and strategic tags. Explicit human orders remain in charge. A truck with an active one-leg delivery checks its remaining route every 30 seconds; if a materially lower-risk path exists through the faction-aware road graph, its driver changes route without losing position or progress. The organization focuses escorts on valuable or exposed loads. Police and rival route choices read the truck's current route. These choices preserve seizure and combat outcome rules.
-
-The new behavior is gated by `Territories.ENABLED`; it draws no additional randomness. Initial verification: Godot 4.7.2 import passed, the full suite passed 898/898, Costa Brava smoke printed `SMOKE OK`, and the 200-seed live war balance run completed. The suite emitted analyst string-formatting and freed-lambda-capture errors alongside its zero-failure summary; investigate those logs before treating the run as fully clean. Not yet: a 2D territory overlay, balance calibration for district control, and authoring another distinct playable region.
-
-## 48. The case file: heat you can see and answer (design, 18 Oct 2026; not built)
-
-Owner, 18 Oct: make heat and the law interactive. Step 1 of the agreed order (then the police search and the ladder down,
-then patterns, escalation, corruption and ground chases). Today most heat is a hidden number that bites: a stash at heat 55
-or more is raided on a 30% roll each minute (`session_rules.gd`, AI task force), and the pilot's case is live suspicion only.
-
-**Four kinds of heat, each cooling at its own rate.**
-
-| Heat | Where it lives | Rises with | Cools |
-|---|---|---|---|
-| Pilot | `PoliceSystem.Case` (exists: suspicion, wanted) plus a new slow `evidence` score | sightings, a lost squawk, seized trucks, busts | evidence slowly (hours); suspicion as today |
-| Aircraft | new, per owned tail number | being seen dark or wanted in it | parked in a hangar; faster after a repaint |
-| Stash | `StashNet` stash `heat` (exists; known at 30) | deliveries, seizures | as today (1.5 a minute, the stash works' rate) |
-| District | new, per market or territory | seizures, fights, raids there | slowly, faster with no incidents |
-
-A hot aircraft makes the pilot's suspicion rise faster when it is seen (the tail number is known); a hot district makes
-patrols and checkpoints more likely there. Each kind is a separate dial, so the player can park a hot aircraft and fly a
-clean one, or empty a hot stash.
-
-**Investigations in stages.** Each target the task force pursues (a stash, the pilot) gets a case file that moves through
-stages on timers instead of a hidden roll:
-
-1. **Lead:** a stash becomes known (heat 30, as today) or the pilot's evidence passes a first mark.
-2. **Surveillance:** after a few minutes with heat still high, a stakeout (a van across the street, a plane on the ramp).
-3. **Warrant:** after the surveillance time, if heat is still above the line, a warrant with a countdown.
-4. **Action:** when the countdown ends, the raid or the arrest at the next landing at a watched strip.
-
-If heat falls below the line during surveillance, the case is dropped. A raid on an empty stash finds nothing, cools it,
-and voids the warrant.
-
-**Counter-moves at each stage.**
-- **Move the product:** empty the stash before the warrant runs out (the logistics trucks already do this).
-- **Lie low:** no deliveries, so heat decays and the case can drop at surveillance.
-- **The lawyer:** challenge a warrant for a fee; a chance to void it, better with a better lawyer (the court's tiers).
-- **A warning:** the lookout (exists) or a cop on the payroll shows the stage and the countdown; without one the player
-  sees only what a phone call or the scanner gives.
-- **A decoy:** a decoy run draws the surveillance away for a while.
-
-**What the player sees.** A **Heat** app on the phone (Codex): one row per case with the target, the stage, what the
-police have, and the time to the next stage when a warning source knows it; the four heat dials. Messages at each stage
-change ("A van has been parked across from the Quarry shed for an hour.").
-
-**Rules.** Behind a static switch `Investigation.ENABLED` registered in `Switches.PARITY` (off: the old raid roll).
-Every random draw (warrant challenge, stakeout noticed) on its own stream, `seed + 163`. Saved in `StrategicSave` (case
-stage, timers, aircraft and district heat). Tests first: a stash at heat moves Lead to Surveillance to Warrant to Raid on
-time; lying low drops a case at surveillance; emptying the stash makes the raid find nothing; a lawyer can void a warrant;
-the switch off keeps the old behaviour. Raids become predictable, so stash losses should fall: a strategic and tactical
-balance run and a BALANCE entry go with it.
-
-**Not in step 1:** the police search pattern, scanner chatter and the ladder down (step 2); pattern detection,
-escalation by agency, corruption and ground chases (step 3).
-
-
-## 49. Buyers' orders: deadlines that follow demand (owner, 18 October 2026)
-
-`scripts/sim/orders.gd`, held by `Trade` (`trade.orders`), on its own RNG stream (`seed + 167`), behind `Orders.ENABLED`. A buyer
-who is open for business (the Morettis, the Company, Los Cuervos for guns) asks for a quantity of a good by a time, and pays a
-premium on top of his quote if it arrives in time.
-
-- **The deadline follows the street's demand.** Where demand over supply in the buyer's market is 1.25 or more it is a **rush**:
-  10 to 20 minutes and 25 to 40% on top. Otherwise it is **a night's work**: 45 to 75 minutes and 10 to 20% on top. Orders are
-  likelier for the goods the street is hungriest for.
-- **What the player does.** Rings in as a message and an `order_posted` event (about one every 15 minutes, at most two open, a
-  third to two thirds of the buyer's appetite). Any bulk sale to that buyer of that good that **settles** before the deadline
-  fills it, whether by a truck reaching the meet or a direct sale, so the lead time of the logistics is what the player races.
-  A part delivery pays the premium on the part and leaves the rest open.
-- **The stakes.** A filled order raises the crew's standing (+3); a missed one costs it (-4, scaled by how little arrived). Until the
-  per-crew trust table of D-11 exists the standing is what each crew already has: the Family's respect, the Company's trust.
-- **The market board.** `Trade.view("org").orders.board` gives, for each hot good in each market, the price against normal, the
-  demand over supply, and a trend (up, down, flat against five minutes before); `.orders.open` the open orders with the time
-  left, `.orders.recent` the last few results. The screens (the board on the phone, the order call) are the UX lane.
-- **Saved** in the strategic save (`StrategicSave.ORDERS`); the posting stream is not saved, like Trade's own.
-- **Balance.** An order adds income on a sold lot, so it needs a BALANCE entry (a `cli.gd -- report` run with trade on); the
-  tests prove the rules, not the economics.
+# Skyrunner design: runners, kickers and the task force
+
+> This is the design document of the Godot game (the one game). It began life with the original
+> Python prototype, which is now kept only as the reference that generated the frozen parity
+> fixtures in `tests/fixtures/`; nothing in the Godot build needs it. Sections 10-12 cover what
+> the Godot build added.
+
+This is the plan for taking Skyrunner from a single-player bush-flying game to an
+asymmetric **traffickers vs. law enforcement** game. It supports solo play against AI,
+co-op crews, and team-vs-team multiplayer, and it follows a campaign that gets harder
+year by year.
+
+Status legend: **[done]** in the code now · **[planned]** historical proposals unless present in [ROADMAP.md](ROADMAP.md). Later decisions and verified code take precedence; the October review is a dated record, not the current queue.
+
+## 0. Where the game is heading (owner-approved direction, 8 October 2026)
+
+The owner's answers to a gameplay questionnaire (recorded by Codex in PR #249) set the target the rest of this
+document grows towards. They take precedence over conflicting older plans, including the deferrals in
+[EMPIRE_MILESTONE.md](archive/EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
+say what exists. The delivery order is in [ROADMAP.md](ROADMAP.md).
+
+**The core experience: build an empire from nothing.** Mount & Blade: Warband is the principal reference. The
+game starts small and personal, then the player takes on more complexity: personal action, recruitment, trade,
+relationships, conquest, command and the stories that emerge from them. Schedule I adds hands-on work, setting up
+a business and automating it. Cities: Skylines adds interconnected systems that the player diagnoses and manages;
+decorative city-building is not a goal. No activity is forced: a solo player delegates to AI, co-op players
+specialise, and a mature organisation can operate across every business area. There is no prescribed ratio of
+flying to management to combat.
+
+**The start [PR #296, awaiting merge].**
+- A new story begins with the player as a hired pilot for a legitimate aviation business (Costa Brava Air
+  Services), flying the employer's aircraft straight away.
+- The business slides into smuggling, and in the main story that becomes unavoidable: there is no permanent
+  legitimate-only branch.
+- Owning an aircraft is an earned milestone, not a starting gift. The draft's first price is $18,000 for the
+  employer's Cessna, uncalibrated.
+- The sandbox (open mode) remains a way to progress without the campaign. The four flying lessons and twelve
+  story chapters stay.
+
+**Economy and workers.**
+- *Economy:* interconnected. Civilian businesses provide jobs and supplies, residents create demand, disruption
+  reduces trade, and neighbourhood prosperity changes what is on offer. The formulas are not designed yet
+  [planned].
+- *Automation:* manual operation always remains possible; automation is earned with enough workers and resources
+  and with the player's own setup.
+  - Basic explicit assignments come first [partly done: payroll assignments, §17].
+  - Then repeatable conditional orders (e.g. restock below a threshold) and configured multi-step task sequences
+    [planned].
+- *Workers:* they follow instructions. Competence never means autonomous strategic spending or expansion. When
+  delegation fails, the preferred cause is the player's poor planning.
+- *Money:* it chiefly buys convenience, and the organisation's properties visibly develop as it grows [planned].
+
+**Turf, factions and the law.**
+- *Territory:* it pays for itself in income, safer routes, recruiting, services, influence and physical occupation.
+  Control can change through presence, negotiation, economic disruption, battles and important sites; the exact
+  rules are open.
+- *Turf war:* it arrives mainly later, or early if the player goes looking for it.
+- *Rivals:* they have recognisable leaders and goals, different starting strengths, and grow through the economy.
+  There is no automatic level-matching and no unearned catch-up money.
+- *Diplomacy and combat:* diplomacy shifts as the player's expansion threatens or displaces other factions. Combat
+  can be led in person, from nearby or remotely. Experienced crew are valuable, so retreating is a real decision.
+- *The police:* response escalates. Pressure is handled by laying low, changing routes, legitimate business, legal
+  measures or sacrificing operations. Travel stays relevant; upgrades, bribes and relationships (the Company, the
+  Family) improve access and security.
+
+**Loss and recovery [planned unless noted].**
+- *The player:* death does not end the game. The player respawns or recovers in hospital, paying a
+  situation-dependent mix of time, money, carried goods and equipment.
+- *The organisation:* while the player recovers, it carries on with only the last instructions it was given; AI
+  never invents new assignments.
+- *Workers:* they can be injured or permanently killed [partly done: jail and death in §17]. After a defeat, the
+  player rebuilds with the survivors.
+- *Aircraft and vehicles:* they can be lost, impounded or (rarely) destroyed. There are several ways to recover an
+  impounded one: fees, legal or faction help, physical retrieval.
+- *Terminal outcomes:* bankruptcy and imprisonment as game-enders are configurable.
+- *Discovered risk:* some risk is learned from experience and reports, with facts kept apart from uncertainty.
+
+**World and campaign.**
+- *The map:* a compact Costa Brava, with interiors where they serve gameplay. The visual target is stylised period
+  cinema; the weathered 1979–82 look (ASSET_BIBLE.md) works within that style. Functional structures and traffic
+  come before ornament.
+- *The campaign:* playing it is optional, and finishing it leaves the sandbox running.
+- *Unlocks:* business access opens through money, reputation and demonstrated activity, with campaign missions as
+  an alternative route to the same unlocks. No essential sandbox system is gated behind the campaign only
+  [planned; today the story gates systems by chapter, §21].
+
+**Multiplayer.**
+- *Modes:* co-operative and competitive play are both part of the first full experience, as separate modes for
+  2–16 players [the lobby already allows 16].
+- *Roles:* players take organisation, rival-faction or police roles. One person owns an organisation and assigns
+  responsibilities.
+- *Leaving:* when the leader leaves, the session halts; a lower-ranked player leaving does not halt it. An absent
+  leader's authority is never handed to AI or a deputy automatically [planned; today an empty seat falls back to AI,
+  §12].
+- *Separate proposals:* multiplayer racing and the hidden informant remain separate proposals.
+
+**Product order.**
+1. The early rise: employed start, the slide into smuggling, the first aircraft.
+2. Setup-driven automation.
+3. Faction competition and the civilian economy.
+4. Multiplayer teamwork and competition.
+
+Physical reliability (access, routes), command clarity and the regression gates are prerequisites inside every
+step. Network ownership contracts are specified early, so step 4 doesn't force a rewrite, but multiplayer features
+don't jump the queue. Don't silently change payroll, aircraft performance, combat authority or balance to reach
+these goals: each mechanical change needs explicit rules, save compatibility and evidence.
+
+**What to borrow from the references** (Codex's research note, PR #249; these are hypotheses to test in play):
+
+| Reference | Borrow | Don't copy |
+|---|---|---|
+| Mount & Blade (original → Bannerlord) | Personal skill that stays useful as the player becomes a commander. A good pilot can still save a shipment in person. Each multiplayer seat does real work (pilot, dispatcher, quartermaster, ground commander). | A bigger arsenal before the current weapons' trade-offs are legible |
+| Mount & Blade: War Sails | Geography matters: aircraft, road and boat access are strategically different | Naval combat |
+| Schedule I | Do a job by hand, understand it, then delegate it and handle the exceptions. Show each worker's assignment, load, destination and blocked reason. | Repetitive handling minigames or production recipes |
+| Cities: Skylines I and II | See a problem, pull an understandable lever, watch it improve. Show the supply chain: source stock, carrier, route, loading access, destination need. Clicking a blocked order highlights the obstacle. | A municipal simulator or costly cosmetic traffic |
+
+**Playtest questions** to answer with recorded human sessions:
+- After one flown run and one delegated run, can a player explain the trade-off?
+- Can they find why a delivery is blocked using only the map?
+- Do named crew and battle reports make losses matter?
+- Do two players each have useful work during one shipment?
+- Does a setback leave an understandable way to recover?
+
+**Open questions for the owner:**
+- The employer's details, the transition's stages, the pay and the first aircraft's price.
+- Recovery costs and time, what happens to inventory, and property seizure.
+- Impound rules.
+- Automation budgets, rule syntax and permission limits.
+- What counts as a "leader" in each mode, and how reconnect, resume and abandonment work.
+- The civilian-economy and district-control formulas.
+- Tone, personal skills and favourite locations.
+
+---
+
+## 1. Pillars
+
+1. **The aircraft is the puzzle.** Weight, balance and fuel are one budget: every pound of
+   fuel is a pound of cargo you can't carry. The flight model flies the result honestly.
+2. **Information is the weapon.** Neither side sees the truth. Traffickers work from radar
+   warnings, scanner chatter and spotter calls. Police work from radar tracks, tips and
+   direction-finding fixes. Most of the game is about controlling what the other side knows.
+3. **Every tool has a counter.** Each gadget exists together with the thing that beats it
+   (see the matrix in §4). Balance comes from the pairs, not from raw stats.
+4. **Complexity arrives one year at a time.** The campaign adds one system per chapter, so
+   by 1986 you juggle all of them, but you learned each one alone.
+5. **From hired pilot to empire (§0).** You start flying someone else's aircraft and earn everything after it.
+   Flying stays worth doing, delegation is a reward you set up yourself, and losses (money, crew, aircraft) are
+   real but recoverable.
+
+## 2. Modes
+
+| Mode | Humans | AI fills | Status |
+|---|---|---|---|
+| **Solo runner** | Pilot | Police, optional AI co-pilot | [done] |
+| **Solo task force** | Controller | AI smuggler flights + boats | [done] |
+| **Co-op crew** | Pilot + co-pilot (+ spotter) | Police | [done] (co-pilot and spotter use the station client) |
+| **Versus** | Runner crew vs. controller (+ interceptor pilot) | Empty roles | [done]; controller and spotter use the station client; the interceptor pilot flies in a 3D seat (`RemoteSeat`) |
+| **Campaign** | Solo or co-op | Scripted threats per chapter | [done]: four flying tutorial chapters and twelve Costa Brava story chapters; former tutorial chapters 5–8 are retired |
+
+Any seat without a human is filled by AI, so the same match can be played by one person or a full table (the lobby
+and dedicated server allow up to 16). The direction (§0) adds separate co-op and competitive modes for 2–16
+players, with organisation, rival-faction and police sides [planned].
+
+## 3. Roles
+
+### Runner side
+
+| Role | Job | Sees | Status |
+|---|---|---|---|
+| **Pilot** | Flies. Transponder, flaps, autopilot. | Out the window, HUD, radar-detector light | [done] |
+| **Co-pilot / kicker** | Loads the aircraft (twice the loading speed), pumps ferry fuel, kicks bales out over drop zones, runs the radio scanner and calls the boat | Tactical map: own aircraft, boat, bales, intercepted police traffic, radar-warning status | [done] (station client + AI fallback) |
+| **Spotter** | Watches one airstrip from the ground. Reports police units and roadblocks near it. Can relocate (takes time). | Units within 5 km of the watched strip, reported with a delay | [done] (AI-driven reports; human uses the station client) |
+| **Boat captain** | Go-fast boat. Waits at the rendezvous, fishes bales out of the water, runs for the cove. | Surface picture around the boat | [done] AI; a human takes the seat at a 2D desk and right-clicks to send the go-fast |
+| **Fixer** | Books jobs, hires spotters, buys gear, manages heat and money between flights | Job boards, the crew, the Family | [done] (section 36) |
+| **Mechanic** | Field refuelling from caches, quick repairs at bush strips | The aircraft's true condition, the cost of the work | [done] (section 39) |
+
+### Law side
+
+| Role | Job | Sees | Status |
+|---|---|---|---|
+| **Controller** (radar/intel desk) | Reads the fused radar picture, classifies tracks, dispatches helicopters, interceptors and cutters, sets radio encryption, requests the aerostat | Radar tracks (with position noise, no identity for non-squawking targets), tips, DF bearings. Never the true runner position. | [done] (station client + AI fallback) |
+| **Interceptor pilot** | Flies the chase aircraft and makes the visual ID | Out the window, its own radar | AI [done]; human pilot [done] (`RemoteSeat`) |
+| **Coast Guard cutter** | Hunts boats and seizes floating bales | Surface radar | [done] AI; a human takes the seat at a 2D desk and sends the cutter |
+| **Analyst** | Works the informant network, fuel-purchase records and tail numbers | Tip feed | [done] (section 34) |
+| **Undercover agent** | Plants a tracking beacon on a runner aircraft on the ground | The strip the aircraft is parked at, the odds, their cover | [done] (section 35) |
+
+### Hidden role (versus, [planned])
+**The informant.** One runner-side player may secretly be working for the task force. They
+score if the crew gets busted and lose if they're caught leaking, so they have to sabotage
+quietly (a bad load plan, "forgetting" to pump fuel, calling the boat on an open channel).
+This is the social-deduction layer that gives crews a reason to watch each other.
+
+## 4. Gadgets and counters
+
+| Runner tool | What it does | Law counter | Counter to the counter |
+|---|---|---|---|
+| **Flying low** | Below the radar floor (≈45 m AGL + 9 m per km of range), and behind terrain, primary radar can't see you | **Aerostat radar** (tethered balloon at 2.5 km altitude: huge line of sight, low floor) | Stay out of its footprint; it's winched down in high wind or lightning [done] (HQ season) |
+| **Transponder off** | No secondary return, so no identity | An unidentified primary track builds suspicion fast | Keep squawking to look like legit traffic. But turning it *off* while tracked ("squawk lost") is a big red flag. |
+| **Transponder on** | You look like a normal charter | You're tracked the whole time you're in coverage; an informant tip names your tail | Only squawk on legit legs |
+| **Radar detector** ("fuzzbuster") | Warns when a radar illuminates you, and whether you're above its detection floor | No direct counter (passive) | – |
+| **Radio scanner** | Hears police dispatch in plain voice: unit, base, heading | **Encrypted radio** (controller toggle): dispatch becomes garbled static | Encryption slows coordination (dispatch delay +8 s) |
+| **Boat radio calls** | Needed to bring the boat to the drop point | **Direction finding**: every transmission gives the task force a bearing, and two stations give a fix | Keep calls short, call from a different spot than the drop, or pre-plan the rendezvous with no call (the boat waits longer, and waiting boats get spotted) |
+| **Ground spotters** | Early warning of police at your destination | **Informants**: a hired spotter may leak your destination (a tip with a 3 km circle) | Pay more for trusted spotters [planned], vary destinations |
+| **Ferry tanks** | Long runs from offshore, no fuel stops | **Fuel-purchase tracking**: buying ferry fuel at a police field raises a tip chance | Fuel caches at bush strips (fly the drums in first) |
+| **Airdrops to boats** | Never land with the goods | **Coast Guard cutters** and the "drop pattern" classifier (a slow, low track circling over water) | Drop fast, drop in the dark [planned], decoy boats [planned] |
+| **Decoy flights** [done] (the HQ season's decoy crews) | A clean aircraft flies the obvious route | Controller has limited units: committing to the decoy is the cost | – |
+
+**Resource limits keep the controller honest.** The task force starts with 1 helicopter,
+2 interceptors and 1 cutter, each with a launch delay and a fuel endurance. They're
+refuelled and recommitted at a base. The runner crew is always cheaper to field
+than the full response, which is how the side with less information stays viable.
+
+## 5. Systems
+
+### 5.1 Fuel is weight [done]
+- The flight model burns fuel from real tank locations, so the CG moves during the flight.
+- The HUD shows endurance and still-air range from the live fuel flow.
+- **Ferry bladder tanks** are cargo items (25 lb empty + fuel) that take up a cabin station.
+  Their fuel only reaches the engine if someone pumps it into the wing tanks. The co-pilot
+  pumps 60 lb/min; solo, the pilot can run the electric pump at 25 lb/min.
+- Buying fuel beyond wing-tank capacity at a police field has a chance to produce a tip.
+
+### 5.2 Loading takes time [done]
+- Every item moved on the ground takes `4 s + 0.02 s/lb` of crew time. Crew = pilot, plus
+  co-pilot, plus the ramp crew at hubs. Loading at a bush strip while the spotter reports
+  police inbound is the tension beat.
+
+### 5.3 Airdrops [done]
+- Droppable items (bales) are kicked out of the door by a crew member: 2 s per bale for the
+  co-pilot, 4 s for the pilot on autopilot. Above 130 kt the door can't be used.
+- Each bale is a ballistic object with drag (terminal velocity ≈ 35 m/s) that inherits the
+  aircraft's velocity. If it lands in the water, it floats and drifts. If it lands on land,
+  it's lost (ground drop zones with a pickup truck are [planned]).
+- The boat collects bales within 40 m (5 s each), then runs for the cove. The job pays per
+  bale delivered to the cove.
+- **Autopilot** (wing leveller + altitude hold) exists so a solo pilot can go aft and kick.
+
+### 5.4 Sensors and the track picture [done]
+- Every emitter and target produces a `Signature`: position, height above ground, speed,
+  transponder state, recent radio transmissions.
+- Sensors (ground radar, aerostat, unit eyeball/FLIR, direction-finding stations) turn
+  signatures into **tracks** with position noise and an age.
+- AI police steer to the **last known position**, not the truth. Break contact and they
+  search the last place they saw you.
+
+### 5.5 Radio [done]
+- One message log per channel (`police`, `runner`). Police dispatch is plain voice
+  unless encrypted. The runner scanner intercepts plain police messages. Runner
+  transmissions can be heard by DF stations.
+
+## 6. Storyline (the Costa Brava flying tutorial)
+
+**Decision (2026-10-03):** the campaign is four chapters, a tutorial that teaches one system at a time. The long game is the Costa Brava story (`Story.CHAPTERS`, DESIGN 25 and the later story sections). The former chapters 5 to 8 (The Balloon, Blue Water, The Leak, Last Run / Flip) are cut; the paragraphs below about them are the original pitch and are not planned.
+
+**Setting (updated 2026-10-07).** Costa Brava, the game's fictional coastal region,
+1979–1982 for these four flying lessons. The twelve-chapter Costa Brava story remains
+the long game. Classic island geometry is retained only for internal regression references.
+The tone draws on the era's documentaries and dramas about the South Florida
+smuggling boom and the Miami-based task forces sent to stop it (the *Cocaine Cowboys*
+documentaries, *Miami Vice*, *American Made*, *Blow*, *Air America*, *Narcos*). All characters
+and events here are original.
+
+**Protagonist.** *Jack "Dusty" Callahan*, a bush pilot who owes the bank for a tired
+Cessna 172. His sister *Rosa* runs the mail contract and is your first co-pilot. The fixer is
+*Manny Arce*, a charming boat dealer from Smuggler's Cove. The antagonist on the law side is
+*Special Agent Evelyn Hart*, who takes over the island's interdiction desk in 1983.
+
+| Ch. | Year | Title | Introduces | Objectives | Status |
+|---|---|---|---|---|---|
+| 1 | 1979 | **Mail Run** | Flying, W&B, short strips | Earn $5,000 legally, land at Mesa del Aguila | [done] |
+| 2 | 1980 | **A Favor for Manny** | Contraband, radar floors, flying low | Deliver one hot cargo without reaching wanted ★ | [done] |
+| 3 | 1981 | **Kickers** | Co-pilot, airdrops, boat rendezvous, radio calls | Drop 4 bales to the *Lady Luck*, 3 must reach the cove | [done] |
+| 4 | 1982 | **Long Legs** | Ferry tanks, fuel planning, offshore entry, fuel caches | Fly in from the south entry point with a ferry tank and make a drop | [done] |
+
+**Historical pitch, retired (not scheduled).** The task-force campaign (law side, 1983–1986) would replay the same years from Hart's desk:
+building the radar net, getting encryption budget approved, turning Callahan's spotters. In
+chapter 8 the two campaigns meet: the runner's "Flip" branch hands you Hart's desk for the
+final interdiction.
+
+**Historical difficulty pitch, not the current tutorial schedule.** Each chapter would raise the threat level: 1 radar site in 1979, plus
+interceptors in 1981, the aerostat and cutters in 1983, encryption and DF in 1984, informants
+in 1985. It also removes a crutch, such as a free loadmaster or a daytime-only schedule.
+
+## 7. Multiplayer architecture
+
+```
+ Pilot's game (3D, Godot 4) ─────────────┐   authoritative Session (flight + AI + rules), 60 Hz
+   └─ listen server (HostServer, TCP) ───┤   snapshots 20 Hz, filtered per role (fog of war)
+                                         │
+ Station clients (2D tactical UI) ◄──────┘   TCP, newline-delimited JSON
+   co-pilot · spotter · controller           commands -> Session.command(role, name, args)
+```
+
+- **Authoritative host.** The pilot's machine runs the only simulation. Remote players send
+  *commands* (validated against a per-role permission table) and receive *snapshots* built
+  for their side only. A controller snapshot contains radar tracks, never the true runner
+  position.
+- **Why TCP + JSON now:** zero dependencies, trivial to debug, and fine at 20 Hz on a LAN or a
+  decent WAN. Station UIs are map views, so a 100 ms delay is invisible there.
+- **Phase 3:** a remote *pilot* (interceptor or second runner) needs UDP with client-side
+  prediction of their own flight model (ENet through Godot's MultiplayerPeer), with the
+  server reconciling. Snapshots already carry sequence numbers for this.
+- **Dedicated server:** `Session` has no rendering dependency, so a headless server is the same
+  code minus the window (`godot --headless --script res://scripts/net/dedicated.gd`).
+- **The wire's safety contracts [done, October 2026, #259/#260]** (`host_server.gd`):
+  - *Bounded framing:* a line over 1 MiB closes the connection before it is parsed, and at most 64 lines are
+    handled per connection per poll.
+  - *Commands run at most once:* sequence numbers must rise per connection. A repeat gets the cached
+    acknowledgement (the last 256 are kept); an old or out-of-order sequence is refused unexecuted. At most 64
+    commands are pending per connection.
+  - *No stale seats:* a command queued before a seat change or disconnect is refused, not run under the new seat.
+  - *No stale sticks:* flight input not refreshed for one second is neutralised; ownership doesn't change.
+- **Read-only previews [done]:** a host advertises `action_previews` in its welcome. A client then asks
+  `preview_request` and gets the same `ActionDescriptions` result a local desk shows (consequence text, enabled or
+  disabled reason). Execution re-checks everything; a preview is never a reservation. Older hosts simply lack the
+  capability.
+- **Who may stop the game [planned, §0]:** when an organisation's leader leaves, the session halts; other players
+  leaving do not halt it. This replaces the current "empty seat becomes AI" rule for leaders only, once "leader"
+  is defined per mode.
+
+## 8. Balance notes and tuning knobs
+
+| Knob | Default | Effect |
+|---|---|---|
+| Radar floor | 45 m + 9 m/km | Lower = police stronger; tune per chapter |
+| Aerostat floor | 20 m + 3 m/km | Makes flying low necessary but not sufficient |
+| Suspicion rate | 8–33 %/s in coverage | How long a runner can clip radar coverage |
+| Bust time | ~4.5 s within 350 m | How close an interceptor must fly formation |
+| Encryption dispatch delay | +8 s | Cost of denying the scanner |
+| Spotter leak chance | 15% per hired spotter per job | Informant pressure |
+| Ferry-fuel tip chance | 25% at police fields | Pushes runners to caches |
+
+Balance target for versus: a competent crew completes about 55% of runs against a competent
+controller. The AI controller should land at about 70% for new players.
+
+## 9. Roadmap
+
+*Historical: the 2025–26 phase plan. The current queue is [ROADMAP.md](ROADMAP.md) and the direction is §0;
+items below marked as later phases are not commitments.*
+
+1. **Phase 1 [done]:** single-player core. Flight-model W&B, tight strips, jobs, radar/wanted, AI police.
+2. **Phase 2 [done] (framework):** roles and permissions, command API, event bus, sensors and
+   tracks, radio/scanner/DF, spotters and informants, transponder, radar detector, aerostat, ferry
+   tanks, loading time, autopilot, airdrops, boats and cutters, AI smuggler, controller mode,
+   campaign engine with chapters 1–4, listen server + station client, role-filtered snapshots.
+3. **Phase 3 [done] (seats, HQs, bots, balance):** remote 3D seats (co-pilot in the right seat; police
+   pilot flying a heli/interceptor with the AI units' envelope, fog-of-war visuals) over TCP with
+   interpolation; boss and chief HQ seats and a season of nights (`scripts/sim/hq.gd`, `nights.gd`); decoy
+   flights and contract crews; rule layers scaled by player count (`scripts/sim/layers.gd`); a pilot bot flying
+   the aircraft, HQ bots, and feasibility / tactical / strategic simulators that drove the balance changes
+   in [BALANCE.md](BALANCE.md); textured graphics with low/medium/high presets. Design reasoning:
+   [MULTIPLAYER.md](MULTIPLAYER.md).
+4. **Phase 4 (depth):** UDP snapshots with prediction, human-driven boats, night and FLIR, wind,
+   AEW patrol aircraft, fixer/mechanic roles, the hidden informant, planted beacons, persistent
+   career across chapters, chapters 5–8 and the task-force campaign, smarter runner bots.
+5. **Phase 5 (content):** bigger map (mainland coast + island chain), more aircraft (from the
+   JSBSim-format `L410`, `C130` data), audio, real 3D models, matchmaking and a dedicated server.
+
+## 10. What the Godot build added
+
+- **Engine.** Godot 4.7 (from 4.4), GDScript only: no GDExtension, so a stock editor opens, runs and exports it
+  to Linux, Windows and macOS. The simulation is in `scripts/sim/`; the Python-exact RNGs, maths and terrain
+  generator in `scripts/util/` stay bit-exact with the Python reference where the fixtures say so
+  ([PORTING.md](PORTING.md)). The flight model (`scripts/sim/flight/`, `FlightDynamics`) is the game's own: a
+  6-DOF rigid body at 120 Hz with quaternion attitude, reading JSBSim-format aircraft files as data (their
+  aerodynamic functions and tables, flight-control channels, mass and tanks, gear contacts, piston and
+  turboprop engines with propeller C_T/C_P tables and a constant-speed governor), spring-damper gear with
+  rolling, braking and side friction, the ISA atmosphere, wind and Gauss-Markov gusts. It replaced JSBSim
+  1.3.1, which the game used to link through a C++ extension. The C172's propeller carries calibration factors
+  (static rpm, ground roll, climb against the handbook): its stock tables left a 160 hp engine short.
+- **Realism layer.** Weather and moon, pattern of life, canary traps, rival tempers, spare-helicopter
+  patrols, nerves ([BALANCE.md](BALANCE.md) entries 14-19).
+- **Radar and radio** that behave like the real thing (`sensors.gd`, `comms.gd`): radar horizon, clutter,
+  MTI, scan rates, Pd, trails, Mode C, squawk codes and coverage; VHF line of sight, channels,
+  push-to-talk length, least-squares DF with an error ellipse, jamming.
+- **Upgrade trees** for both sides (`upgrades.gd`), paid from runner cash and task-force funds.
+- **Costa Brava**, the city coast and default map (`map_city.gd`): the port city of San Telmo, estuary,
+  farm plain, jungle range, quarry, cays; stash houses (`stashes.gd`) with trucked deliveries and raids.
+- **Markets** (`economy.gd`): prices per good per market, moved by rivals, police, seizures, gluts,
+  fuel, weather and the news.
+
+## 11. The ground war, gun running and arsenals
+
+- **Arsenals** (`arsenal.gd`): the organisation, the task force and Los Cuervos each hold weapons by
+  tier (pistols, rifles, machine guns, RPGs) and ammunition. Gun runs bring crates in; on delivery you
+  **sell** them at the street price or **stock** your own arsenal. Everything the police seize
+  (busted loads, trucks, raided stashes, lost firefights) goes into *their* arsenal and arms their
+  patrols.
+- **Squads** (`ground.gd`): gang soldiers, Los Cuervos' crews and police patrols, on foot, in cars and
+  in trucks, driving the city's roads (`road_graph.gd`). They guard stashes, escort trucks, set
+  checkpoints, patrol and raid. Where they meet, a firefight is resolved with Lanchester's square law
+  on each side's weapons, cover and morale. Squad-minutes in a zone move the turf, and turf moves the
+  markets and the season.
+- **Commanders.** Each faction's squads are run by an AI commander by default; a human
+  **lieutenant** (runner side) or **patrol commander** (law side) can take over at any time, and the
+  boss and chief set the budgets.
+- **On foot.** Out of the aircraft you can draw a weapon from your side's arsenal and shoot it out
+  with squads near you, who are simulated man by man inside a 300 m bubble.
+
+**What it costs** (section 24, BALANCE entry 29). The live-play simulator steps the war. The organisation's AI keeps a $30k reserve, raises a squad at most every 30 minutes (only when it has none or is outnumbered), and pays soldiers only for the squads it fields. With the war on, three hours end at $50.0k against $62.5k without it.
+
+## 12. Seats: every role AI until a human takes it
+
+Every role in every mode exists from the start and is run by the AI. Humans join mid-game and
+claim any free seat from the role picker; leaving (or dropping for more than 30 s) hands it back to
+the AI. The host's `Seats` table is the single place this happens. See [MULTIPLAYER.md](MULTIPLAYER.md)
+for the protocol, the roster and chat.
+
+## 13. The Agency, and the history the season runs through
+
+**The Company** (`scripts/sim/agency.gd`) is a covert intelligence agency running guns south to
+the Contras through the island's strips: a fourth player in the drug war, and the task force's most
+awkward opponent. It offers "southern front" arms flights on the shady strips' boards. Carrying its
+cargo, or for half an hour after a run, you're protected: a bust is quashed by a call from
+Washington ("national security"), and police checkpoints are told to wave your trucks through. A
+trusted organisation gets favours (crates of rifles, an informant "reassigned"). Every quash and
+flight leaves a trail; the task force can dig (V at the desk: subpoenas and bank records, cheaper
+the more cases were quashed) and at 100% exposure the hearings end it: no more protection, the
+task force gets the budget, and the organisation's pilots are named in the testimony.
+
+It is fiction inspired by the documented record, not a claim about real people:
+
+- the **Boland Amendments** (1982, and Boland II in 1984) barred U.S. funding for the Contras, and
+  the supply effort went private and covert
+  ([Boland Amendment](https://en.wikipedia.org/wiki/Boland_Amendment));
+- in October 1986 a Contra supply plane was shot down over Nicaragua and its surviving crewman
+  talked; the **Iran-Contra affair** broke that November
+  ([Iran-Contra affair](https://en.wikipedia.org/wiki/Iran%E2%80%93Contra_affair));
+- the Senate subcommittee chaired by John Kerry (the **Kerry Committee**, report 1989) found that
+  people involved in Contra supply networks were also involved in drug trafficking, and that U.S.
+  agencies were at times aware of it
+  ([Kerry Committee report](https://en.wikipedia.org/wiki/Kerry_Committee_report)).
+  Stronger claims made later (for example in the "Dark Alliance" series) remain disputed, and the
+  game doesn't rely on them.
+
+The **Chronicle** also runs a timeline of real headlines, one per stretch of play, in order: the
+1979 Dadeland mall shootout, the 1980 Mariel boatlift, Operation Greenback, the 1982 South Florida
+Task Force, the Boland Amendments, Customs' air-interdiction jets and Blackhawks, crack reaching
+the streets, the 1986 shoot-down, Iran-Contra, the 1986 Anti-Drug Abuse Act and the Kerry
+inquiry. Each moves something in the game: the task force's funds and arsenal, Los Cuervos'
+recruits, the markets, and the Agency's exposure.
+
+## 14. The Family, the Company's double game, and the research behind them
+
+**The Family** (`scripts/sim/family.gd`) is a fictional Cosa Nostra crime family, the Morettis,
+out of Tampa by way of New York. It runs the docks' union, casino count rooms, bookmakers and a
+loan-sharking book. The design rule is that **every helping hand might be a trap**:
+
+- Each offer carries a hidden `honest` flag and a *read* (what our people notice, e.g. "the
+  steward was seen at the federal building"). The read is right about four times in five, so
+  accepting is a judgement call.
+- The offers are: a loan (the con: the vig "changes" and the enforcers come), laundering through a
+  count room (the con: a skim and a wiretap), the union at the docks (the con: the Coast Guard gets
+  the schedule), a gun fence (the con: a buy-bust), a crew of the Family's soldiers (the con: a
+  stash sold to Los Cuervos) and a lawyer (the con: he reports to the prosecutor).
+- Honesty falls with greed, low respect and pressure. The task force's RICO case grows; past 60% a
+  made man may flip, and a family with a rat in it sells everyone out. At 100% the Commission
+  trial ends the Family, and what it knew about our stash houses goes into evidence.
+- Unasked, the Family also: levies a street tax on a rich organisation, sells rifles to Los
+  Cuervos too, puts a sergeant on the payroll who leaks raids, and moves in on a weak organisation's
+  stash.
+
+**Talking to them.** The offers can be taken with a key, or at a sit-down with Sal Moretti
+(`dialogue/family.dialogue`, run by Dialogue Manager): he pitches the offer in his own words, your man
+gives his read, and you can take it, turn it down, or **press him** - a second read, an independent
+roll just as likely right, for two points of respect. Two agreeing reads are right about 94% of the
+time; two that disagree are a coin toss. That makes asking a real decision. The tribute can be paid,
+refused or **stalled** (five more minutes, once, for five points of respect).
+
+**The Company's double game** (in `agency.gd`, on its own RNG stream):
+
+- The limited hangout: at high exposure it may give our names to the task force itself.
+- A stung flight: it hands a flight to the DEA. The notes may say "the contact changed at the last
+  minute", a hint that is right about three times in four.
+- "The check's in the mail": part of the pay is withheld.
+- Both sides: Los Cuervos' planes get waved through too.
+- Disinformation, both ways.
+- Brokering its cash through the Family's casinos.
+
+### What the research found, and where it went
+
+Fiction built on documented history. No real person appears in the game; events are reported as
+the papers did.
+
+| History | In the game |
+|---|---|
+| The CIA recruited mobsters (Giancana, Roselli, Trafficante) to kill Castro in 1960-63; it came out in the Church Committee hearings (1975); Roselli was later found in an oil drum in Biscayne Bay ([CIA plots on Castro](https://en.wikipedia.org/wiki/CIA_assassination_attempts_on_Fidel_Castro), [Mob Museum](https://themobmuseum.org/blog/mob-attempts-assassinate-castro/)) | The Company and the Family know each other: the Company's cash goes through the Family's casinos with us as go-between; the "drum_found" event (a witness silenced, the RICO case sets back) |
+| The Kerry report (1989): the State Department paid Contra "humanitarian" contracts to companies run by traffickers, including SETCO Air and a Costa Rican seafood firm, Frigorificos de Puntarenas, set up to launder drug money ([Kerry Committee](https://en.wikipedia.org/wiki/Kerry_Committee_report), [report text](https://archive.org/stream/KerryCommitteeReport/Kerry%20Committee%20Report_djvu.txt)) | Crates marked "humanitarian aid"; the "shrimp_front" laundering event; the 1989 headline raises the Agency's exposure |
+| A cocaine pilot flew out of Mena, Arkansas, flipped to become a DEA informant in 1983, flew a camera-rigged C-123 on a CIA-linked mission, and was shot dead in 1986 ([Barry Seal](https://en.wikipedia.org/wiki/Barry_Seal)) | The "pilot_flips" event; the 1986 headline (informants go quiet); the stung flight |
+| Norman's Cay, Bahamas: a private island with a 1,000 m strip, armed guards, dogs and radar, used as a transshipment base (1978-82) ([Norman's Cay](https://en.wikipedia.org/wiki/Norman%27s_Cay), [Carlos Lehder](https://en.wikipedia.org/wiki/Carlos_Lehder)) | The offshore pickup island (next phase) |
+| Operation Greenback (1980) followed the cash through the banks; the Opa-locka seizure; Great American Bank fell in 1982 ([Operation Greenback](https://en.wikipedia.org/wiki/Operation_Greenback)) | Headlines; laundering costs; the "bank_collapse" event |
+| 1986: a DEA probe of Eastern Airlines baggage handlers at Miami International, who moved cocaine past customs and dogs for years ([CS Monitor, 1986](https://www.csmonitor.com/1986/0214/aline.html)) | The 1986 headline tightens the airports; airport smuggling with bought handlers (next phase) |
+| The Pizza Connection trial (1985-87) and the Commission trial (1985-86, bosses convicted under RICO) ([Pizza Connection](https://en.wikipedia.org/wiki/Pizza_Connection_Trial), [Commission trial](https://en.wikipedia.org/wiki/Mafia_Commission_Trial)) | Both headlines raise the RICO case |
+| 1988: Noriega indicted in Miami for selling traffickers safe passage; his money sat in BCCI ([Manuel Noriega](https://en.wikipedia.org/wiki/Manuel_Noriega)) | The 1988 headline: laundering costs more |
+| Cuba, 1989: General Ochoa and Colonel de la Guardia were executed after a trial for arranging cocaine drops in Cuban waters, handed to speedboats for Florida ([Arnaldo Ochoa](https://en.wikipedia.org/wiki/Arnaldo_Ochoa)) | The island's corrupt officers and their purge (next phase) |
+
+Storylines and jobs these suggest, some of them built next:
+
+- **The island**: a Cuba-like offshore state with cheaper product, corrupt officers selling safe
+  passage in its waters, and its own politics. A purge can close the route overnight.
+- **Airport runs**: mules and bought baggage handlers at the international airport, against
+  customs, dogs and a crackdown after a scandal.
+- **Informant flights**: the DEA flips your pilot and wants photographs of the next pickup.
+- **The seafood front**: aid contracts that launder money until an inquiry reads the books.
+
+## 15. Isla Soberana: the island trade, the airport and the port
+
+An island republic about 23 km off San Telmo, beyond the map's southern edge (`scripts/sim/island.gd`,
+drawn by `scripts/render/island_render.gd`). Its strip (SOB) is landable but isn't one of the mainland's
+strips (`MapLayout.foreign`), so the mainland's boards, AI and police are unchanged. It is fiction
+inspired by the Ochoa affair (section 14): officers who sold cocaine drops in their waters until
+their own government tried them.
+
+- **Cheap product.** The island's board sells loads: a job with a price paid up front ($18/lb)
+  worth the street price home ($55/lb before the market). A defector wanting a ride north pays
+  well and costs the General's goodwill.
+- **Three routes home.**
+  - **Air:** the usual game, flown.
+  - **Mules:** four on the airliner (Shift+U, or U at the lieutenant's desk). Each is caught
+    independently; odds start at 10%.
+  - **A container:** 500 lb on the freighter (Shift+I / I). One roll; odds start at 8%.
+
+  Both are timed shipments, resolved on arrival against the odds then. So a crackdown ordered
+  after they left still counts.
+- **Where it lands.** With logistics on (live play, the dedicated server, the story from 1980), a
+  cleared container or a mule run pays nothing on arrival: its pounds go into the stash by the docks
+  and the airport (`logistics.site_at("HAR")`, Warehouse 7 by the port), or the nearest stash if
+  that one is burned, and warms that stash as any load arriving does. From there it's sold like any
+  other load (section 22). Without logistics the
+  old instant payout at the street price stays. BALANCE entry 30 has why: 500 lb sold at once, past
+  the dealers and the buyers' caps, paid $150k-$800k over a 12-hour story.
+
+  | Factor | Mule caught | Container found |
+  |---|---|---|
+  | Heat after a catch (decays) | x(1 + heat) | x(1 + heat) |
+  | Sniffer dogs (law) | x1.6 | x1.15 |
+  | Passenger profiling (law) | x1.4 | |
+  | Container X-ray (law) | | x1.7 |
+  | Crackdown / inspections (law, 30 min) | x1.8 | x1.5 |
+  | Trained mules / forged papers / baggage handlers (ours) | /1.25, /1.3, /2.2 | |
+  | False bottoms (ours) | | /2 |
+  | The Family's docks deal (honest / a rat) | | x0.5 / x2 |
+  | A boatlift swamping the Coast Guard | | x0.7 |
+
+  A caught mule may talk (unless her papers are forged). The desks show the odds and every factor.
+- **Sovereign airspace.** South of the territorial line the task force's aircraft break off and
+  won't re-acquire. The island's MiGs may intercept a plane that hasn't bought the General's
+  passage (a "landing fee").
+- **The island's politics.** Hurricanes hold the freighters and close the strip's board; shortages
+  raise prices; a glut drops them; a boatlift swamps the Coast Guard; the General's birthday. A
+  purge (random when relations are low, or the 1989 headline) closes the island: no loads, no
+  passage, and soldiers on the ramp for whoever lands.
+- **The General's aide.** Captain Ibarra (`dialogue/general.dialogue`) meets you on the ramp when
+  you land and answers the island frequency (Shift+G, G at the lieutenant's desk). He sells passage,
+  gives the island's news (and a warning when the General's friends are in danger - relations
+  under 40 are where purges happen), and takes orders for mules and containers, with customs' current
+  odds in the answer text. During a purge a stranger answers.
+
+## 16. The court: lawyers, bail, pleas and juries
+
+Without a court a bust is a fine and the impound. With one (`scripts/sim/court.gd`, `court: true`
+in live play, RNG seed + 107), a bust opens a federal case against the pilot. It is modelled on
+how 1980s South Florida drug cases ran, with invented lawyers and judges.
+
+| Stage | What happens | Choices |
+|---|---|---|
+| Arrest | Charges from the case: possession (any load), importation and trafficking (over 150 lb), a firearm (weapons aboard, or armed strip guards), conspiracy (a heavy case). Evidence is built from the load, the task force's suspicion, informants, an undercover agent, witnesses (arrested soldiers talk), and whether there was a chase. The load is seized as evidence. | - |
+| Bail hearing (90 s) | A judge is drawn: Pike (hard), Ruiz (by the book) or Dunne (lives well for a judge). Bail is $10k per charge weight × the judge × 1.5 for a flight risk (rich, or the General's friend). | Post it all (returned at trial), a bond (10%, gone), or custody. The prosecutor can ask for no bail. |
+| Pretrial (20 min) | On bail you fly; a new arrest revokes it (+15 evidence). In custody the aircraft sits and you can fast-forward. | Hire a lawyer; file motions (suppress, discovery, continuance); lean on a witness or pay the judge through the Family; take a plea; sign a cooperation deal. |
+| Trial | Conviction odds: logistic((evidence − 50)/12 + judge bias × 3 − lawyer skill × 2.2 + 0.25 per witness + jury noise). A close jury can hang (retrial in 10 min, evidence −10). | Skipping the trial on the island makes you a fugitive: failure to appear, a warrant, the bail forfeit. |
+| Sentence | Years from the charges × the judge (trafficking has a 10-year minimum after the 1986 act), 2 game minutes a year up to an hour. A fine plus 30% of the cash (80% to the task force), and the aircraft is forfeited. | One appeal (15% + 40% × the lawyer's skill to reverse); or wait it out. |
+
+**The lawyers.**
+
+| Lawyer | Cost | Skill | Notes |
+|---|---|---|---|
+| The public defender | free | 0.15 | |
+| Arturo Vega | $6,000 | 0.4 | |
+| Roy Kessler | $25,000 | 0.65 | |
+| Leonard Castellano | the Family's offer | 0.7 | If the Family's offer was a con, he works for the prosecutor: +1.5 on the trial's odds and worse pleas. |
+
+Skill drives three things:
+- **Suppression:** 10% + 50% × skill, +25% when the stop had no cause (a random landing check below 40% suspicion). Success takes 30 points off the evidence.
+- **The trial's odds** (the formula above).
+- **The appeal.**
+
+**Off the books.**
+- **Leaning on a witness** ($5,000 to the Family): 35% it becomes obstruction (+20 evidence, bail revoked); otherwise one witness fewer and −12 evidence.
+- **Paying Judge Dunne** ($20,000): 30% it's a sting (45% with an undercover agent), and Judge Pike takes the case; otherwise the judge leans your way.
+
+**Deals.**
+- **The plea:** the top charge at 45% of the years (30% on the second, lenient offer), more as the evidence grows.
+- **Cooperation:** a tenth of the time. In exchange every stash house gets +35 police intel, the Family's respect drops to 0 and its RICO case jumps, and the organisation's soldiers lose heart.
+
+**The task force's side** (controller's desk N W K D Y, or the AI prosecutor when nobody human
+sits the law's chair):
+- no bail;
+- immunity for a crewman ($4,000: +1 witness, +10 evidence);
+- the bank records (a civil forfeiture: 20% of the cash, 80% of it to the task force);
+- a conspiracy count (at 50% evidence);
+- a plea offer.
+
+**The lawyer's conversation** (`dialogue/lawyer.dialogue`, Shift+L, L at the desks) walks
+through all of it: the hearing, the case as he sees it (the exact odds once discovery is in),
+each option, the witness and the judge in lowered voices, the deal, and the appeal.
+
+## 17. Hired hands: the payroll, and NPCs in every system
+
+`scripts/sim/payroll.gd` (`payroll: true` in live play, RNG seed + 109). Both outfits, the
+organisation and Los Cuervos, hire people and pay them.
+
+| Role | Wage / payday | What they do | If lost |
+|---|---|---|---|
+| Soldier | $80 | Crew the ground war's squads. An outfit raises a squad only from soldiers on its payroll; events and the Family's lent crew are exempt. | Men lost in a fight are 40% arrested, 60% dead |
+| Driver | $100 | Takes a stash truck through the checkpoints; a sharp one talks his way past (skill × 40%). No driver hired means a street driver: triple fee, less loyal. | Arrested when the truck is stopped |
+| Mule | $60 | Flies the island's airliner run (a practised mule is harder to read: odds × (1.2 − 0.4 × skill)). Short of mules, street mules. | Arrested when caught at customs |
+| Lookout | $50 | Posted at a stash house, sees a raid coming (35% + 45% × skill; not if disloyal). The house comes up empty and cold. | - |
+| Accountant | $250 | Clean books cool the task force's case every payday (−4 × skill). A sour one skims 5% of the cash. | Knows the most (flip weight 1.5) |
+| Contract pilot | $300 | Flies a run of his own every 20 min: $2,400–3,600, less likely as the case heats up. | A bust: arrested (or dead) |
+
+**The labour market and loyalty.**
+- Candidates refresh every 10 minutes. Skill shows; loyalty shows only as a hint ("did two years
+  and never said a word" vs "asked a lot of questions about the money"), right about 80% of the time.
+- Hiring costs two wages up front.
+- Each payday pays the loyal first. Paid workers gain +0.02 loyalty; unpaid ones lose 0.25.
+- Under 0.35 loyalty, each payday brings a 15% chance of trouble:
+  - they skim $500–2,000;
+  - they walk off the job;
+  - they tip the task force (a stash house, the suspicion, weighted by what they know).
+- A bonus (a wage each) buys +0.1 loyalty.
+- A fired man with a grudge may talk.
+
+**The jailed.**
+- Arrested workers get their own cases (15 minutes).
+- A flip's chance is 35% × (1 − loyalty), which:
+  - halves if the outfit paid a $2,000 lawyer (and the crew sees you look after your own);
+  - doubles with the prosecutor's deal (A at the controller's desk);
+  - is 1.5× for street hires.
+- A flip gives up what he knows:
+  - for the organisation, stash-house intel and suspicion;
+  - for Los Cuervos, cash seized and their corners raided.
+- Otherwise the worker is convicted (gone) or released (back to work).
+
+**NPCs in every system.**
+- Los Cuervos' AI hires, pays (from the cartel's cash), loses and flips people the same way. It
+  sends containers of its own through Isla Soberana's customs every 20 minutes: a glut on the
+  street, or the task force's seizure.
+- The organisation's AI (when no human boss or lieutenant sits):
+  - hires to its needs (soldiers, drivers, lookouts per stash, mules for the island, an
+    accountant and a contract pilot when rich);
+  - posts lookouts at the hottest houses;
+  - pays lawyers for the jailed who know things;
+  - gives bonuses when the crew is sour;
+  - lays people off when the money runs out.
+
+The AI prosecutor and the Family were already NPCs in these systems (sections 14, 16).
+
+**The hiring hall** (`dialogue/crew.dialogue`, Shift+W / W): Manny Ortega shows four candidates
+with their skill, wage and the hint, and handles bonuses and lawyers for the jailed.
+
+
+## 18. The street: supply and demand, and the Company's pipeline
+
+Prices were a random walk with premiums (rivals, police, seizures, gluts, news). Under it there is now a street
+(`scripts/sim/market.gd`): for each hot good (cocaine, marijuana, guns) and each market, **supply** and **demand**
+(1 = normal); for each market a **disruption** of its distribution network; for each good an upstream
+**source**. The street price follows (demand / supply)^0.55, clamped to x0.55-x1.9. Supply relaxes toward
+source x (1 - 0.6 x disruption) in about 15 minutes. Demand recovers in about 40, networks heal in about
+25, the source in about 60.
+
+**What moves it** (the session's event bus):
+
+| Event | Effect |
+|---|---|
+| The pilot busted, a cooperation deal, an informant | the organisation's markets (its stash-house zones) lose their corners |
+| A worker arrested | a smaller hit to that outfit's markets |
+| A long sentence | the whole street goes quiet for a while (demand down) |
+| A stash house raided | that zone's network broken, its product off the street |
+| A truck or a go-fast seized | supply falls there |
+| A hijacked load | sold in Los Cuervos' strongest market |
+| A gunfight | corners close while it lasts; every man arrested or down is a dealer off the street |
+| A Los Cuervos container through customs | floods the docks |
+| Their plane busted | dries up their market |
+| The Commission trial | the Family's fall takes the town's network and its gun fence (guns short island-wide) |
+| A hurricane or a purge on the island | chokes the source: the island's wholesale price rises and its connection restocks slower |
+| A glut on the island | reaches the docks |
+| An airport crackdown | fewer mules get through: the town runs short |
+| The street's own news (own table) | spring break, a bad batch, a crusade, a new disco |
+
+The island's loads are now paid at today's street price when they land: mules in town, containers through the
+port in town. A dry street pays more; your own flood pays less. Los Cuervos' island loads earn at the street
+price too, so the market feeds the rival's war chest.
+
+**The Company's pipeline: cocaine north, guns south.** As the Kerry Committee described the Contra supply
+networks (section 14). Every 15 minutes, while the Agency is in business:
+1. Its contacts buy cocaine upstream (the island's wholesale rises a little).
+2. Its protected planes land it on one market's street: a flood, cheap cocaine there, which hurts the
+   organisation's cocaine trade.
+3. The proceeds buy guns off the street and out of the fences' hands, and buyers bid for what's left: guns get
+   dear in town and the west, which is good for our gun running and the fence.
+4. The war chest puts more southern-front flights on the boards, and "return legs": protected cocaine flights
+   north for us to fly.
+5. Every cycle leaves a trail (exposure). The task force sees the pattern: cocaine prices crash where the
+   unregistered flights land, and a buyer takes every gun. A hangout pauses it for an hour; the hearings end it.
+
+In the live simulator (BALANCE section 7), cocaine in town swings between about x0.64 and x1.7 of its usual price in
+a 3-hour run with everything on (x0.6-x1.4 without). Guns average x1.37 with the Company buying (x1.12
+without). It flies about 24 lots north and buys about 25 lots of guns per run.
+
+Its own RNG streams (the street: seed + 113; the pipeline: seed + 127). Off with `Economy.REALISM`, like the
+rest of the market, for the Python replays.
+
+
+## 19. The trade: stock, dealers, buyers, and grass before cocaine
+
+`scripts/sim/trade.gd`. The organisation now holds product: pounds of cocaine and marijuana in its stash houses.
+
+**Own loads.** The job boards offer our own loads alongside the courier work:
+- **Grass** at the bush strips (the farm): about $2 a pound, 200-500 lb a load. It's bulky, so weight and balance
+  bite.
+- **Cocaine** from the Colombian connection at the shady strips: about $22 a pound, 40-170 lb a load.
+
+Both are paid up front, flown to a stash strip, and go into the stash. A raid takes 30% of what's there.
+
+**The career** (live play, `career: true`). It starts with grass, the way the 1970s smugglers did: cheap, bulky,
+less heat. The Colombians only call once our dealers have sold 1,200 lb of grass, we've landed two tons of it in our stashes, or made $25,000 in the trade. Until then
+there's no cocaine work on the boards, no island trade, and no return legs for the Company.
+
+**Street sellers.** Dealers are a payroll role for both outfits (hire them from Manny).
+- They're posted to the outfit's corners: ours where our stash houses are, Los Cuervos' where they hold turf.
+- Each dealer moves 0.6 lb of cocaine or 5 lb of grass a minute, at the street price, scaled by skill.
+- Competition matters: each of the other outfit's dealers on the same corner takes 12%, and Los Cuervos' hold on
+  the market takes up to 40%.
+- Their sales put product on the market's street, so the price softens.
+- The police pick dealers up, more often where police are thick and for cocaine (the market's arrest hooks
+  follow).
+- A gunfight in their market can take them.
+- Los Cuervos' AI sends a squad at markets where two or more of ours sell and it holds a quarter of the turf.
+
+**Bulk buyers.** Talk to Benny Ruiz: SHIFT+B in the pilot seat, M at the boss's, lieutenant's or co-pilot's
+desk.
+
+| Buyer | Takes | Pays | And then |
+|---|---|---|---|
+| The Moretti family (respect 25+) | cocaine, grass, rifles | 72% / 80% of the town's street; the fence's price for rifles | sells the drugs on in town (more on its street); arms its crews against Los Cuervos (their cash suffers); respect +2 |
+| The Company (in business, not hung out) | cocaine, rifles | 85% of the north's street; 130% of the fence for rifles | cocaine into the pipeline's war chest and its next load north; rifles south (guns scarcer here); trust +, exposure + |
+| Los Cuervos | rifles | 120% of the fence | their armoury grows (they fight better, us included); guns in the west; our suspicion rises |
+
+Each buyer has only so much appetite (it refills over 30 minutes). With no boss in the chair, the organisation's
+AI sells whatever its dealers can't move in two hours to the best buyer.
+
+**The law.**
+- A street sweep (M on the law's desks, $2,500) picks up 45% of the dealers in the market under the mouse, ours and
+  theirs, and breaks the corner.
+- Following the money (T, $4,000) traces the Company's pipeline:
+  - it adds exposure;
+  - a quarter of the war chest is forfeited to the task force;
+  - it names the market where the next load lands.
+
+  Our bulk sales from the last hour are in the trail too (suspicion +4 each).
+
+**Balance** (BALANCE section 7, entry 27). The trade config ends at $72k cash plus about $20k of product
+(control $70k), with the Colombians calling after about 75 minutes.
+
+
+## 20. Sea fog, and the town's side streets
+
+**Sea fog.** Advection fog forms when warm, moist air drifts over cooler water on calm nights. A breeze or a storm clears it, and it can sit on a coast for hours.
+- **When it happens.** `Session.set_weather` rolls it on its own stream (`seed + 137`), but only when live play asks with `fog: true`. The replays and the balance sims never see it.
+- **The roll.** On a night that isn't stormy, with wind of 10 kt or less, there's a 30% chance of fog, with a density of 0.4-0.95. The HQ season's forecast can also set `fog` outright.
+- **The effect.**
+  - The crews' visual range is multiplied by `1 - 0.65 x density`.
+  - Above 0.75 the helicopters are grounded: no heli launches, since nobody flies a helicopter at night in 500 m visibility.
+  - The radar, the transponder and DF are unaffected. That is the point of the trade-off: in fog the runner can slip past eyes, but not a controller who is watching the scope.
+- **On screen.** Exponential fog (visibility about 3/density), about 2 km at 0.4 and 700 m at 0.8. It swallows the sky and is tinted pale grey by the sun or the town's glow.
+
+**Junctions.** The city shader draws a street grid every 110 m. The street furniture now puts a traffic light at every third crossing of that grid inside the urban land use, not only where the arterial roads meet, so downtown reads as a town of blocks rather than a handful of highways. That gives 26 sets of lights on Costa Brava.
+
+## 21. The story: Costa Brava, 1979-1989, and the open mode
+
+*Direction (§0): a new story will open with the player employed by a legitimate air service, sliding into smuggling
+before chapter 1 [PR #296: four opening flights, the employer's Cessna on loan, first ownership
+recorded in the journal]. Story unlocks are to gain sandbox alternatives through money, reputation and activity.*
+
+The game had grown a dozen systems, all on from the first minute. The story (`story.gd`) opens them one chapter at a time. A new player meets the trade before the war, the war before the Family, the Family before the court, and only then the island and the Company.
+
+| Chapter | Year | Opens | Goals |
+|---|---|---|---|
+| Square Grouper | 1979 | trade (grass only), payroll, the papers | 150 lb of grass landed, a dealer on a corner, $2,500 from the trade |
+| The Connection | 1980 | logistics, the dealership | $2,000 of street money home; the Colombian connection calls; *side goal:* buy a vehicle (+$2,000) |
+| Blotter | 1980 | the Sunrise Collective (acid for grass) | 150 lb of grass traded for acid, 20 sheets sold; the lab is taken at the end |
+| Cocaine Cowboys | 1981 | the street war, gun runs and gun sales, soldiers | 60 lb of cocaine flown home, 8 weapons in the armoury; *side goal:* a truck with real cover or steel (+$3,000) |
+| Family Business | 1982 | the Moretti family | a deal with them (offer, loan or bulk sale); $30,000 in spendable cash |
+| The Task Force | 1983 | the federal court | 3 hot loads delivered, the case under 60% |
+| Isla Soberana | 1984 | the island, mules | a load home from the island |
+| The House | 1984 | the Hotel Cielo | a stake, $15,000 through the cage, out alive when the government falls; *side goal:* win $2,000 at the tables (+$3,000) |
+| The Company | 1985 | the Agency | a job for the Company, 4 guns sold to it |
+| Kingpin | 1986 | (all open) | $65,000 in cash, stock and street money |
+| The Hearings | 1987 | - | the case under 50% for 30 minutes running; $40,000 in spendable cash |
+| Last Flight | 1988 | - | $90,000 in cash, stock and street money; the case under 50% for 20 minutes running; then the story is told |
+
+**Side goals (2026-10-03).** A goal can be optional (`[key, text, target, true, bonus]` in `Story.CHAPTERS`): it is never needed to finish the chapter, shows
+"(optional before chapter ends: +$X)" on the card, and pays its bonus once when met. **Blotter** (a new chapter, 1980) is the Collective's story (DESIGN 44) and is dark: when it is done
+the task force takes the lab, a bread van is found in a ravine, Nico Cozz is gone for six hours and the case against us grows by ten points. **The Hearings** and
+**Last Flight** are the endgame the title (1979-1989) promised: the Company's war ends in a subpoena, and the goals are a cold case (`case_cold`, counted in
+consecutive minutes under 50% suspicion, the clock resetting if it rises) and money. Saves carry `v: 4` with optional objective outcomes and chapter history (a version 2 save before Blotter moves up one chapter from
+Cocaine Cowboys on). The story's balance run (`tools/live_balance.gd -- 40 16 story`, 16 hours now) at 40 seeds: Blotter takes about two hours in the stand-in's hands, 95% reach
+The Task Force, 80% reach The Hearings, 55% reach Last Flight and 40% finish (BALANCE entry 50).
+
+**Campaign polish (7 October 2026).** Phone > Chapter guidance and history retains briefings and recorded outcomes. Successful island delivery, actual casino ownership and timely evacuation are distinct from interception or losing the house. Unavailable factions waive unfinished goals without fabricated counters. Last Flight keeps its wealth and consecutive clean-case goals; there is no compulsory finale flight. Validation evidence for this polish is in the pull requests that introduced it (#229, #230, #231); a human branch walkthrough is still pending.
+
+**The employed opening [done, October 2026]** (`employment_opening.gd`). A fresh story game no longer starts
+already smuggling. It opens with a prelude, labelled EMPLOYMENT in the briefing and journal, before chapter 1:
+
+| Stage | Title | What happens |
+|---|---|---|
+| 0 | On the payroll | Two ordinary supply deliveries for Costa Brava Air Services, flown in its Cessna (`c172p`), HAR ↔ VAL |
+| 1 | An unusual customer | One request for sealed cases and no questions: suspicious, but with no contraband flag |
+| 2 | No more pretending | One disclosed marijuana delivery. The route goes to the nearest bush or shady strip with at least 400 m of runway and no police presence, not a customs airport. You may postpone it, but there is no legitimate-only branch |
+
+- *Ownership:* the aircraft is on loan, not owned (the owned fleet starts empty). Buying it costs a provisional
+  **$18,000**, which applies only on this path; every other mode and every old save keeps the roster price. The
+  hangar preview and the purchase command use the same price (`Session.aircraft_purchase_price`). Buying
+  another aircraft returns the loan, and the Cessna is not free to take back. The first purchase is recorded in the
+  story journal.
+- *Pay:* the existing cargo and contraband formulas. There is no employer commission, wage or company-funded fuel
+  yet, and the price has not been pacing-tested [open].
+- *Compatibility:* only an explicit fresh story start opts in. `Story.new` and saves from before the opening keep
+  their chapters. `--chapter N` skips the prelude first (`Story.select_chapter`). Open mode and the four flying
+  lessons are unchanged. A saved unfinished employer flight is offered again after loading rather than restored
+  in flight, because saves are written parked (see `StrategicSave`).
+- *Still open:* unlocks by money, reputation and activity as an alternative to the campaign, the employer's
+  identity and pay structure, and a human walkthrough for pacing.
+
+**How it works**
+- `Session.enable_system(key)` builds a system mid-game. Each system has always had its own random stream, so one that arrives in 1983 behaves as it would have from the start.
+- `Session.unlocked(key)` answers the finer locks: guns (gun runs, gun buys and sales), and which roles the hiring hall offers (soldiers, mules).
+- **Goals.** Goals are read from the event bus (`job_delivered` now says which good, how many pounds, whose job and where from; `cash_home`; `bulk_sale`; `island_shipment`) or from state: dealers on corners, the connection, the armoury, money, net worth.
+- **Softlocks.** A faction that's gone first (the Commission trial convicts the Morettis; the Company is burned or hangs us out) satisfies its chapter, so the story can't strand you.
+- **Saves and entry points.** The story is saved in `saves/story.json` (one folder, one file per mode: `open`, `story`, `campaign`, `police`, `dedicated`; `SavePaths` migrates old loose files once), and loading rebuilds every system its chapters opened. `--chapter N` skips ahead.
+- **Open mode.** `--unlocks open`, or the lobby's Unlocks: Open, has everything from the first minute, cocaine included. A new open game starts with a $10,000 float (`Session.OPEN_FLOAT`, Benny Ruiz fronts it; the story starts on $3,000). BALANCE entry 34: at $3k the safe dips below zero in the worst tenth of runs, from $10k it doesn't, and more up front mostly buys a bigger war.
+
+**Pacing** (BALANCE §7, 40 AI runs of 12 hours with the street war on from 1981; a flight every 15 minutes rolls the tactical sweep's odds, `AirRisk`):
+
+| Chapter | Reached by the AI |
+|---|---|
+| 1980 | about 1 hour, every run |
+| 1981 | about 3 hours, every run |
+| 1983 | about 5.5 hours, 92% of runs |
+| 1985 | about 7 hours, 85% of runs |
+| 1986 | about 8.5 hours, 80% of runs |
+| The end | 62% of runs finish within 12 hours, at about 8 hours |
+
+The stand-in's flown runs count as the pilot's deliveries (every other one hot), as a player's jobs do. The island's product lands as stock (section 15), so it's sold at the street's pace, not paid on arrival; the Kingpin's goal went from $200k to $80k with it (BALANCE entry 30), then to $65k once the stand-in's flights could be busted or crash (entry 31: about 2 busts and 2 crashes a story, $8k in fines and $5k in repairs).
+
+A human who trucks the cash home without waiting for the AI's pickups goes faster.
+
+## 22. Logistics: stock and cash have places
+
+In the 1980s cocaine trade, the product and the money were both physical, heavy and exposed: a stash, a count house, cash in duffel bags, a courier. `logistics.gd` makes them so. It's an opt-in system (live play and the dedicated server ask for it; in the story it opens in 1980).
+
+**Where things are**
+- **Product** sits in a stash house: the one at the strip its load was bought for. `Trade.stock` becomes the total of all the stashes.
+- **Dealers** sell only what's in a stash in their own market. Their takings go into that stash's cash, not the safe.
+- **Island product** lands in the stash by the docks and the airport (Warehouse 7), or the nearest one if it's burned: containers and mules alike (section 15).
+- **Street money** stays in the stash until moved. The organisation's `money` is the club's safe (Club Tropicana, the HQ), which pays wages, loads, lawyers and upgrades.
+
+**Moving it**
+- **Trucks** (`move_goods`, `move_cash`, and a bulk sale) are StashNet trucks. They take the road graph, face roadblocks and the street war's checkpoints, tails and hijacks, can have escorts, and draw a payroll driver or a day driver.
+  - A seized truck forfeits everything to the task force: half the cash goes to its funds. It adds suspicion: +4 for cash (a laundering lead), +6/+10 for product.
+  - A hijacked truck's cash goes to Los Cuervos.
+- **Bulk sales** are trucked to the buyer's meet and settled there at that moment's quote. The cash, and anything the buyer wouldn't take, rides back to the stash on a second truck, which is exposed too.
+- **Cash bags.** $4,500 of street bills weighs about a pound. `load_cash` / `unload_cash` work at a stash's strip, or at the club's strip (HAR, whose bags go to the safe). The bags ride in the load planner as hot cargo, and a bust takes them.
+- **Sellers.** An own load is paid for from the bags aboard: the growers and the connection want cash on the strip.
+
+**The AI boss**
+- Collects any stash holding $1,000+ after 20 minutes, and batches past $8,000.
+- Sends one cash truck at a time, and past $3,000 when the safe can't meet the payroll.
+- Moves product at most every 10 minutes, to markets where it has dealers and no stock.
+
+**Balance** (BALANCE §7, entry 28). The trade configuration with logistics ends at $55.8k in the safe plus $10.4k still out, against $71.8k without: about 8% less, lost to money in transit and trucks lost (about $900 and 120 lb a run).
+
+**On the road** (balance entry 29):
+- **Drivers watch the road.** Police ahead on the route (a checkpoint, or a patrol that isn't busy) and the truck pulls over until they've gone or an escort arrives. Only a patrol that turns up right on top of it still catches it by surprise.
+- **Patrols and checkpoints differ.** A passing patrol pulls a truck over a quarter of the time, half if it's heading for a stash the police know; a checkpoint stops everything.
+- **Our own vans are quieter.** A van between our own places warms its stash a third as much as a load off an aircraft, and a cash truck to the club leaves nothing to tail.
+- **Losses are recorded by cause** (`lost_by`): seized, hijacked, raided, bust.
+
+**Seeing and guarding them**
+- **The maps.** The runner's maps (minimap and desks) colour our trucks by what they carry (`truck_info`): cash, product, guns, a buyer's lot, a load off an aircraft. Each has a line to its destination, and a ring when it has pulled over. The task force's map still shows plain dots.
+- **Escorts.** `escort_truck {job_id}` (pilot, boss, lieutenant; the panel's **Escort** button) orders the nearest free squad of ours to ride with the truck. A checkpoint then gets a fight instead of a search, and an ambush meets guns.
+
+**The Company collects** (`meet_pos`). It keeps no shop: its plane lands at the strip nearest the goods (never a police strip), the way the Contra supply flights did. Its lots take a short drive, not a run through Los Cuervos country to a hangar up north.
+
+**Guns** (`Logistics.send_guns`)
+- **One armoury, one place.** It's `Arsenal.cache` (a stash), or the club.
+- **Gun sales** (to the Morettis, the Company, Los Cuervos) are trucked from the armoury to the buyer's meet and settled there, rifle by rifle against the buyer's appetite. The cash, and whatever the buyer didn't want, rides back.
+- **`move_armoury`** trucks the whole rack to a stash or the club, and the cache moves when it arrives. While it's on the road, nothing is in the rack for the squads.
+- **Losses.** A seized gun truck goes into the police armoury (`_seize_weapons`); a hijacked one arms Los Cuervos.
+
+## 23. The tutorial (optional)
+
+`tutorial.gd` is a layer over any mode, not a mode of its own. A new player learns the game they chose, and the story's pacing does the rest.
+
+**Lessons**
+- Each lesson finishes on evidence that you did it:
+  - an event: `job_accepted`, `job_delivered` (with its good or the Company's flag), `cash_home`, `bulk_sale`, `island_shipment`;
+  - the state: airborne above 300 ft, a dealer on a corner, cash bags aboard, the transponder toggled;
+  - or a note from the seat's UI: the load planner opened, stepping out on foot, a talk opened.
+- The first lesson not yet done whose system is in the game is the one shown. So the list grows as the game does, and the panel counts only what can be taught now ("2/9").
+- In the story, a newly opened faction's lesson comes up when its chapter begins.
+- **Everything added since the first cut is taught too:** the phone, the starter car, the car radio, squad orders (Z/X/C/V), renown, the collectors, stash works, rounds, the arena (each waits for its system; `renown`, `rackets` and `races` are needs like `trade`). They finish on the thing itself: a menu opened (`menu_phone`, `menu_rackets`), the car entered, the radio on, the command succeeding (`field_order`, `stash_works`, `cash_round`/`goods_round`), a race run (`race_run`), a name of 40 points. A one-off tip says what to do with prisoners.
+- **The ending.** When the last lesson the game can teach is finished a closing card ("TUTORIAL COMPLETE - That's the tour") stays up 40 seconds (`Tutorial.GRADUATION_S`); new lessons appear later if more of the game opens up.
+
+**Tips.** Tips are one-off. They fire on the moment (wanted, fuel under a quarter, busted with a court, fog, storm, a payday the safe can't cover, a raid, a stopped truck, the connection) and stay on screen for 20 seconds.
+
+**Control and persistence**
+- F10 skips a lesson; SHIFT+F10 turns the tutorial off or on.
+- The lobby ticks the box for the first game only (`tutorial_seen` in `user://settings.cfg`).
+- Progress (lessons done, tips shown, on or off) is saved with the game.
+
+**The desks** (`DESK_LESSONS`)
+- **Their own lessons.** Every seat has its own, written in that desk's real keys:
+  - the boss: orders, K logistics, M buyers;
+  - the lieutenant: squads, raising them, W the hall, C the Family;
+  - the controller: launches, X raids, M sweeps, T the money, O RICO, L/P the airport and port, the prosecutor's keys;
+  - the chief: orders, the street;
+  - the patrol: squads, RICO;
+  - the co-pilot: the crew keys.
+- **Finishing.** A desk lesson finishes when that role's own command succeeds (`Session.command` tells the tutorial), so it works from a remote seat as well as a local one.
+- **Display.** The snapshot carries the seat's view, and the desk shows it over the map.
+- **Keys.** F10 and SHIFT+F10 go through the `tutorial` command, which every role may send.
+- **Saving.** Progress per role is saved with the game.
+
+## 24. What the street war costs
+
+The live-play simulator steps the war now (balance entry 29). It stands in for the police's cooling of the case with a tenth of `PoliceSystem.SUSPICION_DECAY`, since the war keeps them looking.
+
+**The first measurement.** The organisation's AI was a spendthrift:
+- It raised squads whenever it held $12k and bought rifles past $15k.
+- It paid eight soldiers whether or not it fielded a squad.
+- It hired a $2,000 lawyer for every corner dealer the war put in a cell.
+- The result: $26k after three hours against $58k without the war.
+
+**The guerrilla doctrine now applies to the money too:**
+- **Reserve.** $30k is kept before anything is spent on the war (`GroundWar.ORG_RESERVE`).
+- **Recruiting.** A squad at most every 30 minutes (`ORG_RECRUIT_S`), and only with no squad in the field or Los Cuervos outnumbering us.
+- **Soldiers.** Paid for the squads fielded plus one in reserve (`Payroll.needs`).
+- **Lawyers.** Only for the jailed who know a lot: the accountant, the contract pilots. Corner dealers talk a little more often as a result (0.7 flips a run).
+
+**Now:**
+- $50.0k against $62.5k over three hours: the war costs about a fifth.
+- Suspicion cools between the runs.
+- About 0.7 stash houses a run are burned.
+
+## 25. Renown (Mount & Blade's renown)
+
+How big your name is on the street. It is made of what the organisation does and is read off the event bus
+(`scripts/sim/renown.gd`; a session asks for it with `renown: true`, and the live game does):
+
+| Gains | | Losses (half of the same size) | |
+|---|---|---|---|
+| a load delivered | +3 | the pilot busted | -3 |
+| bales delivered | +2 | the pilot sentenced | -4 |
+| an island container through customs | +3 | a crash | -1.5 |
+| a raid foiled | +3 | a stash raided | -2 |
+| a jury lets the pilot walk | +6 | a truck hijacked / seized | -1.5 / -1 |
+| the case dropped from above | +4 | a flight hijacked | -1 |
+| a bulk sale | +1 to +5 by size | a boat seized | -1.5 |
+| the money home | +0.3 | one of our men takes the government's deal | -2 |
+
+It never goes below nothing. Five tiers (0 Nobody, 40 A name on the street, 120 Known, 300 Feared, 650 A legend); a
+tier going up is said ("RENOWN - Known. Better recruits (+6 skill), buyers pay +3.0%, and the task force cools 12%
+slower."). What a tier is worth:
+
+- the hiring hall: every candidate has +3 points of skill and +2 of loyalty a tier (no extra random draws: the
+  payroll's stream is the same, only the values shift);
+- the bulk buyers pay 1.5% more a tier;
+- the task force watches the famous: suspicion cools 6% slower a tier (`PoliceSystem.decay_mult`).
+
+The phone shows the tier and the score on its title line; a save keeps the score (`StrategicSave`). BALANCE entry
+(the list's "Renown"): a +0.5% to +3% effect on money, with the task force a little warmer, by design small.
+
+## 26. Veteran squads and the orders on the ground (Mount & Blade's troops and battle commands)
+
+**Experience** (`GroundWar.VETERANS`, `Squad.xp`). A fight a squad survives is worth 1, a fight it wins 2 (and
+breaking off from one is 1 for both). A squad that has lost half its men loses half its experience first: the
+good men are the ones who died. Four ranks:
+
+| Rank | Experience | Fire per man | Breaks at morale | Upkeep |
+|---|---|---|---|---|
+| Green | 0 | x1.00 | 0.30 | x1.00 |
+| Blooded | 4 | x1.07 | 0.26 | x1.25 |
+| Veteran | 10 | x1.14 | 0.22 | x1.50 |
+| Elite | 20 | x1.21 | 0.18 | x1.75 |
+
+A rank-up is said on the desk's message line ("S-2 is now veteran."), the desk's squad table shows the rank beside
+the men, and the save keeps the experience. Both sides learn: the rival's and the task force's squads rank up too.
+
+**Field orders.** On foot, with a ground war: **Z** hold, **X** come to me, **C** charge, **V** fall back. The order
+goes to the nearest squad of ours within 250 m (`GroundWar.field_order`; the command `field_order` is the pilot's,
+the boss's and the lieutenant's): *come* walks it to where you stand, *charge* sends it at the nearest rival or
+police squad it can see within 450 m of it (a hidden squad cannot be charged), *fall back* is the melt order (to
+cover, out of sight), *hold* stops it. A squad given an order is under a human's hand and the AI leaves it alone.
+
+## 27. The rackets: tribute, and the men we take (Mount & Blade's villages and prisoners)
+
+`scripts/sim/rackets.gd`, with a ground war and `rackets: true` (the live game); the phone's **The collectors**
+opens the menu, `rackets` is the boss's, the lieutenant's and the pilot's command.
+
+**Tribute.** Every 10 minutes the collectors go round the four markets (town, west, north, sea). A market in which
+the organisation holds more than half the street (`GroundWar.org_share`) pays `$160 x (share - 0.5) x 2`, so $160
+at full control, times the name you have (Renown's price multiple). Each market has terms, cycled with ENTER:
+
+| Terms | Pays | Costs |
+|---|---|---|
+| fair | the amount above | nothing |
+| squeeze | 2.2x | our hold there drops by 15% a round, and the case against us warms by 2 |
+| off | nothing | nothing |
+
+**Prisoners.** When one of our squads routs one of Los Cuervos', a third of what is left of it is taken (a squad of
+three or fewer gives nobody up). The menu's keys: **A** ransom them (Los Cuervos pay $350 a head, up to what cash
+they have; the men go back), **F** put them on the payroll (they come as soldiers: skill 0.3, loyalty 0.25, so a
+bad risk, at the street rate), **G** let them go (half a point of renown a man). Held men get away at one in eight
+every 10 minutes (a group under eight is guarded).
+
+The save keeps the terms, the prisoners and the total collected.
+
+## 28. Stash works (Mount & Blade's village improvements)
+
+`scripts/sim/stash_works.gd`. Two works at each live stash house, two levels each, bought from the safe in the
+logistics menu (the row "Build at the house in from"; the `stash_works` command is the boss's, the pilot's and the
+lieutenant's). The levels are kept on the stash (`works`), so a save keeps them and the stash net, the logistics view
+and the raid all read them where they stand.
+
+| Work | Level 1 | Level 2 | Does |
+|---|---|---|---|
+| Hidden vault | $2,500 | $6,000 | a raid carries off 35% less of what is inside, a level; the rest is spirited away to another house (cash straight to the safe) |
+| Guard post | $2,000 | $5,000 | traffic warms the house 20% less, and its heat cools 25% faster, a level |
+
+A burned house cannot be improved. `StashWorks.ENABLED` switches it off (every level then counts as 0).
+
+## 29. The arena (Mount & Blade's tournaments)
+
+`scripts/sim/races.gd`, `scripts/game/race_markers.gd`; the phone's **The track** lists the courses at the strip you
+are at (`race_enter` is the pilot's, the boss's and the lieutenant's command).
+
+| Course | Where | Gates | Par | Entry | Prize |
+|---|---|---|---|---|---|
+| Street race (the car) | a loop on the roads from the strip through the two nearest of the club and the stash houses and back (the nearer one alone if that would pass 10 km; 3 to 12 km in practice); needs a ground war | every 500 m, 24 m radius | length / 19 m/s | $70 | $700 |
+| Air circuit (the aircraft) | six gates 2.5 km from the strip, round and back to the first | 130 m radius, 180 m above the ground, 110 m tolerance up or down | length / 42 m/s | $140 | $1,400 |
+
+The first gate is the start: the clock begins when you cross it and the gates have to be taken in order (the next one
+is a glowing ring with a beam, the one after it a dim ring). A field of four rivals runs at par x 0.85 to 1.35 (their
+times come from a stream seeded by the session and the course, so the field is the same every time). Your place in
+the field is the prize: first the whole prize, second half, third a quarter, and renown +6 / +3 / +1. A course pays
+once an hour (after that it is for the glory). You are out, and the fee is gone, if you get out of the car mid-race,
+land from the circuit or take three times par. The save keeps what each course last paid and the winnings.
+`Races.ENABLED` switches it off.
+
+**The race chip and the book.** A chip on the HUD says where you are ("RACE  The Smuggler's Cove dash  gate 4/11  1:12.4
+par 4:42.0", or "take the start gate" before the clock runs). The track menu (the phone's *the track*) takes a bet on
+yourself: B cycles the stake ($0 / 100 / 200 / 300), N chooses a win (pays 3x the stake, the stake is not returned) or a
+place (top three, 1.5x). The stake is paid with the entry and is lost if you drop out. The book is only open on a race
+that is paying, a course that paid within the hour takes no bets, so betting cannot be a faster way to the same money.
+The save keeps the book's running total.
+
+## 30. Effects and lighting (the 2026-10-03 upgrade)
+
+**Fire** (`FX.burn`): three layers - an outer flame (Kenney `fire_01`), a white-hot core (`flame_04`) and embers that drift up
+(`spark_01`) - drawn additively at HDR brightness (the material's albedo is above 1, so the glow bloom catches it), a
+light that flickers (three beating sines, a phase of its own per fire) and a charred patch on the ground. The smoke is
+lit orange by the fire at its foot, then soot, then a thin grey veil: soft, so the flames show through it.
+
+**Blasts** (`FX.blast`): a one-frame white flash, a fast fireball and a slower rolling one, sparks, a dust ring flung along the
+ground, a shock ring racing out over it, a mushroom of smoke with a broader grey cap, debris, a scorch mark that stays
+45 s, and a light that spikes to 12 and fades over two seconds. Bullets that hit a wall or the ground throw sparks and dust
+(`FX.impact`). A blast nearby shakes the camera (`FX.shake_at`: up to 0.18 m of Camera3D offset, by size, distance and
+the 1.6 s after it).
+
+**Street lamps** (`StreetLights`): the town's lamp heads are glowing meshes, far too many to be lights, so a pool of
+OmniLights (5 on medium, 10 on high, none on low) follows the lamps within 90 m of the camera: warm sodium pools on the
+road and pavement at night.
+
+**The car's headlights**: two spot lights come on at night (the scene's night above 0.35) while you drive.
+
+## 31. Voice chat that works like a radio
+
+Push-to-talk voice between the people at the table (`scripts/net/voice_*.gd`, `radio_voice.gd`). **Hold ` to talk on your side's
+net; SHIFT + ` to the whole table** (rebindable in `user://voice.cfg`). It rides the host connection the seats already use: no new port.
+
+- **On the wire** (`VoiceCodec`): 8 kHz mono, 40 ms frames of 320 samples, mu-law (one byte a sample): 8 kB/s plus base64 in the
+  JSON line (about 11 kB/s per talker). `{t: voice, ch: net|all, s, d, end}` up; the host sends each listener
+  `{t: voice, from, id, role, ch, s, q, k, d, end}` with the quality they hear it at and what kind of hearing it is. The host drops
+  frames over 25 a second or a transmission over 30 s (a stuck key).
+- **Who hears whom** (`VoiceRouter`, on the host): the **net** is your side's seats (runners: pilot, co-pilot, boss, lieutenant,
+  spotter, boat; law: controller, chief, patrol, interceptor, cutter); the **table** is everyone, clear, always. On the net the
+  quality falls with distance and is zero past the VHF horizon or behind a hill (`RadioNet.can_hear`, the scanner's and DF
+  stations' own line-of-sight); the pilot and co-pilot are the aircraft (so altitude buys range), the desks are their
+  headquarters' masts, and seats with no place on the map (spotter, boat) are a flat 0.75.
+- **The other side listening in**: the law hears the runners' net once it owns **Intercept runner channels**, at 0.85 of the quality;
+  a runner hears the police net with the **scanner**, and it arrives **scrambled** when the task force has paid for encryption.
+  A runner transmission from the air is also a real runner transmission for DF: when the key comes up the DF stations take their
+  bearing (`Session.voice_transmitted`), a long call sharpening it like any other.
+- **The sound** (`RadioVoice`): a 300 Hz to 2.8 kHz band, a little crunch, hiss that grows as the signal weakens, dropouts at the edge
+  of range, a squelch click as a talker keys up and a burst of noise as they let go; a scrambled voice is spectrally inverted
+  (the rhythm of speech, none of the words). The effect slider in the settings runs from a clean voice to the full radio.
+- **Devices**: `VoiceChat` captures the microphone through a muted capture bus (project setting `audio/driver/enable_input`; the macOS build
+  declares the permission) and plays each talker through a generator; without a microphone it is a listener only. Settings
+  (microphone, key, volumes, effect strength, mutes) are in `user://voice.cfg`, never in a save.
+
+## 32. The multiplayer menu, the table and finding games
+
+**F4 in a game** (or the lobby's *Multiplayer* button) opens the multiplayer menu (`MultiplayerMenu`, opened by `Main.open_mp`), with three tabs:
+
+- **Games**: the games on your network (LAN discovery), double-click to join; or join by address with a seat and a name; and, when you
+  host, where your game is (the addresses a friend would type), whether it is **shown on the network**, and whether the table is **closed
+  to new players** (someone who held a seat can still come back).
+- **Table**: the roster (the host first, a dot for whoever is talking), **mute** anyone, **remove** anyone (the host: they are told, and cannot
+  rejoin this game), take a free seat or give yours back to the AI, and the table's chat (to everyone, or to your side).
+- **Voice**: voice chat on/off, the push-to-talk key (click, then press the key you want), the microphone, microphone and radio volumes, how
+  much radio is in your voice (0 clean ... 1 full), and a loop-back test with a level meter.
+
+**Finding games** (`LanDiscovery`): a hosting game (and the dedicated server) sends a small JSON beacon every two seconds by UDP broadcast to
+port 47801 (name, TCP port, mode, players, closed); the menu listens and forgets a game not heard from for 7 s. Joining still goes through the
+host's own port and seats: the beacon is only where the game is.
+
+**The host runs the table** (`HostServer`): `kick(id, ban)`, `locked`, `max_players` (16), `roster()`. Players are known to each other by a
+**public id** (a hash of their reconnect token; the token itself is only ever sent to its owner), which is what voice frames, mutes and kicks use.
+
+## 33. The waiting room: choosing roles before the game starts
+
+The lobby's **Host a multiplayer game** opens a **waiting room** instead of starting at once (`Room`, `RoomScreen`; `HostServer.start_room`).
+The host listens before the game exists; friends join (from the Multiplayer list, an address, or `--connect`) and see every seat by side
+(the runners, the task force) with who has it (a player or the AI). Each player takes one seat or gives it back, ticks **ready**, and chats;
+the host sees who is not ready and presses **Start the game** when everyone has a seat and is ready. Seats nobody took are the AI's.
+
+- **The host takes a seat too**: the pilot's (3D, the default) or a desk (a 2D station: `HostDesk` runs the session, serves the guests, and
+  the AI flies the aircraft until a guest takes the pilot's seat). The police pilot's 3D seat is for guests.
+- **Rules**: a co-op table is the runners only (the law is the AI); a task-force game has no pilot; one player a seat and one seat a
+  player; changing seat un-readies a guest; the host can remove a player or close the table.
+- **On the wire**: `welcome` carries `phase: room`; guests send `room_claim`, `room_release`, `ready`, `say`; the host broadcasts `room`
+  (mode, players, seats, whether it can start) when it changes, and `start {role}` when the game begins (`HostServer.begin` hands every
+  chosen seat to the session, and the guests go straight into theirs). A guest who joins a game that is already running gets the old seat
+  picker, so joining mid-game still works.
+
+
+## 34. The analyst: the desk every tip crosses
+
+The task force's analyst seat (`scripts/sim/analyst.gd`, `Roles.ANALYST`, behind `Analyst.ENABLED`). Without a player in it
+nothing changes: a tip goes straight to dispatch. With one, tips wait on the desk first (`PoliceSystem.add_tip` hands them
+to `Analyst.intake`; `release_tip` is what dispatch does with one):
+
+- **What arrives**: an informant's word, an undercover agent's leak, the fuel desk's note that a tail number bought ferry
+  fuel, an anonymous caller, and a double agent's plant. The sim knows which are real (`truth`); the desk does not.
+- **Verify** (V, 45 s): checks the source and the tail number; the verdict, *sound* or *doubtful*, is right 85% of the time.
+- **Forward** (F): to dispatch, where a helicopter goes up for it. A false lead costs the task force $1,000 in funds.
+- **Bin** (X): a real lead thrown away is a load that got through (counted as a miss).
+- **Stale**: a tip nobody touches goes to dispatch as it is after 150 s, and a desk holds at most 12 (the oldest is
+  forwarded). Handing the seat back forwards everything waiting.
+
+The seat is in the waiting room, the seat picker and the police-mode seat list like the others. The desk's dice are their own
+stream (seed + 909). Not saved: the desk is empty after a load.
+
+
+## 35. The undercover agent: a beacon on the parked aircraft
+
+The task force's agent seat (`scripts/sim/undercover.gd`, `Roles.UNDERCOVER`, behind `Undercover.ENABLED`). The AI chief never
+does this (the law upgrade "undercover" still leaks destinations by itself); it is a seat for a player.
+
+- **Plant** (P): only while the aircraft is parked at a strip. It works 75% of the time, 50% when a spotter of the runners'
+  watches that strip. A live beacon (25 minutes) puts the aircraft on the controller's picture wherever it flies, with a
+  25 m error, radar or no radar, transponder or none (`PoliceSystem.tick` reports it as source `BCN`).
+- **Fail** and the agent is burned: half the cover goes, the crew is told a stranger was seen at the tail, and the agent
+  lies low for 10 minutes. Cover regrows one point in 30 s; at zero the agent is blown for 20 minutes.
+- **The counter**: a runner with the bug sweep upgrade finds a fresh beacon half the time (the agent then lies low for 5
+  minutes). The seat's dice are their own stream (seed + 919).
+
+
+## 36. The fixer: the business between flights
+
+The organisation's business desk (`Roles.FIXER`, a runner-side seat open at a co-op table, in the waiting room and in the seat
+list). The pilot flies; the fixer does everything the pilot does on the ground that is not flying, from a 2D desk:
+
+- **Jobs** (the table): the board at the field the aircraft is parked at and the jobs in hand; ENTER books or drops one.
+- **Gear and spotters**: G the scanner, H the radar detector, F the ferry tank, S a spotter at this strip.
+- **The people**: W the hiring hall (Manny Ortega), C the Family (Sal Moretti's offers, Y / N / P at the desk), L the pilot's
+  lawyer, M the buyers (Benny Ruiz), K logistics (stock, cash and trucks).
+- **The picture**: the money, the heat (suspicion and wanted stars), the payroll and payday, the spotters watching, the
+  pilot's case, the Family's offers, the street and the island.
+
+The permission list is the pilot's business commands without the flying ones (no kick, pump, autopilot, transponder, squawk,
+turn around or call the boat). Nothing new in the sim: it is a desk over the commands that were already there, so the AI
+needs no stand-in (the pilot, or the AI boss, does the same things when nobody sits here).
+
+
+## 37. The docks (Kenney's Pirate Kit)
+
+`scripts/render/port_dress.gd` (`PortDress`, behind `PortDress.ENABLED`, off on the lowest graphics preset and on the other
+maps) puts wooden piers into San Telmo's harbour: along the basin's head, one every 170 m, six deck tiles running out from the
+water's edge, with crates, barrels and chests stacked at the foot and a rowboat or a small ship moored alongside. The positions
+come from the map and a hash of the pier's number (no random stream), so they are the same every time. Scenery only: nothing
+is solid. ![the docks](img/port-docks.png)
+
+
+## 38. Downtown landmarks (Quaternius's Downtown City MegaKit)
+
+`scripts/render/downtown_dress.gd` (`DowntownDress`, behind `DowntownDress.ENABLED`; off on the lowest preset) stands the kit's three
+finished brick-and-glass buildings (large, medium, small) on the footprints of the twelve tallest towers nearest the city's
+centre, instead of the Kenney lot models. The kit's buildings are real-scale and carry their own textured materials, so each is
+its own node, drawn within `CityDress`'s range; beyond it the tower's shader box is drawn as before. Footprints, heights and
+colliders are unchanged. The pack in the repository is cut down to those three buildings and their textures.
+![downtown landmarks](img/downtown-landmarks.png)
+
+
+## 39. Wear, repairs and the mechanic
+
+`scripts/sim/airframe.gd` (`Airframe`, behind `Airframe.ENABLED`; asked for with the session option `airframe: true`, which the
+game's own start sets) gives each aircraft you own an **engine** and an **airframe** condition, 0 to 100, on their own RNG
+stream (seed + 929).
+
+- **What wears.** The engine wears 0.12 points a minute in the air (about 7 an hour). The airframe wears on touchdowns harder
+  than 60 % of the gear's limit (up to 14 points at the limit), on gravel, grass, dirt and sand strips (0.4 to 0.8 a landing),
+  and in a storm (0.1 a minute).
+- **What it does.** Engine under 60: it runs rough and gives less power, down to 80 % at zero (the HUD says ENGINE ROUGH).
+  Engine under 30: it may quit in the air (up to 5 % a minute at zero) for 90 seconds, the throttle forced to idle, and then
+  catches again (ENGINE OUT). Airframe under 50: the gear collapses at a softer landing, down to 60 % of the limit
+  (AIRFRAME WEAK).
+- **Repairs** happen on the ground, over time and for money by the point (engine $30, airframe $20 at a hangar). A hangar (a
+  field with a shop, or a hub or regional strip) does 12 points a minute; a bush strip patches at 5 a minute at 1.5x the
+  price; a **mechanic** (a human in `Roles.MECHANIC`) does 24 a minute, anywhere, at 0.6x the price. The aircraft cannot take
+  off while the work is running (the cowling is off, the throttle held at idle); it stops by itself when the work is done, the
+  money runs out or the aircraft is moved. From the hangar menu (H) the service row starts and stops the work on both.
+- **What you see.** The pilot and everyone else read good / worn / poor / failing. The mechanic reads the numbers, the
+  chance it quits a minute, the power left and what the gear will take (his I key says it aloud), and haggles the farmer's drum
+  fuel 40 % cheaper at bush strips.
+- **The AI ground crew**: a bot (`AutoRunner`) has a worn aircraft (under 70) serviced at a hangar before it flies, and patched
+  at a bush strip only when it is under 40. The save keeps each aircraft's condition.
+
+The mechanic's desk: ↑ ↓ choose the part, Enter repairs it, B both, S stops the work, I inspects, F adds 10 % fuel.
+
+
+## 40. The Hotel Cielo: the Family's casino on Isla Soberana
+
+`scripts/sim/casino.gd` (`Casino`; behind `Casino.ENABLED` and `Casino.REVOLUTION`; `casino: true` in the session options, or the
+story chapter *The House*; needs the Family and the island). The Cielo is a business you do through a conversation with its
+manager, Lenny Vance (`dialogue/casino.dialogue`): Shift+K in the cockpit, X at the boss's, lieutenant's, co-pilot's and fixer's
+desks, or the phone. (Its physical form is section 41.) Its own RNG stream is seed + 939.
+
+- **The house** takes about $16,000 gross an hour, more with tourists (the island's weather and politics: a hurricane cuts it to
+  40 %, a boatlift lifts it 30 %, a headliner on the bill 50 %), less when the Lucky Palm leans on it. The General skims 6 to 14 %
+  (the less he likes you, the more) and the Family 12 %; the rest belongs to the owners. You buy a **stake** from the Family in
+  tenths, $9,000 a tenth, up to 40 %; your share builds up in the house's account to **collect**.
+- **The cage** is chips in, clean cheques out: street cash from any stash goes in and comes out in the safe minus the Family's 8 %
+  and the General's skim (14 to 22 % in all), up to $8,000 an hour. Besides the convenience (no truck to be stopped) it cleans the
+  money trail: the runner's case cools 1.5 points a thousand. Every dollar warms the house's **heat** (0.8 a thousand, cooling 0.25 a
+  minute), and heat becomes the task force's **case** (0.2 a minute at full heat).
+- **The General** can be paid ($3,000): his regard +8, the island's unrest -10, the heat -5.
+- **The Lucky Palm** (Dante Varga) leans on the house until bought out ($20,000, six hours of peace and +10 % take); at full pressure
+  it burns the kitchens: the house is dark for half an hour and 10 % of the account goes.
+- **The task force** (the controller's or chief's F key: `dialogue/casino_file.dialogue`): a wiretap in the counting room ($3,000,
+  +20 case), an audit (the commission has the cage's books for 30 minutes, +10 case, +25 if cash has gone through it), a raid
+  ($5,000, once the case is 50 %: the house is dark 30 minutes, 40 % of the owners' money forfeited to the task force, the Family's
+  respect -8). With no human at the desk the AI chief does it by itself when the heat passes 55. Trace-the-money finds the cage.
+- **The revolution** (Havana, 1959): the island's unrest rises 0.15 a minute, faster with the heat, a purge, a hurricane or a
+  shortage, slower the more the General likes you. At 100 the government falls (`Island.purge`, the island closed for an hour):
+  you have 20 minutes to **evacuate** with 70 % of your account and 40 % of what the stake would fetch, or the house falls with your
+  share in it (the Family's respect -20). Either way the house is seized and the island's new men are cool to you.
+- **In the story**, chapter 8 *The House* (1984) opens it: buy a stake, put $15,000 of street cash through the cage, and when both are
+  done the colonels meet and the uprising is set ten minutes out; get out alive and the chapter ends. If the Family is gone or the
+  house is seized first, the chapter does not strand you. Saves from before the chapter was added shift their chapter number.
+
+
+## 41. The tables
+
+`scripts/sim/casino_games.gd` (`CasinoGames`) holds the games a 1950s Havana casino dealt, with their real rules and the edge the real
+house had; `Casino.play` settles each hand against the player's money (the command `casino_play`, the pilot's alone, and only at
+the Hotel Cielo on Isla Soberana with the house open). Limits are $5 to $500 a bet. What the house wins from the player's losses is
+shared with our stake like the rest of the take (our tenth of the loss after the General's skim and the Family's cut goes into the
+account). The dice and cards come from their own stream (seed + 941) so a session replays.
+
+| Game | Rules | House edge (checked in `tests/test_casino_games.gd`) |
+|---|---|---|
+| Roulette | European, a single zero. Straight 35, split 17, street 11, corner 8, six line 5, dozen and column 2, red / black / even / odd / low / high 1 to 1 | 2.70 %, on every bet (37 numbers, 36 paid) |
+| Blackjack | Two decks, reshuffled at 26 cards; the dealer stands on every 17, looks under an ace or a ten; blackjack pays 3 to 2; double down on any two cards; no splitting or surrender. The table gives basic-strategy advice | about 0.7 % to 1 % with basic strategy |
+| Craps | Pass and don't pass (bar 12), free odds up to three times the line bet paid at true odds (6 to 5 on the 6 and 8, 3 to 2 on the 5 and 9, 2 to 1 on the 4 and 10; laid at the reverse) | pass 1.41 %, don't pass 1.36 % (1.4 % and 0.8 % with full odds) |
+| Baccarat | Punto banco, eight decks, the full third-card tableau; banker pays 0.95 to 1 (a 5 % commission), player 1 to 1, tie 8 to 1 | banker 1.06 %, player 1.24 %, tie 14.4 % |
+| Slot machines | Three reels of twenty stops (a seven, two bars, three each of bells, plums, oranges, lemons, cherries and two blanks); three sevens pay 450 for 1; cherries from the first reel pay 2 or 5 | 8.1 % (a return of 91.9 %, counted over all 8,000 stops) |
+
+
+## 42. The Hotel Cielo, walkable
+
+`scripts/render/casino_building.gd` (`CasinoBuilding`, behind `ENABLED`) builds the casino as a place, from `Buildings.Kit` boxes and
+cylinders, Kenney furniture and `Label3D` signs, in `IslandRender.build`. The models are 1950s Havana's: the Nacional's grand lobby, the
+Capri's compact floor, the Riviera's slab tower and rooftop sign, the Tropicana's open-air cabaret under concrete arches. It stands on the
+flat of the airfield, 75 m from the runway's centreline and 150 m along it (`site()`), its front (local -z) to the runway:
+
+| Part | What |
+|---|---|
+| Forecourt | pavement, a drive, a porte-cochere with a neon edge, a fountain, palms, the vertical blade sign (CIELO) |
+| Block | 68 x 46 m, 8 m ceiling; a glass curtain wall on mullions, pink stucco sides, a roof slab; a ring of neon in the ceiling |
+| Tower | eleven floors of ribbon windows over the back half, a penthouse, the HOTEL CIELO sign on the roof |
+| Lobby | reception, a bar with a back bar, sofas, palms; a screen wall with a wide opening onto the floor |
+| Mezzanine | the manager's office over the lobby (stairs, glass onto the floor, desk, safe): `casino_office` |
+| Floor | a red carpet round the pit; 3 roulette wheels, 4 blackjack tables, 2 craps tables, 5 banks of 8 slot machines; dealers and stools |
+| Cage | a counter behind a brass grille, three cashiers, a vault door: `casino_cage` |
+| Salon | a walled baccarat room with a red carpet and one oval table: `casino_baccarat` |
+| Courtyard | the Salon Bajo las Estrellas: a stage, round tables with candles, a dance floor, four concrete arches |
+
+The interaction points (`Kit.interact`) are `casino_roulette`, `casino_blackjack`, `casino_craps`, `casino_baccarat`, `casino_slots`,
+`casino_cage` and `casino_office`. `PilotApp._on_use` sends the tables to `CasinoMenu` (`scripts/ui/casino_menu.gd`: a `GameMenu` whose
+moves are `casino_play` commands on the pilot's seat, so the rules, the odds and the money are `Casino.play`'s) and the cage and the
+office to the manager's dialogue (`open_talk("casino")`, standing still). `Casino.at_tables()` still decides whether a seat is free:
+parked on the island with the house open. `PilotApp._casino_state` calls `CasinoBuilding.set_open` every fifteen frames: while the house
+trades the lamps and signs are lit; when it is shut, in revolt or seized (or the session has no casino) they go dark and a board across
+the door becomes solid.
+
+The island had no ground for the walker (`Walker.ground_body` is the mainland's height field, which stops at the edge of the map), so
+`CasinoBuilding.ground` lays one: a `HeightMapShape3D` at 5 m over the strip and 150 m beyond it, sampled from `World.ground` (the
+island's own heights and the runway's elevation). `IslandRender.build` adds it and the hotel together.
+
+Menus now pass any letter that is not J, L or H (which still toggle the job board, load planner and hangar) through to the open menu as
+`key("s")` and the like; the race menu's B and N had only worked by clicking their hints before.
+
+**The people** (`scripts/render/casino_crowd.gd`, `CasinoCrowd`): the staff (dealers, cashiers, the bartender, the receptionist, the
+bandsmen: about 20 posts recorded by `CasinoBuilding._figure`) sway at their posts with their arms working, and sixteen patrons stroll
+the aisles. The patrons walk a graph of open lanes (`NODES` and `EDGES`: the lobby, the gate to the floor, the lanes between the tables
+and the slot banks, the salon, the cage, the way out to the courtyard, the courtyard's lanes), pick a random node, take the
+breadth-first route, stand there four to fourteen seconds looking at the table or the stage, and go on. They are scenery: no
+colliders, no sim state, their own `RandomNumberGenerator`; the lights-out switch hides them.
+
+**The sound** (`Soundscape._casino_sounds`, synthesised like the rest): while the house trades, a 3D loop of the band in the
+courtyard (`casino_band`: a mambo at 124 BPM, Dm7 G7 Cmaj7 A7, tumbao bass, piano montuno, 3-2 clave, maracas) and a murmur on the floor
+(`casino_room`), both with short ranges (14 and 10 m units) so they are heard in and around the hotel; and a sound for every hand at
+a table: chips, or a rising arpeggio and coins for a slot win (a longer one from $2,000).
+
+**The felt is drawn** (`CasinoMenu.card_node`, `die_node`, `reel_node`, `pocket_node`, `_fill_stage`): the dealer's and your cards (the dealer's hole card face down
+until the hand is played), baccarat's two hands (a nought is shown as a ten), the two dice, the three reels and the roulette ball's pocket are pictures on the
+green, rebuilt on every refresh. The shoe deals ranks only, so a card's suit is dressed on (`suit_of`: the same card in the same place is always the same suit).
+
+
+## 43. The car dealership
+
+`scripts/sim/dealership.gd` (`Dealership`, `Session.dealer`, behind `ENABLED` and the `dealership` system; the story opens it with logistics)
+sells vehicles for the organisation's money. Nothing in it draws a random number except the checkpoint roll below, which has its own
+stream (seed + 947).
+
+| Use | Vehicles | What they do |
+|---|---|---|
+| drive | Sunrise Hatch $4,000, Harbor Coupe $6,500, Valley SUV $12,000, Marlin GT $21,000, Palmetto Limited $30,000 | the car the pilot drives on the ground: top road speed 23 to 34 m/s, cross-country 10 to 17, acceleration 8 to 13. The first car bought is the active one; `use_vehicle` switches (0 is the starter car). `Car.apply_spec` gives the car its numbers and its Kenney model; `PilotApp._dealer_sync` swaps the parked car when `Dealership.rev` changes |
+| haul | Courier Van $14,000, Steel Box Truck $24,000, Midnight Van $38,000, Ambulance Conversion $55,000, Armoured Truck $70,000 | the stash trucks. The fleet's best speed is the trucks' speed (`StashNet.haul_ms`, 9.5 to 15 m/s, in place of `TRUCK_MS` once a truck is owned), its best cover (`risk_mult`, up to 45% off the roadblock odds) and its best steel (`armour`, up to 60%: the chance a truck drives through the roadblock that would have seized it). A checkpoint or patrol that pulls a truck over (`GroundWar.truck_contacts`) is beaten by `Dealership.gets_past`, rolled once for each truck and stop |
+
+Owning costs insurance by the hour ($40 a car, $90 a truck); selling returns 55% of the price; ten vehicles at most. A car must be bought parked
+(it is delivered to the aircraft); a truck can be bought from anywhere.
+
+**The AI.** `Dealership.auto` lets the AI manage the fleet: every 15 minutes it buys the truck with the best gain in speed, cover and steel per
+$10,000 that it can pay for with $40,000 to spare, while one would improve the fleet. `AutoRunner` (the organisation's bot) switches it on; a
+player can toggle it with `fleet_auto` (the dealer screen's A key). It never buys cars for the pilot.
+
+**Commands** (`buy_vehicle`, `sell_vehicle`, `use_vehicle`, `fleet_auto`): the pilot's, and the boss's and the fixer's for the trucks. The pilot's
+screen is `DealerMenu` (the phone's "The dealership", or E at a showroom: `Buildings.showroom`, a glass-fronted dealer with four cars on the lot,
+at every hub and regional airfield). The boss's and fixer's desks reach the same lot by phone: **V** opens `dialogue/dealer.dialogue` (Marty Quintero, through
+`Talk.State`'s `dl_*` fields and the snapshot's `dealer` view, `Dealership.view_lite`): buy any car or truck, sell the newest, toggle the AI.
+
+Saved by `StrategicSave` (owned, active, spent, auto). `tests/test_dealership.gd` has 13 tests. BALANCE entry 48 (arithmetic only: the
+balance runs build no dealership).
+
+Also in this change: the flying tutorial is four chapters (see section 6) and the former chapters 5 to 8 are cut. Its player-facing geography is now Costa Brava.
+
+
+## 44. The Sunrise Collective: acid for grass
+
+`scripts/sim/psychedelics.gd` (`Psychedelics`, `Session.psych`, behind `ENABLED` and the `psychedelics` system; the story's 1980 chapter,
+*The Connection*, opens it with logistics and the dealership; needs the trade). **Fiction:** Nico Cozz and the Sunrise Collective are invented;
+they are a commune of chemists in the hills of the coast who make blotter acid and run the festival and campus circuit, in the spirit of the
+period's underground, not a portrait of any real person or group. Nothing in the game says how acid is made: the lab is a number that makes sheets.
+
+| Part | What |
+|---|---|
+| The barter | `barter(stash, lb)`: a van calls at a stash and takes grass; we get `lb / 100 x rate()` sheets (a sheet is a hundred doses). `rate()` is 2.4 per hundredweight, up to 25% better with trust, times the grass market over the circuit's mood, clamped to 0.6x to 1.6x |
+| The lab | makes 30 sheets an hour up to a shelf of 90; the Collective takes only 400 lb of grass a half hour |
+| The circuit | `sell(sheets)`: $325 a sheet x 0.8 x the scene, up to 40 sheets a half hour; each sheet adds 0.12 to the task force's suspicion |
+| The scene | a festival (x1.35), a campus crackdown (x0.7), a heatwave of concerts (x1.15), a bad batch on the street (x0.8): a 12% chance each ten minutes, own stream seed + 953 |
+| The raid | a 1.2% ten-minute chance plus 4% of the case's suspicion: the lab goes to ground for three hours, its stock is lost, trust falls 15; a van at a stash door adds 0.4 heat a hundredweight |
+| The AI | `auto` (the organisation's bot switches it on): trades the fullest stash's grass above 200 lb every half hour and sells what it holds |
+
+The talk is `dialogue/psych.dialogue` through `Talk.State`'s `ps_*` fields and the snapshot's `psych` view: **Shift+C** in the cockpit, **J** at the
+boss's and fixer's desks, the phone's "The Sunrise Collective". Commands: `acid_barter`, `acid_sell`, `acid_auto` (the pilot, the boss and the fixer). Saved by `StrategicSave`. `tests/test_psychedelics.gd` has 13 tests; BALANCE entry 49 (arithmetic only).
+
+Acid is a good in the logistics network: the sheets sit in the stash houses (`Logistics.goods()`), trucks carry them from stash to stash, a raid on a stash takes them
+and makes the street scarcer for a while (`RAID_SCARCITY`, decaying over two hours), and the street price walks (`WALK_VOL`) around the scene's mood. A sale leaves the
+money at the stash for a truck to bring home. Not yet: a lab on the map and a trip's effect on the screen.
+
+
+## 45. The dedicated server
+
+`DedicatedServer` (`scripts/net/dedicated_server.gd`, run by `scripts/net/dedicated.gd`) is a headless host: the same `HostServer` (protocol v3) with
+nobody in the host's seat (`HostServer.dedicated`), the pilot's seat released to the AI, and `AutoRunner` flying the aircraft until a player takes it
+(the hand-over `HostDesk` and `PilotApp` make). A fixed 30 Hz loop (`step`, five steps at most per frame) runs `pump`, the session and
+`publish`. Options are flags or `SKYRUNNER_*` environment variables (`parse`). What a server adds: a **password** (`HostServer.password`, the hello's `password`
+field; `NetClient.password`; `--password` and `password@host:port` on the client), a **status probe** (`{"t":"status"}` before any hello answers with the
+name, mode, player count, whether a password is set and the clock, and hangs up), a **log** (`log_fn`: joins, leaves, claims, refusals), **saves** (every
+`--autosave` seconds, when the last player leaves, and on a clean stop; the save is picked up on the next start, the story included), a **stop file**
+(Godot ignores SIGTERM: touch the file and the server saves and exits), and `--max-players`. `deploy/` has the Dockerfile and its SIGTERM-to-stop-file entrypoint,
+a compose file, a systemd unit and the Google Compute Engine scripts; `tools/server_probe.gd` is the probe (and `--join ROLE` takes a seat). CI runs the server from source
+and builds and runs the image. Operating it is `docs/SERVER.md`.
+
+An hour of server time takes about 100 s of one core and 140 MB. Soaking it found a bug in the AI pilot: `AutoRunner` accepted a load that did not fit even
+after the loadmaster re-planned it and then waited for the loading to finish for ever; it now puts the job back and never picks it again (`skipped`).
+
+## 46. Jobs and what they cost you
+
+Every flight starts as a job (`jobs.gd`, `Job.kind`: passenger, cargo, medical, contraband, fugitive or
+airdrop). Most come from a strip's board; other systems post their own. This table pulls together what each one
+asks of the pilot (from Codex's 8 October audit, PR #246, checked against the code).
+
+| Work | Where it comes from | What it asks / risks |
+|---|---|---|
+| Charters | Any board: 1–3 passengers, often with luggage; 30% are VIPs paying 1.4× | Seats. A VIP wants the bank under 45° and a soft landing. |
+| Cargo | Any board: mail, tools, fuel drums, generators, food, glass, lab samples | Weight, station limits and CG. Glass and samples are fragile and pay 1.3×. |
+| Medical | Boards, to bush strips | A deadline (about 0.55 min/km + 2.5 min, at least 4 min) and a fragile kit |
+| Contraband | Shady/bush boards once contraband is open (`No questions asked`) | Radar flags you, police chase, suspicion and informants (§3–5) |
+| Fugitive | Shady/bush boards | A wanted passenger: police are already looking |
+| Airdrops | Shady/bush boards with airdrops open | Bales kicked to a boat at sea; paid by bales landed (§5.3) |
+| Fuel caches | Hub/regional boards with ferry gear open | Drums to a bush strip; they stock a cache for your own runs |
+| Own stock | Trade purchases (§19), stash runs (§22) | Cash up front; the product sells at the destination |
+| Gun runs, the Company | Arsenal (§11), the Agency (§13) | Stock versus sale purpose, unlocks, political exposure |
+| Island work | Isla Soberana (§15): product, mules, defectors | Customs, weather, interception |
+
+**Grading on delivery** (`Session._grade`); the factors multiply:
+
+| Condition | Effect on pay |
+|---|---|
+| Contraband with market realism | Paid at the street price the day it lands (shown as ±%) |
+| Late (deadline passed) | ×0.4 |
+| Fragile cargo, touchdown over 400 fpm | ×0.5 (breakage) |
+| VIP, bank over 45° or touchdown over 300 fpm | ×0.7 |
+| Last touchdown under 150 fpm | ×1.1 (smooth landing bonus) |
+
+**Dropping a job** needs the aircraft parked. It unloads the job's cargo and cancels its boat, and pays nothing.
+At the job's origin it goes back on the board; anywhere else it is dumped. Accepting re-checks location, parking,
+permission, capacity and payment, but not whether the load plan is safe: the loading screen's weight and balance is
+the pilot's job (§5.1).
+
+## 47. Turf territories, tactical choices and threatened routes
+
+`Territories` gives each `MapLayout` a stable region ID and local districts. Costa Brava's region is `costa-brava` and its first ten districts are San Telmo Centro, Barrio Chino, the Docks, Airport Coast, Rio Negro Estuary, Valle Verde, La Selva, Sierra del Aguila, Old Quarry and Smuggler's Cove. Boundaries use the authored city/terrain layout; uncovered positions resolve to the nearest district. Classic and generated maps use a four-area fallback based on their existing market centres. A future playable map can supply its own `region_id` and district records.
+
+The key is `<region_id>/<district_id>`. District presence decays and accumulates from squads; fights add local influence. The existing `control`, `market_at`, `org_share`, `rival_share`, economy markets and rackets policies remain the broad-market contract. Older saves without districts seed them from their saved market totals; saves with districts restore them only into the matching region. The war snapshot includes district names, parent markets, centres and faction control.
+
+NPC commit/withdraw decisions use each squad's range-adjusted `fire_at`, cover, morale and nearby friendly support. Territory patrol targets score local opposition and strategic tags. Explicit human orders remain in charge. A truck with an active one-leg delivery checks its remaining route every 30 seconds; if a materially lower-risk path exists through the faction-aware road graph, its driver changes route without losing position or progress. The organization focuses escorts on valuable or exposed loads. Police and rival route choices read the truck's current route. These choices preserve seizure and combat outcome rules.
+
+The new behavior is gated by `Territories.ENABLED`; it draws no additional randomness. Initial verification: Godot 4.7.2 import passed, the full suite passed 898/898, Costa Brava smoke printed `SMOKE OK`, and the 200-seed live war balance run completed. The suite emitted analyst string-formatting and freed-lambda-capture errors alongside its zero-failure summary; investigate those logs before treating the run as fully clean. Not yet: a 2D territory overlay, balance calibration for district control, and authoring another distinct playable region.
+
+## 48. The case file: heat you can see and answer (design, 18 Oct 2026; not built)
+
+Owner, 18 Oct: make heat and the law interactive. Step 1 of the agreed order (then the police search and the ladder down,
+then patterns, escalation, corruption and ground chases). Today most heat is a hidden number that bites: a stash at heat 55
+or more is raided on a 30% roll each minute (`session_rules.gd`, AI task force), and the pilot's case is live suspicion only.
+
+**Four kinds of heat, each cooling at its own rate.**
+
+| Heat | Where it lives | Rises with | Cools |
+|---|---|---|---|
+| Pilot | `PoliceSystem.Case` (exists: suspicion, wanted) plus a new slow `evidence` score | sightings, a lost squawk, seized trucks, busts | evidence slowly (hours); suspicion as today |
+| Aircraft | new, per owned tail number | being seen dark or wanted in it | parked in a hangar; faster after a repaint |
+| Stash | `StashNet` stash `heat` (exists; known at 30) | deliveries, seizures | as today (1.5 a minute, the stash works' rate) |
+| District | new, per market or territory | seizures, fights, raids there | slowly, faster with no incidents |
+
+A hot aircraft makes the pilot's suspicion rise faster when it is seen (the tail number is known); a hot district makes
+patrols and checkpoints more likely there. Each kind is a separate dial, so the player can park a hot aircraft and fly a
+clean one, or empty a hot stash.
+
+**Investigations in stages.** Each target the task force pursues (a stash, the pilot) gets a case file that moves through
+stages on timers instead of a hidden roll:
+
+1. **Lead:** a stash becomes known (heat 30, as today) or the pilot's evidence passes a first mark.
+2. **Surveillance:** after a few minutes with heat still high, a stakeout (a van across the street, a plane on the ramp).
+3. **Warrant:** after the surveillance time, if heat is still above the line, a warrant with a countdown.
+4. **Action:** when the countdown ends, the raid or the arrest at the next landing at a watched strip.
+
+If heat falls below the line during surveillance, the case is dropped. A raid on an empty stash finds nothing, cools it,
+and voids the warrant.
+
+**Counter-moves at each stage.**
+- **Move the product:** empty the stash before the warrant runs out (the logistics trucks already do this).
+- **Lie low:** no deliveries, so heat decays and the case can drop at surveillance.
+- **The lawyer:** challenge a warrant for a fee; a chance to void it, better with a better lawyer (the court's tiers).
+- **A warning:** the lookout (exists) or a cop on the payroll shows the stage and the countdown; without one the player
+  sees only what a phone call or the scanner gives.
+- **A decoy:** a decoy run draws the surveillance away for a while.
+
+**What the player sees.** A **Heat** app on the phone (Codex): one row per case with the target, the stage, what the
+police have, and the time to the next stage when a warning source knows it; the four heat dials. Messages at each stage
+change ("A van has been parked across from the Quarry shed for an hour.").
+
+**Rules.** Behind a static switch `Investigation.ENABLED` registered in `Switches.PARITY` (off: the old raid roll).
+Every random draw (warrant challenge, stakeout noticed) on its own stream, `seed + 163`. Saved in `StrategicSave` (case
+stage, timers, aircraft and district heat). Tests first: a stash at heat moves Lead to Surveillance to Warrant to Raid on
+time; lying low drops a case at surveillance; emptying the stash makes the raid find nothing; a lawyer can void a warrant;
+the switch off keeps the old behaviour. Raids become predictable, so stash losses should fall: a strategic and tactical
+balance run and a BALANCE entry go with it.
+
+**Not in step 1:** the police search pattern, scanner chatter and the ladder down (step 2); pattern detection,
+escalation by agency, corruption and ground chases (step 3).
+
+
+## 49. Buyers' orders: deadlines that follow demand (owner, 18 October 2026)
+
+`scripts/sim/orders.gd`, held by `Trade` (`trade.orders`), on its own RNG stream (`seed + 167`), behind `Orders.ENABLED`. A buyer
+who is open for business (the Morettis, the Company, Los Cuervos for guns) asks for a quantity of a good by a time, and pays a
+premium on top of his quote if it arrives in time.
+
+- **The deadline follows the street's demand.** Where demand over supply in the buyer's market is 1.25 or more it is a **rush**:
+  10 to 20 minutes and 25 to 40% on top. Otherwise it is **a night's work**: 45 to 75 minutes and 10 to 20% on top. Orders are
+  likelier for the goods the street is hungriest for.
+- **What the player does.** Rings in as a message and an `order_posted` event (about one every 15 minutes, at most two open, a
+  third to two thirds of the buyer's appetite). Any bulk sale to that buyer of that good that **settles** before the deadline
+  fills it, whether by a truck reaching the meet or a direct sale, so the lead time of the logistics is what the player races.
+  A part delivery pays the premium on the part and leaves the rest open.
+- **The stakes.** A filled order raises the crew's standing (+3); a missed one costs it (-4, scaled by how little arrived). Until the
+  per-crew trust table of D-11 exists the standing is what each crew already has: the Family's respect, the Company's trust.
+- **The market board.** `Trade.view("org").orders.board` gives, for each hot good in each market, the price against normal, the
+  demand over supply, and a trend (up, down, flat against five minutes before); `.orders.open` the open orders with the time
+  left, `.orders.recent` the last few results. The screens (the board on the phone, the order call) are the UX lane.
+- **Saved** in the strategic save (`StrategicSave.ORDERS`); the posting stream is not saved, like Trade's own.
+- **Balance.** An order adds income on a sold lot, so it needs a BALANCE entry (a `cli.gd -- report` run with trade on); the
+  tests prove the rules, not the economics.
+
+## 50. Arms and ammunition: crates, rounds and scarcity (owner direction, 18 October 2026; a proposal, not built)
+
+**Where it stands.** `arsenal.gd` holds weapons by four tiers per side (pistols 1.0 fire, rifles 2.2, machine guns 4.0, RPGs 6.0 and
+the ability to hit vehicles); prices are a fixed table (300, 900, 3,500, 5,000) times one "guns" market multiplier. Ammunition is a
+single count of rounds on each arsenal that rises by 120 with every weapon added, is drawn by squads (90 a man) and spent in fights
+(`ground.gd`, `foot_combat.gd`), and a squad at zero rounds stops firing. It is not a good: it is not bought, moved or priced. Weapons
+travel as `{tier: n}` on a truck (`Logistics.send_guns`) and arrive by aircraft in gun runs, whose mix is the only place scarcity
+shows (45% rifles, 30% pistols and rifles, 17% rifles and a machine gun, 8% a machine gun and RPGs).
+
+**Crates.** A weapon travels in a crate of one type, each with its weight and count, so the load planner and a truck's capacity
+decide how much power you can move. Proposed figures:
+
+| Crate | Holds | Weight | Ammunition crate | Rounds | Weight |
+|---|---|---|---|---|---|
+| Pistols | 12 | 18 kg | Pistol rounds | 1,000 | 15 kg |
+| Rifles | 8 | 40 kg | Rifle rounds | 600 | 18 kg |
+| Machine guns | 2 with mounts | 60 kg | Belts | 400 | 20 kg |
+| RPGs | 2 launchers | 35 kg | Rockets | 4 | 25 kg |
+
+**The scarcity ladder.** Each type has its own supply in each market, as `market.gd` keeps for the drugs (supply and demand, the
+price following demand over supply, shocks from events). The base supplies make the powerful rare: pistols 1.0, rifles 0.55,
+machine guns 0.18, RPGs 0.08. Gun runs, the fences and the buyers draw on the same ladder, so a machine-gun crate is an event and a
+pistol crate is stock. A seizure takes supply out; a boatlift or a Company shipment puts it in (the Company already moves guns south).
+
+**Ammunition as a good.** Rounds are per weapon type (a rifle fires rifle rounds), in crates, bought from the same sources, trucked
+and stored in a stash or the armoury like weapons. The dearer, heavier rounds belong to the heavier weapons, so a squad of machine
+guns is strong and costly to keep firing. Prices follow the usual factors: supply, demand, police pressure, the island, and the war.
+
+**The ground and turf war.** Squads draw the rounds of the weapons they carry; fights spend them (the existing per-tick and
+per-shot costs, by type); a district that is fighting raises its ammunition demand, and a dry one pays more. A squad with no rounds
+stops firing, as now. Holding a port, a road or a depot decides who can resupply; losing it cuts the line. The Lanchester `fire`
+weights stay, so power is bought with tier, and sustained with ammunition. Orders (section 49) can ask for crates: "Los Cuervos want
+four rifle crates by tonight".
+
+**Order of work** (ROADMAP "Arms and ammunition"): crates and the ladder, ammunition as a good, the war's use of it, then the screens.
+**Costs to watch:** a save migration (`Arsenal.ammo` becomes a count per type; keep the total for old saves), new random draws on their
+own streams behind switches, and a BALANCE entry per stage, because the ground war's economy and losses are sensitive to arms (the
+turf expansion's 200-seed run already shifted them).
