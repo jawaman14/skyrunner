@@ -24,6 +24,23 @@ func _clean(dir: String) -> void:
 	DirAccess.remove_absolute(abs_dir)
 
 
+## Owner, 18 Oct: save slots. Slot 1 keeps the old name, so an older game is slot 1.
+func test_save_slots_keep_slot_one_on_the_old_name() -> void:
+	check_eq(SavePaths.file_name(Roles.SOLO, true, 1), "story.json", "slot 1 is the save a player already has")
+	check_eq(SavePaths.file_name(Roles.SOLO, true, 2), "story-2.json")
+	check_eq(SavePaths.file_name(Roles.CAMPAIGN, false, 5), "campaign-5.json")
+	check_eq(SavePaths.file_name(Roles.SOLO, false, 99), "open-%d.json" % SavePaths.SLOTS, "a slot past the last is the last")
+
+
+func test_a_slot_describes_itself() -> void:
+	var dir := _dir()
+	check_eq(SavePaths.describe(dir + "story-2.json", 2), "Slot 2: empty")
+	_put(dir + "story.json", JSON.stringify({"money": 12340, "story": {"index": 2}}))
+	var line := SavePaths.describe(dir + "story.json", 1)
+	check(line.begins_with("Slot 1: $12,340, chapter 3 (Blotter), saved "), "money, chapter and when: %s" % line)
+	_clean(dir)
+
+
 func test_each_mode_has_its_own_file() -> void:
 	check_eq(SavePaths.file_name(Roles.SOLO, false), "open.json")
 	check_eq(SavePaths.file_name(Roles.COOP, false), "open.json")
