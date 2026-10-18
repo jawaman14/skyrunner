@@ -13,7 +13,7 @@ const ACTIONS := [
 	["fill_stashes", "Fill every stash house", "500 lb of each good and $25,000 in each safe"],
 	["clear_heat", "Clear all heat", "police, wanted level and every stash's heat and intel"],
 	["refuel", "Fill the tank", "the aircraft you are in, wherever it is"],
-	["heat_up", "Raise the heat", "wanted level 3 and suspicion 80 on the pilot"],
+	["heat_up", "Raise the heat", "wanted level 3 and suspicion 80 on the pilot (the stars only; pursuit units follow the police's own escalation)"],
 	["free_workers", "Free caught workers", "everyone in jail walks out now"],
 	["next_chapter", "Skip to the next chapter", "the story's debug skip"],
 ]
@@ -32,7 +32,10 @@ static func run(s: Session, id: String) -> String:
 			if s.logistics == null:
 				return "This game has no logistics network."
 			var n := 0
+			var live: Array = s.stash_net.live().map(func(st): return str(st.id)) if s.stash_net != null else []
 			for site in s.logistics.stock.keys():
+				if site != Logistics.HQ and s.stash_net != null and not live.has(str(site)):
+					continue  # a burned stash is unreachable; stocking it would only inflate the totals
 				for g in s.logistics.goods():
 					s.logistics.add(site, g, FILL_LB)
 				if site != Logistics.HQ:
@@ -41,6 +44,7 @@ static func run(s: Session, id: String) -> String:
 			return "Filled %d stash houses." % n
 		"clear_heat":
 			s.police.reset(false)
+			s.police._launches = s.police._launches.filter(func(l): return l[3] != "runner")  # units still waiting to take off
 			if s.stash_net != null:
 				for st in s.stash_net.stashes:
 					st.heat = 0.0

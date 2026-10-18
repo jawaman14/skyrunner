@@ -1490,7 +1490,7 @@ func _process(delta: float) -> void:
 		_car_race()
 	if m == null:
 		hud.refresh()
-	elif not s.parked:
+	elif not s.parked and not m is CheatMenu:  # the test menu stays open in the air ("fill the tank wherever it is")
 		m.close()
 	elif _frame % 10 == 0:
 		m.refresh()

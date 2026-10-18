@@ -37,3 +37,12 @@ func test_clear_heat_zeroes_the_stashes() -> void:
 		check_eq(s.stash_net.stashes[0].heat, 0.0, "stash heat gone")
 	check_eq(Cheats.run(s, "nonsense"), "Unknown cheat.", "an unknown id does nothing")
 	s.dispose()
+
+
+func test_clear_heat_cancels_units_waiting_to_launch() -> void:
+	var s := _sess()
+	s.police._launches.append([s.time + 60.0, "heli", "HAR", "runner", null])
+	s.police._launches.append([s.time + 60.0, "heli", "HAR", "rival", null])
+	Cheats.run(s, "clear_heat")
+	check_eq(s.police._launches.size(), 1, "only the rival's launch is left")
+	s.dispose()
