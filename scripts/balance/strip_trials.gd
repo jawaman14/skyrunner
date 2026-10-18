@@ -432,6 +432,39 @@ static func _num(v, fmt := "%.0f") -> String:
 	return "-" if v == null else fmt % v
 
 
+## One mark for a trial: pass, fail, obstructed (no clear final, so not flown) or inconclusive (left the corridor).
+static func mark(r) -> String:
+	if r == null:
+		return "."
+	return {"pass": "✓", "fail": "✗", "obstructed": "–", "inconclusive": "?"}.get(str(r.status), "?")
+
+
+## Markdown for docs/STRIPS.md: one row per strip end, and per aircraft and load a "T L" pair of marks (takeoff and
+## landing from that end). `aircraft` and `loads` give the column order; `fields` the row order.
+static func summary_table(results: Array, fields: Array, aircraft: Array, loads: Array) -> String:
+	var by := {}
+	for r in results:
+		by["%s|%d|%s|%s|%s" % [r.field, r.end, r.aircraft, r.load, r.test]] = r
+	var head := ["| strip | end | heading |"]
+	var rule := ["|---|---|---|"]
+	for k in aircraft:
+		for ld in loads:
+			head.append(" %s %s |" % [k, ld])
+			rule.append("---|")
+	var lines := ["".join(head), "".join(rule)]
+	for code in fields:
+		var af := World.airfield(code)
+		for end in [0, 1]:
+			var cells := []
+			for k in aircraft:
+				for ld in loads:
+					cells.append("T%s L%s" % [mark(by.get("%s|%d|%s|%s|takeoff" % [code, end, k, ld])),
+						mark(by.get("%s|%d|%s|%s|landing" % [code, end, k, ld]))])
+			lines.append("| %s %s | %d | %03.0f | %s |" % [code, af.name, end, end_heading(af, end), " | ".join(cells)])
+	return "
+".join(lines)
+
+
 ## Markdown: one row per trial, in job order.
 static func table(results: Array) -> String:
 	var lines := ["| field | end | hdg | aircraft | load | test | result | liftoff m | 15 m at | min clear m | along m | max off-line m | aim m | final touchdown m | strip left m | sink fpm | roll m | go-arounds | outcome |",

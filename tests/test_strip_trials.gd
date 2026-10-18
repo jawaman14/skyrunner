@@ -86,6 +86,24 @@ func test_filters_are_validated_before_anything_is_flown() -> void:
 	check("empty" in StripTrials.validate_filters([]), "an empty list")
 
 
+## The STRIPS.md summary: one row per strip end, a "T L" pair of marks per aircraft and load.
+func test_the_summary_table_marks_each_trial_and_each_end() -> void:
+	StripTrials.use_map(MapCity.SEED, false)
+	var rs := []
+	for t in [["QRY", 0, "takeoff", "pass"], ["QRY", 0, "landing", "obstructed"], ["QRY", 1, "takeoff", "fail"],
+			["QRY", 1, "landing", "pass"], ["QRY", 1, "takeoff", "inconclusive"]]:
+		rs.append({"field": t[0], "end": t[1], "aircraft": "c172p", "load": "light", "test": t[2], "status": t[3]})
+	var md := StripTrials.summary_table(rs.slice(0, 4), ["QRY"], ["c172p"], ["light", "half"])
+	var lines := md.split("
+")
+	check_eq(lines.size(), 4, "a header, a rule and one row per end")
+	check(lines[0].contains("c172p light") and lines[0].contains("c172p half"))
+	check(lines[2].contains("QRY Old Quarry | 0 |") and lines[2].contains("T✓ L–"), lines[2])
+	check(lines[3].contains("| 1 |") and lines[3].contains("T✗ L✓"), lines[3])
+	check(lines[3].contains("T. L."), "a load nothing was flown for is a dot: " + lines[3])
+	check_eq(StripTrials.mark(rs[4]), "?")
+
+
 ## A bounce, or a go-around that touches first, must not be reported as the final touchdown.
 func test_touchdown_log_keeps_the_first_and_the_final_touchdown() -> void:
 	var tdlog := StripTrials.TouchdownLog.new()
