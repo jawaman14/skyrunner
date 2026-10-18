@@ -48,6 +48,9 @@ func _init(opts := {}) -> void:
 	econ.attach_market(Market.new(_rng(seed + 113)))  # supply and demand on the street (own stream)
 	econ.market.hook(self)  # arrests, raids, seizures, the factions' fortunes move it
 	arng = _rng(seed + 71)
+	brng = _rng(seed + 149)
+	barng = _rng(seed + 151)
+	bagrng = _rng(seed + 157)
 	if Arsenal.REALISM:
 		for side in ["org", "law", "rival"]:
 			arsenals[side] = Arsenal.new(side)
@@ -57,6 +60,7 @@ func _init(opts := {}) -> void:
 			arsenals["org"].side = "org"
 	if not world.map.stashes.is_empty():
 		stash_net = StashNet.new(world.map.stashes, _rng(seed + 41))
+		investigation = Investigation.new(_rng(seed + 163))
 	ai_law_upgrades = opts.get("ai_law_upgrades", false)
 	for key in SYSTEMS:
 		if opts.get(key, false):

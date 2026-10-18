@@ -16,7 +16,7 @@ Status legend: **[done]** in the code now · **[planned]** historical proposals 
 
 The owner's answers to a gameplay questionnaire (recorded by Codex in PR #249) set the target the rest of this
 document grows towards. They take precedence over conflicting older plans, including the deferrals in
-[EMPIRE_MILESTONE.md](EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
+[EMPIRE_MILESTONE.md](archive/EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
 say what exists. The delivery order is in [ROADMAP.md](ROADMAP.md).
 
 **The core experience: build an empire from nothing.** Mount & Blade: Warband is the principal reference. The
@@ -1453,3 +1453,118 @@ The key is `<region_id>/<district_id>`. District presence decays and accumulates
 NPC commit/withdraw decisions use each squad's range-adjusted `fire_at`, cover, morale and nearby friendly support. Territory patrol targets score local opposition and strategic tags. Explicit human orders remain in charge. A truck with an active one-leg delivery checks its remaining route every 30 seconds; if a materially lower-risk path exists through the faction-aware road graph, its driver changes route without losing position or progress. The organization focuses escorts on valuable or exposed loads. Police and rival route choices read the truck's current route. These choices preserve seizure and combat outcome rules.
 
 The new behavior is gated by `Territories.ENABLED`; it draws no additional randomness. Initial verification: Godot 4.7.2 import passed, the full suite passed 898/898, Costa Brava smoke printed `SMOKE OK`, and the 200-seed live war balance run completed. The suite emitted analyst string-formatting and freed-lambda-capture errors alongside its zero-failure summary; investigate those logs before treating the run as fully clean. Not yet: a 2D territory overlay, balance calibration for district control, and authoring another distinct playable region.
+
+## 48. The case file: heat you can see and answer (design, 18 Oct 2026; not built)
+
+Owner, 18 Oct: make heat and the law interactive. Step 1 of the agreed order (then the police search and the ladder down,
+then patterns, escalation, corruption and ground chases). Today most heat is a hidden number that bites: a stash at heat 55
+or more is raided on a 30% roll each minute (`session_rules.gd`, AI task force), and the pilot's case is live suspicion only.
+
+**Four kinds of heat, each cooling at its own rate.**
+
+| Heat | Where it lives | Rises with | Cools |
+|---|---|---|---|
+| Pilot | `PoliceSystem.Case` (exists: suspicion, wanted) plus a new slow `evidence` score | sightings, a lost squawk, seized trucks, busts | evidence slowly (hours); suspicion as today |
+| Aircraft | new, per owned tail number | being seen dark or wanted in it | parked in a hangar; faster after a repaint |
+| Stash | `StashNet` stash `heat` (exists; known at 30) | deliveries, seizures | as today (1.5 a minute, the stash works' rate) |
+| District | new, per market or territory | seizures, fights, raids there | slowly, faster with no incidents |
+
+A hot aircraft makes the pilot's suspicion rise faster when it is seen (the tail number is known); a hot district makes
+patrols and checkpoints more likely there. Each kind is a separate dial, so the player can park a hot aircraft and fly a
+clean one, or empty a hot stash.
+
+**Investigations in stages.** Each target the task force pursues (a stash, the pilot) gets a case file that moves through
+stages on timers instead of a hidden roll:
+
+1. **Lead:** a stash becomes known (heat 30, as today) or the pilot's evidence passes a first mark.
+2. **Surveillance:** after a few minutes with heat still high, a stakeout (a van across the street, a plane on the ramp).
+3. **Warrant:** after the surveillance time, if heat is still above the line, a warrant with a countdown.
+4. **Action:** when the countdown ends, the raid or the arrest at the next landing at a watched strip.
+
+If heat falls below the line during surveillance, the case is dropped. A raid on an empty stash finds nothing, cools it,
+and voids the warrant.
+
+**Counter-moves at each stage.**
+- **Move the product:** empty the stash before the warrant runs out (the logistics trucks already do this).
+- **Lie low:** no deliveries, so heat decays and the case can drop at surveillance.
+- **The lawyer:** challenge a warrant for a fee; a chance to void it, better with a better lawyer (the court's tiers).
+- **A warning:** the lookout (exists) or a cop on the payroll shows the stage and the countdown; without one the player
+  sees only what a phone call or the scanner gives.
+- **A decoy:** a decoy run draws the surveillance away for a while.
+
+**What the player sees.** A **Heat** app on the phone (Codex): one row per case with the target, the stage, what the
+police have, and the time to the next stage when a warning source knows it; the four heat dials. Messages at each stage
+change ("A van has been parked across from the Quarry shed for an hour.").
+
+**Rules.** Behind a static switch `Investigation.ENABLED` registered in `Switches.PARITY` (off: the old raid roll).
+Every random draw (warrant challenge, stakeout noticed) on its own stream, `seed + 163`. Saved in `StrategicSave` (case
+stage, timers, aircraft and district heat). Tests first: a stash at heat moves Lead to Surveillance to Warrant to Raid on
+time; lying low drops a case at surveillance; emptying the stash makes the raid find nothing; a lawyer can void a warrant;
+the switch off keeps the old behaviour. Raids become predictable, so stash losses should fall: a strategic and tactical
+balance run and a BALANCE entry go with it.
+
+**Not in step 1:** the police search pattern, scanner chatter and the ladder down (step 2); pattern detection,
+escalation by agency, corruption and ground chases (step 3).
+
+**Island boards** (`Jobs.ISLAND_BOARD`, a parity switch). Every strip keeps a board that outlives your visits, so the job board can show the whole island: `Session.stock_island_boards` deals each other strip's board from `update()` (at the first tick, then once a minute), a board lives `Jobs.BOARD_TTL_S` (30 sim minutes) and is dealt afresh when stale, and arriving at a strip keeps its fresh board instead of rerolling it. The employed opening deals its own board and is left alone. The extra draws sit on their own streams (`brng` seed + 149, gun runs `barng` seed + 151, the Company's offers `bagrng` seed + 157), swapped in only while the boards are dealt, so nothing else moves. Accepting a job still needs the pilot parked at its origin.
+
+## 49. Buyers' orders: deadlines that follow demand (owner, 18 October 2026)
+
+`scripts/sim/orders.gd`, held by `Trade` (`trade.orders`), on its own RNG stream (`seed + 167`), behind `Orders.ENABLED`. A buyer
+who is open for business (the Morettis, the Company, Los Cuervos for guns) asks for a quantity of a good by a time, and pays a
+premium on top of his quote if it arrives in time.
+
+- **The deadline follows the street's demand.** Where demand over supply in the buyer's market is 1.25 or more it is a **rush**:
+  10 to 20 minutes and 25 to 40% on top of the buyer's own quote. Otherwise it is **a night's work**: 45 to 75 minutes and 10 to 20% on top of it. Orders are
+  likelier for the goods the street is hungriest for.
+- **What the player does.** Rings in as a message and an `order_posted` event (about one every 15 minutes, at most two open, a
+  third to two thirds of the buyer's appetite). Any bulk sale to that buyer of that good that **settles** before the deadline
+  fills it, whether by a truck reaching the meet or a direct sale, so the lead time of the logistics is what the player races.
+  A part delivery pays the premium on the part and leaves the rest open.
+- **The stakes.** A filled order raises the crew's standing (+3); a missed one costs it (-4, scaled by how little arrived). Until the
+  per-crew trust table of D-11 exists the standing is what each crew already has: the Family's respect, the Company's trust.
+- **The market board.** `Trade.view("org").orders.board` gives, for each hot good in each market, the price against normal, the
+  demand over supply, and a trend (up, down, flat against five minutes before); `.orders.open` the open orders with the time
+  left, `.orders.recent` the last few results. The screens (the board on the phone, the order call) are the UX lane.
+- **Saved** in the strategic save (`StrategicSave.ORDERS`); the posting stream is not saved, like Trade's own.
+- **Balance.** An order adds income on a sold lot, so it needs a BALANCE entry (a `cli.gd -- report` run with trade on); the
+  tests prove the rules, not the economics.
+
+## 50. Arms and ammunition: crates, rounds and scarcity (owner direction, 18 October 2026; a proposal, not built)
+
+**Where it stands.** `arsenal.gd` holds weapons by four tiers per side (pistols 1.0 fire, rifles 2.2, machine guns 4.0, RPGs 6.0 and
+the ability to hit vehicles); prices are a fixed table (300, 900, 3,500, 5,000) times one "guns" market multiplier. Ammunition is a
+single count of rounds on each arsenal that rises by 120 with every weapon added, is drawn by squads (90 a man) and spent in fights
+(`ground.gd`, `foot_combat.gd`), and a squad at zero rounds stops firing. It is not a good: it is not bought, moved or priced. Weapons
+travel as `{tier: n}` on a truck (`Logistics.send_guns`) and arrive by aircraft in gun runs, whose mix is the only place scarcity
+shows (45% rifles, 30% pistols and rifles, 17% rifles and a machine gun, 8% a machine gun and RPGs).
+
+**Crates.** A weapon travels in a crate of one type, each with its weight and count, so the load planner and a truck's capacity
+decide how much power you can move. Proposed figures:
+
+| Crate | Holds | Weight | Ammunition crate | Rounds | Weight |
+|---|---|---|---|---|---|
+| Pistols | 12 | 18 kg | Pistol rounds | 1,000 | 15 kg |
+| Rifles | 8 | 40 kg | Rifle rounds | 600 | 18 kg |
+| Machine guns | 2 with mounts | 60 kg | Belts | 400 | 20 kg |
+| RPGs | 2 launchers | 35 kg | Rockets | 4 | 25 kg |
+
+**The scarcity ladder.** Each type has its own supply in each market, as `market.gd` keeps for the drugs (supply and demand, the
+price following demand over supply, shocks from events). The base supplies make the powerful rare: pistols 1.0, rifles 0.55,
+machine guns 0.18, RPGs 0.08. Gun runs, the fences and the buyers draw on the same ladder, so a machine-gun crate is an event and a
+pistol crate is stock. A seizure takes supply out; a boatlift or a Company shipment puts it in (the Company already moves guns south).
+
+**Ammunition as a good.** Rounds are per weapon type (a rifle fires rifle rounds), in crates, bought from the same sources, trucked
+and stored in a stash or the armoury like weapons. The dearer, heavier rounds belong to the heavier weapons, so a squad of machine
+guns is strong and costly to keep firing. Prices follow the usual factors: supply, demand, police pressure, the island, and the war.
+
+**The ground and turf war.** Squads draw the rounds of the weapons they carry; fights spend them (the existing per-tick and
+per-shot costs, by type); a district that is fighting raises its ammunition demand, and a dry one pays more. A squad with no rounds
+stops firing, as now. Holding a port, a road or a depot decides who can resupply; losing it cuts the line. The Lanchester `fire`
+weights stay, so power is bought with tier, and sustained with ammunition. Orders (section 49) can ask for crates: "Los Cuervos want
+four rifle crates by tonight".
+
+**Order of work** (ROADMAP "Arms and ammunition"): crates and the ladder, ammunition as a good, the war's use of it, then the screens.
+**Costs to watch:** a save migration (`Arsenal.ammo` becomes a count per type; keep the total for old saves), new random draws on their
+own streams behind switches, and a BALANCE entry per stage, because the ground war's economy and losses are sensitive to arms (the
+turf expansion's 200-seed run already shifted them).

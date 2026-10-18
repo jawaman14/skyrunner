@@ -145,6 +145,22 @@ func test_a_systems_lesson_waits_for_its_system() -> void:
 	s.dispose()
 
 
+## Owner, 14 Oct: there is no way to learn how to avoid radar and being seen. The first time suspicion builds in the air, the radar tip says how.
+func test_the_radar_tip_comes_once_when_the_police_first_notice_you() -> void:
+	var s := _sess()
+	s.tutorial.tick(s)
+	check(not s.tutorial.tips_shown.has("radar"), "no tip while nobody is watching")
+	s.phase = "flying"
+	s.police.suspicion = 12.0
+	s.tutorial.tick(s)
+	check(s.tutorial.view().tip.begins_with("The police have noticed you"), "the radar tip: %s" % s.tutorial.view().tip)
+	check(s.tutorial.view().tip.contains("45 m") and s.tutorial.view().tip.contains("behind hills"), "and it gives the radar floor and the terrain cover")
+	var n := s.messages.filter(func(m): return "TIP" in str(m[1])).size()
+	s.tutorial.tick(s)
+	check_eq(s.messages.filter(func(m): return "TIP" in str(m[1])).size(), n, "and comes once")
+	s.dispose()
+
+
 func test_tips_come_once() -> void:
 	var s := _sess()
 	s.police.case("runner").wanted = 1

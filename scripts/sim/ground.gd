@@ -201,6 +201,7 @@ var _informant_t := 0.0
 var _started := false
 var _upkeep_acc := 0.0
 var _passed := {}  ## "truck/patrol" -> whether that patrol pulled that truck over
+var _roadside := {}  ## truck job_id -> {guard, rival}: a rival ambush being fought out at the roadside (nobody takes a truck without a fight)
 var _org_recruit_t := -1e9  ## when the organisation's AI last raised a squad
 var _follow_t := 0.0
 
@@ -270,9 +271,7 @@ func territory_share(id: String, faction: String) -> float:
 	var c: Dictionary = territory_control.get(key, {})
 	if c.is_empty():
 		return -1.0
-	var total: float = float(c.get("org", 0.0)) + float(c.get("rival", 0.0)) + 0.5 * float(c.get("police", 0.0))
-	var mine: float = 0.5 * float(c.get("police", 0.0)) if faction == "police" else float(c.get(faction, 0.0))  # police count half in the total, so half in the share
-	return mine / total if total > 1.0 else -1.0
+	return _control_share(c, faction)
 
 
 func seed_territories_from_markets() -> void:
@@ -1247,6 +1246,13 @@ func truck_contacts() -> Array:
 	var out := []
 	if sess.stash_net == null:
 		return out
+	# a truck that left the road mid-fight (seized from the air, or delivered) ends its roadside fight: no guard is left behind
+	var live := {}
+	for t in sess.stash_net.trucks:
+		live[t.job_id] = true
+	for jid in _roadside.keys():
+		if not live.has(jid):
+			_end_roadside(jid)
 	# a decoy car pulled over: the checkpoint wastes its time on it
 	for d in squads:
 		if d.faction != "org" or d.tactic != "decoy" or d.state == "gone":
@@ -1264,6 +1270,27 @@ func truck_contacts() -> Array:
 		var p: Array = t.pos(sess.time)
 		var tp := Vector2(p[0], p[1])
 		if sess.time - t.t0 < t.lead_s():
+			continue
+		if _roadside.has(t.job_id):
+			var rs: Dictionary = _roadside[t.job_id]
+			var guard: Squad = rs.guard
+			var raider: Squad = rs.rival
+			if guard.fight != null and guard.state == "fighting":
+				t.hold(TICK_S)  # the truck waits while it's fought out
+				continue
+			_roadside.erase(t.job_id)  # the shooting is over: who is still standing?
+			raider.tactic = ""
+			raider.hidden = false
+			var held_off: bool = guard.men > 0 and not (guard.state in ["gone", "routed"])
+			guard.state = "gone"
+			squads.erase(guard)
+			if held_off:
+				_say("both", "A truck's driver held off Los Cuervos and drove on")
+				continue
+			out.append([t, "hijacked", "Los Cuervos"])
+			commanders.rival.cash += t.pay * 0.5
+			if not t.weapons.is_empty():
+				arsenal("rival").add_all(t.weapons)
 			continue
 		var escort = Py.first(squads, func(q): return (q.faction == "org" and q.order.get("type", "") == "escort"
 			and int(q.order.get("job_id", -1)) == t.job_id and q.state != "gone"))
@@ -1295,15 +1322,53 @@ func truck_contacts() -> Array:
 				else:
 					out.append([t, "seized", "a %s %s" % [q.id, "checkpoint" if q.tactic == "checkpoint" else "patrol"]])
 				break
-			if q.faction == "rival" and q.tactic == "ambush" and (escort == null or escort.pos().distance_to(tp) > 600.0):
-				out.append([t, "hijacked", "Los Cuervos"])
-				commanders.rival.cash += t.pay * 0.5
-				if not t.weapons.is_empty():
-					arsenal("rival").add_all(t.weapons)
-				q.tactic = ""
-				q.hidden = false
+			if q.faction == "rival" and q.tactic == "ambush" and q.fight == null and (escort == null or escort.pos().distance_to(tp) > 600.0):
+				var guard := _truck_guard(t, tp)  # nobody takes a truck without a fight: the driver and a hand shoot back
+				_roadside[t.job_id] = {"guard": guard, "rival": q}
+				_open(q, guard)
+				t.hold(TICK_S)
 				break
 	return out
+
+
+## Ends a roadside fight whose truck is gone: the fight closes without a result and the transient guard leaves the map.
+func _end_roadside(jid) -> void:
+	var rs: Dictionary = _roadside[jid]
+	_roadside.erase(jid)
+	var guard: Squad = rs.guard
+	var raider: Squad = rs.rival
+	var f = guard.fight
+	if f != null:
+		f.over = true
+		fights.erase(f)
+		if raider.fight == f:
+			raider.fight = null
+			raider.state = "holding"
+	raider.tactic = ""
+	raider.hidden = false
+	guard.fight = null
+	guard.state = "gone"
+	squads.erase(guard)
+
+
+## The driver and a hand, as a squad, for the length of a roadside fight (not hired, not on the payroll, gone when it ends).
+func _truck_guard(t, at: Vector2) -> Squad:
+	var g := Squad.new()
+	g.faction = "org"
+	g.kind = "foot"
+	g.men = 2
+	g.men0 = 2
+	g.id = "D-%d" % t.job_id
+	g.tag = "roadside"  # transient fight participant; its truck and fight are not saved
+	g.loadout = {"pistol": 2}
+	g.ammo = 180
+	g.morale = MORALE0["org"]
+	g.x = at.x
+	g.y = at.y
+	g.home = hq("org")
+	g.state = "holding"
+	squads.append(g)
+	return g
 
 
 ## A patrol that passes a truck (not a checkpoint) pulls it over now and then:
@@ -1425,9 +1490,9 @@ func _control(dt: float) -> void:
 
 
 static func _control_share(values: Dictionary, faction: String) -> float:
-	var total: float = values.org + values.rival + 0.5 * values.police
+	var total: float = float(values.get("org", 0.0)) + float(values.get("rival", 0.0)) + 0.5 * float(values.get("police", 0.0))
 	if total <= 1.0: return -1.0
-	return (0.5 * float(values.police) if faction == "police" else float(values.get(faction, 0.0))) / total
+	return (0.5 * float(values.get("police", 0.0)) if faction == "police" else float(values.get(faction, 0.0))) / total
 
 
 ## Public modeled influence, own deployment/cost and currently observed threats.
@@ -1456,15 +1521,11 @@ func district_view(viewer: String) -> Array:
 
 ## Los Cuervos' share of the streets in market m (0..1), from who's out there.
 func rival_share(m: String) -> float:
-	var c: Dictionary = control[m]
-	var tot: float = c.org + c.rival + 0.5 * c.police
-	return c.rival / tot if tot > 1.0 else -1.0
+	return _control_share(control[m], "rival")
 
 
 func org_share(m: String) -> float:
-	var c: Dictionary = control[m]
-	var tot: float = c.org + c.rival + 0.5 * c.police
-	return c.org / tot if tot > 1.0 else -1.0
+	return _control_share(control[m], "org")
 
 
 ## The turf the markets see: the season's (or the default) nudged by the streets.

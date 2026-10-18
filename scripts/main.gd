@@ -23,7 +23,7 @@ var _finder: LanDiscovery.Finder = null  ## listens for games on the network (th
 var _mp: MultiplayerMenu = null
 var save_dir := SavePaths.DIR  ## the tests point it elsewhere so they never touch a player's saves
 
-var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1,
+var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1, "slot": 1,
 	"players": 0, "layer": 0, "graphics": "high", "watch": false, "shot": "", "frames": 90, "hour": -1.0,
 	"map": -1, "weather": "", "connect": "", "host_room": null, "role": "copilot", "name": "player", "password": "", "seat3d": false, "lobby": true, "unlocks": "story", "chapter": 0, "tutorial": false, "smoke": 0}
 
@@ -216,7 +216,7 @@ func start() -> void:
 	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and mode != Roles.POLICE and features == null
 	if save_dir == SavePaths.DIR:
 		SavePaths.migrate()  # an old player's loose save files move into the folder once
-	var save := save_dir + SavePaths.file_name(mode, story)
+	var save := save_dir + SavePaths.file_name(mode, story, int(args["slot"]))
 	if not args["new"]:
 		var save_error := PlayableMaps.error(int(args["map"]), Session.read_save(save))
 		if save_error != "":
@@ -301,7 +301,7 @@ func _join() -> void:
 		args["password"] = a.substr(0, at)
 		a = a.substr(at + 1)
 	var i := a.rfind(":")
-	var host := a.substr(0, i) if i > 0 else "127.0.0.1"
+	var host := a.substr(0, i) if i > 0 else (a if i < 0 else "127.0.0.1")  # "host" alone is the host; ":port" alone is this machine
 	var port := int(a.substr(i + 1)) if i >= 0 else HostServer.DEFAULT_PORT
 	var link := NetClient.new()
 	add_child(link)

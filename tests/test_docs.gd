@@ -4,7 +4,8 @@ extends TestCase
 ## Python prototype (only tools/reference and the fixtures' README may name it).
 
 const DOCS := ["res://README.md", "res://docs/DESIGN.md", "res://docs/DECISIONS.md", "res://docs/ROADMAP.md", "res://docs/MULTIPLAYER.md", "res://docs/BALANCE.md",
-	"res://docs/PORTING.md", "res://tests/fixtures/README.md"]
+	"res://docs/PORTING.md", "res://tests/fixtures/README.md",
+	"res://docs/README.md", "res://docs/archive/README.md", "res://AGENTS.md"]
 
 
 func _links(text: String) -> Array:

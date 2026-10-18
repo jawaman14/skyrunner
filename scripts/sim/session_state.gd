@@ -11,6 +11,9 @@ const OPEN_FLOAT := 10000  ## open mode's start: every system live from the firs
 const START_FIELD := "HAR"
 const OFF_FIELD_MAX_GS_KTS := 15.0
 const GEAR_MARGIN := 1.25  ## the gear holds to this multiple of its rated sink rate; between 1x and 1.25x is a hard landing
+const BACK_UP_MS := 1.5  ## Backspace on the ramp: m/s backwards
+const BACK_UP_MAX_KTS := 2.0
+var _backing := false
 const WINGTIP_STRIKE_ROLL_DEG := 18.0  ## on the ground: a Cessna's wingtip is about 1.8 m up, half a span out
 ## The graded ground beside a strip (Terrain._shape_fields levels it out to 50 m) is part of the field for the
 ## "ran off" check, so a rollout that drifts onto the shoulder is a scare, not a crash. Pits and cliffs get none.
@@ -73,6 +76,8 @@ var messages: Array = []  ## [[t, text]]
 var phone_calls := PhoneCalls.new()  ## one authoritative incoming queue for all phone surfaces
 var active_jobs: Array = []
 var boards := {}
+var board_at := {}  ## strip code -> sim time its board was dealt (Jobs.ISLAND_BOARD)
+var _stock_next := 0.0
 var jsbsim_root := ""
 var save_path := ""
 var mode := Roles.SOLO
@@ -115,6 +120,7 @@ var econ: Economy  ## the markets: what each good is worth where (Economy)
 var _news_seen := 0
 var stash_net: StashNet = null  ## the organisation's stash houses (maps that have them)
 var _stash_ai_t := 0.0
+var investigation: Investigation = null  ## the task force's case files on the stashes (DESIGN §48)
 var arsenals := {}  ## "org" | "law" | "rival" -> Arsenal (Arsenal.REALISM)
 var seats: Seats  ## who holds each role: the AI, or a human (Seats)
 var _ai_defaults := {}  ## what each seat's AI was set to before a human took it
@@ -132,6 +138,9 @@ var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets:
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
+var brng: PyRandom  ## the island boards' draws (Jobs.ISLAND_BOARD, seed + 149): dealing a board for a strip you have not visited moves no other stream
+var barng: PyRandom  ## ... their gun runs (seed + 151)
+var bagrng: PyRandom  ## ... and the Company's offers (seed + 157)
 var ai_law_upgrades := false  ## the AI chief buys law upgrades as money comes in (live play; off in sims and tests)
 var urng: PyRandom  ## upgrade draws (spoiled tips, leaks), off the parity streams
 var _ai_buy_t := 0.0
@@ -431,6 +440,8 @@ func enable_system(key: String, career := false) -> bool:
 			if trade != null or not Trade.ENABLED:
 				return false
 			trade = Trade.new(self, _rng(seed + 131), career)
+			if Orders.ENABLED:
+				trade.orders = Orders.new(self, trade, _rng(seed + 167))  # buyers' orders (own stream)
 		"logistics":
 			if logistics != null or trade == null or stash_net == null:
 				return false
@@ -484,6 +495,7 @@ func unlocked(key: String) -> bool:
 
 
 func refresh_board(code: String) -> void:
+	board_at[code] = time
 	if story != null and story.employment != null and story.employment.active():
 		boards[code] = story.employment.board(self, code)
 		return
