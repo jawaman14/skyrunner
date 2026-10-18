@@ -1505,3 +1505,25 @@ balance run and a BALANCE entry go with it.
 escalation by agency, corruption and ground chases (step 3).
 
 **Island boards** (`Jobs.ISLAND_BOARD`, a parity switch). Every strip keeps a board that outlives your visits, so the job board can show the whole island: `Session.stock_island_boards` deals each other strip's board from `update()` (at the first tick, then once a minute), a board lives `Jobs.BOARD_TTL_S` (30 sim minutes) and is dealt afresh when stale, and arriving at a strip keeps its fresh board instead of rerolling it. The employed opening deals its own board and is left alone. The extra draws sit on their own streams (`brng` seed + 149, gun runs `barng` seed + 151, the Company's offers `bagrng` seed + 157), swapped in only while the boards are dealt, so nothing else moves. Accepting a job still needs the pilot parked at its origin.
+
+## 49. Buyers' orders: deadlines that follow demand (owner, 18 October 2026)
+
+`scripts/sim/orders.gd`, held by `Trade` (`trade.orders`), on its own RNG stream (`seed + 167`), behind `Orders.ENABLED`. A buyer
+who is open for business (the Morettis, the Company, Los Cuervos for guns) asks for a quantity of a good by a time, and pays a
+premium on top of his quote if it arrives in time.
+
+- **The deadline follows the street's demand.** Where demand over supply in the buyer's market is 1.25 or more it is a **rush**:
+  10 to 20 minutes and 25 to 40% on top. Otherwise it is **a night's work**: 45 to 75 minutes and 10 to 20% on top. Orders are
+  likelier for the goods the street is hungriest for.
+- **What the player does.** Rings in as a message and an `order_posted` event (about one every 15 minutes, at most two open, a
+  third to two thirds of the buyer's appetite). Any bulk sale to that buyer of that good that **settles** before the deadline
+  fills it, whether by a truck reaching the meet or a direct sale, so the lead time of the logistics is what the player races.
+  A part delivery pays the premium on the part and leaves the rest open.
+- **The stakes.** A filled order raises the crew's standing (+3); a missed one costs it (-4, scaled by how little arrived). Until the
+  per-crew trust table of D-11 exists the standing is what each crew already has: the Family's respect, the Company's trust.
+- **The market board.** `Trade.view("org").orders.board` gives, for each hot good in each market, the price against normal, the
+  demand over supply, and a trend (up, down, flat against five minutes before); `.orders.open` the open orders with the time
+  left, `.orders.recent` the last few results. The screens (the board on the phone, the order call) are the UX lane.
+- **Saved** in the strategic save (`StrategicSave.ORDERS`); the posting stream is not saved, like Trade's own.
+- **Balance.** An order adds income on a sold lot, so it needs a BALANCE entry (a `cli.gd -- report` run with trade on); the
+  tests prove the rules, not the economics.

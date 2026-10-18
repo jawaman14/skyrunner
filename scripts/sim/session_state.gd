@@ -439,6 +439,8 @@ func enable_system(key: String, career := false) -> bool:
 			if trade != null or not Trade.ENABLED:
 				return false
 			trade = Trade.new(self, _rng(seed + 131), career)
+			if Orders.ENABLED:
+				trade.orders = Orders.new(self, trade, _rng(seed + 167))  # buyers' orders (own stream)
 		"logistics":
 			if logistics != null or trade == null or stash_net == null:
 				return false

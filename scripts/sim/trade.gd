@@ -69,6 +69,7 @@ var earned := 0  ## money the trade made
 var street_sales := {}  ## market -> $ a minute (the last minute, ours)
 var last := ""
 var bulk_log: Array = []  ## [time, buyer, good, qty] - what following the money finds
+var orders: Orders = null  ## buyers' orders with deadlines that follow demand (set by the session; null without)
 var _t := 0.0
 var _war_t := 0.0
 var _sales_acc := {}
@@ -188,6 +189,8 @@ func sell(buyer: String, good: String, qty: float, tier := "rifle", from := "", 
 func settle(buyer: String, good: String, qty: float, tier := "rifle") -> int:
 	var q := quote(buyer, good, tier)
 	var pay := int(q.price * qty)
+	if orders != null:
+		pay += orders.on_settle(buyer, good, qty, q.price)  # an order filled in time pays its premium
 	if good != "guns":
 		sold[good] += qty
 	appetite[buyer][good] = maxf(0.0, appetite[buyer][good] - qty)
@@ -330,6 +333,8 @@ func update(dt: float) -> void:
 	for b in appetite:
 		for g in appetite[b]:
 			appetite[b][g] = minf(float(BUYERS[b].cap[g]), appetite[b][g] + float(BUYERS[b].cap[g]) * step / REFILL_S)
+	if orders != null:
+		orders.update(sess.time, step)
 	if sess.payroll == null:
 		return
 	_post_dealers()
@@ -533,5 +538,5 @@ func view(side: String) -> Dictionary:
 	for m in street_sales:
 		sales[m] = int(street_sales[m])
 	return {"stock": st, "corners": corners, "quotes": quotes, "connected": connected, "career": career, "last": last,
-		"sales": sales, "sold": {"cocaine": int(sold.cocaine), "marijuana": int(sold.marijuana)}, "earned": earned,
+		"orders": orders.view() if orders != null else {"open": [], "recent": [], "board": {"goods": {}}}, "sales": sales, "sold": {"cocaine": int(sold.cocaine), "marijuana": int(sold.marijuana)}, "earned": earned,
 		"street": {"cocaine": snappedf(street_price("cocaine", "town"), 0.1), "marijuana": snappedf(street_price("marijuana", "town"), 0.1)}}
