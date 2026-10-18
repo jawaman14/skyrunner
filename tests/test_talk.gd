@@ -75,6 +75,16 @@ func test_the_scripts_compile() -> void:
 	check(Engine.has_singleton("DialogueManager") or Talk.manager() != null, "the runtime, with no autoload")
 
 
+func test_rafas_story_beats_compile() -> void:
+	var rafa := Talk.resource("rafa")
+	check(rafa != null, "Rafa's draft compiles")
+	if rafa == null:
+		return
+	for title in ["employment", "chapter_two_first", "chapter_two_second", "chapter_two_third", "chapter_four_news"]:
+		check(rafa.titles.has(title), "Rafa dialogue has entry point: " + title)
+	check(rafa.character_names.has("Rafa Quintero"), "the speaker is Rafa Quintero")
+
+
 func test_take_the_familys_offer() -> void:
 	var s := _sess()
 	s.money = 10000
