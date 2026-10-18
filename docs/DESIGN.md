@@ -1581,13 +1581,14 @@ rework the whole of logistics and stock with the new game in mind." The flow cha
 
 | Kind | Whose cargo | Pays | Hot means |
 |---|---|---|---|
-| **Contract** | the client's | a fee on delivery; never enters your stock | the client's risk; it adds nothing to your case |
+| **Contract** | the client's | a fee on delivery; never enters your stock | the cargo stays illegal: police consequences still apply to the run, and the story's hot-load goals count it |
 | **Own stock** | yours, bought upfront or made | the margin when sold | your risk: it draws heat, case files and raids and can be seized |
 | **Delegated** | yours, flown by a hired pilot or truck | the margin minus the hire (D-10) | the same as own stock, plus the hire's chance of being caught |
 
 The existing job board is the contract kind. It stays as steady income in the early game (chapters 1 and 2) and as a fallback, and
-shrinks in importance as stock opens. "Hot" stops meaning "contraband a client pays you to fly"; it means "stock that is yours and
-can be taken".
+shrinks in importance as stock opens. Contract cargo keeps its legality flags: the stage-2 customer load that teaches police
+consequences (`employment_opening.gd`) and the Task Force chapter's `hot_loads` goal (`story.gd`) still work. What changes is
+ownership: for stock, "hot" also means "yours and can be taken", and only stock you own feeds your case file over time.
 
 ### 51.2 Where stock comes from
 
@@ -1601,8 +1602,10 @@ can be taken".
 
 ### 51.3 What a lot is
 
-Stock is a list of lots, not a count per good. A lot carries: the good, the weight, a **grade** (0 to 1), its **age**, its
-**provenance** (where it came from) and whether it is hot. Grade moves price and which buyers will take it (the Family and the
+Stock is a list of lots, not a count per good. A lot carries: the good, the **units** it is sold in (pounds for drugs, sheets
+for acid, weapons or crates for arms; the existing `psychedelics.gd` and `arsenal.gd` units), its **transport weight** (so loading
+and partial sales settle separately), a **grade** (0 to 1), its **age**, its **provenance** (where it came from) and whether it is
+hot. Grade moves price and which buyers will take it (the Family and the
 casino pay for high grades; corners take low ones). Cutting a lot raises margin and costs a crew's trust and a buyer's repeat
 orders. Age lowers value for goods that spoil (grass dries, acid degrades, guns age), so stock is not simply hoarded. Provenance
 makes stolen stock traceable: sold in the wrong district, its owner finds out. The existing totals (`Logistics.total`, the trade
@@ -1620,11 +1623,15 @@ A **stock ledger** on the boss desk lists every lot: place, grade, age, heat, an
 
 ### 51.5 Selling and cleaning the cash
 
-Lots sell to buyers' orders (section 49) and to street dealers on corners your crew holds. Sales come in as **dirty cash**, a
-balance apart from `Session.money`. Only clean cash buys stock. The casino or a front turns dirty into clean:
+Lots sell to buyers' orders (section 49) and to street dealers on corners your crew holds. Sales come in as **dirty cash**. Only
+clean cash buys stock. Two laundering systems already exist: `HQ.Org` keeps `dirty`, `clean`, tiered `fronts` and a **per-night**
+capacity (`hq.gd`), and `Casino.launder` converts logistics cash into money with a cap, fees and heat (`casino.gd`). Slice 5 does
+**not** add a third: it makes `HQ.Org` the one authority (moving the casino's path onto it, with a save migration) and adds what is
+missing:
 
-- a **weekly clean-deposit cap**, so a big dirty balance cannot be cleaned at once;
-- **fronts bought upfront in tiers**, each with a throughput cap that rises with the price;
+- a cap that resets on a period the session really has: the **night**, as `HQ.Org` already does (a literal week never comes round
+  in an 8-hour campaign);
+- front tiers bought upfront, each with a throughput cap that rises with the price;
 - a **delay** before cleaned cash arrives;
 - over-cap deposits and a large dirty balance raise case-file heat.
 
@@ -1651,19 +1658,24 @@ come from early-access guides and are not used here.
 
 1. This note. 2. Stock lots (grade, age, provenance) behind a switch, with a save migration. 3. Orders and the pickup person, and
 the gun dealer on the same flow. 4. Places and the ledger. 5. Laundering with fronts. 6. Crew relationships and rackets under
-heat. 7. A second currency ("standing") and chapter objectives, only after the owner decides what standing unlocks. 8. The boss
-desk screens (Codex). Each slice has its own static switch registered in `scripts/sim/switches.gd`, its own RNG stream, tests
-first, and a BALANCE entry; slices that touch saves or random draws are reviewed by the other agent.
+heat. 7. Chapter objectives with deadlines, and what the existing Renown (section 25) and crew trust (D-11) unlock at boss level. No new
+saved score unless the owner asks for one: "standing" would duplicate both. 8. The boss
+desk screens (Codex). Each slice that changes behaviour has its own static switch registered in `scripts/sim/switches.gd` and tests
+first. A slice gets its own RNG stream only if it draws random numbers (orders and pickups, crew rolls), and a BALANCE entry only if
+it can move the economy (laundering, orders, lots' ageing); the note, the ledger screen and the desk do neither. Slices that touch
+saves or random draws are reviewed by the other agent.
 
 **Open for the owner:** where the pickup happens (a fixed spot or the contact comes to a stash), the warehouse cap (a count, a
-weight, or floor space you buy), what standing unlocks, and whether the job board is limited to chapters 1 and 2.
+weight, or floor space you buy), what Renown and trust unlock at boss level, and whether the job board is limited to chapters 1 and 2.
 
 
 ### 51.9 Draft parameters (first drafts by MiMo, reviewed; every number is a starting point for balance runs)
 
-**Fronts for laundering (51.5).** Prices and caps are drafts in this game's money (a job pays $500 to $5,000).
+**Fronts for laundering (51.5).** Prices and caps are drafts in this game's money (a job pays $500 to $5,000). The cap column is
+per night (the existing `HQ.Org` period), not per week; the draft numbers below were written for a week and need rescaling to a
+night in the balance run.
 
-| Tier | Front | Price | Weekly clean-deposit cap | Delay (game hours) | Heat per $1,000 over the cap |
+| Tier | Front | Price | Clean-deposit cap (draft, to be rescaled per night) | Delay (game hours) | Heat per $1,000 over the cap |
 |---|---|---|---|---|---|
 | 1 | Laundromat | $2,000 | $1,500 | 24 | 10 |
 | 2 | Post office counter | $8,000 | $5,000 | 18 | 6 |
