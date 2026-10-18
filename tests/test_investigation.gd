@@ -133,6 +133,11 @@ func test_a_known_tail_number_heats_up_and_cools_in_a_hangar() -> void:
 	hangar.tail_heat = {"c172p": inv.tail_heat["c172p"] + 5.0 * Investigation.TAIL_PARKED_MIN}
 	var in_hangar := hangar.update_tail(5 * 60.0, "c172p", false, false, true, true)
 	check(in_hangar < parked, "a hangar cools it faster than a ramp")
+	var wanted_parked := Investigation.new()
+	wanted_parked.tail_heat = {"c172p": 20.0}
+	wanted_parked.update_tail(60.0, "c172p", true, false, true, true)
+	check_near(wanted_parked.tail_heat["c172p"], 20.0 - Investigation.TAIL_HANGAR_MIN, 0.001,
+		"a wanted aircraft still cools while parked in a hangar")
 	check_near(inv.tail_mult("pa28"), 1.0, 0.001, "another aircraft is clean")
 
 

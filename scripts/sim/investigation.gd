@@ -80,18 +80,18 @@ func update(now: float, stash_net) -> Array:
 	return raids
 
 
-## The aircraft's heat over `dt` seconds: up while wanted or tracked dark, down otherwise (fastest in a hangar). Returns
-## the multiplier the police give its sightings.
+## The aircraft's heat over `dt` seconds: up while flying wanted or tracked dark; parked aircraft cool, fastest in a
+## hangar. Returns the multiplier the police give its sightings.
 func update_tail(dt: float, key: String, wanted: bool, tracked_dark: bool, parked: bool, hangar: bool) -> float:
 	var h := float(tail_heat.get(key, 0.0))
 	var before := h
 	var per_min := 0.0
-	if wanted:
+	if parked:
+		per_min = -(TAIL_HANGAR_MIN if hangar else TAIL_PARKED_MIN)
+	elif wanted:
 		per_min = TAIL_WANTED_MIN
 	elif tracked_dark:
 		per_min = TAIL_DARK_MIN
-	elif parked:
-		per_min = -(TAIL_HANGAR_MIN if hangar else TAIL_PARKED_MIN)
 	else:
 		per_min = -TAIL_COOL_MIN
 	h = clampf(h + per_min * dt / 60.0, 0.0, 100.0)
