@@ -98,7 +98,7 @@ func _ready() -> void:
 	kg.add_theme_constant_override("h_separation", 12)
 	flight.add_child(kg)
 	for n in ControlsConfig.names():
-		kg.add_child(UIStyle.label(ControlsConfig.LABELS[n], 15))
+		kg.add_child(_named(n))
 		var l := UIStyle.label("", 15, UIStyle.WHITE)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -118,6 +118,24 @@ func _ready() -> void:
 	foot.add_child(_btn("Save and close", close))
 	_refresh()
 	palette_btn.grab_focus.call_deferred()
+
+
+## A control's name with its glyph in front: the key cap while the keyboard was used last, the button of the connected
+## pad (Xbox, PlayStation, Switch...) after a pad button (Controller Icons, MIT; the glyphs are CC0).
+func _named(n: String) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var tex = ControlsGlyphs.texture(n)
+	if tex != null:
+		var glyph := TextureRect.new()
+		glyph.texture = tex
+		glyph.custom_minimum_size = Vector2(32, 32)
+		glyph.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		glyph.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(glyph)
+	row.add_child(UIStyle.label(ControlsConfig.LABELS[n], 15))
+	return row
 
 
 ## Each tab scrolls independently and follows keyboard/controller focus.
