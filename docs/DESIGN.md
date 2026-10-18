@@ -1503,3 +1503,26 @@ balance run and a BALANCE entry go with it.
 
 **Not in step 1:** the police search pattern, scanner chatter and the ladder down (step 2); pattern detection,
 escalation by agency, corruption and ground chases (step 3).
+
+
+## 49. Buyers' orders: deadlines that follow demand (owner, 18 October 2026)
+
+`scripts/sim/orders.gd`, held by `Trade` (`trade.orders`), on its own RNG stream (`seed + 167`), behind `Orders.ENABLED`. A buyer
+who is open for business (the Morettis, the Company, Los Cuervos for guns) asks for a quantity of a good by a time, and pays a
+premium on top of his quote if it arrives in time.
+
+- **The deadline follows the street's demand.** Where demand over supply in the buyer's market is 1.25 or more it is a **rush**:
+  10 to 20 minutes and 25 to 40% on top. Otherwise it is **a night's work**: 45 to 75 minutes and 10 to 20% on top. Orders are
+  likelier for the goods the street is hungriest for.
+- **What the player does.** Rings in as a message and an `order_posted` event (about one every 15 minutes, at most two open, a
+  third to two thirds of the buyer's appetite). Any bulk sale to that buyer of that good that **settles** before the deadline
+  fills it, whether by a truck reaching the meet or a direct sale, so the lead time of the logistics is what the player races.
+  A part delivery pays the premium on the part and leaves the rest open.
+- **The stakes.** A filled order raises the crew's standing (+3); a missed one costs it (-4, scaled by how little arrived). Until the
+  per-crew trust table of D-11 exists the standing is what each crew already has: the Family's respect, the Company's trust.
+- **The market board.** `Trade.view("org").orders.board` gives, for each hot good in each market, the price against normal, the
+  demand over supply, and a trend (up, down, flat against five minutes before); `.orders.open` the open orders with the time
+  left, `.orders.recent` the last few results. The screens (the board on the phone, the order call) are the UX lane.
+- **Saved** in the strategic save (`StrategicSave.ORDERS`); the posting stream is not saved, like Trade's own.
+- **Balance.** An order adds income on a sold lot, so it needs a BALANCE entry (a `cli.gd -- report` run with trade on); the
+  tests prove the rules, not the economics.
