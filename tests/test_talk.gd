@@ -83,6 +83,33 @@ func test_rafas_story_beats_compile() -> void:
 	for title in ["employment", "chapter_two_first", "chapter_two_second", "chapter_two_third", "chapter_four_news"]:
 		check(rafa.titles.has(title), "Rafa dialogue has entry point: " + title)
 	check(rafa.character_names.has("Rafa Quintero"), "the speaker is Rafa Quintero")
+	var s := _sess()
+	var b := await _balloon(s, "rafa", "chapter_two_first")
+	var seen := await _until_choice(b)
+	check(seen.any(func(line): return "business is knowing" in line), "chapter two reaches the third beat")
+	b.free()
+	s.dispose()
+	var opening := _sess()
+	Story.new_employed().attach(opening)
+	var app := PilotApp.new()
+	Engine.get_main_loop().root.add_child(app)
+	app.setup(opening, "low")
+	app._rafa_story_cue()
+	check(app.talk != null and bool(opening.story.progress.get("rafa_employment_seen", false)), "employment stage zero opens Rafa once")
+	var first := app.talk
+	app._rafa_story_cue()
+	check(app.talk == first, "the opening cue does not reopen")
+	app.free()
+	opening.dispose()
+	var chapter_two := _sess()
+	Story.new(1).attach(chapter_two)
+	var app_two := PilotApp.new()
+	Engine.get_main_loop().root.add_child(app_two)
+	app_two.setup(chapter_two, "low")
+	app_two._rafa_story_cue()
+	check(app_two.talk != null and bool(chapter_two.story.progress.get("rafa_chapter_two_seen", false)), "chapter two opens Rafa once")
+	app_two.free()
+	chapter_two.dispose()
 
 
 func test_take_the_familys_offer() -> void:
