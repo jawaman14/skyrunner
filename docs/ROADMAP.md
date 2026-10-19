@@ -43,7 +43,42 @@ a Claude review of Claude's own work):
 5. **#373** (scenery) and **#374** (period vehicles) after the owner's screenshot review.
 6. **QA lane (Codex):** goldens and BALANCE for #377, #383, #393 and #396; a hands-on look at the quarry exit and the map lines.
 
+## Empire pivot (owner, 19 October)
+
+The game becomes a hybrid of open-world character play and a persistent empire simulation, with equal design weight on both
+(D-65 to D-80). The plan and PR order are in [EMPIRE_PIVOT.md](EMPIRE_PIVOT.md). The simulation contract (ledger, inventory,
+one clock, actors, organisation AI, saves, the Living District's acceptance tests) is in
+[EMPIRE_SIMULATION_SPEC.md](EMPIRE_SIMULATION_SPEC.md).
+
+Order (D-75): land the queue above and finish heat step 1, then:
+
+1. **Now, independent of the simulation:** the pivot docs (this section); story text with Rafa as the employer and Benny as his
+   fixer, and Manny Arce renamed in the flying lessons; `rafa.dialogue` wired into the prelude and chapter 2; stale docs.
+2. **Foundations (Claude, risk class):**
+   - F-1, the save migration chain, comes first.
+   - F-2, the ledger wrap, with no behaviour change.
+   - F-3a-f, the money sites moved by domain.
+   - F-4, inventory.
+   - F-5, `command_as` and actors.
+   - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74).
+   - F-7, time acceleration, after D-12.
+3. **The Living District (P0, D-72):** San Telmo Centro, with three organisations (the player's, Los Cuervos and the Morettis, D-84).
+   - Two supply chains.
+   - The desk's business books.
+   - Direct and delegated delivery equivalence.
+   - Acceptance tests A1-A9 and P1.
+   - The owner's playtest (G1).
+4. **After the gate:** organisation depth (hierarchy, schedules, budgets, conditional orders, trust D-11), then the campaign pivot
+   (story v6 with ventures, the takeover on the ledger, both views kept, the ending and the sandbox), then more cities, each fully explorable (D-81).
+
+Paused by D-75 until the gate: the presentation layers, heat steps 2-3, the rival depot raid and the map redesign. Every PR keeps
+the sockets lane green (D-71). The owner answered O-1 to O-5 on 19 October (D-81 to D-85): every city fully explorable,
+the next in line takes over when the boss dies or is jailed, the sandbox carries on after any ending, the Morettis are the
+third organisation, and the acceleration caps are as specified.
+
 ## Next: presentation layers (owner's pick)
+
+*Paused by D-75 until the Living District gate (Empire pivot, above).*
 
 Full text: [PRESENTATION_LAYERS.md](PRESENTATION_LAYERS.md). Read-only presentation that follows the simulation. None of it may
 change a sim outcome or draw on a sim RNG stream.
@@ -58,6 +93,8 @@ change a sim outcome or draw on a sim RNG stream.
 5. **Heat in the look:** streetlight flicker, more patrols, darker clothing as heat rises.
 
 ## Story: the uncle and the boss's seat (owner, 12 October; not built)
+
+*Now Phase 3 of the Empire pivot (above): the takeover is built on the ledger, and direct play stays first-class after it (D-79).*
 
 Recorded in [PROJECT_TRIAGE_2026-10-12.md §8.5](archive/PROJECT_TRIAGE_2026-10-12.md) and HANDOFF; missing from the 12 October roadmap.
 The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than life, with a darkness you can't place.
@@ -90,6 +127,8 @@ Order: with the rival depot raid, after the presentation layers, unless the owne
 
 ## Heat and the law (owner, 18 October)
 
+*Step 1 finishes; steps 2-3 are paused by D-75 until the Living District gate (Empire pivot, above).*
+
 Agreed order (owner, 18 Oct). Each step: a design note first, its own switch, its own RNG stream, tests first, a balance run.
 
 1. **Case files and kinds of heat** (in progress). Design #400 (DESIGN §48); the stash case files (lead, surveillance,
@@ -108,6 +147,8 @@ Who: Claude the simulation of every step; Codex the Heat app, the HUD and the in
 "heat in the look").
 
 ## Then: the rival depot raid
+
+*Paused by D-75: to be redesigned on rival inventories once the shared economy (D-65) lands.*
 
 Owner's decided design (17 October; saved in memory and on the board): stolen cargo and weapons go to a **rival depot at the
 rival HQ** with a value; a **tip-off a few minutes after the theft** marks it on the map; a raid costs **all four** of casualties
@@ -199,6 +240,8 @@ Claude's draft split, for the discussion:
 | Merging | each merges its own work on green CI; a risk-class PR (saves, RNG streams, goldens or frozen fixtures, the Session layers, the flight model, balance) is reviewed by the other first | the same |
 
 ## Map redesign (owner, 18 October; planned)
+
+*Paused by D-75: resumes on the Living District's district data (Empire pivot, above).*
 
 The owner asked for the map to be rebuilt from the ground up with what we have learnt. The plan is
 [MAP_REDESIGN.md](MAP_REDESIGN.md): constraints first (strips and their approach volumes, then terrain shaped for them,

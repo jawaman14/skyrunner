@@ -85,6 +85,7 @@
     "test_confirm_box.gd",
     "test_controls.gd",
     "test_copilot.gd",
+    "test_cheats.gd",
     "test_court.gd",
     "test_dealership.gd",
     "test_dialogue_reliability.gd",
