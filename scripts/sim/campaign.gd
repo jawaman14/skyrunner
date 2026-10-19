@@ -45,13 +45,13 @@ class Chapter:
 			set(k, opts[k])
 
 
-static func _manny_job(sess) -> void:
+static func _benny_job(sess) -> void:
 	var here := World.airfield(sess.location if sess.location else "HAR")
 	var jid := Jobs.new_id()
 	var items := [Loadout.Item.new(Jobs.new_id(), "'Coffee' sacks", "cargo", 90.0, jid, {"hot": true}),
 		Loadout.Item.new(Jobs.new_id(), "'Coffee' sacks", "cargo", 90.0, jid, {"hot": true})]
 	var dest := "QRY" if here.code != "QRY" else "COV"
-	var job := Jobs.Job.new(jid, "Manny's coffee -> " + World.airfield(dest).name, "contraband", here.code, dest, items, 4500,
+	var job := Jobs.Job.new(jid, "Benny's coffee -> " + World.airfield(dest).name, "contraband", here.code, dest, items, 4500,
 		{"notes": "Stay under the radar floor. Transponder off means primary-only - and suspicious if they see you."})
 	if not sess.boards.has(here.code):
 		sess.boards[here.code] = []
@@ -104,14 +104,14 @@ static func _chapters() -> Array:
 			+ "covers the fuel. Fly charters and freight, learn to balance a load, and prove you\n"
 			+ "can get into Mesa del Aguila - the mesa strip nobody else will touch.",
 			[], [], [Objective.new("earn_legal", "Earn $5,000 from legal work", 5000), Objective.new("land_EGL", "Land at Mesa del Aguila")]),
-		Chapter.new(2, 1980, "A Favor for Manny",
-			"Manny Arce sells boats at Smuggler's Cove and pays cash. He needs two sacks of\n"
+		Chapter.new(2, 1980, "A Favor for Benny",
+			"Benny Ruiz fixes runs for Rafa and knows the boats at Smuggler's Cove and pays cash. He needs two sacks of\n"
 			+ "'coffee' moved to the Old Quarry, quietly. San Telmo and Valle Verde radars can't see you\n"
 			+ "below their clutter floor - the radar detector tells you when they're painting you.",
 			["contraband", "detector"], [], [Objective.new("hot_clean", "Deliver a hot load without ever being wanted")],
-			{"setup": Campaign._manny_job}),
+			{"setup": Campaign._benny_job}),
 		Chapter.new(3, 1981, "Kickers",
-			"Landing with the goods is for amateurs. Manny's boat, the Lady Luck, will wait off\n"
+			"Landing with the goods is for amateurs. Benny's boat, the Lady Luck, will wait off\n"
 			+ "the coast. Rosa rides along to push bales out of the door. Calling the boat on the\n"
 			+ "radio helps it find you - and helps anyone listening find you too.",
 			["contraband", "detector", "airdrop", "copilot", "scanner"], ["interceptors", "rivals"],
