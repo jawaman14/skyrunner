@@ -47,7 +47,7 @@ Run the game with no arguments and the **lobby** opens. It sets the same things 
 | Choice | What it is |
 |---|---|
 | **Solo** | You are the pilot; the AI plays every other seat. |
-| **Flying lessons (Costa Brava)** | Four flying lessons on Costa Brava: mail runs, a favour for Manny, airdrops, the long legs. |
+| **Flying lessons (Costa Brava)** | Four flying lessons on Costa Brava: mail runs, a favour for Benny, airdrops, the long legs. |
 | **Co-op: friends crew for you** | You host; friends take the co-pilot, spotter, boat, boss, lieutenant or fixer seats. |
 | **Versus** | Humans on both sides; the AI fills the empty seats. |
 | **Unlocks: Story / Open** | *Story* (the default): twelve chapters, 1979 to 1988, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
