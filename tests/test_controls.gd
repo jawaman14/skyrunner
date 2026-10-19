@@ -78,6 +78,13 @@ func test_rebind_swaps_and_saves() -> void:
 	check(ControlsConfig.load_file(TMP), "old profile with custom RB loaded")
 	check(rb.is_action(ControlsConfig.action("brake")), "custom RB kept on brake")
 	check(not rb.is_action(ControlsConfig.action("reverse")), "RB not duplicated on reverse")
+	legacy.erase_section_key("keys", "reverse")
+	legacy.save(TMP)
+	ControlsConfig.reset()
+	check(ControlsConfig.load_file(TMP), "profile predating reverse loaded")
+	check(rb.is_action(ControlsConfig.action("brake")), "old custom RB remains on brake")
+	check(not rb.is_action(ControlsConfig.action("reverse")), "old profile without reverse does not duplicate RB")
+	check(backspace.is_action(ControlsConfig.action("reverse")), "missing reverse keeps Backspace default")
 	var n := InputEventKey.new()
 	n.physical_keycode = KEY_N
 	legacy.set_value("keys", "reverse", [n])
