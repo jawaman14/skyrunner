@@ -1,6 +1,6 @@
 # Empire simulation spec (Living District, P0)
 
-Draft for review, 19 October 2026, against `main` @ 34fd7f2. The decisions it rests on are D-62 to D-77 in [DECISIONS.md](DECISIONS.md); the plan and PR order are in [EMPIRE_PIVOT.md](EMPIRE_PIVOT.md).
+Draft for review, 19 October 2026, against `main` @ 34fd7f2. The decisions it rests on are D-65 to D-80 in [DECISIONS.md](DECISIONS.md); the plan and PR order are in [EMPIRE_PIVOT.md](EMPIRE_PIVOT.md).
 
 This is the contract for the first milestone: one district where the player's organisation and two rivals run businesses on the
 same rules. It covers what P0 needs and reserves interfaces for what comes later (more cities, detail levels, co-op). It doesn't
@@ -28,7 +28,7 @@ prove it. Later PRs move call sites one domain at a time.
 | Clock | `Session.time`, advanced in `session_tick.gd` | No sim-side time acceleration (`world_scene.time_scale` only moves the sky). The pilot app steps the sim per frame; D-12 (a fixed 30 Hz step) is planned, not built. |
 | Strategic layer | `HQ.Season` and `NightDirector`: planning, operation and wrap-up per night. Actions: launder, buy_front, bribe, lawyer, opsec... | A night's operation starts when the pilot takes off with something hot (`nights.gd`), so it's tied to the pilot. The balance sims (`scripts/balance/strategic.gd`) are built on nights. |
 | Money | `Session.money` (the player's), `ground.commanders.rival.cash` (Los Cuervos'), `SessionState.law_funds` (the task force's), stash cash in logistics | **88 assignments to `money` in 28 files**, **87 uses of `law_funds` in 16 files**, plus **43 `+=`/`-=` on stash cash and stock**. No ledger. `money` already goes negative today: crash repairs (`session_rules._crash`) and ground upkeep (`ground.gd`) subtract unconditionally. |
-| Rival economy | Los Cuervos have one cash float, start on $20k, and pay for squads | **Injected from nowhere:** `chronicle.gd` (+8k, +6k), `agency.gd` (+4k), `family.gd` (+2k), and `ground.gd` pays them half a truck's value. That breaks "same rules" (D-62). |
+| Rival economy | Los Cuervos have one cash float, start on $20k, and pay for squads | **Injected from nowhere:** `chronicle.gd` (+8k, +6k), `agency.gd` (+4k), `family.gd` (+2k), and `ground.gd` pays them half a truck's value. That breaks "same rules" (D-65). |
 | Factions | `"org"`, `"rival"` and `"police"` as string keys | `"org"` appears **236 times in 31 sim files**, `"rival"` 132 in 23. `ground.gd` hard-codes `CAP`, `HOSTILE` and `DOCTRINE` per key. |
 | Businesses | HQ `fronts` (laundromat), the casino, the dealership | No business entity: nothing with its own books, staff and stock. |
 | Districts | 10 territories in `map_city.gd` (`l.territories`, San Telmo Centro to Smuggler's Cove), each with id, name, market zone, bounds, neighbours and tags. San Telmo Centro is `city, commercial`. | No ownership, businesses or per-district state. |
@@ -108,7 +108,7 @@ Invariants:
 - a lot is in exactly one location.
 
 Migration is the same as money: F-4 wraps stash stock, then call sites move by domain. The aircraft load (`Loadout`) becomes a
-location, so a flown delivery and a trucked one are the same `move`. That's what makes direct and delegated deliveries equal (D-63).
+location, so a flown delivery and a trucked one are the same `move`. That's what makes direct and delegated deliveries equal (D-66).
 
 ## 5. The clock
 
@@ -131,10 +131,10 @@ One authoritative `Session.time` (decided 19 Oct). Three things hang off it:
 
 **Time acceleration** (new; needs D-12's fixed step first):
 - The desk can run ×1, ×4, ×16 or ×60 by stepping the sim N fixed steps per frame.
-- Only the organisation's leader can change the speed (D-82); a host who isn't the leader can't.
+- Only the organisation's leader can change the speed (D-85); a host who isn't the leader can't.
 - It's held at ×1 while **any** human seat, local or remote, is flying or on foot in a hostile area. The flight model
   must never take a variable step.
-- In multiplayer it also needs every human seat parked (D-82).
+- In multiplayer it also needs every human seat parked (D-85).
 - The cap rule lives in one function, so it's tested once.
 
 **Historical time.** 1979–1989 is campaign time, measured on the same clock. Chapter years stay labels on chapters, not a
@@ -151,7 +151,7 @@ own org id. New code calls `command_as(actor, name, args)`. Permission order:
 3. the person's authority. In P0 that means the boss can do everything and a manager only what their budget and orders allow.
 
 **Results.** These are unchanged: `[ok, message]`, and the preview gate still applies. A refused command always gives a reason
-the UI can show (D-66).
+the UI can show (D-69).
 
 **Events.** Every event on the bus gains `org` and `actor`. `job_delivered` gains `by` (person id) and `mode` (`flown`,
 `trucked`, `boat`, `mule`). Story goals count by org, not by who flew. This fixes the gap in EMPIRE_PIVOT: today's payload has
@@ -189,7 +189,7 @@ P0 has one detailed district: San Telmo Centro, recommended in §10. Everything 
 - P0 calls `tick_full` everywhere, because there's only one district;
 - a test checks that a single business run for 24 hours with `tick_full` ends within tolerance of `tick_aggregate(24h)`.
 
-That keeps the door open for detail levels (D-65) without building materialisation or reconciliation before the district has
+That keeps the door open for detail levels (D-68) without building materialisation or reconciliation before the district has
 proved itself.
 
 ## 9. Saves
@@ -216,7 +216,7 @@ map; the map redesign is paused (decided 19 Oct).
 |---|---|---|
 | `org` | The player (Rafa's outfit, then the nephew's) | |
 | `rival` | Los Cuervos | Already have squads, turf and cash |
-| `moretti` | The Morettis' local businesses (owner, D-81) | The Family already has state (respect, greed, loans, the docks) in `family.gd`. Making them an org that owns the restaurant and the laundromat chain gives a third competitor on economic rules rather than violence. |
+| `moretti` | The Morettis' local businesses (owner, D-84) | The Family already has state (respect, greed, loans, the docks) in `family.gd`. Making them an org that owns the restaurant and the laundromat chain gives a third competitor on economic rules rather than violence. |
 
 **Businesses** (12: 8 in San Telmo Centro, 2 in each neighbour):
 
@@ -258,17 +258,17 @@ small).
 
 ## 11. Owner answers to the open questions (19 October)
 
-- **O-1 City access → D-78.** Every city is fully explorable. That makes detail levels (§8, D-65) a requirement for
+- **O-1 City access → D-81.** Every city is fully explorable. That makes detail levels (§8, D-68) a requirement for
   Phase 4, not an option: the far cities must run aggregated until the player arrives, with materialisation and
   reconciliation designed before the second city is built. P0 is unchanged.
-- **O-2 Succession → D-79.** When the boss dies or is jailed, the next in line takes over and the player carries on as
+- **O-2 Succession → D-82.** When the boss dies or is jailed, the next in line takes over and the player carries on as
   them. `Org.succession` holds the line as an ordered list, because `Person.boss` can't pick one heir among several
   reports and the leader has no boss. By default it's ordered by rank, then by hire serial, and the player can reorder it.
   The first living, free person in it becomes `leader`, and the playable character is the org's `leader`, not a fixed
   person. Phase 2's hierarchy must always name a successor, and the desk should show who it is. Bankruptcy isn't a
   change of leader; it stays §0's configurable game-ender unless the owner says otherwise.
-- **O-3 Endings → D-80.** The player just carries on in the sandbox. Rule, Retire and Fall are recorded in the journal,
-  not game-overs. A Retire ending hands the seat on through D-79.
-- **O-4 Third organisation → D-81.** The Morettis, as an economic org (`moretti`) on the same rules (§10).
-- **O-5 Acceleration → D-82.** As proposed in §5: ×1, ×4, ×16, ×60; ×1 while a human flies or is on foot in a hostile
+- **O-3 Endings → D-83.** The player just carries on in the sandbox. Rule, Retire and Fall are recorded in the journal,
+  not game-overs. A Retire ending hands the seat on through D-82.
+- **O-4 Third organisation → D-84.** The Morettis, as an economic org (`moretti`) on the same rules (§10).
+- **O-5 Acceleration → D-85.** As proposed in §5: ×1, ×4, ×16, ×60; ×1 while a human flies or is on foot in a hostile
   area; in multiplayer only the leader, and only with every human seat parked.

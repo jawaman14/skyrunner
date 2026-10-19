@@ -33,7 +33,7 @@ current are in [archive/](archive/). They are kept as records, not as instructio
 | [DECISIONS.md](DECISIONS.md) | **The owner's decisions ledger.** Every decision, with where its work is tracked. Read it first |
 | [ROADMAP.md](ROADMAP.md) | The work queue, in order |
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | What is verified, pending and deferred, with a generated source inventory |
-| [EMPIRE_PIVOT.md](EMPIRE_PIVOT.md) | The empire pivot (19 Oct): decisions D-62 to D-77, verified blockers, and the PR order to the Living District |
+| [EMPIRE_PIVOT.md](EMPIRE_PIVOT.md) | The empire pivot (19 Oct): decisions D-65 to D-80, verified blockers, and the PR order to the Living District |
 | [EMPIRE_SIMULATION_SPEC.md](EMPIRE_SIMULATION_SPEC.md) | The simulation contract for the pivot: ledger, inventory, one clock, actors, organisation AI, saves, acceptance tests |
 | [MAP_REDESIGN.md](MAP_REDESIGN.md) | The plan to rebuild the Costa Brava map from the ground up |
 | [LOOP_IDEAS.md](LOOP_IDEAS.md) | Eight proposed additions to the product and money loop, for the owner to choose from |
