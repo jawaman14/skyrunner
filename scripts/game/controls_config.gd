@@ -25,7 +25,7 @@ const HELD := {
 	"throttle_up": {"keys": [KEY_R, KEY_PAGEUP], "axes": [[JOY_AXIS_TRIGGER_RIGHT, 1.0]]},
 	"throttle_down": {"keys": [KEY_F, KEY_PAGEDOWN], "axes": [[JOY_AXIS_TRIGGER_LEFT, 1.0]]},
 	"brake": {"keys": [KEY_B, KEY_SPACE], "buttons": [JOY_BUTTON_LEFT_SHOULDER]},
-	"reverse": {"keys": [KEY_BACKSPACE]},
+	"reverse": {"keys": [KEY_BACKSPACE], "buttons": [JOY_BUTTON_RIGHT_SHOULDER]},
 	"trim_up": {"keys": [KEY_BRACKETRIGHT], "buttons": [JOY_BUTTON_DPAD_RIGHT]},
 	"trim_down": {"keys": [KEY_BRACKETLEFT], "buttons": [JOY_BUTTON_DPAD_LEFT]},
 }
