@@ -33,6 +33,7 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
          Flight assist (ESC menu): with no key held the wings level and the pitch holds; taps are gentle
          R/F or PGUP/PGDN throttle (hold; a tap is a few %)   Z ramp to full   X ramp to idle   (Z Z / X X: instant)
          G flaps down   T flaps up   [ / ] pitch trim   B or SPACE brakes
+         BACKSPACE back up slowly (1.5 m/s): stopped, throttle at idle, on an airfield
          Y toggle mouse yoke (mouse position = stick)   joystick / gamepad work too
          Air look: hold RIGHT mouse and drag while airborne (independent of Y)
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
