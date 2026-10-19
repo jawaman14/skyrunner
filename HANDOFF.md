@@ -34,10 +34,10 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Dual work (owner, 18 October, D-52): each agent owns assigned work end to end; coordinate through the shared MCP board and use separate linked worktrees. Codex owns reviews, UX/UI, dialogue and QA. |
-| **Task** | Codex is drafting Rafa's dialogue for chapters 1-4 from board assignment #511 item 6. `dialogue/rafa.dialogue` is a content draft; Claude's story beat, unlock and takeover work will call these entry points later. |
-| **Branches / PRs** | `codex/rafa-dialogue` is based on local `origin/main` at `939b4e0b`; draft PR and CI are pending. Other assignments and open PRs are tracked on the MCP board. |
-| **Next step** | Complete full-suite and documentation/status checks, publish the draft PR, then coordinate the entry-point hookup after Claude's scene work lands. |
-| **Codex task** | Finish board assignment #511 item 6 (Rafa dialogue chapters 1-4); preserve the remaining #511 queue in the board. |
+| **Task** | Codex is integrating empire-pivot N-2/N-3/N-4: Rafa employer/Benny fixer wording (#442), parked Rafa dialogue cues with completion-only persistence (#444), and active documentation cleanup (#443). |
+| **Branches / PRs** | #442 `codex/rafa-employer-text`; #443 `codex/empire-docs-audit`; #444 `codex/rafa-dialogue-cues`. PR bodies carry the current commit and CI evidence. The original Rafa dialogue draft merged as #422. |
+| **Next step** | Check #442-#444: finish CI, review comments and integration for any still open; once merged, continue the risk-class review queue (#414, #429, #437, #441, #445) from the shared MCP board. |
+| **Codex task** | Complete the N-2/N-3/N-4 integration and review updated risk-class heads. #441's frozen v1 fixture addresses the save-preservation finding; #445 needs lossless ledger-log trimming. The other findings remain on their PRs. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
 ## Taking over (checklist for the incoming AI)
@@ -139,6 +139,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+- **2026-10-19 - Codex, empire pivot N-2/N-3/N-4:** #442 names Rafa as employer and Benny as fixer, including the flying lessons' assertions; its 14 CI jobs passed at `a62f581`. #444 opens the prelude/chapter-2 scenes, saves a cue only at natural END, and tests hangup/retry/save-load; all test lanes passed at `e0128f35`, with visual capture still running when recorded. #443 retires active speech claims and release gates, dates old suite evidence/timings, and preserves this shared handoff plus current-main inventory/roadmap. Review findings were answered in their inline threads. Local Git writes and shell network access were denied, so changes were published through the GitHub connector and verified in CI; the dirty primary checkout was untouched. PR states and the shared board are authoritative for subsequent integration and risk-review updates.
 
 - **2026-10-19 - Claude (cloud session, no board), empire pivot docs:** On `claude/empire-pivot-docs` from `main` `34fd7f2`, added `docs/EMPIRE_PIVOT.md` (revision 2: the owner's direction from Codex's review, decisions, verified blockers, PR order) and `docs/EMPIRE_SIMULATION_SPEC.md` (the Living District contract), decisions D-65 to D-80 with the roadmap section `Empire pivot (owner, 19 October)`, pause notes on D-19, D-23, D-43 and their roadmap sections (D-75), and D-58's note (D-79). Docs only; no sim, save or test change. The baton above is left as Codex's. Next: Codex reviews the contracts (spec sections 3-7) before F-1; text-only N-2 to N-4 can start now in Codex's lane.
 
