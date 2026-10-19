@@ -27,7 +27,7 @@ These rows are in [DECISIONS.md](DECISIONS.md), tracked under the roadmap sectio
 | D-62 | The player and every rival organisation share one economic model; no organisation gets money or goods except through the same rules or an explicit outside account | planned | Owner (Codex §1), EP-01 |
 | D-63 | Direct and delegated operations make the same ledger and inventory changes | planned | EP-02 |
 | D-64 | One authoritative simulation clock with scheduled ticks (daily books); the HQ nights become a nightly report and an optional planning pause | planned | Owner, 19 Oct |
-| D-65 | Simulation detail can scale with proximity and relevance; P0 only reserves the interface | open | EP-04, EP-07 |
+| D-65 | Simulation detail scales with proximity and relevance, needed once several cities are fully explorable (D-78); P0 only reserves the interface | planned | EP-04, EP-07 |
 | D-66 | Employees follow orders and policies only, and every refused or blocked order shows its reason | planned | EP-05, DESIGN §0 |
 | D-67 | The campaign runs 1979–1989, then an alternate-history sandbox continues indefinitely | planned | Owner (Codex §1) |
 | D-68 | Single-player first. The existing multiplayer keeps working (the sockets lane green on every PR) and new systems go through the command gate, but no new multiplayer features until the Living District passes | planned | Owner, 19 Oct |
@@ -39,7 +39,12 @@ These rows are in [DECISIONS.md](DECISIONS.md), tracked under the roadmap sectio
 | D-74 | Blotter, The House and the arena become optional ventures with lasting economic and faction consequences | planned | Owner (Codex §2) |
 | D-75 | The takeover stays in chapter 4, aiming at about two hours to the boss's seat, to be measured; the half-empire loss (D-35) stays, on its own RNG stream | planned | Owner (Codex §2) |
 | D-76 | Walking, driving, flying and fighting stay first-class after the takeover; the boss desk and character play are two ways into one simulation | planned | Owner (Codex §1); supersedes revision 1's "boss-first" view |
-| D-77 | A larger world with several cities (abstraction level open: O-1) | open | Owner (Codex §1) |
+| D-77 | A larger world with several cities, every one fully explorable (D-78) | planned | Owner (Codex §1) |
+| D-78 | Every city is fully explorable; none stays a strategy-only abstraction | planned | Owner, 19 Oct (O-1) |
+| D-79 | When the boss dies or is jailed, the next in line takes over and the player carries on as them | planned | Owner, 19 Oct (O-2) |
+| D-80 | After any ending the player carries on in the sandbox; endings are recorded, not game-overs | planned | Owner, 19 Oct (O-3) |
+| D-81 | The third organisation is the Morettis, on the same rules | planned | Owner, 19 Oct (O-4) |
+| D-82 | Acceleration ×1, ×4, ×16, ×60; ×1 while a human flies or is on foot in danger; in multiplayer the leader only, with every seat parked | planned | Owner left it to Claude (O-5) |
 
 D-76 partly supersedes D-58 ("flying cargo becomes part of the logistics system, not the main focus"). Delivering is still
 optional after the takeover, but direct play isn't demoted. D-58's row should say so.
@@ -148,13 +153,15 @@ Two changes:
   *or* fly it yourself for a bonus, rather than replacing the personal version.
 - The flying lessons stay as flight school (rename only, N-2).
 
-## 6. Open questions for the owner
+## 6. The owner's answers to O-1 to O-5 (19 October)
 
-These aren't needed before Phase 1:
-- **O-1** City access: fully explorable or strategic.
-- **O-2** Succession on death, arrest or bankruptcy.
-- **O-3** How the endings interact with the sandbox.
-- **O-4** The third org: the Morettis or a new legit competitor.
-- **O-5** Acceleration caps.
+All five are answered (D-78 to D-82; detail in the spec's §11). What they change in the plan:
+- **Fully explorable cities (D-78)** turn detail levels from a reserved hook into required Phase 4 work, designed before
+  the second city is built.
+- **Succession (D-79)** means Phase 2's hierarchy always names a successor, and the playable character follows the org's
+  leader. The takeover in chapter 4 is the first use of the same rule: Rafa dies and the nephew is next in line.
+- **Endings (D-80)** need no game-over path; the ending choice just records an outcome and the sandbox carries on.
+- **The Morettis (D-81)** are L-3's third org.
+- **Acceleration (D-82)** is fixed as specified for F-7.
 
-The spec §11 has my recommendation on each.
+Still open, and not blocking: whether bankruptcy ends the game. It stays §0's configurable game-ender for now.

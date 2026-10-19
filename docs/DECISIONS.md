@@ -79,7 +79,7 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-62 | 2026-10-19 | The player and every rival organisation share one economic model; no organisation gets money or goods except through the same rules or an explicit outside account | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-63 | 2026-10-19 | Direct and delegated operations make the same ledger and inventory changes | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-64 | 2026-10-19 | One authoritative simulation clock with scheduled ticks (daily books); the HQ nights become a nightly report and an optional planning pause | planned | ROADMAP: Empire pivot (owner, 19 October) |
-| D-65 | 2026-10-19 | Simulation detail may scale with proximity and relevance; the first milestone only reserves the interface | open | ROADMAP: Empire pivot (owner, 19 October) |
+| D-65 | 2026-10-19 | Simulation detail scales with proximity and relevance (needed once there are several fully explorable cities, D-78); the first milestone only reserves the interface | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-66 | 2026-10-19 | Employees follow orders and policies only, and every refused or blocked order shows its reason | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-67 | 2026-10-19 | The campaign runs 1979-1989, then an alternate-history sandbox continues indefinitely | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-68 | 2026-10-19 | Single-player first: the existing multiplayer keeps working (sockets lane green on every PR) and new systems use the command gate, but no new multiplayer features until the Living District passes | planned | ROADMAP: Empire pivot (owner, 19 October) |
@@ -91,4 +91,9 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-74 | 2026-10-19 | Blotter, The House and the arena become optional ventures with lasting economic and faction consequences | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-75 | 2026-10-19 | The takeover stays in chapter 4, aiming at about two hours to the boss's seat (to be measured); the half-empire loss (D-35) stays, on its own RNG stream | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-76 | 2026-10-19 | Walking, driving, flying and fighting stay first-class after the takeover: the boss desk and character play are two ways into one simulation (partly supersedes D-58's 'flying is not the focus') | planned | ROADMAP: Empire pivot (owner, 19 October) |
-| D-77 | 2026-10-19 | A larger world with several cities; how much of each is playable is open (EMPIRE_SIMULATION_SPEC O-1) | open | ROADMAP: Empire pivot (owner, 19 October) |
+| D-77 | 2026-10-19 | A larger world with several cities, every one fully explorable (D-78) | planned | ROADMAP: Empire pivot (owner, 19 October) |
+| D-78 | 2026-10-19 | Every city is fully explorable on foot, by car and by air; none stays a strategy-only abstraction (answers O-1) | planned | ROADMAP: Empire pivot (owner, 19 October) |
+| D-79 | 2026-10-19 | When the boss dies or is jailed, the next in line in the organisation's hierarchy takes over, and the player carries on as that character (answers O-2) | planned | ROADMAP: Empire pivot (owner, 19 October) |
+| D-80 | 2026-10-19 | After any campaign ending the player just carries on in the sandbox; endings are recorded, not game-overs (answers O-3) | planned | ROADMAP: Empire pivot (owner, 19 October) |
+| D-81 | 2026-10-19 | The Living District's third organisation is the Morettis, run as a business organisation on the same rules (answers O-4) | planned | ROADMAP: Empire pivot (owner, 19 October) |
+| D-82 | 2026-10-19 | Time acceleration on the desk: x1, x4, x16, x60; held at x1 while a human is flying or on foot in a hostile area; in multiplayer only the leader accelerates, and only with every human seat parked (owner: Claude's call, O-5) | planned | ROADMAP: Empire pivot (owner, 19 October) |

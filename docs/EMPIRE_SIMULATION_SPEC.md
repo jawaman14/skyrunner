@@ -199,13 +199,13 @@ proved itself.
 lock-up, a stash corridor), are its supply edges. They're simulated as today, plus aggregate business ticks. This uses today's
 map; the map redesign is paused (decided 19 Oct).
 
-**Organisations** (proposed):
+**Organisations:**
 
 | Org | Who | Why |
 |---|---|---|
 | `org` | The player (Rafa's outfit, then the nephew's) | |
 | `rival` | Los Cuervos | Already have squads, turf and cash |
-| `moretti` | The Morettis' local businesses | The Family already has state (respect, greed, loans, the docks) in `family.gd`. Making them an org that owns the restaurant and the laundromat chain gives a third competitor on economic rules rather than violence. The owner may prefer a new legit competitor; see open question O-4. |
+| `moretti` | The Morettis' local businesses (owner, D-81) | The Family already has state (respect, greed, loans, the docks) in `family.gd`. Making them an org that owns the restaurant and the laundromat chain gives a third competitor on economic rules rather than violence. |
 
 **Businesses** (proposed: 8 in the district, 2 in each neighbour):
 
@@ -240,13 +240,17 @@ small).
 | P1 | Performance scales | Headless days per second at 1×, 2× and 4× the district's entities, recorded in the PR |
 | G1 | Gameplay gate | Owner playtest: it's interesting without story missions |
 
-## 11. Open questions (not blocking P0)
+## 11. Owner answers to the open questions (19 October)
 
-- **O-1 City access.** Must every city become fully explorable, or can secondary ones stay strategic? Codex recommends fully
-  playable priority cities and abstract secondary ones. It's needed before Phase 4, not P0.
-- **O-2 Failure and succession.** Death, arrest and bankruptcy: does play end, or does control pass to someone else? The
-  `Org.leader` field is the hook. Needed before Phase 3's takeover is final.
-- **O-3 Endgame and the sandbox.** Rule, Retire and Fall are narrative outcomes, then the sandbox continues (Codex §2). This needs
-  rules for whether a retired boss's org keeps running under a successor, which ties to O-2.
-- **O-4 Third org.** The Morettis as a business org, or a new legit competitor?
-- **O-5 Acceleration caps.** Are the ×1/×4/×16/×60 steps and the "flying means ×1" rule right?
+- **O-1 City access → D-78.** Every city is fully explorable. That makes detail levels (§8, D-65) a requirement for
+  Phase 4, not an option: the far cities must run aggregated until the player arrives, with materialisation and
+  reconciliation designed before the second city is built. P0 is unchanged.
+- **O-2 Succession → D-79.** When the boss dies or is jailed, the next in line takes over and the player carries on as
+  them. So `Person.boss` is also the line of succession, and the playable character is the org's `leader`, not a fixed
+  person. Phase 2's hierarchy must always name a successor, and the desk should show who it is. Bankruptcy isn't a
+  change of leader; it stays §0's configurable game-ender unless the owner says otherwise.
+- **O-3 Endings → D-80.** The player just carries on in the sandbox. Rule, Retire and Fall are recorded in the journal,
+  not game-overs. A Retire ending hands the seat on through D-79.
+- **O-4 Third organisation → D-81.** The Morettis, as an economic org (`moretti`) on the same rules (§10).
+- **O-5 Acceleration → D-82.** As proposed in §5: ×1, ×4, ×16, ×60; ×1 while a human flies or is on foot in a hostile
+  area; in multiplayer only the leader, and only with every human seat parked.

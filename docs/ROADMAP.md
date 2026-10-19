@@ -62,17 +62,19 @@ Order (D-72): land the queue above and finish heat step 1, then:
    - F-5, `command_as` and actors.
    - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-71).
    - F-7, time acceleration, after D-12.
-3. **The Living District (P0, D-69):** San Telmo Centro, with three organisations (the player's, Los Cuervos and a third, O-4).
+3. **The Living District (P0, D-69):** San Telmo Centro, with three organisations (the player's, Los Cuervos and the Morettis, D-81).
    - Two supply chains.
    - The desk's business books.
    - Direct and delegated delivery equivalence.
    - Acceptance tests A1-A9 and P1.
    - The owner's playtest (G1).
 4. **After the gate:** organisation depth (hierarchy, schedules, budgets, conditional orders, trust D-11), then the campaign pivot
-   (story v6 with ventures, the takeover on the ledger, both views kept, the ending and the sandbox), then more cities (O-1).
+   (story v6 with ventures, the takeover on the ledger, both views kept, the ending and the sandbox), then more cities, each fully explorable (D-78).
 
 Paused by D-72 until the gate: the presentation layers, heat steps 2-3, the rival depot raid and the map redesign. Every PR keeps
-the sockets lane green (D-68). Open owner questions O-1 to O-5 are in the spec's section 11.
+the sockets lane green (D-68). The owner answered O-1 to O-5 on 19 October (D-78 to D-82): every city fully explorable,
+the next in line takes over when the boss dies or is jailed, the sandbox carries on after any ending, the Morettis are the
+third organisation, and the acceleration caps are as specified.
 
 ## Next: presentation layers (owner's pick)
 
