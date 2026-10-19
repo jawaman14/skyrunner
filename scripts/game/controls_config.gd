@@ -147,6 +147,7 @@ static func save_file(path := PATH) -> void:
 	for n in names():
 		cf.set_value("keys", n, InputMap.action_get_events(action(n)))
 	cf.set_value("axes", "bindings", axes.to_dict())
+	cf.set_value("meta", "bindings_version", 1)
 	cf.save(path)
 
 
@@ -155,6 +156,11 @@ static func load_file(path := PATH) -> bool:
 	if cf.load(path) != OK:
 		return false
 	ensure()
+	var old_reverse: Array = cf.get_value("keys", "reverse", [])
+	var migrate_reverse := int(cf.get_value("meta", "bindings_version", 0)) < 1 and old_reverse.size() == 1
+	if migrate_reverse:
+		var old_key = old_reverse[0]
+		migrate_reverse = old_key is InputEventKey and old_key.physical_keycode == KEY_BACKSPACE
 	for n in names():
 		var evs = cf.get_value("keys", n, null)
 		if evs is Array and not evs.is_empty():
@@ -162,6 +168,21 @@ static func load_file(path := PATH) -> bool:
 			for ev in evs:
 				if ev is InputEvent:
 					InputMap.action_add_event(action(n), ev)
+	# Older profiles stored only Backspace for the default reverse action.
+	# Add the new pad default only if no custom flight control already uses it.
+	if migrate_reverse:
+		var shoulder_taken := false
+		for n in names():
+			if n == "reverse":
+				continue
+			for ev in InputMap.action_get_events(action(n)):
+				if ev is InputEventJoypadButton and ev.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+					shoulder_taken = true
+		if not shoulder_taken:
+			var shoulder := InputEventJoypadButton.new()
+			shoulder.device = -1
+			shoulder.button_index = JOY_BUTTON_RIGHT_SHOULDER
+			InputMap.action_add_event(action("reverse"), shoulder)
 	axes = FlightAxes.from_dict(cf.get_value("axes", "bindings", {}))
 	return true
 
