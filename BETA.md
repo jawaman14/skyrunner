@@ -71,7 +71,5 @@ ask for one.
 - The balance was re-measured on the game's own flight model (docs/BALANCE.md, entry 35), but the
   systems added since (fuel, renown, rackets, races) have shifted it again and a full re-run is
   queued. Expect money and police odds to move between beta builds.
-- Text-to-speech (the read-aloud option) needs the OS speech service; on Linux that is
-  speech-dispatcher.
 - Rendering without a GPU (llvmpipe) works but is slow.
 - The version is shown at the bottom right of the screen: please quote it in reports.
