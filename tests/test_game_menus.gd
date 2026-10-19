@@ -186,11 +186,37 @@ func test_dealer_retains_serial_after_other_vehicle_removed() -> void:
 	s.money = 200000
 	for spec in Dealership.CATALOGUE.slice(5, 8):
 		s.command(Roles.PILOT, "buy_vehicle", {"id": spec.id})
-	var m := DealerMenu.new().setup(s)
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1024, 600)
+	Engine.get_main_loop().root.add_child(viewport)
+	var m := DealerMenu.new()
+	viewport.add_child(m)
+	m.setup(s)
 	m.open()
+	m.set_process(false)
+	for frame in 3:
+		await Engine.get_main_loop().process_frame
+	m.lot.select(0)
+	m.lot.scroll_to_item(m.lot._items[-1])
+	for frame in 2:
+		await Engine.get_main_loop().process_frame
+	var scrolled := m.lot.get_scroll().y
+	check(scrolled > 0, "catalogue is scrolled away from the selected first vehicle")
+	m.refresh()
+	for frame in 2:
+		await Engine.get_main_loop().process_frame
+	check(absf(m.lot.get_scroll().y - scrolled) < 2.0, "refresh retains the browsed position")
+	s.money = 0
+	m.refresh()
+	for frame in 2:
+		await Engine.get_main_loop().process_frame
+	check(absf(m.lot.get_scroll().y - scrolled) < 2.0, "affordability changes do not reset catalogue scroll")
+	check_eq(m.lot.selected_row(), 0, "affordability changes keep purchase selection")
+	s.money = 200000
+	check_eq(m.lot.selected_row(), 0, "scrolling does not change the purchase selection")
 	check(m.my_rows.size() >= 3)
 	if m.my_rows.size() < 3:
-		m.free()
+		viewport.free()
 		return
 	m.mine.select(2)
 	var serial: int = m.my_rows[2].serial
@@ -200,4 +226,4 @@ func test_dealer_retains_serial_after_other_vehicle_removed() -> void:
 	check_eq(m.my_rows[m.mine.selected_row()].serial, serial, "selection follows the vehicle, not its old row")
 	m.mine.row_activated.emit(m.mine.selected_row())
 	check_eq(m.focus, 1, "owned-table activation targets owned vehicles")
-	m.free()
+	viewport.free()
