@@ -95,10 +95,25 @@ func test_rafas_story_beats_compile() -> void:
 	Engine.get_main_loop().root.add_child(app)
 	app.setup(opening, "low")
 	app._rafa_story_cue()
-	check(app.talk != null and bool(opening.story.progress.get("rafa_employment_seen", false)), "employment stage zero opens Rafa once")
+	check(app.talk != null and not bool(opening.story.progress.get("rafa_employment_seen", false)), "opening the cue does not mark it completed")
 	var first := app.talk
 	app._rafa_story_cue()
-	check(app.talk == first, "the opening cue does not reopen")
+	check(app.talk == first, "the active cue does not reopen")
+	first._close()
+	check(not bool(Story.from_dict(opening.story.to_dict()).progress.get("rafa_employment_seen", false)), "hanging up stays unseen through save/load")
+	app._rafa_story_cue()
+	check(app.talk == null, "hanging up does not immediately force the call open")
+	app._rafa_cue_offered = ""  # a new parked visit or UI session can offer the unfinished cue again
+	app._rafa_story_cue()
+	var retry := app.talk
+	check(retry != null, "the unfinished cue can reopen")
+	await (Engine.get_main_loop() as SceneTree).process_frame
+	await _until_choice(retry)
+	check(bool(opening.story.progress.get("rafa_employment_seen", false)), "reaching END completes the cue")
+	check(bool(Story.from_dict(opening.story.to_dict()).progress.get("rafa_employment_seen", false)), "completion survives save/load")
+	app._rafa_cue_offered = ""
+	app._rafa_story_cue()
+	check(app.talk == null, "a completed cue does not reopen")
 	app.free()
 	opening.dispose()
 	var chapter_two := _sess()
@@ -107,7 +122,11 @@ func test_rafas_story_beats_compile() -> void:
 	Engine.get_main_loop().root.add_child(app_two)
 	app_two.setup(chapter_two, "low")
 	app_two._rafa_story_cue()
-	check(app_two.talk != null and bool(chapter_two.story.progress.get("rafa_chapter_two_seen", false)), "chapter two opens Rafa once")
+	check(app_two.talk != null and not bool(chapter_two.story.progress.get("rafa_chapter_two_seen", false)), "chapter two opens before being marked complete")
+	var second := app_two.talk
+	await (Engine.get_main_loop() as SceneTree).process_frame
+	await _until_choice(second)
+	check(bool(chapter_two.story.progress.get("rafa_chapter_two_seen", false)), "all chapter-two beats complete the cue")
 	app_two.free()
 	chapter_two.dispose()
 
