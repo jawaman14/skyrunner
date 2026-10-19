@@ -34,10 +34,10 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Dual work (owner, 18 October, D-52): each agent owns assigned work end to end; coordinate through the shared MCP board and use separate linked worktrees. Codex owns reviews, UX/UI, dialogue and QA. |
-| **Task** | Codex is drafting Rafa's dialogue for chapters 1-4 from board assignment #511 item 6. `dialogue/rafa.dialogue` is a content draft; Claude's story beat, unlock and takeover work will call these entry points later. |
-| **Branches / PRs** | `codex/rafa-dialogue` is based on local `origin/main` at `939b4e0b`; draft PR and CI are pending. Other assignments and open PRs are tracked on the MCP board. |
-| **Next step** | Complete full-suite and documentation/status checks, publish the draft PR, then coordinate the entry-point hookup after Claude's scene work lands. |
-| **Codex task** | Finish board assignment #511 item 6 (Rafa dialogue chapters 1-4); preserve the remaining #511 queue in the board. |
+| **Task** | N-3 of the empire pivot: the Rafa dialogue now opens once at employment stage 0 and once in chapter 2; the three chapter-2 beats form one scene. Chapter-4 news remains unhooked for the takeover scene. |
+| **Branches / PRs** | `codex/rafa-dialogue-cues` carries N-3. Rafa dialogue draft #422 is merged; N-2 and N-4 are on drafts #442/#443. |
+| **Next step** | Check N-3 exact-head CI and Claude review; fix any dialogue or UI findings, then merge when gates pass. |
+| **Codex task** | Finish N-2/N-3/N-4 integration and the exact-head risk reviews tracked on the MCP board. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
 ## Taking over (checklist for the incoming AI)
@@ -139,6 +139,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+- **2026-10-19 - Codex, empire pivot N-3:** On `codex/rafa-dialogue-cues`, PilotApp opens Rafa once at employment stage 0 and once when chapter 2 begins while parked. Existing saved Story.progress records each cue; the three chapter-2 dialogue titles play as one scene. Chapter-4 news stays unhooked. Existing talk test method now checks the cue and scene chain without changing the generated method count. Primary checkout untouched. Local command runner failed before execution; exact-head CI and Claude review are pending.
 
 - **2026-10-18 - Codex, Rafa dialogue draft (#511 item 6):** On `codex/rafa-dialogue` from `main` `939b4e0b`, added five independent entry points for the employment opening, three chapter-2 beats and chapter-4 off-screen death report. `test_talk` passes 12/12; full suite reports 1,214 passed and 4 failed (two core-parity golden tests and two police radar tests, whose files are unchanged from `origin/main`). Generated status is current at 1,218 methods / 149 files; `git diff --check` is clean. The entries are not hooked into the story until Claude's beat/takeover scene work calls them. Next: publish the requested draft PR and wait for exact-head CI/review.
 
