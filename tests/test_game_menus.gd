@@ -206,6 +206,13 @@ func test_dealer_retains_serial_after_other_vehicle_removed() -> void:
 	for frame in 2:
 		await Engine.get_main_loop().process_frame
 	check(absf(m.lot.get_scroll().y - scrolled) < 2.0, "refresh retains the browsed position")
+	s.money = 0
+	m.refresh()
+	for frame in 2:
+		await Engine.get_main_loop().process_frame
+	check(absf(m.lot.get_scroll().y - scrolled) < 2.0, "affordability changes do not reset catalogue scroll")
+	check_eq(m.lot.selected_row(), 0, "affordability changes keep purchase selection")
+	s.money = 200000
 	check_eq(m.lot.selected_row(), 0, "scrolling does not change the purchase selection")
 	check(m.my_rows.size() >= 3)
 	if m.my_rows.size() < 3:

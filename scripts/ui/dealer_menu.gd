@@ -80,7 +80,9 @@ func refresh() -> void:
 	var serial: int = int(my_rows[keep_m].serial) if keep_m >= 0 and keep_m < my_rows.size() else -1
 	var active := focus
 	# Refresh status text freely, but leave unchanged tables (and wheel scroll) alone.
-	if lot_rows != v.catalogue:
+	var shown_l: Array = v.catalogue.map(func(sp): return [sp.id, sp.name, sp.use, sp.price, stats(sp)])
+	var cached_l: Array = lot_rows.map(func(sp): return [sp.id, sp.name, sp.use, sp.price, stats(sp)])
+	if cached_l != shown_l:
 		lot.clear_rows()
 		lot_rows = v.catalogue.duplicate(true)
 		for sp in lot_rows:
