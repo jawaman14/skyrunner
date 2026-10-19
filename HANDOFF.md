@@ -34,10 +34,10 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Dual work (owner, 18 October, D-52): each agent owns assigned work end to end; coordinate through the shared MCP board and use separate linked worktrees. Codex owns reviews, UX/UI, dialogue and QA. |
-| **Task** | Codex is drafting Rafa's dialogue for chapters 1-4 from board assignment #511 item 6. `dialogue/rafa.dialogue` is a content draft; Claude's story beat, unlock and takeover work will call these entry points later. |
-| **Branches / PRs** | `codex/rafa-dialogue` is based on local `origin/main` at `939b4e0b`; draft PR and CI are pending. Other assignments and open PRs are tracked on the MCP board. |
-| **Next step** | Complete full-suite and documentation/status checks, publish the draft PR, then coordinate the entry-point hookup after Claude's scene work lands. |
-| **Codex task** | Finish board assignment #511 item 6 (Rafa dialogue chapters 1-4); preserve the remaining #511 queue in the board. |
+| **Task** | N-4 of the empire pivot: remove the retired read-aloud acceptance gate from current status and label old full-suite counts as dated evidence. N-2 is on draft #442; N-3 dialogue wiring follows. |
+| **Branches / PRs** | `codex/empire-docs-audit` is docs only; `codex/rafa-employer-text` is draft #442. The earlier Rafa dialogue draft merged as #422. |
+| **Next step** | Verify docs CI and Claude review for N-4, then merge this branch; finish N-2 integration and wire Rafa dialogue in N-3. |
+| **Codex task** | Complete N-2/N-3/N-4 and continue exact-head risk reviews from the shared board. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
 ## Taking over (checklist for the incoming AI)
@@ -139,6 +139,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+- **2026-10-19 - Codex, empire pivot N-4:** On `codex/empire-docs-audit`, removed the retired read-aloud human gate from current status and identified the old desktop and pipeline test counts as dated measurements. The generated test inventory was not edited. Primary dirty checkout untouched. Local command launcher stalled before executing; docs CI and Claude review are pending. N-2 is draft #442; N-3 dialogue wiring remains.
 
 - **2026-10-18 - Codex, Rafa dialogue draft (#511 item 6):** On `codex/rafa-dialogue` from `main` `939b4e0b`, added five independent entry points for the employment opening, three chapter-2 beats and chapter-4 off-screen death report. `test_talk` passes 12/12; full suite reports 1,214 passed and 4 failed (two core-parity golden tests and two police radar tests, whose files are unchanged from `origin/main`). Generated status is current at 1,218 methods / 149 files; `git diff --check` is clean. The entries are not hooked into the story until Claude's beat/takeover scene work calls them. Next: publish the requested draft PR and wait for exact-head CI/review.
 
