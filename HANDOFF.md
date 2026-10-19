@@ -34,10 +34,10 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Dual work (owner, 18 October, D-52): each agent owns assigned work end to end; coordinate through the shared MCP board and use separate linked worktrees. Codex owns reviews, UX/UI, dialogue and QA. |
-| **Task** | Codex is drafting Rafa's dialogue for chapters 1-4 from board assignment #511 item 6. `dialogue/rafa.dialogue` is a content draft; Claude's story beat, unlock and takeover work will call these entry points later. |
-| **Branches / PRs** | `codex/rafa-dialogue` is based on local `origin/main` at `939b4e0b`; draft PR and CI are pending. Other assignments and open PRs are tracked on the MCP board. |
-| **Next step** | Complete full-suite and documentation/status checks, publish the draft PR, then coordinate the entry-point hookup after Claude's scene work lands. |
-| **Codex task** | Finish board assignment #511 item 6 (Rafa dialogue chapters 1-4); preserve the remaining #511 queue in the board. |
+| **Task** | N-2 of the empire pivot: Rafa named as the employer in the opening and first chapters, Benny Ruiz as his fixer; the four flying lessons' Manny Arce becomes Benny Ruiz. N-3 dialogue hookup follows on a separate branch. |
+| **Branches / PRs** | `codex/rafa-employer-text` is based on the current remote `main`; it changes story text only. The Rafa dialogue draft is already merged as #422. Other assignments and PRs remain on the MCP board. |
+| **Next step** | Run exact-head CI for N-2 and review the result; then wire the prelude and chapter-2 Rafa dialogue entry points in N-3. |
+| **Codex task** | Complete N-2/N-3/N-4 from the empire pivot, and continue the risk-class review queue through the shared board. |
 | **Watch out** | Wait for Codex's review to finish before merging; its comments arrive minutes after CI. Regenerating `docs/PROJECT_STATUS.md` conflicts the next PR on that line: merge `main`, run `godot --headless --import` (a fresh worktree needs it), then `project_status.gd -- --write` and `--check` before pushing. Don't `pkill -f <name>`. The board lives in one clone's Git directory: a second clone has its own, empty board. |
 
 ## Taking over (checklist for the incoming AI)
@@ -139,6 +139,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+- **2026-10-19 - Codex, empire pivot N-2:** On `codex/rafa-employer-text`, the opening and chapters 1-2 identify Rafa as employer and Benny Ruiz as his fixer. The older flying lessons now name Benny instead of Manny Arce; goals and numerical rules are untouched. Primary dirty checkout was not modified. Local Godot could not run because the command launcher stalled before execution; exact-head CI and Claude review are the next gates. N-3 dialogue hookup follows separately.
 
 - **2026-10-18 - Codex, Rafa dialogue draft (#511 item 6):** On `codex/rafa-dialogue` from `main` `939b4e0b`, added five independent entry points for the employment opening, three chapter-2 beats and chapter-4 off-screen death report. `test_talk` passes 12/12; full suite reports 1,214 passed and 4 failed (two core-parity golden tests and two police radar tests, whose files are unchanged from `origin/main`). Generated status is current at 1,218 methods / 149 files; `git diff --check` is clean. The entries are not hooked into the story until Claude's beat/takeover scene work calls them. Next: publish the requested draft PR and wait for exact-head CI/review.
 
