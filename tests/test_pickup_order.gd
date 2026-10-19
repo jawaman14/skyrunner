@@ -72,3 +72,20 @@ func test_failure_cost_for_each_state() -> void:
 	collected.advance(6.0, true)
 	collected.collect()
 	check_eq(collected.failure_cost(), "none")
+
+
+func test_leaving_the_place_goes_back_to_the_window() -> void:
+	var order := PickupOrder.make(10, "beach", 0.0, 5.0, 30.0)
+	order.advance(5.0, false)
+	order.advance(6.0, true)
+	check_eq(order.state, PickupOrder.AT_PLACE)
+	order.advance(7.0, false)
+	check_eq(order.state, PickupOrder.WINDOW)
+	check(not order.collect(), "nothing to collect away from the place")
+	order.advance(8.0, true)
+	check(order.collect(), "back at the place it can be collected")
+	var late := PickupOrder.make(10, "beach", 0.0, 5.0, 30.0)
+	late.advance(5.0, false)
+	late.advance(6.0, true)
+	late.advance(35.1, false)
+	check_eq(late.state, PickupOrder.LATE, "the window closing still wins")
