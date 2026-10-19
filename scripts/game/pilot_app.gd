@@ -662,6 +662,27 @@ func _show_company_choice() -> void:
 	dialog.popup_centered()
 
 
+## Rafa's opening and chapter-two conversations are one-time story cues. The saved progress dictionary
+## remembers the cue without changing the story or save schema; the chapter-four news stays for the takeover scene.
+func _rafa_story_cue() -> void:
+	if s.story == null or not s.parked or (talk != null and is_instance_valid(talk)):
+		return
+	var story: Story = s.story
+	var title := ""
+	var flag := ""
+	if story.employment != null and story.employment.active():
+		if story.employment.stage == 0:
+			title = "employment"
+			flag = "rafa_employment_seen"
+	elif story.chapter.num == 2:
+		title = "chapter_two_first"
+		flag = "rafa_chapter_two_seen"
+	if flag == "" or bool(story.progress.get(flag, false)):
+		return
+	if open_talk("rafa", title) != null:
+		story.progress[flag] = true
+
+
 ## Word that someone wants to talk, and the aide on the ramp when you land on the island.
 func _talk_cues() -> void:
 	if s.family != null:
@@ -681,6 +702,7 @@ SHIFT+F to sit down with him." % [Talk.CAPO, str(o.text)], "family",
 	if on_island and not _was_on_island:
 		open_talk("general", "landing")
 	_was_on_island = on_island
+	_rafa_story_cue()
 
 
 ## F6: the performance overlay (Calinou's Debug Menu, MIT, addons/debug_menu):
