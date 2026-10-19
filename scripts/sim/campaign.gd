@@ -105,7 +105,7 @@ static func _chapters() -> Array:
 			+ "can get into Mesa del Aguila - the mesa strip nobody else will touch.",
 			[], [], [Objective.new("earn_legal", "Earn $5,000 from legal work", 5000), Objective.new("land_EGL", "Land at Mesa del Aguila")]),
 		Chapter.new(2, 1980, "A Favor for Benny",
-			"Benny Ruiz fixes runs for Rafa and knows the boats at Smuggler's Cove and pays cash. He needs two sacks of\n"
+			"Benny Ruiz, Rafa's fixer, pays cash for boat runs out of Smuggler's Cove. He needs two sacks of\n"
 			+ "'coffee' moved to the Old Quarry, quietly. San Telmo and Valle Verde radars can't see you\n"
 			+ "below their clutter floor - the radar detector tells you when they're painting you.",
 			["contraband", "detector"], [], [Objective.new("hot_clean", "Deliver a hot load without ever being wanted")],
