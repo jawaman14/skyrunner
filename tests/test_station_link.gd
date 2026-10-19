@@ -39,6 +39,12 @@ func test_every_seat_has_one_description() -> void:
 	for level in 3:
 		chart.set_zoom(level)
 		check(chart.m2w(chart.w2m(target.x, target.y)).distance_to(target) < 0.1, "map clicks round-trip at scale %d" % level)
+	chart.set_zoom(1)
+	chart.view_center = Vector2(World.HALF, World.HALF)
+	chart._clamp_center()
+	check(chart._chart_rect().end.x >= chart.size.x - 0.1, "wide desk pan keeps the chart across the viewport")
+	chart.size = Vector2(1100, 600)
+	check(chart._chart_rect().end.x >= chart.size.x - 0.1, "resizing re-clamps the pan")
 	chart.set_zoom(0)
 	check_eq(chart.view_center, Vector2.ZERO, "island view resets pan")
 	var clicks := []

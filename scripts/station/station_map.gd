@@ -32,6 +32,7 @@ func setup(world_: World) -> StationMap:
 	tex = ImageTexture.create_from_image(Models.minimap_image(world, 512))
 	font = UIStyle.mono()
 	clip_contents = true
+	resized.connect(_on_resized)
 	return self
 
 
@@ -83,9 +84,17 @@ func reset_view() -> void:
 
 
 func _clamp_center() -> void:
-	var limit := World.HALF * (1.0 - 1.0 / float(ZOOM[zoom_level]))
-	view_center.x = clampf(view_center.x, -limit, limit)
-	view_center.y = clampf(view_center.y, -limit, limit)
+	var span := maxf(0.001, side() * float(ZOOM[zoom_level]))
+	var limit_x := maxf(0.0, World.HALF * (1.0 - size.x / span))
+	var limit_y := maxf(0.0, World.HALF * (1.0 - size.y / span))
+	view_center.x = clampf(view_center.x, -limit_x, limit_x)
+	view_center.y = clampf(view_center.y, -limit_y, limit_y)
+
+
+func _on_resized() -> void:
+	_clamp_center()
+	view_changed.emit()
+	queue_redraw()
 
 
 func _chart_rect() -> Rect2:
@@ -262,8 +271,9 @@ func _draw_ground() -> void:
 			for p in d.route:
 				pts.append(w2m(p[0], p[1]))
 			draw_polyline(pts, Color(col.r, col.g, col.b, 0.35), 1.0)
-			var destination: Array = d.route[-1]
-			_cross(float(destination[0]), float(destination[1]), col, 4.0)
+			var destination = d.get("destination", [])
+			if destination is Array and destination.size() >= 2:
+				_cross(float(destination[0]), float(destination[1]), col, 4.0)
 		var r := 7.0 if d.kind == "foot" else 9.0
 		if d.kind == "foot":
 			draw_polyline(PackedVector2Array([c + Vector2(-r, 3), c + Vector2(0, -r + 2), c + Vector2(r, 3)]), col, 2.5)
