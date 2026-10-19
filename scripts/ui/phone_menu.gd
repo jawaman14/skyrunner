@@ -474,6 +474,9 @@ func _update_info() -> void:
 
 ## ESC: back to the home screen, and from there away. With the chapter guide open it puts the phone away.
 func close() -> void:
+	if visible and page in ["market", "orders", "heat"] and not campaign_scroll.visible:
+		open_app("empire" if page == "heat" else "work")
+		return
 	if visible and page != "home" and not campaign_scroll.visible:
 		page = "home"
 		refresh()
