@@ -65,7 +65,11 @@ class Spotter:
 
 var world: World
 var seed := 1
-var money := START_MONEY
+var ledger := Ledger.new()  ## every change to money and law_funds is booked here (F-2: against outside:unattributed, until F-3 names them)
+var money := START_MONEY:
+	set(v):
+		ledger.track("org:safe", money, v, time)
+		money = v
 var fuel_spent := {"org": 0.0, "rival": 0.0}  ## what the hired fleet has burned in fuel (Fuel)
 var owned := {"c172p": true}
 var aircraft_key := "c172p"
@@ -115,7 +119,10 @@ var casino: Casino = null  ## the Hotel Cielo, the Family's house on the island 
 var airframe: Airframe = null  ## engine and airframe wear, repairs (Airframe; `airframe: true` asks for it)
 var undercover: Undercover = null  ## the agent who plants a tracking beacon (Undercover)
 var analyst: Analyst = null  ## the tip desk (Analyst; a human seat holds tips back from dispatch)
-var law_funds := 8000.0  ## the task force's upgrade money: a budget plus forfeiture from busts and seizures
+var law_funds := 8000.0:  ## the task force's upgrade money: a budget plus forfeiture from busts and seizures
+	set(v):
+		ledger.track("police:budget", law_funds, v, time)
+		law_funds = v
 var econ: Economy  ## the markets: what each good is worth where (Economy)
 var _news_seen := 0
 var stash_net: StashNet = null  ## the organisation's stash houses (maps that have them)

@@ -168,7 +168,12 @@ class Fight:
 class Commander:
 	var faction: String
 	var ai := true
-	var cash := 0.0  ## Los Cuervos' war chest (the others pay from the session)
+	var sess = null  ## the Session, set by GroundWar: every change to cash is booked in its ledger
+	var cash := 0.0:  ## Los Cuervos' war chest (the others pay from the session)
+		set(v):
+			if sess != null:
+				sess.ledger.track(faction + ":war-chest", cash, v, sess.time)
+			cash = v
 	var think_t := 0.0
 	var log: Array = []
 
@@ -225,6 +230,7 @@ func _init(sess_, rng_: PyRandom, frng_: PyRandom) -> void:
 	for f in ["org", "rival", "police"]:
 		var c := Commander.new()
 		c.faction = f
+		c.sess = sess
 		c.cash = 20000.0 if f == "rival" else 0.0
 		commanders[f] = c
 	for m in Economy.MARKETS:
