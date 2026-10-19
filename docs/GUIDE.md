@@ -216,6 +216,8 @@ Your own recordings go in `user://radio/`.
 | Ctrl+F2 | Developer access overlay: functional footprints, entrances, approaches, loading areas, connector candidates and collision shapes |
 | F3 | Hand the aircraft to the AI (so you can sit at another desk) / take it back |
 | F4 | The multiplayer menu: games on your network, the table (mute, remove, seats, chat), voice settings |
+| Ctrl+F5 | Debug, solo play only: skip the story to the next chapter |
+| Ctrl+F6 | The test menu (solo play only, never at a shared table): add $100,000 or $1,000,000, fill every stash house, clear or raise the heat, free caught workers, fill the tank, skip a chapter. ENTER runs the highlighted row, ESC closes |
 | F6 | Performance overlay |
 | F7 | The radio on / off in the aircraft (`,` and `.` tune): the same real 1979-86 broadcasts as the car's, on one dial |
 | F8 | Controls and settings: rebind keys and axes, the colour-safe palette |
