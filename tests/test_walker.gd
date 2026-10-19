@@ -679,6 +679,11 @@ func test_the_phone_apps() -> void:
 	check(app.talk != null, "an order calls Benny through the existing conversation")
 	if app.talk != null:
 		app.talk._close()
+	s.stash_net = StashNet.new([{"id": "a", "name": "Warehouse 7", "x": 0.0, "y": 0.0, "strip": "HAR", "zone": "town"}], PyRandom.new())
+	s.payroll = Payroll.new(s, PyRandom.new())
+	var lookout := {"id": "watch", "name": "Test Lookout", "outfit": "org", "role": "lookout",
+		"status": "arrested", "assigned": "stash-a"}
+	s.payroll.workers.append(lookout)
 	s.investigation = Investigation.new()
 	s.investigation.tail_heat[s.aircraft_key] = 65.0
 	s.investigation.district_heat["town"] = 80.0
@@ -691,7 +696,15 @@ func test_the_phone_apps() -> void:
 	for i in m.list.row_count():
 		heat_text += m.list.cell(i, 0) + "\n"
 	check(heat_text.contains("65%") and heat_text.contains("80%") and heat_text.contains("warrant"), "heat separates aircraft, districts and case stages")
-	check(not heat_text.contains("2:03"), "a hidden raid countdown is not revealed without a lookout")
+	check(not heat_text.contains("2:03"), "an arrested lookout cannot reveal a raid countdown")
+	lookout.status = "assigned"
+	m.refresh()
+	var watched_text := ""
+	for i in m.list.row_count():
+		watched_text += m.list.cell(i, 0) + "\n"
+	check(watched_text.contains("2:03"), "a posted active lookout reveals the approaching raid")
+	lookout.status = "arrested"
+	m.refresh()
 	m.refresh()
 	check_eq(JSON.stringify(s.investigation.to_dict()), heat_before, "opening and refreshing Heat never mutates the case files")
 	m.page = "home"
@@ -721,5 +734,6 @@ func test_the_phone_apps() -> void:
 	app._sync_phone_hold()
 	check(s.autopilot.engaged and s.autopilot.waypoints.is_empty(), "a route that finishes during the call is not restarted")
 	s.autopilot.disengage()
+	s.payroll = null
 	app.free()
 	s.dispose()

@@ -650,10 +650,10 @@ func _heat_page() -> void:
 		list.add_row(["No district heat recorded."])
 	list.section("Stash case files")
 	var warned := {}
-	if s.payroll != null:
+	if s.payroll != null and s.stash_net != null:
 		for worker in s.payroll.workers:
-			if str(worker.outfit) == "org" and str(worker.role) == "lookout":
-				for stash in s.stash_net.stashes if s.stash_net != null else []:
+			if str(worker.outfit) == "org" and str(worker.role) == "lookout" and str(worker.status) == "assigned":
+				for stash in s.stash_net.stashes:
 					if str(worker.assigned) == "stash-" + str(stash.id):
 						warned[str(stash.id)] = true
 	var cases: Array = investigation.view(s.stash_net, s.time, warned) if s.stash_net != null else []
