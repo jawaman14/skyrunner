@@ -365,3 +365,27 @@ class Squad2:
 	var s := ""
 	var v := Vector2.ZERO
 	var d := {}
+
+
+func _step_a(d: Dictionary) -> Dictionary:
+	d["a"] = 1
+	return d
+
+
+func _step_b(d: Dictionary) -> Dictionary:
+	d["b"] = int(d.get("a", 0)) + 1
+	return d
+
+
+func test_migrate_runs_each_step_in_order_and_refuses_what_it_cannot() -> void:
+	var steps: Array = [_step_a, _step_b]
+	var out := StrategicSave.migrate({"v": 1, "time": 5.0}, steps, 3)
+	check_eq([out.v, out.a, out.b, out.time], [3, 1, 2, 5.0], "v1 goes through both steps, keeping what it had")
+	check_eq(StrategicSave.migrate({"v": 2}, steps, 3).b, 1, "v2 skips the first step")
+	check(StrategicSave.migrate({"v": 4}, steps, 3).is_empty(), "a newer game's save is refused, not guessed at")
+	check(StrategicSave.migrate({"time": 1.0}, steps, 3).is_empty(), "no version is refused")
+	check(StrategicSave.migrate({"v": 1}, [], 2).is_empty(), "a gap in the steps is refused")
+	var src := {"v": 1}
+	StrategicSave.migrate(src, steps, 3)
+	check(not src.has("a"), "the caller's dictionary is not edited")
+	check_eq(StrategicSave.migrate({"v": StrategicSave.VERSION, "time": 7.0}).time, 7.0, "a current save passes through")
