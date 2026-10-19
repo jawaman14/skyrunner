@@ -652,11 +652,74 @@ func test_the_phone_apps() -> void:
 	var job := Jobs.Job.new(Jobs.new_id(), "test", "cargo", "HAR", "VAL", [], 100, {})
 	s.active_jobs.append(job)
 	m.key("1")
-	check(m.page == "work" and m.list.row_count() == 4, "Work: the job board, then the job you took")
-	m.list.select(3)
+	check(m.page == "work" and m.list.row_count() == 7, "Work: job board, market and orders, then the job you took")
+	m.list.select(6)
 	m.key("enter")
 	check(app.waypoint != null and not m.visible, "ENTER on it puts a waypoint down and the phone away")
 	var val := World.airfield("VAL")
 	check((app.waypoint as Vector2).distance_to(Vector2(val.x, val.y)) < 2000.0, "at the job's strip")
+
+	check(not s.autopilot.engaged, "choosing a destination does not engage autopilot")
+	m.open()
+	m.open_app("market")
+	check(m.list.row_count() > 1, "Work has a market board")
+	var market_text := ""
+	for i in m.list.row_count():
+		market_text += m.list.cell(i, 0) + "\n"
+	check(market_text.contains("usual") and market_text.contains("demand"), "prices say what their index and pressure mean")
+	s.trade.orders.open.append({"id": 99, "buyer": "family", "good": "cocaine", "qty": 20.0, "left": 20.0,
+		"premium": 1.3, "kind": "rush", "posted": s.time, "due": s.time + 900.0})
+	m.open_app("orders")
+	var order_text := ""
+	for i in m.list.row_count():
+		order_text += m.list.cell(i, 0) + "\n"
+	check(order_text.contains("20 lb") and order_text.contains("+30%") and order_text.contains("15:00"), "orders show remaining cargo, premium and deadline")
+	m.list.select_near(0)
+	m.key("enter")
+	check(app.talk != null, "an order calls Benny through the existing conversation")
+	if app.talk != null:
+		app.talk._close()
+	s.investigation = Investigation.new()
+	s.investigation.tail_heat[s.aircraft_key] = 65.0
+	s.investigation.district_heat["town"] = 80.0
+	var stash: Dictionary = s.stash_net.stashes[0]
+	s.investigation.cases[str(stash.id)] = {"stage": "warrant", "since": s.time, "until": s.time + 123.0}
+	var heat_before := JSON.stringify(s.investigation.to_dict())
+	m.open()
+	m.open_app("heat")
+	var heat_text := ""
+	for i in m.list.row_count():
+		heat_text += m.list.cell(i, 0) + "\n"
+	check(heat_text.contains("65%") and heat_text.contains("80%") and heat_text.contains("warrant"), "heat separates aircraft, districts and case stages")
+	check(not heat_text.contains("2:03"), "a hidden raid countdown is not revealed without a lookout")
+	m.refresh()
+	check_eq(JSON.stringify(s.investigation.to_dict()), heat_before, "opening and refreshing Heat never mutates the case files")
+	m.page = "home"
+	m.close()
+	app.set_process(false)
+	s.phase = "airborne"
+	s.state.on_ground = false
+	s.state.alt = 1200.0
+	app._open("phone")
+	check(s.autopilot.engaged and s.autopilot.waypoints.is_empty(), "opening the phone airborne starts temporary hold when AP was off")
+	app._process(0.0)
+	check(m.visible, "the next flight frame keeps the phone open")
+	app._phone_call("taxi")
+	check(not app.menus.taxi.visible, "ground-only services stay unavailable airborne")
+	m.page = "home"
+	m.close()
+	app._sync_phone_hold()
+	check(not s.autopilot.engaged, "closing a temporary phone hold restores manual flight")
+	var route := [[s.state.x + 5000.0, s.state.y + 5000.0, 1300.0]]
+	s.autopilot.engage_route(s.state, route.duplicate(true), 1300.0)
+	app._open("phone")
+	check_eq(s.autopilot.waypoints, route, "an existing route is not replaced by phone hold")
+	s.autopilot.waypoints = []
+	s.autopilot.arrived = true
+	m.page = "home"
+	m.close()
+	app._sync_phone_hold()
+	check(s.autopilot.engaged and s.autopilot.waypoints.is_empty(), "a route that finishes during the call is not restarted")
+	s.autopilot.disengage()
 	app.free()
 	s.dispose()
