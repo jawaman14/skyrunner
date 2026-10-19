@@ -713,7 +713,16 @@ func test_the_phone_apps() -> void:
 	s.phase = "airborne"
 	s.state.on_ground = false
 	s.state.alt = 1200.0
+	Input.action_press(ControlsConfig.action("pitch_up"))
+	app.help.visible = true
+	check(app._gather_input().held.has("pitch_up"), "direct F1 help leaves flight controls active")
+	app.help.visible = false
+	app.hud.minimap.big = true
+	check(app._gather_input().held.has("pitch_up"), "direct chart leaves flight controls active")
+	app.hud.minimap.big = false
 	app._open("phone")
+	check(not app._gather_input().held.has("pitch_up"), "phone-owned hold blocks flight controls")
+	Input.action_release(ControlsConfig.action("pitch_up"))
 	check(s.autopilot.engaged and s.autopilot.waypoints.is_empty(), "opening the phone airborne starts temporary hold when AP was off")
 	app._process(0.0)
 	check(m.visible, "the next flight frame keeps the phone open")

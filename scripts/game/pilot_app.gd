@@ -1391,7 +1391,7 @@ func _gather_input() -> ControlMapper.InputFrame:
 	var inp := ControlMapper.InputFrame.new()
 	inp.pressed = _pressed
 	_pressed = {}
-	var menu_open := _active_menu() != null or controls_menu != null or pack_menu != null or pause_menu != null or is_instance_valid(talk) or _map_open() or help.visible
+	var menu_open := _active_menu() != null or controls_menu != null or pack_menu != null or pause_menu != null or (_phone_flight_open and (is_instance_valid(talk) or _map_open() or help.visible))
 	if not menu_open:
 		for action in ControlsConfig.HELD:
 			if Input.is_action_pressed(ControlsConfig.action(action)):
