@@ -8,6 +8,7 @@ extends CanvasLayer
 ## their keys. (It used to be a box across the bottom of the screen with the character's name in neon script.)
 
 signal finished
+signal completed  ## The script reached END; hanging up only emits finished.
 
 const PHONE_W := 400.0
 const BUBBLE_W := 270.0
@@ -203,6 +204,7 @@ func _next(id: String) -> void:
 	line = next_line
 	busy = false
 	if line == null:
+		completed.emit()
 		_close()
 		return
 	if line.text != "" or line.responses.is_empty():
