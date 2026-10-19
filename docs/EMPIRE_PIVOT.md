@@ -77,7 +77,7 @@ optional after the takeover, but direct play isn't demoted. D-58's row should sa
 |---|---|---|---|---|
 | B-1 | A save-version bump silently skips the whole sim block | `strategic_save.gd` `restore()`: `if ... v != VERSION: return` | Any new field with a version bump wipes old saves' state without telling anyone | F-1 migration chain, first |
 | B-2 | Rival money from nowhere | `chronicle.gd` (+8k, +6k, and two removals into nowhere), `agency.gd` (+4k), `family.gd` (+2k), `ground.gd` (half a truck's value) | Breaks D-62 | F-3, each one named or removed, with a balance entry |
-| B-3 | No ledger: 88 `money` assignments in 28 files, 43 stash cash and stock edits | All over `scripts/sim` | Can't prove conservation or equal rules | F-2 wrap (no behaviour change), F-3 move by domain |
+| B-3 | No ledger: 88 `money` assignments in 28 files, 87 `law_funds` uses in 16 files, 43 stash cash and stock edits | All over `scripts/sim` | Can't prove conservation or equal rules | F-2 wrap (no behaviour change), F-3 move by domain |
 | B-4 | Factions are hard-coded keys | `"org"` 236× in 31 files, `"rival"` 132× in 23; `CAP`, `HOSTILE` and `DOCTRINE` in `ground.gd` | A third org can't join the ground war or the old systems | New code takes the org id as data; old systems stay two-faction until a PR needs them (L-3 adds `moretti` to the economy only) |
 | B-5 | The nights are tied to the pilot | `nights.gd`: the operation starts when the pilot takes off hot | Conflicts with D-64 and D-76 | F-6 scheduler and nightly report; `Nights.ENABLED` opt-in |
 | B-6 | No sim-side time acceleration | Only `world_scene.time_scale` (the sky) | The desk needs it to make days pass | D-12 fixed step first, then F-7 |
@@ -106,7 +106,7 @@ Legend:
 | PR | What | Depends on | Size | Gate |
 |---|---|---|---|---|
 | F-1 | Save migration chain; a frozen v1 fixture loads with every block | – | S | New `test_save_migration` |
-| F-2 | `Ledger` and accounts; `money` and rival cash become ledger-backed properties; unattributed adjustments are logged; **no behaviour change** | F-1 | M | All parity and goldens unchanged; conservation test |
+| F-2 | `Ledger` and accounts; `money`, rival cash and `law_funds` become ledger-backed properties (an org's safe may go negative as today); unattributed adjustments are logged; **no behaviour change** | F-1 | M | All parity and goldens unchanged; conservation test |
 | F-3a–f | Move the money sites to named transfers, one domain per PR (`cmds_*`, logistics, payroll, chronicle/family/agency, casino) | F-2 | 6 × S | Unattributed count falls each PR; B-2 items get a BALANCE entry |
 | F-4 | Inventory lots and locations; stash stock wrapped, with no behaviour change; `Loadout` becomes a location | F-1 | M | Inventory invariants |
 | F-5 | `command_as(actor, ...)` with the role shim; events carry `org` and `actor`; `job_delivered` gets `by` and `mode` | – | M | Every existing command test passes through the shim; sockets lane |
@@ -122,7 +122,7 @@ Legend:
 | L-3 | `moretti` as an economic org; org AI v1 (strategy and policy layers) on new RNG streams | C ⚠ | L-1, F-5 | L |
 | L-4 | Desk: business books, staff and orders, blocked reasons | X | L-1, F-5 | M |
 | L-5 | Direct and delegated delivery adapters, plus the A5 equivalence test | X adapters, C test | F-4, F-5 | M |
-| L-6 | Leaving the district: aggregate ticks for the neighbours, plus the equivalence test | C | L-1, F-6 | S |
+| L-6 | Leaving the district: operations keep settling while the player is away (A8); `tick_aggregate` exposed and its equivalence test only, with no district switched to it (D-65) | C | L-1, F-6 | S |
 | L-7 | Acceptance suite A1–A9, P1 performance, and an "N days" balance sim | C sim, X integration and perf | all of the above | M |
 | **Gate** | Owner playtest (G1) | owner | L-7 | |
 

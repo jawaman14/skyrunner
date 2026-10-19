@@ -27,11 +27,11 @@ prove it. Later PRs move call sites one domain at a time.
 | Command gate | `Session.command(role, name, args)`: every non-flight action, from local menus, network clients and AI crews, passes `Roles.allowed` (`session_commands.gd`, `roles.gd`) | It knows the *role*, not the organisation or the person. There's one organisation per side. |
 | Clock | `Session.time`, advanced in `session_tick.gd` | No sim-side time acceleration (`world_scene.time_scale` only moves the sky). The pilot app steps the sim per frame; D-12 (a fixed 30 Hz step) is planned, not built. |
 | Strategic layer | `HQ.Season` and `NightDirector`: planning, operation and wrap-up per night. Actions: launder, buy_front, bribe, lawyer, opsec... | A night's operation starts when the pilot takes off with something hot (`nights.gd`), so it's tied to the pilot. The balance sims (`scripts/balance/strategic.gd`) are built on nights. |
-| Money | `Session.money` (the player's), `ground.commanders.rival.cash` (Los Cuervos'), stash cash in logistics | **88 assignments to `money` in 28 files**, plus **43 `+=`/`-=` on stash cash and stock**. No ledger. |
+| Money | `Session.money` (the player's), `ground.commanders.rival.cash` (Los Cuervos'), `SessionState.law_funds` (the task force's), stash cash in logistics | **88 assignments to `money` in 28 files**, **87 uses of `law_funds` in 16 files**, plus **43 `+=`/`-=` on stash cash and stock**. No ledger. `money` already goes negative today: crash repairs (`session_rules._crash`) and ground upkeep (`ground.gd`) subtract unconditionally. |
 | Rival economy | Los Cuervos have one cash float, start on $20k, and pay for squads | **Injected from nowhere:** `chronicle.gd` (+8k, +6k), `agency.gd` (+4k), `family.gd` (+2k), and `ground.gd` pays them half a truck's value. That breaks "same rules" (D-62). |
 | Factions | `"org"`, `"rival"` and `"police"` as string keys | `"org"` appears **236 times in 31 sim files**, `"rival"` 132 in 23. `ground.gd` hard-codes `CAP`, `HOSTILE` and `DOCTRINE` per key. |
 | Businesses | HQ `fronts` (laundromat), the casino, the dealership | No business entity: nothing with its own books, staff and stock. |
-| Districts | 18 entries in `map_city.gd`, each with id, name, market zone, bounds, neighbours and tags. San Telmo Centro is `city, commercial`. | No ownership, businesses or per-district state. |
+| Districts | 10 territories in `map_city.gd` (`l.territories`, San Telmo Centro to Smuggler's Cove), each with id, name, market zone, bounds, neighbours and tags. San Telmo Centro is `city, commercial`. | No ownership, businesses or per-district state. |
 | Workers | `Payroll`: outfit, role, skill, loyalty, wage, status, assignment | No schedules or budgets; one assignment string per worker. |
 | Saves | `StrategicSave`, `VERSION := 1` | **On a version mismatch, `restore()` returns without loading the sim block**, so a version bump silently drops old saves' state. That needs a migration chain before anything else touches saves. |
 | Determinism | Every system has its own RNG stream (seed + offset). New rules sit behind switches registered in `switches.gd`. | Fine as is; new systems follow it. |
@@ -56,12 +56,12 @@ No ids come from RNG.
 
 | Entity | Key fields | Notes |
 |---|---|---|
-| `Org` | `id`, `name`, `kind` (`player`, `rival`, `law`), `leader` (person id), `relations{org_id: float}` | `"org"`, `"rival"` and `"police"` stay as the first three ids, so old code keeps working. New code takes an org id as data. |
+| `Org` | `id`, `name`, `kind` (`player`, `rival`, `law`), `leader` (person id), `succession[]` (ordered person ids), `relations{org_id: float}` | `"org"`, `"rival"` and `"police"` stay as the first three ids, so old code keeps working. New code takes an org id as data. |
 | `Account` | `id` = `org:place`, e.g. `org:safe`, `rival:safe`, `org:stash-docks`, `biz-12:till`, `outside:growers` | Money only. A balance is derived from transfers and cached. |
 | `Business` | `id`, `kind`, `district`, `site` (x, y), `owner` (org id), `staff[]`, `till` (account), `stock` (inventory location), `costs{rent, utilities}`, `price_policy`, `open_hours` | P0 kinds below. |
 | `Site` | `id`, `district`, `kind` (`stash`, `shop`, `warehouse`, `strip`), `owner` | Wraps today's stash and airfield records. |
 | `Lot` | `id`, `good`, `lb`, `origin`, `quality`, `heat` | Product moves as lots, and a lot can split. |
-| `Person` | `id`, `org`, `role`, `skill`, `loyalty`, `wage`, `boss` (person id), `schedule`, `assignment` | Extends Payroll's worker. `boss` gives the hierarchy. |
+| `Person` | `id`, `org`, `role`, `skill`, `loyalty`, `wage`, `boss` (person id), `schedule`, `assignment` | Extends Payroll's worker. `boss` gives the hierarchy (reporting only; succession is `Org.succession`, §11 O-2). |
 | `Order` | `id`, `org`, `issuer` (person or actor), `assignee`, `kind`, `args`, `condition`, `status`, `blocked_reason` | Explicit and conditional orders. Workers only run orders; they never make one up (§0). |
 | `District` | `id` (from `map_city.gd`), `control{org_id: float}`, `demand{good: float}`, `prosperity` | It wraps the existing table; it doesn't replace it. |
 
@@ -77,16 +77,22 @@ the only accounts allowed to go negative. A report shows the net flow across thi
 
 **Invariants** (checked in tests and, in debug builds, after every tick):
 1. Conservation: the sum of all balances, `outside:*` included, is zero.
-2. No account except `outside:*` goes below zero. A command that would overdraw fails with a reason instead.
+2. Only `outside:*` accounts and each org's main account (`<org>:safe`) may go below zero. A negative safe is the org's
+   debt: today's unconditional costs (crash repairs, ground upkeep, wages) keep working, so F-2 stays a no-behaviour-change
+   wrap, and the books tick puts a negative safe into arrears with a blocked reason. Every other account (tills, stashes,
+   trucks) can't overdraw; a discretionary command that would spend money the safe doesn't have fails with a reason, as
+   today's affordability checks already do.
 3. Every transfer has a reason from a closed list, plus an actor (who caused it).
 4. Rebuilding balances from the log equals the cache.
 
 **Migration** (wrap, then move):
 - **F-2 (no behaviour change).** `Ledger` exists. `Session.money` becomes a property whose setter records an `adjust`
-  transfer against `outside:unattributed` for the difference. Rival cash gets the same treatment. Every value stays bit-identical,
+  transfer against `outside:unattributed` for the difference. Rival cash and `law_funds` (as `police:budget`) get the same
+  treatment, so the task force's income and spending are inside the conservation check and the boundary report. Every value stays bit-identical,
   so parity stays green. We now get a log of every unattributed adjustment, which is the to-do list for F-3.
 - **F-3 (one domain per PR).** Replace the adjustments with named transfers: `cmds_air`, `cmds_crew`, `cmds_ground`,
-  `cmds_trade`, `cmds_court`, `cmds_org`, then `logistics`, `payroll`, `chronicle`, `family`, `agency` and `casino`. The PR that
+  `cmds_trade`, `cmds_court`, `cmds_org`, then `logistics`, `payroll`, `chronicle`, `family`, `agency`, `casino`, and the
+  task force's `law_funds` sites (`court`, `ground`, `trade` and the rest of the 16 files). The PR that
   removes `outside:unattributed` adds a test that it's never written.
 - **Rival injections.** Each one either becomes a named outside source with a reason (the Company really pays Los Cuervos, say)
   or is removed. Removing any changes balance, so each needs a `cli.gd -- report` entry. None touches parity (§1).
@@ -125,9 +131,10 @@ One authoritative `Session.time` (decided 19 Oct). Three things hang off it:
 
 **Time acceleration** (new; needs D-12's fixed step first):
 - The desk can run ×1, ×4, ×16 or ×60 by stepping the sim N fixed steps per frame.
-- It's capped at ×1 while the local player is flying or on foot in a hostile area. The flight model must never take a
-  variable step.
-- In multiplayer, only the host or leader can accelerate, and only when every human seat is parked.
+- Only the organisation's leader can change the speed (D-82); a host who isn't the leader can't.
+- It's held at ×1 while **any** human seat, local or remote, is flying or on foot in a hostile area. The flight model
+  must never take a variable step.
+- In multiplayer it also needs every human seat parked (D-82).
 - The cap rule lives in one function, so it's tested once.
 
 **Historical time.** 1979–1989 is campaign time, measured on the same clock. Chapter years stay labels on chapters, not a
@@ -136,7 +143,9 @@ calendar the sim depends on. The calendar needed for 1989 and the sandbox is res
 ## 6. Commands, actors and events
 
 **Actor.** `{org, role, person}`. The existing `command(role, name, args)` stays as a shim that fills `org` from the role's
-side (`Roles` already knows it) and `person` from the seat. New code calls `command_as(actor, name, args)`. Permission order:
+side through an explicit map, because `Roles.side()` returns sides, not org ids: `runner` → `org`, `law` → `police`. It
+fills `person` from the seat. Rival and Moretti actors never come through the shim; their AI calls `command_as` with its
+own org id. New code calls `command_as(actor, name, args)`. Permission order:
 1. `Roles.allowed(role, name)`, as now;
 2. the org owns the target (business, site, worker);
 3. the person's authority. In P0 that means the boss can do everything and a manager only what their budget and orders allow.
@@ -187,7 +196,9 @@ proved itself.
 
 1. **F-1 first.** `StrategicSave` gets a migration chain: `MIGRATIONS = {1: _v1_to_v2, ...}`, applied in order. `restore()`
    never drops a block on a version mismatch. A test loads a frozen v1 save fixture and checks that every block survives.
-2. The ledger, inventory, businesses, orgs and orders save under `sim.empire`. An older save gets them built from its state:
+2. The ledger, inventory, businesses, orgs and orders save under `sim.empire`, together with the scheduler's continuation
+   state (the pending heap and its serial) and the state of every RNG stream this spec adds (§7). Without them a loaded
+   game would restart random sequences or reorder future events. An older save gets them built from its state:
    - `money` becomes the opening balance of `org:safe`;
    - stash cash and stock become their accounts and locations;
    - the opening entries come from `outside:opening`.
@@ -196,7 +207,7 @@ proved itself.
 ## 10. The Living District (P0 content)
 
 **Where:** San Telmo Centro (`city, commercial`). Its neighbours, The Docks (Warehouse 7, the port) and Barrio Chino (the
-lock-up, a stash corridor), are its supply edges. They're simulated as today, plus aggregate business ticks. This uses today's
+lock-up, a stash corridor), are its supply edges. They run `tick_full` like everything else in P0 (§8); no district is switched to aggregate ticks yet. This uses today's
 map; the map redesign is paused (decided 19 Oct).
 
 **Organisations:**
@@ -207,17 +218,22 @@ map; the map redesign is paused (decided 19 Oct).
 | `rival` | Los Cuervos | Already have squads, turf and cash |
 | `moretti` | The Morettis' local businesses (owner, D-81) | The Family already has state (respect, greed, loans, the docks) in `family.gd`. Making them an org that owns the restaurant and the laundromat chain gives a third competitor on economic rules rather than violence. |
 
-**Businesses** (proposed: 8 in the district, 2 in each neighbour):
+**Businesses** (12: 8 in San Telmo Centro, 2 in each neighbour):
 
-| Business | Chain | Starting owner |
-|---|---|---|
-| Corner spots ×3 | Product: strip → stash → corner | 1 org, 1 rival, 1 free |
-| Laundromat | Laundering front | moretti |
-| Bar / the club | Front and product | org |
-| Restaurant | Front (legit wholesale in) | moretti |
-| Import-export warehouse (Docks) | Legit: `outside:market` → warehouse → retail | free |
-| Bodega | Legit retail; it's where the import chain sells | rival |
-| Car dealership | Exists (`dealership.gd`); joins the ledger | outside, unowned |
+| Business | District | Chain | Starting owner |
+|---|---|---|---|
+| Corner spot A | San Telmo Centro | Product: strip → stash → corner | org |
+| Corner spot B | San Telmo Centro | Product | free |
+| Laundromat | San Telmo Centro | Laundering front | moretti |
+| Bar / the club | San Telmo Centro | Front and product | org |
+| Restaurant | San Telmo Centro | Front; buys legit wholesale | moretti |
+| Bodega | San Telmo Centro | Legit retail; sells the import chain's goods | rival |
+| Travel agency | San Telmo Centro | Laundering front (cash-heavy, period-typical) | free |
+| Car dealership | San Telmo Centro | Exists (`dealership.gd`); joins the ledger | outside, unowned |
+| Import-export warehouse | The Docks | Legit: `outside:market` → warehouse → retail | free |
+| Fish market | The Docks | Legit retail and a buyer of the warehouse's goods | moretti |
+| Corner spot C | Barrio Chino | Product (its stash is the lock-up) | rival |
+| Garage | Barrio Chino | Vehicles and repairs; a cover for trucks | free |
 
 That's two supply chains: **product** (exists, re-plumbed onto the ledger and inventory) and **legit import to retail** (new,
 small).
@@ -231,13 +247,13 @@ small).
 | A1 | Player buys or starts a business and reads its books | Headless command plus a desk screenshot |
 | A2 | Staff get budget, shift and orders | Order and schedule state after 1 day |
 | A3 | A supply chain flows without duplication | Inventory invariants over 7 days |
-| A4 | Rivals buy, sell, recruit and expand on the same rules | No transfer from a rival that isn't `command_as`; their outside boundary is reported |
+| A4 | Rivals buy, sell, recruit and expand on the same rules | Every rival transfer is either a discretionary action through `command_as` or a scheduled settlement (wages, rent, utilities, debt service, production, restock) made by the scheduler with actor `system:books` under the same rules as the player's org; nothing else. Their outside boundary is reported |
 | A5 | A flown and a delegated delivery give equal state changes | Same seed, two runs, diff the ledger and inventory |
 | A6 | Wages, costs, revenue and losses settle over several cycles | 14 days, conservation holds |
 | A7 | Negotiate, compete or fight, and the consequences persist | Relations and control saved and restored |
 | A8 | Operations continue when the player leaves the district | Player parked out of district for 2 days; books still settle |
-| A9 | Save and load reproduce everything | Round-trip equality of `sim.empire` |
-| P1 | Performance scales | Headless days per second at 1×, 2× and 4× the district's entities, recorded in the PR |
+| A9 | Save and load reproduce everything | Round-trip equality of `sim.empire`, **and** a game saved mid-day and run 2 more days after loading ends identical (ledger, inventory, orders, RNG draws) to the same game run 2 days without saving |
+| P1 | Performance scales | On the CI Linux runner, headless: (a) 4× the district's entities costs at most 5× the time per sim day, so growth is no worse than about linear; (b) at 1× size and ×60 desk speed, the sim's work per rendered frame stays under 8 ms; (c) no more than 10% slower than the previous recorded P1 run. Thresholds are initial and recalibrated once, in the PR that first measures them |
 | G1 | Gameplay gate | Owner playtest: it's interesting without story missions |
 
 ## 11. Owner answers to the open questions (19 October)
@@ -246,7 +262,9 @@ small).
   Phase 4, not an option: the far cities must run aggregated until the player arrives, with materialisation and
   reconciliation designed before the second city is built. P0 is unchanged.
 - **O-2 Succession → D-79.** When the boss dies or is jailed, the next in line takes over and the player carries on as
-  them. So `Person.boss` is also the line of succession, and the playable character is the org's `leader`, not a fixed
+  them. `Org.succession` holds the line as an ordered list, because `Person.boss` can't pick one heir among several
+  reports and the leader has no boss. By default it's ordered by rank, then by hire serial, and the player can reorder it.
+  The first living, free person in it becomes `leader`, and the playable character is the org's `leader`, not a fixed
   person. Phase 2's hierarchy must always name a successor, and the desk should show who it is. Bankruptcy isn't a
   change of leader; it stays §0's configurable game-ender unless the owner says otherwise.
 - **O-3 Endings → D-80.** The player just carries on in the sandbox. Rule, Retire and Fall are recorded in the journal,
