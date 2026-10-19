@@ -73,7 +73,8 @@ from the log in tests.
 
 **The outside.** Money enters or leaves the map only through `outside:*` accounts: `outside:growers`, `outside:buyers`,
 `outside:company`, `outside:family`, `outside:state` (fines, seizures, taxes) and `outside:market` (legit wholesale). These are
-the only accounts allowed to go negative. A report shows the net flow across this boundary, so injections can be seen.
+the only accounts allowed to go negative, apart from each org's main account `<org>:safe`, whose negative balance
+is that org's debt (invariant 2). A report shows the net flow across this boundary, so injections can be seen.
 
 **Invariants** (checked in tests and, in debug builds, after every tick):
 1. Conservation: the sum of all balances, `outside:*` included, is zero.
@@ -248,7 +249,7 @@ small).
 | A2 | Staff get budget, shift and orders | Order and schedule state after 1 day |
 | A3 | A supply chain flows without duplication | Inventory invariants over 7 days |
 | A4 | Rivals buy, sell, recruit and expand on the same rules | Every rival transfer is either a discretionary action through `command_as` or a scheduled settlement (wages, rent, utilities, debt service, production, restock) made by the scheduler with actor `system:books` under the same rules as the player's org; nothing else. Their outside boundary is reported |
-| A5 | A flown and a delegated delivery give equal state changes | Same seed, two runs, diff the ledger and inventory |
+| A5 | A flown and a delegated delivery give equal state changes | Same seed, two runs. Compare the **economic projection**, not the raw log: every account's balance, every lot's location and pounds, and each transfer as `(from, to, amount, reason)`, compared as a multiset. `id`, `t`, `actor`, `ref`, and the event's `by` and `mode` are provenance and are excluded. The only difference allowed is the delegation fee, if D-10's fee is on: one `delegation_fee` transfer from the org's safe in the delegated run, which the test removes from that run's projection before comparing |
 | A6 | Wages, costs, revenue and losses settle over several cycles | 14 days, conservation holds |
 | A7 | Negotiate, compete or fight, and the consequences persist | Relations and control saved and restored |
 | A8 | Operations continue when the player leaves the district | Player parked out of district for 2 days; books still settle |
