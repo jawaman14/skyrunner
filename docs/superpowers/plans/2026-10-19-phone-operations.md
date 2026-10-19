@@ -27,13 +27,15 @@
 **Files:** scripts/ui/phone_menu.gd, scripts/game/pilot_app.gd, tests/test_walker.gd, docs/GUIDE.md, HANDOFF.md.
 **Consumes:** Orders.view(), Investigation.view(stash_net, now, warned), Session.command(PILOT, "autopilot", {on: bool}).
 **Produces:** Work subpages market/orders, Empire subpage heat, PilotApp._sync_phone_hold().
-- [ ] Extend test_the_phone_apps with page contents, countdown privacy, read-only refresh, airborne lifetime and AP ownership checks.
-- [ ] Verify the existing build fails these new expectations.
-- [ ] Implement pages and stable selection in the existing handset layout.
-- [ ] Permit the phone in flight; engage hold only on entry when AP was off, release only the hold this UI started.
-- [ ] Document the paths and record decision progress.
+- [x] Extend test_the_phone_apps with page contents, countdown privacy, read-only refresh, airborne lifetime and AP ownership checks.
+- [x] Verify the existing build fails these new expectations.
+- [x] Implement pages and stable selection in the existing handset layout.
+- [x] Permit the phone in flight; engage hold only on entry when AP was off, release only the hold this UI started.
+- [x] Document the paths and record decision progress.
 - [ ] Verify final CI, visual captures and fresh review, then integrate under D-52.
 
 ## Execution notes
 - Native worktree creation failed because task cwd is not a Git repository; manual linked-worktree writes were denied. Use a separate remote branch and CI, preserving the dirty canonical checkout.
 - Initial checkpoint contains tests only so CI can demonstrate the unmet behavior before implementation.
+
+- RED evidence: CI job 117954655516 on 4d573571, Work layout and job waypoint assertions fail (452 passed, 1 failed); old row index then produces a null waypoint cast. Implementation checkpoint follows; final CI remains required.

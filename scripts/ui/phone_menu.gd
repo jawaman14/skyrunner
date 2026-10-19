@@ -59,6 +59,7 @@ var _info: Label
 var _jobs: Array = []
 var _work: Array = []  ## the Work page's rows: [kind, payload] - "board", "job" (a Job), or "" for a heading
 var _empire: Array = []  ## the Empire page's rows: an action to call, or "" for a line
+var _order_rows: Array = []
 var _call_ids: Array = []  ## the ringing calls last drawn: a new one refreshes the phone
 var history_label: Label  ## Contacts: the last few calls, answered, declined or missed
 var campaign_scroll: ScrollContainer  ## the chapter guide (G, or its button on the home screen), over any app
@@ -297,6 +298,7 @@ func refresh() -> void:
 	if s.story != null and campaign_scroll.visible:
 		campaign_text.text = s.story.journal_text()
 	var selected := list.selected_row()
+	var order_keep: int = int(_order_rows[selected].id) if page == "orders" and selected >= 0 and selected < _order_rows.size() else -1
 	var keep: String = _row_id(rows[selected]) if page == "contacts" and selected >= 0 and selected < rows.size() else ""
 	# the book is always current (the walker's tests and the pilot app read it); ringing calls come first
 	rows = []
@@ -340,6 +342,12 @@ func refresh() -> void:
 			_work.append(["", null])
 			list.add_row(["Open the job board"])
 			_work.append(["board", null])
+			list.section("Market and buyers")
+			_work.append(["", null])
+			list.add_row(["Market prices"])
+			_work.append(["market", null])
+			list.add_row(["Buyers' orders"])
+			_work.append(["orders", null])
 			list.section("My jobs: ENTER puts a waypoint on one")
 			_work.append(["", null])
 			for j in _jobs:
@@ -358,6 +366,12 @@ func refresh() -> void:
 					list.add_row([str(item[0])])
 					_empire.append(str(item[1]))
 			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "open", "enter"], ["ESC", "back", "esc"]])
+		"market":
+			_market_page()
+		"orders":
+			_orders_page()
+		"heat":
+			_heat_page()
 		"radio":
 			title.text = "Radio"
 			if radio != null:
@@ -371,6 +385,9 @@ func refresh() -> void:
 			# keep the same person selected when a call starts or stops ringing above them
 			var ids: Array = rows.map(_row_id)
 			list.select_near(ids.find(keep) if ids.has(keep) else 0)
+		elif page == "orders":
+			var ids: Array = _order_rows.map(func(o): return int(o.id))
+			list.select_near(ids.find(order_keep) if ids.has(order_keep) else 0)
 		else:
 			list.select_near(selected if selected >= 0 else 0)
 	_update_info()
@@ -413,7 +430,7 @@ func _empire_parts() -> Array:
 		fleet.append(["Engine %s, airframe %s" % [v.get("engine", "?"), v.get("airframe", "?")], ""])
 	if s.dealer != null:
 		fleet.append(["The car lot: cars, vans and trucks", "dealer"])
-	var parts := [["Money", money], ["Fleet", fleet]]
+	var parts := [["Money", money], ["Fleet", fleet], ["The law", [["Heat and case files", "heat"]]]]
 	var turf := []
 	if s.rackets != null:
 		turf.append(["The collectors: the streets we hold", "rackets"])
@@ -506,6 +523,8 @@ func key(k: String) -> void:
 					var action: String = rows[i][0]
 					if action == "" and rows[i].size() <= 3:
 						return  # a group's heading
+					if not _can_call(action):
+						return
 					if rows[i].size() > 3:
 						var result: Array = s.command(Roles.PILOT, "phone_answer", {"id": rows[i][3]})
 						if not result[0]:
@@ -519,6 +538,11 @@ func key(k: String) -> void:
 				"work":
 					if i < 0 or i >= _work.size() or str(_work[i][0]) == "":
 						return
+					if str(_work[i][0]) in ["market", "orders"]:
+						open_app(str(_work[i][0]))
+						return
+					if str(_work[i][0]) == "board" and not _can_call("job_board"):
+						return
 					page = "home"
 					super.close()
 					if str(_work[i][0]) == "board":
@@ -528,9 +552,19 @@ func key(k: String) -> void:
 						waypoint_to.emit(Vector2(float(xy[0]), float(xy[1])))
 				"empire":
 					if i >= 0 and i < _empire.size() and str(_empire[i]) != "":
+						if str(_empire[i]) == "heat":
+							open_app("heat")
+							return
+						if not _can_call(str(_empire[i])):
+							return
 						page = "home"
 						super.close()
 						called.emit(str(_empire[i]))
+				"orders":
+					if i >= 0 and i < _order_rows.size():
+						page = "home"
+						super.close()
+						called.emit("buyers")
 				"radio":
 					if radio != null and i >= 0 and i < radio.stations.size():
 						radio.idx = i
@@ -556,3 +590,80 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 	super._input(event)
+
+
+## These services need a parked aircraft; calls and the read-only apps work aloft.
+func _can_call(action: String) -> bool:
+	if not s.parked and action in ["job_board", "desk", "logistics", "taxi", "rackets", "dealer", "track"]:
+		show_feedback("Land and park before using this service.", false)
+		return false
+	return true
+
+
+func _market_page() -> void:
+	title.text = "Market prices"
+	if s.trade == null or s.trade.orders == null:
+		footer.text = "The market board is not available in this game."
+		return
+	var goods: Dictionary = s.trade.orders.board().goods
+	for good in goods:
+		list.section(str(good).capitalize())
+		for market in goods[good]:
+			var quote: Dictionary = goods[good][market]
+			list.add_row(["%s: %d%% of usual, %s" % [str(market).capitalize(), roundi(float(quote.price) * 100.0), str(quote.trend)]])
+			list.add_row(["  demand / supply: %.2fx" % float(quote.pressure)])
+	footer.text = "Relative prices, not a sale quote. Call Benny for the buyer's terms."
+	hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
+
+
+func _orders_page() -> void:
+	title.text = "Buyers' orders"
+	_order_rows = []
+	if s.trade != null and s.trade.orders != null:
+		_order_rows = s.trade.orders.view().open
+	for order in _order_rows:
+		var seconds := maxi(0, int(order.seconds_left))
+		var unit := "rifles" if str(order.good) == "guns" else "lb"
+		list.add_row(["%s: %d %s %s  +%d%%  %d:%02d" % [str(order.name), int(order.left), unit,
+			str(order.good), roundi((float(order.premium) - 1.0) * 100.0), seconds / 60, seconds % 60]])
+	if _order_rows.is_empty():
+		footer.text = "No open orders. Check back when buyers post demand."
+	else:
+		footer.text = "ENTER calls Benny. Deliver and sell to the named buyer before the deadline; calling does not accept a sale."
+	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "call Benny", "enter"], ["ESC", "back", "esc"]])
+
+
+func _heat_page() -> void:
+	title.text = "Heat and case files"
+	if s.investigation == null:
+		footer.text = "Case files are not available in this game."
+		return
+	var investigation: Investigation = s.investigation
+	list.section("Aircraft")
+	list.add_row(["Current tail: %d%%" % roundi(float(investigation.tail_heat.get(s.aircraft_key, 0.0)))])
+	list.section("Districts")
+	var districts: Array = investigation.district_heat.keys()
+	districts.sort()
+	for district in districts:
+		list.add_row(["%s: %d%%" % [str(district).capitalize(), roundi(float(investigation.district_heat[district]))]])
+	if districts.is_empty():
+		list.add_row(["No district heat recorded."])
+	list.section("Stash case files")
+	var warned := {}
+	if s.payroll != null:
+		for worker in s.payroll.workers:
+			if str(worker.outfit) == "org" and str(worker.role) == "lookout":
+				for stash in s.stash_net.stashes if s.stash_net != null else []:
+					if str(worker.assigned) == "stash-" + str(stash.id):
+						warned[str(stash.id)] = true
+	var cases: Array = investigation.view(s.stash_net, s.time, warned) if s.stash_net != null else []
+	for case in cases:
+		var line := "%s: %s" % [str(case.name), str(case.stage)]
+		if case.has("raid_in_s"):
+			var seconds := maxi(0, int(case.raid_in_s))
+			line += "  lookout: %d:%02d" % [seconds / 60, seconds % 60]
+		list.add_row([line])
+	if cases.is_empty():
+		list.add_row(["No active stash case files."])
+	footer.text = "Park (a hangar cools the tail faster), lie low or move stock. Call your lawyer about a warrant. Raid timing needs a posted lookout."
+	hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
