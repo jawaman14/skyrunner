@@ -22,8 +22,8 @@ const LOCKS := ["guns", "role_soldier", "role_mule"]
 ## laundering sets off the uprising), so none of them can be optional.
 const CHAPTERS := [
 	[1979, "Square Grouper",
-		"San Telmo, 1979. Rafa Quintero's charter company is half the bank's and barely covers the fuel,\n"
-		+ "so Rafa sends his fixer Benny Ruiz to men up in the hills with bales of grass.\n"
+		"San Telmo, 1979. Rafa Quintero's charter outfit owes the bank, and its fares barely cover fuel,\n"
+		+ "but his fixer Benny Ruiz knows men up in the hills with bales of grass.\n"
 		+ "Buy it at the bush strips, fly it into our stash houses, and hire a kid or two\n"
 		+ "to sell it on the corners [Phone > Manny Ortega]. Low money, low risk - for now.",
 		["trade", "payroll", "chronicle"],
@@ -35,7 +35,7 @@ const CHAPTERS := [
 "
 		+ "know the Colombians. Grass pays by the ton; the white stuff pays by the ounce.
 "
-		+ "Rafa: 'It's a business now.' Product sits in a stash, the money piles up on the corners,
+		+ "Rafa calls it a business now: product sits in a stash, the money piles up on the corners,
 "
 		+ "and the growers want cash on the strip. Truck it, fly it, count it [Phone > Dispatch].
 "
