@@ -252,7 +252,7 @@ Order: after the buyers' orders (D-59) land; each stage needs a BALANCE entry be
 - **Start-up architecture (#97):** entry paths consolidated across steps 1–9; the save-resume gap (a partial campaign resumes
   without its chapter setup) needs a save-format change.
 - **Network:** the client-side oversized-frame stall, and the doubled per-frame snapshot on local desks (HANDOFF log, 10 Oct).
-- **Test time:** the full suite takes about 13 minutes under the machine lock; a cold import in each worktree adds about 5.
+- **Test time:** the 11 October run took about 13 minutes under the machine lock, with about 5 minutes for a cold import. These are historical timings; use the current job status when planning access to the lock.
 - **Windows memory:** overlapping Godot jobs have caused allocation failures; the lock is the only guard.
 - **A flaky test on this machine:** `test_pause_menu` volume fails on clean main here (a saved volume setting); and the `crew`
   filter shows a walker phone test that passes in the full suite.
