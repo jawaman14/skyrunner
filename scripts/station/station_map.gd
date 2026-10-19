@@ -7,6 +7,12 @@ extends Control
 ## Left-click / right-click are reported through `clicked(button, world_xy)`.
 
 signal clicked(button: int, world_xy: Vector2)
+signal view_changed
+
+const ZOOM := [1.0, 2.0, 4.0]
+var zoom_level := 0
+var view_center := Vector2.ZERO
+var _panning := false
 
 const LAYERS := {"operations": "Operations", "people": "People / logistics", "intelligence": "Intelligence"}
 const ITEM_LAYER := {"jobs": "operations", "units": "operations", "boats": "people", "bales": "people", "stashes": "people", "trucks": "people", "people": "people",
@@ -50,25 +56,65 @@ func origin() -> Vector2:
 
 
 func w2m(x: float, y: float) -> Vector2:
-	var s := side()
-	return origin() + Vector2((x + World.HALF) / (2 * World.HALF) * s, s - (y + World.HALF) / (2 * World.HALF) * s)
+	var scale := side() * float(ZOOM[zoom_level]) / (2.0 * World.HALF)
+	return size / 2.0 + Vector2(x - view_center.x, view_center.y - y) * scale
 
 
 func m2w(p: Vector2) -> Vector2:
-	var s := side()
-	p -= origin()
-	return Vector2(p.x / s * 2 * World.HALF - World.HALF, (s - p.y) / s * 2 * World.HALF - World.HALF)
+	var scale := maxf(0.001, side() * float(ZOOM[zoom_level]) / (2.0 * World.HALF))
+	var offset := (p - size / 2.0) / scale
+	return view_center + Vector2(offset.x, -offset.y)
+
+
+func set_zoom(level: int, anchor := Vector2(-1, -1)) -> void:
+	var anchored := anchor.x >= 0.0 and anchor.y >= 0.0
+	var before := m2w(anchor) if anchored else view_center
+	zoom_level = clampi(level, 0, ZOOM.size() - 1)
+	if anchored:
+		view_center += before - m2w(anchor)
+	_clamp_center()
+	view_changed.emit()
+	queue_redraw()
+
+
+func reset_view() -> void:
+	view_center = Vector2.ZERO
+	set_zoom(0)
+
+
+func _clamp_center() -> void:
+	var limit := World.HALF * (1.0 - 1.0 / float(ZOOM[zoom_level]))
+	view_center.x = clampf(view_center.x, -limit, limit)
+	view_center.y = clampf(view_center.y, -limit, limit)
+
+
+func _chart_rect() -> Rect2:
+	var extent := Vector2.ONE * side() * float(ZOOM[zoom_level])
+	return Rect2(w2m(-World.HALF, World.HALF), extent)
 
 
 func _on_map(p: Vector2) -> bool:
-	var q := p - origin()
-	return q.x >= 0 and q.y >= 0 and q.x <= side() and q.y <= side()
+	return Rect2(Vector2.ZERO, size).has_point(p) and _chart_rect().has_point(p)
 
 
 func _gui_input(ev: InputEvent) -> void:
-	if ev is InputEventMouseButton and ev.pressed and _on_map(ev.position):
-		clicked.emit(ev.button_index, m2w(ev.position))
+	if ev is InputEventMouseMotion and _panning:
+		var scale := maxf(0.001, side() * float(ZOOM[zoom_level]) / (2.0 * World.HALF))
+		view_center += Vector2(-ev.relative.x, ev.relative.y) / scale
+		_clamp_center()
+		view_changed.emit()
+		queue_redraw()
 		accept_event()
+	elif ev is InputEventMouseButton:
+		if ev.button_index == MOUSE_BUTTON_MIDDLE:
+			_panning = ev.pressed and _on_map(ev.position)
+			accept_event()
+		elif ev.pressed and _on_map(ev.position):
+			if ev.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+				set_zoom(zoom_level + (1 if ev.button_index == MOUSE_BUTTON_WHEEL_UP else -1), ev.position)
+			elif ev.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+				clicked.emit(ev.button_index, m2w(ev.position))
+			accept_event()
 
 
 func mouse_world():
@@ -83,7 +129,7 @@ func _process(_dt: float) -> void:
 
 
 func _circle(x: float, y: float, r: float, col: Color, w := 1.5) -> void:
-	draw_arc(w2m(x, y), r / (2 * World.HALF) * side(), 0, TAU, 48, col, w)
+	draw_arc(w2m(x, y), r / (2 * World.HALF) * side() * float(ZOOM[zoom_level]), 0, TAU, 48, col, w)
 
 
 func _arrow(x: float, y: float, hdg: float, col: Color, size_px := 12.0) -> void:
@@ -108,7 +154,7 @@ func _text(x: float, y: float, t: String, col: Color) -> void:
 func _draw() -> void:
 	var s := side()
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0.25, 0.42))  # open sea round the square chart
-	draw_texture_rect(tex, Rect2(origin(), Vector2(s, s)), false)
+	draw_texture_rect(tex, _chart_rect(), false)
 	for af in World.AIRFIELDS:
 		var a: Array = af.threshold(0)
 		var b: Array = af.threshold(1)
@@ -160,6 +206,9 @@ func _draw_runner() -> void:
 		_circle(j.x, j.y, 600, Color(0.3, 1, 0.3), 2.0)
 		_text(j.x, j.y, str(j.dest), Color(0.4, 1, 0.4))
 	for b in visible_items("boats"):
+		var destination = b.get("dest")
+		if destination is Array and destination.size() >= 2:
+			_destination(b.x, b.y, float(destination[0]), float(destination[1]), str(b.get("dest_name", "destination")), Color(0.3, 0.8, 1))
 		_arrow(b.x, b.y, b.heading, Color(0.3, 0.8, 1), 9)
 		_text(b.x, b.y, "%s %s [%d]" % [b.id, b.state, int(b.cargo)], Color(0.5, 0.85, 1))
 	for bl in visible_items("bales"):
@@ -213,6 +262,8 @@ func _draw_ground() -> void:
 			for p in d.route:
 				pts.append(w2m(p[0], p[1]))
 			draw_polyline(pts, Color(col.r, col.g, col.b, 0.35), 1.0)
+			var destination: Array = d.route[-1]
+			_cross(float(destination[0]), float(destination[1]), col, 4.0)
 		var r := 7.0 if d.kind == "foot" else 9.0
 		if d.kind == "foot":
 			draw_polyline(PackedVector2Array([c + Vector2(-r, 3), c + Vector2(0, -r + 2), c + Vector2(r, 3)]), col, 2.5)
@@ -260,7 +311,7 @@ func _draw_coverage() -> void:
 				img.set_pixel(i, j, Color(0, 0, 0, 0) if seen else Color(0.05, 0.05, 0.1, 0.55))
 		_cov_img = ImageTexture.create_from_image(img)
 	var sd := side()
-	draw_texture_rect(_cov_img, Rect2(origin(), Vector2(sd, sd)), false)
+	draw_texture_rect(_cov_img, _chart_rect(), false)
 	draw_string(font, origin() + Vector2(8, sd - 10), "blind below %d m AGL shaded" % int(coverage_agl),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.8, 0.9, 1))
 
@@ -337,3 +388,11 @@ func _draw_law() -> void:
 			continue
 		_arrow(u.x, u.y, u.heading, col, 11)
 		_text(u.x, u.y, "%s %s%s" % [u.id, u.state, " EYES ON" if u.sees else ""], col)
+
+
+## Draw only an already disclosed destination; no simulation lookup or inference.
+func _destination(x: float, y: float, tx: float, ty: float, label: String, color: Color) -> void:
+	draw_line(w2m(x, y), w2m(tx, ty), Color(color, 0.4), 1.5)
+	_cross(tx, ty, color, 4.0)
+	if get_local_mouse_position().distance_to(w2m(x, y)) < 12.0:
+		_text(tx, ty, label, color)

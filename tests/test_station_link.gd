@@ -27,7 +27,7 @@ func test_every_seat_has_one_description() -> void:
 		check_eq(s.about, Roles.ABOUT[s.role], "the room shows the shared text for %s" % s.role)
 
 	# The desk chart keeps click coordinates correct at each of its three scales.
-	var chart := StationMap.new()
+	var chart := StationMap.new().setup(World.new())
 	chart.size = Vector2(900, 600)
 	Engine.get_main_loop().root.add_child(chart)
 	chart.set_process(false)
