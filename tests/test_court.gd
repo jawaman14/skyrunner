@@ -430,6 +430,25 @@ func test_a_legacy_bail_case_is_normalised_for_a_free_pilot() -> void:
 	s.dispose()
 
 
+func test_a_legacy_custody_or_prison_case_does_not_hold_a_free_pilot() -> void:
+	var s := _sess()
+	var c := _arrest(s)
+	c.stage = "custody"
+	s.phase = "custody"
+	Court.PILOT_FREE = true
+	s.court.update(0.1)
+	check_eq(c.stage, "pretrial", "custody becomes the lawyer's case")
+	check(not s.court.holding() and s.phase != "custody", "and the pilot is out")
+	c.stage = "prison"
+	c.release_at = s.time + 3600.0
+	c.verdict = "convicted"
+	s.phase = "custody"
+	s.court.update(0.1)
+	check(s.court.case_ == null, "an old sentence is served at once")
+	check(s.phase != "custody", "and nothing keeps the pilot inside")
+	s.dispose()
+
+
 func test_the_free_pilots_sentence_still_reaches_the_event_bus() -> void:
 	Court.PILOT_FREE = true
 	var s := _sess()

@@ -601,10 +601,16 @@ func update(dt: float) -> void:
 	if case_ == null:
 		return
 	var now: float = sess.time
-	if PILOT_FREE and str(case_.stage) == "bail":  # a case saved before the pilot was free: no bond is charged
+	if PILOT_FREE and str(case_.stage) in ["bail", "custody"]:  # a case saved before the pilot was free: no bond, no cell
 		case_.stage = "pretrial"
 		case_.bail_posted = "lawyer"
 		case_.bail = 0
+		if sess.phase == "custody":
+			sess.phase = "busted"  # ENTER walks them out
+	if PILOT_FREE and str(case_.stage) == "prison":  # the sentence was served in the old way: release them now
+		case_.release_at = now
+		if sess.phase == "custody":
+			sess.phase = "busted"
 	match str(case_.stage):
 		"bail":
 			if now >= float(case_.bail_by):
