@@ -179,6 +179,10 @@ func dispose() -> void:
 
 
 static func load_or_new(path: String, opts := {}) -> Session:
+	var load_error := save_load_error(path)
+	if load_error != "":
+		push_warning(load_error)
+		return null
 	var data := read_save(path)
 	var o := {}
 	o.merge(opts)
