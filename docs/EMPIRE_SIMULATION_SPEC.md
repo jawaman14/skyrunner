@@ -28,7 +28,7 @@ prove it. Later PRs move call sites one domain at a time.
 | Clock | `Session.time`, advanced in `session_tick.gd` | No sim-side time acceleration (`world_scene.time_scale` only moves the sky). The pilot app steps the sim per frame; D-12 (a fixed 30 Hz step) is planned, not built. |
 | Strategic layer | `HQ.Season` and `NightDirector`: planning, operation and wrap-up per night. Actions: launder, buy_front, bribe, lawyer, opsec... | A night's operation starts when the pilot takes off with something hot (`nights.gd`), so it's tied to the pilot. The balance sims (`scripts/balance/strategic.gd`) are built on nights. |
 | Money | `Session.money` (the player's), `ground.commanders.rival.cash` (Los Cuervos'), `SessionState.law_funds` (the task force's), stash cash in logistics | **88 assignments to `money` in 28 files**, **87 uses of `law_funds` in 16 files**, plus **43 `+=`/`-=` on stash cash and stock**. No ledger. `money` already goes negative today: crash repairs (`session_rules._crash`) and ground upkeep (`ground.gd`) subtract unconditionally. |
-| Rival economy | Los Cuervos have one cash float, start on $20k, and pay for squads | **Injected from nowhere:** `chronicle.gd` (+8k, +6k), `agency.gd` (+4k), `family.gd` (+2k), and `ground.gd` pays them half a truck's value. That breaks "same rules" (D-65). |
+| Rival economy | Los Cuervos have one cash float, start on $20k, and pay for squads | **Injected from nowhere:** `chronicle.gd` (+8k, +6k), `agency.gd` (+4k), `family.gd` (+2k), and `ground.gd` pays them half a truck's value plus a passive $30 per simulated minute. That breaks "same rules" (D-65). |
 | Factions | `"org"`, `"rival"` and `"police"` as string keys | `"org"` appears **236 times in 31 sim files**, `"rival"` 132 in 23. `ground.gd` hard-codes `CAP`, `HOSTILE` and `DOCTRINE` per key. |
 | Businesses | HQ `fronts` (laundromat), the casino, the dealership | No business entity: nothing with its own books, staff and stock. |
 | Districts | 10 territories in `map_city.gd` (`l.territories`, San Telmo Centro to Smuggler's Cove), each with id, name, market zone, bounds, neighbours and tags. San Telmo Centro is `city, commercial`. | No ownership, businesses or per-district state. |
@@ -96,7 +96,8 @@ is that org's debt (invariant 2). A report shows the net flow across this bounda
   task force's `law_funds` sites (`court`, `ground`, `trade` and the rest of the 16 files). The PR that
   removes `outside:unattributed` adds a test that it's never written.
 - **Rival injections.** Each one either becomes a named outside source with a reason (the Company really pays Los Cuervos, say)
-  or is removed. Removing any changes balance, so each needs a `cli.gd -- report` entry. None touches parity (§1).
+  or is removed. This includes the passive `ground.gd` rival income (`+$30` per simulated minute), not just the one-off
+  payments listed in §1. Removing any changes balance, so each needs a `cli.gd -- report` entry. None touches parity (§1).
 
 ## 4. Inventory
 
@@ -125,7 +126,10 @@ One authoritative `Session.time` (decided 19 Oct). Three things hang off it:
 - **Nights retire as a model, but stay as a report.**
   - `NightDirector` moves behind a switch, `Nights.ENABLED`, in `OPT_IN`.
   - A "night" becomes the window between two books ticks.
-  - The nightly debrief (dirty money, seizures, evidence, heat) is generated from the ledger and the event log for that window.
+  - The nightly debrief (dirty money, seizures, evidence, heat) is generated from the ledger and a durable event summary for
+    that window. `EventBus.log` is capped at 400 entries and is not saved today; it cannot be the report's source of truth.
+    Persist the unfinished window's summary with the scheduler, then close it at the books tick so a busy day or mid-day
+    load produces the same debrief.
   - HQ actions (launder, buy_front, bribe, lawyer, opsec) become ordinary commands that run any time and cost through the ledger.
   - The strategic balance sim stays on the old path until a new headless "N days" sim replaces it. `strategic_ref` parity
     retires in the same PR.
@@ -197,8 +201,11 @@ proved itself.
 
 1. **F-1 first.** `StrategicSave` gets a migration chain: `MIGRATIONS = {1: _v1_to_v2, ...}`, applied in order. `restore()`
    never drops a block on a version mismatch. A test loads a frozen v1 save fixture and checks that every block survives.
+   A missing migration, malformed sim block or save from a newer version stops the load with a visible reason; callers must
+   not continue with a default `Session` or overwrite that save. Test the refusal path as well as the v1 upgrade.
 2. The ledger, inventory, businesses, orgs and orders save under `sim.empire`, together with the scheduler's continuation
-   state (the pending heap and its serial) and the state of every RNG stream this spec adds (§7). Without them a loaded
+   state (the pending heap and its serial), the unfinished nightly event summary (§5), and the state of every RNG stream
+   this spec adds (§7). Without them a loaded
    game would restart random sequences or reorder future events. An older save gets them built from its state:
    - `money` becomes the opening balance of `org:safe`;
    - stash cash and stock become their accounts and locations;
@@ -249,7 +256,7 @@ small).
 | A2 | Staff get budget, shift and orders | Order and schedule state after 1 day |
 | A3 | A supply chain flows without duplication | Inventory invariants over 7 days |
 | A4 | Rivals buy, sell, recruit and expand on the same rules | Every rival transfer is either a discretionary action through `command_as` or a scheduled settlement (wages, rent, utilities, debt service, production, restock) made by the scheduler with actor `system:books` under the same rules as the player's org; nothing else. Their outside boundary is reported |
-| A5 | A flown and a delegated delivery give equal state changes | Same seed, two runs. Compare the **economic projection**, not the raw log: every account's balance, every lot's location and pounds, and each transfer as `(from, to, amount, reason)`, compared as a multiset. `id`, `t`, `actor`, `ref`, and the event's `by` and `mode` are provenance and are excluded. The only difference allowed is the delegation fee, if D-10's fee is on: one `delegation_fee` transfer from the org's safe in the delegated run, which the test removes from that run's projection before comparing |
+| A5 | A flown and a delegated delivery give equal state changes | Same seed, two runs. Compare the **economic projection**, not the raw log: every account's balance, every lot's location and pounds, and each transfer as `(from, to, amount, reason)`, compared as a multiset. `id`, `t`, `actor`, `ref`, and the event's `by` and `mode` are provenance and are excluded. The only difference allowed is the delegation fee, if D-10's fee is on: remove that `delegation_fee` transfer from the delegated projection **and recompute its account balances from the remaining transfers** before comparing |
 | A6 | Wages, costs, revenue and losses settle over several cycles | 14 days, conservation holds |
 | A7 | Negotiate, compete or fight, and the consequences persist | Relations and control saved and restored |
 | A8 | Operations continue when the player leaves the district | Player parked out of district for 2 days; books still settle |
