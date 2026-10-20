@@ -391,6 +391,27 @@ func test_migrate_runs_each_step_in_order_and_refuses_what_it_cannot() -> void:
 	check_eq(StrategicSave.migrate({"v": StrategicSave.VERSION, "time": 7.0}).time, 7.0, "a current save passes through")
 
 
+func _check_invalid_sim_is_not_loaded_or_overwritten(sim_block, label: String) -> void:
+	var raw := JSON.stringify({"money": 4567, "sim": sim_block})
+	var f := FileAccess.open(PATH, FileAccess.WRITE)
+	f.store_string(raw)
+	f.close()
+	check(not Session.save_load_error(PATH).is_empty(), "%s has a reason the launcher can display" % label)
+	var loaded := Session.load_or_new(PATH, _opts())
+	check(loaded == null, "%s is refused instead of loaded as a default session" % label)
+	if loaded != null:
+		loaded.dispose()
+	check_eq(FileAccess.get_file_as_string(PATH), raw, "%s save remains byte-for-byte untouched" % label)
+
+
+func test_newer_sim_save_is_not_loaded_or_overwritten() -> void:
+	_check_invalid_sim_is_not_loaded_or_overwritten({"v": StrategicSave.VERSION + 1, "time": 123.0}, "newer")
+
+
+func test_malformed_sim_save_is_not_loaded_or_overwritten() -> void:
+	_check_invalid_sim_is_not_loaded_or_overwritten("broken", "malformed")
+
+
 ## True when `got` has everything `want` has (a loader may add a zero entry for a good the save never listed).
 func _holds(got, want) -> bool:
 	if want is Dictionary:
