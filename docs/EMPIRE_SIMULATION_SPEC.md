@@ -204,7 +204,8 @@ proved itself.
    A missing migration, malformed sim block or save from a newer version stops the load with a visible reason; callers must
    not continue with a default `Session` or overwrite that save. Test the refusal path as well as the v1 upgrade.
 2. The ledger, inventory, businesses, orgs and orders save under `sim.empire`, together with the scheduler's continuation
-   state (the pending heap and its serial) and the state of every RNG stream this spec adds (§7). Without them a loaded
+   state (the pending heap and its serial), the unfinished nightly event summary (§5), and the state of every RNG stream
+   this spec adds (§7). Without them a loaded
    game would restart random sequences or reorder future events. An older save gets them built from its state:
    - `money` becomes the opening balance of `org:safe`;
    - stash cash and stock become their accounts and locations;
