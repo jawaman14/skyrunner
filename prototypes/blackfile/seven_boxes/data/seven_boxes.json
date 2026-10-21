@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "id": "BF-MK-01",
+  "title": "SEVEN BOXES",
+  "date": "1977-08-04",
+  "year": 1977,
+  "location": "Fictional federal records annex",
+  "disclaimer": "Fictional playable office, staff, interviews, vouchers and choices. Historical facts are separately sourced; the fiction is NOT a claim these events happened.",
+  "briefing": "Seven boxes of surviving administrative records were located after earlier MKULTRA files had been destroyed. In this fictional records office, assess what a fragmentary inventory can support before briefing oversight. Never infer names or activities from redactions.",
+  "sources": [
+    {
+      "id": "S001",
+      "title": "U.S. Senate, Project MKULTRA hearing",
+      "date": "1977-08-03",
+      "kind": "primary hearing",
+      "url": "https://www.intelligence.senate.gov/sites/default/files/hearings/95mkultra.pdf",
+      "review_note": "Selected sections reviewed; no claim of exhaustive examination."
+    },
+    {
+      "id": "S007",
+      "title": "National Security Archive curated MKULTRA collection",
+      "date": "2024-12-23",
+      "kind": "secondary curation (not available to 1977 characters)",
+      "url": "https://nsarchive.gwu.edu/briefing-book/dnsa-intelligence/2024-12-23/cia-behavior-control-experiments-focus-new-scholarly",
+      "review_note": "Out-of-era reference for player research only."
+    }
+  ],
+  "claims": [
+    {
+      "id": "H-01",
+      "status": "D",
+      "text": "The CIA reported locating seven boxes of administrative and financial material during its 1977 review.",
+      "source_ids": [
+        "S001"
+      ],
+      "note": "Documented in the 1977 Senate hearing."
+    },
+    {
+      "id": "H-02",
+      "status": "D",
+      "text": "A substantial body of original MKULTRA programme files had been destroyed in 1973.",
+      "source_ids": [
+        "S001"
+      ],
+      "note": "Surviving records cannot recover destroyed contents."
+    },
+    {
+      "id": "H-03",
+      "status": "D",
+      "text": "The recovered files disclosed additional details of numbered subprojects, institutions and grants.",
+      "source_ids": [
+        "S001"
+      ],
+      "note": "Administrative records do not by themselves prove what every subproject did."
+    },
+    {
+      "id": "H-04",
+      "status": "U",
+      "text": "A redacted voucher reveals a specific individual subject and the outcome of an experiment.",
+      "source_ids": [
+        "S001"
+      ],
+      "note": "NOT established. The game must never manufacture a name or a tested outcome."
+    },
+    {
+      "id": "F-01",
+      "status": "F",
+      "text": "The playable annex and its staff are fictional.",
+      "source_ids": [],
+      "note": "Mission framework, not a historical event."
+    }
+  ],
+  "rooms": [
+    "Archive Annex",
+    "Finance Desk",
+    "Loading Bay",
+    "Oversight Room"
+  ],
+  "documents": [
+    {
+      "id": "inv-77",
+      "title": "Inventory slip: seven boxes",
+      "status": "F",
+      "room": "Archive Annex",
+      "body": "Fictional object for gameplay: an accession count and damaged locator cards. Its identifier is invented."
+    },
+    {
+      "id": "voucher-77",
+      "title": "Fragmented voucher register",
+      "status": "F",
+      "room": "Finance Desk",
+      "body": "Fictional puzzle: multiple expense lines have no reliable matching research description."
+    },
+    {
+      "id": "witness-77",
+      "title": "Archivist interview notes",
+      "status": "F",
+      "room": "Loading Bay",
+      "body": "Fictional archivist says two labels were added during transfer. Treat the statement as a lead, not external proof."
+    },
+    {
+      "id": "review-77",
+      "title": "Oversight review memo",
+      "status": "F",
+      "room": "Oversight Room",
+      "body": "Fictional review requires distinguishing proven records from speculative personal identifiers."
+    }
+  ],
+  "actions": [
+    {
+      "id": "inspect_inventory",
+      "title": "Inventory and label recovered boxes",
+      "room": "Archive Annex",
+      "cost": 40,
+      "days": 1,
+      "require": [],
+      "unlock": [
+        "inv-77"
+      ],
+      "evidence": 15,
+      "oversight": 0,
+      "preservation": 30,
+      "privacy": 0,
+      "report": "Catalogued physical records and labelled unknown contents explicitly."
+    },
+    {
+      "id": "reconcile_vouchers",
+      "title": "Compare vouchers to accession list",
+      "room": "Finance Desk",
+      "cost": 80,
+      "days": 2,
+      "require": [
+        "inspect_inventory"
+      ],
+      "unlock": [
+        "voucher-77"
+      ],
+      "evidence": 35,
+      "oversight": 0,
+      "preservation": 15,
+      "privacy": 0,
+      "report": "Reconciled financial references without claiming the vouchers prove particular experiments."
+    },
+    {
+      "id": "interview_archivist",
+      "title": "Interview the archivist",
+      "room": "Loading Bay",
+      "cost": 75,
+      "days": 1,
+      "require": [
+        "inspect_inventory"
+      ],
+      "unlock": [
+        "witness-77"
+      ],
+      "evidence": 10,
+      "oversight": 0,
+      "preservation": 15,
+      "privacy": 0,
+      "report": "Recorded an invented witness account as uncorroborated contextual evidence."
+    },
+    {
+      "id": "protect_redactions",
+      "title": "Review and protect redactions",
+      "room": "Archive Annex",
+      "cost": 25,
+      "days": 1,
+      "require": [
+        "inspect_inventory"
+      ],
+      "unlock": [],
+      "evidence": 0,
+      "oversight": 0,
+      "preservation": 0,
+      "privacy": 40,
+      "report": "Protected identities; the unknown subject remains unknown."
+    },
+    {
+      "id": "request_oversight",
+      "title": "Request oversight review",
+      "room": "Oversight Room",
+      "cost": 85,
+      "days": 1,
+      "require": [
+        "reconcile_vouchers"
+      ],
+      "unlock": [
+        "review-77"
+      ],
+      "evidence": 0,
+      "oversight": 55,
+      "preservation": 0,
+      "privacy": 0,
+      "report": "Legal and oversight review labels each conclusion with evidence limitations."
+    },
+    {
+      "id": "qualified_brief",
+      "title": "Submit evidence-qualified briefing",
+      "room": "Oversight Room",
+      "cost": 20,
+      "days": 0,
+      "require": [
+        "inspect_inventory",
+        "reconcile_vouchers",
+        "protect_redactions",
+        "request_oversight"
+      ],
+      "thresholds": {
+        "evidence": 50,
+        "oversight": 50,
+        "privacy": 40
+      },
+      "ending": "qualified_brief_submitted",
+      "report": "Filed a qualified report. No redacted subject identity was invented."
+    },
+    {
+      "id": "preserve_archive",
+      "title": "Preserve archive and close inquiry",
+      "room": "Archive Annex",
+      "cost": 0,
+      "days": 0,
+      "require": [
+        "inspect_inventory",
+        "protect_redactions"
+      ],
+      "ending": "document_preserved",
+      "report": "Preserved records for future review with personal information protected."
+    },
+    {
+      "id": "withdraw_claim",
+      "title": "Withdraw unsupported identity claim",
+      "room": "Finance Desk",
+      "cost": 0,
+      "days": 0,
+      "require": [
+        "inspect_inventory",
+        "reconcile_vouchers"
+      ],
+      "ending": "unsupported_claim_withdrawn",
+      "report": "Withdrawn a fictional analyst’s proposed subject attribution because the files do not establish it."
+    },
+    {
+      "id": "defer_finding",
+      "title": "Defer finding / request more records",
+      "room": "Oversight Room",
+      "cost": 0,
+      "days": 0,
+      "require": [],
+      "ending": "unresolved_pending_more_evidence",
+      "report": "Recorded incomplete evidence rather than drawing an unsupported conclusion."
+    }
+  ],
+  "opening_balances": {
+    "case_fund": 500,
+    "outside_services": -500
+  },
+  "starting_metrics": {
+    "evidence": 10,
+    "oversight": 0,
+    "preservation": 20,
+    "privacy": 0,
+    "days": 0
+  }
+}
