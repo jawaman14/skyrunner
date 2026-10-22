@@ -134,7 +134,7 @@ Agreed order (owner, 18 Oct). Each step: a design note first, its own switch, it
 1. **Case files and kinds of heat** (in progress). Design #400 (DESIGN §48); the stash case files (lead, surveillance,
    warrant, raid; lying low drops a case; an emptied stash is raided for nothing) are built on `claude/heat-case-file`.
    Still to do in step 1: the lawyer's warrant challenge as a command; pilot evidence, aircraft heat (per tail number)
-   and district heat; the phone Heat app (Codex); the balance run and BALANCE entry.
+   and district heat; the balance run and BALANCE entry. The phone Heat app is in #446 (Codex), using the existing case-file visibility rules.
 2. **The police search and the ladder down.** Helicopters search outward from the last known position; checkpoints on
    likely escape roads; dispatch chatter on the scanner; visible ways to cool off from wanted (break line of sight, go
    under cloud, swap the transponder code, hide the aircraft in a hangar, change aircraft or repaint).
@@ -259,7 +259,7 @@ calendar, a deal that moves mid-flight, price wars, investments with a return, a
 D-58 to D-60): deadlines follow demand, the boss layer organises while flying is optional, and to begin as seen fit.
 
 - **Built (the simulation half of addition 1, #419):** `Orders` and the market board data in `Trade.view`, with tests; DESIGN section 49.
-- **Still to do for addition 1:** the market board and the order call on the phone (Codex, UX lane); a BALANCE entry for the premium
+- **Phone interface (#446):** Work has the market board and buyers' orders with premiums/deadlines; Enter calls Benny. Still to do: a BALANCE entry for the premium
   payouts (the live balance run with and without orders, see BALANCE).
 - **Not started:** additions 2 to 8, in the order of LOOP_IDEAS section 2 (cover cargo next, then the calendar).
 
@@ -328,3 +328,10 @@ decisions or two real machines unresolved until their evidence exists. Publishin
 release acceptance.
 
 - **Turf expansion (Codex, branch codex/turf-war-expansion):** `Territories` adds map-scoped district IDs while retaining the four economy markets as parent rollups. Costa Brava has ten authored areas; classic/generated maps use their current market centres. Ground control, squad decisions and exposed one-leg truck routes read the local layer. Stable region IDs allow later maps to bring their own districts. Initial local verification passed (898 tests, Costa Brava smoke, and a 200-seed war balance run); the balance run shifts the war economy and losses and needs interpretation before tuning. Not yet: a visible territory map, balance calibration for district control, and authored content for an additional region.
+
+### UI decision follow-through (19 October 2026)
+
+- #446 implements the existing market/order and heat data on the phone, and D-62's phone use during flight.
+- #447 addresses D-62's dealership scroll reset independently.
+- D-62's full worker-control desk waits for L-1/F-5 and L-4 in [EMPIRE_PIVOT.md](EMPIRE_PIVOT.md); gun pickup needs the authoritative PickupOrder work. These are not complete.
+- D-75's presentation layers and world-map redesign remain paused. Station-map navigation and existing destination-line feedback can be improved without changing world geography or inventing new simulation orders.
