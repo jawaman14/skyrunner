@@ -291,7 +291,6 @@ Beyond the prototype:
   - 5 uses a medkit.
   - Climbing back in returns the guns to the armoury.
   - Arrested, the pack is evidence for the task force.
-- **Read aloud (F8).** Conversations and radio calls in the operating system's voice.
 - **Colour-safe palette and screen filters.**
   - Under simulated colour blindness, the neon status colours collapse into each other. Examples: "on" green vs the pink accent under protanopia, and warning amber vs danger red under deuteranopia.
   - The colour-safe palette (F8) switches to Okabe–Ito-style colours that stay apart under all three simulations. `test_accessibility` checks every pair: ΔE ≥ 20.
