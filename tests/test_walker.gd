@@ -732,6 +732,39 @@ func test_the_phone_apps() -> void:
 	m.close()
 	app._sync_phone_hold()
 	check(not s.autopilot.engaged, "closing a temporary phone hold restores manual flight")
+	s.state.on_ground = false
+	s.state.alt = 1200.0
+	app.hud.minimap.big = true
+	app._open("phone")
+	m.page = "home"
+	m.close()
+	app._sync_phone_hold()
+	check(not s.autopilot.engaged and not app._phone_flight_open, "a chart opened before the phone does not inherit its hold")
+	app.hud.minimap.big = false
+	app._open("phone")
+	m.open_app("map")
+	app.waypoint = Vector2(s.state.x + 3000.0, s.state.y + 4000.0)
+	var u := InputEventKey.new()
+	u.keycode = KEY_U
+	u.pressed = true
+	app._unhandled_input(u)
+	check(s.autopilot.engaged and not s.autopilot.waypoints.is_empty(), "the first U after Phone Map routes to the chart waypoint")
+	if not s.autopilot.waypoints.is_empty():
+		check(absf(float(s.autopilot.waypoints[0][0]) - app.waypoint.x) < 1.0, "the route uses the selected waypoint")
+	app.hud.minimap.big = false
+	app._sync_phone_hold()
+	check(s.autopilot.engaged, "closing the phone chart preserves the explicit route")
+	s.autopilot.disengage()
+	app.waypoint = null
+	s.state.on_ground = true
+	app._open("phone")
+	check(not m.visible, "the phone cannot open while taxiing")
+	s.state.on_ground = false
+	app._open("phone")
+	s.state.on_ground = true
+	app._process(0.0)
+	check(not m.visible, "landing while using the phone restores the controls")
+	s.state.on_ground = false
 	var route := [[s.state.x + 5000.0, s.state.y + 5000.0, 1300.0]]
 	s.autopilot.engage_route(s.state, route.duplicate(true), 1300.0)
 	app._open("phone")

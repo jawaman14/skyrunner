@@ -20,6 +20,10 @@ in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; 
 
 Work now opens market indices and buyers' orders (remaining cargo, premium, deadline; Enter calls Benny without accepting a sale). Empire opens a read-only Heat view, with raid countdowns restricted to posted lookouts. The phone stays open airborne and owns only a temporary AP hold it starts; pre-existing routes are never copied or restored. Ground services remain parked-only. GUIDE and decision trackers updated. Regression checkpoint 4d573571 failed the Work/waypoint assertions in CI job 117954655516 as expected; implementation CI and fresh review still required. D-62's full desk and pickup scenes remain dependent on L-1/F-5/L-4 and PickupOrder; D-75's world rebuild and later presentation remain paused.
 
+### 22 October 2026 - phone operations review fixes (#446, Codex)
+
+The handset now closes on a moving ground aircraft, preserves only overlays it opened for the temporary airborne hold, and sends the first explicit U from Phone to Map to the selected chart waypoint. The focused phone regression passes (1/1); PROJECT_STATUS is current. Exact-head CI and independent review are next; PR stays draft until the review findings are cleared.
+
 ## For the owner: switching AIs
 
 Paste this into the new AI:
@@ -144,6 +148,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
   is intended behaviour, say so here before anyone "fixes" it.
 
 ## Log
+
+- **2026-10-22 - Codex, #446 review fixes:** In an isolated worktree, fixed the three open phone findings: overlay ownership, moving-ground handset control, and first-U waypoint routing. Focused phone test 1/1; project status check current; primary checkout untouched. Next: exact-head CI, review, and thread resolution before integration.
 
 - **2026-10-19 - Codex, phone operations:** On `codex/phone-operations`, recorded the plan and regression expectations for Work market/orders, Empire Heat and in-flight phone hold (D-27/D-49/D-62). This checkpoint intentionally precedes implementation: the new expectations should fail. Worktree creation and local Git writes were denied; verification uses CI. Main's previous N-2/N-3/N-4 history is preserved. Next: demonstrate the failure, implement through current interfaces, then finish CI/review/integration.
 
