@@ -16,7 +16,7 @@ func _first_missions() -> bool:
 func _crash(reason: String) -> void:
 	phase = "crashed"
 	var fee := 0 if _first_missions() else maxi(2500, int(spec.price * 0.12))
-	money -= fee
+	move_money(-fee, "outside:market", "repair")
 	var lost := active_jobs.size()
 	last_outcome = "CRASH: %s. Repairs -$%s." % [reason, Py.money(fee)] + (" %d job(s) lost." % lost if lost else "")
 	say(last_outcome)
@@ -54,7 +54,7 @@ func _bust(how: String) -> void:
 	if upgrades["runner"].has("strip_guards"):
 		fine = int(fine * 1.5)  # an armed-bust case
 		how += ", with the armed guards"
-	money -= fine
+	move_money(-fine, "outside:state", "fine")
 	last_outcome = "BUSTED (%s). Fine and impound -$%s. Cargo seized." % [how, Py.money(fine)]
 	say(last_outcome)
 	police.score["busts"] += 1
@@ -242,7 +242,7 @@ func _update_stashes(dt: float) -> void:
 			say("Truck in at %s: %s into the armoury here" % [st.name, Arsenal.describe(t.weapons)])
 			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": 0, "dest": t.stash, "hot": true})
 		elif r[1] == "delivered":
-			money += t.pay
+			move_money(t.pay, "outside:buyers", "delivery")
 			econ.record_delivery("guns" if not t.weapons.is_empty() else "cocaine", st.zone)
 			say("Truck in at %s: +$%s" % [st.name, Py.money(t.pay)])
 			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": t.pay, "dest": t.stash, "hot": true})
@@ -425,7 +425,7 @@ func _complete_delivery(job: Jobs.Job, af: Airfield) -> void:
 	if job.defector and island != null:
 		island.defected(job)
 	var g := _grade(job)
-	money += g[0]
+	move_money(g[0], "outside:buyers", "delivery")
 	if job.hot():
 		econ.record_delivery(Economy.good_of(job), Economy.job_market(job))
 	active_jobs.erase(job)

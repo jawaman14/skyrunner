@@ -243,7 +243,7 @@ func _police_outcome(what: String) -> void:
 		_bust("forced down by police")
 	elif what == "clean":
 		var fine := 500 if not transponder else 0
-		money -= fine
+		move_money(-fine, "outside:state", "fine")
 		say("Police forced you down and searched the aircraft: clean." + (" Fined $%d for no transponder." % fine if fine else ""))
 
 
@@ -254,7 +254,7 @@ func _maritime_event(kind: String, data: Dictionary) -> void:
 		runner_score["bales_delivered"] += n
 		if job:
 			var pay := int(job.payout * n / float(maxi(1, job.bales_total)))
-			money += pay
+			move_money(pay, "outside:buyers", "delivery")
 			job.bales_delivered = n
 			_resolve_job(job, "%s made the cove with %d/%d bales: +$%s" % [data["boat"], n, job.bales_total, Py.money(pay)])
 		bus.emit("bales_delivered", time, "", ["runner"], {"count": n, "job_id": data.get("job_id")})
