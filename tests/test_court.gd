@@ -458,14 +458,11 @@ func test_a_conviction_takes_the_aircraft_once_it_is_parked() -> void:
 	var c := _arrest(s)
 	s.phase = "flying"
 	s.location = null
-	c.evidence = 100.0
-	c.lawyer = "public"
-	for i in 10:
-		if s.court.case_ == null:
-			break
-		c.trial_at = s.time
-		s.court.update(0.1)
-	check(s.court.case_ == null, "convicted and closed")
+	s.court._sentence("convicted", 3.0, 0)
+	check(not s.court.forfeit_pending, "a short sentence keeps the aircraft")
+	_arrest(s)
+	s.court._sentence("pleaded guilty", 9.0, 0)
+	check(s.court.case_ == null, "sentenced and closed")
 	check(s.court.forfeit_pending, "the aircraft is owed")
 	check_eq(s.aircraft_key, "c182", "but not swapped while flying")
 	s.phase = "parked"
@@ -478,6 +475,15 @@ func test_a_conviction_takes_the_aircraft_once_it_is_parked() -> void:
 	check_eq(s.aircraft_key, "c172p", "a used Skyhawk takes its place once parked")
 	check(not s.owned.has("c182") and not s.court.forfeit_pending, "the Skylane is gone")
 	s.dispose()
+
+
+func test_a_legacy_fugitive_case_becomes_the_lawyers_pretrial() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	var c := _arrest(s)
+	c.stage = "fugitive"
+	s.court.update(0.1)
+	check_eq(c.stage, "pretrial", "a fugitive is not a thing for a free pilot")
 
 
 func test_the_free_pilots_sentence_still_reaches_the_event_bus() -> void:

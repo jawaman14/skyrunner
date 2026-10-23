@@ -125,7 +125,7 @@ func arrest(how: String) -> void:
 		case_.trial_at = sess.time + 300.0
 		_hot_charges(hot_lb, armed)
 		_say("Arrested again while the case is open: the case is reopened, heavier. Trial in 5 min.",
-			"The pilot is back in custody - bail revoked (%s)" % how)
+			("The pilot is free to fly - the lawyer reopens the case (%s)" if PILOT_FREE else "The pilot is back in custody - bail revoked (%s)") % how)
 		return
 	_serial += 1
 	var j: Dictionary = JUDGES[rng.randint(0, JUDGES.size() - 1)]
@@ -573,7 +573,7 @@ func _sentence(how: String, years: float, fine: int) -> void:
 	sess.law_funds += float(k) * 0.8
 	if how == "convicted" and sess.aircraft_key != "c172p" and not PILOT_FREE:
 		sess._switch_aircraft("c172p", 0.5)  # forfeited; a used Skyhawk waits when you get out
-	elif how in ["convicted", "pleaded guilty"] and PILOT_FREE and sess.aircraft_key != "c172p":
+	elif how in ["convicted", "pleaded guilty"] and years >= 8.0 and PILOT_FREE and sess.aircraft_key != "c172p":
 		forfeit_pending = true  # taken when it is next parked: swapping a flying aircraft would leave an unspawned model
 	sess.police.score["convictions"] = int(sess.police.score.get("convictions", 0)) + 1
 	if mins < 1.0:
@@ -618,7 +618,7 @@ func update(dt: float) -> void:
 	if case_ == null:
 		return
 	var now: float = sess.time
-	if PILOT_FREE and str(case_.stage) in ["bail", "custody"]:  # a case saved before the pilot was free: no bond, no cell
+	if PILOT_FREE and str(case_.stage) in ["bail", "custody", "fugitive"]:  # a case saved before the pilot was free: no bond, no cell
 		case_.stage = "pretrial"
 		case_.bail_posted = "lawyer"
 		case_.bail = 0
