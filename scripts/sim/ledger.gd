@@ -34,8 +34,9 @@ func transfer(from: String, to: String, amount: float, reason: String, actor := 
 
 
 ## Move an account to `value` for a change the old code made directly: the difference is booked against UNATTRIBUTED.
+## `other`, `reason` and `actor` name the change (F-3); left alone it is the unattributed adjustment F-2 booked.
 ## An account seen for the first time opens at `old` (what it held before this change) from outside:start.
-func track(account: String, old: float, value: float, t := 0.0) -> void:
+func track(account: String, old: float, value: float, t := 0.0, other := UNATTRIBUTED, reason := "adjust", actor := "system") -> void:
 	if not balances.has(account):
 		balances[account] = 0.0
 		if old > 0.0:
@@ -44,9 +45,9 @@ func track(account: String, old: float, value: float, t := 0.0) -> void:
 			transfer(account, "outside:start", -old, "open", "system", t)
 	var d := value - balance(account)
 	if d > 0.0:
-		transfer(UNATTRIBUTED, account, d, "adjust", "system", t)
+		transfer(other, account, d, reason, actor, t)
 	elif d < 0.0:
-		transfer(account, UNATTRIBUTED, -d, "adjust", "system", t)
+		transfer(account, other, -d, reason, actor, t)
 
 
 func total() -> float:

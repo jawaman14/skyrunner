@@ -68,8 +68,21 @@ var seed := 1
 var ledger := Ledger.new()  ## every change to money and law_funds is booked here (F-2: against outside:unattributed, until F-3 names them)
 var money := START_MONEY:
 	set(v):
-		ledger.track("org:safe", money, v, time)
+		ledger.track("org:safe", money, v, time, _pay_other, _pay_reason, _pay_actor)
 		money = v
+## A named change to the safe (F-3): `delta` > 0 comes from `other`, < 0 goes to it. Same value as `money += delta`, but the ledger row
+## says where it went and why, instead of an unattributed adjustment.
+func move_money(delta: int, other: String, reason: String, actor := "org") -> void:
+	_pay_other = other
+	_pay_reason = reason
+	_pay_actor = actor
+	money += delta
+	_pay_other = Ledger.UNATTRIBUTED
+	_pay_reason = "adjust"
+	_pay_actor = "system"
+var _pay_other := Ledger.UNATTRIBUTED
+var _pay_reason := "adjust"
+var _pay_actor := "system"
 var fuel_spent := {"org": 0.0, "rival": 0.0}  ## what the hired fleet has burned in fuel (Fuel)
 var owned := {"c172p": true}
 var aircraft_key := "c172p"

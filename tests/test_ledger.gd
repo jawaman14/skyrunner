@@ -35,6 +35,23 @@ func test_trimming_the_log_keeps_rebuild_exact() -> void:
 		check(absf(float(got.get(acct, 0.0)) - l.balance(acct)) < 0.001, "%s rebuilds to the cache" % acct)
 
 
+func test_a_named_move_books_its_counterparty_not_the_unattributed() -> void:
+	var s := Session.new({"seed": 1})
+	s.money += 0
+	var u0: float = s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0)
+	var m0: int = s.money
+	s.move_money(-300, "outside:market", "fuel")
+	s.move_money(120, "outside:market", "resale")
+	check_eq(s.money, m0 - 180, "the value is the same as money += delta")
+	var row: Dictionary = s.ledger.log[-1]
+	check(row.from == "outside:market" and row.to == "org:safe" and row.reason == "resale" and row.actor == "org", "the last row names it: %s" % [row])
+	check_eq(float(s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0)), u0, "nothing went to unattributed")
+	check_eq(float(s.ledger.boundary().get("outside:market")), -180.0, "net 180 left the safe for the market")
+	s.money += 5
+	check_eq(s.ledger.log[-1].from, Ledger.UNATTRIBUTED, "a plain change is still unattributed")
+	s.dispose()
+
+
 func test_the_session_wrap_keeps_values_and_books_every_change() -> void:
 	var s := Session.new({"seed": 1})
 	s.money += 0  # opens the account at what the session started with

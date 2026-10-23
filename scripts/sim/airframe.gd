@@ -234,7 +234,7 @@ func _work(dt: float) -> void:
 		if sess.money < cost:
 			stop("the money ran out")
 			return
-		sess.money -= int(round(cost))
+		sess.move_money(-int(round(cost)), "outside:market", "repair", "org")
 		spent += int(round(cost))
 		a[p] = minf(100.0, float(a[p]) + gain)
 	if work.parts.is_empty():
