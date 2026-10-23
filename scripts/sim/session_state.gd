@@ -66,6 +66,7 @@ class Spotter:
 var world: World
 var seed := 1
 var ledger := Ledger.new()  ## every change to money and law_funds is booked here (F-2: against outside:unattributed, until F-3 names them)
+var inventory := Inventory.new()  ## stash stock as lots (F-4 wrap: Logistics reconciles it to its own numbers; call sites move to `move` slice by slice)
 var money := START_MONEY:
 	set(v):
 		ledger.track("org:safe", money, v, time, _pay_other, _pay_reason, _pay_actor)

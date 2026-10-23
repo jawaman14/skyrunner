@@ -1039,9 +1039,17 @@ func _bags() -> void:
 # ------------------------------------------------------------------ the AI
 ## The organisation's AI (no boss in the chair): cash home, product to where
 ## the dealers are, the surplus to the best buyer.
+## F-4 wrap: the stash stock dictionary stays the truth; the session's Inventory is brought to match it every few seconds.
+func _sync_inventory() -> void:
+	for id in stock:
+		for g in stock[id]:
+			sess.inventory.reconcile("stash:" + str(id), str(g), float(stock[id][g]), sess.time)
+
+
 func update(dt: float) -> void:
 	_watch_t += dt
 	if _watch_t >= 5.0:
+		_sync_inventory()
 		_pull_over(_watch_t)
 		_watch_t = 0.0
 	_route_t += dt
