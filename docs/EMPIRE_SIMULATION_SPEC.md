@@ -60,7 +60,7 @@ No ids come from RNG.
 | `Account` | `id` = `org:place`, e.g. `org:safe`, `rival:safe`, `org:stash-docks`, `biz-12:till`, `outside:growers` | Money only. A balance is derived from transfers and cached. |
 | `Business` | `id`, `kind`, `district`, `site` (x, y), `owner` (org id), `staff[]`, `till` (account), `stock` (inventory location), `costs{rent, utilities}`, `price_policy`, `open_hours` | P0 kinds below. |
 | `Site` | `id`, `district`, `kind` (`stash`, `shop`, `warehouse`, `strip`), `owner` | Wraps today's stash and airfield records. |
-| `Lot` | `id`, `good`, `lb`, `origin`, `quality`, `heat` | Product moves as lots, and a lot can split. |
+| `Lot` | `id`, `good`, `lb`, `units` (what it is sold in: pounds, sheets, crates; `lb` stays the transport weight), `origin` (provenance), `quality` (grade), `age`, `heat` | Product moves as lots, and a lot can split. |
 | `Person` | `id`, `org`, `role`, `skill`, `loyalty`, `wage`, `boss` (person id), `schedule`, `assignment` | Extends Payroll's worker. `boss` gives the hierarchy (reporting only; succession is `Org.succession`, §11 O-2). |
 | `Order` | `id`, `org`, `issuer` (person or actor), `assignee`, `kind`, `args`, `condition`, `status`, `blocked_reason` | Explicit and conditional orders. Workers only run orders; they never make one up (§0). |
 | `District` | `id` (from `map_city.gd`), `control{org_id: float}`, `demand{good: float}`, `prosperity` | It wraps the existing table; it doesn't replace it. |
