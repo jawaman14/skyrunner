@@ -449,6 +449,33 @@ func test_a_legacy_custody_or_prison_case_does_not_hold_a_free_pilot() -> void:
 	s.dispose()
 
 
+func test_a_conviction_takes_the_aircraft_once_it_is_parked() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.money = 60000
+	s.owned["c182"] = true
+	s._switch_aircraft("c182", 0.5)
+	var c := _arrest(s)
+	s.phase = "flying"
+	s.location = null
+	c.evidence = 100.0
+	c.lawyer = "public"
+	for i in 10:
+		if s.court.case_ == null:
+			break
+		c.trial_at = s.time
+		s.court.update(0.1)
+	check(s.court.case_ == null, "convicted and closed")
+	check(s.court.forfeit_pending, "the aircraft is owed")
+	check_eq(s.aircraft_key, "c182", "but not swapped while flying")
+	s.phase = "parked"
+	s.location = "HAR"
+	s.court.update(0.1)
+	check_eq(s.aircraft_key, "c172p", "a used Skyhawk takes its place once parked")
+	check(not s.owned.has("c182") and not s.court.forfeit_pending, "the Skylane is gone")
+	s.dispose()
+
+
 func test_the_free_pilots_sentence_still_reaches_the_event_bus() -> void:
 	Court.PILOT_FREE = true
 	var s := _sess()
