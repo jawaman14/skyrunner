@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "bf-1979-second-cable",
+  "title": "The Second Cable",
+  "year": 1979,
+  "place": "San Telmo, fictional Costa Brava",
+  "disclaimer": "All characters, incidents, reported cables, and player choices in this mission are fictional. The historical source is contextual only.",
+  "reference": {
+    "id": "FRUS-1977-80-XV-286",
+    "url": "https://history.state.gov/historicaldocuments/frus1977-80v15/d286",
+    "kind": "official_historical_document",
+    "document_date": "1979-07-17"
+  },
+  "scenario": "A fictional intelligence station receives contradictory reports about a rumoured meeting. The player determines the confidence of the available evidence before making a recommendation.",
+  "claims": [
+    {
+      "id": "dispatch-a",
+      "source_type": "fictional",
+      "statement": "An unverified informant reports a closed meeting.",
+      "support": "uncorroborated"
+    },
+    {
+      "id": "dispatch-b",
+      "source_type": "fictional",
+      "statement": "Municipal records suggest the same meeting was public.",
+      "support": "conflicting"
+    },
+    {
+      "id": "press-query",
+      "source_type": "fictional",
+      "statement": "A local editor requests a correction to an earlier unverified statement.",
+      "support": "context"
+    }
+  ],
+  "actions": [
+    "compare_cables",
+    "verify_independently",
+    "consult_oversight",
+    "publish_correction",
+    "submit_brief",
+    "stand_down"
+  ],
+  "endings": [
+    "public_correction",
+    "confidential_assessment",
+    "stood_down"
+  ],
+  "notes": "No distribution mechanics, messaging scripts or modern audience targeting. Future events use finite budgets and deterministic actions."
+}
