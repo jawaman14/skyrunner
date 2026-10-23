@@ -243,7 +243,7 @@ func _police_outcome(what: String) -> void:
 		_bust("forced down by police")
 	elif what == "clean":
 		var fine := 500 if not transponder else 0
-		money -= fine
+		move_money(-fine, "outside:state", "fine")
 		say("Police forced you down and searched the aircraft: clean." + (" Fined $%d for no transponder." % fine if fine else ""))
 
 
@@ -254,7 +254,7 @@ func _maritime_event(kind: String, data: Dictionary) -> void:
 		runner_score["bales_delivered"] += n
 		if job:
 			var pay := int(job.payout * n / float(maxi(1, job.bales_total)))
-			money += pay
+			move_money(pay, "outside:buyers", "delivery")
 			job.bales_delivered = n
 			_resolve_job(job, "%s made the cove with %d/%d bales: +$%s" % [data["boat"], n, job.bales_total, Py.money(pay)])
 		bus.emit("bales_delivered", time, "", ["runner"], {"count": n, "job_id": data.get("job_id")})
@@ -262,10 +262,10 @@ func _maritime_event(kind: String, data: Dictionary) -> void:
 		police.score["boats_seized"] += 1
 		police.score["bales_seized"] += data["count"]
 		law_say("%s seized %s with %d bales" % [data["cutter"], data["boat"], data["count"]])
-		law_funds += 1500.0 + 100.0 * data["count"]  # asset forfeiture
+		move_law_funds(1500.0 + 100.0 * data["count"], "outside:state", "forfeiture")
 		econ.record_seizure("marijuana", "sea")
 		if upgrades["runner"].has("armed_boat"):
-			law_funds += 1500.0
+			move_law_funds(1500.0, "outside:state", "forfeiture")
 			_seize_weapons({"rifle": 2}, data["boat"])
 			law_say("Firearms aboard %s: a federal charge on top" % data["boat"])
 		if job:
