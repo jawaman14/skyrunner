@@ -18,3 +18,8 @@ the flight model and the bot down as a determinism check. Regenerate them only w
 deliberately change the flight model, the aircraft data or the pilot bot, and say so in the commit.
 The trial inputs still come from `trials_ref.json`, and the Python `fm`/`flight` entries in
 `core_ref.json` and `bots_ref.json` are kept as history.
+
+## Strategic save v1 (`strategic_save_v1.json`)
+
+A v1 `StrategicSave.capture` written once by the game itself (not the Python prototype) and never regenerated. `test_strategic_save.gd`
+restores it and requires every block back as written, so a `VERSION` bump must add a step to `StrategicSave.STEPS` that carries it forward.

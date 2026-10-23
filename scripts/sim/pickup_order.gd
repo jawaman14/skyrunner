@@ -39,6 +39,8 @@ func advance(now: float, at_place: bool) -> void:
 		AT_PLACE:
 			if now > closes_at:
 				state = LATE
+			elif not at_place:
+				state = WINDOW  # walked off: nothing to collect until they are back (DESIGN 51.9)
 
 
 func collect() -> bool:
