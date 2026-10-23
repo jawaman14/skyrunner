@@ -77,6 +77,7 @@ var history: Array = []  ## closed cases: {verdict, years, t}
 var mandatory := false  ## the Anti-Drug Abuse Act (1986): mandatory minimums
 var prosecutor_ai := true  ## no human in the prosecutor's chair
 var forfeit_pending := false  ## convicted: the aircraft goes when it is next parked
+var forfeit_key := ""  ## which aircraft was sentenced (the player may switch before it is parked)
 var _serial := 0
 
 
@@ -574,7 +575,8 @@ func _sentence(how: String, years: float, fine: int) -> void:
 	if how == "convicted" and sess.aircraft_key != "c172p" and not PILOT_FREE:
 		sess._switch_aircraft("c172p", 0.5)  # forfeited; a used Skyhawk waits when you get out
 	elif how in ["convicted", "pleaded guilty"] and years >= 8.0 and PILOT_FREE and sess.aircraft_key != "c172p":
-		forfeit_pending = true  # taken when it is next parked: swapping a flying aircraft would leave an unspawned model
+		forfeit_pending = true
+		forfeit_key = sess.aircraft_key  # taken when it is next parked: swapping a flying aircraft would leave an unspawned model
 	sess.police.score["convictions"] = int(sess.police.score.get("convictions", 0)) + 1
 	if mins < 1.0:
 		_say(("%s: %s years the lawyer has settled off the books. -$%s." if PILOT_FREE else "%s: %s years, served as time already done. -$%s.") % [how.capitalize(), Py.f(years, 1), Py.money(k)], "The pilot %s: %s years" % [how, Py.f(years, 1)])
@@ -603,9 +605,14 @@ func _take_aircraft() -> void:
 	if not forfeit_pending or sess.phase != "parked" or sess.location == null or not sess.active_jobs.is_empty():
 		return
 	forfeit_pending = false
-	if sess.aircraft_key == "c172p":
+	var key: String = forfeit_key if forfeit_key != "" else str(sess.aircraft_key)  # a save from before the key was recorded: the one flown now
+	forfeit_key = ""
+	if key == "c172p":
 		return
-	sess.owned.erase(sess.aircraft_key)
+	sess.owned.erase(key)
+	if sess.aircraft_key != key:
+		_say("The conviction took your %s." % key, "Aircraft forfeited")
+		return  # already flying something else: only the sentenced aircraft goes
 	sess.owned["c172p"] = true
 	sess._switch_aircraft("c172p", 0.5)
 	sess.spawn_at(str(sess.location))

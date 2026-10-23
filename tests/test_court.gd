@@ -488,6 +488,25 @@ func test_a_legacy_fugitive_case_becomes_the_lawyers_pretrial() -> void:
 	check_eq(c.stage, "pretrial", "a fugitive is not a thing for a free pilot")
 
 
+func test_switching_aircraft_before_parking_forfeits_the_sentenced_one() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.money = 60000
+	s.owned["c182"] = true
+	s.owned["c172p"] = true
+	s._switch_aircraft("c182", 0.5)
+	_arrest(s)
+	s.court._sentence("convicted", 9.0, 0)
+	check_eq(s.court.forfeit_key, "c182", "the sentenced aircraft is recorded")
+	s._switch_aircraft("c172p", 0.5)
+	s.phase = "parked"
+	s.location = "HAR"
+	s.court.update(0.1)
+	check(not s.owned.has("c182"), "the sentenced Skylane goes")
+	check_eq(s.aircraft_key, "c172p", "and the Skyhawk being flown stays")
+	s.dispose()
+
+
 func test_the_free_pilots_sentence_still_reaches_the_event_bus() -> void:
 	Court.PILOT_FREE = true
 	var s := _sess()

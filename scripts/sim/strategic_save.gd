@@ -94,7 +94,7 @@ static func capture(s: Session) -> Dictionary:
 	d["case"] = {"suspicion": c.suspicion, "bust_meter": c.bust_meter, "rival_meter": c.rival_meter}
 	if s.court != null:
 		d["court"] = {"case": s.court.case_, "history": s.court.history.duplicate(true), "mandatory": s.court.mandatory,
-			"serial": s.court._serial, "forfeit_pending": s.court.forfeit_pending}
+			"serial": s.court._serial, "forfeit_pending": s.court.forfeit_pending, "forfeit_key": s.court.forfeit_key}
 	if s.ground != null:
 		var squads := []
 		for q: GroundWar.Squad in s.ground.squads:
@@ -284,6 +284,7 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.court.mandatory = bool(d.court.get("mandatory", false))
 		s.court._serial = int(d.court.get("serial", 0))
 		s.court.forfeit_pending = bool(d.court.get("forfeit_pending", false))
+		s.court.forfeit_key = str(d.court.get("forfeit_key", ""))
 	if s.ground != null and d.get("squads") is Dictionary:
 		_restore_squads(s, d.squads)
 	if s.ground != null and d.get("war") is Dictionary:
