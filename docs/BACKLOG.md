@@ -21,7 +21,7 @@ start a dated copy.
 ## Still open
 
 **Needs the owner (#326)**
-- Release gates: Windows and macOS exported-build walkthroughs, controller / read-aloud / four-resolution acceptance,
+- Release gates: Windows and macOS exported-build walkthroughs, controller / four-resolution acceptance,
   a two-machine multiplayer session, the functional-site walk, performance captures, radio and asset licensing.
 - Decisions: job generator vs strips (#88, evidence in `STRIPS.md` and PR #323), the hub approach on natural terrain,
   whether flight skill is a story goal, the order of the design epics, whether the wake tool may spend Codex quota.
