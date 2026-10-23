@@ -20,6 +20,10 @@ extends RefCounted
 
 const VERSION := 1
 
+## STEPS[v - 1] carries a save from version v to v + 1: it edits the dictionary and returns it. Add one with every VERSION bump,
+## and a test, so an older save is carried forward instead of losing its state.
+static var STEPS: Array[Callable] = []
+
 const FAMILY := ["respect", "greed", "rico", "rat", "gone", "offers", "loan", "docks_until", "docks_honest", "muscle", "lawyer",
 	"tribute_due", "tribute_by", "taxed", "tribute_total", "_tax_next", "_stalled", "payroll_until", "knows", "loans_taken",
 	"accepted", "cons", "last", "_serial", "_t", "_offer_t", "_side_t", "_rat_t"]
@@ -198,8 +202,25 @@ static func _payroll(s: Session) -> Dictionary:
 		"last": p.last.duplicate(), "squads": squads, "serial": p._serial}
 
 
+## Brings a save up to `target`. A save with no version, a newer game's, or a gap in `steps` gives {} and a warning.
+static func migrate(d: Dictionary, steps: Array = STEPS, target: int = VERSION) -> Dictionary:
+	var v := int(d.get("v", 0))
+	if v < 1 or v > target or steps.size() < target - 1:
+		push_warning("strategic save v%d cannot be brought to v%d; its state is not loaded" % [v, target])
+		return {}
+	d = d.duplicate(true)
+	while v < target:
+		d = steps[v - 1].call(d)
+		v += 1
+		d["v"] = v
+	return d
+
+
 static func restore(s: Session, d: Dictionary) -> void:
-	if d.is_empty() or int(d.get("v", 0)) != VERSION:
+	if d.is_empty():
+		return
+	d = migrate(d)
+	if d.is_empty():
 		return
 	s.time = float(d.get("time", 0.0))
 	s.phone_calls.restore(d.get("phone_calls", {}) if d.get("phone_calls") is Dictionary else {})
