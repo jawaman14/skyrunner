@@ -15,7 +15,7 @@ This section describes **this checkout**. Run `godot --headless --script res://t
 | Field | Source value | Meaning / source |
 |---|---|---|
 | Version | 0.9.0-beta.1 | project.godot |
-| Declared automated tests | 1263 methods in 154 test files | Compiled source inventory; this is not a test result |
+| Declared automated tests | 1264 methods in 154 test files | Compiled source inventory; this is not a test result |
 | Flying tutorial | 4 Costa Brava chapters | Campaign.CHAPTERS |
 | Main story | 12 chapters | Story.CHAPTERS; distinct from the tutorial |
 | Configured exports | Linux, Windows, macOS | Export presets; build/manual acceptance is recorded below |
@@ -26,12 +26,12 @@ This section describes **this checkout**. Run `godot --headless --script res://t
 | Field | Current value | Evidence / limit |
 |---|---|---|
 | Engine | Godot 4.7.2, GDScript, Jolt | project configuration |
-| Latest merged-main desktop run | 1,027 passed, 0 failed across three serial shards | Main `c7b8763`; 314 / 357 / 356 passed in 254.6 / 163.0 / 313.1 seconds; no script/parse failures; known shutdown cleanup diagnostics remain |
+| Recorded merged-main desktop run (9 October) | 1,027 passed, 0 failed across three serial shards | Main `c7b8763`; 314 / 357 / 356 passed in 254.6 / 163.0 / 313.1 seconds; no script/parse failures; known shutdown cleanup diagnostics remain |
 | Overhaul branch evidence | 1,076 passed, 0 failed at `8c08b41` in 799.7 seconds | #283 historical stack, including unmerged world work; no script/parse failures; not a main or human acceptance claim |
 | Player map | Costa Brava | Classic geometry remains internal regression only; generated maps are optional |
 | Desktop targets | Linux, Windows and macOS exported and smoke-launched in CI | PR #223 CI run 37568034562; human exported-build walkthroughs remain pending |
 | Multiplayer | protocol and remote preview/ack paths implemented | real two-machine seat, action and voice session remains unperformed |
-| Human verification | controller, read-aloud, four-resolution visual walkthrough and exported Windows walkthrough pending | record evidence before release claims |
+| Human verification | controller, four-resolution visual walkthrough and exported Windows walkthrough pending | Read-aloud was removed from the game; record evidence for the remaining release gates |
 | Asset rights | used third-party notices included; bundled radio redistribution rights unresolved | `docs/ASSET_PROVENANCE.md` and issue #175 |
 
 ## Faction-AI diagnostic evidence
@@ -44,7 +44,7 @@ The [forty-seed isolation study](archive/FACTION_AI_ISOLATION_2026-10-09.md) rec
 
 [#280](https://github.com/jawaman14/skyrunner/pull/280) restores exact prior parity state and hardens the seeded-generator scanner; [#281](https://github.com/jawaman14/skyrunner/pull/281) adds vegetation preset/determinism coverage. [#282](https://github.com/jawaman14/skyrunner/pull/282) deduplicates host/client voice setup and fixes waiting-room beacon lifetime. [#284](https://github.com/jawaman14/skyrunner/pull/284) moves all 105 command handlers into six stateless modules without changing their bodies or Session authority. Each was squash-merged after all eight current-head CI jobs passed. CI lane separation [#286](https://github.com/jawaman14/skyrunner/pull/286) and shared seat screen [#285](https://github.com/jawaman14/skyrunner/pull/285) are also squash-merged, each after all eleven current-head jobs passed. This dated batch reached `549ec05`; later integrations and desktop evidence are recorded below. Issues #93 and #95 are completed; broader startup and physical/hardware gates remain open. Taxi coverage and the complete #94 action matrix are squash-merged through [#288](https://github.com/jawaman14/skyrunner/pull/288), after all eleven current-head checks passed.
 
-The older dated evidence below is historical; it does not override the generated checkout inventory or upgrade source checks into human acceptance.
+The older dated evidence below is historical; it does not override the generated checkout inventory or upgrade source checks into human acceptance. The recorded full-suite counts above are dated results at named commits; the generated inventory is the current count of declared methods, not proof that they passed on this head.
 
 ### Follow-up integration, 9 October 2026
 
@@ -54,7 +54,7 @@ Desktop post-integration run: **1,026 passed, zero failed in 863.3 seconds** at 
 
 Merged-main confirmation at `c7b8763`: **1,027 passed, zero failed** (314 / 357 / 356), three serial shards in 254.6 / 163.0 / 313.1 seconds. All processes exit zero with no script/parse failures; known shutdown resource diagnostics remain. The diagnostic/evidence follow-up changes no game or test source.
 
-Performed: automated desktop input/state/layout, full regression, save/load, parity/determinism, export filters, hygiene and isolated smoke. Linux/Windows/macOS exports and smoke pass in each completed PR's CI. Unperformed: human exported Windows walkthrough, physical controller/read-aloud/visual acceptance, two-machine seat/action/voice session, functional-site walk/drive acceptance and moving/dense-scene performance capture. Local Windows packaging remains unverified without matching export templates. Radio redistribution rights remain unresolved; no automated result clears those gates.
+Performed: automated desktop input/state/layout, full regression, save/load, parity/determinism, export filters, hygiene and isolated smoke. Linux/Windows/macOS exports and smoke pass in each completed PR's CI. Unperformed: human exported Windows walkthrough, physical controller and visual acceptance, two-machine seat/action/voice session, functional-site walk/drive acceptance and moving/dense-scene performance capture. Local Windows packaging remains unverified without matching export templates. Radio redistribution rights remain unresolved; no automated result clears those gates.
 
 ### Reliability integration, 8 October 2026
 
@@ -129,7 +129,7 @@ logistics and armoury previews; payroll checked travel and in-transit state.
 Implemented but requiring further evidence: complete entrance/threshold/loading
 walkthrough, terrain-specific remote access, remaining hangar/HQ/casino states,
 full NPC truck/squad migration, Costa Brava coastal art reference area,
-performance route captures, exported builds, physical controllers, read-aloud,
+performance route captures, exported builds, physical controllers,
 human macOS walkthrough, two-machine multiplayer/voice and radio rights decision.
 
 Deferred until the overhaul gates pass: new chapters, hidden informant gameplay,

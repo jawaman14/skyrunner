@@ -262,13 +262,13 @@ and events here are original.
 
 **Protagonist.** *Jack "Dusty" Callahan*, a bush pilot who owes the bank for a tired
 Cessna 172. His sister *Rosa* runs the mail contract and is your first co-pilot. The fixer is
-*Manny Arce*, a charming boat dealer from Smuggler's Cove. The antagonist on the law side is
+*Benny Ruiz*, who works for Rafa Quintero and arranges boat runs from Smuggler's Cove. The antagonist on the law side is
 *Special Agent Evelyn Hart*, who takes over the island's interdiction desk in 1983.
 
 | Ch. | Year | Title | Introduces | Objectives | Status |
 |---|---|---|---|---|---|
 | 1 | 1979 | **Mail Run** | Flying, W&B, short strips | Earn $5,000 legally, land at Mesa del Aguila | [done] |
-| 2 | 1980 | **A Favor for Manny** | Contraband, radar floors, flying low | Deliver one hot cargo without reaching wanted ★ | [done] |
+| 2 | 1980 | **A Favor for Benny** | Contraband, radar floors, flying low | Deliver one hot cargo without reaching wanted ★ | [done] |
 | 3 | 1981 | **Kickers** | Co-pilot, airdrops, boat rendezvous, radio calls | Drop 4 bales to the *Lady Luck*, 3 must reach the cove | [done] |
 | 4 | 1982 | **Long Legs** | Ferry tanks, fuel planning, offshore entry, fuel caches | Fly in from the south entry point with a ferry tank and make a drop | [done] |
 
