@@ -185,7 +185,6 @@ To start completely fresh, delete that folder.
 | **Windows: the exe vanishes after download** | Some antivirus tools quarantine unsigned games. Restore it, or add an exception for the folder. |
 | **No sound on Linux** | The game uses PulseAudio or PipeWire via ALSA. Check that `pavucontrol` shows it and that it isn't muted. |
 | **Joystick not detected** | Plug it in before starting the game, then press F8 → the axis rows → *Capture* and move the control. |
-| **Text-to-speech does nothing** | It needs the system voice: Windows and macOS have it built in; on Linux install `speech-dispatcher`. |
 | **Multiplayer: friends can't connect** | The host needs TCP port **47800** open (or `--port N`) in its firewall and router. Friends join with `--connect HOST_IP:47800`, or through the lobby. |
 
 Still stuck? Press **F12** in game (or send `logs/godot.log` from the folder above) and include it

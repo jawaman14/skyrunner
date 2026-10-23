@@ -102,6 +102,22 @@ func refresh() -> void:
 	hints.set_hints([["UP/DOWN", "choose", "down"], ["LEFT/RIGHT", "lot or yours", "right"], ["ENTER", "buy / drive", "enter"], ["S", "sell", "s"], ["A", "AI fleet", "a"], ["ESC", "leave", "esc"]])
 
 
+## UP/DOWN walk the lot, then carry on into "Yours" instead of wrapping to the top (which read as the list scrolling back up).
+func _step(d: int) -> void:
+	var t: DataTable = lot if focus == 0 else mine
+	var edge := t.row_count() - 1 if d > 0 else 0
+	if t.selected_row() != edge:
+		t.move(d)
+		return
+	var other: DataTable = mine if focus == 0 else lot
+	if (d > 0) != (focus == 0) or other.row_count() == 0:
+		return # the top of the lot and the bottom of "Yours" stay put
+	focus = 1 - focus
+	other.select(0 if d > 0 else other.row_count() - 1)
+	if other.is_inside_tree():
+		other.grab_focus()
+
+
 func key(k: String) -> void:
 	if confirmation_key(k):
 		return
@@ -110,9 +126,9 @@ func key(k: String) -> void:
 		return
 	match k:
 		"up":
-			(lot if focus == 0 else mine).move(-1)
+			_step(-1)
 		"down":
-			(lot if focus == 0 else mine).move(1)
+			_step(1)
 		"left":
 			focus = 0
 			if lot.is_inside_tree():
