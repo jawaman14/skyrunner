@@ -105,6 +105,27 @@ func setup(link_, role_: String, world_: World = null, vertical := false) -> Sta
 		button.toggled.connect(func(enabled): map.set_layer(key, enabled))
 		layer_buttons[key] = button
 		layer_row.add_child(button)
+	var zoom_row := HFlowContainer.new()
+	map_column.add_child(zoom_row)
+	var zoom_buttons := []
+	for level in 3:
+		var button := Button.new()
+		button.text = ["Island", "District", "Close"][level]
+		button.add_theme_font_size_override("font_size", 13)
+		button.toggle_mode = true
+		button.button_pressed = level == 0
+		button.pressed.connect(func(): map.set_zoom(level))
+		zoom_buttons.append(button)
+		zoom_row.add_child(button)
+	map.view_changed.connect(func():
+		for level in zoom_buttons.size():
+			zoom_buttons[level].set_pressed_no_signal(map.zoom_level == level))
+	var reset := Button.new()
+	reset.text = "Reset view"
+	reset.add_theme_font_size_override("font_size", 13)
+	reset.pressed.connect(map.reset_view)
+	zoom_row.add_child(reset)
+	zoom_row.add_child(UIStyle.label("Wheel: zoom  |  Middle-drag: pan", 12, UIStyle.CAPTION))
 	map_column.add_child(map)
 	h.add_child(map_column)
 	var panel := PanelContainer.new()
