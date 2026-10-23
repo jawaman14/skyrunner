@@ -131,7 +131,7 @@ func test_a_court_case_survives_a_save() -> void:
 	check(t.court.case_ != null, "the case is still open")
 	check_eq(str(t.court.case_.id), id, "the same case")
 	check_eq(t.court.case_.charges, charges, "the same charges")
-	check_eq(t.court.stage(), "bail", "waiting on bail")
+	check_eq(t.court.stage(), "pretrial", "the lawyer has the case; the pilot is not held")
 	t.dispose()
 
 

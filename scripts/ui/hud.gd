@@ -322,7 +322,7 @@ func refresh() -> void:
 	if s.court != null and s.court.open() and s.phase in ["busted", "custody"]:
 		var v: Dictionary = s.court.view("runner")
 		var line: String = {"bail": "THE BAIL HEARING - %d s to decide" % int(v.bail_s), "custody": "IN CUSTODY - trial in %d min" % int(ceil(v.trial_s / 60.0)),
-			"prison": "INSIDE - %d min to release" % int(ceil(v.release_s / 60.0)), "pretrial": "ON BAIL - trial in %d min" % int(ceil(v.trial_s / 60.0))}.get(str(v.stage), str(v.stage))
+			"prison": "INSIDE - %d min to release" % int(ceil(v.release_s / 60.0)), "pretrial": ("YOUR LAWYER HAS THE CASE - trial in %d min" if v.bail_posted == "lawyer" else "ON BAIL - trial in %d min") % int(ceil(v.trial_s / 60.0))}.get(str(v.stage), str(v.stage))
 		center.text = "%s\n%s" % [line, ", ".join(v.charges)]
 		hints.set_hints([["SHIFT+L", "your lawyer"]] + ([["ENTER", "walk out"]] if v.stage == "pretrial" else []))
 	elif s.phase in ["crashed", "busted"]:
