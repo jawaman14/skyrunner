@@ -582,7 +582,7 @@ static func court_lines(c: Dictionary) -> Array:
 static func _court_law_line(c: Dictionary) -> String:
 	if c.is_empty() or not c.get("open", false):
 		return ""
-	return "PROSECUTION (%s): evidence %d%%, %d witnesses, conviction %d%%, trial in %d min, before %s. N no bail  W immunity  K bank records  D conspiracy  Y plea\n" % [
+	return "PROSECUTION (%s): evidence %d%%, %d witnesses, conviction %d%%, trial in %d min, before %s.  W immunity  K bank records  D conspiracy  Y plea\n" % [
 		c.stage, int(c.get("evidence", 0)), int(c.get("witnesses", 0)), int(100 * float(c.get("odds", 0))), int(ceil(float(c.get("trial_s", 0)) / 60.0)), c.judge]
 
 

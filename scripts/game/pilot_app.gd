@@ -79,7 +79,7 @@ Trade    SHIFT+B Benny Ruiz and the buyers: sell cocaine, grass or rifles in bul
          go into the stash; dealers (hire them from Manny) sell it on the corners
          SHIFT+C talk to the Sunrise Collective (when available)
 Haul     SHIFT+H logistics: product and cash sit in the stashes - truck them (to the club, a buyer, the corners) or fly cash bags (C load, U unload)
-Court    arrested (with a court): SHIFT+L your lawyer - bail or a bond, a better lawyer, motions to
+Court    arrested (with a court): SHIFT+L your lawyer - a better lawyer, motions to
          suppress / discovery / more time, the plea, the witness, the judge, a deal; the appeal inside
 Crew     SHIFT+W Manny Ortega's hiring hall: hire soldiers, drivers, mules, lookouts, an accountant,
          contract pilots; bonuses; lawyers for the jailed. Payday every 10 min - pay them or else
@@ -516,7 +516,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 		elif ev.shift_pressed and k == KEY_B and s.trade != null:
 			open_talk("buyers")  # Benny Ruiz: who's buying, and at what
 		elif ev.shift_pressed and k == KEY_L and s.court != null:
-			open_talk("lawyer")  # your lawyer: bail, motions, the plea, a deal, the appeal
+			open_talk("lawyer")  # your lawyer: motions, the plea, a deal, the appeal
 		elif ev.shift_pressed and k == KEY_F and s.family != null:
 			open_talk("family")  # a sit-down with the Family
 		elif ev.shift_pressed and k == KEY_G and s.island != null:
