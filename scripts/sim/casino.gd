@@ -486,7 +486,7 @@ func case_action(kind: String) -> String:
 		"wiretap":
 			if sess.law_funds < WIRETAP:
 				return "Need $%s in funds." % Py.money(WIRETAP)
-			sess.law_funds -= WIRETAP
+			sess.move_law_funds(-WIRETAP, "outside:market", "fee")
 			case_ = minf(100.0, case_ + 20.0)
 			sess.law_say("CASINO: a microphone in the %s's counting room: the case is %d%%." % [NAME, int(case_)])
 		"audit":
@@ -494,7 +494,7 @@ func case_action(kind: String) -> String:
 				return "Need $%s in funds." % Py.money(AUDIT)
 			if sess.time < audit_until:
 				return "The commission is already in the cage."
-			sess.law_funds -= AUDIT
+			sess.move_law_funds(-AUDIT, "outside:market", "fee")
 			audit_until = sess.time + AUDIT_S
 			case_ = minf(100.0, case_ + (25.0 if cage_left() < CAGE_CAP else 10.0))
 			sess.law_say("CASINO: the gaming commission opens the cage's books for %d minutes (case %d%%)." % [int(AUDIT_S / 60.0), int(case_)])
@@ -504,10 +504,10 @@ func case_action(kind: String) -> String:
 				return "The case is only %d%%: it needs %d%% before a judge will sign." % [int(case_), int(RAID_CASE)]
 			if sess.law_funds < RAID:
 				return "Need $%s in funds." % Py.money(RAID)
-			sess.law_funds -= RAID
+			sess.move_law_funds(-RAID, "outside:market", "fee")
 			var seized := int(float(owed) * 0.4)
 			owed -= seized
-			sess.law_funds += seized
+			sess.move_law_funds(seized, "outside:state", "forfeiture")
 			closed_until = sess.time + RAID_S
 			heat = 20.0
 			case_ = 0.0

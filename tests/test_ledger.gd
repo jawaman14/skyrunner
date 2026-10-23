@@ -36,6 +36,39 @@ func test_trimming_the_log_keeps_rebuild_exact() -> void:
 		check(absf(float(got.get(acct, 0.0)) - l.balance(acct)) < 0.001, "%s rebuilds to the cache" % acct)
 
 
+func test_a_named_move_books_its_counterparty_not_the_unattributed() -> void:
+	var s := Session.new({"seed": 1})
+	s.money += 0
+	var u0: float = s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0)
+	var m0: int = s.money
+	s.move_money(-300, "outside:market", "fuel")
+	s.move_money(120, "outside:market", "resale")
+	check_eq(s.money, m0 - 180, "the value is the same as money += delta")
+	var row: Dictionary = s.ledger.log[-1]
+	check(row.from == "outside:market" and row.to == "org:safe" and row.reason == "resale" and row.actor == "org", "the last row names it: %s" % [row])
+	check_eq(float(s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0)), u0, "nothing went to unattributed")
+	check_eq(float(s.ledger.boundary().get("outside:market")), -180.0, "net 180 left the safe for the market")
+	s.money += 5
+	check_eq(s.ledger.log[-1].from, Ledger.UNATTRIBUTED, "a plain change is still unattributed")
+	s.dispose()
+
+
+func test_the_budget_accrual_is_one_named_row_a_minute() -> void:
+	var s := Session.new({"seed": 1})
+	var rows0: int = s.ledger.log.size()
+	var f0: float = s.law_funds
+	for i in 120:
+		s.time += 0.5
+		s._update_upgrades(0.5)
+	check_eq(s.ledger.log.size() - rows0, 1, "60 s of frames is one row (merged), not 120")
+	s.time += 60.0
+	s._update_upgrades(0.5)
+	check_eq(s.ledger.log.size() - rows0, 2, "the next minute opens a new row")
+	var row: Dictionary = s.ledger.log[rows0]
+	check(row.from == "outside:state" and row.to == "police:budget" and row.reason == "budget", "named: %s" % [row])
+	check_eq(s.ledger.balance("police:budget"), s.law_funds, "the ledger agrees")
+	var got := s.ledger.rebuild()
+	check(absf(float(got.get("police:budget", 0.0)) - s.law_funds) < 0.01, "and rebuilds")
 func test_a_loaded_session_opens_at_its_saved_money_with_no_phantom_inflow() -> void:
 	var s := Session.new({"seed": 1, "money": 10000})
 	check_eq(s.ledger.balance("org:safe"), 10000.0, "opened at the saved value")

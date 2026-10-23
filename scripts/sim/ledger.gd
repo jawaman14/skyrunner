@@ -6,6 +6,8 @@ extends RefCounted
 
 const OUTSIDE := "outside:"
 const UNATTRIBUTED := "outside:unattributed"
+const COALESCE := ["budget"]  ## reasons booked every frame: consecutive rows with the same names merge within COALESCE_S
+const COALESCE_S := 60.0
 ## The closed list of reasons (spec section 3, invariant 3); a transfer with any other is refused. Later F-3 slices add to it.
 const REASONS := ["open", "adjust", "purchase", "resale", "fee", "fuel", "repair", "upgrade", "fine", "delivery", "forfeiture", "budget", "wages"]
 const TRIM := 1000  ## rows folded into `opening` at a time, so trimming is not a shift of the whole array on every transfer
@@ -25,6 +27,13 @@ func balance(account: String) -> float:
 func transfer(from: String, to: String, amount: float, reason: String, actor := "system", t := 0.0, ref := "") -> bool:
 	if amount <= 0.0 or from == to or not reason in REASONS:
 		return false
+	var last: Dictionary = log[-1] if not log.is_empty() else {}
+	if reason in COALESCE and not last.is_empty() and last.from == from and last.to == to and last.reason == reason \
+			and last.actor == actor and t - float(last.t) < COALESCE_S:
+		last.amount = float(last.amount) + amount  # a per-frame accrual is one row a minute, not sixty a second
+		balances[from] = balance(from) - amount
+		balances[to] = balance(to) + amount
+		return true
 	_serial += 1
 	log.append({"id": _serial, "t": t, "from": from, "to": to, "amount": amount, "reason": reason, "actor": actor, "ref": ref})
 	if log.size() >= LOG_MAX + TRIM:
@@ -38,8 +47,9 @@ func transfer(from: String, to: String, amount: float, reason: String, actor := 
 
 
 ## Move an account to `value` for a change the old code made directly: the difference is booked against UNATTRIBUTED.
+## `other`, `reason` and `actor` name the change (F-3); left alone it is the unattributed adjustment F-2 booked.
 ## An account seen for the first time opens at `old` (what it held before this change) from outside:start.
-func track(account: String, old: float, value: float, t := 0.0) -> void:
+func track(account: String, old: float, value: float, t := 0.0, other := UNATTRIBUTED, reason := "adjust", actor := "system") -> void:
 	if not balances.has(account):
 		balances[account] = 0.0
 		opening[account] = 0.0  # so rebuild() lists the account even if nothing has moved yet
@@ -49,9 +59,9 @@ func track(account: String, old: float, value: float, t := 0.0) -> void:
 			transfer(account, "outside:start", -old, "open", "system", t)
 	var d := value - balance(account)
 	if d > 0.0:
-		transfer(UNATTRIBUTED, account, d, "adjust", "system", t)
+		transfer(other, account, d, reason, actor, t)
 	elif d < 0.0:
-		transfer(account, UNATTRIBUTED, -d, "adjust", "system", t)
+		transfer(account, other, -d, reason, actor, t)
 
 
 func total() -> float:
