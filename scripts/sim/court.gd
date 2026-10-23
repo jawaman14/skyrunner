@@ -573,7 +573,7 @@ func _sentence(how: String, years: float, fine: int) -> void:
 	sess.law_funds += float(k) * 0.8
 	if how == "convicted" and sess.aircraft_key != "c172p" and not PILOT_FREE:
 		sess._switch_aircraft("c172p", 0.5)  # forfeited; a used Skyhawk waits when you get out
-	elif how == "convicted" and PILOT_FREE and sess.aircraft_key != "c172p":
+	elif how in ["convicted", "pleaded guilty"] and PILOT_FREE and sess.aircraft_key != "c172p":
 		forfeit_pending = true  # taken when it is next parked: swapping a flying aircraft would leave an unspawned model
 	sess.police.score["convictions"] = int(sess.police.score.get("convictions", 0)) + 1
 	if mins < 1.0:
@@ -599,7 +599,8 @@ func _close(verdict: String) -> void:
 
 ## A conviction forfeits the aircraft (D-64): once the pilot is parked at an airfield, a used Skyhawk takes its place there.
 func _take_aircraft() -> void:
-	if not forfeit_pending or sess.phase != "parked" or sess.location == null:
+	# swapping the loadout under an accepted job would leave the job payable with its cargo gone, so it waits for an empty hold
+	if not forfeit_pending or sess.phase != "parked" or sess.location == null or not sess.active_jobs.is_empty():
 		return
 	forfeit_pending = false
 	if sess.aircraft_key == "c172p":

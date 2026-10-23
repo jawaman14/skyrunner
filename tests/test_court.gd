@@ -470,6 +470,10 @@ func test_a_conviction_takes_the_aircraft_once_it_is_parked() -> void:
 	check_eq(s.aircraft_key, "c182", "but not swapped while flying")
 	s.phase = "parked"
 	s.location = "HAR"
+	s.active_jobs.append(Jobs.Job.new(1, "x", "cargo", "QRY", "FRM", [], 1))
+	s.court.update(0.1)
+	check_eq(s.aircraft_key, "c182", "not while a job is aboard")
+	s.active_jobs.clear()
 	s.court.update(0.1)
 	check_eq(s.aircraft_key, "c172p", "a used Skyhawk takes its place once parked")
 	check(not s.owned.has("c182") and not s.court.forfeit_pending, "the Skylane is gone")
