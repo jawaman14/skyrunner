@@ -270,7 +270,7 @@ longer makes sense once you own stock bought upfront. The design is [DESIGN.md s
 a switch and tests first (an RNG stream and a BALANCE entry where the slice draws random numbers or moves the economy):
 
 1. The design note (this section and DESIGN 51). (Claude)
-2. Stock lots with grade, age and provenance, and the save migration. (Claude)
+2. Stock lots with grade, age and provenance. This is the stock side of F-4 (`docs/EMPIRE_PIVOT.md`, inventory lots, each lot in exactly one location per `EMPIRE_SIMULATION_SPEC.md` section 4) and uses its single wrap-first save migration rather than a second one. (Claude)
 3. Orders and the pickup person; the gun dealer on the same flow, replacing "sell / keep guns". (Claude the sim, Codex the dealer scenes)
 4. Storage places and the stock ledger. (Claude the data, Codex the screen)
 5. Laundering: one authority (`HQ.Org`), fronts with a per-night cap and a delay; the casino path moves onto it. (Claude)

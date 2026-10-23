@@ -1579,6 +1579,10 @@ rework the whole of logistics and stock with the new game in mind." The flow cha
 
 ### 51.1 Three kinds of run
 
+Who owns the cargo and who carries it are separate: any kind below can be flown by the player or handed to a crew pilot or truck
+(D-58, D-66). A hired carrier changes the fee and the chance of being caught, never whose cargo it is; a contract run flown by a
+crew pilot still pays the client's fee, and stock flown by one is the "Delegated" row.
+
 | Kind | Whose cargo | Pays | Hot means |
 |---|---|---|---|
 | **Contract** | the client's | a fee on delivery; never enters your stock | the cargo stays illegal: police consequences still apply to the run, and the story's hot-load goals count it |
@@ -1626,8 +1630,9 @@ A **stock ledger** on the boss desk lists every lot: place, grade, age, heat, an
 Lots sell to buyers' orders (section 49) and to street dealers on corners your crew holds. Sales come in as **dirty cash**. Only
 clean cash buys stock. Two laundering systems already exist: `HQ.Org` keeps `dirty`, `clean`, tiered `fronts` and a **per-night**
 capacity (`hq.gd`), and `Casino.launder` converts logistics cash into money with a cap, fees and heat (`casino.gd`). Slice 5 does
-**not** add a third: it makes `HQ.Org` the one authority (moving the casino's path onto it, with a save migration) and adds what is
-missing:
+**not** add a third. The authority for every dollar is the ledger (`EMPIRE_SIMULATION_SPEC.md` sections 0 and 3); F-3 moves `casino` and
+the other money sites onto named transfers. `HQ.Org` stays the rule set for tiers and the per-night cap, and its dirty and clean
+balances become ledger accounts rather than a second book. Slice 5 adds what is missing:
 
 - a cap that resets on a period the session really has: the **night**, as `HQ.Org` already does (a literal week never comes round
   in an 8-hour campaign);
@@ -1693,7 +1698,7 @@ prices. Tune in the laundering slice's balance run.
 | Ordered | the player pays upfront | confirmation, price paid, pickup place | the window opens | none (already paid) |
 | Window open | the order's window starts (10 to 20 game minutes) | countdown and a marker at the place | the player arrives, the window ends, or the player cancels | none |
 | At the place | the player reaches the place inside the window | a prompt to collect | the player collects, leaves, or the window ends | none |
-| Collected | the player takes the goods | the lot added to the chosen store, weight shown | terminal | none |
+| Collected | the player takes the goods | the lot loaded into the carrier (the player, or the aircraft or truck they came in), weight shown | the lot is then moved to a store by the normal carry, which is exposed on the way (51.4); terminal for the order | none |
 | Late | the window ends before the player arrives | "too late" notice | the contact reopens orders after a cooldown | trust with the crew |
 | Intercepted | a rival acts on the pickup first | an ambush at the place | the order ends | the lot, or the cash paid |
 | Cancelled | the player aborts before collecting | the order voided | terminal | the cash paid (paid upfront) |
