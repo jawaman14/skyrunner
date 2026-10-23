@@ -331,7 +331,7 @@ func tamper() -> String:
 			case_.stage = "custody"
 			case_.bail_posted = ""
 		_say("The witness went to the FBI instead: obstruction of justice added%s." % ("" if PILOT_FREE else ", bail revoked"),
-			"A witness in the pilot's case reports being threatened: obstruction charged, bail revoked")
+			"A witness in the pilot's case reports being threatened: obstruction charged%s" % ("" if PILOT_FREE else ", bail revoked"))
 	else:
 		case_.witnesses = int(case_.witnesses) - 1
 		case_.evidence = maxf(0.0, float(case_.evidence) - 12.0)
