@@ -97,7 +97,10 @@ func cash(o: String) -> float:
 
 func spend(o: String, k: float) -> void:
 	if o == "org":
-		sess.move_money(-int(k), "outside:market", "wages")
+		if k >= 0.0:
+			sess.move_money(-int(k), "outside:market", "wages")
+		else:  # earn() pays in through here: a run's income, not a wage refund
+			sess.move_money(-int(k), "outside:buyers", "delivery")
 	else:
 		sess.ground.commanders.rival.cash -= k
 
