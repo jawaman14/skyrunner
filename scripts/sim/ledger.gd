@@ -6,6 +6,7 @@ extends RefCounted
 
 const OUTSIDE := "outside:"
 const UNATTRIBUTED := "outside:unattributed"
+const TRIM := 1000  ## rows folded into `opening` at a time, so trimming is not a shift of the whole array on every transfer
 const LOG_MAX := 20000  ## the oldest rows are folded into `opening` past this, so rebuild() stays exact; F-3 saves both.
 
 var log: Array = []  ## {id, t, from, to, amount, reason, actor, ref}
@@ -24,10 +25,11 @@ func transfer(from: String, to: String, amount: float, reason: String, actor := 
 		return false
 	_serial += 1
 	log.append({"id": _serial, "t": t, "from": from, "to": to, "amount": amount, "reason": reason, "actor": actor, "ref": ref})
-	if log.size() > LOG_MAX:
-		var old: Dictionary = log.pop_front()
-		opening[old.from] = float(opening.get(old.from, 0.0)) - float(old.amount)
-		opening[old.to] = float(opening.get(old.to, 0.0)) + float(old.amount)
+	if log.size() >= LOG_MAX + TRIM:
+		for row in log.slice(0, TRIM):
+			opening[row.from] = float(opening.get(row.from, 0.0)) - float(row.amount)
+			opening[row.to] = float(opening.get(row.to, 0.0)) + float(row.amount)
+		log = log.slice(TRIM)
 	balances[from] = balance(from) - amount
 	balances[to] = balance(to) + amount
 	return true

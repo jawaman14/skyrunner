@@ -27,9 +27,9 @@ func test_track_opens_at_the_old_value_then_books_the_difference() -> void:
 
 func test_trimming_the_log_keeps_rebuild_exact() -> void:
 	var l := Ledger.new()
-	for i in Ledger.LOG_MAX + 50:
+	for i in Ledger.LOG_MAX + Ledger.TRIM + 50:
 		l.transfer("a", "b", 1.0 + (i % 7), "x")
-	check_eq(l.log.size(), Ledger.LOG_MAX, "the log is capped")
+	check(l.log.size() <= Ledger.LOG_MAX + Ledger.TRIM and l.log.size() >= Ledger.LOG_MAX, "the log stays near its cap")
 	var got := l.rebuild()
 	for acct in l.balances:
 		check(absf(float(got.get(acct, 0.0)) - l.balance(acct)) < 0.001, "%s rebuilds to the cache" % acct)
@@ -37,8 +37,8 @@ func test_trimming_the_log_keeps_rebuild_exact() -> void:
 
 func test_the_session_wrap_keeps_values_and_books_every_change() -> void:
 	var s := Session.new({"seed": 1})
+	check_eq(s.ledger.balance("police:budget"), s.law_funds, "the budget is open from construction")
 	s.money += 0  # opens the account at what the session started with
-	s.law_funds += 0.0
 	var u0: float = s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0)
 	var m0: int = s.money
 	s.money += 700
