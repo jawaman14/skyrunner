@@ -6,6 +6,7 @@
     "test_fixture_isolation.gd",
     "test_hq.gd",
     "test_ledger.gd",
+    "test_inventory.gd",
     "test_rng.gd",
     "test_save_paths.gd",
     "test_stock_value.gd",
