@@ -168,7 +168,12 @@ class Fight:
 class Commander:
 	var faction: String
 	var ai := true
-	var cash := 0.0  ## Los Cuervos' war chest (the others pay from the session)
+	var sess = null  ## the Session, set by GroundWar: every change to cash is booked in its ledger
+	var cash := 0.0:  ## Los Cuervos' war chest (the others pay from the session)
+		set(v):
+			if sess != null:
+				sess.ledger.track(faction + ":war-chest", cash, v, sess.time)
+			cash = v
 	var think_t := 0.0
 	var log: Array = []
 
@@ -226,6 +231,9 @@ func _init(sess_, rng_: PyRandom, frng_: PyRandom) -> void:
 		var c := Commander.new()
 		c.faction = f
 		c.cash = 20000.0 if f == "rival" else 0.0
+		c.sess = sess  # after the starting cash, which the ledger then opens at (not as an unattributed inflow)
+		if sess != null:
+			sess.ledger.track(f + ":war-chest", c.cash, c.cash, sess.time)
 		commanders[f] = c
 	for m in Economy.MARKETS:
 		control[m] = {"org": 0.0, "rival": 0.0, "police": 0.0}
