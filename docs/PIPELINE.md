@@ -22,8 +22,9 @@ person can do (the human release gates and the decisions in #326). This file is 
 
 **Running Godot (tests, imports, measurements).**
 1. One Godot job at a time on the machine, with no priority or estimate. A 40-minute strip regeneration of mine held the lock while Codex's
-   screenshot and full-suite runs queued behind it (Codex said so in note 173). The full suite is about 13 minutes (1,114 tests, 761 s) and a
-   cold import in a fresh worktree about 5 more, because every worktree has its own `.godot` cache.
+   screenshot and full-suite runs queued behind it (Codex said so in note 173). On 11 October the full suite took about 13 minutes (1,114 passing tests, 761 s), and a
+   cold import in a fresh worktree took about 5 more. These are dated measurements, not the current suite count or a runtime promise;
+   every worktree has its own `.godot` cache.
 2. A test run is refused if `docs/PROJECT_STATUS.md` is stale, so adding one test cost a failed run before the regeneration.
 3. A filtered run (`phone`) showed a walker failure that does not happen when the whole file runs: a selection artifact that looked like a
    regression until the whole file was run.
