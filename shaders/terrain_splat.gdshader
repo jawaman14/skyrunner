@@ -62,9 +62,13 @@ void fragment() {
 	grass = mix(grass, forest, clamp(biome.a * 1.2, 0.0, 1.0));
 	vec3 dry = mix(dry_a, dry_b, n.b + (g.a - 0.5) * 0.3);
 	vec4 tr = tri(wpos, wnrm, tile * 0.6);
-	float strata = 0.5 + 0.5 * sin(wpos.y * 0.07 + tr.b * 4.0);
+	float strata = 0.5 + 0.5 * sin(wpos.y * 0.33 + tr.b * 2.0);
 	vec3 rock = mix(rock_a, rock_b, tr.g * 0.7 + strata * 0.2);
 	vec3 sand = mix(sand_a, sand_b, n.a * 0.6 + m.r * 0.4);
+	// Wind-rippled sand: fade the narrow bands before they shimmer at distance.
+	float ripple_phase = dot(wpos.xz, vec2(1.4, 0.6));
+	float ripple_fade = 1.0 - smoothstep(0.4, 1.2, fwidth(ripple_phase));
+	sand *= 1.0 + 0.07 * sin(ripple_phase + n.b * 2.0) * detail_fade * ripple_fade;
 
 	// height-blended weights: the noise decides which material wins at a boundary
 	float slope = 1.0 - clamp(wnrm.y, 0.0, 1.0);
@@ -80,9 +84,15 @@ void fragment() {
 		float f = fract(sin(dot(floor(wxy / vec2(400.0, 300.0)), vec2(127.1, 311.7))) * 43758.5453);
 		vec3 crop = f > 0.66 ? vec3(0.60, 0.54, 0.30) : (f > 0.33 ? vec3(0.34, 0.47, 0.19) : vec3(0.46, 0.40, 0.26));
 		float rows = 0.86 + 0.14 * sin(dot(wxy, f > 0.5 ? vec2(1.0, 0.0) : vec2(0.0, 1.0)) * 1.4);
+		// Worked headlands frame the fields, without changing terrain elevations.
+		vec2 field_pos = mod(wxy, vec2(400.0, 300.0));
+		float field_edge = min(min(field_pos.x, 400.0 - field_pos.x), min(field_pos.y, 300.0 - field_pos.y));
+		crop = mix(crop * vec3(0.78, 0.76, 0.68), crop, smoothstep(2.0, 7.0, field_edge));
 		col = mix(col, crop * mix(1.0, rows, detail_fade) * (0.9 + 0.2 * n.r), lu.g * (1.0 - w_rock));
 		col = mix(col, vec3(0.24, 0.25, 0.16) * (0.8 + 0.4 * n.b), lu.b * 0.85);
-		col = mix(col, forest * 0.85, lu.a * 0.7);
+		vec3 jungle_floor = forest * (0.75 + 0.3 * n.b);
+		jungle_floor = mix(jungle_floor, vec3(0.30, 0.24, 0.12), smoothstep(0.72, 0.9, n.g) * 0.22);
+		col = mix(col, jungle_floor, lu.a * 0.7);
 		vec2 gp = mod(wxy - grid_origin, block);
 		float lot = step(street * 0.5, gp.x) * step(gp.x, block - street * 0.5) * step(street * 0.5, gp.y) * step(gp.y, block - street * 0.5);
 		lot = mix(1.0, lot, painted_streets);
@@ -104,3 +114,4 @@ void fragment() {
 	NORMAL_MAP = texture(normal_pack, uv * (w_rock > 0.5 ? 0.6 : 1.0)).rgb;
 	NORMAL_MAP_DEPTH = mix(0.6, 1.4, w_rock) * detail_fade;
 }
+

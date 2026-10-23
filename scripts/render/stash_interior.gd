@@ -44,6 +44,10 @@ static func build(world: World, stash: Dictionary) -> Node3D:
 		k.box(Vector3(0, 0.3, -12), Vector3(3, 0.6, 10), "wood")
 		k.box(Vector3(0, 0.15, -6.6), Vector3(2, 0.3, 0.8), "wood")
 		k.box(Vector3(0, 0.15, -17.4), Vector3(2, 0.3, 0.8), "wood")
+	if world.map.map_seed == MapCity.SEED and stash.id == "docks" and stash.kind == "warehouse":
+		warehouse_frontage(k, size)
+	if world.map.map_seed == MapCity.SEED:
+		rural_dressing(k, stash, size)
 	var desk_x: float = -6.0 if stash.kind == "lockup" else 0.0
 	var desk_z := size.z / 2 - 1.0
 	k.box(Vector3(desk_x, floor_y + 0.95, desk_z), Vector3(2.0, 0.12, 0.7), "wood")
@@ -57,6 +61,71 @@ static func build(world: World, stash: Dictionary) -> Node3D:
 	var area := node.get_node("use_stash_logistics") as Area3D
 	area.set_meta("stash", stash.id)
 	return node
+
+## Warehouse 7's working-port identity is painted onto its existing shell.
+## Thin battens sit against the wall; the central loading doorway stays clear.
+static func warehouse_frontage(k: Buildings.Kit, size: Vector3) -> void:
+	var front := -size.z / 2
+	k.box(Vector3(0, 5.0, front - 0.035), Vector3(10, 1.2, 0.05), "pump_cream", false)
+	Buildings.painted_sign(k, "warehouse-seven-name", "ALMACEN 7", Vector3(0, 5.0, front - 0.065), 0.025)
+	for side in [-1, 1]:
+		# Door-jamb paint and low scuffs, with no step or barrier at the threshold.
+		k.box(Vector3(side * 1.7, 1.2, front - 0.025), Vector3(0.18, 2.4, 0.035), "pump_cream", false)
+		for mark in 4:
+			k.box(Vector3(side * 1.7, 0.3 + mark * 0.55, front - 0.05), Vector3(0.18, 0.15, 0.015), "black", false)
+		for rib in 4:
+			var x: float = side * (3.5 + rib * 3.0)
+			k.box(Vector3(x, size.y / 2, front - 0.025), Vector3(0.045, size.y - 0.3, 0.035), "metal_rust", false)
+		k.box(Vector3(side * 8, 0.3, front - 0.025), Vector3(8, 0.3, 0.025), "metal_rust", false)
+
+
+## Hand-authored rural scenery, contained by each existing storage shell.
+## These stacks and furnishings are scenery, not stock or new interaction points.
+static func rural_dressing(k: Buildings.Kit, stash: Dictionary, size: Vector3) -> void:
+	var front := -size.z / 2
+	if stash.id == "barn" and stash.kind == "barn":
+		k.box(Vector3(0, 3.65, front - 0.04), Vector3(7, 0.8, 0.05), "pump_cream", false)
+		Buildings.painted_sign(k, "finca-morales-name", "FINCA MORALES", Vector3(0, 3.65, front - 0.075), 0.018)
+		# Bound hay stacks sit along the left wall, leaving the main aisle open.
+		for z in [-5.0, -2.0]:
+			var at := Vector3(-size.x / 2 + 1.4, 0.65, z)
+			k.box(at, Vector3(2, 1.2, 1.8), "pump_cream")
+			for band in [-0.55, 0.55]:
+				k.box(at + Vector3(band, 0, -0.91), Vector3(0.04, 1.2, 0.025), "wood", false)
+				k.box(at + Vector3(band, 0.61, 0), Vector3(0.04, 0.025, 1.8), "wood", false)
+			k.box(at + Vector3(0, 0, -0.92), Vector3(2, 0.035, 0.02), "wood", false)
+		var timber := Vector3(size.x / 2 - 1.3, 0.55, 0)
+		k.box(timber, Vector3(1.2, 1, 4.8), "wood")
+		for row in 4:
+			k.box(timber + Vector3(0, -0.36 + row * 0.24, -2.41), Vector3(1.2, 0.025, 0.025), "black", false)
+	elif stash.id == "quarry" and stash.kind == "shed":
+		var bench := Vector3(-size.x / 2 + 1.6, 0, size.z / 2 - 1.45)
+		k.box(bench + Vector3(0, 0.65, 0), Vector3(2.4, 1.2, 1.2), "wood")
+		Buildings.workshop_tools(k, bench)
+		k.box(Vector3(-3, 2.05, front - 0.04), Vector3(1.6, 0.45, 0.05), "pump_cream", false)
+		Buildings.painted_sign(k, "quarry-name", "CANTERA", Vector3(-3, 2.05, front - 0.075), 0.0075)
+		var scrap := Vector3(size.x / 2 - 1.2, 0.35, 0)
+		k.box(scrap, Vector3(1.2, 0.6, 2), "metal_rust")
+		for row in 3:
+			k.box(scrap + Vector3(0, -0.15 + row * 0.18, -1.015), Vector3(1.2, 0.025, 0.025), "black", false)
+	elif stash.id == "camp" and stash.kind == "camp":
+		var shelf := Vector3(-size.x / 2 + 0.6, 0.6, 0.3)
+		k.box(shelf, Vector3(0.65, 1.1, 2), "wood")
+		for row in 2:
+			k.box(shelf + Vector3(0.335, -0.3 + row * 0.55, 0), Vector3(0.02, 0.09, 2), "metal_rust", false)
+			for z in [-0.6, 0.3]:
+				k.box(shelf + Vector3(0.34, -0.1 + row * 0.55, z), Vector3(0.02, 0.28, 0.45), "drum_sage", false)
+		# One solid cot envelope, away from the doorway and rear logistics desk.
+		var cot := Vector3(size.x / 2 - 0.85, 0.325, 0.4)
+		k.box(cot, Vector3(0.85, 0.5, 1.8), "wood")
+		k.box(cot + Vector3(0, 0.26, 0), Vector3(0.82, 0.05, 1.76), "green", false)
+		k.box(cot + Vector3(0, 0.31, 0.6), Vector3(0.65, 0.05, 0.35), "pump_cream", false)
+		k.box(Vector3(-1.65, 1.75, front - 0.04), Vector3(1.3, 0.45, 0.05), "wood", false)
+		Buildings.painted_sign(k, "la-selva-name", "LA SELVA", Vector3(-1.65, 1.75, front - 0.075), 0.006)
+		# Patches sit on the existing canvas side wall, below the pitched roof.
+		for z in [-1.4, 1.2]:
+			k.box(Vector3(-size.x / 2 - 0.015, 1.5, z), Vector3(0.025, 0.55, 0.7), "drum_sage", false)
+
 
 static func available(stash: Dictionary) -> bool:
 	return not stash.is_empty() and not bool(stash.get("burned", false))
@@ -75,3 +144,4 @@ static func show_state(node: Node3D, stash: Dictionary) -> void:
 		sign.position = area.position + Vector3(0, 0.7, 0)
 	sign.text = "STORAGE / WORKSHOP" if usable else "BURNED — STORAGE UNAVAILABLE"
 	sign.modulate = Color(0.8, 0.76, 0.65) if usable else Color(0.8, 0.3, 0.2)
+
