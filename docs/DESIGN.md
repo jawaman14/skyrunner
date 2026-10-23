@@ -1597,8 +1597,9 @@ ownership: for stock, "hot" also means "yours and can be taken", and only stock 
 ### 51.2 Where stock comes from
 
 1. **Ordered from a contact** (a crew or dealer: the Morettis, Los Cuervos, the Sunrise Collective, Manny's dealers). You place an
-   order and pay upfront at the market-board price (section 49), then **collect it in person** from a named person at a place
-   within a window. A late pickup loses the lot or costs trust. This is the same flow as the gun dealer (section 50, D-61), which
+   order and pay upfront at the market-board price (section 49), then **collect it** from a named person at a place
+   within a window: in person, or by a worker or crew pilot given the desk's `collect` order (arrival and collection belong to whoever is
+   assigned, and the lot loads into that carrier). A late pickup loses the lot or costs trust. This is the same flow as the gun dealer (section 50, D-61), which
    replaces the job menu's "sell / keep guns" toggle.
 2. **Imported** through the port, Isla Soberana or a cove drop.
 3. **Produced** at your own stash works and rackets; output waits at the site until collected.
@@ -1623,7 +1624,9 @@ stock) stay as derived sums so the market and the street keep working.
 | Hidden stash | little | slow to be found |
 | Aircraft or truck | what it carries | traced by tail number or plate; exposed to radar, patrols and rival ambushes while it moves |
 
-A **stock ledger** on the boss desk lists every lot: place, grade, age, heat, and what it would sell for now.
+A **stock ledger** on the boss desk lists every lot: place, grade, age, heat, and what it would sell for now **at a named buyer and market**
+(the best open quote, with the buyer shown; a lot has no single value, since quotes differ by buyer, market and grade, and grade and
+provenance decide who will take it).
 
 ### 51.5 Selling and cleaning the cash
 
@@ -1638,7 +1641,9 @@ balances become ledger accounts rather than a second book. Slice 5 adds what is 
   in an 8-hour campaign);
 - front tiers bought upfront, each with a throughput cap that rises with the price;
 - a **delay** before cleaned cash arrives;
-- over-cap deposits and a large dirty balance raise case-file heat.
+- the cap is **soft** up to a hard ceiling: deposits up to the nightly allowance are clean of extra heat; deposits between the allowance and the
+  ceiling (1.5 times it, draft) go through but raise case-file heat; above the ceiling they are refused, as `HQ.Org._r_launder` clamps today.
+  A large dirty balance raises heat too.
 
 The shape is borrowed from Schedule I; the prices and caps are set by balance runs in this game's money, not copied.
 
