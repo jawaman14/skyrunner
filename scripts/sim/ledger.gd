@@ -79,11 +79,23 @@ func boundary() -> Dictionary:
 	return out
 
 
-## Accounts that are below zero and may not be: only outside:* and an org's main account (<org>:safe) may owe.
+## A loaded save holds `value` in `account`: book the difference as an opening from outside:start, not as an economic event.
+func restate(account: String, value: float, t := 0.0) -> void:
+	if not balances.has(account):
+		track(account, 0.0, 0.0, t)
+	var d := value - balance(account)
+	if d > 0.0:
+		transfer("outside:start", account, d, "open", "system", t)
+	elif d < 0.0:
+		transfer(account, "outside:start", -d, "open", "system", t)
+
+
+## Accounts that are below zero and may not be: only outside:* and an org's main account (<org>:safe) may owe. A war chest too, because
+## upkeep and fuel debit it unconditionally today (spec invariant 2: unconditional costs keep working).
 func overdrawn() -> Array:
 	var bad := []
 	for a in balances:
 		var s := str(a)
-		if balance(s) < -0.005 and not s.begins_with(OUTSIDE) and not s.ends_with(":safe"):
+		if balance(s) < -0.005 and not s.begins_with(OUTSIDE) and not s.ends_with(":safe") and not s.ends_with(":war-chest"):
 			bad.append(s)
 	return bad
