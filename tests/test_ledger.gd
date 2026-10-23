@@ -79,6 +79,28 @@ func test_a_loaded_session_opens_at_its_saved_money_with_no_phantom_inflow() -> 
 	s.dispose()
 
 
+func test_a_restate_is_an_opening_not_an_inflow() -> void:
+	var l := Ledger.new()
+	l.track("rival:war-chest", 20000.0, 20000.0)
+	l.restate("rival:war-chest", 12000.0)
+	check_eq(l.balance("rival:war-chest"), 12000.0)
+	check_eq(float(l.boundary().get(Ledger.UNATTRIBUTED, 0.0)), 0.0, "no unattributed flow")
+	check(absf(l.total()) < 0.001, "conservation")
+	l.transfer("rival:war-chest", "outside:market", 99999.0, "fuel")
+	check_eq(l.overdrawn(), [], "a war chest may owe, as the unconditional upkeep needs")
+
+
+func test_the_rival_war_chest_opens_at_its_starting_cash() -> void:
+	var s := Session.new({"seed": 1})
+	s.enable_system("ground_war")
+	if s.ground == null:
+		s.dispose()
+		return
+	check_eq(s.ledger.balance("rival:war-chest"), 20000.0, "opened at the starting cash")
+	check_eq(float(s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0)), 0.0, "no phantom inflow")
+	s.dispose()
+
+
 func test_the_session_wrap_keeps_values_and_books_every_change() -> void:
 	var s := Session.new({"seed": 1})
 	check_eq(s.ledger.balance("police:budget"), s.law_funds, "the budget is open from construction")
