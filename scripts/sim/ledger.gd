@@ -6,11 +6,11 @@ extends RefCounted
 
 const OUTSIDE := "outside:"
 const UNATTRIBUTED := "outside:unattributed"
-const LOG_MAX := 20000  ## shortcut: the oldest rows are dropped past this, so rebuild() is only exact while `dropped` is 0; F-3 saves the log.
+const LOG_MAX := 20000  ## the oldest rows are folded into `opening` past this, so rebuild() stays exact; F-3 saves both.
 
 var log: Array = []  ## {id, t, from, to, amount, reason, actor, ref}
 var balances := {}
-var dropped := 0
+var opening := {}  ## balances of the rows trimmed off the front of the log
 var _serial := 0
 
 
@@ -25,8 +25,9 @@ func transfer(from: String, to: String, amount: float, reason: String, actor := 
 	_serial += 1
 	log.append({"id": _serial, "t": t, "from": from, "to": to, "amount": amount, "reason": reason, "actor": actor, "ref": ref})
 	if log.size() > LOG_MAX:
-		log.pop_front()
-		dropped += 1
+		var old: Dictionary = log.pop_front()
+		opening[old.from] = float(opening.get(old.from, 0.0)) - float(old.amount)
+		opening[old.to] = float(opening.get(old.to, 0.0)) + float(old.amount)
 	balances[from] = balance(from) - amount
 	balances[to] = balance(to) + amount
 	return true
@@ -55,9 +56,9 @@ func total() -> float:
 	return sum
 
 
-## What the cache should equal: the balances rebuilt from the log (exact only while nothing was dropped).
+## What the cache should equal: the opening balances plus the rows still in the log.
 func rebuild() -> Dictionary:
-	var out := {}
+	var out := opening.duplicate()
 	for row in log:
 		out[row.from] = float(out.get(row.from, 0.0)) - float(row.amount)
 		out[row.to] = float(out.get(row.to, 0.0)) + float(row.amount)
