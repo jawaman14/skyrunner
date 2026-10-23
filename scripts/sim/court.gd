@@ -622,6 +622,7 @@ func update(dt: float) -> void:
 		case_.stage = "pretrial"
 		case_.bail_posted = "lawyer"
 		case_.bail = 0
+		case_.charges.erase("bail_jumping")  # a fugitive charge for a hearing counsel now attends
 		if sess.phase == "custody":
 			sess.phase = "busted"  # ENTER walks them out
 	if PILOT_FREE and str(case_.stage) == "prison":  # the sentence was served in the old way: release them now

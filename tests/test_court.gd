@@ -482,7 +482,9 @@ func test_a_legacy_fugitive_case_becomes_the_lawyers_pretrial() -> void:
 	var s := _sess()
 	var c := _arrest(s)
 	c.stage = "fugitive"
+	c.charges.append("bail_jumping")
 	s.court.update(0.1)
+	check(not c.charges.has("bail_jumping"), "and the bail-jumping charge goes with it")
 	check_eq(c.stage, "pretrial", "a fugitive is not a thing for a free pilot")
 
 
