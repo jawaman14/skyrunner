@@ -7,9 +7,10 @@ func test_a_transfer_is_one_debit_and_one_credit() -> void:
 	check(l.transfer("org:safe", "biz-1:till", 50.0, "wages", "org"), "booked")
 	check_eq(l.balance("org:safe"), -50.0)
 	check_eq(l.balance("biz-1:till"), 50.0)
-	check(not l.transfer("a", "a", 5.0, "x"), "the same account both sides is refused")
-	check(not l.transfer("a", "b", 0.0, "x"), "a zero amount is refused")
+	check(not l.transfer("a", "a", 5.0, "fee"), "the same account both sides is refused")
+	check(not l.transfer("a", "b", 0.0, "fee"), "a zero amount is refused")
 	check(not l.transfer("a", "b", 5.0, ""), "no reason is refused")
+	check(not l.transfer("a", "b", 5.0, "wagse"), "a reason off the closed list is refused")
 	check_eq(l.log.size(), 1, "refusals leave no row")
 	check(absf(l.total()) < 0.001, "conservation")
 
@@ -28,11 +29,21 @@ func test_track_opens_at_the_old_value_then_books_the_difference() -> void:
 func test_trimming_the_log_keeps_rebuild_exact() -> void:
 	var l := Ledger.new()
 	for i in Ledger.LOG_MAX + Ledger.TRIM + 50:
-		l.transfer("a", "b", 1.0 + (i % 7), "x")
+		l.transfer("a", "b", 1.0 + (i % 7), "fee")
 	check(l.log.size() <= Ledger.LOG_MAX + Ledger.TRIM and l.log.size() >= Ledger.LOG_MAX, "the log stays near its cap")
 	var got := l.rebuild()
 	for acct in l.balances:
 		check(absf(float(got.get(acct, 0.0)) - l.balance(acct)) < 0.001, "%s rebuilds to the cache" % acct)
+
+
+func test_a_loaded_session_opens_at_its_saved_money_with_no_phantom_inflow() -> void:
+	var s := Session.new({"seed": 1, "money": 10000})
+	check_eq(s.ledger.balance("org:safe"), 10000.0, "opened at the saved value")
+	check_eq(float(s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0)), 0.0, "nothing booked as an unattributed inflow")
+	var got := s.ledger.rebuild()
+	for acct in s.ledger.balances:
+		check(got.has(acct), "%s is listed by rebuild" % acct)
+	s.dispose()
 
 
 func test_the_session_wrap_keeps_values_and_books_every_change() -> void:

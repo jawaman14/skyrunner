@@ -19,8 +19,10 @@ func _init(opts := {}) -> void:
 		world = World.new()
 	map_seed = world.map.map_seed
 	seed = opts.get("seed", 1)
-	money = opts.get("money", START_MONEY)
-	ledger.track("police:budget", law_funds, law_funds, time)  # open the budget now, as money opens with its first assignment
+	var start_money = opts.get("money", START_MONEY)
+	ledger.track("org:safe", start_money, start_money, time)  # open at what the game starts (or loads) with, not at START_MONEY plus a phantom adjustment
+	money = start_money
+	ledger.track("police:budget", law_funds, law_funds, time)
 	owned = set_of(opts.get("owned", ["c172p"]))
 	aircraft_key = opts.get("aircraft_key", "c172p")
 	location = opts.get("location", START_FIELD)
