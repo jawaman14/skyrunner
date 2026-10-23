@@ -47,7 +47,7 @@ Run the game with no arguments and the **lobby** opens. It sets the same things 
 | Choice | What it is |
 |---|---|
 | **Solo** | You are the pilot; the AI plays every other seat. |
-| **Flying lessons (Costa Brava)** | Four flying lessons on Costa Brava: mail runs, a favour for Manny, airdrops, the long legs. |
+| **Flying lessons (Costa Brava)** | Four flying lessons on Costa Brava: mail runs, a favour for Benny, airdrops, the long legs. |
 | **Co-op: friends crew for you** | You host; friends take the co-pilot, spotter, boat, boss, lieutenant or fixer seats. |
 | **Versus** | Humans on both sides; the AI fills the empty seats. |
 | **Unlocks: Story / Open** | *Story* (the default): twelve chapters, 1979 to 1988, each opening part of the game. *Open*: every faction and system from the first minute, and a $10,000 float. |
@@ -126,6 +126,7 @@ Every flight key and gamepad button can be rebound (**F8**). The keys below are 
 | G / T | Flaps down / up |
 | [ / ] | Pitch trim |
 | B or Space | Brakes |
+| Backspace | Back up slowly (1.5 m/s) when stopped with the throttle at idle, on an airfield; a way out when stuck |
 | Y | Mouse yoke on / off (mouse position is the stick) |
 | C | Camera: chase, cockpit, tower |
 | M | The big map (the island chart); the round radar in the corner turns with your nose, `+` / `-` change its range, Shift+M holds north up |
@@ -216,6 +217,8 @@ Your own recordings go in `user://radio/`.
 | Ctrl+F2 | Developer access overlay: functional footprints, entrances, approaches, loading areas, connector candidates and collision shapes |
 | F3 | Hand the aircraft to the AI (so you can sit at another desk) / take it back |
 | F4 | The multiplayer menu: games on your network, the table (mute, remove, seats, chat), voice settings |
+| Ctrl+F5 | Debug, solo play only: skip the story to the next chapter |
+| Ctrl+F6 | The test menu (solo play only, never at a shared table): add $100,000 or $1,000,000, fill every stash house, clear or raise the heat, free caught workers, fill the tank, skip a chapter. ENTER runs the highlighted row, ESC closes |
 | F6 | Performance overlay |
 | F7 | The radio on / off in the aircraft (`,` and `.` tune): the same real 1979-86 broadcasts as the car's, on one dial |
 | F8 | Controls and settings: rebind keys and axes, the colour-safe palette |

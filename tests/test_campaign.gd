@@ -25,8 +25,8 @@ func test_objectives_advance_chapters() -> void:
 	_emit(s, "job_delivered", {"pay": 5200, "hot": false})
 	_emit(s, "landed", {"code": "EGL"})
 	s.update(1.0 / 60, T.inp())
-	check(camp.index == 1 and camp.chapter.title == "A Favor for Manny", "chapter 2")
-	check(Py.any(s.boards[s.location], func(j): return j.hot() and "Manny" in j.title), "Manny's job posted")
+	check(camp.index == 1 and camp.chapter.title == "A Favor for Benny", "chapter 2")
+	check(Py.any(s.boards[s.location], func(j): return j.hot() and "Benny" in j.title), "Benny's job posted")
 	check(s.features.has("contraband"))
 
 

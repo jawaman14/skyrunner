@@ -389,3 +389,33 @@ func test_migrate_runs_each_step_in_order_and_refuses_what_it_cannot() -> void:
 	StrategicSave.migrate(src, steps, 3)
 	check(not src.has("a"), "the caller's dictionary is not edited")
 	check_eq(StrategicSave.migrate({"v": StrategicSave.VERSION, "time": 7.0}).time, 7.0, "a current save passes through")
+
+
+## True when `got` has everything `want` has (a loader may add a zero entry for a good the save never listed).
+func _holds(got, want) -> bool:
+	if want is Dictionary:
+		if not got is Dictionary:
+			return false
+		for k in want:
+			if not got.has(k) or not _holds(got[k], want[k]):
+				return false
+		return true
+	return got == want
+
+
+## strategic_save_v1.json is a v1 save written once by this code and never regenerated: when VERSION moves on, a step in
+## StrategicSave.STEPS must carry it forward, and every block in it must come back as it was written.
+func test_a_frozen_v1_save_restores_every_block() -> void:
+	var f := FileAccess.open("res://tests/fixtures/strategic_save_v1.json", FileAccess.READ)
+	var frozen: Dictionary = JSON.parse_string(f.get_as_text())
+	f.close()
+	check_eq(int(frozen.v), 1, "the fixture is a v1 save")
+	var s := Session.new(_opts())
+	_quiet(s)
+	StrategicSave.restore(s, frozen)
+	var back: Dictionary = JSON.parse_string(JSON.stringify(StrategicSave.capture(s)))
+	back["v"] = 1  # a later VERSION writes its own number; the blocks are what is compared
+	for block in frozen:
+		check(back.has(block), "block %s comes back" % block)
+		check(_holds(back.get(block), frozen[block]), "block %s is as it was written" % block)
+	s.dispose()
