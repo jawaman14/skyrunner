@@ -33,6 +33,7 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
          Flight assist (ESC menu): with no key held the wings level and the pitch holds; taps are gentle
          R/F or PGUP/PGDN throttle (hold; a tap is a few %)   Z ramp to full   X ramp to idle   (Z Z / X X: instant)
          G flaps down   T flaps up   [ / ] pitch trim   B or SPACE brakes
+         BACKSPACE back up slowly (1.5 m/s): stopped, throttle at idle, on an airfield
          Y toggle mouse yoke (mouse position = stick)   joystick / gamepad work too
          Air look: hold RIGHT mouse and drag while airborne (independent of Y)
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
@@ -219,7 +220,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	car_dash = CarDash.new()
 	car_dash.visible = false
 	ui.add_child(car_dash)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu], ["dealer", DealerMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu], ["dealer", DealerMenu], ["cheat", CheatMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
@@ -406,6 +407,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 		if k == KEY_F5 and ev.ctrl_pressed and not ev.echo and s.story != null and server == null:  # debug: solo only, never at a shared table
 			s.story.debug_skip_chapter()
 			s.say("Debug: skipped to chapter %d." % s.story.chapter.num)
+			get_viewport().set_input_as_handled()
+			return
+		if k == KEY_F6 and ev.ctrl_pressed and not ev.echo and server == null:  # the owner's test menu: solo only, never at a shared table
+			_open("cheat")
 			get_viewport().set_input_as_handled()
 			return
 		var m := _active_menu()
@@ -1486,7 +1491,7 @@ func _process(delta: float) -> void:
 		_car_race()
 	if m == null:
 		hud.refresh()
-	elif not s.parked:
+	elif not s.parked and not m is CheatMenu:  # the test menu stays open in the air ("fill the tank wherever it is")
 		m.close()
 	elif _frame % 10 == 0:
 		m.refresh()
