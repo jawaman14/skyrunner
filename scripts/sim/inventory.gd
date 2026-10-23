@@ -40,6 +40,29 @@ func move(lot_id: int, lb: float, to: String, reason: String, actor := "system",
 	return int(part.id)
 
 
+## The F-4 wrap: make `at` hold `value` pounds of `good` for a change the old code made directly. A shortfall arrives from
+## outside:unattributed and an excess leaves to it (oldest lots first), so the unattributed flow is the to-do list for the later slices.
+func reconcile(at: String, good: String, value: float, t := 0.0) -> void:
+	if at == "" or at.begins_with(OUTSIDE):
+		return
+	var diff := value - stock(at, good)
+	if diff > 0.0001:
+		add(good, diff, at, "unattributed", "", 0.5, 0.0, t)
+	elif diff < -0.0001:
+		var owed := -diff
+		var ids := []
+		for id in lots:
+			if lots[id].at == at and lots[id].good == good:
+				ids.append(id)
+		ids.sort()
+		for id in ids:
+			if owed <= 0.0001:
+				break
+			var take := minf(owed, float(lots[id].lb))
+			move(id, take, OUTSIDE + "unattributed", "adjust", "system", t)
+			owed -= take
+
+
 ## Pounds of `good` held at a location (outside:* counts too, as the loss account).
 func stock(at: String, good: String) -> float:
 	var sum := 0.0

@@ -27,6 +27,38 @@ func test_a_part_splits_the_lot_and_keeps_its_traits() -> void:
 	check_eq(inv.violations(), [], "no breach")
 
 
+func test_reconcile_brings_a_location_to_a_number_and_books_the_difference() -> void:
+	var inv := Inventory.new()
+	inv.reconcile("stash:a", "cocaine", 80.0)
+	check_eq(inv.stock("stash:a", "cocaine"), 80.0)
+	inv.reconcile("stash:a", "cocaine", 50.0)
+	check_eq(inv.stock("stash:a", "cocaine"), 50.0, "an excess leaves")
+	inv.reconcile("stash:a", "cocaine", 65.0)
+	check_eq(inv.stock("stash:a", "cocaine"), 65.0, "a shortfall arrives")
+	check_eq(inv.held("cocaine"), inv.net_inflow("cocaine"), "conservation holds")
+	check_eq(inv.net_inflow("cocaine"), 65.0)
+	check_eq(inv.violations(), [], "no breach")
+	inv.reconcile("stash:a", "cocaine", 0.0)
+	check_eq(inv.held("cocaine"), 0.0)
+
+
+func test_a_logistics_session_keeps_its_inventory_in_step_with_the_stash_stock() -> void:
+	var s := Session.new({"seed": 1})
+	s.enable_system("trade")
+	s.enable_system("logistics")
+	if s.logistics == null:
+		s.dispose()
+		return
+	var id: String = s.stash_net.stashes[0].id
+	s.logistics.stock[id]["cocaine"] = 120.0
+	s.logistics.update(6.0)
+	check_eq(s.inventory.stock("stash:" + id, "cocaine"), 120.0, "the inventory follows the stock")
+	s.logistics.stock[id]["cocaine"] = 70.0
+	s.logistics.update(6.0)
+	check_eq(s.inventory.stock("stash:" + id, "cocaine"), 70.0, "and a loss")
+	s.dispose()
+
+
 func test_conservation_per_good_through_the_boundary() -> void:
 	var inv := Inventory.new()
 	var id := inv.add("cocaine", 100.0, "a")
