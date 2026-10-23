@@ -16,7 +16,7 @@ func _first_missions() -> bool:
 func _crash(reason: String) -> void:
 	phase = "crashed"
 	var fee := 0 if _first_missions() else maxi(2500, int(spec.price * 0.12))
-	money -= fee
+	move_money(-fee, "outside:market", "repair")
 	var lost := active_jobs.size()
 	last_outcome = "CRASH: %s. Repairs -$%s." % [reason, Py.money(fee)] + (" %d job(s) lost." % lost if lost else "")
 	say(last_outcome)
@@ -46,7 +46,7 @@ func _bust(how: String) -> void:
 		return  # a very good lawyer
 	phase = "busted"
 	var fine := 1500 + int(maxi(0, money) * 0.25)
-	law_funds += 3000.0  # the aircraft and the cash, forfeited
+	move_law_funds(3000.0, "outside:state", "forfeiture")  # the aircraft and the cash, forfeited
 	for j in active_jobs:
 		if j.hot():
 			econ.record_seizure(Economy.good_of(j), Economy.job_market(j))
@@ -54,7 +54,7 @@ func _bust(how: String) -> void:
 	if upgrades["runner"].has("strip_guards"):
 		fine = int(fine * 1.5)  # an armed-bust case
 		how += ", with the armed guards"
-	money -= fine
+	move_money(-fine, "outside:state", "fine")
 	last_outcome = "BUSTED (%s). Fine and impound -$%s. Cargo seized." % [how, Py.money(fine)]
 	say(last_outcome)
 	police.score["busts"] += 1
@@ -242,7 +242,7 @@ func _update_stashes(dt: float) -> void:
 			say("Truck in at %s: %s into the armoury here" % [st.name, Arsenal.describe(t.weapons)])
 			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": 0, "dest": t.stash, "hot": true})
 		elif r[1] == "delivered":
-			money += t.pay
+			move_money(t.pay, "outside:buyers", "delivery")
 			econ.record_delivery("guns" if not t.weapons.is_empty() else "cocaine", st.zone)
 			say("Truck in at %s: +$%s" % [st.name, Py.money(t.pay)])
 			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": t.pay, "dest": t.stash, "hot": true})
@@ -254,7 +254,7 @@ func _update_stashes(dt: float) -> void:
 			if Investigation.ENABLED and investigation != null:
 				investigation.heat_district(str(st.get("zone", "")), Investigation.DISTRICT_SEIZED)
 			law_say("Truck stopped on the road to %s: %d crates seized" % [st.name, t.items])
-			law_funds += 2000.0 + 300.0 * t.items
+			move_law_funds(2000.0 + 300.0 * t.items, "outside:state", "forfeiture")
 			econ.record_seizure("guns" if not t.weapons.is_empty() else "cocaine", st.zone)
 			_seize_weapons(t.weapons, "the truck")
 			police.case("runner").suspicion = minf(100.0, police.case("runner").suspicion + 15.0)
@@ -340,7 +340,7 @@ func _raid(id: String):
 		var ls: Dictionary = stash_net.get_stash(id)
 		ls.heat = 0.0
 		ls.intel *= 0.5
-		law_funds += 500.0
+		move_law_funds(500.0, "outside:state", "forfeiture")
 		law_say("Raid on %s: empty. Somebody warned them." % ls.name)
 		say("The lookout at %s saw the raid coming: the product was moved. The house is cold for now." % ls.name)
 		bus.emit("raid_foiled", time, "", ["runner", "law"], {"stash": id})
@@ -360,7 +360,7 @@ func _raid(id: String):
 	var taken := stash_net.trucks_to(id)
 	for t in taken:
 		stash_net.trucks.erase(t)
-	law_funds += 2000.0 + 1500.0 * taken.size()
+	move_law_funds(2000.0 + 1500.0 * taken.size(), "outside:state", "forfeiture")
 	econ.record_seizure("cocaine", st.zone)
 	if Investigation.ENABLED and investigation != null:
 		investigation.heat_district(str(st.zone), Investigation.DISTRICT_RAIDED)
@@ -425,7 +425,7 @@ func _complete_delivery(job: Jobs.Job, af: Airfield) -> void:
 	if job.defector and island != null:
 		island.defected(job)
 	var g := _grade(job)
-	money += g[0]
+	move_money(g[0], "outside:buyers", "delivery")
 	if job.hot():
 		econ.record_delivery(Economy.good_of(job), Economy.job_market(job))
 	active_jobs.erase(job)

@@ -102,7 +102,7 @@ func buy(id: String, by_ai := false) -> String:
 	if err != "":
 		return err
 	var sp := spec(id)
-	sess.money -= int(sp.price)
+	sess.move_money(-int(sp.price), "outside:market", "purchase", "org")
 	spent += int(sp.price)
 	_serial += 1
 	owned.append({"serial": _serial, "id": id, "bought": sess.time})
@@ -125,7 +125,7 @@ func sell(serial: int) -> String:
 	var sp := spec(str(v.id))
 	var back := int(float(sp.price) * RESALE)
 	owned.remove_at(i)
-	sess.money += back
+	sess.move_money(back, "outside:market", "resale", "org")
 	if active == serial:
 		active = 0
 		for o in owned:
