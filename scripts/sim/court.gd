@@ -77,6 +77,7 @@ var history: Array = []  ## closed cases: {verdict, years, t}
 var mandatory := false  ## the Anti-Drug Abuse Act (1986): mandatory minimums
 var prosecutor_ai := true  ## no human in the prosecutor's chair
 var forfeit_pending := false  ## convicted: the aircraft goes when it is next parked
+var forfeit_key := ""  ## which aircraft was sentenced (the player may switch before it is parked)
 var _serial := 0
 
 
@@ -156,7 +157,7 @@ func arrest(how: String) -> void:
 		fam.lawyer = ""
 	case_.bail = _bail_amount()
 	sess.police.score["busts"] += 1
-	sess.law_funds += 3000.0  # the aircraft impounded, the cash on board
+	sess.move_law_funds(3000.0, "outside:state", "forfeiture")  # the aircraft impounded, the cash on board
 	sess.police.reset(false)
 	if PILOT_FREE:
 		case_.stage = "pretrial"  # no bail hearing, no custody: the lawyer attends in the pilot's place
@@ -232,7 +233,7 @@ func post_bail(how: String) -> String:
 	if how in ["cash", "bond"]:
 		if sess.money < amt:
 			return "Need $%s." % Py.money(amt)
-		sess.money -= amt
+		sess.move_money(-amt, "outside:state", "fee")
 		case_.bail_posted = how
 		case_.stage = "pretrial"
 		_say("Bail posted (%s, $%s). You're out - don't miss the trial in %d min." % [
@@ -257,7 +258,7 @@ func hire(tier: String) -> String:
 		return "You already have someone as good."
 	if sess.money < int(l.cost):
 		return "%s wants $%s up front." % [l.name, Py.money(int(l.cost))]
-	sess.money -= int(l.cost)
+	sess.move_money(-int(l.cost), "outside:market", "fee")
 	case_.lawyer = tier
 	case_.lawyer_honest = true
 	_say("%s takes the case (%s)." % [l.name, l.blurb], "The pilot has retained %s" % l.name)
@@ -280,7 +281,7 @@ func motion(kind: String) -> String:
 	var cost: int = MOTION_COST[kind]
 	if sess.money < cost:
 		return "Need $%s for the filing." % Py.money(cost)
-	sess.money -= cost
+	sess.move_money(-cost, "outside:state", "fee")
 	case_.motions.append(kind)
 	var l := lawyer()
 	match kind:
@@ -322,7 +323,7 @@ func tamper() -> String:
 		return "There's no witness to lean on."
 	if sess.money < 5000:
 		return "The Family wants $5,000 for the favour."
-	sess.money -= 5000
+	sess.move_money(-5000, "outside:family", "bribe")
 	case_.tampered = true
 	if rng.random() < 0.35:
 		_charge("obstruction")
@@ -349,7 +350,7 @@ func bribe_judge() -> String:
 		return "%s isn't that kind of judge." % case_.judge.name
 	if sess.money < 20000:
 		return "It takes $20,000, in cash."
-	sess.money -= 20000
+	sess.move_money(-20000, "outside:state", "bribe")
 	case_.bribed = true
 	var p := 0.3 + (0.15 if sess.upgrades["law"].has("undercover") else 0.0)
 	if rng.random() < p:
@@ -394,7 +395,7 @@ func cooperate() -> String:
 	if sess.ground != null:
 		for q in sess.ground.of("org"):
 			q.morale = maxf(0.2, q.morale - 0.2)
-	sess.law_funds += 5000.0
+	sess.move_law_funds(5000.0, "outside:state", "forfeiture")
 	_say("You signed a cooperation agreement. The task force has the stash houses, the strips, the names. The Family knows.",
 		"The pilot is cooperating: %d stash houses, the organisation's strips and names (+$5,000)" % n)
 	sess.bus.emit("cooperating", sess.time, "", ["runner", "law"], {"stashes": n})
@@ -410,7 +411,7 @@ func appeal() -> String:
 		return "The appeal was heard."
 	if sess.money < 8000:
 		return "An appeal costs $8,000."
-	sess.money -= 8000
+	sess.move_money(-8000, "outside:state", "fee")
 	case_.appealed = true
 	if rng.random() < 0.15 + 0.4 * float(lawyer().skill):
 		_say("The appeals court REVERSED: the conviction is thrown out. You're free.", "The pilot's conviction was reversed on appeal")
@@ -442,7 +443,7 @@ func immunity() -> String:
 		return "Already done."
 	if sess.law_funds < 4000.0:
 		return "Need $4,000."
-	sess.law_funds -= 4000.0
+	sess.move_law_funds(-4000.0, "outside:market", "fee")
 	case_.immunity = true
 	case_.witnesses = int(case_.witnesses) + 1
 	case_.evidence = minf(100.0, float(case_.evidence) + 10.0)
@@ -457,11 +458,11 @@ func forfeiture() -> String:
 		return "The accounts are already frozen."
 	if sess.law_funds < 3000.0:
 		return "Need $3,000."
-	sess.law_funds -= 3000.0
+	sess.move_law_funds(-3000.0, "outside:market", "fee")
 	var k := int(maxi(0, sess.money) * 0.2)
-	sess.money -= k
+	sess.move_money(-k, "outside:state", "forfeiture")
 	case_.frozen = k
-	sess.law_funds += float(k) * 0.8  # equitable sharing
+	sess.move_law_funds(float(k) * 0.8, "outside:state", "forfeiture")  # equitable sharing
 	_say("The bank records were subpoenaed: $%s seized in a civil forfeiture." % Py.money(k),
 		"Civil forfeiture: $%s of the pilot's money seized (80%% to the task force)" % Py.money(k))
 	return ""
@@ -476,7 +477,7 @@ func add_conspiracy() -> String:
 		return "Not enough evidence for conspiracy yet (%d%%)." % int(case_.evidence)
 	if sess.law_funds < 3000.0:
 		return "Need $3,000."
-	sess.law_funds -= 3000.0
+	sess.move_law_funds(-3000.0, "outside:market", "fee")
 	_charge("conspiracy")
 	_say("A superseding indictment: conspiracy to import added.", "Conspiracy added to the pilot's indictment")
 	return ""
@@ -544,7 +545,7 @@ func _trial() -> void:
 		_say("You missed the trial. A warrant is out; the bail is forfeit. Stay out of their reach.",
 			"The pilot failed to appear: fugitive warrant issued, bail forfeited")
 		if case_.bail_posted == "cash":
-			sess.law_funds += float(case_.bail) * 0.5
+			sess.move_law_funds(float(case_.bail) * 0.5, "outside:state", "forfeiture")
 		return
 	var x := _trial_x(rng.gauss(0.0, 0.8))
 	if absf(x) < 0.4 and rng.random() < 0.35:
@@ -554,7 +555,7 @@ func _trial() -> void:
 		_say("HUNG JURY. A mistrial - the government will try again in 10 minutes.", "Hung jury in the pilot's case: retrial set")
 		return
 	if case_.bail_posted == "cash":
-		sess.money += int(case_.bail)  # you showed up: the court returns it
+		sess.move_money(int(case_.bail), "outside:state", "refund")  # you showed up: the court returns it
 	if x > 0.0 and rng.random() < 1.0 / (1.0 + exp(-x * 2.0)):
 		_sentence("convicted", _expected_years(), 5000 * _weight())
 	else:
@@ -569,12 +570,13 @@ func _sentence(how: String, years: float, fine: int) -> void:
 	var mins := 0.0 if PILOT_FREE else clampf(years * MIN_PER_YEAR, 0.0, MAX_PRISON_MIN)
 	var share := 0.3 if how == "convicted" else 0.1
 	var k := mini(maxi(0, sess.money), fine + int(maxi(0, sess.money) * share))
-	sess.money -= k
-	sess.law_funds += float(k) * 0.8
+	sess.move_money(-k, "outside:state", "fine")
+	sess.move_law_funds(float(k) * 0.8, "outside:state", "forfeiture")
 	if how == "convicted" and sess.aircraft_key != "c172p" and not PILOT_FREE:
 		sess._switch_aircraft("c172p", 0.5)  # forfeited; a used Skyhawk waits when you get out
 	elif how in ["convicted", "pleaded guilty"] and years >= 8.0 and PILOT_FREE and sess.aircraft_key != "c172p":
-		forfeit_pending = true  # taken when it is next parked: swapping a flying aircraft would leave an unspawned model
+		forfeit_pending = true
+		forfeit_key = sess.aircraft_key  # taken when it is next parked: swapping a flying aircraft would leave an unspawned model
 	sess.police.score["convictions"] = int(sess.police.score.get("convictions", 0)) + 1
 	if mins < 1.0:
 		_say(("%s: %s years the lawyer has settled off the books. -$%s." if PILOT_FREE else "%s: %s years, served as time already done. -$%s.") % [how.capitalize(), Py.f(years, 1), Py.money(k)], "The pilot %s: %s years" % [how, Py.f(years, 1)])
@@ -603,9 +605,14 @@ func _take_aircraft() -> void:
 	if not forfeit_pending or sess.phase != "parked" or sess.location == null or not sess.active_jobs.is_empty():
 		return
 	forfeit_pending = false
-	if sess.aircraft_key == "c172p":
+	var key: String = forfeit_key if forfeit_key != "" else str(sess.aircraft_key)  # a save from before the key was recorded: the one flown now
+	forfeit_key = ""
+	if key == "c172p":
 		return
-	sess.owned.erase(sess.aircraft_key)
+	sess.owned.erase(key)
+	if sess.aircraft_key != key:
+		_say("The conviction took your %s." % key, "Aircraft forfeited")
+		return  # already flying something else: only the sentenced aircraft goes
 	sess.owned["c172p"] = true
 	sess._switch_aircraft("c172p", 0.5)
 	sess.spawn_at(str(sess.location))

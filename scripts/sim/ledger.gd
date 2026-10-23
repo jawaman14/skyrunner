@@ -9,7 +9,7 @@ const UNATTRIBUTED := "outside:unattributed"
 const COALESCE := ["budget"]  ## reasons booked every frame: consecutive rows with the same names merge within COALESCE_S
 const COALESCE_S := 60.0
 ## The closed list of reasons (spec section 3, invariant 3); a transfer with any other is refused. Later F-3 slices add to it.
-const REASONS := ["open", "adjust", "purchase", "resale", "fee", "fuel", "repair", "upgrade", "fine", "delivery", "forfeiture", "budget", "wages"]
+const REASONS := ["open", "adjust", "purchase", "resale", "fee", "fuel", "repair", "upgrade", "fine", "delivery", "forfeiture", "budget", "wages", "refund", "bribe"]
 const TRIM := 1000  ## rows folded into `opening` at a time, so trimming is not a shift of the whole array on every transfer
 const LOG_MAX := 20000  ## the oldest rows are folded into `opening` past this, so rebuild() stays exact; F-3 saves both.
 
