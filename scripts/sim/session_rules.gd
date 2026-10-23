@@ -46,7 +46,7 @@ func _bust(how: String) -> void:
 		return  # a very good lawyer
 	phase = "busted"
 	var fine := 1500 + int(maxi(0, money) * 0.25)
-	law_funds += 3000.0  # the aircraft and the cash, forfeited
+	move_law_funds(3000.0, "outside:state", "forfeiture")  # the aircraft and the cash, forfeited
 	for j in active_jobs:
 		if j.hot():
 			econ.record_seizure(Economy.good_of(j), Economy.job_market(j))
@@ -254,7 +254,7 @@ func _update_stashes(dt: float) -> void:
 			if Investigation.ENABLED and investigation != null:
 				investigation.heat_district(str(st.get("zone", "")), Investigation.DISTRICT_SEIZED)
 			law_say("Truck stopped on the road to %s: %d crates seized" % [st.name, t.items])
-			law_funds += 2000.0 + 300.0 * t.items
+			move_law_funds(2000.0 + 300.0 * t.items, "outside:state", "forfeiture")
 			econ.record_seizure("guns" if not t.weapons.is_empty() else "cocaine", st.zone)
 			_seize_weapons(t.weapons, "the truck")
 			police.case("runner").suspicion = minf(100.0, police.case("runner").suspicion + 15.0)
@@ -340,7 +340,7 @@ func _raid(id: String):
 		var ls: Dictionary = stash_net.get_stash(id)
 		ls.heat = 0.0
 		ls.intel *= 0.5
-		law_funds += 500.0
+		move_law_funds(500.0, "outside:state", "forfeiture")
 		law_say("Raid on %s: empty. Somebody warned them." % ls.name)
 		say("The lookout at %s saw the raid coming: the product was moved. The house is cold for now." % ls.name)
 		bus.emit("raid_foiled", time, "", ["runner", "law"], {"stash": id})
@@ -360,7 +360,7 @@ func _raid(id: String):
 	var taken := stash_net.trucks_to(id)
 	for t in taken:
 		stash_net.trucks.erase(t)
-	law_funds += 2000.0 + 1500.0 * taken.size()
+	move_law_funds(2000.0 + 1500.0 * taken.size(), "outside:state", "forfeiture")
 	econ.record_seizure("cocaine", st.zone)
 	if Investigation.ENABLED and investigation != null:
 		investigation.heat_district(str(st.zone), Investigation.DISTRICT_RAIDED)

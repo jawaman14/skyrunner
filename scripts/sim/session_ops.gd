@@ -314,7 +314,7 @@ func buy_upgrade(side: String, id: String):
 		money -= int(n.cost)
 		say("Upgrade: %s (-$%s)" % [n.name, Py.money(int(n.cost))])
 	else:
-		law_funds -= float(n.cost)
+		move_law_funds(-float(n.cost), "outside:market", "upgrade")
 		law_say("Upgrade: %s (-$%s)" % [n.name, Py.money(int(n.cost))])
 	upgrades[side][id] = true
 	if id == "counter_mole" and upgrades["runner"].has("mole"):
@@ -362,7 +362,7 @@ func apply_upgrades() -> void:
 
 ## Law funds and the AI chief's shopping, plus the runner's lookouts.
 func _update_upgrades(dt: float) -> void:
-	law_funds += dt * 40.0 / 60.0  # the budget line: ~$2,400 an hour
+	move_law_funds(dt * 40.0 / 60.0, "outside:state", "budget")  # the budget line: ~$2,400 an hour
 	if ai_law_upgrades and police.controller == "ai" and time >= _ai_buy_t:
 		_ai_buy_t = time + 90.0
 		var id := Upgrades.ai_pick(upgrades["law"], int(law_funds))

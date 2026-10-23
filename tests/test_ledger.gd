@@ -52,6 +52,25 @@ func test_a_named_move_books_its_counterparty_not_the_unattributed() -> void:
 	s.dispose()
 
 
+func test_the_budget_accrual_is_one_named_row_a_minute() -> void:
+	var s := Session.new({"seed": 1})
+	var rows0: int = s.ledger.log.size()
+	var f0: float = s.law_funds
+	for i in 120:
+		s.time += 0.5
+		s._update_upgrades(0.5)
+	check_eq(s.ledger.log.size() - rows0, 1, "60 s of frames is one row (merged), not 120")
+	s.time += 60.0
+	s._update_upgrades(0.5)
+	check_eq(s.ledger.log.size() - rows0, 2, "the next minute opens a new row")
+	var row: Dictionary = s.ledger.log[rows0]
+	check(row.from == "outside:state" and row.to == "police:budget" and row.reason == "budget", "named: %s" % [row])
+	check_eq(s.ledger.balance("police:budget"), s.law_funds, "the ledger agrees")
+	var got := s.ledger.rebuild()
+	check(absf(float(got.get("police:budget", 0.0)) - s.law_funds) < 0.01, "and rebuilds")
+	s.dispose()
+
+
 func test_the_session_wrap_keeps_values_and_books_every_change() -> void:
 	var s := Session.new({"seed": 1})
 	check_eq(s.ledger.balance("police:budget"), s.law_funds, "the budget is open from construction")

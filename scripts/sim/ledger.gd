@@ -6,6 +6,8 @@ extends RefCounted
 
 const OUTSIDE := "outside:"
 const UNATTRIBUTED := "outside:unattributed"
+const COALESCE := ["budget"]  ## reasons booked every frame: consecutive rows with the same names merge within COALESCE_S
+const COALESCE_S := 60.0
 const TRIM := 1000  ## rows folded into `opening` at a time, so trimming is not a shift of the whole array on every transfer
 const LOG_MAX := 20000  ## the oldest rows are folded into `opening` past this, so rebuild() stays exact; F-3 saves both.
 
@@ -23,6 +25,13 @@ func balance(account: String) -> float:
 func transfer(from: String, to: String, amount: float, reason: String, actor := "system", t := 0.0, ref := "") -> bool:
 	if amount <= 0.0 or from == to or reason == "":
 		return false
+	var last: Dictionary = log[-1] if not log.is_empty() else {}
+	if reason in COALESCE and not last.is_empty() and last.from == from and last.to == to and last.reason == reason \
+			and last.actor == actor and t - float(last.t) < COALESCE_S:
+		last.amount = float(last.amount) + amount  # a per-frame accrual is one row a minute, not sixty a second
+		balances[from] = balance(from) - amount
+		balances[to] = balance(to) + amount
+		return true
 	_serial += 1
 	log.append({"id": _serial, "t": t, "from": from, "to": to, "amount": amount, "reason": reason, "actor": actor, "ref": ref})
 	if log.size() >= LOG_MAX + TRIM:

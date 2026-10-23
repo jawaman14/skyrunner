@@ -262,10 +262,10 @@ func _maritime_event(kind: String, data: Dictionary) -> void:
 		police.score["boats_seized"] += 1
 		police.score["bales_seized"] += data["count"]
 		law_say("%s seized %s with %d bales" % [data["cutter"], data["boat"], data["count"]])
-		law_funds += 1500.0 + 100.0 * data["count"]  # asset forfeiture
+		move_law_funds(1500.0 + 100.0 * data["count"], "outside:state", "forfeiture")
 		econ.record_seizure("marijuana", "sea")
 		if upgrades["runner"].has("armed_boat"):
-			law_funds += 1500.0
+			move_law_funds(1500.0, "outside:state", "forfeiture")
 			_seize_weapons({"rifle": 2}, data["boat"])
 			law_say("Firearms aboard %s: a federal charge on top" % data["boat"])
 		if job:

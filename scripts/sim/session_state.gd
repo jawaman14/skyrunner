@@ -80,6 +80,15 @@ func move_money(delta: int, other: String, reason: String, actor := "org") -> vo
 	_pay_other = Ledger.UNATTRIBUTED
 	_pay_reason = "adjust"
 	_pay_actor = "system"
+## The task force's budget, named the same way: `delta` > 0 comes from `other`, < 0 goes to it.
+func move_law_funds(delta: float, other: String, reason: String, actor := "law") -> void:
+	_pay_other = other
+	_pay_reason = reason
+	_pay_actor = actor
+	law_funds += delta
+	_pay_other = Ledger.UNATTRIBUTED
+	_pay_reason = "adjust"
+	_pay_actor = "system"
 var _pay_other := Ledger.UNATTRIBUTED
 var _pay_reason := "adjust"
 var _pay_actor := "system"
@@ -134,7 +143,7 @@ var undercover: Undercover = null  ## the agent who plants a tracking beacon (Un
 var analyst: Analyst = null  ## the tip desk (Analyst; a human seat holds tips back from dispatch)
 var law_funds := 8000.0:  ## the task force's upgrade money: a budget plus forfeiture from busts and seizures
 	set(v):
-		ledger.track("police:budget", law_funds, v, time)
+		ledger.track("police:budget", law_funds, v, time, _pay_other, _pay_reason, _pay_actor)
 		law_funds = v
 var econ: Economy  ## the markets: what each good is worth where (Economy)
 var _news_seen := 0
