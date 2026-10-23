@@ -390,7 +390,10 @@ static func _restore_war(g: GroundWar, d: Dictionary) -> void:
 	for f in cmd:
 		if g.commanders.has(f):
 			var c: GroundWar.Commander = g.commanders[f]
-			c.cash = float(cmd[f].get("cash", c.cash))
+			var saved_cash := float(cmd[f].get("cash", c.cash))
+			if g.sess != null:
+				g.sess.ledger.restate(f + ":war-chest", saved_cash, g.sess.time)
+			c.cash = saved_cash
 			c.think_t = float(cmd[f].get("think_t", 0.0))
 			c.log = cmd[f].get("log", [])
 
