@@ -264,7 +264,7 @@ func board_offer(origin: Airfield, jobs_rng: PyRandom):
 	var n := jobs_rng.randint(o.n[0], o.n[1])
 	var items := []
 	for k in n:
-		items.append(Jobs.item(o.label, "cargo", jobs_rng.uniform(o.lb[0], o.lb[1]), jid, {"hot": true}))
+		items.append(Jobs.item(o.label, "cargo", jobs_rng.uniform(o.lb[0], o.lb[1]), jid, {"hot": true, "good": good}))
 	var lb := Py.sum_by(items, func(i): return i.weight_lb)
 	var cost := int(lb * float(o.per_lb) * sess.econ.wholesale(good))
 	var job := Jobs.Job.new(jid, "%s: %d lb -> %s" % [o.title, int(lb), World.airfield(st.strip).name], "contraband", origin.code, st.strip,
