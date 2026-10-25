@@ -140,7 +140,7 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
-- **2026-10-26 - Codex, #450 contract integration:** Synced the PR branch with main `7e8e9d75` and retained both the 23 October #431 checkpoint and the 20 October empire contract entry. The three-file PR diff is documentation only. The two earlier automated spec findings are addressed at `69137aa4`. Fresh exact-head CI and independent Claude review are required before merge.
+- **2026-10-26 - Codex, #450 contract integration:** Synced the PR branch with main `3744307c` after F-4 step 4, retaining both the 23 October #431 checkpoint and the 20 October empire contract entry. The three-file PR diff is documentation only. The two earlier automated spec findings are addressed at `69137aa4`. Fresh exact-head CI and independent Claude review are required before merge.
 
 - **2026-10-23 - Codex, #431 dealer navigation integration:** Merged current main into Claude's dealer-scroll PR in an isolated worktree. Only generated PROJECT_STATUS conflicted; regenerated it to 1,258 methods and checked current. The PR's lot-to-Yours UP/DOWN behavior remains intact. Focused game menus 8/8 and dealership 14/14; diff check clean. Exact-head CI and a fresh independent review of the merge remain before integration with #447.
 
