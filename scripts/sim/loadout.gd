@@ -18,6 +18,7 @@ class Item:
 	var job_id: int  ## 0 = the aircraft's own equipment
 	var hot := false  ## contraband / fugitive -> police interest
 	var fragile := false
+	var good := ""  ## the economy good this cargo is (own loads only), so the load can be an Inventory location
 	var droppable := false  ## can be kicked out of the door in flight
 	var fuel_lb := 0.0  ## ferry tanks only
 	var fuel_cap_lb := 0.0

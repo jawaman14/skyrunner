@@ -59,6 +59,24 @@ func test_a_logistics_session_keeps_its_inventory_in_step_with_the_stash_stock()
 	s.dispose()
 
 
+func test_goods_aboard_the_aircraft_are_lots_at_the_aircraft() -> void:
+	var s := Session.new({"seed": 1})
+	s.enable_system("trade")
+	s.enable_system("logistics")
+	if s.logistics == null or s.loadout == null:
+		s.dispose()
+		return
+	var at: String = "aircraft:" + str(s.aircraft_key)
+	var it := Loadout.Item.new(Jobs.new_id(), "Kilo brick crate", "cargo", 40.0, 0, {"hot": true, "good": "cocaine"})
+	s.loadout.add(it)
+	s.logistics.update(6.0)
+	check_eq(s.inventory.stock(at, "cocaine"), 40.0, "the crate is aboard")
+	s.loadout.remove_item(it.id)
+	s.logistics.update(6.0)
+	check_eq(s.inventory.stock(at, "cocaine"), 0.0, "and gone when unloaded")
+	s.dispose()
+
+
 func test_conservation_per_good_through_the_boundary() -> void:
 	var inv := Inventory.new()
 	var id := inv.add("cocaine", 100.0, "a")
