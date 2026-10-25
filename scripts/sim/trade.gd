@@ -284,6 +284,8 @@ func delivered(job) -> void:
 		var site: String = sess.logistics.site_at(job.dest)  # the stash at the strip it was bought for
 		if site == "" or site == Logistics.HQ:
 			site = sess.logistics.nearest_stash(Vector2(af.x, af.y))
+		sess.logistics.sync_aircraft_load()  # the load aboard as it is now, so the move has lots to take
+		sess.inventory.transfer("aircraft:" + str(sess.aircraft_key), "stash:" + str(site), job.own_good, lb, "delivery", "runner", sess.time)
 		sess.logistics.add(site, job.own_good, lb)
 		sess.say("Delivered '%s': %d lb of %s into %s" % [job.title, int(lb), job.own_good, sess.logistics.name_of(site)])
 		return
