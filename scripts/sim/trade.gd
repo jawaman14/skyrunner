@@ -286,7 +286,7 @@ func delivered(job) -> void:
 			site = sess.logistics.nearest_stash(Vector2(af.x, af.y))
 		sess.logistics.sync_aircraft_load()  # the load aboard as it is now, so the move has lots to take
 		sess.inventory.transfer("aircraft:" + str(sess.aircraft_key), "stash:" + str(site), job.own_good, lb, "delivery", "runner", sess.time)
-		sess.logistics.add(site, job.own_good, lb)
+		sess.logistics.add(site, job.own_good, lb)  # the stock stays the source of truth; a short move is booked as unattributed by the next reconcile
 		sess.say("Delivered '%s': %d lb of %s into %s" % [job.title, int(lb), job.own_good, sess.logistics.name_of(site)])
 		return
 	stock[job.own_good] += lb
