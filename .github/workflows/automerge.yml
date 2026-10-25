@@ -51,8 +51,8 @@ jobs:
             ok=$(jq -r '
               .state == "OPEN" and (.isDraft | not) and .mergeable == "MERGEABLE"
               and ([.labels[].name] | index("automerge") != null)
-              and (.statusCheckRollup | length > 0)
-              and ([.statusCheckRollup[] | (.conclusion // .state // "PENDING") | ascii_upcase] | all(. == "SUCCESS" or . == "SKIPPED" or . == "NEUTRAL"))' <<<"$info")
+              and ([.statusCheckRollup[] | select(.workflowName != "Auto-merge")] | length > 0)
+              and ([.statusCheckRollup[] | select(.workflowName != "Auto-merge") | (.conclusion // .state // "PENDING") | ascii_upcase] | all(. == "SUCCESS" or . == "SKIPPED" or . == "NEUTRAL"))' <<<"$info")
             if [ "$ok" != "true" ]; then
               echo "#$pr: not ready (needs the automerge label, ready for review, no conflicts, all checks passed); skipped"
               continue
