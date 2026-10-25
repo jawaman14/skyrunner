@@ -40,6 +40,23 @@ func move(lot_id: int, lb: float, to: String, reason: String, actor := "system",
 	return int(part.id)
 
 
+## Move up to `lb` pounds of `good` from `from` to `to`, oldest lots first. Returns the pounds moved (less than `lb` when `from` holds less).
+func transfer(from: String, to: String, good: String, lb: float, reason: String, actor := "system", t := 0.0) -> float:
+	var ids := []
+	for id in lots:
+		if lots[id].at == from and lots[id].good == good:
+			ids.append(id)
+	ids.sort()
+	var moved := 0.0
+	for id in ids:
+		if lb - moved <= 0.0001:
+			break
+		var take := minf(lb - moved, float(lots[id].lb))
+		if move(id, take, to, reason, actor, t) != 0:
+			moved += take
+	return moved
+
+
 ## The F-4 wrap: make `at` hold `value` pounds of `good` for a change the old code made directly. A shortfall arrives from
 ## outside:unattributed and an excess leaves to it (oldest lots first), so the unattributed flow is the to-do list for the later slices.
 func reconcile(at: String, good: String, value: float, t := 0.0) -> void:
