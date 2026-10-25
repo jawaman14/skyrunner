@@ -60,7 +60,7 @@ No ids come from RNG.
 | `Account` | `id` = `org:place`, e.g. `org:safe`, `rival:safe`, `org:stash-docks`, `biz-12:till`, `outside:growers` | Money only. A balance is derived from transfers and cached. |
 | `Business` | `id`, `kind`, `district`, `site` (x, y), `owner` (org id), `staff[]`, `till` (account), `stock` (inventory location), `costs{rent, utilities}`, `price_policy`, `open_hours` | P0 kinds below. |
 | `Site` | `id`, `district`, `kind` (`stash`, `shop`, `warehouse`, `strip`), `owner` | Wraps today's stash and airfield records. |
-| `Lot` | `id`, `good`, `lb`, `origin`, `quality`, `heat` | Product moves as lots, and a lot can split. |
+| `Lot` | `id`, `good`, `lb`, `units` (what it is sold in: pounds, sheets, crates; `lb` stays the transport weight), `origin` (provenance), `quality` (grade), `age`, `heat` | Product moves as lots, and a lot can split. |
 | `Person` | `id`, `org`, `role`, `skill`, `loyalty`, `wage`, `boss` (person id), `schedule`, `assignment` | Extends Payroll's worker. `boss` gives the hierarchy (reporting only; succession is `Org.succession`, §11 O-2). |
 | `Order` | `id`, `org`, `issuer` (person or actor), `assignee`, `kind`, `args`, `condition`, `status`, `blocked_reason` | Explicit and conditional orders. Workers only run orders; they never make one up (§0). |
 | `District` | `id` (from `map_city.gd`), `control{org_id: float}`, `demand{good: float}`, `prosperity` | It wraps the existing table; it doesn't replace it. |
@@ -130,6 +130,7 @@ One authoritative `Session.time` (decided 19 Oct). Three things hang off it:
     that window. `EventBus.log` is capped at 400 entries and is not saved today; it cannot be the report's source of truth.
     Persist the unfinished window's summary with the scheduler, then close it at the books tick so a busy day or mid-day
     load produces the same debrief.
+    The closed debriefs (today's `season.reports`) are saved too, as finalized summaries, so a load keeps every completed one.
   - HQ actions (launder, buy_front, bribe, lawyer, opsec) become ordinary commands that run any time and cost through the ledger.
   - The strategic balance sim stays on the old path until a new headless "N days" sim replaces it. `strategic_ref` parity
     retires in the same PR.
@@ -204,7 +205,7 @@ proved itself.
    A missing migration, malformed sim block or save from a newer version stops the load with a visible reason; callers must
    not continue with a default `Session` or overwrite that save. Test the refusal path as well as the v1 upgrade.
 2. The ledger, inventory, businesses, orgs and orders save under `sim.empire`, together with the scheduler's continuation
-   state (the pending heap and its serial), the unfinished nightly event summary (§5), and the state of every RNG stream
+   state (the pending heap and its serial), the unfinished nightly event summary and the closed debriefs (§5), and the state of every RNG stream
    this spec adds (§7). Without them a loaded
    game would restart random sequences or reorder future events. An older save gets them built from its state:
    - `money` becomes the opening balance of `org:safe`;
@@ -256,11 +257,11 @@ small).
 | A2 | Staff get budget, shift and orders | Order and schedule state after 1 day |
 | A3 | A supply chain flows without duplication | Inventory invariants over 7 days |
 | A4 | Rivals buy, sell, recruit and expand on the same rules | Every rival transfer is either a discretionary action through `command_as` or a scheduled settlement (wages, rent, utilities, debt service, production, restock) made by the scheduler with actor `system:books` under the same rules as the player's org; nothing else. Their outside boundary is reported |
-| A5 | A flown and a delegated delivery give equal state changes | Same seed, two runs. Compare the **economic projection**, not the raw log: every account's balance, every lot's location and pounds, and each transfer as `(from, to, amount, reason)`, compared as a multiset. `id`, `t`, `actor`, `ref`, and the event's `by` and `mode` are provenance and are excluded. The only difference allowed is the delegation fee, if D-10's fee is on: remove that `delegation_fee` transfer from the delegated projection **and recompute its account balances from the remaining transfers** before comparing |
+| A5 | A flown and a delegated delivery give equal state changes | Same seed, two runs. Compare the **economic projection**, not the raw log: every account's balance, every lot's location and pounds, and each transfer as `(from, to, amount, reason)`, compared as a multiset. `id`, `t`, `actor`, `ref`, and the event's `by` and `mode` are provenance and are excluded. The only difference allowed is the delegation fee, if D-10's fee is on: first assert there is exactly one `delegation_fee` transfer, from the organisation's safe, of the expected amount to the expected destination; then remove that transfer from the delegated projection **and recompute its account balances from the remaining transfers** before comparing |
 | A6 | Wages, costs, revenue and losses settle over several cycles | 14 days, conservation holds |
 | A7 | Negotiate, compete or fight, and the consequences persist | Relations and control saved and restored |
 | A8 | Operations continue when the player leaves the district | Player parked out of district for 2 days; books still settle |
-| A9 | Save and load reproduce everything | Round-trip equality of `sim.empire`, **and** a game saved mid-day and run 2 more days after loading ends identical (ledger, inventory, orders, RNG draws) to the same game run 2 days without saving |
+| A9 | Save and load reproduce everything | Round-trip equality of `sim.empire` (including the closed debriefs), **and** a game saved mid-day and run 2 more days after loading ends identical (ledger, inventory, orders, RNG draws) to the same game run 2 days without saving |
 | P1 | Performance scales | On the CI Linux runner, headless: (a) 4× the district's entities costs at most 5× the time per sim day, so growth is no worse than about linear; (b) at 1× size and ×60 desk speed, the sim's work per rendered frame stays under 8 ms; (c) no more than 10% slower than the previous recorded P1 run. Thresholds are initial and recalibrated once, in the PR that first measures them |
 | G1 | Gameplay gate | Owner playtest: it's interesting without story missions |
 

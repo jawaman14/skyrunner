@@ -20,6 +20,10 @@ extends RefCounted
 
 const VERSION := 1
 
+## STEPS[v - 1] carries a save from version v to v + 1: it edits the dictionary and returns it. Add one with every VERSION bump,
+## and a test, so an older save is carried forward instead of losing its state.
+static var STEPS: Array[Callable] = []
+
 const FAMILY := ["respect", "greed", "rico", "rat", "gone", "offers", "loan", "docks_until", "docks_honest", "muscle", "lawyer",
 	"tribute_due", "tribute_by", "taxed", "tribute_total", "_tax_next", "_stalled", "payroll_until", "knows", "loans_taken",
 	"accepted", "cons", "last", "_serial", "_t", "_offer_t", "_side_t", "_rat_t"]
@@ -90,7 +94,7 @@ static func capture(s: Session) -> Dictionary:
 	d["case"] = {"suspicion": c.suspicion, "bust_meter": c.bust_meter, "rival_meter": c.rival_meter}
 	if s.court != null:
 		d["court"] = {"case": s.court.case_, "history": s.court.history.duplicate(true), "mandatory": s.court.mandatory,
-			"serial": s.court._serial}
+			"serial": s.court._serial, "forfeit_pending": s.court.forfeit_pending, "forfeit_key": s.court.forfeit_key}
 	if s.ground != null:
 		var squads := []
 		for q: GroundWar.Squad in s.ground.squads:
@@ -198,8 +202,25 @@ static func _payroll(s: Session) -> Dictionary:
 		"last": p.last.duplicate(), "squads": squads, "serial": p._serial}
 
 
+## Brings a save up to `target`. A save with no version, a newer game's, or a gap in `steps` gives {} and a warning.
+static func migrate(d: Dictionary, steps: Array = STEPS, target: int = VERSION) -> Dictionary:
+	var v := int(d.get("v", 0))
+	if v < 1 or v > target or steps.size() < target - 1:
+		push_warning("strategic save v%d cannot be brought to v%d; its state is not loaded" % [v, target])
+		return {}
+	d = d.duplicate(true)
+	while v < target:
+		d = steps[v - 1].call(d)
+		v += 1
+		d["v"] = v
+	return d
+
+
 static func restore(s: Session, d: Dictionary) -> void:
-	if d.is_empty() or int(d.get("v", 0)) != VERSION:
+	if d.is_empty():
+		return
+	d = migrate(d)
+	if d.is_empty():
 		return
 	s.time = float(d.get("time", 0.0))
 	s.phone_calls.restore(d.get("phone_calls", {}) if d.get("phone_calls") is Dictionary else {})
@@ -262,6 +283,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.court.history = d.court.get("history", [])
 		s.court.mandatory = bool(d.court.get("mandatory", false))
 		s.court._serial = int(d.court.get("serial", 0))
+		s.court.forfeit_pending = bool(d.court.get("forfeit_pending", false))
+		s.court.forfeit_key = str(d.court.get("forfeit_key", ""))
 	if s.ground != null and d.get("squads") is Dictionary:
 		_restore_squads(s, d.squads)
 	if s.ground != null and d.get("war") is Dictionary:
@@ -368,7 +391,10 @@ static func _restore_war(g: GroundWar, d: Dictionary) -> void:
 	for f in cmd:
 		if g.commanders.has(f):
 			var c: GroundWar.Commander = g.commanders[f]
-			c.cash = float(cmd[f].get("cash", c.cash))
+			var saved_cash := float(cmd[f].get("cash", c.cash))
+			if g.sess != null:
+				g.sess.ledger.restate(f + ":war-chest", saved_cash, g.sess.time)
+			c.cash = saved_cash
 			c.think_t = float(cmd[f].get("think_t", 0.0))
 			c.log = cmd[f].get("log", [])
 
