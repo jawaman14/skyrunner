@@ -77,6 +77,32 @@ func test_goods_aboard_the_aircraft_are_lots_at_the_aircraft() -> void:
 	s.dispose()
 
 
+func test_a_flown_delivery_is_a_move_from_the_aircraft_to_the_stash() -> void:
+	var s := Session.new({"seed": 1})
+	s.enable_system("trade")
+	s.enable_system("logistics")
+	if s.logistics == null or s.loadout == null:
+		s.dispose()
+		return
+	var st: Dictionary = s.stash_net.stashes[0]
+	var jid := Jobs.new_id()
+	var it := Loadout.Item.new(Jobs.new_id(), "Kilo brick crate", "cargo", 40.0, jid, {"hot": true, "good": "cocaine"})
+	s.loadout.add(it)
+	var job := Jobs.Job.new(jid, "Test load", "contraband", "FRM", st.strip, [it], 0, {})
+	job.own_good = "cocaine"
+	var inv: Inventory = s.inventory
+	s.trade.delivered(job)
+	var at: String = "aircraft:" + str(s.aircraft_key)
+	var site: String = s.logistics.site_at(st.strip)
+	check_eq(inv.stock(at, "cocaine"), 0.0, "off the aircraft")
+	check_eq(inv.stock("stash:" + site, "cocaine"), 40.0, "into the stash")
+	s.loadout.remove_job(jid)
+	s.logistics.update(6.0)
+	check_eq(inv.stock("outside:unattributed", "cocaine"), 0.0, "with nothing booked as unattributed")
+	check_eq(inv.stock("stash:" + site, "cocaine"), s.logistics.stock[site]["cocaine"], "and the stash still matches its stock")
+	s.dispose()
+
+
 func test_conservation_per_good_through_the_boundary() -> void:
 	var inv := Inventory.new()
 	var id := inv.add("cocaine", 100.0, "a")
