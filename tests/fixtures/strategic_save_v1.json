@@ -1,0 +1,950 @@
+{
+  "arsenals": {
+    "law": {
+      "ammo": 1560.0,
+      "cache": "",
+      "seized_total": 0.0,
+      "stock": {
+        "mg": 0.0,
+        "pistol": 10.0,
+        "rifle": 0.0,
+        "rpg": 0.0
+      }
+    },
+    "org": {
+      "ammo": 240.0,
+      "cache": "",
+      "seized_total": 0.0,
+      "stock": {
+        "mg": 0.0,
+        "pistol": 0.0,
+        "rifle": 0.0,
+        "rpg": 0.0
+      }
+    },
+    "rival": {
+      "ammo": 1080.0,
+      "cache": "",
+      "seized_total": 0.0,
+      "stock": {
+        "mg": 0.0,
+        "pistol": 7.0,
+        "rifle": 0.0,
+        "rpg": 0.0
+      }
+    }
+  },
+  "case": {
+    "bust_meter": 0.0,
+    "rival_meter": 0.0,
+    "suspicion": 41.0
+  },
+  "court": {
+    "case": null,
+    "history": [],
+    "mandatory": false,
+    "serial": 0.0
+  },
+  "econ": {
+    "_now": 0.0333333333333333,
+    "_t": 0.0333333333333333,
+    "busts": {
+      "north": 0.0,
+      "sea": 0.0,
+      "town": 0.0,
+      "west": 0.0
+    },
+    "events": [],
+    "fuel_walk": 1.0,
+    "glut": {
+      "cocaine": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      },
+      "fragile": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      },
+      "fuel_drums": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      },
+      "fugitive": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      },
+      "general": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      },
+      "guns": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      },
+      "marijuana": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      },
+      "medical": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      },
+      "passengers": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      },
+      "perishable": {
+        "north": 0.0,
+        "sea": 0.0,
+        "town": 0.0,
+        "west": 0.0
+      }
+    },
+    "law_kit": 0.0,
+    "news": [],
+    "scarcity": {
+      "cocaine": 0.0,
+      "fragile": 0.0,
+      "fuel_drums": 0.0,
+      "fugitive": 0.0,
+      "general": 0.0,
+      "guns": 0.0,
+      "marijuana": 0.0,
+      "medical": 0.0,
+      "passengers": 0.0,
+      "perishable": 0.0
+    },
+    "storm": false,
+    "walk": {
+      "cocaine": {
+        "north": 1.06550861984841,
+        "sea": 0.997489015650534,
+        "town": 0.991222276025092,
+        "west": 0.967054157174222
+      },
+      "fragile": {
+        "north": 0.999511376962693,
+        "sea": 0.98871290801205,
+        "town": 0.997231680325909,
+        "west": 1.00532793894606
+      },
+      "fuel_drums": {
+        "north": 1.0,
+        "sea": 1.0,
+        "town": 1.0,
+        "west": 1.0
+      },
+      "fugitive": {
+        "north": 1.03566539058302,
+        "sea": 0.983502401281471,
+        "town": 0.973357331510765,
+        "west": 1.03312095399507
+      },
+      "general": {
+        "north": 1.01815306187632,
+        "sea": 1.01585221602614,
+        "town": 0.991312314586386,
+        "west": 1.00667240363031
+      },
+      "guns": {
+        "north": 1.04384426569581,
+        "sea": 1.01423288064963,
+        "town": 0.945462252451433,
+        "west": 1.01641057902045
+      },
+      "marijuana": {
+        "north": 0.952449082447993,
+        "sea": 0.966680626992632,
+        "town": 0.953749147857065,
+        "west": 1.02799529201385
+      },
+      "medical": {
+        "north": 0.994925283103936,
+        "sea": 0.994549292266762,
+        "town": 1.01273171234895,
+        "west": 0.98514778661676
+      },
+      "passengers": {
+        "north": 0.994926148836847,
+        "sea": 0.997010351556883,
+        "town": 1.00535346174621,
+        "west": 1.02052109940089
+      },
+      "perishable": {
+        "north": 0.978224017478786,
+        "sea": 1.00903446886281,
+        "town": 1.03013798630042,
+        "west": 1.01726515481654
+      }
+    }
+  },
+  "fuel_spent": {
+    "org": 0.0,
+    "rival": 0.0
+  },
+  "investigation": {
+    "cases": {},
+    "district_heat": {},
+    "tail_heat": {
+      "c172p": 0.0
+    }
+  },
+  "logistics": {
+    "aboard": 0.0,
+    "cash": {
+      "barn": 5000.0,
+      "boathouse": 0.0,
+      "camp": 0.0,
+      "docks": 0.0,
+      "lockup": 0.0,
+      "quarry": 0.0,
+      "shack": 0.0,
+      "villa": 0.0
+    },
+    "cash_since": {},
+    "lost": {
+      "cash": 0.0,
+      "product": 0.0
+    },
+    "lost_by": {
+      "bust": 0.0,
+      "hijacked": 0.0,
+      "raided": 0.0,
+      "seized": 0.0
+    },
+    "stock": {
+      "barn": {
+        "grass": 120.0
+      },
+      "boathouse": {
+        "cocaine": 0.0,
+        "marijuana": 0.0
+      },
+      "camp": {
+        "cocaine": 0.0,
+        "marijuana": 0.0
+      },
+      "docks": {
+        "cocaine": 0.0,
+        "marijuana": 0.0
+      },
+      "lockup": {
+        "cocaine": 0.0,
+        "marijuana": 0.0
+      },
+      "quarry": {
+        "cocaine": 0.0,
+        "marijuana": 0.0
+      },
+      "shack": {
+        "cocaine": 0.0,
+        "marijuana": 0.0
+      },
+      "villa": {
+        "cocaine": 0.0,
+        "marijuana": 0.0
+      }
+    }
+  },
+  "market": {
+    "_demand_events": [],
+    "_last_news": {},
+    "_now": 0.0,
+    "_t": 0.0,
+    "demand": {
+      "cocaine": {
+        "north": 1.0,
+        "sea": 1.0,
+        "town": 1.0,
+        "west": 1.0
+      },
+      "guns": {
+        "north": 1.0,
+        "sea": 1.0,
+        "town": 1.0,
+        "west": 1.0
+      },
+      "marijuana": {
+        "north": 1.0,
+        "sea": 1.0,
+        "town": 1.0,
+        "west": 1.0
+      }
+    },
+    "disruption": {
+      "north": 0.0,
+      "sea": 0.0,
+      "town": 0.0,
+      "west": 0.0
+    },
+    "news": [],
+    "source": {
+      "cocaine": 1.0,
+      "guns": 1.0,
+      "marijuana": 1.0
+    },
+    "supply": {
+      "cocaine": {
+        "north": 1.0,
+        "sea": 1.0,
+        "town": 1.0,
+        "west": 1.0
+      },
+      "guns": {
+        "north": 1.0,
+        "sea": 1.0,
+        "town": 1.0,
+        "west": 1.0
+      },
+      "marijuana": {
+        "north": 1.0,
+        "sea": 1.0,
+        "town": 1.0,
+        "west": 1.0
+      }
+    },
+    "why": {
+      "north": "",
+      "sea": "",
+      "town": "",
+      "west": ""
+    }
+  },
+  "orders": {
+    "_next_id": 1.0,
+    "_prev": {},
+    "_sample_t": 0.0,
+    "history": [],
+    "open": []
+  },
+  "payroll": {
+    "ai": {
+      "org": true,
+      "rival": true
+    },
+    "candidates": {
+      "org": [
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "the boss's godchild",
+          "hired_at": -1.0,
+          "id": "W1",
+          "loyalty": 0.86,
+          "name": "Lalo Caruso",
+          "outfit": "org",
+          "role": "soldier",
+          "skill": 0.32,
+          "status": "candidate",
+          "street": false,
+          "wage": 71.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "drives a new car on no money",
+          "hired_at": -1.0,
+          "id": "W2",
+          "loyalty": 0.41,
+          "name": "Marisol Varela",
+          "outfit": "org",
+          "role": "driver",
+          "skill": 0.9,
+          "status": "candidate",
+          "street": false,
+          "wage": 124.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "drives a new car on no money",
+          "hired_at": -1.0,
+          "id": "W3",
+          "loyalty": 0.22,
+          "name": "Danny Olmos",
+          "outfit": "org",
+          "role": "lookout",
+          "skill": 0.79,
+          "status": "candidate",
+          "street": false,
+          "wage": 58.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "their last crew all got busted",
+          "hired_at": -1.0,
+          "id": "W4",
+          "loyalty": 0.34,
+          "name": "Danny Salas",
+          "outfit": "org",
+          "role": "driver",
+          "skill": 0.27,
+          "status": "candidate",
+          "street": false,
+          "wage": 86.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "came up from the old neighbourhood",
+          "hired_at": -1.0,
+          "id": "W5",
+          "loyalty": 0.69,
+          "name": "Manny Ocampo",
+          "outfit": "org",
+          "role": "accountant",
+          "skill": 0.54,
+          "status": "candidate",
+          "street": false,
+          "wage": 256.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "was in a county lockup last month",
+          "hired_at": -1.0,
+          "id": "W6",
+          "loyalty": 0.75,
+          "name": "Manny Brennan",
+          "outfit": "org",
+          "role": "lookout",
+          "skill": 0.44,
+          "status": "candidate",
+          "street": false,
+          "wage": 48.0
+        }
+      ],
+      "rival": [
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "drives a new car on no money",
+          "hired_at": -1.0,
+          "id": "W7",
+          "loyalty": 0.21,
+          "name": "Hector Varela",
+          "outfit": "rival",
+          "role": "dealer",
+          "skill": 0.83,
+          "status": "candidate",
+          "street": false,
+          "wage": 84.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "worked the Bahamas route in '81, clean",
+          "hired_at": -1.0,
+          "id": "W8",
+          "loyalty": 0.77,
+          "name": "Manny Quintero",
+          "outfit": "rival",
+          "role": "driver",
+          "skill": 0.32,
+          "status": "candidate",
+          "street": false,
+          "wage": 89.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "did two years and never said a word",
+          "hired_at": -1.0,
+          "id": "W9",
+          "loyalty": 0.63,
+          "name": "Manny Rivas",
+          "outfit": "rival",
+          "role": "driver",
+          "skill": 0.54,
+          "status": "candidate",
+          "street": false,
+          "wage": 102.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "worked the Bahamas route in '81, clean",
+          "hired_at": -1.0,
+          "id": "W10",
+          "loyalty": 0.68,
+          "name": "Luis Navarro",
+          "outfit": "rival",
+          "role": "driver",
+          "skill": 0.62,
+          "status": "candidate",
+          "street": false,
+          "wage": 107.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "asked a lot of questions about the money",
+          "hired_at": -1.0,
+          "id": "W11",
+          "loyalty": 0.46,
+          "name": "Yolanda Navarro",
+          "outfit": "rival",
+          "role": "dealer",
+          "skill": 0.22,
+          "status": "candidate",
+          "street": false,
+          "wage": 58.0
+        },
+        {
+          "assigned": "",
+          "heat": 0.0,
+          "hint": "their last crew all got busted",
+          "hired_at": -1.0,
+          "id": "W12",
+          "loyalty": 0.4,
+          "name": "Rosa Navarro",
+          "outfit": "rival",
+          "role": "mule",
+          "skill": 0.63,
+          "status": "candidate",
+          "street": false,
+          "wage": 64.0
+        }
+      ]
+    },
+    "flips": {
+      "org": 0.0,
+      "rival": 0.0
+    },
+    "jail": [],
+    "last": {
+      "org": "Hired Luis Ferrer, soldier (asked a lot of questions about the money).",
+      "rival": ""
+    },
+    "lost": {
+      "org": 0.0,
+      "rival": 0.0
+    },
+    "paid_total": {
+      "org": 0.0,
+      "rival": 0.0
+    },
+    "serial": 15.0,
+    "squads": {},
+    "unpaid": {
+      "org": 0.0,
+      "rival": 0.0
+    },
+    "workers": [
+      {
+        "assigned": "",
+        "heat": 0.0,
+        "hint": "their last crew all got busted",
+        "hired_at": 0.0333333333333333,
+        "id": "W13",
+        "loyalty": 0.8,
+        "name": "Hector Quintero",
+        "outfit": "org",
+        "role": "soldier",
+        "skill": 0.77,
+        "status": "free",
+        "street": false,
+        "wage": 92.0
+      },
+      {
+        "assigned": "",
+        "heat": 0.0,
+        "hint": "nobody knows them",
+        "hired_at": 0.0333333333333333,
+        "id": "W14",
+        "loyalty": 0.8,
+        "name": "Rafa Varela",
+        "outfit": "org",
+        "role": "soldier",
+        "skill": 0.27,
+        "status": "free",
+        "street": false,
+        "wage": 68.0
+      },
+      {
+        "assigned": "",
+        "heat": 0.0,
+        "hint": "asked a lot of questions about the money",
+        "hired_at": 0.0333333333333333,
+        "id": "W15",
+        "loyalty": 0.8,
+        "name": "Luis Ferrer",
+        "outfit": "org",
+        "role": "soldier",
+        "skill": 0.69,
+        "status": "free",
+        "street": false,
+        "wage": 89.0
+      }
+    ]
+  },
+  "people": {
+    "bodies": [],
+    "v": 1.0
+  },
+  "phone_calls": {
+    "calls": [],
+    "next_id": 1.0
+  },
+  "squads": {
+    "full": true,
+    "list": [
+      {
+        "ammo": 360.0,
+        "faction": "org",
+        "hx": -1500.0,
+        "hy": -9700.0,
+        "id": "S-1",
+        "kind": "foot",
+        "loadout": {
+          "pistol": 2.0,
+          "rifle": 2.0
+        },
+        "men": 4.0,
+        "men0": 4.0,
+        "morale": 0.75,
+        "tag": "",
+        "x": -1500.0,
+        "xp": 0.0,
+        "y": -9700.0
+      },
+      {
+        "ammo": 360.0,
+        "faction": "org",
+        "hx": -1500.0,
+        "hy": -9700.0,
+        "id": "S-2",
+        "kind": "car",
+        "loadout": {
+          "pistol": 4.0
+        },
+        "men": 4.0,
+        "men0": 4.0,
+        "morale": 0.75,
+        "tag": "",
+        "x": -1500.0,
+        "xp": 0.0,
+        "y": -9700.0
+      },
+      {
+        "ammo": 360.0,
+        "faction": "rival",
+        "hx": 3987.86791992188,
+        "hy": 4387.8681640625,
+        "id": "C-3",
+        "kind": "foot",
+        "loadout": {
+          "mg": 1.0,
+          "rifle": 3.0
+        },
+        "men": 4.0,
+        "men0": 4.0,
+        "morale": 0.75,
+        "tag": "",
+        "x": 3987.86791992188,
+        "xp": 0.0,
+        "y": 4387.8681640625
+      },
+      {
+        "ammo": 360.0,
+        "faction": "rival",
+        "hx": 3987.86791992188,
+        "hy": 4387.8681640625,
+        "id": "C-4",
+        "kind": "car",
+        "loadout": {
+          "pistol": 1.0,
+          "rifle": 3.0
+        },
+        "men": 4.0,
+        "men0": 4.0,
+        "morale": 0.75,
+        "tag": "",
+        "x": 3987.86791992188,
+        "xp": 0.0,
+        "y": 4387.8681640625
+      },
+      {
+        "ammo": 360.0,
+        "faction": "police",
+        "hx": 950.0,
+        "hy": -11170.0,
+        "id": "P-5",
+        "kind": "car",
+        "loadout": {
+          "rifle": 4.0
+        },
+        "men": 4.0,
+        "men0": 4.0,
+        "morale": 0.85,
+        "tag": "",
+        "x": 950.0,
+        "xp": 0.0,
+        "y": -11170.0
+      },
+      {
+        "ammo": 360.0,
+        "faction": "police",
+        "hx": 950.0,
+        "hy": -11170.0,
+        "id": "P-6",
+        "kind": "car",
+        "loadout": {
+          "pistol": 2.0,
+          "rifle": 2.0
+        },
+        "men": 4.0,
+        "men0": 4.0,
+        "morale": 0.85,
+        "tag": "",
+        "x": 950.0,
+        "xp": 0.0,
+        "y": -11170.0
+      },
+      {
+        "ammo": 360.0,
+        "faction": "police",
+        "hx": 950.0,
+        "hy": -11170.0,
+        "id": "P-7",
+        "kind": "car",
+        "loadout": {
+          "pistol": 4.0
+        },
+        "men": 4.0,
+        "men0": 4.0,
+        "morale": 0.85,
+        "tag": "",
+        "x": 950.0,
+        "xp": 0.0,
+        "y": -11170.0
+      }
+    ],
+    "serial": 7.0
+  },
+  "stashes": {
+    "barn": {
+      "burned": false,
+      "heat": 33.0,
+      "intel": 12.5,
+      "works": {}
+    },
+    "boathouse": {
+      "burned": false,
+      "heat": 0.0,
+      "intel": 0.0,
+      "works": {}
+    },
+    "camp": {
+      "burned": false,
+      "heat": 0.0,
+      "intel": 0.0,
+      "works": {}
+    },
+    "docks": {
+      "burned": false,
+      "heat": 0.0,
+      "intel": 0.0,
+      "works": {}
+    },
+    "lockup": {
+      "burned": false,
+      "heat": 0.0,
+      "intel": 0.0,
+      "works": {}
+    },
+    "quarry": {
+      "burned": false,
+      "heat": 0.0,
+      "intel": 0.0,
+      "works": {}
+    },
+    "shack": {
+      "burned": false,
+      "heat": 0.0,
+      "intel": 0.0,
+      "works": {}
+    },
+    "villa": {
+      "burned": false,
+      "heat": 0.0,
+      "intel": 0.0,
+      "works": {}
+    }
+  },
+  "time": 1234.0,
+  "trade": {
+    "_sales_acc": {},
+    "_t": 0.0333333333333333,
+    "_war_t": 0.0,
+    "appetite": {
+      "agency": {
+        "cocaine": 60.0,
+        "guns": 20.0
+      },
+      "family": {
+        "cocaine": 40.0,
+        "guns": 12.0,
+        "marijuana": 600.0
+      },
+      "rival": {
+        "guns": 15.0
+      }
+    },
+    "bulk_log": [],
+    "connected": true,
+    "earned": 0.0,
+    "landed": {
+      "cocaine": 0.0,
+      "marijuana": 0.0
+    },
+    "last": "",
+    "sold": {
+      "cocaine": 0.0,
+      "marijuana": 0.0
+    },
+    "stock": {
+      "cocaine": 0.0,
+      "marijuana": 0.0
+    },
+    "street_sales": {
+      "north": 0.0,
+      "sea": 0.0,
+      "town": 0.0,
+      "west": 0.0
+    }
+  },
+  "v": 1.0,
+  "war": {
+    "_informant_t": 0.0,
+    "_org_recruit_t": -1000000000.0,
+    "_round_t": 0.0333333333333333,
+    "_upkeep_acc": 0.0,
+    "arrests_total": 0.0,
+    "battle_reports": [],
+    "commanders": {
+      "org": {
+        "cash": 0.0,
+        "log": [],
+        "think_t": 0.0
+      },
+      "police": {
+        "cash": 0.0,
+        "log": [],
+        "think_t": 0.0
+      },
+      "rival": {
+        "cash": 20000.0,
+        "log": [],
+        "think_t": 0.0
+      }
+    },
+    "control": {
+      "north": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "sea": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "town": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "west": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      }
+    },
+    "fights_total": 0.0,
+    "hot_spots": [],
+    "lost_men": {
+      "org": 0.0,
+      "police": 0.0,
+      "rival": 0.0
+    },
+    "officers_down": 0.0,
+    "spent": {
+      "arms": 0.0,
+      "recruit": 0.0,
+      "upkeep": 0.0
+    },
+    "territory_control": {
+      "costa-brava/airport-coast": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "costa-brava/barrio-chino": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "costa-brava/la-selva": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "costa-brava/old-quarry": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "costa-brava/rio-negro-estuary": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "costa-brava/san-telmo-centro": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "costa-brava/sierra-del-aguila": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "costa-brava/smugglers-cove": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "costa-brava/the-docks": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      },
+      "costa-brava/valle-verde": {
+        "org": 0.0,
+        "police": 0.0,
+        "rival": 0.0
+      }
+    },
+    "territory_region": "costa-brava"
+  }
+}

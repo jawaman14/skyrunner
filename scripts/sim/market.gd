@@ -216,7 +216,7 @@ static func _name(m: String) -> String:
 func hook(sess) -> void:
 	var b: EventBus = sess.bus
 	b.subscribe("busted", func(_e): _org_hit(sess, 0.3, 0.1, "the pilot was busted",
-		"The organisation's pilot is in custody: its corners are short this week"))
+		"The organisation's pilot was arrested: its corners are short this week"))
 	b.subscribe("ai_busted", func(_e): _rival_hit(sess, 0.15, 0.08, "a Los Cuervos plane went down to the law",
 		"Los Cuervos lose a plane to the task force: their buyers are looking elsewhere"))
 	b.subscribe("worker_arrested", func(e): (_org_hit if e.data.get("outfit", "") == "org" else _rival_hit).call(sess, 0.1, 0.03,

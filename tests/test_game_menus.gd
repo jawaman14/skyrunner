@@ -227,3 +227,24 @@ func test_dealer_retains_serial_after_other_vehicle_removed() -> void:
 	m.mine.row_activated.emit(m.mine.selected_row())
 	check_eq(m.focus, 1, "owned-table activation targets owned vehicles")
 	viewport.free()
+
+
+func test_dealer_down_runs_on_into_yours_instead_of_wrapping_to_the_top() -> void:
+	var s := _session()
+	s.money = 200000
+	s.command(Roles.PILOT, "buy_vehicle", {"id": Dealership.CATALOGUE[5].id})
+	var m := DealerMenu.new().setup(s)
+	m.open()
+	check(m.my_rows.size() >= 1 and m.lot_rows.size() >= 2, "a lot and a car of your own")
+	var last: int = m.lot.row_count() - 1
+	m.lot.select(last)
+	m.key("down")
+	check_eq(m.focus, 1, "past the last car on the lot is the first of yours")
+	check_eq(m.mine.selected_row(), 0, "on its first row")
+	m.key("up")
+	check_eq(m.focus, 0, "and back up")
+	check_eq(m.lot.selected_row(), last, "to the last car on the lot")
+	m.lot.select(0)
+	m.key("up")
+	check_eq(m.lot.selected_row(), 0, "the top of the lot stays put")
+	m.free()

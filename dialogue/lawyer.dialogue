@@ -145,7 +145,7 @@ else
 => END
 
 ~ witness
-{{lawyer_name}}: (quietly) I didn't hear this conversation. But certain friends of yours could... discourage a witness. If it goes wrong it's obstruction of justice, and you go back in.
+{{lawyer_name}}: (quietly) I didn't hear this conversation. But certain friends of yours could... discourage a witness. If it goes wrong it's obstruction of justice, and the case gets heavier.
 - Make the call. ($5,000 to the Family)
 	do lean_on_witness()
 	if result != ""
