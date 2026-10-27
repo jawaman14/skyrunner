@@ -264,7 +264,7 @@ func board_offer(origin: Airfield, jobs_rng: PyRandom):
 	var n := jobs_rng.randint(o.n[0], o.n[1])
 	var items := []
 	for k in n:
-		items.append(Jobs.item(o.label, "cargo", jobs_rng.uniform(o.lb[0], o.lb[1]), jid, {"hot": true}))
+		items.append(Jobs.item(o.label, "cargo", jobs_rng.uniform(o.lb[0], o.lb[1]), jid, {"hot": true, "good": good}))
 	var lb := Py.sum_by(items, func(i): return i.weight_lb)
 	var cost := int(lb * float(o.per_lb) * sess.econ.wholesale(good))
 	var job := Jobs.Job.new(jid, "%s: %d lb -> %s" % [o.title, int(lb), World.airfield(st.strip).name], "contraband", origin.code, st.strip,
@@ -284,6 +284,8 @@ func delivered(job) -> void:
 		var site: String = sess.logistics.site_at(job.dest)  # the stash at the strip it was bought for
 		if site == "" or site == Logistics.HQ:
 			site = sess.logistics.nearest_stash(Vector2(af.x, af.y))
+		sess.logistics.sync_aircraft_load()  # the load aboard as it is now, so the move has lots to take
+		sess.inventory.transfer("aircraft:" + str(sess.aircraft_key), "stash:" + str(site), job.own_good, lb, "delivery", "runner", sess.time)
 		sess.logistics.add(site, job.own_good, lb)
 		sess.say("Delivered '%s': %d lb of %s into %s" % [job.title, int(lb), job.own_good, sess.logistics.name_of(site)])
 		return

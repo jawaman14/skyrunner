@@ -67,6 +67,8 @@ func refresh() -> void:
 		subtitle.text = "There is no dealership in this game."
 		lot.clear_rows()
 		mine.clear_rows()
+		lot_rows = []
+		my_rows = []
 		return
 	var v: Dictionary = d.view()
 	subtitle.text = "$%s in hand   -   %d of %d vehicles   -   insurance $%s an hour   -   the AI %s the fleet" % [Py.money(s.money), v.owned.size(), v.limit,
@@ -77,25 +79,30 @@ func refresh() -> void:
 	var lot_id: String = str(lot_rows[keep_l].id) if keep_l >= 0 and keep_l < lot_rows.size() else ""
 	var serial: int = int(my_rows[keep_m].serial) if keep_m >= 0 and keep_m < my_rows.size() else -1
 	var active := focus
-	lot.clear_rows()
-	mine.clear_rows()
-	lot_rows = v.catalogue
-	for sp in lot_rows:
-		lot.add_row([str(sp.name), "drive" if sp.use == "drive" else "trucks", "$%s" % Py.money(int(sp.price)), stats(sp)])
-	my_rows = v.owned
-	for o in my_rows:
-		var status := ""
-		if o.use == "drive":
-			status = "the car you drive" if o.active else "parked by the aircraft: ENTER to make it the one you drive"
-		else:
-			status = "on the stash runs"
-		mine.add_row([str(o.name), "drive" if o.use == "drive" else "trucks", "$%s" % Py.money(int(o.resale)), status])
-	if not lot_rows.is_empty():
-		var ids: Array = lot_rows.map(func(sp): return str(sp.id))
-		lot.select_near(ids.find(lot_id) if ids.has(lot_id) else maxi(0, keep_l))
-	if not my_rows.is_empty():
-		var serials: Array = my_rows.map(func(o): return int(o.serial))
-		mine.select_near(serials.find(serial) if serials.has(serial) else maxi(0, keep_m))
+	# Refresh status text freely, but leave unchanged tables (and wheel scroll) alone.
+	var shown_l: Array = v.catalogue.map(func(sp): return [sp.id, sp.name, sp.use, sp.price, stats(sp)])
+	var cached_l: Array = lot_rows.map(func(sp): return [sp.id, sp.name, sp.use, sp.price, stats(sp)])
+	if cached_l != shown_l:
+		lot.clear_rows()
+		lot_rows = v.catalogue.duplicate(true)
+		for sp in lot_rows:
+			lot.add_row([str(sp.name), "drive" if sp.use == "drive" else "trucks", "$%s" % Py.money(int(sp.price)), stats(sp)])
+		if not lot_rows.is_empty():
+			var ids: Array = lot_rows.map(func(sp): return str(sp.id))
+			lot.select_near(ids.find(lot_id) if ids.has(lot_id) else maxi(0, keep_l))
+	if my_rows != v.owned:
+		mine.clear_rows()
+		my_rows = v.owned.duplicate(true)
+		for o in my_rows:
+			var status := ""
+			if o.use == "drive":
+				status = "the car you drive" if o.active else "parked by the aircraft: ENTER to make it the one you drive"
+			else:
+				status = "on the stash runs"
+			mine.add_row([str(o.name), "drive" if o.use == "drive" else "trucks", "$%s" % Py.money(int(o.resale)), status])
+		if not my_rows.is_empty():
+			var serials: Array = my_rows.map(func(o): return int(o.serial))
+			mine.select_near(serials.find(serial) if serials.has(serial) else maxi(0, keep_m))
 	focus = active
 	footer.text = note if note != "" else ("The trucks run at %d km/h with %d%% cover and %d%% steel (%d owned). The starter car is the one you drive until you buy another." % [
 		int(float(fl.speed) * 3.6), int(float(fl.stealth) * 100.0), int(float(fl.armour) * 100.0), int(fl.count)])

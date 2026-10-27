@@ -1044,6 +1044,23 @@ func _sync_inventory() -> void:
 	for id in stock:
 		for g in stock[id]:
 			sess.inventory.reconcile("stash:" + str(id), str(g), float(stock[id][g]), sess.time)
+	sync_aircraft_load()
+
+
+## The same wrap for the aircraft load: goods aboard are lots at `aircraft:<key>`, so a flown delivery can later be a `move`.
+func sync_aircraft_load() -> void:
+	if sess.loadout == null:
+		return
+	var at: String = "aircraft:" + str(sess.aircraft_key)
+	var aboard := {}
+	for it in sess.loadout.items.values():
+		if it.good != "":
+			aboard[it.good] = float(aboard.get(it.good, 0.0)) + it.weight_lb
+	for lot in sess.inventory.lots.values():
+		if lot.at == at and not aboard.has(lot.good):
+			aboard[lot.good] = 0.0
+	for g in aboard:
+		sess.inventory.reconcile(at, g, aboard[g], sess.time)
 
 
 func update(dt: float) -> void:

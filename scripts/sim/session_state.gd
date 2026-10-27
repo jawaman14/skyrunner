@@ -625,3 +625,19 @@ static func read_save(path: String) -> Dictionary:
 		return {}
 	var d = JSON.parse_string(FileAccess.get_file_as_string(path))
 	return d if d is Dictionary else {}
+
+
+## Empty means a new game or a supported save. A failed load must keep its file untouched.
+static func save_load_error(path: String) -> String:
+	if path == "" or not FileAccess.file_exists(path):
+		return ""
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not data is Dictionary:
+		return "Save file is not a valid game save."
+	if not data.has("sim"):
+		return ""  # saves from before the strategic block remain valid
+	if not data.sim is Dictionary or data.sim.is_empty():
+		return "Save has an invalid simulation block."
+	if not (data.sim.get("time") is int or data.sim.get("time") is float):
+		return "Save has an invalid simulation clock."
+	return StrategicSave.migration_error(data.sim)

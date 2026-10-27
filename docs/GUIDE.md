@@ -184,13 +184,25 @@ footer, which is also clickable), ESC closes.
 | F2 | Move the time of day on three hours |
 | Esc | Release the mouse, then the pause menu |
 
-**The phone (T on foot, Shift+T in the cockpit)** is a handset with apps (arrows and **Enter**, or **1–7**; **Esc** goes back):
-**Contacts** rings whoever you would otherwise have to walk or fly to (Manny's hiring hall, the buyers, your lawyer, the Family,
-the General's aide, the Collective, the car lot, the casino, the desk, **the track**, **the collectors**, dispatch and **a taxi**;
-only the systems switched on appear, and a new number is marked NEW); **Messages** keeps what the phone has buzzed with;
-**Map** opens the chart; **Jobs** lists the jobs you have taken and **Enter** puts a waypoint on one; **Bank** shows the money in
-hand, in each stash house and aboard; **Radio** tunes the dial; **Settings** is the pause menu. A call is a chat on the handset:
-their lines on the left, your answers on the right. Offers (the Family's) buzz in as notifications with the keys that answer them.
+**The phone (T on foot, Shift+T in the cockpit)** is a handset with nine apps (arrows and **Enter**, or **1–9**; **Esc** goes back):
+**Work** opens the job board, the market board, buyers' orders and your jobs; **People** rings your contacts;
+**Empire** shows money, fleet, turf services and **Heat and case files**; **Map** opens the chart; **Messages** keeps recent
+notifications; **Guide** opens the chapter guide; **Help** shows the controls; **Radio** tunes the dial; **Settings** opens the pause menu.
+Only enabled systems appear in People; new numbers are marked NEW.
+
+In **Work → Market prices**, prices are percentages of the usual price, with a demand/supply ratio and trend. These are
+market indices, not cash sale quotes. **Buyers' orders** lists the named buyer, remaining cargo, premium and time left.
+**Enter** calls Benny; it does not accept a sale. Deliver and sell to the named buyer before the deadline.
+**Enter** on one of your jobs sets a waypoint.
+
+**Empire → Heat and case files** separates the current aircraft's tail heat, district heat and stash case stages.
+A raid countdown appears only where your organisation has a posted lookout. Park (a hangar cools the tail faster),
+lie low or move stock; call your lawyer about a warrant.
+
+The phone stays open while flying. If autopilot was off, opening it starts a temporary heading/altitude hold until you
+put it away and finish its conversation or map. An existing route keeps running and is never restarted by the phone.
+This is a hold, not obstacle avoidance: use it with safe altitude and airspeed. Ground services (the desk, dispatch,
+taxi, collectors, dealership and track) still need a parked aircraft. Calls do not pause the simulation.
 
 When a human-run organisation receives a Family offer, the same event rings the
 phone for 20 seconds. Open **T** on foot or **Shift+T** in the cockpit, select

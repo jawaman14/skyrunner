@@ -218,6 +218,10 @@ func start() -> void:
 		SavePaths.migrate()  # an old player's loose save files move into the folder once
 	var save := save_dir + SavePaths.file_name(mode, story, int(args["slot"]))
 	if not args["new"]:
+		var load_error := Session.save_load_error(save)
+		if load_error != "":
+			show_lobby(load_error)
+			return
 		var save_error := PlayableMaps.error(int(args["map"]), Session.read_save(save))
 		if save_error != "":
 			show_lobby(save_error)
@@ -234,6 +238,9 @@ func start() -> void:
 		opts["features"] = features
 	var fresh := not FileAccess.file_exists(save)
 	var sess := Session.load_or_new(save, opts)
+	if sess == null:
+		show_lobby(Session.save_load_error(save))
+		return
 	if fresh and opts.has("money"):
 		sess.say("Benny Ruiz fronts the start-up money: $%s. Everything's open from the first minute - spend it well." % Py.money(int(opts.money)))
 	if args["weather"] != "":  # --weather clear|cloud|storm[,moon 0..1]; the HQ season sets its own each night
