@@ -24,6 +24,10 @@ Work now opens market indices and buyers' orders (remaining cargo, premium, dead
 
 The handset now closes on a moving ground aircraft, preserves only overlays it opened for the temporary airborne hold, and sends the first explicit U from Phone to Map to the selected chart waypoint. The focused phone regression passes (1/1); PROJECT_STATUS is current. Exact-head CI and independent review are next; PR stays draft until the review findings are cleared.
 
+### 27 October 2026 - phone Controls hold follow-up to #446 (Codex)
+
+Fixed the remaining phone hold transition from Settings to Controls: when the pause panel belongs to the phone, opening Controls retains its temporary airborne autopilot hold until Controls closes. Added a regression for that path; the focused phone app test passes (1/1). #446 merged while this review fix was being prepared, so this fix will go in a separate PR. Broader tests, exact-head CI and independent review remain before integration.
+
 ## For the owner: switching AIs
 
 Paste this into the new AI:
