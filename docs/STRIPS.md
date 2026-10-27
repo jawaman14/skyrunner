@@ -25,11 +25,11 @@ Aircraft c172p, c182 at light, half, max load, one calm run per cell. Key under 
 | VAL Valle Verde | 0 | 070 | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✗ |
 | VAL Valle Verde | 1 | 250 | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✗ |
 | FRM Finca Morales | 0 | 120 | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✗ |
-| FRM Finca Morales | 1 | 300 | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✗ L✗ |
+| FRM Finca Morales | 1 | 300 | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✗ |
 | MGR Barra del Rio | 0 | 100 | T✓ L✓ | T✓ L✓ | T✗ L✓ | T✓ L✗ | T✓ L✓ | T✓ L✗ |
 | MGR Barra del Rio | 1 | 280 | T✓ L✓ | T✓ L✓ | T✗ L✓ | T✓ L✗ | T✓ L✓ | T✓ L✗ |
-| QRY Old Quarry | 0 | 110 | T✓ L– | T✓ L– | T✓ L– | T✗ L– | T✓ L– | T✓ L– |
-| QRY Old Quarry | 1 | 290 | T✗ L✓ | T✗ L✓ | T✗ L✓ | T✗ L✗ | T✗ L✓ | T✗ L✗ |
+| QRY Old Quarry | 0 | 110 | T✓ L– | T✓ L– | T✓ L– | T✓ L– | T✓ L– | T✓ L– |
+| QRY Old Quarry | 1 | 290 | T✗ L✓ | T✗ L✓ | T✗ L✓ | T✓ L✗ | T✗ L✓ | T✗ L✗ |
 | EGL Mesa del Aguila | 0 | 010 | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✗ |
 | EGL Mesa del Aguila | 1 | 190 | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✓ | T✓ L✗ |
 | PNR La Selva | 0 | 110 | T✓ L– | T✓ L– | T✗ L– | T✓ L– | T✓ L– | T✗ L– |
@@ -56,8 +56,8 @@ Natural terrain, map seed 100000, 30% fuel. Each value is a **sampled lower boun
 | EGL Mesa del Aguila | 1 | >= 609 lb (all the room) | >= 1040 lb (all the room) |
 | PNR La Selva | 0 | >= 438 lb (failed at 457) | >= 845 lb (failed at 878) |
 | PNR La Selva | 1 | none | none |
-| QRY Old Quarry | 0 | >= 609 lb (all the room) | none |
-| QRY Old Quarry | 1 | none | none |
+| QRY Old Quarry | 0 | >= 609 lb (all the room) | >= 1040 lb (all the room) |
+| QRY Old Quarry | 1 | none | >= 33 lb (failed at 65) |
 
 ## Reading the results
 
@@ -104,6 +104,5 @@ Natural terrain, map seed 100000, 30% fuel. Each value is a **sampled lower boun
 - **COV Smuggler's Cove**: 18 m wide is under 1.6 wingspans for c310 (span 11.3 m)
 - **ISL Cayo Largo**: 20 m wide is under 1.6 wingspans for dhc6 (span 19.8 m)
 - **QRY Old Quarry**: no aircraft or load flown here lands from end 0 (no clear final)
-- **QRY Old Quarry**: no aircraft or load flown here takes off from end 1 (CRASH: Ran off the strip into rough ground. Repairs -$2,500.)
 - **PNR La Selva**: no aircraft or load flown here lands from end 0 (no clear final)
 - **PNR La Selva**: no aircraft or load flown here takes off from end 1 (CRASH: Ran off the strip into rough ground. Repairs -$2,500.)

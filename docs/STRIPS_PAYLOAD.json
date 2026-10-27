@@ -656,20 +656,29 @@
     "field": "QRY",
     "fuel_frac": 0.3,
     "map_seed": 100000,
-    "max_payload_frac": null,
-    "max_payload_lb": null,
+    "max_payload_frac": 1.0,
+    "max_payload_lb": 1040.0,
     "payload_room_lb": 1040.0,
     "runs": [
       {
-        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "outcome": "3km",
         "payload_frac": 0.0,
-        "status": "fail"
+        "status": "pass"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 1.0,
+        "status": "pass"
       }
     ],
     "samples": [
       [
         0.0,
-        false
+        true
+      ],
+      [
+        1.0,
+        true
       ]
     ],
     "terrain": "natural"
@@ -706,20 +715,74 @@
     "field": "QRY",
     "fuel_frac": 0.3,
     "map_seed": 100000,
-    "max_payload_frac": null,
-    "max_payload_lb": null,
+    "max_payload_frac": 0.03125,
+    "max_payload_lb": 32.5,
     "payload_room_lb": 1040.0,
     "runs": [
       {
-        "outcome": "CRASH: Flew into terrain. Repairs -$10,200.",
+        "outcome": "3km",
         "payload_frac": 0.0,
+        "status": "pass"
+      },
+      {
+        "outcome": "CRASH: Flew into terrain. Repairs -$10,200.",
+        "payload_frac": 1.0,
         "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.5,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.25,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.125,
+        "status": "fail"
+      },
+      {
+        "outcome": "CRASH: Ran off the strip into rough ground. Repairs -$10,200.",
+        "payload_frac": 0.0625,
+        "status": "fail"
+      },
+      {
+        "outcome": "3km",
+        "payload_frac": 0.03125,
+        "status": "pass"
       }
     ],
     "samples": [
       [
         0.0,
+        true
+      ],
+      [
+        1.0,
         false
+      ],
+      [
+        0.5,
+        false
+      ],
+      [
+        0.25,
+        false
+      ],
+      [
+        0.125,
+        false
+      ],
+      [
+        0.0625,
+        false
+      ],
+      [
+        0.03125,
+        true
       ]
     ],
     "terrain": "natural"
