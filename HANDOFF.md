@@ -24,6 +24,10 @@ Work now opens market indices and buyers' orders (remaining cargo, premium, dead
 
 The handset now closes on a moving ground aircraft, preserves only overlays it opened for the temporary airborne hold, and sends the first explicit U from Phone to Map to the selected chart waypoint. The focused phone regression passes (1/1); PROJECT_STATUS is current. Exact-head CI and independent review are next; PR stays draft until the review findings are cleared.
 
+### 27 October 2026 - phone Controls hold follow-up to #446 (Codex)
+
+Fixed the remaining phone hold transition from Settings to Controls: when the pause panel belongs to the phone, opening Controls retains its temporary airborne autopilot hold until Controls closes. Added a regression for that path; the focused phone app test passes (1/1). #446 merged while this review fix was being prepared, so this fix will go in a separate PR. Broader tests, exact-head CI and independent review remain before integration.
+
 ## For the owner: switching AIs
 
 Paste this into the new AI:
@@ -60,6 +64,8 @@ Windows capture fix (14 Oct): root cause is twofold: Windows `--headless` select
 Publication status: the Windows capture fix is committed locally, but `git push` failed first against the configured proxy and then because Git's credential prompt script could not start (`Win32 error 5`). Draft #374 is still at remote head `ced9ea0`; no exact-head CI exists for this local fix. Preserve the clean local commit and retry publication when Git credentials work.
 
 TTS follow-up (14 Oct): after the owner reported that the game was still invisible, removed `audio/general/text_to_speech=true` from `project.godot` and guarded the default speech callback. The setting caused a reproducible WinRT startup exception on this PC. The Windows capture launcher no longer edits project settings; it produced 16/16 PNGs after the change. A fresh game process launched through the `SkyRunner Review` desktop shortcut and has a responsive `Skyrunner (DEBUG)` window. The desktop controller cannot select or focus that window, so visibility to the owner remains unverified. The main checkout's dirty `project.godot` and `scripts/game/speech.gd` were patched with the same TTS fix without disturbing its editor plugin setting.
+
+**Map scenery draft (Codex, 14 Oct), #373:** Airport/docks, rural, HQ/casino/city, terrain/sidewalk and Miami street details are pushed. Club Tropicana planted arrival beds and canopy, Hotel Cielo outer-court planting, deeper cafe frontage and the deterministic low-rise shop-awning pass are implemented. Six raised beds add matching solid collision inside existing pavement, clear of the central approaches and casino drive. The awnings reuse the Kenney commercial kit, batch per city chunk and add no collision or interactions. Focused checks recorded before the awning follow-up: 13/13 for access, footprint and per-bed triangle budget. Latest known exact-head CI/captures passed on 797a40d. This follow-up has not had Godot tests, import, or a capture run; the current machine's GitHub fetch failed through its proxy. Design and plan: `docs/superpowers/specs/2026-10-14-costa-brava-city-frontage-design.md` and `docs/superpowers/plans/2026-10-14-costa-brava-city-frontage-plan.md`. No human gameplay check or merge is claimed. Waterfront streets remain a future slice; other baton tasks above remain active.
 
 ## Taking over (checklist for the incoming AI)
 
@@ -161,6 +167,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-10-27 - Codex, #373 after #414/#446/#447:** Synced the scenery PR with `main` `6f2d2344`, preserved both handoff histories and regenerated the project status after importing the new glyph add-on. Focused `city_dress` 12/12, `period_props` 8/8 and `docs` 3/3 pass. The awning regression remains in place. Next: exact-head CI, scenery captures, independent review and resolution of open threads before merging; the `automerge` label remains removed.
+
+- **2026-10-27 - Codex, #373 scenery integration:** Synced the remote PR head with `main` `1117604b` in a fresh linked worktree; the older #373 worktree has unrelated dirty files and was preserved. Main's period building parcels displaced the old commercial kit, so the awning placement now also accepts period shop models; the real-map placement test selects eligible shops across the map. Focused `city_dress` 12/12, `period_props` 8/8 and `docs` 3/3 passed. Project status was regenerated; trailing blank lines in the PR diff were removed. Next: exact-head CI, visual capture and independent review before merge.
 - **2026-10-27 - Codex, #447 current-main sync:** Merged `main` `1117604b` into the isolated dealer-scroll worktree without conflicts. The PR diff remains this handoff, `dealer_menu.gd`, and `test_game_menus.gd`; focused `game_menus` 8/8 and `dealership` 14/14, project status current, and `git diff --check` clean. Next: push this head, wait for exact-head CI and independent Claude review, then merge only if the queue is ready. The dirty primary checkout was untouched.
 
 - **2026-10-26 - Codex, #447 after #463:** Merged main `3744307c` into the dealer-scroll branch without conflicts. The PR still changes only this handoff, `dealer_menu.gd`, and its existing menu test; the F-4 inventory delivery merge remains intact. New exact-head CI is required. The owner's requested Codex technical review found no blocking issue at the previous head; the project still needs an independent review at the new head before merge.

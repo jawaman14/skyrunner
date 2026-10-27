@@ -85,6 +85,34 @@ func _footprint(m: Dictionary, xf: Transform3D) -> Rect2:
 	return r
 
 
+## The shop awnings (#373) ride on the lots' own transforms, so after the lot fit was corrected (#407) each canopy must still
+## stand on its own building: within a few metres of the box's footprint, and never on another building's side of the street.
+func test_shop_awnings_stay_at_their_own_building() -> void:
+	var boxes := _boxes(10000)
+	var idx := []
+	for i in boxes.size():
+		if boxes[i].style == "shop" and boxes[i].h <= 14.0:
+			idx.append(i)
+			if idx.size() >= 32:
+				break
+	var placements := CityDress._awning_placements(boxes, idx)
+	var placed := 0
+	var worst := 0.0
+	for part in placements:
+		for xf in placements[part]:
+			var at: Vector3 = (xf as Transform3D).origin
+			var nearest := 1e9
+			for b in boxes:
+				# how far the point is outside the building's footprint (0 inside)
+				var dx := maxf(absf(at.x - float(b.x)) - float(b.w) / 2.0, 0.0)
+				var dy := maxf(absf(-at.z - float(b.y)) - float(b.d) / 2.0, 0.0)
+				nearest = minf(nearest, sqrt(dx * dx + dy * dy))
+			worst = maxf(worst, nearest)
+			placed += 1
+	check(placed > 0, "some shop lots got an awning (%d)" % placed)
+	check(worst < 6.0, "every awning is within 6 m of its own building's footprint (worst %.1f m)" % worst)
+
+
 func test_a_box_is_cut_into_lots_by_its_size_and_the_same_box_always_the_same() -> void:
 	var small := CityDress.lots(_bld("res", 22.0, 22.0, 10.0), 1)
 	var big := CityDress.lots(_bld("res", 44.0, 44.0, 10.0), 1)
@@ -129,6 +157,8 @@ func test_build_draws_models_near_and_boxes_far_in_chunks() -> void:
 		for n in c.get_children():
 			if n is StaticBody3D:
 				continue  # the collision
+			if n.name == "shop-frontages":
+				continue  # the awnings (#373): their own test below
 			var mmi := n as MultiMeshInstance3D
 			if mmi.name == "buildings":
 				boxes_drawn += mmi.multimesh.instance_count

@@ -35,6 +35,12 @@ void fragment() {
 	float macro = vnoise(wpos.xz * macro_scale);
 	float rock = smoothstep(0.30, 0.55, slope + (d1 - 0.5) * 0.15);
 	vec3 col = mix(base, rock_color * (0.85 + 0.3 * d2), rock * step(0.0, wpos.y));
+	// Exposed cliff strata and subtle beach ripples on the fallback material.
+	float strata = 0.94 + 0.06 * sin(wpos.y * 0.33 + d1 * 2.0);
+	col *= mix(1.0, strata, rock);
+	float shore = (1.0 - smoothstep(2.0, 7.0, wpos.y)) * step(1.8, wpos.y) * (1.0 - rock);
+	float phase = dot(wpos.xz, vec2(1.4, 0.6));
+	col *= 1.0 + shore * 0.05 * sin(phase + d1 * 2.0) * (1.0 - smoothstep(0.4, 1.2, fwidth(phase)));
 	col *= 0.86 + 0.18 * d1 + 0.08 * d2;
 	col *= 0.93 + 0.14 * macro;
 	float wet = 1.0 - smoothstep(0.0, 1.8, wpos.y);

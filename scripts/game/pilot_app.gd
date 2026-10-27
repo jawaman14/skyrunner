@@ -840,8 +840,11 @@ func _on_pause_choice(action: String) -> void:
 			s.save()
 			pause_menu.say("Saved." if s.parked else "Saved: in the air, so you'll start again at %s." % World.airfield(s.save_location()).name)
 		"controls":
+			var from_phone := _phone_flight_open and _phone_owned_overlay == "pause"
 			close_pause()
 			toggle_controls()
+			if from_phone and controls_menu != null:
+				_phone_owned_overlay = "controls"
 		"load", "lobby", "desktop":
 			if action != "load":
 				s.save()
@@ -1898,7 +1901,7 @@ func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
 func _sync_phone_hold() -> void:
 	var phone: PhoneMenu = menus.get("phone")
 	var in_flight := not on_foot and s.state != null and not s.state.on_ground
-	var overlay_open := (_phone_owned_overlay == "map" and _map_open()) or (_phone_owned_overlay == "help" and help.visible) or (_phone_owned_overlay == "pause" and pause_menu != null) or (_phone_owned_overlay == "talk" and is_instance_valid(talk))
+	var overlay_open := (_phone_owned_overlay == "map" and _map_open()) or (_phone_owned_overlay == "help" and help.visible) or (_phone_owned_overlay == "pause" and pause_menu != null) or (_phone_owned_overlay == "controls" and controls_menu != null) or (_phone_owned_overlay == "talk" and is_instance_valid(talk))
 	var open := in_flight and ((phone != null and phone.visible) or (_phone_flight_open and overlay_open))
 	if open and not _phone_flight_open:
 		if bot == null and not s.autopilot.engaged:
