@@ -467,4 +467,3 @@ static func _patio(k: Buildings.Kit) -> void:
 	_palm(k, -32.0, 48.0)
 	_palm(k, 32.0, 48.0)
 	_palm(k, -32.0, 72.0)
-

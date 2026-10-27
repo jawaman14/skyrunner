@@ -49,4 +49,3 @@ void fragment() {
 	ROUGHNESS = mix(0.95, 0.7, rock) - wet * 0.35;
 	SPECULAR = 0.25;
 }
-

@@ -692,4 +692,3 @@ static func _palms(world: World, roads: Array, q: Quality) -> MultiMeshInstance3
 ## a lock-up, tents under the canopy, a quarry shed, a boathouse, a villa.
 static func stash_house(world: World, st: Dictionary) -> Node3D:
 	return StashInterior.build(world, st)
-

@@ -114,4 +114,3 @@ void fragment() {
 	NORMAL_MAP = texture(normal_pack, uv * (w_rock > 0.5 ? 0.6 : 1.0)).rgb;
 	NORMAL_MAP_DEPTH = mix(0.6, 1.4, w_rock) * detail_fade;
 }
-

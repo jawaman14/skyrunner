@@ -275,4 +275,3 @@ func test_drum_stack_keeps_fuel_access_and_small_prop_budget() -> void:
 			check_eq(child.position, Vector3(0.7, 1, -1.4), "original approach position")
 	check_eq(actions, 1, "dressing adds no misleading inventory actions")
 	site.free()
-

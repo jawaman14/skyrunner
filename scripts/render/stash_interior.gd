@@ -144,4 +144,3 @@ static func show_state(node: Node3D, stash: Dictionary) -> void:
 		sign.position = area.position + Vector3(0, 0.7, 0)
 	sign.text = "STORAGE / WORKSHOP" if usable else "BURNED — STORAGE UNAVAILABLE"
 	sign.modulate = Color(0.8, 0.76, 0.65) if usable else Color(0.8, 0.3, 0.2)
-

@@ -361,7 +361,7 @@ static func _awning_placements(boxes: Array, indices: Array) -> Dictionary:
 			if rng.randf() >= 0.55:
 				continue
 			var lot: Dictionary = shop_lots[lot_index]
-			if str(lot.kit) != "commercial":
+			if str(lot.kit) not in ["commercial", "period"]:
 				continue
 			var building_value: Variant = _load([str(lot.kit), str(lot.name)])
 			if not (building_value is Dictionary):
@@ -387,4 +387,3 @@ static func _awning_placements(boxes: Array, indices: Array) -> Dictionary:
 			var xf := Transform3D(basis, facade - basis * mount)
 			(placements[part] as Array).append(xf)
 	return placements
-

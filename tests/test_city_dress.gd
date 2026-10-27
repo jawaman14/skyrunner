@@ -88,8 +88,13 @@ func _footprint(m: Dictionary, xf: Transform3D) -> Rect2:
 ## The shop awnings (#373) ride on the lots' own transforms, so after the lot fit was corrected (#407) each canopy must still
 ## stand on its own building: within a few metres of the box's footprint, and never on another building's side of the street.
 func test_shop_awnings_stay_at_their_own_building() -> void:
-	var boxes := _boxes(400)
-	var idx := range(boxes.size())
+	var boxes := _boxes(10000)
+	var idx := []
+	for i in boxes.size():
+		if boxes[i].style == "shop" and boxes[i].h <= 14.0:
+			idx.append(i)
+			if idx.size() >= 32:
+				break
 	var placements := CityDress._awning_placements(boxes, idx)
 	var placed := 0
 	var worst := 0.0

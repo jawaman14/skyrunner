@@ -958,4 +958,3 @@ static func _hacienda(k: Kit) -> void:
 		k.box(Vector3(-3 + i * 4.5, 1.4, 8.4), Vector3(0.3, 2.8, 0.3), "wood")
 	k.box(Vector3(6, 2.9, 8.4), Vector3(22, 0.2, 2.4), "terracotta", false)
 	_windows(k, -3, 15, 8.9, 1.8, 4)
-

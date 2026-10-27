@@ -61,4 +61,3 @@ func _capture() -> void:
 			quit(1)
 			return
 	quit()
-
