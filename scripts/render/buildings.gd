@@ -840,9 +840,7 @@ static func _task_force(k: Kit) -> void:
 	k.interact(Vector3(-2.0, 1.0, 0.6), "hq_law", "Task-force duty desk")
 	k.lamp(Vector3(-2.0, 3.0, 1.5))
 	for i in 3:  # patrol cars
-		k.box(Vector3(-6 + i * 5.5, 0.7, -12), Vector3(1.9, 1.4, 4.4), "white")
-		k.box(Vector3(-6 + i * 5.5, 1.55, -12.3), Vector3(1.8, 0.1, 0.5), "blue", false)
-		k.box(Vector3(-6 + i * 5.5, 1.5, -11.2), Vector3(1.7, 0.5, 1.8), "glass", false)
+		k.vehicle("police", 4.4, Vector3(-6 + i * 5.5, 0, -12))
 
 
 ## Los Cuervos: a walled compound, a corrugated warehouse, a watchtower, trucks.
@@ -933,8 +931,8 @@ static func _nightclub(k: Kit) -> void:
 	k.lamp(Vector3(0, 7.6, 2.0))
 	# a doorman's rope and the boss's car at the kerb
 	k.box(Vector3(0, 0.5, -d / 2 - 2.0), Vector3(4, 1.0, 0.08), "red", false)
-	k.box(Vector3(9, 0.7, -d / 2 - 4.5), Vector3(4.6, 1.4, 2.0), "black")
-	k.box(Vector3(9, 1.6, -d / 2 - 4.5), Vector3(2.6, 0.6, 1.9), "glass", false)
+	# Keep the existing 4.6 x 2.0 m kerbside footprint clear of the club beds.
+	k.vehicle("suv-luxury", 4.6, Vector3(9, 0, -d / 2 - 4.5), 90.0)
 
 
 ## The customs house extras: a lattice radar tower and a customs launch at the quay.

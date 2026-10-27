@@ -213,8 +213,7 @@ static func _forecourt(k: Buildings.Kit) -> void:
 	for p in [[-36.0, -6.0], [36.0, -6.0], [-36.0, -20.0], [36.0, -20.0], [-18.0, -2.5], [18.0, -2.5], [-40.0, 30.0], [40.0, 30.0]]:
 		_palm(k, p[0], p[1])
 	# a doorman's rope and the guests' car at the kerb
-	k.box(Vector3(14, 0.7, -22), Vector3(4.6, 1.4, 2.0), "black")
-	k.box(Vector3(14, 1.6, -22), Vector3(2.6, 0.6, 1.9), "glass", false)
+	k.vehicle("sedan-sports", 4.6, Vector3(14, 0, -22), 90.0)
 
 
 ## The vertical blade sign, the rooftop sign and the neon along the roof line (labels go dark with the house).
