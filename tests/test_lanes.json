@@ -35,6 +35,7 @@
     "test_city_map.gd",
     "test_command_domains.gd",
     "test_commands.gd",
+    "test_controls_glyphs.gd",
     "test_core_parity.gd",
     "test_crew.gd",
     "test_economy.gd",
