@@ -15,6 +15,15 @@ history: the Claude-led workflow they describe is superseded.
 in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the queue in
 `docs/ROADMAP.md`. Older handoffs: [docs/archive/HANDOFF_HISTORY_2026-09.md](docs/archive/HANDOFF_HISTORY_2026-09.md).
 
+
+### 19 October 2026 — phone operations (#446, Codex)
+
+Work now opens market indices and buyers' orders (remaining cargo, premium, deadline; Enter calls Benny without accepting a sale). Empire opens a read-only Heat view, with raid countdowns restricted to posted lookouts. The phone stays open airborne and owns only a temporary AP hold it starts; pre-existing routes are never copied or restored. Ground services remain parked-only. GUIDE and decision trackers updated. Regression checkpoint 4d573571 failed the Work/waypoint assertions in CI job 117954655516 as expected; implementation CI and fresh review still required. D-62's full desk and pickup scenes remain dependent on L-1/F-5/L-4 and PickupOrder; D-75's world rebuild and later presentation remain paused.
+
+### 22 October 2026 - phone operations review fixes (#446, Codex)
+
+The handset now closes on a moving ground aircraft, preserves only overlays it opened for the temporary airborne hold, and sends the first explicit U from Phone to Map to the selected chart waypoint. The focused phone regression passes (1/1); PROJECT_STATUS is current. Exact-head CI and independent review are next; PR stays draft until the review findings are cleared.
+
 ## For the owner: switching AIs
 
 Paste this into the new AI:
@@ -152,9 +161,23 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-10-27 - Codex, #447 current-main sync:** Merged `main` `1117604b` into the isolated dealer-scroll worktree without conflicts. The PR diff remains this handoff, `dealer_menu.gd`, and `test_game_menus.gd`; focused `game_menus` 8/8 and `dealership` 14/14, project status current, and `git diff --check` clean. Next: push this head, wait for exact-head CI and independent Claude review, then merge only if the queue is ready. The dirty primary checkout was untouched.
+
+- **2026-10-26 - Codex, #447 after #463:** Merged main `3744307c` into the dealer-scroll branch without conflicts. The PR still changes only this handoff, `dealer_menu.gd`, and its existing menu test; the F-4 inventory delivery merge remains intact. New exact-head CI is required. The owner's requested Codex technical review found no blocking issue at the previous head; the project still needs an independent review at the new head before merge.
+
+- **2026-10-25 - Codex, #447 dealer scroll integration:** Merged `main` at `fa4ff455` into the dealer-scroll branch in a separate linked worktree. The only conflict was in `tests/test_game_menus.gd`: kept #447's viewport-backed wheel-scroll regression and #431's keyboard traversal regression. The source merged automatically. Focused `game_menus` 8/8 and `dealership` 14/14; project-status check passed. The first cold Godot import segfaulted during asset import, then a locked retry completed; no test assertion ran on the failed attempt. Exact-head CI passed 14/14 at `fadb70b7`, then main advanced to `7e8e9d75` (#459); the second merge was conflict-free and requires new checks. Next: verify and push the refreshed head, get fresh CI and independent exact-head review, then integrate #447 if all gates pass. The primary dirty checkout was untouched.
+
+- **2026-10-26 - Codex, #450 contract integration:** Synced the PR branch with main `3744307c` after F-4 step 4, retaining both the 23 October #431 checkpoint and the 20 October empire contract entry. The three-file PR diff is documentation only. The two earlier automated spec findings are addressed at `69137aa4`. Fresh exact-head CI and independent Claude review are required before merge.
+
 - **2026-10-27 - Codex, #374 period vehicle integration:** Synced the PR branch with `main` `1117604b`. Retained the vehicle work and its historical handoff; kept main's retired speech-script deletion and archived link targets, and regenerated `PROJECT_STATUS.md`. Focused `period_vehicles` 6/6, `car_physics` 8/8 and `docs` 3/3 passed on pinned Godot 4.7.2. Next: inspect the PR-only diff, push for exact-head CI and vehicle captures, obtain independent review, then resync after #373 lands if needed. The primary dirty checkout was untouched.
 
 - **2026-10-23 - Codex, #431 dealer navigation integration:** Merged current main into Claude's dealer-scroll PR in an isolated worktree. Only generated PROJECT_STATUS conflicted; regenerated it to 1,258 methods and checked current. The PR's lot-to-Yours UP/DOWN behavior remains intact. Focused game menus 8/8 and dealership 14/14; diff check clean. Exact-head CI and a fresh independent review of the merge remain before integration with #447.
+
+- **2026-10-20 - Codex, empire contract follow-up:** `codex/empire-contract-fixes` corrects the F-1 unsupported-save gate, names passive Los Cuervos income for F-3, makes F-6's nightly report independent of the capped transient event bus, and normalises A5's fee in transfers and balances. `test_docs` passed 3/3; `git diff --check` was clean. No gameplay code changed. F-1's code guard is a separate follow-up based on draft #441; later F-3, F-6 and L-5 implementations still need their own tests.
+
+- **2026-10-22 - Codex, #446 review fixes:** In an isolated worktree, fixed the three open phone findings: overlay ownership, moving-ground handset control, and first-U waypoint routing. Focused phone test 1/1; project status check current; primary checkout untouched. Next: exact-head CI, review, and thread resolution before integration.
+
+- **2026-10-19 - Codex, phone operations:** On `codex/phone-operations`, recorded the plan and regression expectations for Work market/orders, Empire Heat and in-flight phone hold (D-27/D-49/D-62). This checkpoint intentionally precedes implementation: the new expectations should fail. Worktree creation and local Git writes were denied; verification uses CI. Main's previous N-2/N-3/N-4 history is preserved. Next: demonstrate the failure, implement through current interfaces, then finish CI/review/integration.
 
 - **2026-10-19 - Codex, empire pivot N-2/N-3/N-4:** #442 names Rafa as employer and Benny as fixer, including the flying lessons' assertions; its 14 CI jobs passed at `a62f581`. #444 opens the prelude/chapter-2 scenes, saves a cue only at natural END, and tests hangup/retry/save-load; all test lanes passed at `e0128f35`, with visual capture still running when recorded. #443 retires active speech claims and release gates, dates old suite evidence/timings, and preserves this shared handoff plus current-main inventory/roadmap. Review findings were answered in their inline threads. Local Git writes and shell network access were denied, so changes were published through the GitHub connector and verified in CI; the dirty primary checkout was untouched. PR states and the shared board are authoritative for subsequent integration and risk-review updates.
 

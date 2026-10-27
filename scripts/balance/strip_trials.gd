@@ -205,7 +205,7 @@ static func takeoff(aircraft: String, code: String, load: String, end: int, frac
 		if bot.phase == "done":
 			stop = "bot gave up"
 			break
-		if c != null and bot.phase in ["climb", "enroute"]:
+		if c != null and (bot.phase in ["climb", "enroute"] or not s.state.on_ground):  # from liftoff, not only once the bot calls it a climb: a light aircraft drifts 15+ m in between
 			c.aileron = hold_line_aileron(bot, s.state, hdg, dep.cross)
 		s.update(DT, null, c)
 		if _ended(s):

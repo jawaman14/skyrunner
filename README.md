@@ -200,7 +200,7 @@ The game's own code and content are MIT ([LICENSE](LICENSE)). All the people, or
   Quaternius's Downtown City MegaKit (CC0); Kenney's particle sprites and UI sounds (CC0). Fonts are Kaushan Script
   and Monoton (SIL OFL, `assets/fonts/`). Every other sound is synthesized in `scripts/game/sound.gd`.
 - **Add-ons** (all in `addons/`, each with its licence): Dialogue Manager and Input Helper (Nathan Hoad, MIT), Debug
-  Menu (Hugo Locurcio, MIT), SimpleGodotCRTShader (Henrique Lacreta Alves, MIT) and GATO's colour-blindness shader
-  (MPL-2.0, unmodified). Godot and Jolt are MIT.
+  Menu (Hugo Locurcio, MIT), Controller Icons (Ricardo Subtil, MIT; its key and pad glyphs are Xelu's CC0 set),
+  SimpleGodotCRTShader (Henrique Lacreta Alves, MIT) and GATO's colour-blindness shader (MPL-2.0, unmodified). Godot and Jolt are MIT.
 
 [docs/LIBRARIES.md](docs/LIBRARIES.md) lists the libraries considered and the art removed again.
