@@ -15,6 +15,10 @@ history: the Claude-led workflow they describe is superseded.
 in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the queue in
 `docs/ROADMAP.md`. Older handoffs: [docs/archive/HANDOFF_HISTORY_2026-09.md](docs/archive/HANDOFF_HISTORY_2026-09.md).
 
+### 27 October 2026 - automatic merge review gate (Codex)
+
+The label-driven merge workflow was found to merge non-draft PRs after green CI even when independent review or review threads remained open. #414 and #446 merged while their final findings were still being fixed; #467 and #468 carry those fixes. This branch makes auto-merge require an approval from the other agent on the exact head, all review threads resolved, and a head current with main. Removed the `automerge` label from unsafe open PRs while the workflow change is reviewed. This workflow PR must remain draft and unlabeled until its own review and CI gates pass.
+
 
 ### 19 October 2026 — phone operations (#446, Codex)
 
