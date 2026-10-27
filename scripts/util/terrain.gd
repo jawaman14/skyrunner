@@ -26,7 +26,7 @@ static var _f := PackedFloat32Array([0.0])
 ## res://data/terrain (tools/bake_terrain.gd), anything else is cached in
 ## user://terrain on first use. Bump CACHE_VERSION whenever the generator
 ## changes, then re-bake.
-const CACHE_VERSION := 2
+const CACHE_VERSION := 3
 const BAKED_DIR := "res://data/terrain"
 const CACHE_DIR := "user://terrain"
 static var disk_cache := true
@@ -287,9 +287,9 @@ func _shape_fields(h: PackedFloat64Array, p_seed := 0) -> void:
 					if haul >= 0:
 						var s_end := -1.0 if haul == 0 else 1.0
 						var beyond := s_end * lon - half_len
-						var cut := beyond > -20 and absf(lat) < 70 + maxf(beyond, 0.0) * 0.3
+						var cut := beyond > -20 and absf(lat) < 120 + maxf(beyond, 0.0) * 0.5
 						if cut:
-							hv = minf(hv, elev - maxf(beyond, 0.0) * 0.06)
+							hv = minf(hv, elev - maxf(beyond, 0.0) * 0.09)
 				else:
 					var reach := 650.0 if setting == "beach" else 260.0
 					var blend := _smoothstep(reach, 50, dist)
