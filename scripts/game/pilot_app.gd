@@ -557,7 +557,11 @@ func _unhandled_input(ev: InputEvent) -> void:
 			var args := {}
 			if k == KEY_U and waypoint != null:
 				args["waypoint"] = [waypoint.x, waypoint.y]  # U flies to the waypoint set on the chart
+			if k == KEY_U and _phone_hold_started and s.autopilot.waypoints.is_empty() and waypoint != null:
+				s.command(Roles.PILOT, "autopilot", {"on": false})  # first explicit U uses the selected waypoint
 			var r: Array = s.command(Roles.PILOT, CREW_KEYS[k], args)
+			if k == KEY_U and r[0]:
+				_phone_hold_started = false
 			if not r[0]:
 				s.say(r[1])
 		elif k == KEY_7:
@@ -623,6 +627,9 @@ var waypoint = null  ## the ground point you picked on the chart (Vector2), or n
 var _wp_beacon: MeshInstance3D = null
 var car_dash: CarDash = null  ## the dashboard, shown while driving
 var radio: CarRadio = null  ## the radio: the cockpit's (F7) and the car's (R); silent on foot
+var _phone_flight_open := false
+var _phone_hold_started := false
+var _phone_owned_overlay := ""
 var talk: TalkBalloon = null  ## a conversation on screen (the Family, the General's aide)
 var company_choice_dialog: AcceptDialog = null
 var _offers_seen := {}
@@ -1034,13 +1041,19 @@ func _toggle_on_foot() -> void:
 ## A number picked from the phone: the same call the Shift keys make from the cockpit, and the
 ## desk and dispatch without walking to them.
 func _phone_call(action: String) -> void:
+	if not on_foot and not s.parked and action in ["desk", "logistics", "taxi", "rackets", "dealer", "track"]:
+		s.say("Land and park before using this service.")
+		return
 	match action:
 		"map":
 			_map_toggle()
+			_phone_owned_overlay = "map" if _map_open() else ""
 		"settings":
 			open_pause()
+			_phone_owned_overlay = "pause" if pause_menu != null else ""
 		"help":
 			help.visible = true
+			_phone_owned_overlay = "help"
 		"job_board":
 			if not on_foot and s.parked:
 				_toggle_menu("j")
@@ -1060,6 +1073,7 @@ func _phone_call(action: String) -> void:
 			_open("track")
 		_:
 			_talk_standing(action)
+			_phone_owned_overlay = "talk" if is_instance_valid(talk) else ""
 
 
 ## A conversation, with the walker standing still for it.
@@ -1357,9 +1371,14 @@ func _on_use(action: String, area: Area3D) -> void:
 
 
 func _open(key: String) -> void:
+	if key == "phone" and not on_foot and s.state != null and s.state.on_ground and not s.parked:
+		s.say("Come to a full stop before using the phone.")
+		return
 	for other in menus.values():
 		other.visible = false
 	menus[key].open()
+	if key == "phone":
+		_sync_phone_hold()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if walker != null:
 		walker.look_enabled = false
@@ -1384,7 +1403,7 @@ func _gather_input() -> ControlMapper.InputFrame:
 	var inp := ControlMapper.InputFrame.new()
 	inp.pressed = _pressed
 	_pressed = {}
-	var menu_open := _active_menu() != null or controls_menu != null or pack_menu != null or pause_menu != null
+	var menu_open := _active_menu() != null or controls_menu != null or pack_menu != null or pause_menu != null or (_phone_flight_open and (is_instance_valid(talk) or _map_open() or help.visible))
 	if not menu_open:
 		for action in ControlsConfig.HELD:
 			if Input.is_action_pressed(ControlsConfig.action(action)):
@@ -1438,6 +1457,9 @@ func _offers_watch() -> void:
 
 
 func _process(delta: float) -> void:
+	_sync_phone_hold()
+	if not on_foot and s.state != null and s.state.on_ground and not s.parked and menus.phone.visible:
+		menus.phone.visible = false  # landing or taxiing puts the handset away before controls are read
 	var dt := minf(delta, 0.1)
 	_frame += 1
 	if _air_look_active and not _air_camera_look_allowed():
@@ -1519,7 +1541,7 @@ func _process(delta: float) -> void:
 		_car_race()
 	if m == null:
 		hud.refresh()
-	elif not s.parked and not m is CheatMenu:  # the test menu stays open in the air ("fill the tank wherever it is")
+	elif not s.parked and not m is CheatMenu and not m is PhoneMenu:  # the test menu stays open in the air ("fill the tank wherever it is")
 		m.close()
 	elif _frame % 10 == 0:
 		m.refresh()
@@ -1869,3 +1891,22 @@ func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
 		_cam_pos.y = ground
 	cam.global_position = _cam_pos
 	cam.look_at(target + view_offset, Vector3.UP)
+
+
+## A temporary heading/altitude hold only when the phone interrupted manual flight.
+## Existing routes keep their own state, including arrival; never restore a saved route.
+func _sync_phone_hold() -> void:
+	var phone: PhoneMenu = menus.get("phone")
+	var in_flight := not on_foot and s.state != null and not s.state.on_ground
+	var overlay_open := (_phone_owned_overlay == "map" and _map_open()) or (_phone_owned_overlay == "help" and help.visible) or (_phone_owned_overlay == "pause" and pause_menu != null) or (_phone_owned_overlay == "talk" and is_instance_valid(talk))
+	var open := in_flight and ((phone != null and phone.visible) or (_phone_flight_open and overlay_open))
+	if open and not _phone_flight_open:
+		if bot == null and not s.autopilot.engaged:
+			var result: Array = s.command(Roles.PILOT, "autopilot", {"on": true})
+			_phone_hold_started = bool(result[0])
+	elif not open and _phone_flight_open:
+		if _phone_hold_started and s.autopilot.engaged and s.autopilot.waypoints.is_empty():
+			s.command(Roles.PILOT, "autopilot", {"on": false})
+		_phone_hold_started = false
+		_phone_owned_overlay = ""
+	_phone_flight_open = open
