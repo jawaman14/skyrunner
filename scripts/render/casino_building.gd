@@ -56,6 +56,7 @@ static func build(world: World) -> Node3D:
 	_cage(k)
 	_salon(k)
 	_patio(k)
+	_deco_identity(k)
 	var node := k.finish()
 	var at := site()
 	node.position = Vector3(at.x, world.ground(at.x, at.y), -at.y)
@@ -66,6 +67,42 @@ static func build(world: World) -> Node3D:
 	_signs(node)
 	root.add_child(node)
 	return root
+
+
+## Brass portals and terrazzo inlays sit on existing surfaces. All geometry is
+## cosmetic: no changes to the entry, manager stairs, tables, cage or crowd routes.
+static func _deco_identity(k: Buildings.Kit) -> void:
+	# Stepped entrance piers: cream and brass against the pink-and-glass facade.
+	for side in [-1, 1]:
+		for fin in 3:
+			k.box(Vector3(side * (31.3 + fin * 0.6), 4, -0.29), Vector3(0.2, 7 - fin * 0.7, 0.06), "brass", false)
+		k.box(Vector3(side * 4.6, 2.25, -0.29), Vector3(0.12, 4.5, 0.06), "brass", false)
+		# Lobby-to-floor opening is 16m wide; the jambs remain on its wall.
+		k.box(Vector3(side * 8.2, 2.4, 10.76), Vector3(0.12, 4.5, 0.06), "brass", false)
+	k.box(Vector3(0, 4.6, -0.29), Vector3(9.4, 0.12, 0.06), "brass", false)
+	k.box(Vector3(0, 4.7, 10.76), Vector3(16.6, 0.15, 0.06), "brass", false)
+	# Flat inset paths distinguish lobby, gaming floor and the courtyard exit.
+	for side in [-1, 1]:
+		k.box(Vector3(side * 2.7, FLOOR + 0.008, 5), Vector3(0.08, 0.01, 9), "brass", false)
+		k.box(Vector3(side * 10.5, FLOOR + 0.04, 26), Vector3(0.1, 0.012, 21), "pump_cream", false)
+	for z in [2.0, 5.0, 8.0]:
+		k.box(Vector3(0, FLOOR + 0.009, z), Vector3(0.65, 0.012, 0.65), "drum_sage", false)
+	# Palm-like fan motifs on the high side walls, above the slot machines.
+	for side in [-1, 1]:
+		for z in [17.0, 28.0, 38.0]:
+			for step in 5:
+				k.box(Vector3(side * (W / 2 - 0.23), 5.6, z - 0.9 + step * 0.45), Vector3(0.04, 0.6 + (2 - absi(2 - step)) * 0.55, 0.12), "brass", false)
+	# Reception panel and cabaret stage retain their original envelope.
+	# Small glass-block accents borrow the period Deco material vocabulary.
+	for side in [-1, 1]:
+		k.box(Vector3(side * 20, 6.05, -0.09), Vector3(1.55, 1.2, 0.035), "pump_cream", false)
+		for row in 3:
+			for column in 4:
+				k.box(Vector3(side * 20 - 0.555 + column * 0.37, 5.67 + row * 0.38, -0.13), Vector3(0.29, 0.29, 0.055), "glass", false)
+	for x in [-27.0, -25.5, -24.0, -22.5, -21.0]:
+		k.box(Vector3(x, FLOOR + 0.55, 1.38), Vector3(0.035, 1, 0.025), "brass", false)
+	for x in [19.0, 21.0, 31.0, 33.0]:
+		k.box(Vector3(x, 4.2, 75.19), Vector3(0.12, 4.8, 0.04), "brass", false)
 
 
 ## The walker's ground on the island: the strip, the apron and the casino, as one height field of the island's heights.
@@ -155,6 +192,13 @@ static func _table(k: Buildings.Kit, x: float, z: float, size: Vector3, action: 
 static func _forecourt(k: Buildings.Kit) -> void:
 	k.box(Vector3(0, 0.05, 20), Vector3(104, 0.1, 112), "concrete")  # the pavement, front, sides and the courtyard behind
 	k.box(Vector3(0, 0.07, -24), Vector3(46, 0.04, 16), "asphalt", false)  # the drive
+	# Planted arrival courts occupy the unused outer pavement, not the drive,
+	# fountain, canopy columns or the runway-facing entrance corridor.
+	for side in [-1, 1]:
+		for z in [-27.0, -11.0]:
+			Buildings.forecourt_planter(k, Vector3(side * 44, 0.1, z), Vector2(6, 3), true)
+		k.box(Vector3(side * 34, 0.113, -29), Vector3(14, 0.012, 0.18), "terracotta", false)
+		k.box(Vector3(side * 34, 0.113, -31), Vector3(14, 0.012, 0.18), "terracotta", false)
 	# the porte-cochere: a flat plate on four slim columns, its edge a neon strip
 	k.box(Vector3(0, 5.2, -8), Vector3(26, 0.35, 16), "white")
 	k.box(Vector3(0, 4.95, -16.1), Vector3(26, 0.16, 0.1), "neon_cyan", false)
@@ -169,8 +213,7 @@ static func _forecourt(k: Buildings.Kit) -> void:
 	for p in [[-36.0, -6.0], [36.0, -6.0], [-36.0, -20.0], [36.0, -20.0], [-18.0, -2.5], [18.0, -2.5], [-40.0, 30.0], [40.0, 30.0]]:
 		_palm(k, p[0], p[1])
 	# a doorman's rope and the guests' car at the kerb
-	k.box(Vector3(14, 0.7, -22), Vector3(4.6, 1.4, 2.0), "black")
-	k.box(Vector3(14, 1.6, -22), Vector3(2.6, 0.6, 1.9), "glass", false)
+	k.vehicle("sedan-sports", 4.6, Vector3(14, 0, -22), 90.0)
 
 
 ## The vertical blade sign, the rooftop sign and the neon along the roof line (labels go dark with the house).
