@@ -27,6 +27,10 @@ The handset now closes on a moving ground aircraft, preserves only overlays it o
 
 The glyph column now removes a binding label only when its active-device glyph actually resolves and can render. In headless mode, or for an unsupported rebound key, the empty slot keeps every binding readable. Added a headless menu regression and explicit missing-glyph coverage; focused glyph tests pass 6/6. #414 merged while this review finding was being fixed, so the fix will go in a separate PR. Exact-head CI and independent review remain before integration.
 
+### 27 October 2026 - phone Controls hold follow-up to #446 (Codex)
+
+Fixed the remaining phone hold transition from Settings to Controls: when the pause panel belongs to the phone, opening Controls retains its temporary airborne autopilot hold until Controls closes. Added a regression for that path; the focused phone app test passes (1/1). #446 merged while this review fix was being prepared, so this fix will go in a separate PR. Broader tests, exact-head CI and independent review remain before integration.
+
 ## For the owner: switching AIs
 
 Paste this into the new AI:

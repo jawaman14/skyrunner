@@ -123,9 +123,9 @@ static func _strip_specs() -> Array:
 		["FRM", "Finca Morales", -1500.0, -2600.0, 0.0, 480.0, 20.0, null, "grass", "bush", {}, "flat", 700.0, [15.0, 260.0]],
 		["MGR", "Barra del Rio", -12600.0, -9400.0, 60.0, 340.0, 18.0, 3.0, "sand", "shady", {"setting": "beach"}, "beach", 700.0,
 			[0.5, 20.0]],
-		["QRY", "Old Quarry", 10500.0, 1700.0, 0.0, 240.0, 18.0, null, "dirt", "shady",
-			{"setting": "pit", "haul_road": 0}, "pit", 1400.0, [120.0, 600.0]],
-		["EGL", "Mesa del Aguila", -7500.0, 8800.0, 90.0, 280.0, 18.0, null, "dirt", "bush", {"setting": "plateau"}, "plateau", 3500.0,
+		["QRY", "Old Quarry", 10500.0, 1700.0, 0.0, 620.0, 18.0, null, "dirt", "shady",
+			{"setting": "pit", "haul_road": 0, "pin": [10704.1, 701.8, 110.0]}, "pit", 1400.0, [120.0, 600.0]],
+		["EGL", "Mesa del Aguila", -7500.0, 8800.0, 90.0, 560.0, 18.0, null, "dirt", "bush", {"setting": "plateau"}, "plateau", 3500.0,
 			[950.0, 1600.0]],
 		["PNR", "La Selva", 4700.0, 8200.0, 90.0, 380.0, 18.0, null, "gravel", "bush", {"tree_lines": true}, "flat", 1800.0,
 			[150.0, 650.0]],
@@ -175,9 +175,15 @@ static func generate() -> MapLayout:
 			x = at[1]
 			y = at[2]
 			hdg = at[3]
+		var pin = s[10].get("pin")  # a fixed site: the search above still runs, so the shared random draws (and every later strip) stay as they were
+		if pin != null:
+			x = pin[0]
+			y = pin[1]
+			hdg = pin[2]
 		if s[11] == "plateau":
 			elev = snappedf(base.height64(x, y), 1.0)
 		var opts: Dictionary = s[10].duplicate()
+		opts.erase("pin")
 		if s[11] == "pit":
 			opts["haul_road"] = 1 if sin(deg_to_rad(hdg)) > 0 else 0  # the end facing east
 		placed.append(Airfield.new(s[0], s[1], x, y, hdg, s[5], s[6], elev, s[8], s[9], opts))
