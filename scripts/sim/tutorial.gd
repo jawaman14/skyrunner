@@ -108,7 +108,7 @@ const DESK_LESSONS := {
 		["c_airport", "island", "The airport and the port",
 			"L cracks down at the airport, P puts inspectors on the port: fewer mules and containers get through - for a while.", ["airport_crackdown", "port_inspections"]],
 		["c_court", "court", "Prosecute",
-			"With a case open: N no bail, W immunity for a witness, K forfeiture, D charges, Y a plea offer. A offers an arrested worker a deal.", ["court_no_bail", "court_immunity", "court_forfeiture", "court_charge", "court_offer_plea", "offer_worker_deal"]],
+			"With a case open: W immunity for a witness, K forfeiture, D charges, Y a plea offer. A offers an arrested worker a deal.", ["court_no_bail", "court_immunity", "court_forfeiture", "court_charge", "court_offer_plea", "offer_worker_deal"]],
 	],
 	"chief": [
 		["h_orders", "", "Run the task force",
@@ -133,7 +133,7 @@ const TIPS := {
 	"radar": "The police have noticed you. Radar cannot see you below about 45 m above the ground (a little higher the farther you are from it) or behind hills; patrols and helicopters also spot you by eye out to about 4 km, less in fog, rain or cloud. Fly low and behind terrain, turn the transponder off only below the radar floor, and watch the detector: it shows who is painting you. A tethered balloon on the coast sees low flyers.",
 	"wanted": "You're WANTED. Break contact: low, behind hills, into cloud or rain; lose them over the sea. Landing dirty at a watched strip ends it.",
 	"fuel": "Fuel under a quarter. Land and refuel (L), or pump the ferry tank (V) if you carry one.",
-	"busted": "Busted. With a court in the game it's a case now: SHIFT+L talks to your lawyer - bail, motions, a plea or a deal.",
+	"busted": "Busted. With a court in the game it's a case now: SHIFT+L talks to your lawyer - motions, a plea or a deal.",
 	"fog": "Sea fog tonight: the police crews can't see far and thick fog grounds the helicopters. The radar doesn't care.",
 	"storm": "A storm: rain and cloud hide you from the crews, but the turbulence is real and helicopters stay home.",
 	"short": "Payday's coming and the safe is thin. Unpaid crews skim, walk or talk - get the street money home.",

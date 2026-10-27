@@ -1,0 +1,37 @@
+# First-draft lines for Rafael "Rafa" Quintero. These entry points are
+# deliberately independent of the takeover scene that will call them.
+
+~ employment
+Rafa Quintero: There you are! My favorite pilot in the family, right on time and only a little bit expensive.
+Your man: You said it was a delivery job.
+Rafa Quintero: It is. I pay you, you fly, somebody gets what they asked for. That's honest work if you don't ask the wrong questions.
+Rafa Quintero: Bring the plane back in one piece. Your mother still thinks I lend you the good one.
+=> END
+
+~ chapter_two_first
+Rafa Quintero: How'd the run go? Don't give me the pilot's version. Tell me what the people on the ground wanted.
+Your man: A clean drop. No names, no questions.
+Rafa Quintero: Good. A package is only a package until somebody trusts you with what's inside.
+Rafa Quintero: For now, you fly. I'll take care of the introductions.
+=> chapter_two_second
+
+~ chapter_two_second
+Rafa Quintero: You think we're moving cargo. We're moving favors. The cargo just gives everybody something to hold while they decide what a favor is worth.
+Your man: And if they decide it isn't worth much?
+Rafa Quintero: Then they learn my prices have a long memory.
+Rafa Quintero: (a beat; then a bright laugh) But don't worry, mi familia. We are all smiles until the books come out.
+=> chapter_two_third
+
+~ chapter_two_third
+Rafa Quintero: People see the plane and think the plane is the business. It isn't. The business is knowing who can keep a promise when the money gets loud.
+Your man: You trust all these people?
+Rafa Quintero: Trust? No. I keep track. Trust is what you call it when the books are balanced.
+Rafa Quintero: You're family. That gets you a seat at the table. What you do with it is up to you.
+=> END
+
+~ chapter_four_news
+Radio: The lookout called. Los Cuervos stopped Rafa on the road. Then the line went quiet.
+Your man: Two people heard the shots. Nobody saw the end. They say Rafa is dead.
+Your man: Half the crew stayed. Half the quiet stashes are still ours. The only trucks left are the ones parked at home, and there's a quarter of his cash.
+Your man: His desk is empty. Take it if you want. The runway is still open either way.
+=> END

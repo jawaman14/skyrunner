@@ -205,7 +205,7 @@ func ship(method: String, amount: int) -> String:
 			if sess.payroll != null:
 				sess.payroll.release(mules)
 			return "Need $%s." % Py.money(cost)
-		sess.money -= cost
+		sess.move_money(-cost, "outside:growers", "purchase")
 		next_mules = sess.time + RESTOCK_S * sess.econ.restock_mult("cocaine")
 		_serial += 1
 		shipments.append({"id": "M%d" % _serial, "method": "mules", "n": n, "lb": lb, "cost": cost,
@@ -221,7 +221,7 @@ func ship(method: String, amount: int) -> String:
 		var cost := int(lb * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine")) + SHIP_FREIGHT + port_fee
 		if sess.money < cost:
 			return "Need $%s." % Py.money(cost)
-		sess.money -= cost
+		sess.move_money(-cost, "outside:growers", "purchase")
 		next_ship = sess.time + RESTOCK_S * sess.econ.restock_mult("cocaine")
 		_serial += 1
 		shipments.append({"id": "S%d" % _serial, "method": "ship", "n": 1, "lb": float(lb), "cost": cost,
@@ -260,11 +260,11 @@ func _resolve(sh: Dictionary) -> void:
 			pay = 0
 			if got > 0:
 				landed = _land(float(sh.lb) * got / maxf(1.0, float(sh.n)), Vector2(World.airfield("HAR").x, World.airfield("HAR").y))
-		sess.money += pay
+		sess.move_money(pay, "outside:buyers", "delivery")
 		if lost > 0:
 			caught += lost
 			airport_heat = minf(100.0, airport_heat + 12.0 * lost)
-			sess.law_funds += 800.0 * lost
+			sess.move_law_funds(800.0 * lost, "outside:state", "forfeiture")
 			sess.econ.record_seizure("cocaine", "sea")
 			sess.law_say("Customs at San Telmo Intl: %d swallowers caught off the island flight" % lost)
 			# a mule who talks
@@ -282,7 +282,7 @@ func _resolve(sh: Dictionary) -> void:
 		if rng.random() < p:
 			caught += 1
 			port_heat = minf(100.0, port_heat + 30.0)
-			sess.law_funds += 5000.0
+			sess.move_law_funds(5000.0, "outside:state", "forfeiture")
 			c.suspicion = minf(100.0, c.suspicion + 12.0)
 			sess.econ.record_seizure("cocaine", "sea")
 			sess.law_say("Port of San Telmo: %d lb found under frozen shrimp in a container from Isla Soberana" % int(sh.lb))
@@ -296,7 +296,7 @@ func _resolve(sh: Dictionary) -> void:
 			if sess.logistics != null:
 				last = "The container cleared customs: %s" % _land(float(sh.lb), PORT)
 			else:
-				sess.money += worth
+				sess.move_money(worth, "outside:buyers", "delivery")
 				last = "The container cleared customs: +$%s" % Py.money(worth)
 	sess.say("THE ISLAND - " + last)
 	sess.bus.emit("island_shipment", sess.time, last, ["runner"], {"method": sh.method, "delivered_lb": delivered_lb})
@@ -325,7 +325,7 @@ func buy_passage() -> String:
 	var cost := passage_cost()
 	if sess.money < cost:
 		return "Need $%s." % Py.money(cost)
-	sess.money -= cost
+	sess.move_money(-cost, "outside:state", "fee")
 	passage_until = sess.time + PASSAGE_S
 	relations = minf(100.0, relations + 8.0)
 	last = "Safe passage bought from the General's aide: the MiGs look the other way for %d min" % int(PASSAGE_S / 60)
@@ -346,7 +346,7 @@ func on_arrive() -> void:
 	if not open():
 		# the purge: whoever lands is part of the plot
 		var k := mini(maxi(0, sess.money), 8000)
-		sess.money -= k
+		sess.move_money(-k, "outside:state", "forfeiture")
 		relations = maxf(0.0, relations - 10.0)
 		sess.say("THE ISLAND - Soldiers on the ramp: the purge. They 'confiscate' $%s and the cargo, and let you go." % Py.money(k))
 		for j in sess.active_jobs.duplicate():
@@ -462,7 +462,7 @@ func _rival_trade() -> void:
 		rival_caught += 1
 		caught += 1
 		port_heat = minf(100.0, port_heat + 20.0)
-		sess.law_funds += 5000.0
+		sess.move_law_funds(5000.0, "outside:state", "forfeiture")
 		sess.econ.record_seizure("cocaine", "sea")
 		sess.law_say("Port of San Telmo: a Los Cuervos container from Isla Soberana, 500 lb under the fish")
 		sess.say("NEWS - Customs open a container from the island: Los Cuervos lose a load.")
@@ -488,7 +488,7 @@ func _patrol(step: float) -> void:
 		_mig_t = 0.0
 		intercepts += 1
 		var fine := mini(maxi(0, sess.money), 3000 + int(relations < 30.0) * 5000)
-		sess.money -= fine
+		sess.move_money(-fine, "outside:state", "fine")
 		relations = maxf(0.0, relations - 5.0)
 		last = "A MiG-21 on the wing, rocking: the island's air force. A 'landing fee' of $%s wired to an account on the island" % Py.money(fine)
 		sess.say("THE ISLAND - " + last)

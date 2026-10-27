@@ -22,8 +22,8 @@ const LOCKS := ["guns", "role_soldier", "role_mule"]
 ## laundering sets off the uprising), so none of them can be optional.
 const CHAPTERS := [
 	[1979, "Square Grouper",
-		"San Telmo, 1979. The Cessna is half the bank's, the charters don't cover the fuel,\n"
-		+ "and Benny Ruiz at the boatyard knows men up in the hills with bales of grass.\n"
+		"San Telmo, 1979. Rafa Quintero's charter outfit owes the bank, and its fares barely cover fuel,\n"
+		+ "but his fixer Benny Ruiz knows men up in the hills with bales of grass.\n"
 		+ "Buy it at the bush strips, fly it into our stash houses, and hire a kid or two\n"
 		+ "to sell it on the corners [Phone > Manny Ortega]. Low money, low risk - for now.",
 		["trade", "payroll", "chronicle"],
@@ -31,11 +31,11 @@ const CHAPTERS := [
 			["dealers", "Hire a street dealer for a corner [Phone > Manny Ortega]", 1],
 			["trade_earned", "Earn $2,500 from the corners: the product your dealers sell counts as you are paid", 2500]]],
 	[1980, "The Connection",
-		"The boatlift brings a hundred thousand people across the straits, and a few of them
+		"Rafa says the boatlift brings a hundred thousand people across the straits, and a few of them
 "
 		+ "know the Colombians. Grass pays by the ton; the white stuff pays by the ounce.
 "
-		+ "And it's a business now: product sits in a stash, the money piles up on the corners,
+		+ "Rafa calls it a business now: product sits in a stash, the money piles up on the corners,
 "
 		+ "and the growers want cash on the strip. Truck it, fly it, count it [Phone > Dispatch].
 "
@@ -147,7 +147,7 @@ const GUIDANCE := [
 	"Phone > Sunrise Collective reaches Nico. Trade pounds of grass for sheets, then sell sheets through the circuit. Ask about rates and half-hour limits; proceeds remain at the named location. Delegation allows your people to repeat trading automatically until you stop it.",
 	"Cocaine work, guns and soldiers are now available. Acquire weapons first, hire soldiers, then assign orders at the desk. Keep eight weapons in the armoury for the objective. Truck cover and steel reduce risk; neither guarantees safety.",
 	"Phone > Family reads offers; Benny also handles Family bulk sales. Any accepted offer, loan or bulk sale qualifies. Read the review for costs and continuing obligations. Spendable cash is separate from money waiting at stashes.",
-	"Federal court cases now replace the old fine-only consequences of a bust. Phone > Your lawyer explains bail, discovery and pleas when a case opens. Deliver three jobs marked hot, then have suspicion below 60%; this goal is an end-state check, not a consecutive timer.",
+	"Federal court cases now replace the old fine-only consequences of a bust. Phone > Your lawyer explains discovery, motions and pleas when a case opens. Deliver three jobs marked hot, then have suspicion below 60%; this goal is an end-state check, not a consecutive timer.",
 	"Phone > General's aide compares flight, mule and container routes. Read fees and customs risk before ordering. At least some product must arrive; an intercepted shipment does not count. Logistics normally receives island product near the harbour/airport.",
 	"Phone > Hotel Cielo: buy a real stake, then launder street cash through the cage. Fees and available cash appear in the action review. Meeting these goals schedules unrest in ten minutes. When the uprising begins, use the launch before its displayed deadline. Losing the house continues the story but is recorded as missed evacuation.",
 	"Company-marked jobs appear on flight boards. Deliver one, then Phone > Benny Ruiz to sell four rifles to the Company. Protection has limits and can end. An unavailable Company waives unfinished work; it does not mean you completed it.",
@@ -233,7 +233,7 @@ You turned the Company down without taking a side. The General remains in power,
 				elif company_decision == "skipped":
 					briefing += "\nThe Company cut you loose before the order came. The General remains in power and the island route stays open."
 			if index == 0 and employment != null:
-				briefing = "The company has crossed into smuggling. Until you buy your own aircraft, the Cessna remains company property. Benny Ruiz introduces the growers: buy grass, fly it into stash houses, and set up your first dealer through Phone > Manny Ortega.\n" + "A loaned aircraft is use of company equipment, not ownership. Your savings and first purchase remain yours."
+				briefing = "Rafa's company has crossed into smuggling. Until you buy your own aircraft, the Cessna remains company property. His fixer Benny Ruiz introduces the growers: buy grass, fly it into stash houses, and set up your first dealer through Phone > Manny Ortega.\n" + "A loaned aircraft is use of company equipment, not ownership. Your savings and first purchase remain yours."
 			_chapter = Campaign.Chapter.new(index + 1, c[0], c[1], briefing, [], [], goals)
 		return _chapter
 

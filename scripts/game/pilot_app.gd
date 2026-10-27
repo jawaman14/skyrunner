@@ -33,6 +33,7 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
          Flight assist (ESC menu): with no key held the wings level and the pitch holds; taps are gentle
          R/F or PGUP/PGDN throttle (hold; a tap is a few %)   Z ramp to full   X ramp to idle   (Z Z / X X: instant)
          G flaps down   T flaps up   [ / ] pitch trim   B or SPACE brakes
+         BACKSPACE back up slowly (1.5 m/s): stopped, throttle at idle, on an airfield
          Y toggle mouse yoke (mouse position = stick)   joystick / gamepad work too
          Air look: hold RIGHT mouse and drag while airborne (independent of Y)
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
@@ -78,8 +79,8 @@ Trade    SHIFT+B Benny Ruiz and the buyers: sell cocaine, grass or rifles in bul
          go into the stash; dealers (hire them from Manny) sell it on the corners
          SHIFT+C talk to the Sunrise Collective (when available)
 Haul     SHIFT+H logistics: product and cash sit in the stashes - truck them (to the club, a buyer, the corners) or fly cash bags (C load, U unload)
-Court    arrested (with a court): SHIFT+L your lawyer - bail or a bond, a better lawyer, motions to
-         suppress / discovery / more time, the plea, the witness, the judge, a deal; the appeal inside
+Court    arrested (with a court): SHIFT+L your lawyer - a better lawyer, motions to
+         suppress / discovery / more time, the plea, the witness, the judge, a deal
 Crew     SHIFT+W Manny Ortega's hiring hall: hire soldiers, drivers, mules, lookouts, an accountant,
          contract pilots; bonuses; lawyers for the jailed. Payday every 10 min - pay them or else
 Island   Isla Soberana is over the southern horizon (SOB): cheap loads, the General's MiGs, and the
@@ -219,7 +220,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	car_dash = CarDash.new()
 	car_dash.visible = false
 	ui.add_child(car_dash)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu], ["dealer", DealerMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu], ["dealer", DealerMenu], ["cheat", CheatMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
@@ -408,6 +409,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			s.say("Debug: skipped to chapter %d." % s.story.chapter.num)
 			get_viewport().set_input_as_handled()
 			return
+		if k == KEY_F6 and ev.ctrl_pressed and not ev.echo and server == null:  # the owner's test menu: solo only, never at a shared table
+			_open("cheat")
+			get_viewport().set_input_as_handled()
+			return
 		var m := _active_menu()
 		if m != null:
 			if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k == KEY_G) or (m is HQMenu and k in [KEY_Q, KEY_D])):
@@ -511,7 +516,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 		elif ev.shift_pressed and k == KEY_B and s.trade != null:
 			open_talk("buyers")  # Benny Ruiz: who's buying, and at what
 		elif ev.shift_pressed and k == KEY_L and s.court != null:
-			open_talk("lawyer")  # your lawyer: bail, motions, the plea, a deal, the appeal
+			open_talk("lawyer")  # your lawyer: motions, the plea, a deal
 		elif ev.shift_pressed and k == KEY_F and s.family != null:
 			open_talk("family")  # a sit-down with the Family
 		elif ev.shift_pressed and k == KEY_G and s.island != null:
@@ -621,6 +626,7 @@ var radio: CarRadio = null  ## the radio: the cockpit's (F7) and the car's (R); 
 var talk: TalkBalloon = null  ## a conversation on screen (the Family, the General's aide)
 var company_choice_dialog: AcceptDialog = null
 var _offers_seen := {}
+var _rafa_cue_offered := ""  ## Offer once per parked visit; a hangup may retry after the next landing or reload.
 var _was_on_island := false
 var _court_stage := ""
 var _casino_node: Node3D = null  ## the Hotel Cielo's building, once found (it exists only on the island)
@@ -662,6 +668,32 @@ func _show_company_choice() -> void:
 	dialog.popup_centered()
 
 
+## Rafa's opening and chapter-two conversations are one-time story cues. The saved progress dictionary
+## remembers the cue without changing the story or save schema; the chapter-four news stays for the takeover scene.
+func _rafa_story_cue() -> void:
+	if not s.parked:
+		_rafa_cue_offered = ""
+		return
+	if s.story == null or (talk != null and is_instance_valid(talk)):
+		return
+	var story: Story = s.story
+	var title := ""
+	var flag := ""
+	if story.employment != null and story.employment.active():
+		if story.employment.stage == 0:
+			title = "employment"
+			flag = "rafa_employment_seen"
+	elif story.chapter.num == 2:
+		title = "chapter_two_first"
+		flag = "rafa_chapter_two_seen"
+	if flag == "" or flag == _rafa_cue_offered or bool(story.progress.get(flag, false)):
+		return
+	var balloon := open_talk("rafa", title)
+	if balloon != null:
+		_rafa_cue_offered = flag
+		balloon.completed.connect(func(): story.progress[flag] = true, CONNECT_ONE_SHOT)
+
+
 ## Word that someone wants to talk, and the aide on the ramp when you land on the island.
 func _talk_cues() -> void:
 	if s.family != null:
@@ -681,6 +713,7 @@ SHIFT+F to sit down with him." % [Talk.CAPO, str(o.text)], "family",
 	if on_island and not _was_on_island:
 		open_talk("general", "landing")
 	_was_on_island = on_island
+	_rafa_story_cue()
 
 
 ## F6: the performance overlay (Calinou's Debug Menu, MIT, addons/debug_menu):
@@ -1486,7 +1519,7 @@ func _process(delta: float) -> void:
 		_car_race()
 	if m == null:
 		hud.refresh()
-	elif not s.parked:
+	elif not s.parked and not m is CheatMenu:  # the test menu stays open in the air ("fill the tank wherever it is")
 		m.close()
 	elif _frame % 10 == 0:
 		m.refresh()

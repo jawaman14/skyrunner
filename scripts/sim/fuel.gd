@@ -43,7 +43,7 @@ static func pay(sess, o: String, amount: float) -> void:
 	if amount <= 0.0:
 		return
 	if o == "org":
-		sess.money -= int(round(amount))
+		sess.move_money(-int(round(amount)), "outside:market", "fuel", "org")
 	elif sess.ground != null:
 		sess.ground.commanders.rival.cash -= amount
 	sess.fuel_spent[o] = float(sess.fuel_spent.get(o, 0.0)) + amount

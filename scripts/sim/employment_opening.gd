@@ -6,9 +6,9 @@ const AIRCRAFT := "c172p"
 const PURCHASE_PRICE := 18000  # provisional career-only used-aircraft price; needs pacing playtest
 const TITLES := ["On the payroll", "An unusual customer", "No more pretending"]
 const BRIEFINGS := [
-	"Costa Brava Air Services hired you to fly its Cessna. It belongs to the company, not you. Start with ordinary supplies between San Telmo and Valle Verde. Complete two deliveries; check fuel and loading before departure.",
-	"The charter business is struggling. A customer pays for sealed cases and asks you not to discuss the contents. This first request is suspicious, but carries no contraband flag. Complete the flight; the company is changing.",
-	"The manager finally tells you what the next load is: marijuana. This is smuggling, with police consequences. The customer uses an unpoliced strip, not the scheduled airport charter route. Check the destination and radar information before departure. There is no legitimate-only branch of this story. You can postpone the flight, but completing it is required to continue."
+	"Rafa Quintero hired you to fly the Costa Brava Air Services Cessna. It belongs to his company, not you. Benny Ruiz, Rafa's fixer, has ordinary supplies for San Telmo and Valle Verde. Complete two deliveries; check fuel and loading before departure.",
+	"Rafa says the charter business needs this customer. Benny has sealed cases and asks you not to discuss the contents. The request is suspicious, but carries no contraband flag. Complete the flight; Rafa's business is changing.",
+	"Rafa finally tells you what the next load is: marijuana. Benny has arranged an unpoliced strip instead of a scheduled airport charter route. This is smuggling, with police consequences. Check the destination and radar information before departure. There is no legitimate-only branch of this story. You can postpone the flight, but completing it is required to continue."
 ]
 var stage := 0
 var delivered := 0

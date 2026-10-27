@@ -1,0 +1,62 @@
+name: Auto-merge
+
+# Merges a pull request once every check on its current head has passed, but only when it is opted in with the
+# `automerge` label, is not a draft and has no conflicts. The repo has no branch protection, so `gh pr merge --auto`
+# would merge at once; this waits for the "Skyrunner beta builds" run to finish instead. No code from the pull request
+# is checked out or run here.
+
+on:
+  workflow_run:
+    workflows: ["Skyrunner beta builds"]
+    types: [completed]
+  pull_request_target:
+    types: [opened, reopened, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: automerge
+  cancel-in-progress: false
+
+jobs:
+  label:
+    # Every new pull request opts in; remove the label to keep one out of the auto-merge.
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target' && github.event.action != 'labeled'
+    steps:
+      - run: gh pr edit "$PR" --add-label automerge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+
+  merge:
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request')
+      || (github.event_name == 'pull_request_target' && github.event.label.name == 'automerge')
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PRS_FROM_RUN: ${{ join(github.event.workflow_run.pull_requests.*.number, ' ') }}
+      PR_FROM_LABEL: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Merge the pull requests whose checks all passed
+        run: |
+          set -uo pipefail
+          for pr in $PRS_FROM_RUN $PR_FROM_LABEL; do
+            info=$(gh pr view "$pr" --json state,isDraft,mergeable,headRefOid,labels,statusCheckRollup)
+            ok=$(jq -r '
+              .state == "OPEN" and (.isDraft | not) and .mergeable == "MERGEABLE"
+              and ([.labels[].name] | index("automerge") != null)
+              and ([.statusCheckRollup[] | select(.workflowName != "Auto-merge")] | length > 0)
+              and ([.statusCheckRollup[] | select(.workflowName != "Auto-merge") | (.conclusion // .state // "PENDING") | ascii_upcase] | all(. == "SUCCESS" or . == "SKIPPED" or . == "NEUTRAL"))' <<<"$info")
+            if [ "$ok" != "true" ]; then
+              echo "#$pr: not ready (needs the automerge label, ready for review, no conflicts, all checks passed); skipped"
+              continue
+            fi
+            sha=$(jq -r .headRefOid <<<"$info")
+            gh pr merge "$pr" --merge --match-head-commit "$sha" && echo "#$pr: merged at $sha"
+          done
