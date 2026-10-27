@@ -58,6 +58,40 @@ func test_rebind_swaps_and_saves() -> void:
 	check(jb.is_action(ControlsConfig.action("throttle_full")), "the saved button")
 	check_eq(ControlsConfig.axes.bindings.throttle.axis, 5, "the saved axis")
 	check(not InputMap.action_get_events("ui_up").is_empty(), "the game's other actions untouched")
+	# Legacy profiles had only Backspace on reverse; gain RB unless another
+	# control was deliberately rebound to that button.
+	var legacy := ConfigFile.new()
+	var backspace := InputEventKey.new()
+	backspace.physical_keycode = KEY_BACKSPACE
+	var rb := InputEventJoypadButton.new()
+	rb.device = -1
+	rb.button_index = JOY_BUTTON_RIGHT_SHOULDER
+	legacy.set_value("keys", "reverse", [backspace])
+	legacy.save(TMP)
+	ControlsConfig.reset()
+	check(ControlsConfig.load_file(TMP), "old controls profile loaded")
+	check(backspace.is_action(ControlsConfig.action("reverse")), "old reverse key kept")
+	check(rb.is_action(ControlsConfig.action("reverse")), "new RB default migrated")
+	legacy.set_value("keys", "brake", [rb])
+	legacy.save(TMP)
+	ControlsConfig.reset()
+	check(ControlsConfig.load_file(TMP), "old profile with custom RB loaded")
+	check(rb.is_action(ControlsConfig.action("brake")), "custom RB kept on brake")
+	check(not rb.is_action(ControlsConfig.action("reverse")), "RB not duplicated on reverse")
+	legacy.erase_section_key("keys", "reverse")
+	legacy.save(TMP)
+	ControlsConfig.reset()
+	check(ControlsConfig.load_file(TMP), "profile predating reverse loaded")
+	check(rb.is_action(ControlsConfig.action("brake")), "old custom RB remains on brake")
+	check(not rb.is_action(ControlsConfig.action("reverse")), "old profile without reverse does not duplicate RB")
+	check(backspace.is_action(ControlsConfig.action("reverse")), "missing reverse keeps Backspace default")
+	var n := InputEventKey.new()
+	n.physical_keycode = KEY_N
+	legacy.set_value("keys", "reverse", [n])
+	legacy.save(TMP)
+	ControlsConfig.reset()
+	check(ControlsConfig.load_file(TMP), "old profile with custom reverse key loaded")
+	check(not rb.is_action(ControlsConfig.action("reverse")), "custom reverse binding not changed")
 
 
 func test_shaping() -> void:

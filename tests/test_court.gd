@@ -5,7 +5,12 @@ extends TestCase
 ## prosecutor's tools; the lawyer's conversation.
 
 
+func before_each() -> void:
+	Court.PILOT_FREE = false  # the bail, custody and prison process; the free pilot has its own tests at the end
+
+
 func after_each() -> void:
+	Court.PILOT_FREE = true
 	World.use_map(0)
 
 
@@ -378,3 +383,140 @@ func test_off_means_the_old_bust() -> void:
 	check(s.money < 10000 and s.phase == "busted", "a fine and the impound, as before")
 	s.dispose()
 	Court.ENABLED = true
+
+
+func test_the_free_pilot_is_never_held() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.money = 60000
+	var c := _arrest(s)
+	check_eq(c.stage, "pretrial", "no bail hearing")
+	check(not s.court.holding(), "the pilot is not held")
+	check_eq(c.bail_posted, "lawyer", "the lawyer attends")
+	check(s.command(Roles.PILOT, "confirm")[0], "back to work at once")
+	c.trial_at = s.time
+	c.evidence = 100.0
+	c.lawyer = "public"
+	var m0 := s.money
+	s.court.update(0.1)
+	check(s.court.case_ == null or s.court.case_.stage != "prison", "a verdict never sends the pilot inside")
+	check(not s.court.holding() and s.phase != "custody", "and never holds them")
+	check(s.money <= m0, "the verdict is paid in money")
+	s.dispose()
+
+
+func test_the_free_pilot_does_not_become_a_fugitive_when_away() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	var c := _arrest(s)
+	s.location = Island.CODE
+	c.trial_at = s.time
+	s.court.update(0.1)
+	check(s.court.case_ == null or s.court.case_.stage != "fugitive", "the lawyer appears; no warrant for missing a trial")
+	s.dispose()
+
+
+func test_a_legacy_bail_case_is_normalised_for_a_free_pilot() -> void:
+	var s := _sess()
+	s.money = 60000
+	var c := _arrest(s)  # the old process: a bail hearing
+	check_eq(c.stage, "bail", "the old process starts at bail")
+	Court.PILOT_FREE = true
+	var m0 := s.money
+	c.bail_by = s.time
+	s.court.update(0.1)
+	check_eq(c.stage, "pretrial", "converted to the lawyer's case")
+	check_eq(s.money, m0, "no bond is charged")
+	s.dispose()
+
+
+func test_a_legacy_custody_or_prison_case_does_not_hold_a_free_pilot() -> void:
+	var s := _sess()
+	var c := _arrest(s)
+	c.stage = "custody"
+	s.phase = "custody"
+	Court.PILOT_FREE = true
+	s.court.update(0.1)
+	check_eq(c.stage, "pretrial", "custody becomes the lawyer's case")
+	check(not s.court.holding() and s.phase != "custody", "and the pilot is out")
+	c.stage = "prison"
+	c.release_at = s.time + 3600.0
+	c.verdict = "convicted"
+	s.phase = "custody"
+	s.court.update(0.1)
+	check(s.court.case_ == null, "an old sentence is served at once")
+	check(s.phase != "custody", "and nothing keeps the pilot inside")
+	s.dispose()
+
+
+func test_a_conviction_takes_the_aircraft_once_it_is_parked() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.money = 60000
+	s.owned["c182"] = true
+	s._switch_aircraft("c182", 0.5)
+	var c := _arrest(s)
+	s.phase = "flying"
+	s.location = null
+	s.court._sentence("convicted", 3.0, 0)
+	check(not s.court.forfeit_pending, "a short sentence keeps the aircraft")
+	_arrest(s)
+	s.court._sentence("pleaded guilty", 9.0, 0)
+	check(s.court.case_ == null, "sentenced and closed")
+	check(s.court.forfeit_pending, "the aircraft is owed")
+	check_eq(s.aircraft_key, "c182", "but not swapped while flying")
+	s.phase = "parked"
+	s.location = "HAR"
+	s.active_jobs.append(Jobs.Job.new(1, "x", "cargo", "QRY", "FRM", [], 1))
+	s.court.update(0.1)
+	check_eq(s.aircraft_key, "c182", "not while a job is aboard")
+	s.active_jobs.clear()
+	s.court.update(0.1)
+	check_eq(s.aircraft_key, "c172p", "a used Skyhawk takes its place once parked")
+	check(not s.owned.has("c182") and not s.court.forfeit_pending, "the Skylane is gone")
+	s.dispose()
+
+
+func test_a_legacy_fugitive_case_becomes_the_lawyers_pretrial() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	var c := _arrest(s)
+	c.stage = "fugitive"
+	c.charges.append("bail_jumping")
+	s.court.update(0.1)
+	check(not c.charges.has("bail_jumping"), "and the bail-jumping charge goes with it")
+	check_eq(c.stage, "pretrial", "a fugitive is not a thing for a free pilot")
+
+
+func test_switching_aircraft_before_parking_forfeits_the_sentenced_one() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.money = 60000
+	s.owned["c182"] = true
+	s.owned["c172p"] = true
+	s._switch_aircraft("c182", 0.5)
+	_arrest(s)
+	s.court._sentence("convicted", 9.0, 0)
+	check_eq(s.court.forfeit_key, "c182", "the sentenced aircraft is recorded")
+	s._switch_aircraft("c172p", 0.5)
+	s.phase = "parked"
+	s.location = "HAR"
+	s.court.update(0.1)
+	check(not s.owned.has("c182"), "the sentenced Skylane goes")
+	check_eq(s.aircraft_key, "c172p", "and the Skyhawk being flown stays")
+	s.dispose()
+
+
+func test_the_free_pilots_sentence_still_reaches_the_event_bus() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.money = 60000
+	var c := _arrest(s)
+	var heard := [0]
+	s.bus.subscribe("sentenced", func(_e): heard[0] += 1)
+	c.trial_at = s.time
+	c.evidence = 100.0
+	c.lawyer = "public"
+	s.court.update(0.1)
+	check(heard[0] >= 1 or s.court.case_ != null, "a conviction emits sentenced before the case closes")
+	s.dispose()

@@ -19,7 +19,10 @@ func _init(opts := {}) -> void:
 		world = World.new()
 	map_seed = world.map.map_seed
 	seed = opts.get("seed", 1)
-	money = opts.get("money", START_MONEY)
+	var start_money = opts.get("money", START_MONEY)
+	ledger.track("org:safe", start_money, start_money, time)  # open at what the game starts (or loads) with, not at START_MONEY plus a phantom adjustment
+	money = start_money
+	ledger.track("police:budget", law_funds, law_funds, time)
 	owned = set_of(opts.get("owned", ["c172p"]))
 	aircraft_key = opts.get("aircraft_key", "c172p")
 	location = opts.get("location", START_FIELD)
@@ -179,6 +182,10 @@ func dispose() -> void:
 
 
 static func load_or_new(path: String, opts := {}) -> Session:
+	var load_error := save_load_error(path)
+	if load_error != "":
+		push_warning(load_error)
+		return null
 	var data := read_save(path)
 	var o := {}
 	o.merge(opts)

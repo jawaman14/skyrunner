@@ -95,7 +95,7 @@ The simulation shader only shows the problem; the colour-safe palette is the fix
 
 | Also looked at | Licence | Verdict |
 |---|---|---|
-| [GATO text-to-speech](https://github.com/Nokorpo/gato-godot-accessibility-toolkit) | MPL-2.0 | Done in the fourth pass. Its plugin wraps Godot's own `DisplayServer.tts_*`, so `scripts/game/speech.gd` calls that directly: conversations and radio calls, read aloud (F8). |
+| [GATO text-to-speech](https://github.com/Nokorpo/gato-godot-accessibility-toolkit) | MPL-2.0 | Previously implemented through Godot's own TTS API; read-aloud was removed in #385. The GATO TTS plugin is not a runtime dependency. |
 | [GodotShaderWarmup](https://github.com/Koisuji02/GodotShaderWarmup) | MIT | Still not adopted. It's a native binary per platform, and first-sight stutter can't be measured on this GPU-less build box. Godot has had a built-in shader baker that does the same job since 4.5; the project is on 4.7 with it on in the export presets, so measure with F6 before adding anything. |
 | [Phantom Camera](https://github.com/ramokz/phantom-camera), [Shaker](https://github.com/Eneskp3441/Shaker) | MIT | Tour cameras; screen shake for gunfire and turbulence. Small, later. |
 | [Maaack's Game/Menus Template](https://github.com/Maaack/Godot-Game-Template) | MIT | We have our own lobby and menus. |
@@ -120,7 +120,7 @@ The gaps asked about, checked one by one on GitHub (the only reachable source):
 | Textures | [Kenney Prototype Textures](https://github.com/shorepine/kenney); Poly Haven and ambientCG are unreachable (not on GitHub) | The terrain, city and water are procedural (`texgen.gd`, splat shaders) at any resolution. Photo textures would clash with the low-poly look, so nothing was taken. |
 | Inventory | [GLoot](https://github.com/peter-kish/gloot) (MIT, 4.4+), [Expresso Inventory System](https://github.com/expressobits/inventory-system) (MIT, C++), [Inventory Manager](https://github.com/Rubonnek/inventory-manager) | GLoot is the best of them, but its `Inventory` is a scene-tree Node, and ours has to live in the host-authoritative simulation and replicate. An on-foot pack of six kinds of thing is about 100 lines of `FootCombat`: it has a weight limit, slows you when heavy, keeps the other gun when you switch, takes and returns to the armoury, and holds medkits. Arrested, it becomes the task force's evidence. GLoot is the pick if inventory grows into containers, trading or grids. |
 | Street props | [KayKit City Builder Bits](https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0) | Adopted (above). |
-| Read aloud | GATO TTS | Adopted as Godot's own TTS (above). |
+| Read aloud | GATO TTS | Retired in #385 (above). |
 
 ## Looked at, not a fit
 
