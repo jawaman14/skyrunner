@@ -139,6 +139,9 @@ func test_save_writes_and_lobby_asks_first() -> void:
 
 
 func test_volume_and_graphics_settings_persist() -> void:
+	# Start from known settings: a volume or graphics level saved on this machine must not shift the steps.
+	ControlsConfig.save_setting("volume", 1.0)
+	ControlsConfig.save_setting("graphics", "high")
 	var r := _app()
 	var app: PilotApp = r[0]
 	app.open_pause()
