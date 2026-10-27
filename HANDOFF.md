@@ -15,7 +15,6 @@ history: the Claude-led workflow they describe is superseded.
 in the code and `docs/DESIGN.md`; release evidence in `docs/PROJECT_STATUS.md`; the queue in
 `docs/ROADMAP.md`. Older handoffs: [docs/archive/HANDOFF_HISTORY_2026-09.md](docs/archive/HANDOFF_HISTORY_2026-09.md).
 
-
 ### 19 October 2026 — phone operations (#446, Codex)
 
 Work now opens market indices and buyers' orders (remaining cargo, premium, deadline; Enter calls Benny without accepting a sale). Empire opens a read-only Heat view, with raid countdowns restricted to posted lookouts. The phone stays open airborne and owns only a temporary AP hold it starts; pre-existing routes are never copied or restored. Ground services remain parked-only. GUIDE and decision trackers updated. Regression checkpoint 4d573571 failed the Work/waypoint assertions in CI job 117954655516 as expected; implementation CI and fresh review still required. D-62's full desk and pickup scenes remain dependent on L-1/F-5/L-4 and PickupOrder; D-75's world rebuild and later presentation remain paused.
@@ -23,6 +22,10 @@ Work now opens market indices and buyers' orders (remaining cargo, premium, dead
 ### 22 October 2026 - phone operations review fixes (#446, Codex)
 
 The handset now closes on a moving ground aircraft, preserves only overlays it opened for the temporary airborne hold, and sends the first explicit U from Phone to Map to the selected chart waypoint. The focused phone regression passes (1/1); PROJECT_STATUS is current. Exact-head CI and independent review are next; PR stays draft until the review findings are cleared.
+
+### 27 October 2026 - Controls glyph binding fallback after #414 (Codex)
+
+The glyph column now removes a binding label only when its active-device glyph actually resolves and can render. In headless mode, or for an unsupported rebound key, the empty slot keeps every binding readable. Added a headless menu regression and explicit missing-glyph coverage; focused glyph tests pass 6/6. #414 merged while this review finding was being fixed, so the fix will go in a separate PR. Exact-head CI and independent review remain before integration.
 
 ### 27 October 2026 - phone Controls hold follow-up to #446 (Codex)
 
