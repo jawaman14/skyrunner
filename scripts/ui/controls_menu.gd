@@ -158,8 +158,9 @@ func _btn(text: String, cb: Callable) -> Button:
 func _refresh() -> void:
 	var device := "pad" if ControllerIcons.get_last_input_type() == ControllerIcons.InputType.CONTROLLER else "keyboard"
 	for n in key_rows:
-		key_glyphs[n].texture = ControlsGlyphs.texture(n)
-		key_rows[n].text = "press a key or button ..." if waiting_key == n else ControlsGlyphs.other_device_bindings(n, device)
+		var glyph_drawn := ControlsGlyphs.drawable() and ControlsGlyphs.resolved(n, device) != null
+		key_glyphs[n].texture = ControlsGlyphs.texture(n) if glyph_drawn else null
+		key_rows[n].text = "press a key or button ..." if waiting_key == n else ControlsGlyphs.other_device_bindings(n, device, glyph_drawn)
 	for c in axis_rows:
 		var b: FlightAxes.Binding = ControlsConfig.axes.bindings[c]
 		axis_rows[c].desc.text = "move it ..." if capturing == c else ControlsConfig.axes.describe(c)

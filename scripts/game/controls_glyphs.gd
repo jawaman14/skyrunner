@@ -40,10 +40,9 @@ static func resolved(control: String, device: String) -> Texture:
 	return icons.parse_path(ControlsConfig.action(control), icons.InputType.CONTROLLER if device == "pad" else icons.InputType.KEYBOARD_MOUSE)
 
 
-## Text bindings left beside the glyph. The glyph draws only the first event of the active device, so that one is dropped
-## from the text; every other binding (a second key, the other device) stays readable. `device` is explicit so this stays
-## deterministic in tests.
-static func other_device_bindings(control: String, device: String) -> String:
+## Text bindings left beside the glyph. Omit the first event of the active device only when a glyph actually draws it;
+## keep every binding readable when the slot is empty. `device` and `glyph_drawn` are explicit for headless tests.
+static func other_device_bindings(control: String, device: String, glyph_drawn: bool) -> String:
 	ControlsConfig.ensure()
 	var helper := ControlsConfig.helper()
 	var pad_active := device == "pad"
@@ -51,7 +50,7 @@ static func other_device_bindings(control: String, device: String) -> String:
 	var drawn := false
 	for ev in InputMap.action_get_events(ControlsConfig.action(control)):
 		var is_pad := ev is InputEventJoypadButton or ev is InputEventJoypadMotion
-		if is_pad == pad_active and not drawn:
+		if glyph_drawn and is_pad == pad_active and not drawn:
 			drawn = true
 			continue
 		labels.append(helper.get_label_for_input(ev))
