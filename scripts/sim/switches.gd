@@ -21,7 +21,7 @@ const PARITY := [
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
 ## options ask for it, so a parity session never builds it. Each has its own tests that flip it.
 const OPT_IN := [
-	"Court.ENABLED", "Family.ENABLED", "Island.ENABLED", "Payroll.ENABLED", "Trade.ENABLED", "Races.ENABLED",
+	"Court.ENABLED", "Court.PILOT_FREE", "Family.ENABLED", "Island.ENABLED", "Payroll.ENABLED", "Trade.ENABLED", "Races.ENABLED",
 	"Rackets.ENABLED", "Renown.ENABLED", "StashWorks.ENABLED", "CityDress.ENABLED", "ModelLib.ENABLED",
 	"Scenery.ENABLED", "GroundWar.ENGAGEMENT", "GroundWar.SMART_ROUTES", "GroundWar.VETERANS",
 	"Logistics.ROUNDS", "Tactical.PYTHON", "RadioNet.REALISM", "Analyst.ENABLED", "Casino.ENABLED", "Casino.REVOLUTION", "Airframe.ENABLED", "Undercover.ENABLED", "PortDress.ENABLED", "AirfieldDress.ENABLED", "DowntownDress.ENABLED",

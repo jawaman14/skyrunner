@@ -14,7 +14,7 @@ func accept_job(job: Jobs.Job):
 			return err
 		say("Paid $%s in cash for the load." % Py.money(job.cost))
 	elif job.cost > 0:
-		money -= job.cost
+		move_money(-job.cost, "outside:market", "purchase")
 		say("Paid $%s for the load." % Py.money(job.cost))
 	job.accepted_at = time
 	if job.kind == "fugitive":
@@ -190,7 +190,7 @@ func drop_job(job: Jobs.Job) -> void:
 func hire_loadmaster() -> bool:
 	if not parked:
 		return false
-	money -= LOADMASTER_FEE
+	move_money(-LOADMASTER_FEE, "outside:market", "fee")
 	var before := loadout.assignment.duplicate()
 	var ok := loadout.auto_balance()
 	loadout.requeue_changed(before)
@@ -253,7 +253,7 @@ func _draw_fuel(want_lb: float) -> float:
 	if cache > 0:
 		fuel_caches[code] = cache - minf(got, cache)
 		price = 0.0
-	money -= int(Py.round_int(got * price))
+	move_money(-int(Py.round_int(got * price)), "outside:market", "fuel")
 	return got
 
 
@@ -311,10 +311,10 @@ func buy_upgrade(side: String, id: String):
 		if err:
 			return err
 	elif side == "runner":
-		money -= int(n.cost)
+		move_money(-int(n.cost), "outside:market", "upgrade")
 		say("Upgrade: %s (-$%s)" % [n.name, Py.money(int(n.cost))])
 	else:
-		law_funds -= float(n.cost)
+		move_law_funds(-float(n.cost), "outside:market", "upgrade")
 		law_say("Upgrade: %s (-$%s)" % [n.name, Py.money(int(n.cost))])
 	upgrades[side][id] = true
 	if id == "counter_mole" and upgrades["runner"].has("mole"):
@@ -362,7 +362,7 @@ func apply_upgrades() -> void:
 
 ## Law funds and the AI chief's shopping, plus the runner's lookouts.
 func _update_upgrades(dt: float) -> void:
-	law_funds += dt * 40.0 / 60.0  # the budget line: ~$2,400 an hour
+	move_law_funds(dt * 40.0 / 60.0, "outside:state", "budget")  # the budget line: ~$2,400 an hour
 	if ai_law_upgrades and police.controller == "ai" and time >= _ai_buy_t:
 		_ai_buy_t = time + 90.0
 		var id := Upgrades.ai_pick(upgrades["law"], int(law_funds))
@@ -402,7 +402,7 @@ func buy_gear(name: String):
 		return "Already fitted."
 	else:
 		gear[name] = true
-	money -= price
+	move_money(-price, "outside:market", "purchase")
 	if name in Upgrades.GEAR_NODES:
 		upgrades["runner"][name] = true
 	say("Fitted: %s (-$%s)" % [GEAR[name][1], Py.money(price)])
@@ -417,7 +417,7 @@ func hire_spotter(code):
 		return "Unknown field."
 	if Py.any(spotters, func(s): return s.code == code):
 		return "Already watching that strip."
-	money -= SPOTTER_FEE
+	move_money(-SPOTTER_FEE, "outside:market", "fee")
 	spotters.append(Spotter.new(code))
 	say("Spotter watching %s (-$%d)" % [World.airfield(code).name, SPOTTER_FEE])
 	return null
@@ -448,7 +448,7 @@ func buy_or_switch(key: String):
 	if not owned.has(key):
 		if money < price:
 			return "Need $%s." % Py.money(price)
-		money -= price
+		move_money(-price, "outside:market", "purchase")
 		owned[key] = true
 		say("Bought a %s!" % sp.name)
 	if story != null and story.employment != null and story.employment.loaner:

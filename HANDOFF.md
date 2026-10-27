@@ -149,6 +149,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 ## Log
 
+- **2026-10-26 - Codex, #450 contract integration:** Synced the PR branch with main `3744307c` after F-4 step 4, retaining both the 23 October #431 checkpoint and the 20 October empire contract entry. The three-file PR diff is documentation only. The two earlier automated spec findings are addressed at `69137aa4`. Fresh exact-head CI and independent Claude review are required before merge.
+
+- **2026-10-23 - Codex, #431 dealer navigation integration:** Merged current main into Claude's dealer-scroll PR in an isolated worktree. Only generated PROJECT_STATUS conflicted; regenerated it to 1,258 methods and checked current. The PR's lot-to-Yours UP/DOWN behavior remains intact. Focused game menus 8/8 and dealership 14/14; diff check clean. Exact-head CI and a fresh independent review of the merge remain before integration with #447.
+
+- **2026-10-20 - Codex, empire contract follow-up:** `codex/empire-contract-fixes` corrects the F-1 unsupported-save gate, names passive Los Cuervos income for F-3, makes F-6's nightly report independent of the capped transient event bus, and normalises A5's fee in transfers and balances. `test_docs` passed 3/3; `git diff --check` was clean. No gameplay code changed. F-1's code guard is a separate follow-up based on draft #441; later F-3, F-6 and L-5 implementations still need their own tests.
+
 - **2026-10-22 - Codex, #446 review fixes:** In an isolated worktree, fixed the three open phone findings: overlay ownership, moving-ground handset control, and first-U waypoint routing. Focused phone test 1/1; project status check current; primary checkout untouched. Next: exact-head CI, review, and thread resolution before integration.
 
 - **2026-10-19 - Codex, phone operations:** On `codex/phone-operations`, recorded the plan and regression expectations for Work market/orders, Empire Heat and in-flight phone hold (D-27/D-49/D-62). This checkpoint intentionally precedes implementation: the new expectations should fail. Worktree creation and local Git writes were denied; verification uses CI. Main's previous N-2/N-3/N-4 history is preserved. Next: demonstrate the failure, implement through current interfaces, then finish CI/review/integration.

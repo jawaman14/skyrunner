@@ -263,6 +263,21 @@ D-58 to D-60): deadlines follow demand, the boss layer organises while flying is
   payouts (the live balance run with and without orders, see BALANCE).
 - **Not started:** additions 2 to 8, in the order of LOOP_IDEAS section 2 (cover cargo next, then the calendar).
 
+## Stock, ownership and the money loop (owner, 18 October; planned)
+
+The owner (D-63, #427) asked for cargo, stock and logistics to be reworked for the bigger game: flying hot cargo for a client no
+longer makes sense once you own stock bought upfront. The design is [DESIGN.md section 51](DESIGN.md). Slices, each its own PR with
+a switch and tests first (an RNG stream and a BALANCE entry where the slice draws random numbers or moves the economy):
+
+1. The design note (this section and DESIGN 51). (Claude)
+2. Stock lots with grade, age and provenance. This is the stock side of F-4 (`docs/EMPIRE_PIVOT.md`, inventory lots, each lot in exactly one location per `EMPIRE_SIMULATION_SPEC.md` section 4) and uses its single wrap-first save migration rather than a second one. (Claude)
+3. Orders and the pickup person; the gun dealer on the same flow, replacing "sell / keep guns". (Claude the sim, Codex the dealer scenes)
+4. Storage places and the stock ledger. (Claude the data, Codex the screen)
+5. Laundering: one authority (`HQ.Org`), fronts with a per-night cap and a delay; the casino path moves onto it. (Claude)
+6. Crew relationships and rackets that close under heat. (Claude the sim, Codex the cards and dialogue)
+7. Chapter objectives with deadlines, and what Renown and crew trust unlock at boss level (no new currency). (Claude)
+8. The boss desk: worker control, area marking, heat map, ledger tab. (Codex lead, D-62)
+
 ## Arms and ammunition (owner, 18 October; planned)
 
 The owner's direction (D-61): **ammunition is a cargo** that is moved and traded, priced by the usual factors; **weapons move as

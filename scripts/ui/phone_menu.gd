@@ -220,7 +220,7 @@ func contacts() -> Array:
 	if s.trade != null:
 		out.append(["buyers", "Benny Ruiz", "who's buying, and at what"])
 	if s.court != null:
-		out.append(["lawyer", "Your lawyer", "bail, motions, the plea, a deal, the appeal"])
+		out.append(["lawyer", "Your lawyer", "motions, the plea, a deal"])
 	if s.family != null:
 		out.append(["family", Talk.CAPO, "a sit-down with the Family"])
 	if s.island != null:

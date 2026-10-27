@@ -76,7 +76,7 @@ optional after the takeover, but direct play isn't demoted. D-58's row should sa
 | # | Blocker | Where | Consequence | Fix (PR) |
 |---|---|---|---|---|
 | B-1 | A save-version bump silently skips the whole sim block | `strategic_save.gd` `restore()`: `if ... v != VERSION: return` | Any new field with a version bump wipes old saves' state without telling anyone | F-1 migration chain, first |
-| B-2 | Rival money from nowhere | `chronicle.gd` (+8k, +6k, and two removals into nowhere), `agency.gd` (+4k), `family.gd` (+2k), `ground.gd` (half a truck's value) | Breaks D-65 | F-3, each one named or removed, with a balance entry |
+| B-2 | Rival money from nowhere | `chronicle.gd` (+8k, +6k, and two removals into nowhere), `agency.gd` (+4k), `family.gd` (+2k), `ground.gd` (half a truck's value and passive +$30 per simulated minute) | Breaks D-65 | F-3, each one named or removed, with a balance entry |
 | B-3 | No ledger: 88 `money` assignments in 28 files, 87 `law_funds` uses in 16 files, 43 stash cash and stock edits | All over `scripts/sim` | Can't prove conservation or equal rules | F-2 wrap (no behaviour change), F-3 move by domain |
 | B-4 | Factions are hard-coded keys | `"org"` 236× in 31 files, `"rival"` 132× in 23; `CAP`, `HOSTILE` and `DOCTRINE` in `ground.gd` | A third org can't join the ground war or the old systems | New code takes the org id as data; old systems stay two-faction until a PR needs them (L-3 adds `moretti` to the economy only) |
 | B-5 | The nights are tied to the pilot | `nights.gd`: the operation starts when the pilot takes off hot | Conflicts with D-67 and D-79 | F-6 scheduler and nightly report; `Nights.ENABLED` opt-in |
@@ -105,7 +105,7 @@ Legend:
 
 | PR | What | Depends on | Size | Gate |
 |---|---|---|---|---|
-| F-1 | Save migration chain; a frozen v1 fixture loads with every block | – | S | New `test_save_migration` |
+| F-1 | Save migration chain; a frozen v1 fixture loads with every block; unsupported versions refuse visibly without overwriting the save | – | S | Migration and refusal tests |
 | F-2 | `Ledger` and accounts; `money`, rival cash and `law_funds` become ledger-backed properties (an org's safe may go negative as today); unattributed adjustments are logged; **no behaviour change** | F-1 | M | All parity and goldens unchanged; conservation test |
 | F-3a–f | Move the money sites to named transfers, one domain per PR (`cmds_*`, logistics, payroll, chronicle/family/agency, casino) | F-2 | 6 × S | Unattributed count falls each PR; B-2 items get a BALANCE entry |
 | F-4 | Inventory lots and locations; stash stock wrapped, with no behaviour change; `Loadout` becomes a location | F-1 | M | Inventory invariants |
