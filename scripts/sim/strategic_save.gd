@@ -202,12 +202,28 @@ static func _payroll(s: Session) -> Dictionary:
 		"last": p.last.duplicate(), "squads": squads, "serial": p._serial}
 
 
-## Brings a save up to `target`. A save with no version, a newer game's, or a gap in `steps` gives {} and a warning.
+## A refusal reason, or "" when every migration step needed by this save exists.
+static func migration_error(d: Dictionary, steps: Array = STEPS, target: int = VERSION) -> String:
+	var raw = d.get("v")
+	if not (raw is int or raw is float) or int(raw) != raw:
+		return "Simulation save has no valid version."
+	var v := int(raw)
+	if v < 1:
+		return "Simulation save version %d is unsupported." % v
+	if v > target:
+		return "Simulation save version %d is newer than this game's version %d." % [v, target]
+	if steps.size() < target - 1:
+		return "Simulation save version %d has no complete migration path to version %d." % [v, target]
+	return ""
+
+
+## Brings a save up to `target`. An unsupported save gives {} and a warning.
 static func migrate(d: Dictionary, steps: Array = STEPS, target: int = VERSION) -> Dictionary:
-	var v := int(d.get("v", 0))
-	if v < 1 or v > target or steps.size() < target - 1:
-		push_warning("strategic save v%d cannot be brought to v%d; its state is not loaded" % [v, target])
+	var error := migration_error(d, steps, target)
+	if error != "":
+		push_warning(error)
 		return {}
+	var v := int(d.v)
 	d = d.duplicate(true)
 	while v < target:
 		d = steps[v - 1].call(d)
