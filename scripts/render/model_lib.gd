@@ -210,4 +210,3 @@ static func palm_mesh(variant: int, height: float) -> Array:
 	if mesh == null:
 		return []
 	return [mesh, height / maxf(0.01, mesh.get_aabb().size.y)]  # the raw mesh: a MultiMesh ignores the scene's transforms
-
