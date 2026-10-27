@@ -97,7 +97,10 @@ func cash(o: String) -> float:
 
 func spend(o: String, k: float) -> void:
 	if o == "org":
-		sess.money -= int(k)
+		if k >= 0.0:
+			sess.move_money(-int(k), "outside:market", "wages")
+		else:  # earn() pays in through here: a run's income, not a wage refund
+			sess.move_money(-int(k), "outside:buyers", "delivery")
 	else:
 		sess.ground.commanders.rival.cash -= k
 
@@ -410,8 +413,10 @@ func _rival_hit(weight: float, why: String) -> void:
 		return
 	g.commanders.rival.cash = maxf(0.0, g.commanders.rival.cash - 2500.0 * weight)
 	for m in g.control:
-		g.control[m]["rival"] *= 1.0 - 0.15 * weight
-	sess.law_funds += 1500.0 * weight
+		var multiplier := 1.0 - 0.15 * weight
+		g.control[m]["rival"] *= multiplier
+		g.adjust_territories(m, "rival", multiplier)
+	sess.move_law_funds(1500.0 * weight, "outside:state", "forfeiture")
 	sess.law_say("Los Cuervos hit on %s: cash seized, their corners raided" % why)
 
 
@@ -445,7 +450,7 @@ func offer_deal(id := "") -> String:
 	if sess.law_funds < 2000.0:
 		return "Need $2,000."
 	var j = Py.max_by(cands, func(x): return ROLES[get_worker(x.id).role][1] if get_worker(x.id) != null else 0.0)
-	sess.law_funds -= 2000.0
+	sess.move_law_funds(-2000.0, "outside:market", "fee")
 	j.deal = true
 	var w = get_worker(j.id)
 	sess.law_say("A deal offered to %s" % (w.name if w != null else j.id))
@@ -505,7 +510,7 @@ func _pilot_runs() -> void:
 				sess.econ.record_delivery("cocaine", ["west", "north", "sea"][rng.randint(0, 2)])
 				say(o, "%s flew a run: +$%s." % [p.name, Py.money(pay)])
 			elif rng.random() < 0.85:
-				sess.law_funds += 2500.0
+				sess.move_law_funds(2500.0, "outside:state", "forfeiture")
 				sess.econ.record_seizure("cocaine", "west")
 				lose(p.id, "arrested")
 			else:

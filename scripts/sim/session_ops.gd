@@ -14,7 +14,7 @@ func accept_job(job: Jobs.Job):
 			return err
 		say("Paid $%s in cash for the load." % Py.money(job.cost))
 	elif job.cost > 0:
-		money -= job.cost
+		move_money(-job.cost, "outside:market", "purchase")
 		say("Paid $%s for the load." % Py.money(job.cost))
 	job.accepted_at = time
 	if job.kind == "fugitive":
@@ -38,12 +38,34 @@ func accept_job(job: Jobs.Job):
 
 
 ## Shared read-only gate for accepting work, used by both previews and execution.
+## Every other strip keeps a board that outlives your visits, so the job board can show the whole island. Dealt by the sim, never by a menu.
+func stock_island_boards() -> void:
+	if not Jobs.ISLAND_BOARD or _first_missions():
+		return
+	# deal them on their own streams: refresh_board reads rng, arng and the Company's rng, so swap those three for the duration
+	var saved_rng := rng
+	var saved_arng := arng
+	var saved_agency_rng = agency.rng if agency != null else null
+	rng = brng
+	arng = barng
+	if agency != null:
+		agency.rng = bagrng
+	for af in world.airfields:
+		# the strip you are parked at ages too: a pilot who waits past the TTL finds a new board (in the air the current strip's board is the one you left)
+		if (af.code != location or parked) and af.kind != "foreign" and not board_is_fresh(af.code):
+			refresh_board(af.code)
+	rng = saved_rng
+	arng = saved_arng
+	if agency != null:
+		agency.rng = saved_agency_rng
+
+
 func accept_job_reason(job: Jobs.Job) -> String:
 	if story != null and story.employment != null and story.employment.active():
 		if job.employer_stage != story.employment.stage or job.employer_serial <= story.employment.last_completed or job.employer_serial >= story.employment.next_serial:
 			return "Complete the current employer assignment first."
 	if not parked or location != job.origin:
-		return "You need to be parked at the job's origin."
+		return "Fly to %s and park there to take this job." % World.airfield(job.origin).name
 	if job.hot() and not features.has("contraband"):
 		return "Not that kind of pilot. Yet."
 	var seats := spec.seat_count() - (1 if copilot else 0)
@@ -168,7 +190,7 @@ func drop_job(job: Jobs.Job) -> void:
 func hire_loadmaster() -> bool:
 	if not parked:
 		return false
-	money -= LOADMASTER_FEE
+	move_money(-LOADMASTER_FEE, "outside:market", "fee")
 	var before := loadout.assignment.duplicate()
 	var ok := loadout.auto_balance()
 	loadout.requeue_changed(before)
@@ -231,7 +253,7 @@ func _draw_fuel(want_lb: float) -> float:
 	if cache > 0:
 		fuel_caches[code] = cache - minf(got, cache)
 		price = 0.0
-	money -= int(Py.round_int(got * price))
+	move_money(-int(Py.round_int(got * price)), "outside:market", "fuel")
 	return got
 
 
@@ -289,10 +311,10 @@ func buy_upgrade(side: String, id: String):
 		if err:
 			return err
 	elif side == "runner":
-		money -= int(n.cost)
+		move_money(-int(n.cost), "outside:market", "upgrade")
 		say("Upgrade: %s (-$%s)" % [n.name, Py.money(int(n.cost))])
 	else:
-		law_funds -= float(n.cost)
+		move_law_funds(-float(n.cost), "outside:market", "upgrade")
 		law_say("Upgrade: %s (-$%s)" % [n.name, Py.money(int(n.cost))])
 	upgrades[side][id] = true
 	if id == "counter_mole" and upgrades["runner"].has("mole"):
@@ -340,7 +362,7 @@ func apply_upgrades() -> void:
 
 ## Law funds and the AI chief's shopping, plus the runner's lookouts.
 func _update_upgrades(dt: float) -> void:
-	law_funds += dt * 40.0 / 60.0  # the budget line: ~$2,400 an hour
+	move_law_funds(dt * 40.0 / 60.0, "outside:state", "budget")  # the budget line: ~$2,400 an hour
 	if ai_law_upgrades and police.controller == "ai" and time >= _ai_buy_t:
 		_ai_buy_t = time + 90.0
 		var id := Upgrades.ai_pick(upgrades["law"], int(law_funds))
@@ -380,7 +402,7 @@ func buy_gear(name: String):
 		return "Already fitted."
 	else:
 		gear[name] = true
-	money -= price
+	move_money(-price, "outside:market", "purchase")
 	if name in Upgrades.GEAR_NODES:
 		upgrades["runner"][name] = true
 	say("Fitted: %s (-$%s)" % [GEAR[name][1], Py.money(price)])
@@ -395,7 +417,7 @@ func hire_spotter(code):
 		return "Unknown field."
 	if Py.any(spotters, func(s): return s.code == code):
 		return "Already watching that strip."
-	money -= SPOTTER_FEE
+	move_money(-SPOTTER_FEE, "outside:market", "fee")
 	spotters.append(Spotter.new(code))
 	say("Spotter watching %s (-$%d)" % [World.airfield(code).name, SPOTTER_FEE])
 	return null
@@ -426,7 +448,7 @@ func buy_or_switch(key: String):
 	if not owned.has(key):
 		if money < price:
 			return "Need $%s." % Py.money(price)
-		money -= price
+		move_money(-price, "outside:market", "purchase")
 		owned[key] = true
 		say("Bought a %s!" % sp.name)
 	if story != null and story.employment != null and story.employment.loaner:

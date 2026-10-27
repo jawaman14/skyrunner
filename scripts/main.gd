@@ -23,7 +23,7 @@ var _finder: LanDiscovery.Finder = null  ## listens for games on the network (th
 var _mp: MultiplayerMenu = null
 var save_dir := SavePaths.DIR  ## the tests point it elsewhere so they never touch a player's saves
 
-var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1,
+var args := {"mode": "solo", "police": false, "host": false, "port": 47800, "bind": "*", "new": false, "seed": 1, "slot": 1,
 	"players": 0, "layer": 0, "graphics": "high", "watch": false, "shot": "", "frames": 90, "hour": -1.0,
 	"map": -1, "weather": "", "connect": "", "host_room": null, "role": "copilot", "name": "player", "password": "", "seat3d": false, "lobby": true, "unlocks": "story", "chapter": 0, "tutorial": false, "smoke": 0}
 
@@ -216,8 +216,12 @@ func start() -> void:
 	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and mode != Roles.POLICE and features == null
 	if save_dir == SavePaths.DIR:
 		SavePaths.migrate()  # an old player's loose save files move into the folder once
-	var save := save_dir + SavePaths.file_name(mode, story)
+	var save := save_dir + SavePaths.file_name(mode, story, int(args["slot"]))
 	if not args["new"]:
+		var load_error := Session.save_load_error(save)
+		if load_error != "":
+			show_lobby(load_error)
+			return
 		var save_error := PlayableMaps.error(int(args["map"]), Session.read_save(save))
 		if save_error != "":
 			show_lobby(save_error)
@@ -234,6 +238,9 @@ func start() -> void:
 		opts["features"] = features
 	var fresh := not FileAccess.file_exists(save)
 	var sess := Session.load_or_new(save, opts)
+	if sess == null:
+		show_lobby(Session.save_load_error(save))
+		return
 	if fresh and opts.has("money"):
 		sess.say("Benny Ruiz fronts the start-up money: $%s. Everything's open from the first minute - spend it well." % Py.money(int(opts.money)))
 	if args["weather"] != "":  # --weather clear|cloud|storm[,moon 0..1]; the HQ season sets its own each night
@@ -301,7 +308,7 @@ func _join() -> void:
 		args["password"] = a.substr(0, at)
 		a = a.substr(at + 1)
 	var i := a.rfind(":")
-	var host := a.substr(0, i) if i > 0 else "127.0.0.1"
+	var host := a.substr(0, i) if i > 0 else (a if i < 0 else "127.0.0.1")  # "host" alone is the host; ":port" alone is this machine
 	var port := int(a.substr(i + 1)) if i >= 0 else HostServer.DEFAULT_PORT
 	var link := NetClient.new()
 	add_child(link)

@@ -16,7 +16,7 @@ Status legend: **[done]** in the code now · **[planned]** historical proposals 
 
 The owner's answers to a gameplay questionnaire (recorded by Codex in PR #249) set the target the rest of this
 document grows towards. They take precedence over conflicting older plans, including the deferrals in
-[EMPIRE_MILESTONE.md](EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
+[EMPIRE_MILESTONE.md](archive/EMPIRE_MILESTONE.md). This section is a **design target, not a feature list**: status tags
 say what exists. The delivery order is in [ROADMAP.md](ROADMAP.md).
 
 **The core experience: build an empire from nothing.** Mount & Blade: Warband is the principal reference. The
@@ -262,13 +262,13 @@ and events here are original.
 
 **Protagonist.** *Jack "Dusty" Callahan*, a bush pilot who owes the bank for a tired
 Cessna 172. His sister *Rosa* runs the mail contract and is your first co-pilot. The fixer is
-*Manny Arce*, a charming boat dealer from Smuggler's Cove. The antagonist on the law side is
+*Benny Ruiz*, who works for Rafa Quintero and arranges boat runs from Smuggler's Cove. The antagonist on the law side is
 *Special Agent Evelyn Hart*, who takes over the island's interdiction desk in 1983.
 
 | Ch. | Year | Title | Introduces | Objectives | Status |
 |---|---|---|---|---|---|
 | 1 | 1979 | **Mail Run** | Flying, W&B, short strips | Earn $5,000 legally, land at Mesa del Aguila | [done] |
-| 2 | 1980 | **A Favor for Manny** | Contraband, radar floors, flying low | Deliver one hot cargo without reaching wanted ★ | [done] |
+| 2 | 1980 | **A Favor for Benny** | Contraband, radar floors, flying low | Deliver one hot cargo without reaching wanted ★ | [done] |
 | 3 | 1981 | **Kickers** | Co-pilot, airdrops, boat rendezvous, radio calls | Drop 4 bales to the *Lady Luck*, 3 must reach the cove | [done] |
 | 4 | 1982 | **Long Legs** | Ferry tanks, fuel planning, offshore entry, fuel caches | Fly in from the south entry point with a ferry tank and make a drop | [done] |
 
@@ -1441,3 +1441,294 @@ asks of the pilot (from Codex's 8 October audit, PR #246, checked against the co
 At the job's origin it goes back on the board; anywhere else it is dumped. Accepting re-checks location, parking,
 permission, capacity and payment, but not whether the load plan is safe: the loading screen's weight and balance is
 the pilot's job (§5.1).
+
+## 47. Turf territories, tactical choices and threatened routes
+
+`Territories` gives each `MapLayout` a stable region ID and local districts. Costa Brava's region is `costa-brava` and its first ten districts are San Telmo Centro, Barrio Chino, the Docks, Airport Coast, Rio Negro Estuary, Valle Verde, La Selva, Sierra del Aguila, Old Quarry and Smuggler's Cove. Boundaries use the authored city/terrain layout; uncovered positions resolve to the nearest district. Classic and generated maps use a four-area fallback based on their existing market centres. A future playable map can supply its own `region_id` and district records.
+
+The key is `<region_id>/<district_id>`. District presence decays and accumulates from squads; fights add local influence. The existing `control`, `market_at`, `org_share`, `rival_share`, economy markets and rackets policies remain the broad-market contract. Older saves without districts seed them from their saved market totals; saves with districts restore them only into the matching region. The war snapshot includes district names, parent markets, centres and faction control.
+
+NPC commit/withdraw decisions use each squad's range-adjusted `fire_at`, cover, morale and nearby friendly support. Territory patrol targets score local opposition and strategic tags. Explicit human orders remain in charge. A truck with an active one-leg delivery checks its remaining route every 30 seconds; if a materially lower-risk path exists through the faction-aware road graph, its driver changes route without losing position or progress. The organization focuses escorts on valuable or exposed loads. Police and rival route choices read the truck's current route. These choices preserve seizure and combat outcome rules.
+
+The new behavior is gated by `Territories.ENABLED`; it draws no additional randomness. Initial verification: Godot 4.7.2 import passed, the full suite passed 898/898, Costa Brava smoke printed `SMOKE OK`, and the 200-seed live war balance run completed. The suite emitted analyst string-formatting and freed-lambda-capture errors alongside its zero-failure summary; investigate those logs before treating the run as fully clean. Not yet: a 2D territory overlay, balance calibration for district control, and authoring another distinct playable region.
+
+## 48. The case file: heat you can see and answer (design, 18 Oct 2026; not built)
+
+Owner, 18 Oct: make heat and the law interactive. Step 1 of the agreed order (then the police search and the ladder down,
+then patterns, escalation, corruption and ground chases). Today most heat is a hidden number that bites: a stash at heat 55
+or more is raided on a 30% roll each minute (`session_rules.gd`, AI task force), and the pilot's case is live suspicion only.
+
+**Four kinds of heat, each cooling at its own rate.**
+
+| Heat | Where it lives | Rises with | Cools |
+|---|---|---|---|
+| Pilot | `PoliceSystem.Case` (exists: suspicion, wanted) plus a new slow `evidence` score | sightings, a lost squawk, seized trucks, busts | evidence slowly (hours); suspicion as today |
+| Aircraft | new, per owned tail number | being seen dark or wanted in it | parked in a hangar; faster after a repaint |
+| Stash | `StashNet` stash `heat` (exists; known at 30) | deliveries, seizures | as today (1.5 a minute, the stash works' rate) |
+| District | new, per market or territory | seizures, fights, raids there | slowly, faster with no incidents |
+
+A hot aircraft makes the pilot's suspicion rise faster when it is seen (the tail number is known); a hot district makes
+patrols and checkpoints more likely there. Each kind is a separate dial, so the player can park a hot aircraft and fly a
+clean one, or empty a hot stash.
+
+**Investigations in stages.** Each target the task force pursues (a stash, the pilot) gets a case file that moves through
+stages on timers instead of a hidden roll:
+
+1. **Lead:** a stash becomes known (heat 30, as today) or the pilot's evidence passes a first mark.
+2. **Surveillance:** after a few minutes with heat still high, a stakeout (a van across the street, a plane on the ramp).
+3. **Warrant:** after the surveillance time, if heat is still above the line, a warrant with a countdown.
+4. **Action:** when the countdown ends, the raid or the arrest at the next landing at a watched strip.
+
+If heat falls below the line during surveillance, the case is dropped. A raid on an empty stash finds nothing, cools it,
+and voids the warrant.
+
+**Counter-moves at each stage.**
+- **Move the product:** empty the stash before the warrant runs out (the logistics trucks already do this).
+- **Lie low:** no deliveries, so heat decays and the case can drop at surveillance.
+- **The lawyer:** challenge a warrant for a fee; a chance to void it, better with a better lawyer (the court's tiers).
+- **A warning:** the lookout (exists) or a cop on the payroll shows the stage and the countdown; without one the player
+  sees only what a phone call or the scanner gives.
+- **A decoy:** a decoy run draws the surveillance away for a while.
+
+**What the player sees.** A **Heat** app on the phone (Codex): one row per case with the target, the stage, what the
+police have, and the time to the next stage when a warning source knows it; the four heat dials. Messages at each stage
+change ("A van has been parked across from the Quarry shed for an hour.").
+
+**Rules.** Behind a static switch `Investigation.ENABLED` registered in `Switches.PARITY` (off: the old raid roll).
+Every random draw (warrant challenge, stakeout noticed) on its own stream, `seed + 163`. Saved in `StrategicSave` (case
+stage, timers, aircraft and district heat). Tests first: a stash at heat moves Lead to Surveillance to Warrant to Raid on
+time; lying low drops a case at surveillance; emptying the stash makes the raid find nothing; a lawyer can void a warrant;
+the switch off keeps the old behaviour. Raids become predictable, so stash losses should fall: a strategic and tactical
+balance run and a BALANCE entry go with it.
+
+**Not in step 1:** the police search pattern, scanner chatter and the ladder down (step 2); pattern detection,
+escalation by agency, corruption and ground chases (step 3).
+
+**Island boards** (`Jobs.ISLAND_BOARD`, a parity switch). Every strip keeps a board that outlives your visits, so the job board can show the whole island: `Session.stock_island_boards` deals each other strip's board from `update()` (at the first tick, then once a minute), a board lives `Jobs.BOARD_TTL_S` (30 sim minutes) and is dealt afresh when stale, and arriving at a strip keeps its fresh board instead of rerolling it. The employed opening deals its own board and is left alone. The extra draws sit on their own streams (`brng` seed + 149, gun runs `barng` seed + 151, the Company's offers `bagrng` seed + 157), swapped in only while the boards are dealt, so nothing else moves. Accepting a job still needs the pilot parked at its origin.
+
+## 49. Buyers' orders: deadlines that follow demand (owner, 18 October 2026)
+
+`scripts/sim/orders.gd`, held by `Trade` (`trade.orders`), on its own RNG stream (`seed + 167`), behind `Orders.ENABLED`. A buyer
+who is open for business (the Morettis, the Company, Los Cuervos for guns) asks for a quantity of a good by a time, and pays a
+premium on top of his quote if it arrives in time.
+
+- **The deadline follows the street's demand.** Where demand over supply in the buyer's market is 1.25 or more it is a **rush**:
+  10 to 20 minutes and 25 to 40% on top of the buyer's own quote. Otherwise it is **a night's work**: 45 to 75 minutes and 10 to 20% on top of it. Orders are
+  likelier for the goods the street is hungriest for.
+- **What the player does.** Rings in as a message and an `order_posted` event (about one every 15 minutes, at most two open, a
+  third to two thirds of the buyer's appetite). Any bulk sale to that buyer of that good that **settles** before the deadline
+  fills it, whether by a truck reaching the meet or a direct sale, so the lead time of the logistics is what the player races.
+  A part delivery pays the premium on the part and leaves the rest open.
+- **The stakes.** A filled order raises the crew's standing (+3); a missed one costs it (-4, scaled by how little arrived). Until the
+  per-crew trust table of D-11 exists the standing is what each crew already has: the Family's respect, the Company's trust.
+- **The market board.** `Trade.view("org").orders.board` gives, for each hot good in each market, the price against normal, the
+  demand over supply, and a trend (up, down, flat against five minutes before); `.orders.open` the open orders with the time
+  left, `.orders.recent` the last few results. The screens (the board on the phone, the order call) are the UX lane.
+- **Saved** in the strategic save (`StrategicSave.ORDERS`); the posting stream is not saved, like Trade's own.
+- **Balance.** An order adds income on a sold lot, so it needs a BALANCE entry (a `cli.gd -- report` run with trade on); the
+  tests prove the rules, not the economics.
+
+## 50. Arms and ammunition: crates, rounds and scarcity (owner direction, 18 October 2026; a proposal, not built)
+
+**Where it stands.** `arsenal.gd` holds weapons by four tiers per side (pistols 1.0 fire, rifles 2.2, machine guns 4.0, RPGs 6.0 and
+the ability to hit vehicles); prices are a fixed table (300, 900, 3,500, 5,000) times one "guns" market multiplier. Ammunition is a
+single count of rounds on each arsenal that rises by 120 with every weapon added, is drawn by squads (90 a man) and spent in fights
+(`ground.gd`, `foot_combat.gd`), and a squad at zero rounds stops firing. It is not a good: it is not bought, moved or priced. Weapons
+travel as `{tier: n}` on a truck (`Logistics.send_guns`) and arrive by aircraft in gun runs, whose mix is the only place scarcity
+shows (45% rifles, 30% pistols and rifles, 17% rifles and a machine gun, 8% a machine gun and RPGs).
+
+**Crates.** A weapon travels in a crate of one type, each with its weight and count, so the load planner and a truck's capacity
+decide how much power you can move. Proposed figures:
+
+| Crate | Holds | Weight | Ammunition crate | Rounds | Weight |
+|---|---|---|---|---|---|
+| Pistols | 12 | 18 kg | Pistol rounds | 1,000 | 15 kg |
+| Rifles | 8 | 40 kg | Rifle rounds | 600 | 18 kg |
+| Machine guns | 2 with mounts | 60 kg | Belts | 400 | 20 kg |
+| RPGs | 2 launchers | 35 kg | Rockets | 4 | 25 kg |
+
+**The scarcity ladder.** Each type has its own supply in each market, as `market.gd` keeps for the drugs (supply and demand, the
+price following demand over supply, shocks from events). The base supplies make the powerful rare: pistols 1.0, rifles 0.55,
+machine guns 0.18, RPGs 0.08. Gun runs, the fences and the buyers draw on the same ladder, so a machine-gun crate is an event and a
+pistol crate is stock. A seizure takes supply out; a boatlift or a Company shipment puts it in (the Company already moves guns south).
+
+**Ammunition as a good.** Rounds are per weapon type (a rifle fires rifle rounds), in crates, bought from the same sources, trucked
+and stored in a stash or the armoury like weapons. The dearer, heavier rounds belong to the heavier weapons, so a squad of machine
+guns is strong and costly to keep firing. Prices follow the usual factors: supply, demand, police pressure, the island, and the war.
+
+**The ground and turf war.** Squads draw the rounds of the weapons they carry; fights spend them (the existing per-tick and
+per-shot costs, by type); a district that is fighting raises its ammunition demand, and a dry one pays more. A squad with no rounds
+stops firing, as now. Holding a port, a road or a depot decides who can resupply; losing it cuts the line. The Lanchester `fire`
+weights stay, so power is bought with tier, and sustained with ammunition. Orders (section 49) can ask for crates: "Los Cuervos want
+four rifle crates by tonight".
+
+**Order of work** (ROADMAP "Arms and ammunition"): crates and the ladder, ammunition as a good, the war's use of it, then the screens.
+**Costs to watch:** a save migration (`Arsenal.ammo` becomes a count per type; keep the total for old saves), new random draws on their
+own streams behind switches, and a BALANCE entry per stage, because the ground war's economy and losses are sensitive to arms (the
+turf expansion's 200-seed run already shifted them).
+
+
+## 51. Stock, ownership and the money loop (owner, 18 October 2026; a proposal, not built)
+
+The game began as transport: a job named a cargo and a client, and the pilot was paid to fly it. It is now an empire game
+(sections 0 and 46), and flying is one activity among several. This section says whose cargo it is at each stage, where stock
+comes from, how it is held and sold, and which systems act on it. The owner's brief (D-63, #427): "doesn't make sense flying hot
+cargo: do you keep it to bring to your warehouse, or are you flying it for other people? When I get my own stock to buy upfront,
+rework the whole of logistics and stock with the new game in mind." The flow chart is
+<https://claude.ai/artifact/KspRDvP3ptvHZMr9AmhmRU>; the reference games are summarised in section 51.7.
+
+### 51.1 Three kinds of run
+
+Who owns the cargo and who carries it are separate: any kind below can be flown by the player or handed to a crew pilot or truck
+(D-58, D-66). A hired carrier changes the fee and the chance of being caught, never whose cargo it is; a contract run flown by a
+crew pilot still pays the client's fee, and stock flown by one is the "Delegated" row.
+
+| Kind | Whose cargo | Pays | Hot means |
+|---|---|---|---|
+| **Contract** | the client's | a fee on delivery; never enters your stock | the cargo stays illegal: police consequences still apply to the run, and the story's hot-load goals count it |
+| **Own stock** | yours, bought upfront or made | the margin when sold | your risk: it draws heat, case files and raids and can be seized |
+| **Delegated** | yours, flown by a hired pilot or truck | the margin minus the hire (D-10) | the same as own stock, plus the hire's chance of being caught |
+
+The existing job board is the contract kind. It stays as steady income in the early game (chapters 1 and 2) and as a fallback, and
+shrinks in importance as stock opens. Contract cargo keeps its legality flags: the stage-2 customer load that teaches police
+consequences (`employment_opening.gd`) and the Task Force chapter's `hot_loads` goal (`story.gd`) still work. What changes is
+ownership: for stock, "hot" also means "yours and can be taken", and only stock you own feeds your case file over time.
+
+### 51.2 Where stock comes from
+
+1. **Ordered from a contact** (a crew or dealer: the Morettis, Los Cuervos, the Sunrise Collective, Manny's dealers). You place an
+   order and pay upfront at the market-board price (section 49), then **collect it** from a named person at a place
+   within a window: in person, or by a worker or crew pilot given the desk's `collect` order (arrival and collection belong to whoever is
+   assigned, and the lot loads into that carrier). A late pickup loses the lot or costs trust. This is the same flow as the gun dealer (section 50, D-61), which
+   replaces the job menu's "sell / keep guns" toggle.
+2. **Imported** through the port, Isla Soberana or a cove drop.
+3. **Produced** at your own stash works and rackets; output waits at the site until collected.
+4. **Taken from rivals** by a raid on their depot (D-19); marked as stolen.
+
+### 51.3 What a lot is
+
+Stock is a list of lots, not a count per good. A lot carries: the good, the **units** it is sold in (pounds for drugs, sheets
+for acid, weapons or crates for arms; the existing `psychedelics.gd` and `arsenal.gd` units), its **transport weight** (so loading
+and partial sales settle separately), a **grade** (0 to 1), its **age**, its **provenance** (where it came from) and whether it is
+hot. Grade moves price and which buyers will take it (the Family and the
+casino pay for high grades; corners take low ones). Cutting a lot raises margin and costs a crew's trust and a buyer's repeat
+orders. Age lowers value for goods that spoil (grass dries, acid degrades, guns age), so stock is not simply hoarded. Provenance
+makes stolen stock traceable: sold in the wrong district, its owner finds out. The existing totals (`Logistics.total`, the trade
+stock) stay as derived sums so the market and the street keep working.
+
+### 51.4 Where it is held and moved
+
+| Place | Holds | Exposure |
+|---|---|---|
+| Warehouse | most | raided first; case-file stages lead, surveillance, warrant, raid (section 48) |
+| Hidden stash | little | slow to be found |
+| Aircraft or truck | what it carries | traced by tail number or plate; exposed to radar, patrols and rival ambushes while it moves |
+
+A **stock ledger** on the boss desk lists every lot: place, grade, age, heat, and what it would sell for now **at a named buyer and market**
+(the best open quote, with the buyer shown; a lot has no single value, since quotes differ by buyer, market and grade, and grade and
+provenance decide who will take it).
+
+### 51.5 Selling and cleaning the cash
+
+Lots sell to buyers' orders (section 49) and to street dealers on corners your crew holds. Sales come in as **dirty cash**. Only
+clean cash buys stock. Two laundering systems already exist: `HQ.Org` keeps `dirty`, `clean`, tiered `fronts` and a **per-night**
+capacity (`hq.gd`), and `Casino.launder` converts logistics cash into money with a cap, fees and heat (`casino.gd`). Slice 5 does
+**not** add a third. The authority for every dollar is the ledger (`EMPIRE_SIMULATION_SPEC.md` sections 0 and 3); F-3 moves `casino` and
+the other money sites onto named transfers. `HQ.Org` stays the rule set for tiers and the per-night cap, and its dirty and clean
+balances become ledger accounts rather than a second book. Slice 5 adds what is missing:
+
+- a cap that resets on a period the session really has: the **night**, as `HQ.Org` already does (a literal week never comes round
+  in an 8-hour campaign);
+- front tiers bought upfront, each with a throughput cap that rises with the price;
+- a **delay** before cleaned cash arrives;
+- the cap is **soft** up to a hard ceiling: deposits up to the nightly allowance are clean of extra heat; deposits between the allowance and the
+  ceiling (1.5 times it, draft) go through but raise case-file heat; above the ceiling they are refused, as `HQ.Org._r_launder` clamps today.
+  A large dirty balance raises heat too.
+
+The shape is borrowed from Schedule I; the prices and caps are set by balance runs in this game's money, not copied.
+
+### 51.6 What else acts on stock
+
+Heat and the case files (section 48) attach to stock you own, in a building and on the move; client cargo adds nothing. Trust with
+each crew (D-11) rises when you order from them and falls with their enemies; lost shipments cost trust and a crew without trust
+sells elsewhere. Rivals can take stock to a depot you can raid. Police act only on what a human in their seat would see (D-36).
+Delegation costs money (D-10). When the pilot is arrested the lawyer takes the hit and the pilot is never held (D-64); caught
+workers do serve their time. Crew members get pairwise relationships (hate, friendship, love) that change who will work together,
+and a racket in a hot district must be closed or risks a raid.
+
+### 51.7 What the reference games contribute
+
+A fact-checked read of Empire of Sin, Mount & Blade, Schedule I and Tropico (secondary sources only) found: crew relationships and
+rackets that close under police suspicion (Empire of Sin); a capped, tiered, delayed laundering loop and dealers on a revenue
+share (Schedule I); a second currency for rank (Mount & Blade's influence); and objectives against deadlines (Tropico). It found
+nothing reliable on manager-UI patterns or on Mount & Blade's trade loop, so the boss desk is our own design. Schedule I's numbers
+come from early-access guides and are not used here.
+
+### 51.8 Order of work (ROADMAP "Stock, ownership and the money loop")
+
+1. This note. 2. Stock lots (grade, age, provenance) behind a switch, with a save migration. 3. Orders and the pickup person, and
+the gun dealer on the same flow. 4. Places and the ledger. 5. Laundering with fronts. 6. Crew relationships and rackets under
+heat. 7. Chapter objectives with deadlines, and what the existing Renown (section 25) and crew trust (D-11) unlock at boss level. No new
+saved score unless the owner asks for one: "standing" would duplicate both. 8. The boss
+desk screens (Codex). Each slice that changes behaviour has its own static switch registered in `scripts/sim/switches.gd` and tests
+first. A slice gets its own RNG stream only if it draws random numbers (orders and pickups, crew rolls), and a BALANCE entry only if
+it can move the economy (laundering, orders, lots' ageing); the note, the ledger screen and the desk do neither. Slices that touch
+saves or random draws are reviewed by the other agent.
+
+**Open for the owner:** where the pickup happens (a fixed spot or the contact comes to a stash), the warehouse cap (a count, a
+weight, or floor space you buy), what Renown and trust unlock at boss level, and whether the job board is limited to chapters 1 and 2.
+
+
+### 51.9 Draft parameters (first drafts by MiMo, reviewed; every number is a starting point for balance runs)
+
+**Fronts for laundering (51.5).** Prices and caps are drafts in this game's money (a job pays $500 to $5,000). The cap column is
+per night (the existing `HQ.Org` period), not per week; the draft numbers below were written for a week and need rescaling to a
+night in the balance run.
+
+| Tier | Front | Price | Clean-deposit cap (draft, to be rescaled per night) | Delay (game hours) | Heat per $1,000 over the cap |
+|---|---|---|---|---|---|
+| 1 | Laundromat | $2,000 | $1,500 | 24 | 10 |
+| 2 | Post office counter | $8,000 | $5,000 | 18 | 6 |
+| 3 | Car wash | $18,000 | $9,000 | 12 | 3 |
+| 4 | Restaurant | $40,000 | $14,000 | 6 | 1 |
+
+Review: the cap per dollar spent falls with the tier (0.75, 0.63, 0.50, 0.35), so a higher tier buys speed and low heat, not more
+cap for the money. That is acceptable if the point is to start cheap and grow, but the caps may need to rise faster than the
+prices. Tune in the laundering slice's balance run.
+
+**The pickup (51.2).** States of an order collected in person.
+
+| State | Entered when | Player sees | Leaves when | Failure cost |
+|---|---|---|---|---|
+| Ordered | the player pays upfront | confirmation, price paid, pickup place | the window opens | none (already paid) |
+| Window open | the order's window starts (10 to 20 game minutes) | countdown and a marker at the place | the player arrives, the window ends, or the player cancels | none |
+| At the place | the player reaches the place inside the window | a prompt to collect | the player collects, leaves, or the window ends | none |
+| Collected | the player takes the goods | the lot loaded into the carrier (the player, or the aircraft or truck they came in), weight shown | the lot is then moved to a store by the normal carry, which is exposed on the way (51.4); terminal for the order | none |
+| Late | the window ends before the player arrives | "too late" notice | the contact reopens orders after a cooldown | trust with the crew |
+| Intercepted | a rival acts on the pickup first | an ambush at the place | the order ends | the lot, or the cash paid |
+| Cancelled | the player aborts before collecting | the order voided | terminal | the cash paid (paid upfront) |
+
+A rival can wait at the place, tip the police, or buy the lot from the contact first.
+
+**Crew relationships (51.6).** Drafted effects; the percentages are placeholders.
+
+| Pair | Effect on jobs | When one is arrested | Loyalty |
+|---|---|---|---|
+| Hate | less pay together, more refusals | the partner may talk | lowers both |
+| Friend | steadier together | the partner's loyalty drops a little | raises both |
+| Love | the best pairing, a rare double-cross if one is hurt | the partner's loyalty drops sharply | strongly raises the loved one's |
+
+A worker card shows one short icon and one line ("Hates Rico: will not work a crew job with him").
+
+**Boss desk brief (for Codex, board note 552).** A full-screen top-down map of the island with district overlays; three zoom
+levels (island, district, close); drag-select workers and give them orders (guard, carry, collect, lie low); a drag-to-mark tool
+that claims an area, with a hatched border; a heat overlay per district from green to red; side panels for the stock ledger
+(section 51.4) and cash. Acceptance checks by eye: zoom cycles three levels without blank frames; three selected workers all take a
+carry order; a marked district keeps its border after closing and reopening; the heat overlay shows the hottest district red; the
+ledger and cash update within a second of a payout. Not research-backed (see 51.7): treat the layout as ours to design.
+
+**Autopilot (issue #426 item 5).** Proposal: U only turns the autopilot on (hold heading and altitude) and off; setting a
+destination is a separate action on the chart or the phone; opening the phone in flight engages hold and closing it restores the
+previous state. Edge cases to test: restoring a route after the phone closes; a route that finishes while the phone is open must
+not restart; a destination set while off must not engage anything. (MiMo suggested P for the destination key; P is the pause key
+in the aircraft, so the key is still to choose.)

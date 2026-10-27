@@ -69,6 +69,7 @@ var earned := 0  ## money the trade made
 var street_sales := {}  ## market -> $ a minute (the last minute, ours)
 var last := ""
 var bulk_log: Array = []  ## [time, buyer, good, qty] - what following the money finds
+var orders: Orders = null  ## buyers' orders with deadlines that follow demand (set by the session; null without)
 var _t := 0.0
 var _war_t := 0.0
 var _sales_acc := {}
@@ -188,6 +189,8 @@ func sell(buyer: String, good: String, qty: float, tier := "rifle", from := "", 
 func settle(buyer: String, good: String, qty: float, tier := "rifle") -> int:
 	var q := quote(buyer, good, tier)
 	var pay := int(q.price * qty)
+	if orders != null:
+		pay += orders.on_settle(buyer, good, qty, q.price)  # an order filled in time pays its premium
 	if good != "guns":
 		sold[good] += qty
 	appetite[buyer][good] = maxf(0.0, appetite[buyer][good] - qty)
@@ -261,7 +264,7 @@ func board_offer(origin: Airfield, jobs_rng: PyRandom):
 	var n := jobs_rng.randint(o.n[0], o.n[1])
 	var items := []
 	for k in n:
-		items.append(Jobs.item(o.label, "cargo", jobs_rng.uniform(o.lb[0], o.lb[1]), jid, {"hot": true}))
+		items.append(Jobs.item(o.label, "cargo", jobs_rng.uniform(o.lb[0], o.lb[1]), jid, {"hot": true, "good": good}))
 	var lb := Py.sum_by(items, func(i): return i.weight_lb)
 	var cost := int(lb * float(o.per_lb) * sess.econ.wholesale(good))
 	var job := Jobs.Job.new(jid, "%s: %d lb -> %s" % [o.title, int(lb), World.airfield(st.strip).name], "contraband", origin.code, st.strip,
@@ -281,6 +284,8 @@ func delivered(job) -> void:
 		var site: String = sess.logistics.site_at(job.dest)  # the stash at the strip it was bought for
 		if site == "" or site == Logistics.HQ:
 			site = sess.logistics.nearest_stash(Vector2(af.x, af.y))
+		sess.logistics.sync_aircraft_load()  # the load aboard as it is now, so the move has lots to take
+		sess.inventory.transfer("aircraft:" + str(sess.aircraft_key), "stash:" + str(site), job.own_good, lb, "delivery", "runner", sess.time)
 		sess.logistics.add(site, job.own_good, lb)
 		sess.say("Delivered '%s': %d lb of %s into %s" % [job.title, int(lb), job.own_good, sess.logistics.name_of(site)])
 		return
@@ -330,6 +335,8 @@ func update(dt: float) -> void:
 	for b in appetite:
 		for g in appetite[b]:
 			appetite[b][g] = minf(float(BUYERS[b].cap[g]), appetite[b][g] + float(BUYERS[b].cap[g]) * step / REFILL_S)
+	if orders != null:
+		orders.update(sess.time, step)
 	if sess.payroll == null:
 		return
 	_post_dealers()
@@ -533,5 +540,5 @@ func view(side: String) -> Dictionary:
 	for m in street_sales:
 		sales[m] = int(street_sales[m])
 	return {"stock": st, "corners": corners, "quotes": quotes, "connected": connected, "career": career, "last": last,
-		"sales": sales, "sold": {"cocaine": int(sold.cocaine), "marijuana": int(sold.marijuana)}, "earned": earned,
+		"orders": orders.view() if orders != null else {"open": [], "recent": [], "board": {"goods": {}}}, "sales": sales, "sold": {"cocaine": int(sold.cocaine), "marijuana": int(sold.marijuana)}, "earned": earned,
 		"street": {"cocaine": snappedf(street_price("cocaine", "town"), 0.1), "marijuana": snappedf(street_price("marijuana", "town"), 0.1)}}

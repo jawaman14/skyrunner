@@ -2,7 +2,16 @@
 
 This is the single rules file. `CLAUDE.md` only imports it, so both agents read the same text.
 
-**Working mode: simultaneous, Claude Code leads** (owner, 11 October 2026). Both agents work at the same time.
+**Working mode: dual work** (owner, 18 October 2026, D-52). Each agent owns its lanes end to end: it writes, tests and
+merges its own work, and Codex is not only a reviewer. The lanes are in ROADMAP "Working structure". Jobs pass between
+the agents on the board: an `assign` note (`assign <task> | files | base SHA | test command | done when`) that the other
+agent answers by claiming the task. **The other agent's exact-head review is mandatory only for risk-class PRs:** any change
+to saves (`StrategicSave`, save formats), a new random draw or RNG stream, goldens or frozen fixtures, the `Session` layers
+(`scripts/sim/session_*.gd`), the flight model, or balance numbers, and any PR whose author asks for one. Every other PR
+the author merges when CI is green on the head, every review thread has a reply, and they have read their own diff. The
+other agent may still review after the merge and fix what it finds. Human release gates stay the owner's.
+
+**Earlier mode: simultaneous, Claude Code leads** (owner, 11 October 2026; kept for the task format). Both agents work at the same time.
 Claude Code turns the [HANDOFF.md](HANDOFF.md) baton into tasks, keeps Tier A and B (below) and posts at most three
 Tier C tasks at a time to Codex, each with a goal, base SHA, allowed files, test command and done-when. Codex
 implements those in parallel and reviews every Claude PR at its exact head; Claude reviews Codex's. Start every
@@ -38,14 +47,14 @@ and a woken turn answers with at most one note. Read with `after=<cursor> limit=
 `tools/collab/board_status.py`, `notify.py once` and `dashboard.py` (the board only), and the MCP tools `github_merge_queue`, `github_review_packet` and `github_pr_states` for GitHub state, instead of full reads. A
 visible receipt is only for an owner-required one: `ack <id>`.
 
-**Merging** (one integrator, one PR at a time). Claude, as lead, keeps the merge queue in the HANDOFF baton and
-does every merge, through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and
+**Merging** (one PR at a time; since 18 October each author merges their own, see Working mode). The author keeps the
+merge queue in the HANDOFF baton and merges through the MCP's `github_pr_merge` (it refuses unless CI is green on the expected head SHA and
 every review thread has a reply), never `gh pr merge`. Before a PR joins the queue:
 1. its author merges current `main` into it in their own worktree (merge, not rebase, so review history survives),
    reruns the focused tests and regenerates `docs/PROJECT_STATUS.md` last. `python tools/collab/sync_shared.py` does the
    merge and resolves the three files every PR collides on (HANDOFF's Log, the test count, the test lanes); it stops
    and leaves the merge open if anything else conflicts;
-2. the other agent reviews the exact head, including how conflicts were resolved
+2. if it is a risk-class PR, the other agent reviews the exact head, including how conflicts were resolved
    (`git show --remerge-diff <merge>` shows only the resolution);
 3. CI is green on that head.
 
@@ -53,7 +62,8 @@ After each merge, the next PR in the queue merges `main` straight away. Run `git
 shows which open PRs conflict with `main` and with each other, so overlapping work is split or ordered before
 either side builds on it. A PR whose files another open PR rewrites waits for that one, then merges `main`. Keep
 PRs short-lived: anything more than about a day or 20 commits behind `main` merges `main` before more work goes
-on it. Merges still need the owner's word or the standing rule in HANDOFF.md.
+on it. Merges need the owner's word or a standing rule: D-52 (dual work mode) in docs/DECISIONS.md is the standing rule for each
+author's own PRs.
 
 **Heavy jobs.** One full suite, cold import or balance run on the machine at a time. The server now takes a
 machine-wide Godot lock (skyrunner-mcp #1), so jobs from either agent queue instead of exhausting commit memory
@@ -62,19 +72,28 @@ machine-wide Godot lock (skyrunner-mcp #1), so jobs from either agent queue inst
 the same lock. Say on the board when you start and finish a long one, and reuse CI results for a SHA instead of
 rerunning them locally.
 
-**Lanes** ([docs/AGENT_WORK_SPLIT.md](docs/AGENT_WORK_SPLIT.md), tracker [docs/AI_WORK_ALLOCATION.md](docs/AI_WORK_ALLOCATION.md)):
+**Lanes** (from the 11 October work split, archived in [docs/archive/AGENT_WORK_SPLIT.md](docs/archive/AGENT_WORK_SPLIT.md)):
 Tier A (Session layers, RNG, goldens, saves, sim and map geometry, flight, balance) is Claude Code's. Tier B
 (bounded UI/gameplay behind a stable interface) is either, with the other reviewing. Tier C (repeated UI
 patterns, isolated tests, docs, CI tooling, issue triage) is Codex's. A Tier C task that needs a new random draw,
 a golden, a save-format change or a `scripts/sim/session_*.gd` edit stops and says so in the PR. Neither agent
-can mark a human release gate passed; those are recorded in `docs/PROJECT_STATUS.md` with a build SHA.
+can mark a human release gate passed; those are recorded in `docs/PROJECT_STATUS.md` with a build SHA. Since 12 October Codex also
+leads UX/UI and dialogue (Claude reviews) and runs the QA lane: sims, full suites, sweeps and balance runs.
 
 **MCP server:** it lives in its own repository, [skyrunner-mcp](https://github.com/jawaman14/skyrunner-mcp);
 this repo only holds the pinned launcher (`tools/mcp/`, `.mcp.json`). Server changes go there, then bump the pin
 in `tools/mcp/launch.py` in a reviewed commit.
 
 Pure GDScript on Godot 4.7.2. No native code, no plug-ins to build. See README.md for the game,
-docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the baton.
+docs/DESIGN.md for the systems, and docs/ROADMAP.md for the work queue. See HANDOFF.md for the baton, and
+docs/README.md for every document; dated reports and old plans are in docs/archive/ (records, not instructions).
+
+## Owner decisions: the ledger (owner, 18 October 2026)
+
+Every owner decision goes into [docs/DECISIONS.md](docs/DECISIONS.md) in the session it is made, with where its work is
+tracked (a `ROADMAP: <section>` or a PR/issue); `tests/test_docs.gd` fails a row with no tracker. Read the ledger before
+planning or rewriting the roadmap (Claude's SessionStart hook prints the open rows). Before a session's final report,
+check the owner's messages for decisions not yet in it. Work items also go on #328 (Claude) or #329 (Codex).
 
 ## Commands
 ```bash
@@ -84,6 +103,7 @@ $GODOT --headless --import                    # after adding scripts/assets (ref
 godot --headless --script res://tools/project_status.gd -- --write  # refresh source facts after adding tests/chapters/exports
 $GODOT --path . -- --unlocks open             # play, open mode
 $GODOT --headless --path . -- --unlocks open --watch --new --smoke 1800   # CI's headless smoke run
+$GODOT --headless --path . --script res://tools/playtest.gd -- --seed 3 --seconds 900 --every 300   # a repeatable playtest digest (the AI flies; same seed, same digest)
 $GODOT --headless --script res://scripts/balance/cli.gd -- feasibility|tactical|strategic|report [--seeds N --workers N --n N]
 $GODOT --headless --script res://tools/regen_flight_golden.gd   # after a deliberate flight-model change
 $GODOT --headless --script res://tools/bake_terrain.gd          # after a terrain generator change

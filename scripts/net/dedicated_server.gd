@@ -112,6 +112,9 @@ func session_options() -> Dictionary:
 ## Build the game (loading the save if there is one), listen, and be ready to step. Returns "" or why not.
 func start() -> String:
 	var save := str(cfg.save)
+	var load_error := Session.save_load_error(save)
+	if load_error != "":
+		return load_error
 	var map_error := PlayableMaps.error(int(cfg.map), Session.read_save(save))
 	if map_error != "":
 		return map_error
@@ -122,6 +125,8 @@ func start() -> String:
 	var fresh := not FileAccess.file_exists(save)
 	var story: Story = null
 	sess = Session.load_or_new(save, opts)
+	if sess == null:
+		return Session.save_load_error(save)
 	if str(cfg.mode) == Roles.CAMPAIGN:
 		Campaign.from_dict(Session.read_save(save).get("campaign")).attach(sess)
 	elif str(cfg.unlocks) == "story" and str(cfg.mode) != "police":

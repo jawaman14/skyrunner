@@ -14,6 +14,59 @@ class FixedRng extends PyRandom:
 		return v
 
 
+## Owner, 12 Oct: a very slow reverse on the ground in case you get stuck.
+func test_backspace_creeps_the_aircraft_backwards_when_stopped_on_the_strip() -> void:
+	var s := _session()
+	for i in 10:
+		s.update(1.0 / 30)
+	var h := deg_to_rad(s.state.heading)
+	var x0: float = s.state.x
+	var y0: float = s.state.y
+	var inp := ControlMapper.InputFrame.new()
+	inp.held["reverse"] = true
+	for i in 90:
+		s.update(1.0 / 30, inp)
+	var back: float = -((s.state.x - x0) * sin(h) + (s.state.y - y0) * cos(h))  # along the nose (sin h, cos h), reversed
+	var side: float = (s.state.x - x0) * cos(h) - (s.state.y - y0) * sin(h)
+	check(back > 3.0 and back < 6.0, "three seconds backs up about 4.5 m: %.2f" % back)
+	check(absf(side) < 0.3, "straight back, not sideways (%.2f m off the line)" % side)
+	var x1: float = s.state.x
+	var y1: float = s.state.y
+	for i in 30:
+		s.update(1.0 / 30)
+	check(Vector2(s.state.x - x1, s.state.y - y1).length() < 0.5, "and it stops when the key is released")
+
+
+## Owner, 12 Oct: taking off from dirt should slowly wear the tyres, not crash the aircraft.
+func test_a_fast_roll_on_dirt_wears_the_airframe_but_asphalt_does_not() -> void:
+	var s := _session()
+	var a := s.airframe.of()
+	var dirt: Airfield = null
+	var paved: Airfield = null
+	for af in s.world.airfields:
+		if af.surface == "dirt" and dirt == null:
+			dirt = af
+		if af.surface == "asphalt" and paved == null:
+			paved = af
+	check(dirt != null and paved != null, "the map has a dirt and an asphalt strip")
+	var fs := FlightModel.FlightState.new()
+	fs.on_ground = true
+	fs.gs_kts = 40.0
+	fs.x = paved.x
+	fs.y = paved.y
+	var before := float(a.airframe)
+	s.airframe.update(60.0, fs)
+	check_eq(float(a.airframe), before, "a minute of rolling on asphalt costs nothing")
+	fs.x = dirt.x
+	fs.y = dirt.y
+	s.airframe.update(60.0, fs)
+	check_near(before - float(a.airframe), 0.7 * Airframe.ROLL_WEAR_PER_MIN, 0.01, "a minute on dirt wears the airframe")
+	fs.gs_kts = 3.0
+	var mid := float(a.airframe)
+	s.airframe.update(60.0, fs)
+	check_eq(float(a.airframe), mid, "creeping along does not")
+
+
 func after_each() -> void:
 	Airframe.ENABLED = true
 	if _sess != null:

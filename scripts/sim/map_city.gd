@@ -140,6 +140,7 @@ static func _strip_specs() -> Array:
 static func generate() -> MapLayout:
 	var l := MapLayout.new()
 	l.id = "city"
+	l.region_id = "costa-brava"
 	l.map_seed = SEED
 	l.terrain_seed = TERRAIN_SEED
 	l.params = _params()
@@ -183,6 +184,18 @@ static func generate() -> MapLayout:
 	l.airfields = placed
 	l.zone_fields = {"west": ["FRM", "QRY", "MGR"], "north": ["EGL", "PNR"], "sea": ["COV", "ISL"]}
 	l.zone_centre = {"west": [-3500.0, -3000.0], "north": [1000.0, 8500.0], "sea": [13500.0, -11500.0]}
+	l.territories = [
+		{"id": "san-telmo-centro", "name": "San Telmo Centro", "market": "west", "center": Vector2(-650.0, -10000.0), "bounds": Rect2(-1700.0, -11000.0, 2100.0, 1900.0), "neighbors": ["barrio-chino", "the-docks", "airport-coast"], "tags": ["city", "commercial"]},
+		{"id": "barrio-chino", "name": "Barrio Chino", "market": "west", "center": Vector2(1250.0, -9700.0), "bounds": Rect2(400.0, -10500.0, 1900.0, 1500.0), "neighbors": ["san-telmo-centro", "valle-verde"], "tags": ["city", "residential", "stash-corridor"]},
+		{"id": "the-docks", "name": "The Docks", "market": "sea", "center": Vector2(-2900.0, -10850.0), "bounds": Rect2(-4500.0, -11900.0, 2800.0, 1900.0), "neighbors": ["san-telmo-centro", "airport-coast", "rio-negro-estuary"], "tags": ["port", "commercial", "logistics"]},
+		{"id": "airport-coast", "name": "Airport Coast", "market": "town", "center": Vector2(-6600.0, -10000.0), "bounds": Rect2(-9000.0, -11800.0, 4500.0, 3400.0), "neighbors": ["san-telmo-centro", "the-docks", "rio-negro-estuary", "valle-verde"], "tags": ["airfield", "logistics"]},
+		{"id": "rio-negro-estuary", "name": "Rio Negro Estuary", "market": "west", "center": Vector2(-11800.0, -6500.0), "bounds": Rect2(-16000.0, -8800.0, 7000.0, 5300.0), "neighbors": ["the-docks", "airport-coast", "valle-verde"], "tags": ["river", "mangrove", "remote"]},
+		{"id": "valle-verde", "name": "Valle Verde", "market": "west", "center": Vector2(1000.0, -4200.0), "bounds": Rect2(-9000.0, -8500.0, 18000.0, 6500.0), "neighbors": ["barrio-chino", "airport-coast", "rio-negro-estuary", "la-selva", "old-quarry"], "tags": ["rural", "farm", "airfield"]},
+		{"id": "la-selva", "name": "La Selva", "market": "north", "center": Vector2(4500.0, 7800.0), "bounds": Rect2(-3000.0, 0.0, 12000.0, 13500.0), "neighbors": ["valle-verde", "sierra-del-aguila", "old-quarry"], "tags": ["jungle", "remote", "stash-corridor"]},
+		{"id": "sierra-del-aguila", "name": "Sierra del Aguila", "market": "north", "center": Vector2(-7500.0, 8500.0), "bounds": Rect2(-12000.0, 0.0, 9000.0, 13500.0), "neighbors": ["valle-verde", "la-selva"], "tags": ["highland", "airfield", "remote"]},
+		{"id": "old-quarry", "name": "Old Quarry", "market": "west", "center": Vector2(10500.0, 1700.0), "bounds": Rect2(9000.0, -6500.0, 6500.0, 13000.0), "neighbors": ["valle-verde", "la-selva", "smugglers-cove"], "tags": ["industrial", "road-chokepoint"]},
+		{"id": "smugglers-cove", "name": "Smuggler's Cove", "market": "sea", "center": Vector2(11600.0, -9300.0), "bounds": Rect2(9000.0, -13000.0, 6500.0, 6500.0), "neighbors": ["old-quarry"], "tags": ["coastal", "boat-landing", "remote"]},
+	]
 	l.aerostat_pos = [5500.0, -13800.0]
 	var planned := load_roads()
 	l.roads = planned.get("roads", ROADS.duplicate(true))
@@ -541,8 +554,12 @@ static func post(t: Terrain, l: MapLayout) -> void:
 	l.land_use = lu
 	var probe := Terrain.new()
 	probe.set_data(h, PackedFloat32Array(), dicts)
+	if l.settlement_trunk_count < 0: l.settlement_trunk_count = l.roads.size()
+	l.roads.resize(l.settlement_trunk_count)
+	l.roads.append_array(CostaBravaPlan.streets(probe, l))
 	l.buildings = _city(probe, l)
 	var trees := _plant(probe, t.get_trees(), l)
+	trees.append_array(CostaBravaPlan.planting(probe, l))
 	for b in l.buildings:
 		# a building is a cluster of obstacle points over its footprint (Terrain.tree_hit)
 		var nx := maxi(1, int(ceil(b.w / 14.0)))
@@ -599,82 +616,10 @@ static func _plant(t: Terrain, native: PackedFloat32Array, l: MapLayout) -> Pack
 	return out
 
 
-## The city: a street grid of blocks, the buildings on them (taller downtown),
-## and warehouses and cranes on the docks. Heights are capped under every
-## strip's approach so no tower stands in a glide path.
-## Each: {x, y, z, w, d, h, style} (style: res | shop | tower | warehouse | crane)
+## Period districts share authored streets and stable parcels with rendering.
+## Physical foundations, working plots and runway approaches constrain placement.
 static func _city(t: Terrain, l: MapLayout) -> Array:
-	var out := []
-	var road_idx := RoadIndex.new(l.roads, 70.0)  # the town keeps a lot's width and a bit off every road
-	var lu := l.land_use
-	var rng := RandomNumberGenerator.new()
-	rng.seed = TERRAIN_SEED + 1
-	var street := 14.0
-	var block := 110.0
-	var bx := CITY_C.x - CITY_R.x
-	while bx < CITY_C.x + CITY_R.x:
-		var by := CITY_C.y - CITY_R.y
-		while by < CITY_C.y + CITY_R.y:
-			var cx := bx + block / 2
-			var cy := by + block / 2
-			var cls := at(lu, cx, cy)
-			if cls == URBAN:
-				var r := _ell(Vector2(cx, cy), CITY_C, CITY_R)
-				var down := clampf(1.0 - r, 0.0, 1.0)
-				var lots := 2 if down > 0.55 else 3
-				var lot := (block - street) / lots
-				for a in lots:
-					for b in lots:
-						if rng.randf() < 0.12:
-							continue  # a yard, a plaza, a vacant lot
-						var x := bx + street / 2 + (a + 0.5) * lot
-						var y := by + street / 2 + (b + 0.5) * lot
-						var z := t.height64(x, y)
-						if z < 1.0 or at(lu, x, y) != URBAN:
-							continue
-						if Vector2(x, y).distance_to(ORG_AT) < 70.0 or Vector2(x, y).distance_to(LAW_AT) < 70.0:
-							continue  # the nightclub's and the customs house's plots
-						if road_idx.dist(Vector2(x, y)) < lot / 2 + 12.0:
-							continue  # the highway runs through town
-						var tall := 6.0 + rng.randf() * (6.0 + 50.0 * down * down)
-						var style := "tower" if tall > 26 else ("shop" if rng.randf() < 0.3 else "res")
-						out.append({"x": x, "y": y, "z": z, "w": lot - rng.randf_range(4, 10), "d": lot - rng.randf_range(4, 10),
-							"h": tall, "style": style})
-			by += block
-		bx += block
-	# the docks: warehouses behind the quays, cranes on the edge
-	var qx := HARBOUR_X.x - 350.0
-	while qx < HARBOUR_X.y + 350.0:
-		for row in 2:
-			var x := qx + 30
-			var y := COAST_Y + 90.0 + row * 70.0
-			var keep_road: bool = road_idx.dist(Vector2(x, y)) > 26.0 + 8.0  # a warehouse is 52 x 26: not on the quay road
-			if t.height64(x, y) > 1.0 and rng.randf() < 0.8 and Vector2(x, y).distance_to(LAW_AT) > 80.0 and keep_road:
-				out.append({"x": x, "y": y, "z": t.height64(x, y), "w": 52.0, "d": 26.0, "h": rng.randf_range(8, 12), "style": "warehouse"})
-		qx += 70.0
-	for c in 5:
-		var x := lerpf(HARBOUR_X.x + 200, HARBOUR_X.y - 200, c / 4.0)
-		var y := COAST_Y + 22.0
-		if t.height64(x, y) > 0.5 and road_idx.dist(Vector2(x, y)) > 14.0:
-			out.append({"x": x, "y": y, "z": t.height64(x, y), "w": 12.0, "d": 12.0, "h": 38.0, "style": "crane"})
-	# nothing in a glide path: a 3-degree slope from each runway end, 1.8 km out
-	var keep := []
-	for b in out:
-		var ok := true
-		for af in l.airfields:
-			var lc: Array = af.to_local(b.x, b.y)
-			var beyond: float = absf(lc[0]) - af.length / 2
-			if absf(lc[1]) < af.width / 2 + 90 + maxf(beyond, 0.0) * 0.2 and beyond < 1800 and beyond > -af.length / 2:
-				var cap: float = maxf(beyond, 0.0) * 0.05 - 8.0
-				if cap < 5.0:
-					ok = false
-				else:
-					b.h = minf(b.h, cap)
-			if af.contains(b.x, b.y, 120.0):
-				ok = false
-		if ok:
-			keep.append(b)
-	return keep
+	return CostaBravaPlan.buildings(t, l)
 
 
 # ------------------------------------------------------------------ headquarters

@@ -25,6 +25,7 @@ const HELD := {
 	"throttle_up": {"keys": [KEY_R, KEY_PAGEUP], "axes": [[JOY_AXIS_TRIGGER_RIGHT, 1.0]]},
 	"throttle_down": {"keys": [KEY_F, KEY_PAGEDOWN], "axes": [[JOY_AXIS_TRIGGER_LEFT, 1.0]]},
 	"brake": {"keys": [KEY_B, KEY_SPACE], "buttons": [JOY_BUTTON_LEFT_SHOULDER]},
+	"reverse": {"keys": [KEY_BACKSPACE], "buttons": [JOY_BUTTON_RIGHT_SHOULDER]},
 	"trim_up": {"keys": [KEY_BRACKETRIGHT], "buttons": [JOY_BUTTON_DPAD_RIGHT]},
 	"trim_down": {"keys": [KEY_BRACKETLEFT], "buttons": [JOY_BUTTON_DPAD_LEFT]},
 }
@@ -38,7 +39,7 @@ const PRESSED := {
 const LABELS := {
 	"pitch_up": "Pitch up (pull)", "pitch_down": "Pitch down (push)", "roll_left": "Roll left", "roll_right": "Roll right",
 	"yaw_left": "Rudder left", "yaw_right": "Rudder right", "throttle_up": "Throttle up", "throttle_down": "Throttle down",
-	"brake": "Brakes", "trim_up": "Trim nose up", "trim_down": "Trim nose down", "flaps_down": "Flaps down",
+	"brake": "Brakes", "reverse": "Back up (slowly, stopped on a strip)", "trim_up": "Trim nose up", "trim_down": "Trim nose down", "flaps_down": "Flaps down",
 	"flaps_up": "Flaps up", "throttle_cut": "Throttle cut", "throttle_full": "Full throttle",
 }
 
@@ -146,6 +147,7 @@ static func save_file(path := PATH) -> void:
 	for n in names():
 		cf.set_value("keys", n, InputMap.action_get_events(action(n)))
 	cf.set_value("axes", "bindings", axes.to_dict())
+	cf.set_value("meta", "bindings_version", 1)
 	cf.save(path)
 
 
@@ -154,6 +156,12 @@ static func load_file(path := PATH) -> bool:
 	if cf.load(path) != OK:
 		return false
 	ensure()
+	var old_reverse: Array = cf.get_value("keys", "reverse", [])
+	var legacy_profile := int(cf.get_value("meta", "bindings_version", 0)) < 1
+	var migrate_reverse := legacy_profile and old_reverse.is_empty()
+	if legacy_profile and old_reverse.size() == 1:
+		var old_key = old_reverse[0]
+		migrate_reverse = old_key is InputEventKey and old_key.physical_keycode == KEY_BACKSPACE
 	for n in names():
 		var evs = cf.get_value("keys", n, null)
 		if evs is Array and not evs.is_empty():
@@ -161,19 +169,40 @@ static func load_file(path := PATH) -> bool:
 			for ev in evs:
 				if ev is InputEvent:
 					InputMap.action_add_event(action(n), ev)
+	# Older profiles stored only Backspace, or predate the reverse action.
+	# Give RB to reverse only if no custom flight control already uses it.
+	if migrate_reverse:
+		var shoulder_taken := false
+		for n in names():
+			if n == "reverse":
+				continue
+			for ev in InputMap.action_get_events(action(n)):
+				if ev is InputEventJoypadButton and ev.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+					shoulder_taken = true
+		var reverse_has_shoulder := false
+		for ev in InputMap.action_get_events(action("reverse")):
+			if ev is InputEventJoypadButton and ev.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+				reverse_has_shoulder = true
+				if shoulder_taken:
+					InputMap.action_erase_event(action("reverse"), ev)
+		if not shoulder_taken and not reverse_has_shoulder:
+			var shoulder := InputEventJoypadButton.new()
+			shoulder.device = -1
+			shoulder.button_index = JOY_BUTTON_RIGHT_SHOULDER
+			InputMap.action_add_event(action("reverse"), shoulder)
 	axes = FlightAxes.from_dict(cf.get_value("axes", "bindings", {}))
 	return true
 
 
 # ------------------------------------------------------------ the look
-## {palette: "neon"|"safe", filter: ScreenFilter mode, speak: read aloud,
+## {palette: "neon"|"safe", filter: ScreenFilter mode,
 ## graphics: the preset a game loads with, volume: the master volume 0..1,
 ## assist: keyboard flight assist (wings level, pitch hold)}
 static func settings() -> Dictionary:
 	var cf := ConfigFile.new()
 	cf.load(SETTINGS_PATH)
 	return {"palette": cf.get_value("look", "palette", "neon"), "filter": cf.get_value("look", "filter", "off"),
-		"speak": cf.get_value("look", "speak", false), "tutorial_seen": cf.get_value("look", "tutorial_seen", false),
+		"tutorial_seen": cf.get_value("look", "tutorial_seen", false),
 		"graphics": cf.get_value("look", "graphics", "high"), "volume": cf.get_value("look", "volume", 1.0),
 		"assist": cf.get_value("look", "assist", true)}
 

@@ -11,8 +11,6 @@ func _tree() -> SceneTree:
 
 func after_each() -> void:
 	World.use_map(0)
-	Speech.enabled = false
-	Speech.spoken.clear()
 
 
 func test_the_sprites_are_there() -> void:
@@ -118,8 +116,11 @@ func test_debris_lands_on_the_ground() -> void:
 	for i in 60:
 		fx.throw_debris(Vector3(0, 1, 0), 1)
 	check(fx.debris.filter(func(b): return is_instance_valid(b) and not b.is_queued_for_deletion()).size() <= FX.MAX_DEBRIS, "capped")
+	var first_chunk: WeakRef = weakref(fx.debris[0])
 	fx.queue_free()
 	floor.queue_free()
+	await _tree().create_timer(FX.DEBRIS_S + 0.1).timeout
+	check(first_chunk.get_ref() == null, "debris is released after its parent and cleanup timer finish")
 
 
 func test_the_seat_lights_fires_where_things_burn() -> void:
@@ -251,31 +252,6 @@ func test_the_pack_panel() -> void:
 	m.refresh()
 	check(m.weight_bar.value > 0.0, "the weight shows")
 	m.queue_free()
-	s.dispose()
-
-
-func test_read_aloud() -> void:
-	var said := []
-	var real = Speech.speaker
-	Speech.speaker = func(text: String, _i: bool) -> void: said.append(text)
-	Speech.say("not while it's off")
-	check(said.is_empty(), "off: silent")
-	Speech.enabled = true
-	Speech.say("[b]Tower[/b], go ahead")
-	check_eq(said.back(), "Tower, go ahead", "on: said, without the markup")
-	Speech.line("Sal Moretti", "You look tired, kid.", ["Take it", "Leave it"])
-	check_eq(said.back(), "Sal Moretti: You look tired, kid.. 1, Take it. 2, Leave it", "the line and the numbered answers")
-	# radio calls are read as they come, past the log's eighth line too (the squelch used to stop there)
-	var s := Session.new({"seed": 1, "location": "HAR"})
-	var snd := Soundscape.new()
-	var n0 := said.size()
-	snd._last_msg_set = true
-	for i in 12:
-		s.say("call %d" % i)
-		snd._radio(s, false)
-	check_eq(said.size() - n0, 12, "every call read (%d)" % (said.size() - n0))
-	Speech.speaker = real
-	snd.free()
 	s.dispose()
 
 

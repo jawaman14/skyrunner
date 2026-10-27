@@ -19,7 +19,10 @@ func _init(opts := {}) -> void:
 		world = World.new()
 	map_seed = world.map.map_seed
 	seed = opts.get("seed", 1)
-	money = opts.get("money", START_MONEY)
+	var start_money = opts.get("money", START_MONEY)
+	ledger.track("org:safe", start_money, start_money, time)  # open at what the game starts (or loads) with, not at START_MONEY plus a phantom adjustment
+	money = start_money
+	ledger.track("police:budget", law_funds, law_funds, time)
 	owned = set_of(opts.get("owned", ["c172p"]))
 	aircraft_key = opts.get("aircraft_key", "c172p")
 	location = opts.get("location", START_FIELD)
@@ -48,6 +51,9 @@ func _init(opts := {}) -> void:
 	econ.attach_market(Market.new(_rng(seed + 113)))  # supply and demand on the street (own stream)
 	econ.market.hook(self)  # arrests, raids, seizures, the factions' fortunes move it
 	arng = _rng(seed + 71)
+	brng = _rng(seed + 149)
+	barng = _rng(seed + 151)
+	bagrng = _rng(seed + 157)
 	if Arsenal.REALISM:
 		for side in ["org", "law", "rival"]:
 			arsenals[side] = Arsenal.new(side)
@@ -57,6 +63,7 @@ func _init(opts := {}) -> void:
 			arsenals["org"].side = "org"
 	if not world.map.stashes.is_empty():
 		stash_net = StashNet.new(world.map.stashes, _rng(seed + 41))
+		investigation = Investigation.new(_rng(seed + 163))
 	ai_law_upgrades = opts.get("ai_law_upgrades", false)
 	for key in SYSTEMS:
 		if opts.get(key, false):
@@ -175,6 +182,10 @@ func dispose() -> void:
 
 
 static func load_or_new(path: String, opts := {}) -> Session:
+	var load_error := save_load_error(path)
+	if load_error != "":
+		push_warning(load_error)
+		return null
 	var data := read_save(path)
 	var o := {}
 	o.merge(opts)

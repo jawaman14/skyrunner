@@ -95,7 +95,7 @@ The simulation shader only shows the problem; the colour-safe palette is the fix
 
 | Also looked at | Licence | Verdict |
 |---|---|---|
-| [GATO text-to-speech](https://github.com/Nokorpo/gato-godot-accessibility-toolkit) | MPL-2.0 | Done in the fourth pass. Its plugin wraps Godot's own `DisplayServer.tts_*`, so `scripts/game/speech.gd` calls that directly: conversations and radio calls, read aloud (F8). |
+| [GATO text-to-speech](https://github.com/Nokorpo/gato-godot-accessibility-toolkit) | MPL-2.0 | Previously implemented through Godot's own TTS API; read-aloud was removed in #385. The GATO TTS plugin is not a runtime dependency. |
 | [GodotShaderWarmup](https://github.com/Koisuji02/GodotShaderWarmup) | MIT | Still not adopted. It's a native binary per platform, and first-sight stutter can't be measured on this GPU-less build box. Godot has had a built-in shader baker that does the same job since 4.5; the project is on 4.7 with it on in the export presets, so measure with F6 before adding anything. |
 | [Phantom Camera](https://github.com/ramokz/phantom-camera), [Shaker](https://github.com/Eneskp3441/Shaker) | MIT | Tour cameras; screen shake for gunfire and turbulence. Small, later. |
 | [Maaack's Game/Menus Template](https://github.com/Maaack/Godot-Game-Template) | MIT | We have our own lobby and menus. |
@@ -120,7 +120,7 @@ The gaps asked about, checked one by one on GitHub (the only reachable source):
 | Textures | [Kenney Prototype Textures](https://github.com/shorepine/kenney); Poly Haven and ambientCG are unreachable (not on GitHub) | The terrain, city and water are procedural (`texgen.gd`, splat shaders) at any resolution. Photo textures would clash with the low-poly look, so nothing was taken. |
 | Inventory | [GLoot](https://github.com/peter-kish/gloot) (MIT, 4.4+), [Expresso Inventory System](https://github.com/expressobits/inventory-system) (MIT, C++), [Inventory Manager](https://github.com/Rubonnek/inventory-manager) | GLoot is the best of them, but its `Inventory` is a scene-tree Node, and ours has to live in the host-authoritative simulation and replicate. An on-foot pack of six kinds of thing is about 100 lines of `FootCombat`: it has a weight limit, slows you when heavy, keeps the other gun when you switch, takes and returns to the armoury, and holds medkits. Arrested, it becomes the task force's evidence. GLoot is the pick if inventory grows into containers, trading or grids. |
 | Street props | [KayKit City Builder Bits](https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0) | Adopted (above). |
-| Read aloud | GATO TTS | Adopted as Godot's own TTS (above). |
+| Read aloud | GATO TTS | Retired in #385 (above). |
 
 ## Looked at, not a fit
 
@@ -189,3 +189,133 @@ from the Commercial kit's `detail-*` pieces, crosswalks, furniture in the hangar
 at the port, Quaternius's downtown pieces, and the 2D packs (glyphs for the controls screens, the crosshair, map symbols).
 
 **Removed in October 2026 (unused; CC0; fetch again if needed):** Kenney survival, factory, retro-urban, modular-buildings and city-roads kits; Quaternius Stylized Nature, Ultimate Nature, Realistic Car and Modular Street packs; all of Kenney's 2D packs (Input Prompts, Game Icons, UI Pack, Cursors, Minimap, Flags, Map Pack, Explosions, Emotes, Road Textures). The flags are real countries' flags and the game's world is fictional; the cursors are thin outlines or plain white and read worse than the system pointer on the game's dark and bright scenes; the rest had no place in the layout.
+
+## Candidates from the GitHub `godot` topic (18 October 2026)
+
+The owner asked for the top 500 repositories tagged [godot](https://github.com/topics/godot) (by stars) to be read for names and descriptions that could help. About 50 stood out; the rest are engines, tutorials, templates, 2D genres or tools for other languages. **This is a list to assess, not a decision to adopt anything.** Only names, descriptions, languages and licences were read, nothing was run. The project's limits decide: pure GDScript with no native add-on, a deterministic simulation, fictional content, and licences compatible with MIT (GPL and unclear licences are marked). A row moves to the main table above only after a prototype or a read of its source.
+
+### Map, roads and world
+
+| Repository | Stars | Language | Licence | Could help with | First look |
+|---|---|---|---|---|---|
+| [TheDuckCow/godot-road-generator](https://github.com/TheDuckCow/godot-road-generator) | 1235 | GDScript | MIT | Map redesign L5: road meshes, junctions, lane-following traffic for the city's ambient life | Best fit on the list. Our roads are a baked graph; look at its lane and junction geometry, and at traffic that follows lanes |
+| [AlexeyBond/godot-constraint-solving](https://github.com/AlexeyBond/godot-constraint-solving) | 465 | GDScript | MIT | Valle Verde (D-46): wave-function-collapse for blocks, lots and streets | A generator idea for L6; the output must stay deterministic and baked |
+| [Arnklit/Waterways](https://github.com/Arnklit/Waterways) | 1337 | GDScript | MIT | Rio Negro river and estuary meshes with flow and foam from curves | Assessed: Godot 3 only (project config_version 4, last change 2022, `.shader` files). Skip; the flow-map idea stays |
+| [Yogoda/ZoneLoadingSystem](https://github.com/Yogoda/ZoneLoadingSystem) | 238 | GDScript | CC0-1.0 | Streaming a 32 km map by zone | CC0. Check against our chunked rendering before adding anything |
+| [levinzonr/godot-asset-placer](https://github.com/levinzonr/godot-asset-placer) | 253 | GDScript | MIT | Placing and managing 3D assets in the editor (L7 sites, L9 props) | An editor tool for the asset catalogue workflow; our placement is baked data |
+| [iiMidknightii/PathMesh3D](https://github.com/iiMidknightii/PathMesh3D) | 147 | C++ | MIT | Extruding fences, kerbs and rails along a path | C++ GDExtension: ideas only, since the project is pure GDScript |
+| [2Retr0/GodotGrass](https://github.com/2Retr0/GodotGrass) | 695 | C# | MIT | Per-blade grass for the plain and verges | Cost on the target machines is the question; prototype only |
+| [JekSun97/gdTree3D](https://github.com/JekSun97/gdTree3D) | 382 | C++ | NOASSERTION | Procedural trees | Licence is unclear; do not use until clarified |
+| [openfw-game/OpenLiberty](https://github.com/openfw-game/OpenLiberty) | 468 | GDScript | MIT | Streaming a GTA-era open world with period models | A reference for how a city of this style is streamed |
+| [godot-extended-libraries/godot-lod](https://github.com/godot-extended-libraries/godot-lod) | 247 | GDScript | MIT | LOD for the city's models | Godot 3.x; read for the approach only |
+| [DmitriySalnikov/godot_debug_draw_3d](https://github.com/DmitriySalnikov/godot_debug_draw_3d) | 1073 | C++ | NOASSERTION | Drawing the map audit's overlay in the 3D view | Native add-on and a custom licence: probably draw our own lines |
+
+### Flight and vehicles
+
+| Repository | Stars | Language | Licence | Could help with | First look |
+|---|---|---|---|---|---|
+| [addmix/godot_aerodynamic_physics](https://github.com/addmix/godot_aerodynamic_physics) | 204 | GDScript | MIT | Cross-checking our flight model against another aerodynamic model | Reference only; our model reads JSBSim data and must stay deterministic |
+| [GDQuest/godot-steering-ai-framework](https://github.com/GDQuest/godot-steering-ai-framework) | 1582 | GDScript | MIT | Steering for ambient traffic, squads and boats | MIT and pure GDScript. Check it against our own route following |
+| [HungryProton/proton_trail](https://github.com/HungryProton/proton_trail) | 150 | GDScript | MIT | 3D trails: contrails, wingtip vapour, tyre smoke | Small add-on for the effects layer |
+| [appsinacup/godot-rapier-physics](https://github.com/appsinacup/godot-rapier-physics) | 1027 | Rust | MIT | Deterministic physics with state serialization | Native. Interesting for replays, but our sim does not use engine physics |
+
+### Interface and polish (the epic order, D-48)
+
+| Repository | Stars | Language | Licence | Could help with | First look |
+|---|---|---|---|---|---|
+| [rsubtil/controller_icons](https://github.com/rsubtil/controller_icons) | 445 | GDScript | MIT | #134/#148 first-use hints and #138 readability: key and controller prompts that follow the device | Strong fit for Tier 1 items 3 and 5. Pure GDScript |
+| [zijcht/godot-game-settings](https://github.com/zijcht/godot-game-settings) | 524 | GDScript | MIT | #137 settings and pause menu | Compare with our settings code before adopting |
+| [Inspiaaa/ThemeGen](https://github.com/Inspiaaa/ThemeGen) | 267 | GDScript | MIT | One programmatic theme for UIStyle and GameMenu (#138) | Could replace hand-built themes; check how it works with our shared shell |
+| [tavurth/godot-radial-menu](https://github.com/tavurth/godot-radial-menu) | 350 | GDScript | MIT | A radial menu for squad orders or quick phone actions | Idea for the phone hub's quick keys |
+| [murikistudio/simple-gui-transitions](https://github.com/murikistudio/simple-gui-transitions) | 205 | GDScript | MIT | Menu transitions | Polish only |
+| [MrEliptik/godot_ui_components](https://github.com/MrEliptik/godot_ui_components) | 775 | GDScript | MIT | UI component designs | Reference for layouts |
+| [Kubulambula/Godot-GDShell](https://github.com/Kubulambula/Godot-GDShell) | 230 | GDScript | MIT | A developer console for QA commands | Our session commands already exist; a console could call them |
+| [Ark2000/PankuConsole](https://github.com/Ark2000/PankuConsole) | 1437 | GDScript | MIT | Real-time debugging toolkit | Dev builds only |
+| [russmatney/log.gd](https://github.com/russmatney/log.gd) | 140 | GDScript | MIT | A readable logger for the sim and tests | Tiny; would not touch determinism |
+
+### Look and sound (presentation layers, D-23)
+
+| Repository | Stars | Language | Licence | Could help with | First look |
+|---|---|---|---|---|---|
+| [AnalogFeelings/godot-psx](https://github.com/AnalogFeelings/godot-psx) | 152 | - | MIT | The PS2-era look (roadmap #380): PS1/PS2 shaders for models | Assessed: PS1 look (vertex snapping, affine warp), not PS2. Only the dither pass is useful; see below |
+| [MenacingMecha/godot-psx-style-demo](https://github.com/MenacingMecha/godot-psx-style-demo) | 739 | GDScript | MIT | The same, with materials and a demo | MIT |
+| [ahopness/GodotRetro](https://github.com/ahopness/GodotRetro) | 803 | GLSL | NOASSERTION | Retro compositor effects | Licence is unclear |
+| [hugemenace/resonate](https://github.com/hugemenace/resonate) | 240 | GDScript | MIT | Music and sound management: pooling, crossfades | For the radio, stingers and per-district music (#167) |
+| [nlaha/godot-midi](https://github.com/nlaha/godot-midi) | 147 | C++ | MIT | Playing MIDI for era music at small size | Assessed: native GDExtension for rhythm games. Skip |
+| [kyzfrintin/Godot-Mixing-Desk](https://github.com/kyzfrintin/Godot-Mixing-Desk) | 673 | GDScript | MIT | Adaptive and procedural music (stingers) | Godot 3.3, so ideas only |
+| [ikbencasdoei/godot-voip](https://github.com/ikbencasdoei/godot-voip) | 211 | Rust | MIT | Voice chat | We have our own voice layer; compare quality and latency |
+| [cloudofoz/godot-smashthemesh](https://github.com/cloudofoz/godot-smashthemesh) | 497 | GDScript | MIT | Breaking meshes into fragments | Crash and explosion effects; check cost |
+| [cloudofoz/godot-deformablemesh](https://github.com/cloudofoz/godot-deformablemesh) | 451 | GDScript | MIT | Run-time mesh deformation | Vehicle dents; check cost |
+
+### Dialogue and story
+
+| Repository | Stars | Language | Licence | Could help with | First look |
+|---|---|---|---|---|---|
+| [ephread/inkgd](https://github.com/ephread/inkgd) | 396 | GDScript | MIT | Branching story scripts in ink, in pure GDScript | An alternative to Dialogue Manager for Rafa's chapters; we already use Dialogue Manager, so only if it falls short |
+| [viniciusgerevini/godot-clyde-dialogue](https://github.com/viniciusgerevini/godot-clyde-dialogue) | 149 | GDScript | MIT | A small dialogue language | Probably not needed |
+| [TheWalruzz/godot-questify](https://github.com/TheWalruzz/godot-questify) | 255 | GDScript | MIT | Graph-based quest editor | Our story goals are code; read for the UI of goals |
+
+### Networking and servers
+
+| Repository | Stars | Language | Licence | Could help with | First look |
+|---|---|---|---|---|---|
+| [grazianobolla/godot-monke-net](https://github.com/grazianobolla/godot-monke-net) | 251 | C# | - | Client-server authoritative multiplayer | Reference for our host service |
+| [heroiclabs/nakama + nakama-godot](https://github.com/heroiclabs/nakama) | 13520 | Go | Apache-2.0 | Matchmaking and accounts for dedicated servers | A server framework: a decision for the multiplayer step, not now |
+| [0xFA11/MultiplayerNetworkingResources](https://github.com/0xFA11/MultiplayerNetworkingResources) | 8742 | C | - | A reading list on multiplayer networking | Reading |
+
+### Testing, tools and agents
+
+| Repository | Stars | Language | Licence | Could help with | First look |
+|---|---|---|---|---|---|
+| [GDQuest/GDScript-formatter](https://github.com/GDQuest/GDScript-formatter) | 478 | Rust | MIT | A faster formatter and linter pass for CI hygiene | Compare with gdscript-toolkit, which is already on the list |
+| [abarichello/godot-ci](https://github.com/abarichello/godot-ci) | 1146 | Dockerfile | MIT | Export and deploy templates for CI | Compare with our workflow; ideas only |
+| [satelliteoflove/godot-mcp](https://github.com/satelliteoflove/godot-mcp) | 178 | GDScript | MIT | Input injection, deterministic playtesting and live game state through MCP | Relevant to the #172 playtest protocol and the owner's screenshots; compare with our own MCP |
+| [HaD0Yun/Doyunha-Gopeak](https://github.com/HaD0Yun/Doyunha-Gopeak) | 268 | TypeScript | MIT | MCP with screenshot capture, a GDScript language server and a debugger | Ideas for our MCP tools |
+| [Coding-Solo/godot-mcp](https://github.com/Coding-Solo/godot-mcp) | 6135 | JavaScript | MIT | Launch, run and capture debug output through MCP | The best known Godot MCP; compare tools |
+| [jame581/GodotPrompter](https://github.com/jame581/GodotPrompter) | 845 | JavaScript | MIT | Godot 4 skills for coding agents | Could improve how Claude and Codex write Godot; read the skills first |
+| [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills) | 1582 | Python | Apache-2.0 | A directory of game-dev agent skills | A list to browse |
+| [script-gd/gdcc](https://github.com/script-gd/gdcc) | 157 | Java | LGPL-3.0 | An ahead-of-time GDScript compiler | Would add native binaries and a build step; not for a pure-GDScript project today |
+| [getsentry/sentry-godot](https://github.com/getsentry/sentry-godot) | 256 | C++ | MIT | Crash reporting | Sends data off the machine, which the owner's playtest-log decision rules out |
+
+Not listed on purpose: engine forks and language bindings (Redot, godot-rust, the C#, Go, Kotlin, Lua and Nim bindings), ECS frameworks (the simulation has its own layers), 2D genre kits (platformer, roguelike, card, tower defence, tile and dual-grid tools), ad, store and platform SDKs, VR and Live2D tools, and editors and IDE plugins.
+
+### Assessed after reading the source (18 October 2026)
+
+I cloned the twelve most promising repositories into a scratch folder outside the project and read their README, layout,
+licence and the code that matters. Nothing was run and nothing is added to the game. The verdicts, with what to do next:
+
+| Repository | What it is | Verdict | Why, and the next step |
+|---|---|---|---|
+| [TheDuckCow/godot-road-generator](https://github.com/TheDuckCow/godot-road-generator) | 6,000 lines of editor-authored road nodes (RoadContainer, RoadPoint, segments, lanes), an n-gon intersection mesh (976 lines) and lane-following traffic agents; MIT; Godot 4.4+; "not feature complete" | **Borrow ideas, do not adopt** | Our roads are a planned and baked graph, not scene nodes, and the plugin is still changing. What we lack is junction geometry: read `procgen/intersection_ngon.gd` and `segment_geo.gd` before writing the map redesign's L5 junctions (`docs/MAP_REDESIGN.md`), and `road_lane_agent.gd` for how traffic follows a curve |
+| [rsubtil/controller_icons](https://github.com/rsubtil/controller_icons) | 1,900 lines of GDScript; icons for keyboard, mouse and every common pad that follow the device and the remapped action; MIT; art is CC0 (Xelu), 4.3 MB | **Prototype** | Our game already registers every control as an `InputMap` action with key and joypad events (`scripts/game/controls_config.gd`), which is exactly what the add-on reads. One slice: show the real glyph in `KeyHints` and the first-use hints (Tier 1 items 3 and 5). Needs an autoload and an export-filter entry for the assets |
+| [AnalogFeelings/godot-psx](https://github.com/AnalogFeelings/godot-psx) | Four shaders: lit and unlit PS1 surfaces, a full-screen dither with colour depth, a fade; MIT | **Write our own dither; skip the rest** | The PS1 vertex snapping and affine warping are the wrong era (the owner's direction is PS2). The dither is 30 lines using the standard 4x4 ordered pattern; its README says it derives from the DuckStation emulator, whose licence is not MIT. Write a clean banding-and-dither pass for the optional PS2 screen filter (`ScreenFilter.MODES`, `docs/ASSET_COVERAGE.md` item 8) |
+| [AlexeyBond/godot-constraint-solving](https://github.com/AlexeyBond/godot-constraint-solving) | Wave-function collapse and a generic constraint solver for tile maps and grid maps; MIT | **Skip** | It cannot guarantee that all road tiles connect (its own README lists global constraints as not implemented), it draws on the global random generator (no per-item seeds), and it is tile-based. Valle Verde's streets should be a parametric grid bent to the terrain and clipped by the highway, built by our own tool |
+| [Arnklit/Waterways](https://github.com/Arnklit/Waterways) | River meshes with flow and foam maps from bezier curves | **Skip** | Godot 3 (2022). Reading its flow-map filter passes is fine for the Rio Negro's water shader, but nothing can be used as it stands |
+| [satelliteoflove/godot-mcp](https://github.com/satelliteoflove/godot-mcp) | A Node.js MCP server and an editor plugin: freeze the game clock, step time, step until a condition holds, inject real input, read live state as JSON, run GDScript in the running game; MIT; Godot 4.5+ | **Borrow ideas, do not adopt** | It adds Node and an editor plugin to a repository whose MCP is Python and whose runs are headless. The valuable idea for the playtest script (#172) is a deterministic stepping and state-digest tool: our simulation is already deterministic, so a "play N seconds with these inputs and give me a digest and a screenshot" tool in skyrunner-mcp would do the same job |
+| [jame581/GodotPrompter](https://github.com/jame581/GodotPrompter) | 57 skills for coding agents (testing, save and load, shaders, optimisation, procedural generation, multiplayer, dedicated server); MIT; no telemetry | **Read selected skills, do not install** | The generic advice conflicts with our rules (GUT and gdUnit4 where we have our own test runner, autoload event buses, C# examples) and it installs a session-start hook that would add to the context every session. If a skill helps (`godot-optimization`, `shader-basics`, `procedural-generation`), copy the relevant lines into our docs |
+| [addmix/godot_aerodynamic_physics](https://github.com/addmix/godot_aerodynamic_physics) | 4,000 lines: an aircraft as an engine `VehicleBody3D` with lift surfaces; MIT; a C++ port is in progress | **Skip** | It rides on the engine's vehicle-body physics, which is not deterministic; our flight model is our own, reads JSBSim data and is replayable. At most compare its lift-curve shape with ours |
+| [GDQuest/godot-steering-ai-framework](https://github.com/GDQuest/godot-steering-ai-framework) | Steering behaviours (seek, arrive, pursue, avoid, follow a path) on plain vectors; MIT; last change September 2024 | **Skip for now** | The behaviours are not tied to engine physics, so it would be safe, but our traffic and squads already follow road-graph routes. Revisit only if crowd movement (the casino's patrons) needs it |
+| [hugemenace/resonate](https://github.com/hugemenace/resonate) | A sound manager (pooled players, 2D and 3D, polyphony) and a music manager with stemmed tracks and crossfades; MIT; now maintained by Widgit Gaming | **Prototype when the presentation layers start** | Stems and crossfades are what per-district music and the stingers in D-34 need, and it is pure GDScript. The game's sounds are synthesised in `scripts/game/sound.gd` and the car radio plays recorded excerpts, so it would sit beside them, not replace them |
+| [Yogoda/ZoneLoadingSystem](https://github.com/Yogoda/ZoneLoadingSystem) | Loading and unloading zones by trigger areas | **Skip** | Godot 3 and unmaintained. Our chunked MultiMeshes already handle the city |
+| [grazianobolla/godot-monke-net](https://github.com/grazianobolla/godot-monke-net) | Client-authoritative multiplayer with prediction and interpolation | **Skip** | C#, and it needs the author's fork of Godot. Our host service and snapshots are our own |
+
+Terrain3D (already on the main table as "cannot be swapped") was read again on 18 October at the owner's request:
+
+| Repository | What it is | Verdict | Why |
+|---|---|---|---|
+| [TokisanGames/Terrain3D](https://github.com/TokisanGames/Terrain3D) | A C++ GDExtension: geometric clipmap terrain split into regions (256 m at 1 m spacing by default, up to 65 km), sculpting, holes, 32 textures, foliage instancing, collision; MIT; active (17 October) | **Do not adopt; borrow the data model** | It is native code that every platform and the headless server would need, and the simulation reads the terrain (radar line of sight, landings, roads, the pit exit) from its own baked height grid, so two terrains would be two sources of truth. What it shows is the answer to our real limit: our grid is 513 x 513 over 32 km, so one cell is 62.5 m. A fine regional height layer over the coarse grid, read in pure GDScript, is now written into the map plan (`docs/MAP_REDESIGN.md`, the height patches) |
+
+Six more were read afterwards:
+
+| Repository | What it is | Verdict | Why |
+|---|---|---|---|
+| [HungryProton/proton_trail](https://github.com/HungryProton/proton_trail) | One 256-line GDScript node that draws a 3D trail; MIT; last change 2023 | **Borrow** | Small enough to vendor with its licence, or to rewrite, for contrails, wingtip vapour and tyre smoke in the effects layer. Not needed until that work starts |
+| [Inspiaaa/ThemeGen](https://github.com/Inspiaaa/ThemeGen) | One GDScript file that builds a `Theme` from code, with semantic colours and light and dark variations; MIT | **Skip, idea only** | `UIStyle` already builds our themes in code; the semantic-colour variations are the same idea as our accessibility palettes |
+| [zijcht/godot-game-settings](https://github.com/zijcht/godot-game-settings) | A settings framework with ready-made components, its own save file and a glyph database; MIT; Godot 4.5 | **Skip** | It would replace our settings, controls and pause menus rather than add to them. Its glyph database overlaps `controller_icons` |
+| [ikbencasdoei/godot-voip](https://github.com/ikbencasdoei/godot-voip) | Voice chat; MIT; last change August 2024 | **Skip** | It ships native code (an Opus extension); we have our own radio-style voice layer in pure GDScript |
+| [nlaha/godot-midi](https://github.com/nlaha/godot-midi) | MIDI import and playback for rhythm games; MIT | **Skip** | A native GDExtension built for rhythm games; not pure GDScript |
+| [GDQuest/GDScript-formatter](https://github.com/GDQuest/GDScript-formatter) | A Rust formatter and linter for GDScript | **Skip** | A native binary to download in CI, which is a supply-chain addition; `gdscript-toolkit` already covers the job |
+
+**Next, in this order, if the owner agrees:** (1) read the road generator's intersection code while writing L5 (no project change);
+(2) one `controller_icons` prototype slice behind `KeyHints`, with a screenshot; (3) write the dither banding pass for the screen filter;
+(4) the stepping and digest tool for the playtest script. Resonate waits for the presentation layers.

@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 
-SERVER_COMMIT = "1b8edfd6ca1c683c841b167fad7b25cadfa7852c"
+SERVER_COMMIT = "ec56c32691bb2edf4d7588e1c1ecf960f2fd0572"
 SERVER_SOURCE = "git+https://github.com/jawaman14/skyrunner-mcp.git@" + SERVER_COMMIT
 
 def main():

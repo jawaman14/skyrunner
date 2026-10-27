@@ -1,310 +1,345 @@
 # Roadmap
 
-Current continuation queue, reviewed 9 October 2026. Each slice is a separate
-feature branch and draft PR. Historical progress is preserved in
-[ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md); the source-backed
-findings and reproduction checks are in [UI_WORLD_REVIEW.md](UI_WORLD_REVIEW.md).
+Current queue, rewritten 18 October 2026. The 12 October text is in git history (PR #370); the 9 October text is kept in
+git history (`git show 40bf0d44:docs/ROADMAP.md`); older progress is in
+[ROADMAP_HISTORY_2026-10.md](archive/ROADMAP_HISTORY_2026-10.md). Live state of every PR and issue is in
+`github_merge_queue` and [PROJECT_TRIAGE_2026-10-12.md](archive/PROJECT_TRIAGE_2026-10-12.md); generated facts are in
+[PROJECT_STATUS.md](PROJECT_STATUS.md). Every owner decision and where its work is tracked: [DECISIONS.md](DECISIONS.md)
+(read it first when rewriting this file).
 
-## Where we are heading (owner direction, 8 October 2026)
+## Product direction (owner, 8 October 2026)
 
 The approved direction is [DESIGN.md §0](DESIGN.md#0-where-the-game-is-heading-owner-approved-direction-8-october-2026):
-build an empire from nothing, Warband-style, starting as a hired pilot. Product order:
+build an empire from nothing, starting as a hired pilot. Four steps, in order:
 
-1. **The early rise.** A new story opens employed by a legitimate air service, flying its Cessna. The business
-   slides into smuggling, which becomes unavoidable, and the player earns their first aircraft. Sandbox unlocks
-   come from money, reputation and activity, with the campaign as an alternative route. *Implemented as one
-   rebased PR, #296 (from Codex's #250, #251, #252 and #255; nine employment tests), awaiting merge. Needs rebasing, a
-   human pacing walkthrough and a calibrated first-aircraft price (draft: $18,000).*
-2. **Setup-driven automation.** Explicit assignments first (payroll has these), then conditional orders
-   (stock thresholds) and multi-step task sequences. Manual play always remains. Workers follow instructions;
-   AI never invents assignments.
-3. **Faction competition and the civilian economy.** Rivals with distinct starting strengths, growing through the
-   economy; expansion-driven diplomacy; civilian jobs, demand and prosperity; turf war arrives late or by choice.
-4. **Multiplayer teamwork and competition.** Separate co-op and competitive modes for 2–16 players, with
-   organisation, rival and police sides. A leader leaving halts the session.
+| Step | Status (18 Oct) | Evidence |
+|---|---|---|
+| 1. The early rise: employed pilot, the business slides into smuggling, first aircraft earned | **Done**, polish continuing | Employed opening #296 merged; first missions free and retryable (#376); chapter 1 goals reworded (#390 draft). A human pacing walkthrough and the first-aircraft price remain on the playtest list (#345). |
+| 2. Setup-driven automation: assignments, then conditional orders and task sequences; manual play always remains | **Not started** | Payroll's fixed assignments are the only merged piece. Needs a design note in `DESIGN.md` first. |
+| 3. Faction competition and the civilian economy | **In progress** | Rivals cannot take cargo from the air (#377 merged); the rival plane and hijack are removed (#388 draft, retire target 56,000); roadside truck firefights (#384, #387); turf-war districts and the General's choice (#378 draft, landing now). Rival depot raid designed, not built. |
+| 4. Multiplayer: co-op and competitive modes for 2–16 players | **Furthest along** | Host service steps 1–9 of #97 merged (#364 and earlier); #97 stays open for broader entry-path coverage. Two-machine play and voice are not yet verified by a human. |
 
-The overhaul queue below (menus, stations, access, roads, interiors, NPCs, art) and the completion gates are the
-**reliability prerequisites inside each step**, not a separate product phase. Loss and recovery (hospital,
-impound, rebuilding with survivors) supports step 1. Specify the network ownership contracts early, so step 4
-doesn't force a rewrite.
+## Owner decisions of 17 October
 
-## Next implementation packages (from Codex's planning PRs #241–#243 and audit #246)
+- **The polish-week feature freeze is removed.** New features and the roadmap are back on, in the order below.
+- **#378 (turf war) lands now**, after Codex's exact-head review and green CI.
+- **Strips: change the strips** (do not gate the job generator): Mesa del Aguila 560 m and Old Quarry 620 m with a wider exit
+  (#396 draft). The Cessna 172 now lifts its full 609 lb from EGL and from QRY's east end.
+- **Vehicles:** #367 is closed; #374 (Codex's period vehicle rebuild) replaces it and still needs the owner's screenshot review.
+- **Next after the freeze: presentation layers**, then the rival depot raid.
 
-Each package is a series of separate branches and draft PRs off `main`, with focused tests and the evidence in the
-PR body. None is implemented beyond what the queue below records.
+## Now: land the queue
 
-**A. Physical access and movement (#241).** Prerequisite for automation and faction competition.
-- *Where it stands:* the recorded route baseline had all 99 audited directed logistics pairs blocked. The
-  authored loading endpoints (#235) and validated local detours (#237) are now on `main` (#294); the remaining
-  access series (#265–#276) is unmerged and reached 13–26 of 99 in its own audits. Re-run `tools/logistics_routes.gd`
-  for the current number. Failure kinds are grade, footprint, an unauthored meeting point,
-  a disconnected network, and no nearby access.
-- *Never:* raise connector limits or restore straight-line fallbacks to make the numbers pass.
-1. Reproduce HAR, Warehouse 7, HQ and dock access in the Ctrl+F2 overlay. Record site IDs, entrance and loading
-   coordinates, road node, obstruction and intended travel mode.
-2. Fix grade and footprint failures with narrow authored approach corrections, checked in both directions.
-   - Respect bridges, foundations, occlusion, runway clearance and water.
-   - Keep La Selva without a public road.
-   - Mark boat-only and foot-only destinations as such, instead of promising vehicle access everywhere.
-3. Author the Family's meeting and loading point where the club actually is (draft #274), then re-audit all 99
-   pairs with before/after lengths and reasons.
-4. Migrate logistics dispatch only for validated vehicle endpoints.
-   - Refuse unreachable orders before money or stock leaves.
-   - Persist the blocked reason and last valid position.
-   - Never duplicate cargo on reroute, save/load or cancel.
-   - Keep the legacy route API for callers not yet migrated.
-5. Migrate squads separately, after the trucks. One worker identity through truck, foot, squad, jail, away and
-   death; animation never decides arrival.
-6. Only then measure issue #85, member-level combat contact, on paired seeds against the current accounting.
+Draft PRs, each tested; none merged yet. Review order (Codex's exact-head review is required for each, since the server refuses
+a Claude review of Claude's own work):
 
-**B. Empire command and feedback (#242).** Builds on #236 (squad cards), #238 (visible-only targeting), #239
-(district summary), #240 and #245 (own-unit battle accounts), all now on `main` (#294); don't rebuild those.
-1. An owner-only empire overview showing:
-   - money and stock: safe cash, cash out at sites, stock;
-   - obligations: payroll and squad upkeep;
-   - crew: available, assigned and jailed.
+1. **#378** turf war expansion (owner: land now).
+2. **The small fixes:** #390 (chapter 1 wording, boat pickup messages, destination lines on the map), #391 (the AI pilot says
+   where it is going), #392 (radar tip), #393 (rolling on a rough strip wears the airframe), #394 (Backspace slow reverse),
+   #395 (Deliver step covers unloading), #385 (read-aloud removed).
+3. **Ground and economy:** #383 (island-wide job board), #384 (roadside firefight, redundant once #387 lands), #388 (rival
+   aircraft and hijack removed, retire target 56,000).
+4. **#396** the strip changes, stacked on #323 and #319 (the strip evidence PRs).
+5. **#373** (scenery) and **#374** (period vehicles) after the owner's screenshot review.
+6. **QA lane (Codex):** goldens and BALANCE for #377, #383, #393 and #396; a hands-on look at the quarry exit and the map lines.
 
-   Rows use stable IDs and open the existing previews. No single "net worth" and no promised income.
-2. A durable order lifecycle (accepted, travelling, arrived, blocked, refused, result unknown).
-   - It correlates with sequence acknowledgements; an acknowledgement and a refreshed snapshot are separate
-     evidence.
-   - It never resends after a disconnect.
-3. Operational debriefs built from recorded events (deliveries, interceptions, transfers, wages, injuries,
-   arrests, collections), ordered and de-duplicated by event ID.
-   - Missing evidence shows as "unknown".
-   - Never reconstruct a cause from today's state, and never reveal unseen police or rival decisions.
-4. Battle accounts extended with custody, retreat and observed tactical facts (range, cover, surprise), stated as
-   observations rather than causes. Combat maths unchanged.
-5. Teach the first empire decisions at the existing unlocks: how flights fund stock, wages, repairs and defence.
-   No new mechanics or payouts.
+## Empire pivot (owner, 19 October)
 
-**C. Coastal art, playability and release (#243).**
-1. Finish one reference corridor first: HAR, the coastal road, Warehouse 7, the harbour and services. Audit
-   foundations, doors, desks, loading and parking, waterfront edges and yard transitions before adding decoration.
-   Drafts #227/#228 are the starting point.
-2. Then:
-   - functional coastal architecture and wayfinding;
-   - period vehicles (draft #269) and readable crew identity;
-   - analogue cockpit surfaces on the existing aircraft;
-   - event feedback through effects and cleared audio: arrival, incoming fire, damage, retreat, lost contact.
+The game becomes a hybrid of open-world character play and a persistent empire simulation, with equal design weight on both
+(D-65 to D-80). The plan and PR order are in [EMPIRE_PIVOT.md](EMPIRE_PIVOT.md). The simulation contract (ledger, inventory,
+one clock, actors, organisation AI, saves, the Living District's acceptance tests) is in
+[EMPIRE_SIMULATION_SPEC.md](EMPIRE_SIMULATION_SPEC.md).
 
-   Neon stays in nightlife and the interface. No unresolved radio audio (#175).
-3. Before and after each asset batch, capture a fixed moving route and a dense-squad scene at matched
-   seed, time, preset and hardware. Record mean and P95 frame time, define the memory metric, and investigate
-   regressions over 10%. The 7 October static benchmark is not enough.
+Order (D-75): land the queue above and finish heat step 1, then:
 
-**D. Open review items (#246, Claude's review in HANDOFF.md).**
-- #246's network findings (command de-duplication, frame limits, stale input) are **fixed on `main`** by
-  #259/#260.
-- Still open:
-  - **AI knowledge policy:** police and rival AI read broader simulation state than a human in the same role
-    sees. Decide the intended knowledge before tuning, and before #244's escort/stakeout changes are balanced.
-  - The client-side oversized-frame stall, and the doubled per-frame snapshot on local desks (HANDOFF.md log,
-    2026-10-10).
+1. **Now, independent of the simulation:** the pivot docs (this section); story text with Rafa as the employer and Benny as his
+   fixer, and Manny Arce renamed in the flying lessons; `rafa.dialogue` wired into the prelude and chapter 2; stale docs.
+2. **Foundations (Claude, risk class):**
+   - F-1, the save migration chain, comes first.
+   - F-2, the ledger wrap, with no behaviour change.
+   - F-3a-f, the money sites moved by domain.
+   - F-4, inventory.
+   - F-5, `command_as` and actors.
+   - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74).
+   - F-7, time acceleration, after D-12.
+3. **The Living District (P0, D-72):** San Telmo Centro, with three organisations (the player's, Los Cuervos and the Morettis, D-84).
+   - Two supply chains.
+   - The desk's business books.
+   - Direct and delegated delivery equivalence.
+   - Acceptance tests A1-A9 and P1.
+   - The owner's playtest (G1).
+4. **After the gate:** organisation depth (hierarchy, schedules, budgets, conditional orders, trust D-11), then the campaign pivot
+   (story v6 with ventures, the takeover on the ledger, both views kept, the ending and the sandbox), then more cities, each fully explorable (D-81).
 
-## Baseline and completed work
+Paused by D-75 until the gate: the presentation layers, heat steps 2-3, the rival depot raid and the map redesign. Every PR keeps
+the sockets lane green (D-71). The owner answered O-1 to O-5 on 19 October (D-81 to D-85): every city fully explorable,
+the next in line takes over when the boss dies or is jailed, the sandbox carries on after any ending, the Morettis are the
+third organisation, and the acceleration caps are as specified.
 
-Faction-AI corrections now have a [forty-seed isolated evidence record](FACTION_AI_ISOLATION_2026-10-09.md). Keep #244 and #98 open: surveillance effects change, and the stand-in has no cargo trucks to measure active escorts. No balance tuning accompanies this study.
+## Next: presentation layers (owner's pick)
 
-Worker-map port #289 and startup failure cleanup #290 are squash-merged through `a3f66fb`, each after eleven exact-head checks passed. The original desktop changes remain preserved. #291 completes the read-only fixture audit and is squash-merged as `aae28fa` after eleven exact-head checks. Merged main `c7b8763` passes all 1,027 desktop tests in three shards, with zero test/script/parse failures. Generated status #287 is squash-merged as `c7b8763` after eleven exact-head checks. Issues #94, #96, #101 and #177 are completed. Broader #97 entry-path coverage and physical/human gates remain open. Do not reschedule the integrated taxi, seat, worker-marker, failed-host or immutable-fixture work.
+*Paused by D-75 until the Living District gate (Empire pivot, above).*
 
-**Latest integrations:** #280/#281/#282/#284 are squash-merged through main `9d879ba`, each after all eight current-head CI jobs passed. Parity/seed registration (#93) and command separation (#95) are complete. Seat consolidation #285 and test lanes #286 are now squash-merged through `828ba50`, each after eleven CI jobs passed. #288 is squash-merged as `549ec05` after eleven current-head checks passed, publishing taxi coverage and the #94 acceptance matrix. Generated checkout facts and separate validation/human gates are in [PROJECT_STATUS.md](PROJECT_STATUS.md). The dated baseline/stack descriptions below remain history.
+Full text: [PRESENTATION_LAYERS.md](PRESENTATION_LAYERS.md). Read-only presentation that follows the simulation. None of it may
+change a sim outcome or draw on a sim RNG stream.
 
-**Earlier reliability baseline, 8 October 2026:** #254 and #259–#263 are
-squash-merged; main `3347007` passes 1,002 post-merge desktop tests, smoke and
-hygiene. Superseded #232/#233/#234/#256/#257 are closed. Use the
-[per-PR integration record](PR_INTEGRATION_2026-10-08.md) for the current queue
-and remaining acceptance gates; older dated stack descriptions below are history.
+1. **Territory radio and era music.** Each crew gets a station that is stronger in its district; per-year stations from the
+   owner's own tracks in `user://radio/<station>/` (`.ogg` best, `.mp3`, 16-bit `.wav`); distance-based static
+   (FM 6 km, AM 20 km, shortwave 60 km) is designed, not built. Music evolves by era through stems and changes only at natural
+   breaks.
+2. **Era fashion and liveries,** in step with the music; owned aircraft keep their livery.
+3. **Crew colours, signage and graffiti** that mark who holds a street and repaint when a district changes hands.
+4. **City pulse:** the economy sets the rhythm, each faction gets a motif, consequences give a directional stinger.
+5. **Heat in the look:** streetlight flicker, more patrols, darker clothing as heat rises.
 
-**Integration update, 7 October 2026:** #119, #178–#209, and replacement
-PRs #216–#220 are merged. [#222](https://github.com/jawaman14/skyrunner/pull/222)
-fixes map keyboard routing and fixer review coverage; the corrected desktop
-suite passes 985 tests (315 / 337 / 333). The draft-stack descriptions below
-are retained as implementation history, not the current merge queue.
-Use [PROJECT_STATUS.md](PROJECT_STATUS.md) for verified and pending evidence.
-[#225](https://github.com/jawaman14/skyrunner/pull/225) integrates the first
-incoming Family-call source; its dated desktop baseline was 990 passing tests.
-Additional incoming-call sources/evidence (#83), radar-aware routing (#87), and
-human release gates remain open. [#223](https://github.com/jawaman14/skyrunner/pull/223)
-is merged with passing macOS bundle/launch validation. The
-[dated verification report](VALIDATION_2026-10-07.md) records current evidence.
+## Story: the uncle and the boss's seat (owner, 12 October; not built)
 
-Before truck routing migrates, fix loading/meet endpoint connectors: the
-[route baseline](LOGISTICS_ROUTE_BASELINE.md) originally found all 99 audited endpoint pairs
-blocked by checked access. The unmerged authored-loading/surface stack now reaches 26 of 99;
-73 remain blocked. See the loading triage in [draft #276](https://github.com/jawaman14/skyrunner/pull/276);
-that report is not integrated into main yet. Keep this a measured slice rather than replacing the
-legacy fallback globally.
+*Now Phase 3 of the Empire pivot (above): the takeover is built on the ledger, and direct play stays first-class after it (D-79).*
 
-The four-chapter Costa Brava flying tutorial and twelve-chapter Costa Brava story stay.
-Save expansion, the six-layer Session split, role support, switch registry and
-strategic calibration are implemented; do not restart them from older reviews.
+Recorded in [PROJECT_TRIAGE_2026-10-12.md §8.5](archive/PROJECT_TRIAGE_2026-10-12.md) and HANDOFF; missing from the 12 October roadmap.
+The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than life, with a darkness you can't place.
 
-*Everything from #178 to #209, including the "draft continuations" #184–#200 named in the next two paragraphs,
-is merged; the wording records the state on 6–7 October.*
+1. **Chapter 1-2:** name the employer as Rafa in the employed opening; two or three dialogue beats in chapter 2 as he
+   reveals his business (talk scenes, `scripts/game/talk.gd`).
+2. **Chapter 4 (Cocaine Cowboys):** after the first Los Cuervos incident a scripted beat: the player **hears** Rafa was
+   killed by Los Cuervos (not witnessed). The turf war starts and the player **takes his seat**: the boss desk and its
+   orders become the player's.
+3. **A crumbling empire** (owner, 18 Oct): half survives: half the stashes (the least known ones), half the crew, the
+   trucks that were parked, and a quarter of Rafa's cash.
+4. **Not locked in:** every other layer (flying, the ground, the desks) stays open; **delegating a flight costs money**
+   (a hired pilot flies it with the existing bot).
+5. **Reputation is trust with each crew** (accepted table: Morettis up means Los Cuervos down; Los Cuervos up means the
+   Morettis and the street dealers down; the Company up means the Sunrise Collective down a little; the Collective up
+   means the Company down a little; the street dealers up means Los Cuervos down a little); lost shipments cost
+   trust, and a crew without trust buys elsewhere.
 
-The historical overhaul stack was #178 (menu/HUD foundation), #179 (job previews),
-#180 (read-only fuel previews and feedback), #181 (airfield props), #182 (fuel
-cache props), #183 (interface/world audit). Those PRs and #119 (patterns/Asset
-Bible) are merged; do not schedule that completed work again.
-[Baseline reconciliation #184](https://github.com/jawaman14/skyrunner/pull/184),
-[Costa Brava map focus #185](https://github.com/jawaman14/skyrunner/pull/185), and
-[dialogue reliability/navigation #186](https://github.com/jawaman14/skyrunner/pull/186)
-are prepared as draft continuations of that stack.
-[Dialogue input hardening #187](https://github.com/jawaman14/skyrunner/pull/187) and
-[shared action previews #188](https://github.com/jawaman14/skyrunner/pull/188)
-continue in that order. Draft continuations #189 (documentation), #190 (menu focus),
-#191 (station outcomes/feed), #192 (interaction occlusion), #193 (checked road
-surfaces) and #194 (shared site records/overlay) follow in dependency order.
-Draft #195 adds stash interiors, #196 graded bridge approaches and #197 modal input.
-Draft continuations [#198](https://github.com/jawaman14/skyrunner/pull/198) (map layers),
-[#199](https://github.com/jawaman14/skyrunner/pull/199) (HQ/outcomes) and
-[#200](https://github.com/jawaman14/skyrunner/pull/200) (remote action review) follow.
-The source baseline through #197 passed
-948 tests across three shards (313 / 316 / 319, zero failures and no script errors).
-Existing Godot shutdown resource diagnostics persist. The #193 CI run
-[37546858573](https://github.com/jawaman14/skyrunner/actions/runs/37546858573)
-passed all three shards, dedicated server, exports and Linux/Windows smoke checks.
-The earlier #186 CI run
-[37487390571](https://github.com/jawaman14/skyrunner/actions/runs/37487390571)
-passed shards, dedicated-server checks, exports and Linux/Windows smoke tests;
-that export evidence does not validate the later commits. Exported Windows human walkthrough
-and real two-machine remote/voice validation remain unperformed.
+6. **Flight skill** (owner, 18 Oct): good landings, short strips and clean approaches give optional bonus goals (money or
+   reputation); they never block a chapter.
 
-## Ordered implementation queue
+7. **The boss layer** (owner, 18 Oct; D-58): when the player takes the seat, the game turns to organising: choosing the crew, the
+   routes and the orders, and delivering is optional, by a crew pilot or by the player. Flying cargo becomes one part of the
+   logistics system, not the focus. Before the takeover the player flies the cargo themselves and meets each mechanic one chapter
+   at a time (the flights, the load planner, the stash and trucks, the street, the law, the court), so the boss's seat is
+   understood when it arrives. This sets what delegation (D-10) and the orders (D-59) are for.
 
-1. **Baseline consolidation:** the stack (#178–#209) is merged; the export and human release evidence
-   (completion gates below) is what remains.
-2. **Dialogue:** implementation is prepared in #186 with correlated results,
-   refreshed-state gating, scrolling/wrapped choices, navigation and failure text.
-   Synthetic mouse/controller events, long choices and layout bounds pass in both
-   palettes at all four supported sizes, including palette changes while open.
-   Actual scene removal/replacement and duplicate pending clicks are covered.
-   Complete physical-controller, read-aloud and visual display walkthroughs at
-   supported resolutions, plus two-machine delayed-result validation.
-3. **Contextual actions:** general read-only descriptions and optional remote
-   preview requests are implemented for aircraft/gear/vehicle purchases, vehicle
-   and product sales, single cash/goods truck transfers, repairs, prisoner policy/
-   bulk actions and squad disbanding. Command execution rechecks current state.
-   Hangar/dealer reviews use shared Cancel-first confirmation; station and
-   supported logistics reviews now request/recheck read-only host consequences.
-   Multi-stop cash/goods rounds and whole-armoury relocation now describe
-   ordered pickups/deliveries, limited stock, ammunition exclusion and travel obligations.
-   Commands reject stale/burned destinations before dispatch. Review callbacks
-   freeze argument copies; caller changes cannot substitute a different order.
-   Supported dialogue commitments now share Cancel-first host preview/recheck,
-   frozen arguments and removal cancellation before command dispatch. Finish
-   descriptions for other committing dialogue and remaining menu-specific actions; unsupported previews stay explicit.
-4. **Menus/settings:** finish focus, selection, scrolling, persistent feedback,
-   disabled reasons and palette refresh across all menus. Hangar/dealer first,
-   logistics/rackets next, then remaining screens. The shared shell now focuses
-   task controls, handles real table/controller navigation, restores invoking
-   focus, and refreshes open palettes. Dealer/hangar/collector selection follows
-   stable IDs; collector commitments use Cancel-first reviews. Hint controls,
-   load/pack/controls/HQ/logistics buttons are focusable. Logistics has scrolling,
-   a visible exit and retained site choices. Remaining preview adoption and
-   remote outcome presentation are still queued. Pack/Controls now let native
-   buttons handle keyboard navigation before the modal fallback, block held
-   Enter repeats, restore invoking focus and refresh their open palette. Pack
-   rows retain action IDs and scroll above a visible exit. Single cash-home
-   orders retain pending/refusal messages instead of reporting no cash. HQ
-   disbanding now uses the shared role-aware Cancel-first review; leaving the
-   desk cancels pending review and restores seat/focus ownership. Transfer and
-   sale/prisoner acknowledgements include their actual capped outcome, without
-   revealing an enemy cash balance.
-5. **Stations/maps/feed:** organize fifteen seats by task; selected-entity cards,
-   acknowledged orders, grouped map layers and a shared role-filtered event feed.
-   Shared persistent sequence outcomes now distinguish acknowledgement from a
-   refreshed snapshot, suppress duplicate pending orders and retain unknown
-   results without retrying. Station logistics uses this path; selection follows
-   IDs and cards consume filtered snapshots. A text-only ordered/deduplicated
-   EventBus/Chronicle feed retains source, age and report uncertainty, with
-   severity-based expiry. Station maps now group operations, people/logistics and intelligence with
-   keyboard-focusable toggles. Visible items consume the role-filtered snapshot
-   and preserve report metadata; hidden map markers cannot dispatch/select.
-   Capability-advertised previews now drive station commitments and supported
-   logistics actions locally/remotely. Approval requests a fresh preview; changed
-   consequences require another review. Removal, timeout, disconnect and seat
-   changes send no mutation. Older peers explicitly label unavailable previews
-   and retain confirmed legacy operation. Dialogue commitment review and the remaining seat-specific refinements remain.
-6. **Placement/access:** deterministic footprints, entrances, walk/loading
-   approaches and network connectors; diagnostic overlay and interaction occlusion.
-   Through-wall interaction is reproduced with actual overlapping physics areas
-   and a solid wall. Selection and activation now require an unobstructed ray;
-   all nineteen walker tests pass, including existing desks/job boards. Shared
-   all-entrance walkthrough and connector validation remain.
-   Deterministic site data now supplies airfield parts/frames, HQ/stash frames,
-   dock sites and the hotel anchor; records cover footprints, entrances, walking
-   approaches, loading points and explicitly unverified connector candidates.
-   Ctrl+F2 displays these records, runway/threshold/overlap diagnostics and physics
-   colliders. Three focused site tests pass on Costa Brava/generated geometry;
-   A read-only SiteAccess validator now checks short walking/loading connectors
-   against primary footprints, terrain/water/decks, grades and runway clearance,
-   with deterministic detours around nearby footprints. Ctrl+F2 draws checked
-   paths and failure reasons. Its 120m local-connector search is conservative:
-   longer/remote access remains unverified, not physically declared impossible.
-   Ancillary scenery, approach steps and complete end-to-end network/physics
-   checks remain ahead of integration.
-7. **Roads/bridges:** shared physical/rendered surface, checked routes and safe
-   connectors. Preserve La Selva without a public road; no incidental map rebake.
-   Road ribbons now share vertices with deck collision and indexed ground-vehicle
-   height queries. Checked routes return explicit failure, skip speculative T
-   links and retain the route-penalty hook. Their cached topology now preserves
-   close authored bends and splits real crossings without changing legacy nodes; the legacy simulation route API stays
-   unchanged pending measured migration. Synthetic deck/water physics, road and
-   car tests pass. Dry lowland ribbons now follow terrain at a reachable 0.45m
-   offset; water retains 2.65m clearance with 10% graded approach fill. Railings
-   use the same indexed surface. Four road-surface tests pass, including actual
-   bidirectional walking and driving across both synthetic banks. Site
-   connectors, Costa Brava bridge approaches and bidirectional
-   exported walking/driving still require validation.
-8. **Interiors:** fix existing hangars/HQs/casino; make all eight stash types
-   enterable with existing logistics access, real availability and clear exits.
-   All eight stash shells now have open doors, storage workbenches and clear aisles;
-   the shack and boathouse have stepped access. Workbench use focuses logistics
-   on the stable stash ID, rechecks burned state and leaves exits open. Focused
-   physics checks walk into and out of every type. Pitched stash roofs now have matching slope/end collision; aisle/exit checks
-   cover the added geometry. Runway diagnostics use full polygon intersections,
-   including crossings and containment. Terrain-specific placement,
-   Club Tropicana was reproduced covering its worker road anchor; its shared
-   physical frame now sets it back within the reserved plot, preserving strategic
-   coordinates and roads. Other hangar/HQ/casino corrections and exported
-   walkthroughs remain.
-9. **NPCs:** checked pedestrian/vehicle access, identity/task presentation and
-   body lifecycle. Payroll/combat remain authoritative; no arrival-gated work.
-   Migrate truck/squad connectors separately with paired-seed measurements.
-10. **Period art:** validate one existing coastal reference area, then reuse
-    architecture, infrastructure, workshop props, vehicles and analogue cockpits.
-    Weathered 1979-1982 world; neon concentrated in nightlife and interface accents.
-    Maintain [ASSET_PROVENANCE.md](ASSET_PROVENANCE.md) with actual runtime usage.
+Who: Claude the beat, the unlock, the takeover state, delegation and trust; Codex the dialogue and the scene.
+Order: with the rival depot raid, after the presentation layers, unless the owner moves it up.
+
+## Heat and the law (owner, 18 October)
+
+*Step 1 finishes; steps 2-3 are paused by D-75 until the Living District gate (Empire pivot, above).*
+
+Agreed order (owner, 18 Oct). Each step: a design note first, its own switch, its own RNG stream, tests first, a balance run.
+
+1. **Case files and kinds of heat** (in progress). Design #400 (DESIGN §48); the stash case files (lead, surveillance,
+   warrant, raid; lying low drops a case; an emptied stash is raided for nothing) are built on `claude/heat-case-file`.
+   Still to do in step 1: the lawyer's warrant challenge as a command; pilot evidence, aircraft heat (per tail number)
+   and district heat; the phone Heat app (Codex); the balance run and BALANCE entry.
+2. **The police search and the ladder down.** Helicopters search outward from the last known position; checkpoints on
+   likely escape roads; dispatch chatter on the scanner; visible ways to cool off from wanted (break line of sight, go
+   under cloud, swap the transponder code, hide the aircraft in a hangar, change aircraft or repaint).
+3. **Patterns, escalation, corruption, ground chases.** Habitual routes and hours raise the risk and draw roadblocks and
+   radar pickets (pattern exposure from the HQ season, in live play); new agencies at heat thresholds (state police, the
+   DEA, a military radar picket); paid cops who warn and can be flipped by Internal Affairs, crew loyalty and leaks, the
+   accountant slowing the RICO case; a stopped truck or a raid nearby becomes a short car or foot chase.
+
+Who: Claude the simulation of every step; Codex the Heat app, the HUD and the in-world look (the presentation layers'
+"heat in the look").
+
+## Then: the rival depot raid
+
+*Paused by D-75: to be redesigned on rival inventories once the shared economy (D-65) lands.*
+
+Owner's decided design (17 October; saved in memory and on the board): stolen cargo and weapons go to a **rival depot at the
+rival HQ** with a value; a **tip-off a few minutes after the theft** marks it on the map; a raid costs **all four** of casualties
+(garrison fight), police heat, a rival grudge (more ambushes for a while) and squad upkeep and time; success returns **all of the
+cargo and weapons**, minus the raid's cost. Build behind a static switch registered in `scripts/sim/switches.gd`, on its own RNG
+stream, tests first, as a follow-up to #384/#387. Depends on #378 and #387 landing.
+
+## After that: the four product steps
+
+1. **Step 2, automation.** Conditional orders (stock thresholds) first, then task sequences. Workers follow instructions; AI
+   never invents assignments. Needs a design note in `DESIGN.md` before any code.
+2. **Step 3, the rest.** The AI knowledge policy is decided (owner, 18 Oct): the AI police and rivals act only on what a
+   human in their seat would see (radar, sightings, tips, informants); audit where they read more today and fix it. Then
+   rivals' starting strengths and civilian jobs, demand and prosperity. The escort and stakeout balance (#244, #98) can now be tuned.
+3. **Logistics access (#241 series).** The 99 audited logistics pairs were blocked by grade, footprint and unauthored meeting
+   points; the access stack (#265–#276) was closed unmerged on 12 October, and new work starts from `main`. Re-run
+   `tools/logistics_routes.gd` for the current count. Never raise connector limits or restore straight-line fallbacks to make
+   numbers pass.
+4. **Empire command and feedback (#242).** Owner overview, durable order lifecycle, operational debriefs, and teaching the first
+   empire decisions at the existing unlocks.
+5. **Coastal art and release (#243).** One reference corridor first (HAR, the coastal road, Warehouse 7, the harbour), then
+   architecture, period vehicles (#374), cockpit surfaces and feedback. Frame-time captures before and after each asset batch.
+
+## Forgotten or half done (found 18 October)
+
+These were finished in part, dropped from the 12 October list, or never written down.
+
+- **Backspace reverse (#394):** no gamepad binding and no F1/GUIDE help line.
+- **Map destinations (#390):** only go-fast boats and stash trucks have destination lines. Squads, convoys and the station map
+  (`station_map.gd`) do not; the AI pilot's route is announced (#391) but not drawn.
+- **HAR runway end 0** (owner, 18 Oct; D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain
+  change, re-bake, strip trials).
+- **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356), the pilot
+  app does not. Its own task, needs render interpolation.
+- **Key audit (#345):** every key, which are still used, what the help text says. Not started.
+- **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
+- **Job board (#383):** remote desks still get only the current strip's board; boards are not saved (a load redeals once).
+- **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached.
+  Not part of the game, listed so it is not lost.
+- **Quarry west end and PNR end 1:** one-way by design (terrain or trees in the climb-out); keep documented in `STRIPS.md`.
+- **The uncle story (Rafa Quintero) was missing from the roadmap:** now its own section above.
+- **Docs to update:** HANDOFF and DESIGN (the strip pin option, the pit constants, `CACHE_VERSION` 3, the RNG stream table for
+  the island boards); `docs/ROADMAP.md` itself was stale on 9 and 12 October.
+- **Stale PRs:** #321 (28 behind main), #305 (waits on the strip decision, now made), #370 (superseded by this rewrite).
+- **Local housekeeping:** scratch worktrees under `.claude-worktrees` and terrain cache backups.
+
+## The design epics, in order (owner, 18 October)
+
+Agreed by Claude and Codex and accepted by the owner (D-48; the full table is on #326). One item at a time, each as its
+smallest slice with a screenshot, starting once the queue above has landed:
+
+1. First-session playtest protocol (#172), with #155 as its chapter 1-4 tutorial audit and #157 as a local log only. It runs
+   first and may reorder the rest.
+2. Readability and accessibility (#138, #156).
+3. Cockpit clutter (#142).
+4. One event model and interruption policy (#120, #151), shared by the feed and the phone's Messages.
+5. Contextual lessons and first-use hints as one system (#134, #148).
+6. Failure fairness (#165), with #164's assists as explicit settings.
+7. "Why did that happen" reasons (#147, #173).
+
+Then Tier 2 with the story, map and presentation layers (#163, #133/#132, #130/#131, #168, #161, #166, #167,
+#140/#141/#143/#159, #144/#149, #171) and Tier 3 later. Nine issues (#125, #137, #154, #129, #135, #128, #127, #121, #126)
+are foundations, not done: each gets a gap audit before it is scheduled. #169 is deferred.
+
+## Working structure (owner, 18 October)
+
+The owner changed the structure (D-52): Claude and Codex each do their own work end to end, including merging it, instead
+of Codex being mainly the approver. They hand each other coding jobs through the board. **In effect from 18 October (08:50,
+the owner's word), written into AGENTS.md and PIPELINE.md by #408:**
+
+1. The other agent's review is mandatory only for risk-class PRs, defined in AGENTS.md "Working mode: dual work": saves
+   (`StrategicSave`, save formats), a new random draw or RNG stream, goldens or frozen fixtures, the `Session` layers
+   (`scripts/sim/session_*.gd`), the flight model, or balance numbers, and any PR whose author asks. Every other PR its
+   author merges on green CI with every thread answered.
+2. Codex still finishes the reviews it owes on the risk-class PRs, then joins the discussion on the board: which jobs it
+   wants and which it will not take. The split below is Claude's draft.
+3. The open PRs are finished together: Claude merges its low-risk PRs, Codex reviews the risk-class ones and runs the QA lane.
+
+Claude's draft split, for the discussion:
+
+| Lane | Claude | Codex |
+|---|---|---|
+| Systems | heat steps 2-3, the rival depot raid, the AI knowledge audit, Rafa's takeover state and the trust table, flight-skill goals, saves | the Heat app and the station map lines on top of those |
+| Story | beats, unlocks, the takeover | dialogue and scenes for Rafa, briefings and debriefings |
+| Map | layers L0 to L5 (data, build tool, map audit), the HAR approach | L6 to L10 (site layouts, asset catalogue, props), the walk and drive checks |
+| UX epics | the data behind "why did that happen" (#147, #173), failure fairness (#165) | #172 protocol, #138/#156, #142, #120/#151, #134/#148 |
+| Presentation | hooks in the sim | music, graffiti, signage, vehicles, scenery |
+| QA | fixes | sweeps, full suites, balance runs, goldens |
+| Merging | each merges its own work on green CI; a risk-class PR (saves, RNG streams, goldens or frozen fixtures, the Session layers, the flight model, balance) is reviewed by the other first | the same |
+
+## Map redesign (owner, 18 October; planned)
+
+*Paused by D-75: resumes on the Living District's district data (Empire pivot, above).*
+
+The owner asked for the map to be rebuilt from the ground up with what we have learnt. The plan is
+[MAP_REDESIGN.md](MAP_REDESIGN.md): constraints first (strips and their approach volumes, then terrain shaped for them,
+water, one district map, roads with classes and real city streets), then parcels, a site manifest with access checks, an
+asset catalogue, props and presentation hooks, all baked by one build tool and checked by one map audit. It starts after
+the map PRs in the queue land (#373, #374, #378, #396, #402, #404), as a new region beside the current one; the owner
+approves the layout sketch (step 0) and the screenshots (step 6), and playtests before the old map is retired. Four
+owner questions are open in its section 7.
+
+## Product and money loop ideas (owner asked 18 October; for decision)
+
+The owner asked what could make the loop more dynamic and fun. [LOOP_IDEAS.md](LOOP_IDEAS.md) says where it is flat today and
+proposes eight additions: a market board with buyers' orders and deadlines, cover cargo, dirty money with a clock, a readable
+calendar, a deal that moves mid-flight, price wars, investments with a return, and comeback valves. The owner answered (18 Oct,
+D-58 to D-60): deadlines follow demand, the boss layer organises while flying is optional, and to begin as seen fit.
+
+- **Built (the simulation half of addition 1, #419):** `Orders` and the market board data in `Trade.view`, with tests; DESIGN section 49.
+- **Still to do for addition 1:** the market board and the order call on the phone (Codex, UX lane); a BALANCE entry for the premium
+  payouts (the live balance run with and without orders, see BALANCE).
+- **Not started:** additions 2 to 8, in the order of LOOP_IDEAS section 2 (cover cargo next, then the calendar).
+
+## Stock, ownership and the money loop (owner, 18 October; planned)
+
+The owner (D-63, #427) asked for cargo, stock and logistics to be reworked for the bigger game: flying hot cargo for a client no
+longer makes sense once you own stock bought upfront. The design is [DESIGN.md section 51](DESIGN.md). Slices, each its own PR with
+a switch and tests first (an RNG stream and a BALANCE entry where the slice draws random numbers or moves the economy):
+
+1. The design note (this section and DESIGN 51). (Claude)
+2. Stock lots with grade, age and provenance. This is the stock side of F-4 (`docs/EMPIRE_PIVOT.md`, inventory lots, each lot in exactly one location per `EMPIRE_SIMULATION_SPEC.md` section 4) and uses its single wrap-first save migration rather than a second one. (Claude)
+3. Orders and the pickup person; the gun dealer on the same flow, replacing "sell / keep guns". (Claude the sim, Codex the dealer scenes)
+4. Storage places and the stock ledger. (Claude the data, Codex the screen)
+5. Laundering: one authority (`HQ.Org`), fronts with a per-night cap and a delay; the casino path moves onto it. (Claude)
+6. Crew relationships and rackets that close under heat. (Claude the sim, Codex the cards and dialogue)
+7. Chapter objectives with deadlines, and what Renown and crew trust unlock at boss level (no new currency). (Claude)
+8. The boss desk: worker control, area marking, heat map, ledger tab. (Codex lead, D-62)
+
+## Arms and ammunition (owner, 18 October; planned)
+
+The owner's direction (D-61): **ammunition is a cargo** that is moved and traded, priced by the usual factors; **weapons move as
+crates of each type**, which differ in their specs; the **more powerful weapons are in shorter supply** and the weaker ones plentiful;
+and all of it ties into the ground and turf war. The design, grounded in `arsenal.gd`, `ground.gd`, `foot_combat.gd` and
+`logistics.gd`, is [DESIGN.md section 50](DESIGN.md). Four stages, each its own PR with a balance run:
+
+1. **Crates and the scarcity ladder.** A crate holds one type; each type has its own supply and price (pistols plentiful, rifles
+   common, machine guns scarce, RPGs rare); gun runs and buyers follow the ladder. (Claude)
+2. **Ammunition as a good.** Rounds per weapon type, in crates, bought, trucked and stored; squads draw the rounds of the weapons
+   they carry. (Claude)
+3. **The war uses it.** Fights consume rounds, a dry district's ammunition price climbs, a squad without rounds stops firing, and
+   holding a port or road changes who can resupply. (Claude, with the turf work)
+4. **The screens.** The pack and logistics menus, and the market board (it already carries guns; ammunition joins it). (Codex)
+
+Order: after the buyers' orders (D-59) land; each stage needs a BALANCE entry because the war economy is sensitive to it.
+
+## Human release gates and owner decisions (#326)
+
+- **Gates only a person can pass:** exported Windows and macOS walkthroughs; physical controller and four-resolution visual
+  acceptance in both palettes; two-machine multiplayer with seat, action and voice, waiting room, LAN and guest seating;
+  functional-site walk and drive; moving and dense-scene performance captures; radio recordings and third-party asset licensing.
+- **Decisions still open:** none from this list; see [DECISIONS.md](DECISIONS.md) for every open row.
+- **Decided:** strips (change them), the freeze (removed), #367 (closed for #374); on 18 Oct the HAR hill (flatten it),
+  flight skill (optional bonus goals), the AI knowledge policy (only what a human would see), the engine (stay on Godot),
+  Rafa's empire (half survives), the 52 epics (the agents rank them), Codex's unattended turns (keep them).
+
+## Open technical items
+
+- **Start-up architecture (#97):** entry paths consolidated across steps 1–9; the save-resume gap (a partial campaign resumes
+  without its chapter setup) needs a save-format change.
+- **Network:** the client-side oversized-frame stall, and the doubled per-frame snapshot on local desks (HANDOFF log, 10 Oct).
+- **Test time:** the 11 October run took about 13 minutes under the machine lock, with about 5 minutes for a cold import. These are historical timings; use the current job status when planning access to the lock.
+- **Windows memory:** overlapping Godot jobs have caused allocation failures; the lock is the only guard.
+- **A flaky test on this machine:** `test_pause_menu` volume fails on clean main here (a saved volume setting); and the `crew`
+  filter shows a walker phone test that passes in the full suite.
 
 ## Completion gates
 
 - Real input, long/empty/stale content and pending/refused/unknown remote outcomes.
-- Both palettes; 1024x768, 1280x720, 1920x1080, 2560x1080; visible focus/read-aloud.
-- Walk/drive bridges and every functional entrance; check wall occlusion/thresholds.
-- Costa Brava and representative generated maps; preserve runway clearance.
-- The classic island is retired from player entry points. Reject classic saves
-  without rewriting them; retain geography only for frozen parity/balance tests.
+- Both palettes; 1024x768, 1280x720, 1920x1080, 2560x1080; visible focus.
+- Walk and drive bridges and every functional entrance; wall occlusion and thresholds.
+- Costa Brava and representative generated maps; runway clearance preserved.
+- The classic island is retired from player entry points; classic saves are rejected, not rewritten; its geography stays only
+  for frozen parity and balance tests.
 - Worker assignment, arrival, jail/death, save/load and human/AI handoff.
 - Focused and full sharded tests, parity/goldens, export filters and build smoke.
-- Fixed-route frame-time/memory comparisons; investigate regressions above 10%.
+- Fixed-route frame-time and memory comparisons; investigate regressions above 10%.
 - Paired-seed balance measurements for travel changes; no arbitrary retuning.
-- Exported Windows walkthrough and real two-machine seat/action/voice session.
+- Exported Windows walkthrough and a real two-machine seat/action/voice session.
 
 ## Deferred
 
-New campaign chapters, hidden-informant gameplay, arrival-gated payroll, new
-combat mechanics, UDP prediction, multiplayer racing, additional aircraft and
-cloud deployment follow this overhaul. Ordinary city houses remain scenery.
+New campaign chapters beyond the current twelve, hidden-informant gameplay, arrival-gated payroll, new combat mechanics, UDP
+prediction, multiplayer racing, additional aircraft and cloud deployment. Ordinary city houses remain scenery.
 
 ## Subsequent GitHub issue pass
 
-The owner requested review and resolution of every repository issue after this
-overhaul. The 7 October 2026 inventory contains 97 open issues (#80–#177, excluding
-PR #119). Evaluate each against verified code and this completion queue; overlapping
-master programs and already implemented work must not create duplicate systems.
-Expansion issues follow completion gates. Keep issues requiring human playtests,
-physical controllers, rights decisions or two real machines explicitly unresolved
-until their evidence exists. Publishing a draft PR is not integration or proof of
+The owner asked for every repository issue to be reviewed after the overhaul. 54 of the 97 open issues of 7 October (#80–#177) were
+closed with a pointer to [#326](https://github.com/jawaman14/skyrunner/issues/326) (owner gates, decisions and design epics); the agent-doable engineering work is in one other issue linked from it. Evaluate each against verified code and the queues above; overlapping master programs and
+already-implemented work must not create duplicate systems. Keep issues needing human playtests, physical controllers, rights
+decisions or two real machines unresolved until their evidence exists. Publishing a draft PR is not integration or proof of
 release acceptance.
+
+- **Turf expansion (Codex, branch codex/turf-war-expansion):** `Territories` adds map-scoped district IDs while retaining the four economy markets as parent rollups. Costa Brava has ten authored areas; classic/generated maps use their current market centres. Ground control, squad decisions and exposed one-leg truck routes read the local layer. Stable region IDs allow later maps to bring their own districts. Initial local verification passed (898 tests, Costa Brava smoke, and a 200-seed war balance run); the balance run shifts the war economy and losses and needs interpretation before tuning. Not yet: a visible territory map, balance calibration for district control, and authored content for an additional region.

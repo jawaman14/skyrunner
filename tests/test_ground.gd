@@ -138,6 +138,116 @@ func _war(seed := 3, ai := false) -> Session:
 	return s
 
 
+## Codex's review of #378: police count half in a district's total, so they count half in its share too (a share is never above 1).
+func test_territory_shares_add_up_to_one_and_police_count_half() -> void:
+	var s := _war()
+	var g := s.ground
+	var area: Dictionary = Territories.records(g.world.map)[0]
+	var id := str(area.get("id", ""))
+	var key := Territories.key(g.world.map, id)
+	g.territory_control[key] = {"org": 0.0, "rival": 0.0, "police": 10.0}
+	check_near(g.territory_share(id, "police"), 1.0, 0.000001, "police alone hold all of it, not more")
+	g.territory_control[key] = {"org": 10.0, "rival": 10.0, "police": 20.0}
+	var total := g.territory_share(id, "org") + g.territory_share(id, "rival") + g.territory_share(id, "police")
+	check_near(total, 1.0, 0.000001, "the three shares add up to one")
+	check_near(g.territory_share(id, "police"), 1.0 / 3.0, 0.000001, "twenty police count as ten, one third of the thirty")
+	s.dispose()
+
+
+## A lone truck mid-route with a rival squad lying in ambush on it (owner, 14 Oct: nobody takes cargo without a firefight).
+func _ambushed_truck(s: Session, raiders: Dictionary, morale := 0.8) -> Array:
+	var g := s.ground
+	var net: StashNet = s.stash_net
+	var t := StashNet.Truck.new()
+	t.job_id = 4242
+	t.stash = net.stashes[0].id
+	t.x0 = 0.0
+	t.y0 = 0.0
+	t.x1 = 4000.0
+	t.y1 = 0.0
+	t.t0 = s.time - 2000.0
+	t.dur = 4000.0
+	t.pay = 1000
+	net.trucks.append(t)
+	var p: Array = t.pos(s.time)
+	var rival := _squad(g, "rival", Vector2(p[0], p[1]), raiders)
+	rival.morale = morale
+	rival.tactic = "ambush"
+	rival.hidden = true
+	return [t, rival]
+
+
+func test_a_rival_ambush_on_a_lone_truck_is_fought_out_before_the_truck_is_lost() -> void:
+	var s := _war()
+	var g := s.ground
+	var ab := _ambushed_truck(s, {"rifle": 6})
+	var t = ab[0]
+	check(g.truck_contacts().is_empty(), "the ambush does not take the truck on contact")
+	check(g._roadside.has(t.job_id) and g.fights.size() == 1, "it opens a firefight with the driver and a hand")
+	check(g.squads.any(func(q): return q.id == "D-4242"), "the driver's side is on the map")
+	var out := []
+	for i in 200:
+		g._rounds(GroundWar.ROUND_S)
+		out = g.truck_contacts()
+		if not out.is_empty() or not g._roadside.has(t.job_id):
+			break
+	check(not out.is_empty() and out[0][1] == "hijacked", "six rifles against a driver and a hand win the truck, but only after the shooting")
+	check(g.fights.is_empty() and not g.squads.any(func(q): return q.id == "D-4242"), "and the roadside fight is over and cleaned up")
+	s.dispose()
+
+
+## Review of #387: a truck seized (or delivered) while its roadside fight is on must not leave the guard squad behind.
+func test_a_truck_that_leaves_the_road_mid_fight_ends_the_roadside_fight() -> void:
+	var s := _war()
+	var g := s.ground
+	var ab := _ambushed_truck(s, {"rifle": 2})
+	var t = ab[0]
+	var raider = ab[1]
+	g.truck_contacts()
+	check(g._roadside.has(t.job_id), "the roadside fight is on")
+	s.stash_net.trucks.erase(t)  # a police helicopter overhead takes it (StashNetwork.update)
+	g.truck_contacts()
+	check(not g._roadside.has(t.job_id), "the fight is forgotten")
+	check(g.fights.is_empty(), "and closed")
+	check(not g.squads.any(func(q): return q.id == "D-4242"), "the guard leaves the map")
+	check(raider.fight == null and raider.state != "fighting", "the raiders stop fighting")
+	s.dispose()
+
+
+func test_a_rival_ambush_that_breaks_leaves_the_truck_to_drive_on() -> void:
+	var s := _war()
+	var g := s.ground
+	var ab := _ambushed_truck(s, {"pistol": 1}, 0.0)
+	var t = ab[0]
+	g.truck_contacts()
+	var hijacked := false
+	for i in 200:
+		g._rounds(GroundWar.ROUND_S)
+		for r in g.truck_contacts():
+			hijacked = hijacked or r[1] == "hijacked"
+		if not g._roadside.has(t.job_id):
+			break
+	check(not g._roadside.has(t.job_id), "the roadside fight ended")
+	check(not hijacked, "a broken ambush does not get the truck")
+	check(s.stash_net.trucks.has(t), "the truck is still on the road")
+
+## Codex's second review of #378: the patrol choice must use the corrected share too: police go where the organisation holds ground, not where they already dominate.
+func test_police_patrol_the_district_the_organisation_holds_not_one_they_dominate() -> void:
+	var s := _war()
+	var g := s.ground
+	var records: Array = Territories.records(g.world.map)
+	check(records.size() >= 2, "the map has at least two districts")
+	for r: Dictionary in records:
+		g.territory_control[Territories.key(g.world.map, str(r.get("id", "")))] = {"org": 0.0, "rival": 0.0, "police": 0.0}
+	var held: Dictionary = records[0]
+	var ruled: Dictionary = records[1]
+	g.territory_control[Territories.key(g.world.map, str(held.get("id", "")))] = {"org": 10.0, "rival": 0.0, "police": 10.0}
+	g.territory_control[Territories.key(g.world.map, str(ruled.get("id", "")))] = {"org": 4.0, "rival": 0.0, "police": 20.0}
+	var order: Dictionary = g._patrol_order("police", Territories.center_of(held))
+	check_eq(str(order.get("territory", "")), str(held.get("id", "")), "police patrol the district the organisation holds")
+	s.dispose()
+
+
 func _squad(g: GroundWar, f: String, at: Vector2, loadout: Dictionary, kind := "foot") -> GroundWar.Squad:
 	var q = g.recruit(f, kind, at, false)
 	var n := 0

@@ -54,6 +54,7 @@ const LAW_NODES := ["sniffer_dogs", "passenger_profiling", "container_xray"]
 var sess
 var rng: PyRandom
 var relations := 50.0  ## 0..100: the General's regard for the organisation
+var controller := "general"  ## general | mob: who controls Isla Soberana after the Company chapter
 var passage_until := -1.0  ## safe passage bought: the MiGs look the other way
 var status := "calm"  ## calm | purge | hurricane | shortage | boatlift
 var status_until := -1.0
@@ -167,6 +168,9 @@ func ship_odds() -> Array:
 	if runner_has("false_bottoms"):
 		p /= 2.0
 		why.append("false bottoms /2")
+	if controller == "mob":
+		p *= 0.5
+		why.append("Moretti port control /2")
 	var fam = sess.family
 	if fam != null and fam.docks_until > sess.time:
 		var k := 0.5 if fam.docks_honest else 2.0
@@ -201,7 +205,7 @@ func ship(method: String, amount: int) -> String:
 			if sess.payroll != null:
 				sess.payroll.release(mules)
 			return "Need $%s." % Py.money(cost)
-		sess.money -= cost
+		sess.move_money(-cost, "outside:growers", "purchase")
 		next_mules = sess.time + RESTOCK_S * sess.econ.restock_mult("cocaine")
 		_serial += 1
 		shipments.append({"id": "M%d" % _serial, "method": "mules", "n": n, "lb": lb, "cost": cost,
@@ -213,10 +217,11 @@ func ship(method: String, amount: int) -> String:
 		if sess.time < next_ship:
 			return "No container space on the freighter for %d min." % int(ceil((next_ship - sess.time) / 60.0))
 		var lb := clampi(amount, 100, 1200)
-		var cost := int(lb * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine")) + SHIP_FREIGHT
+		var port_fee := 4000 if controller == "mob" else 0
+		var cost := int(lb * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine")) + SHIP_FREIGHT + port_fee
 		if sess.money < cost:
 			return "Need $%s." % Py.money(cost)
-		sess.money -= cost
+		sess.move_money(-cost, "outside:growers", "purchase")
 		next_ship = sess.time + RESTOCK_S * sess.econ.restock_mult("cocaine")
 		_serial += 1
 		shipments.append({"id": "S%d" % _serial, "method": "ship", "n": 1, "lb": float(lb), "cost": cost,
@@ -255,11 +260,11 @@ func _resolve(sh: Dictionary) -> void:
 			pay = 0
 			if got > 0:
 				landed = _land(float(sh.lb) * got / maxf(1.0, float(sh.n)), Vector2(World.airfield("HAR").x, World.airfield("HAR").y))
-		sess.money += pay
+		sess.move_money(pay, "outside:buyers", "delivery")
 		if lost > 0:
 			caught += lost
 			airport_heat = minf(100.0, airport_heat + 12.0 * lost)
-			sess.law_funds += 800.0 * lost
+			sess.move_law_funds(800.0 * lost, "outside:state", "forfeiture")
 			sess.econ.record_seizure("cocaine", "sea")
 			sess.law_say("Customs at San Telmo Intl: %d swallowers caught off the island flight" % lost)
 			# a mule who talks
@@ -277,7 +282,7 @@ func _resolve(sh: Dictionary) -> void:
 		if rng.random() < p:
 			caught += 1
 			port_heat = minf(100.0, port_heat + 30.0)
-			sess.law_funds += 5000.0
+			sess.move_law_funds(5000.0, "outside:state", "forfeiture")
 			c.suspicion = minf(100.0, c.suspicion + 12.0)
 			sess.econ.record_seizure("cocaine", "sea")
 			sess.law_say("Port of San Telmo: %d lb found under frozen shrimp in a container from Isla Soberana" % int(sh.lb))
@@ -291,7 +296,7 @@ func _resolve(sh: Dictionary) -> void:
 			if sess.logistics != null:
 				last = "The container cleared customs: %s" % _land(float(sh.lb), PORT)
 			else:
-				sess.money += worth
+				sess.move_money(worth, "outside:buyers", "delivery")
 				last = "The container cleared customs: +$%s" % Py.money(worth)
 	sess.say("THE ISLAND - " + last)
 	sess.bus.emit("island_shipment", sess.time, last, ["runner"], {"method": sh.method, "delivered_lb": delivered_lb})
@@ -320,7 +325,7 @@ func buy_passage() -> String:
 	var cost := passage_cost()
 	if sess.money < cost:
 		return "Need $%s." % Py.money(cost)
-	sess.money -= cost
+	sess.move_money(-cost, "outside:state", "fee")
 	passage_until = sess.time + PASSAGE_S
 	relations = minf(100.0, relations + 8.0)
 	last = "Safe passage bought from the General's aide: the MiGs look the other way for %d min" % int(PASSAGE_S / 60)
@@ -341,7 +346,7 @@ func on_arrive() -> void:
 	if not open():
 		# the purge: whoever lands is part of the plot
 		var k := mini(maxi(0, sess.money), 8000)
-		sess.money -= k
+		sess.move_money(-k, "outside:state", "forfeiture")
 		relations = maxf(0.0, relations - 10.0)
 		sess.say("THE ISLAND - Soldiers on the ramp: the purge. They 'confiscate' $%s and the cargo, and let you go." % Py.money(k))
 		for j in sess.active_jobs.duplicate():
@@ -449,7 +454,7 @@ func _rival_trade() -> void:
 	var g = sess.ground
 	if g == null or not open() or status == "hurricane" or g.commanders.rival.cash < 15000.0:
 		return
-	var cost: float = 500 * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine") + SHIP_FREIGHT
+	var cost: float = 500 * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine") + SHIP_FREIGHT + (4000 if controller == "mob" else 0)
 	g.commanders.rival.cash -= cost
 	var p := 0.08 * (1.0 + port_heat / 100.0) * (2.0 if law_has("container_xray") else 1.0) * (2.0 if inspections_until > sess.time else 1.0)
 	rival_shipped += 1
@@ -457,7 +462,7 @@ func _rival_trade() -> void:
 		rival_caught += 1
 		caught += 1
 		port_heat = minf(100.0, port_heat + 20.0)
-		sess.law_funds += 5000.0
+		sess.move_law_funds(5000.0, "outside:state", "forfeiture")
 		sess.econ.record_seizure("cocaine", "sea")
 		sess.law_say("Port of San Telmo: a Los Cuervos container from Isla Soberana, 500 lb under the fish")
 		sess.say("NEWS - Customs open a container from the island: Los Cuervos lose a load.")
@@ -483,7 +488,7 @@ func _patrol(step: float) -> void:
 		_mig_t = 0.0
 		intercepts += 1
 		var fine := mini(maxi(0, sess.money), 3000 + int(relations < 30.0) * 5000)
-		sess.money -= fine
+		sess.move_money(-fine, "outside:state", "fine")
 		relations = maxf(0.0, relations - 5.0)
 		last = "A MiG-21 on the wing, rocking: the island's air force. A 'landing fee' of $%s wired to an account on the island" % Py.money(fine)
 		sess.say("THE ISLAND - " + last)

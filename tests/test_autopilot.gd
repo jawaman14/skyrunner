@@ -458,6 +458,10 @@ func test_ai_controls_do_not_cancel_its_own_autopilot() -> void:
 	s.dispose()
 
 
+func _last_message(s: Session) -> String:
+	return str(s.messages.back()[1]) if not s.messages.is_empty() else ""
+
+
 func test_ai_pilot_takes_midflight_job_without_waiting_for_the_ramp() -> void:
 	var s := _sess({"trade": true})
 	_airborne(s)
@@ -467,6 +471,7 @@ func test_ai_pilot_takes_midflight_job_without_waiting_for_the_ramp() -> void:
 	var controls := ai.step(1.0 / 30.0)
 	check(controls != null, "AI supplies flight controls immediately after F3 in midair")
 	check(ai.bot != null, "AI starts a flight plan while airborne")
+	check("AI pilot: flying to" in _last_message(s), "and says where it is going: %s" % _last_message(s))
 	if ai.bot != null:
 		check_eq(ai.bot.phase, "enroute", "midflight takeover skips taxi and takeoff")
 		check_eq(ai.bot.legs.back().code, "PNR", "AI continues the active job")
@@ -480,4 +485,5 @@ func test_ai_pilot_takes_midflight_aircraft_home_without_a_job() -> void:
 	var ai := AutoRunner.new(s)
 	check(ai.step(1.0 / 30.0) != null, "AI does not leave an airborne aircraft without controls")
 	check(ai.bot != null and ai.bot.legs.back().kind == "land", "AI plans a landing when no job is active")
+	check("no job aboard, landing at the nearest field" in _last_message(s), "and says so: %s" % _last_message(s))
 	s.dispose()

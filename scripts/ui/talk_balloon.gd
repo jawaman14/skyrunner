@@ -8,6 +8,7 @@ extends CanvasLayer
 ## their keys. (It used to be a box across the bottom of the screen with the character's name in neon script.)
 
 signal finished
+signal completed  ## The script reached END; hanging up only emits finished.
 
 const PHONE_W := 400.0
 const BUBBLE_W := 270.0
@@ -203,6 +204,7 @@ func _next(id: String) -> void:
 	line = next_line
 	busy = false
 	if line == null:
+		completed.emit()
 		_close()
 		return
 	if line.text != "" or line.responses.is_empty():
@@ -227,7 +229,6 @@ func _next(id: String) -> void:
 		b.pressed.connect(choose.bind(i))
 		choices.add_child(b)
 	hint.text = "UP/DOWN, 1-%d reply   ESC hang up" % _answers.size() if not _answers.is_empty() else "ENTER next   ESC hang up"
-	Speech.line(line.character if line.text != "" else "", line.text, _answers.map(func(r): return str(r.text)))
 	# keep the thread's height sensible: the answers take what they need, the thread the rest
 	var room: float = panel.get_viewport().get_visible_rect().size.y - 48.0 if panel.get_viewport() != null else 700.0
 	panel.offset_top = -minf(250.0 + 150.0 + 44.0 * _answers.size(), room)

@@ -14,16 +14,17 @@ person can do (the human release gates and the decisions in #326). This file is 
 | 4 | Sync `main` into the branch | the author | `sync_shared.py` (`--baton theirs` for a PR that is not the holder; #332) | minutes | 12 branches 39 commits behind: every PR collides on HANDOFF, the status count and the lanes |
 | 5 | CI | automatic | `github_pr_wait` | about 10 minutes | none |
 | 6 | Bot review (arrives minutes after CI) | automatic | `review_packet.py` shows unanswered threads | minutes | threads left unanswered blocked merges; several valid P1/P2 findings went unseen until the packet existed |
-| 7 | Other-agent review of the exact head | the reviewer | `github_pr_review` | one wake | **the main stall:** Codex's desktop session acts only when the owner prompts it, and a woken turn cannot call the review tool (approval policy never) |
-| 8 | Merge | the integrator (Claude) | `github_pr_merge` (needs green CI on the head and every thread replied) | seconds | waiting on step 7 |
+| 7 | Other-agent review of the exact head (**risk-class PRs only since 18 Oct, D-52**; see AGENTS.md) | the reviewer | `github_pr_review` | one wake | **the main stall:** Codex's desktop session acts only when the owner prompts it, and a woken turn cannot call the review tool (approval policy never) |
+| 8 | Merge | the author (since 18 Oct, D-52; before that the integrator, Claude) | `github_pr_merge` (needs green CI on the head and every thread replied) | seconds | waiting on step 7 |
 | 9 | Notes for the owner | the integrator | one comment on #326 per merge, a summary at the end | seconds | did not exist |
 
 ## What went wrong on 11 October, with the evidence
 
 **Running Godot (tests, imports, measurements).**
 1. One Godot job at a time on the machine, with no priority or estimate. A 40-minute strip regeneration of mine held the lock while Codex's
-   screenshot and full-suite runs queued behind it (Codex said so in note 173). The full suite is about 13 minutes (1,114 tests, 761 s) and a
-   cold import in a fresh worktree about 5 more, because every worktree has its own `.godot` cache.
+   screenshot and full-suite runs queued behind it (Codex said so in note 173). On 11 October the full suite took about 13 minutes (1,114 passing tests, 761 s), and a
+   cold import in a fresh worktree took about 5 more. These are dated measurements, not the current suite count or a runtime promise;
+   every worktree has its own `.godot` cache.
 2. A test run is refused if `docs/PROJECT_STATUS.md` is stale, so adding one test cost a failed run before the regeneration.
 3. A filtered run (`phone`) showed a walker failure that does not happen when the whole file runs: a selection artifact that looked like a
    regression until the whole file was run.
@@ -169,6 +170,19 @@ Release gates and the owner's decisions are never merged or ticked by an agent.
 
 **Standing owner rule this rests on**: recorded in `HANDOFF.md` under Owner decisions (11 October, afternoon), in the owner's words:
 "you dont need to discuss with me what needs to be merged or not that is you and codex job to see if its ready too".
+
+## Owner decisions: the ledger (18 October)
+
+The uncle storyline (decided 12 October) was lost: it went into HANDOFF.md's log and the triage document but never into
+the roadmap or an issue, HANDOFF's decision log stopped being kept after 12 October, the 12 October roadmap refresh (#370)
+was never merged, and the 18 October rewrite was built from the agents' recent context instead of from the record. Two
+other 12 October decisions were lost the same way (the 3D pilot app's fixed step, the crew trust table).
+
+- Every owner decision goes into [DECISIONS.md](DECISIONS.md) in the session it is made, with where its work is tracked
+  (a roadmap section that exists, or a PR or issue). `tests/test_docs.gd` checks every row.
+- A roadmap rewrite starts from DECISIONS.md: every row that is not done or superseded must have its place.
+- Decisions that need work also go on the agent's queue issue (#328 Claude, #329 Codex), so they travel with the
+  repository and survive an agent's context being summarised.
 
 ## Rules that keep it moving
 

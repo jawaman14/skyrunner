@@ -20,15 +20,21 @@ extends RefCounted
 
 const VERSION := 1
 
+## STEPS[v - 1] carries a save from version v to v + 1: it edits the dictionary and returns it. Add one with every VERSION bump,
+## and a test, so an older save is carried forward instead of losing its state.
+static var STEPS: Array[Callable] = []
+
 const FAMILY := ["respect", "greed", "rico", "rat", "gone", "offers", "loan", "docks_until", "docks_honest", "muscle", "lawyer",
 	"tribute_due", "tribute_by", "taxed", "tribute_total", "_tax_next", "_stalled", "payroll_until", "knows", "loans_taken",
 	"accepted", "cons", "last", "_serial", "_t", "_offer_t", "_side_t", "_rat_t"]
 const FAMILY_INTS := ["cost", "amount", "owed"]
 const TRADE := ["stock", "connected", "appetite", "sold", "landed", "earned", "street_sales", "last", "bulk_log", "_t", "_war_t",
 	"_sales_acc"]
+const ORDERS := ["open", "history", "_next_id", "_sample_t", "_prev"]
+const ORDERS_INTS := ["id"]
 const ECON := ["walk", "fuel_walk", "scarcity", "glut", "busts", "events", "news", "storm", "law_kit", "_t", "_now"]
 const MARKET := ["supply", "demand", "disruption", "source", "news", "why", "_last_news", "_demand_events", "_t", "_now"]
-const ISLAND := ["relations", "passage_until", "status", "status_until", "price_mult", "airport_heat", "port_heat", "crackdown_until",
+const ISLAND := ["relations", "controller", "passage_until", "status", "status_until", "price_mult", "airport_heat", "port_heat", "crackdown_until",
 	"inspections_until", "shipments", "delivered", "caught", "intercepts", "next_mules", "next_ship", "rival_shipped", "rival_caught",
 	"_rival_t", "last", "_serial", "_t", "_event_t", "_mig_t"]
 const ISLAND_INTS := ["n", "cost", "value", "mules"]
@@ -66,6 +72,8 @@ static func capture(s: Session) -> Dictionary:
 		for x in s.stash_net.stashes:
 			st[x.id] = {"heat": x.heat, "intel": x.intel, "burned": x.burned, "works": x.get("works", {}).duplicate()}
 		d["stashes"] = st
+	if s.investigation != null:
+		d["investigation"] = s.investigation.to_dict()
 	if s.logistics != null:
 		var l: Logistics = s.logistics
 		d["logistics"] = {"stock": l.stock.duplicate(true), "cash": l.cash.duplicate(true), "cash_since": l.cash_since.duplicate(true),
@@ -86,10 +94,12 @@ static func capture(s: Session) -> Dictionary:
 	d["case"] = {"suspicion": c.suspicion, "bust_meter": c.bust_meter, "rival_meter": c.rival_meter}
 	if s.court != null:
 		d["court"] = {"case": s.court.case_, "history": s.court.history.duplicate(true), "mandatory": s.court.mandatory,
-			"serial": s.court._serial}
+			"serial": s.court._serial, "forfeit_pending": s.court.forfeit_pending, "forfeit_key": s.court.forfeit_key}
 	if s.ground != null:
 		var squads := []
 		for q: GroundWar.Squad in s.ground.squads:
+			if q.tag == "roadside":
+				continue  # trucks and in-progress fights do not survive a save
 			squads.append({"id": q.id, "faction": q.faction, "kind": q.kind, "men": q.men, "men0": q.men0, "loadout": q.loadout.duplicate(),
 				"ammo": q.ammo, "morale": q.morale, "tag": q.tag, "xp": q.xp, "x": q.x, "y": q.y, "hx": q.home.x, "hy": q.home.y})
 		d["squads"] = {"list": squads, "serial": s.ground._serial, "full": true}
@@ -105,6 +115,8 @@ static func _capture_world(s: Session, d: Dictionary) -> void:
 		d["family"] = SaveVars.capture(s.family, FAMILY)
 	if s.trade != null:
 		d["trade"] = SaveVars.capture(s.trade, TRADE)
+		if s.trade.orders != null:
+			d["orders"] = SaveVars.capture(s.trade.orders, ORDERS)
 	if s.econ != null:
 		d["econ"] = SaveVars.capture(s.econ, ECON)
 		if s.econ.market != null:
@@ -154,6 +166,8 @@ static func _capture_nights(n: NightDirector) -> Dictionary:
 
 static func _capture_war(g: GroundWar) -> Dictionary:
 	var out := SaveVars.capture(g, WAR + WAR_PLAIN)
+	out["territory_region"] = g.world.map.region_id
+	out["territory_control"] = g.territory_control.duplicate(true)
 	var cmd := {}
 	for f in g.commanders:
 		var c: GroundWar.Commander = g.commanders[f]
@@ -188,14 +202,49 @@ static func _payroll(s: Session) -> Dictionary:
 		"last": p.last.duplicate(), "squads": squads, "serial": p._serial}
 
 
+## A refusal reason, or "" when every migration step needed by this save exists.
+static func migration_error(d: Dictionary, steps: Array = STEPS, target: int = VERSION) -> String:
+	var raw = d.get("v")
+	if not (raw is int or raw is float) or int(raw) != raw:
+		return "Simulation save has no valid version."
+	var v := int(raw)
+	if v < 1:
+		return "Simulation save version %d is unsupported." % v
+	if v > target:
+		return "Simulation save version %d is newer than this game's version %d." % [v, target]
+	if steps.size() < target - 1:
+		return "Simulation save version %d has no complete migration path to version %d." % [v, target]
+	return ""
+
+
+## Brings a save up to `target`. An unsupported save gives {} and a warning.
+static func migrate(d: Dictionary, steps: Array = STEPS, target: int = VERSION) -> Dictionary:
+	var error := migration_error(d, steps, target)
+	if error != "":
+		push_warning(error)
+		return {}
+	var v := int(d.v)
+	d = d.duplicate(true)
+	while v < target:
+		d = steps[v - 1].call(d)
+		v += 1
+		d["v"] = v
+	return d
+
+
 static func restore(s: Session, d: Dictionary) -> void:
-	if d.is_empty() or int(d.get("v", 0)) != VERSION:
+	if d.is_empty():
+		return
+	d = migrate(d)
+	if d.is_empty():
 		return
 	s.time = float(d.get("time", 0.0))
 	s.phone_calls.restore(d.get("phone_calls", {}) if d.get("phone_calls") is Dictionary else {})
 	s.phone_calls.tick(s.time)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
+	if s.investigation != null:
+		s.investigation.load_dict(d.get("investigation", {}))  # an older save has no case files: the task force starts afresh
 	if s.stash_net != null and d.get("stashes") is Dictionary:
 		for id in d.stashes:
 			var st = s.stash_net.get_stash(str(id))
@@ -250,6 +299,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.court.history = d.court.get("history", [])
 		s.court.mandatory = bool(d.court.get("mandatory", false))
 		s.court._serial = int(d.court.get("serial", 0))
+		s.court.forfeit_pending = bool(d.court.get("forfeit_pending", false))
+		s.court.forfeit_key = str(d.court.get("forfeit_key", ""))
 	if s.ground != null and d.get("squads") is Dictionary:
 		_restore_squads(s, d.squads)
 	if s.ground != null and d.get("war") is Dictionary:
@@ -305,6 +356,8 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 		SaveVars.restore(s.family, d.family, FAMILY, FAMILY_INTS)
 	if s.trade != null and d.get("trade") is Dictionary:
 		SaveVars.restore(s.trade, d.trade, TRADE)
+		if s.trade.orders != null and d.get("orders") is Dictionary:
+			SaveVars.restore(s.trade.orders, d.orders, ORDERS, ORDERS_INTS)
 	if s.econ != null and d.get("econ") is Dictionary:
 		SaveVars.restore(s.econ, d.econ, ECON)
 		if s.econ.market != null and d.get("market") is Dictionary:
@@ -341,11 +394,23 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 static func _restore_war(g: GroundWar, d: Dictionary) -> void:
 	SaveVars.restore(g, d, WAR, WAR_INTS)
 	SaveVars.restore(g, d, WAR_PLAIN)
+	var saved_region := str(d.get("territory_region", ""))
+	var saved_control = d.get("territory_control", {})
+	if saved_region == g.world.map.region_id and saved_control is Dictionary:
+		for id in g.territory_control:
+			if saved_control.has(id) and saved_control[id] is Dictionary:
+				for faction in ["org", "rival", "police"]:
+					g.territory_control[id][faction] = float(saved_control[id].get(faction, 0.0))
+	else:
+		g.seed_territories_from_markets()
 	var cmd: Dictionary = d.get("commanders", {})
 	for f in cmd:
 		if g.commanders.has(f):
 			var c: GroundWar.Commander = g.commanders[f]
-			c.cash = float(cmd[f].get("cash", c.cash))
+			var saved_cash := float(cmd[f].get("cash", c.cash))
+			if g.sess != null:
+				g.sess.ledger.restate(f + ":war-chest", saved_cash, g.sess.time)
+			c.cash = saved_cash
 			c.think_t = float(cmd[f].get("think_t", 0.0))
 			c.log = cmd[f].get("log", [])
 

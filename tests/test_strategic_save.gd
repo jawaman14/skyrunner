@@ -38,6 +38,20 @@ func _hire(s: Session, role: String, n: int) -> Array:
 	return ids
 
 
+func test_roadside_guard_is_not_saved_as_a_permanent_squad() -> void:
+	var s := Session.new(_opts())
+	_quiet(s)
+	var truck := StashNet.Truck.new()
+	truck.job_id = 4242
+	var guard: GroundWar.Squad = s.ground._truck_guard(truck, s.ground.hq("org"))
+	check_eq(guard.id, "D-4242", "the truck's temporary guard exists during the fight")
+	var data := StrategicSave.capture(s)
+	var saved: Array = data.squads.list
+	check_eq(saved.filter(func(row): return row.id == guard.id).size(), 0,
+		"a saved game does not turn the temporary guard into a permanent squad")
+	s.dispose()
+
+
 func test_a_save_keeps_the_organisation() -> void:
 	var o := _opts()
 	o["save_path"] = PATH
@@ -117,7 +131,7 @@ func test_a_court_case_survives_a_save() -> void:
 	check(t.court.case_ != null, "the case is still open")
 	check_eq(str(t.court.case_.id), id, "the same case")
 	check_eq(t.court.case_.charges, charges, "the same charges")
-	check_eq(t.court.stage(), "bail", "waiting on bail")
+	check_eq(t.court.stage(), "pretrial", "the lawyer has the case; the pilot is not held")
 	t.dispose()
 
 
@@ -351,3 +365,78 @@ class Squad2:
 	var s := ""
 	var v := Vector2.ZERO
 	var d := {}
+
+
+func _step_a(d: Dictionary) -> Dictionary:
+	d["a"] = 1
+	return d
+
+
+func _step_b(d: Dictionary) -> Dictionary:
+	d["b"] = int(d.get("a", 0)) + 1
+	return d
+
+
+func test_migrate_runs_each_step_in_order_and_refuses_what_it_cannot() -> void:
+	var steps: Array = [_step_a, _step_b]
+	var out := StrategicSave.migrate({"v": 1, "time": 5.0}, steps, 3)
+	check_eq([out.v, out.a, out.b, out.time], [3, 1, 2, 5.0], "v1 goes through both steps, keeping what it had")
+	check_eq(StrategicSave.migrate({"v": 2}, steps, 3).b, 1, "v2 skips the first step")
+	check(StrategicSave.migrate({"v": 4}, steps, 3).is_empty(), "a newer game's save is refused, not guessed at")
+	check(StrategicSave.migrate({"time": 1.0}, steps, 3).is_empty(), "no version is refused")
+	check(StrategicSave.migrate({"v": 1}, [], 2).is_empty(), "a gap in the steps is refused")
+	var src := {"v": 1}
+	StrategicSave.migrate(src, steps, 3)
+	check(not src.has("a"), "the caller's dictionary is not edited")
+	check_eq(StrategicSave.migrate({"v": StrategicSave.VERSION, "time": 7.0}).time, 7.0, "a current save passes through")
+
+
+func _check_invalid_sim_is_not_loaded_or_overwritten(sim_block, label: String) -> void:
+	var raw := JSON.stringify({"money": 4567, "sim": sim_block})
+	var f := FileAccess.open(PATH, FileAccess.WRITE)
+	f.store_string(raw)
+	f.close()
+	check(not Session.save_load_error(PATH).is_empty(), "%s has a reason the launcher can display" % label)
+	var loaded := Session.load_or_new(PATH, _opts())
+	check(loaded == null, "%s is refused instead of loaded as a default session" % label)
+	if loaded != null:
+		loaded.dispose()
+	check_eq(FileAccess.get_file_as_string(PATH), raw, "%s save remains byte-for-byte untouched" % label)
+
+
+func test_newer_sim_save_is_not_loaded_or_overwritten() -> void:
+	_check_invalid_sim_is_not_loaded_or_overwritten({"v": StrategicSave.VERSION + 1, "time": 123.0}, "newer")
+
+
+func test_malformed_sim_save_is_not_loaded_or_overwritten() -> void:
+	_check_invalid_sim_is_not_loaded_or_overwritten("broken", "malformed")
+
+
+## True when `got` has everything `want` has (a loader may add a zero entry for a good the save never listed).
+func _holds(got, want) -> bool:
+	if want is Dictionary:
+		if not got is Dictionary:
+			return false
+		for k in want:
+			if not got.has(k) or not _holds(got[k], want[k]):
+				return false
+		return true
+	return got == want
+
+
+## strategic_save_v1.json is a v1 save written once by this code and never regenerated: when VERSION moves on, a step in
+## StrategicSave.STEPS must carry it forward, and every block in it must come back as it was written.
+func test_a_frozen_v1_save_restores_every_block() -> void:
+	var f := FileAccess.open("res://tests/fixtures/strategic_save_v1.json", FileAccess.READ)
+	var frozen: Dictionary = JSON.parse_string(f.get_as_text())
+	f.close()
+	check_eq(int(frozen.v), 1, "the fixture is a v1 save")
+	var s := Session.new(_opts())
+	_quiet(s)
+	StrategicSave.restore(s, frozen)
+	var back: Dictionary = JSON.parse_string(JSON.stringify(StrategicSave.capture(s)))
+	back["v"] = 1  # a later VERSION writes its own number; the blocks are what is compared
+	for block in frozen:
+		check(back.has(block), "block %s comes back" % block)
+		check(_holds(back.get(block), frozen[block]), "block %s is as it was written" % block)
+	s.dispose()

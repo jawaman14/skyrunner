@@ -6,6 +6,9 @@ extends SessionOps
 func update(dt: float, inp: ControlMapper.InputFrame = null, bot_controls: FlightModel.Controls = null) -> void:
 	time += dt
 	phone_calls.tick(time)
+	if Jobs.ISLAND_BOARD and time >= _stock_next:
+		_stock_next = time + 60.0
+		stock_island_boards()
 	if inp == null:
 		inp = ControlMapper.InputFrame.new()
 	if runner_active():
@@ -68,6 +71,8 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 	if airframe != null:
 		controls = airframe.limit(controls)  # a rough or failed engine, or the cowling off for a repair
 	fm.controls = controls
+	if inp.held.has("reverse"):
+		_back_up(dt)
 	var s := fm.step(dt, world.ground)
 	state = s
 	if s.valid:
@@ -79,6 +84,24 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 		_crew_work(dt, s)
 	if phase == "parked" and not unloading.is_empty():
 		_unload_tick(dt)
+
+
+## Backspace: creep backwards at BACK_UP_MS, only stopped on a strip with the engine at idle (owner, 12 Oct: a way out when stuck).
+func _back_up(dt: float) -> void:
+	var s := state
+	var was := _backing  # a fresh spawn takes a step to settle onto its wheels
+	_backing = false
+	if s == null or not (s.on_ground or was) or s.gs_kts > BACK_UP_MAX_KTS or fm.controls.throttle > 0.05:
+		return
+	var h := deg_to_rad(s.heading)
+	var nx: float = s.x - sin(h) * BACK_UP_MS * dt  # the nose points along (sin h, cos h): backwards is the opposite
+	var ny: float = s.y - cos(h) * BACK_UP_MS * dt
+	if world.airfield_at(nx, ny, 40.0) == null or world.is_water(nx, ny):
+		return
+	_backing = true
+	fm.spawn(nx, ny, s.heading, world.ground(nx, ny), loadout)
+	fm.controls = FlightModel.Controls.make({"brake": 1.0})
+	state = fm.state()
 
 
 static func _any_held(inp: ControlMapper.InputFrame, keys: Array) -> bool:
@@ -220,7 +243,7 @@ func _police_outcome(what: String) -> void:
 		_bust("forced down by police")
 	elif what == "clean":
 		var fine := 500 if not transponder else 0
-		money -= fine
+		move_money(-fine, "outside:state", "fine")
 		say("Police forced you down and searched the aircraft: clean." + (" Fined $%d for no transponder." % fine if fine else ""))
 
 
@@ -231,7 +254,7 @@ func _maritime_event(kind: String, data: Dictionary) -> void:
 		runner_score["bales_delivered"] += n
 		if job:
 			var pay := int(job.payout * n / float(maxi(1, job.bales_total)))
-			money += pay
+			move_money(pay, "outside:buyers", "delivery")
 			job.bales_delivered = n
 			_resolve_job(job, "%s made the cove with %d/%d bales: +$%s" % [data["boat"], n, job.bales_total, Py.money(pay)])
 		bus.emit("bales_delivered", time, "", ["runner"], {"count": n, "job_id": data.get("job_id")})
@@ -239,10 +262,10 @@ func _maritime_event(kind: String, data: Dictionary) -> void:
 		police.score["boats_seized"] += 1
 		police.score["bales_seized"] += data["count"]
 		law_say("%s seized %s with %d bales" % [data["cutter"], data["boat"], data["count"]])
-		law_funds += 1500.0 + 100.0 * data["count"]  # asset forfeiture
+		move_law_funds(1500.0 + 100.0 * data["count"], "outside:state", "forfeiture")
 		econ.record_seizure("marijuana", "sea")
 		if upgrades["runner"].has("armed_boat"):
-			law_funds += 1500.0
+			move_law_funds(1500.0, "outside:state", "forfeiture")
 			_seize_weapons({"rifle": 2}, data["boat"])
 			law_say("Firearms aboard %s: a federal charge on top" % data["boat"])
 		if job:
@@ -251,6 +274,10 @@ func _maritime_event(kind: String, data: Dictionary) -> void:
 	elif kind == "bale_seized":
 		police.score["bales_seized"] += 1
 		law_say("%s recovered a floating bale" % data["cutter"])
+	elif kind == "bale_collected" and job:
+		say("%s: bale aboard (%d)." % [data["boat"], data["count"]])
+	elif kind == "boat_running" and job:
+		say("%s: %d bale(s) aboard, running for the cove." % [data["boat"], data["count"]])
 	elif kind == "bale_splash" and job:
 		say("Splash - bale in the water.")
 	elif kind == "bale_lost" and job:

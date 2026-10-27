@@ -160,12 +160,16 @@ static func _ended(s: Session) -> bool:
 	return s.phase in ["crashed", "busted"]
 
 
-static func takeoff(aircraft: String, code: String, load: String, end: int) -> Dictionary:
+## `fractions` ([fuel, payload], each 0..1) overrides the named load, for sweeping the payload; the result records `fuel_frac` and `payload_frac`.
+static func takeoff(aircraft: String, code: String, load: String, end: int, fractions := []) -> Dictionary:
 	var r := _base("takeoff", aircraft, code, load, end)
 	var af := World.airfield(code)
 	var hdg: float = r.heading
 	var s := Feasibility._session(aircraft, code)
-	Feasibility.load_aircraft(s, Feasibility.LOADS[load][0], Feasibility.LOADS[load][1])
+	var fr: Array = fractions if fractions.size() == 2 else Feasibility.LOADS[load]
+	Feasibility.load_aircraft(s, fr[0], fr[1])
+	r.fuel_frac = fr[0]
+	r.payload_frac = fr[1]
 	# the start of the run: RUN_START_M in from the threshold of this end, facing down the runway (as Session.spawn_at)
 	var t: Array = af.threshold(end)
 	var h := deg_to_rad(hdg)
@@ -430,6 +434,82 @@ static func run_job(j: Array) -> Dictionary:
 
 static func _num(v, fmt := "%.0f") -> String:
 	return "-" if v == null else fmt % v
+
+
+## The largest value of `x` in [0, 1] for which `passes(x)` holds, by bisection, assuming that passing gets harder as x grows
+## (a heavier payload never helps a takeoff). Returns {max, samples}: -1.0 if x = 0 already fails, 1.0 if x = 1 passes; the
+## samples list every [x, passed] tried so the assumption can be audited.
+static func bisect_max(passes: Callable, steps := 5) -> Dictionary:
+	var samples := []
+	var ok0: bool = passes.call(0.0)
+	samples.append([0.0, ok0])
+	if not ok0:
+		return {"max": -1.0, "samples": samples}
+	var ok1: bool = passes.call(1.0)
+	samples.append([1.0, ok1])
+	if ok1:
+		return {"max": 1.0, "samples": samples}
+	var lo := 0.0
+	var hi := 1.0
+	for i in steps:
+		var mid := (lo + hi) / 2.0
+		var ok: bool = passes.call(mid)
+		samples.append([mid, ok])
+		if ok:
+			lo = mid
+		else:
+			hi = mid
+	return {"max": lo, "samples": samples}
+
+
+## The heaviest payload that takes off from `end` of `code` with `fuel_frac` of the tanks: bisects the payload fraction of what the
+## aircraft can still carry (MTOW minus its weight with that fuel). `max_payload_lb` is null when it cannot take off empty.
+static func max_payload(aircraft: String, code: String, end: int, fuel_frac := 0.3, steps := 5) -> Dictionary:
+	var empty := takeoff(aircraft, code, "light", end, [fuel_frac, 0.0])
+	var spec: Aircraft.Spec = Aircraft.ROSTER[aircraft]
+	var room: float = maxf(0.0, spec.mtow_lb - float(empty.weight_lb))
+	var runs := []
+	var passes := func(x: float) -> bool:
+		var r := takeoff(aircraft, code, "light", end, [fuel_frac, x])
+		runs.append({"payload_frac": x, "status": r.status, "outcome": r.outcome})
+		return r.status == "pass"
+	var result := bisect_max(passes, steps)
+	return {"aircraft": aircraft, "field": code, "end": end, "fuel_frac": fuel_frac, "empty_weight_lb": empty.weight_lb,
+		"payload_room_lb": room, "max_payload_frac": null if result.max < 0.0 else result.max,
+		"max_payload_lb": null if result.max < 0.0 else result.max * room, "samples": result.samples, "runs": runs}
+
+
+## One mark for a trial: pass, fail, obstructed (no clear final, so not flown) or inconclusive (left the corridor).
+static func mark(r) -> String:
+	if r == null:
+		return "."
+	return {"pass": "✓", "fail": "✗", "obstructed": "–", "inconclusive": "?"}.get(str(r.status), "?")
+
+
+## Markdown for docs/STRIPS.md: one row per strip end, and per aircraft and load a "T L" pair of marks (takeoff and
+## landing from that end). `aircraft` and `loads` give the column order; `fields` the row order.
+static func summary_table(results: Array, fields: Array, aircraft: Array, loads: Array) -> String:
+	var by := {}
+	for r in results:
+		by["%s|%d|%s|%s|%s" % [r.field, r.end, r.aircraft, r.load, r.test]] = r
+	var head := ["| strip | end | heading |"]
+	var rule := ["|---|---|---|"]
+	for k in aircraft:
+		for ld in loads:
+			head.append(" %s %s |" % [k, ld])
+			rule.append("---|")
+	var lines := ["".join(head), "".join(rule)]
+	for code in fields:
+		var af := World.airfield(code)
+		for end in [0, 1]:
+			var cells := []
+			for k in aircraft:
+				for ld in loads:
+					cells.append("T%s L%s" % [mark(by.get("%s|%d|%s|%s|takeoff" % [code, end, k, ld])),
+						mark(by.get("%s|%d|%s|%s|landing" % [code, end, k, ld]))])
+			lines.append("| %s %s | %d | %03.0f | %s |" % [code, af.name, end, end_heading(af, end), " | ".join(cells)])
+	return "
+".join(lines)
 
 
 ## Markdown: one row per trial, in job order.

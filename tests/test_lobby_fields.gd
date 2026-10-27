@@ -14,6 +14,15 @@ func after_each() -> void:
 	_lobby.free()
 
 
+## Owner, 18 Oct: pick which save to use. The lobby lists the slots and passes the chosen one.
+func test_the_lobby_lists_save_slots_and_passes_the_chosen_one() -> void:
+	check_eq(_lobby.slot_ob.item_count, SavePaths.SLOTS, "one row per slot")
+	check(_lobby.slot_ob.get_item_text(0).begins_with("Slot 1"), "each row names its slot: %s" % _lobby.slot_ob.get_item_text(0))
+	check_eq(_lobby._opts().slot, 1, "slot 1 by default, the save every older game already has")
+	_lobby.slot_ob.select(2)
+	check_eq(_lobby._opts().slot, 3, "the chosen slot goes with the options")
+
+
 func test_the_name_password_and_port_go_with_the_options() -> void:
 	var plain := _lobby._opts()
 	check(not plain.has("name"), "a blank name keeps the game's own default")

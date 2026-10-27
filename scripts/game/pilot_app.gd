@@ -33,13 +33,15 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
          Flight assist (ESC menu): with no key held the wings level and the pitch holds; taps are gentle
          R/F or PGUP/PGDN throttle (hold; a tap is a few %)   Z ramp to full   X ramp to idle   (Z Z / X X: instant)
          G flaps down   T flaps up   [ / ] pitch trim   B or SPACE brakes
+         BACKSPACE back up slowly (1.5 m/s): stopped, throttle at idle, on an airfield
          Y toggle mouse yoke (mouse position = stick)   joystick / gamepad work too
          Air look: hold RIGHT mouse and drag while airborne (independent of Y)
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
             toe brakes (several devices) with invert, deadzone and expo; the colour-safe palette
-View     C cycle camera (chase / cockpit / tower)    M big map    P pause   F2 time of day
+View     C cycle camera (chase / cockpit / tower)    M big map    P pause (in the aircraft; ESC anywhere)   F2 time of day
 Seats    F3 hand the aircraft to the AI pilot / take it back (separate from U autopilot)
 Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)   CTRL+F5 skip to the next story chapter (solo, for testing)
+         CTRL+F2 site access overlay: footprints, entrances, loading points, runway clearance
 Table    F4 multiplayer menu: games on your network, who is at the table (mute, remove), chat, voice settings
 Voice    hold ` (default, rebind in F4) to talk on your side's net (a radio: range, hills, static);
          SHIFT + that key talks to the whole table (hosting or joined)
@@ -59,7 +61,8 @@ On foot  TAB get out (parked) / back in    WASD walk  SHIFT run  SPACE jump  mou
             RIGHT-CLICK the map to send it, buttons for melt away / hold / disband / raise one. Q again
             or ESC hands the squads straight back to the AI, the same as leaving the lieutenant's seat.
          I your pack: spare guns, rounds, medkits (24 kg; over 12 kg you slow down)   5 medkit
-Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT: upgrade trees)
+Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT: upgrade trees) - in the aircraft;
+            on foot walk up to the board or the hangar and press E
          SHIFT+T phone from the cockpit   SHIFT+V car lot (when available)
 Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
          U autopilot: from off, with a chart waypoint set, fly there; U again turns it off. Otherwise U holds
@@ -67,6 +70,7 @@ Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
             stay low with a hot load, direct at cruise otherwise; squawk unless there's already heat
          K kick a bale   O call the boat (SHIFT+O: the 1 s codeword - harder to DF)
          V ferry fuel pump   I push aircraft round (stopped)   ENTER continue   ESC close menu / pause menu
+SHIFT    the SHIFT keys below work in the aircraft; on foot SHIFT runs, so use T, the phone, for the same people
 Family   SHIFT+F sit down with Sal Moretti: hear the offer, your man's read on it, press him for
          another, take it or leave it; pay or stall the tribute (1-4 answer, ENTER go on, ESC leave)
          SHIFT+Y / SHIFT+N take or turn down the newest offer without the talk, SHIFT+P pay the tribute
@@ -75,8 +79,8 @@ Trade    SHIFT+B Benny Ruiz and the buyers: sell cocaine, grass or rifles in bul
          go into the stash; dealers (hire them from Manny) sell it on the corners
          SHIFT+C talk to the Sunrise Collective (when available)
 Haul     SHIFT+H logistics: product and cash sit in the stashes - truck them (to the club, a buyer, the corners) or fly cash bags (C load, U unload)
-Court    arrested (with a court): SHIFT+L your lawyer - bail or a bond, a better lawyer, motions to
-         suppress / discovery / more time, the plea, the witness, the judge, a deal; the appeal inside
+Court    arrested (with a court): SHIFT+L your lawyer - a better lawyer, motions to
+         suppress / discovery / more time, the plea, the witness, the judge, a deal
 Crew     SHIFT+W Manny Ortega's hiring hall: hire soldiers, drivers, mules, lookouts, an accountant,
          contract pilots; bonuses; lawyers for the jailed. Payday every 10 min - pay them or else
 Island   Isla Soberana is over the southern horizon (SOB): cheap loads, the General's MiGs, and the
@@ -181,7 +185,6 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	var look := ControlsConfig.settings()
 	s.keyboard_assist = bool(look.assist)
 	UIStyle.set_palette(look.palette)
-	Speech.set_enabled(bool(look.speak))
 	screen_filter = ScreenFilter.new()
 	add_child(screen_filter)
 	screen_filter.set_mode(look.filter)
@@ -217,7 +220,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	car_dash = CarDash.new()
 	car_dash.visible = false
 	ui.add_child(car_dash)
-	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu], ["dealer", DealerMenu]]:
+	for k in [["j", JobMenu], ["l", LoadMenu], ["h", HangarMenu], ["hq", HQMenu], ["intel", HQMenu], ["phone", PhoneMenu], ["taxi", TaxiMenu], ["rackets", RacketsMenu], ["track", RaceMenu], ["casino", CasinoMenu], ["dealer", DealerMenu], ["cheat", CheatMenu]]:
 		var m: GameMenu = k[1].new()
 		ui.add_child(m)
 		if k[0] == "intel":
@@ -406,6 +409,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			s.say("Debug: skipped to chapter %d." % s.story.chapter.num)
 			get_viewport().set_input_as_handled()
 			return
+		if k == KEY_F6 and ev.ctrl_pressed and not ev.echo and server == null:  # the owner's test menu: solo only, never at a shared table
+			_open("cheat")
+			get_viewport().set_input_as_handled()
+			return
 		var m := _active_menu()
 		if m != null:
 			if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k == KEY_G) or (m is HQMenu and k in [KEY_Q, KEY_D])):
@@ -490,6 +497,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 					help.visible = not help.visible
 				KEY_F2:
 					scene.set_hour(scene.hour + 3.0)
+				KEY_J, KEY_L, KEY_H:
+					s.say("On foot: walk up to the job board or the hangar and press E, or get back in (TAB) for J, L and H.")
+				KEY_P:
+					s.say("P pauses in the aircraft; ESC opens the menu anywhere.")
 			get_viewport().set_input_as_handled()
 			return
 		if ev.shift_pressed and k == KEY_W and s.payroll != null:
@@ -505,7 +516,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 		elif ev.shift_pressed and k == KEY_B and s.trade != null:
 			open_talk("buyers")  # Benny Ruiz: who's buying, and at what
 		elif ev.shift_pressed and k == KEY_L and s.court != null:
-			open_talk("lawyer")  # your lawyer: bail, motions, the plea, a deal, the appeal
+			open_talk("lawyer")  # your lawyer: motions, the plea, a deal
 		elif ev.shift_pressed and k == KEY_F and s.family != null:
 			open_talk("family")  # a sit-down with the Family
 		elif ev.shift_pressed and k == KEY_G and s.island != null:
@@ -613,7 +624,9 @@ var _wp_beacon: MeshInstance3D = null
 var car_dash: CarDash = null  ## the dashboard, shown while driving
 var radio: CarRadio = null  ## the radio: the cockpit's (F7) and the car's (R); silent on foot
 var talk: TalkBalloon = null  ## a conversation on screen (the Family, the General's aide)
+var company_choice_dialog: AcceptDialog = null
 var _offers_seen := {}
+var _rafa_cue_offered := ""  ## Offer once per parked visit; a hangup may retry after the next landing or reload.
 var _was_on_island := false
 var _court_stage := ""
 var _casino_node: Node3D = null  ## the Hotel Cielo's building, once found (it exists only on the island)
@@ -632,6 +645,53 @@ func open_talk(name: String, title := "start") -> TalkBalloon:
 	if talk != null:
 		talk.finished.connect(func(): talk = null)
 	return talk
+
+
+func _show_company_choice() -> void:
+	var dialog := AcceptDialog.new()
+	dialog.title = "The Company - An Order from Washington"
+	dialog.dialog_text = "The Company orders you to assassinate General Ibarra.\n\nCarry it out: the Moretti-backed government takes the island. Containers clear more often, but the Family takes a $4,000 port cut. The Company rewards you, and the operation adds exposure.\n\nSpare him: the Morettis respect your refusal and the General grants better passage. The Company loses trust, adds scrutiny and ends its protection."
+	dialog.add_button("Carry out the assassination", false, "remove")
+	dialog.add_button("Spare the General", false, "spare")
+	dialog.add_button("Walk away", false, "declined")
+	dialog.get_ok_button().hide()
+	dialog.custom_action.connect(func(action: String):
+		s.story.choose_general(action)
+		paused = false
+		company_choice_dialog = null
+		dialog.queue_free())
+	dialog.canceled.connect(func(): dialog.call_deferred("popup_centered"))
+	dialog.close_requested.connect(func(): dialog.call_deferred("popup_centered"))
+	company_choice_dialog = dialog
+	paused = true
+	ui.add_child(dialog)
+	dialog.popup_centered()
+
+
+## Rafa's opening and chapter-two conversations are one-time story cues. The saved progress dictionary
+## remembers the cue without changing the story or save schema; the chapter-four news stays for the takeover scene.
+func _rafa_story_cue() -> void:
+	if not s.parked:
+		_rafa_cue_offered = ""
+		return
+	if s.story == null or (talk != null and is_instance_valid(talk)):
+		return
+	var story: Story = s.story
+	var title := ""
+	var flag := ""
+	if story.employment != null and story.employment.active():
+		if story.employment.stage == 0:
+			title = "employment"
+			flag = "rafa_employment_seen"
+	elif story.chapter.num == 2:
+		title = "chapter_two_first"
+		flag = "rafa_chapter_two_seen"
+	if flag == "" or flag == _rafa_cue_offered or bool(story.progress.get(flag, false)):
+		return
+	var balloon := open_talk("rafa", title)
+	if balloon != null:
+		_rafa_cue_offered = flag
+		balloon.completed.connect(func(): story.progress[flag] = true, CONNECT_ONE_SHOT)
 
 
 ## Word that someone wants to talk, and the aide on the ramp when you land on the island.
@@ -653,6 +713,7 @@ SHIFT+F to sit down with him." % [Talk.CAPO, str(o.text)], "family",
 	if on_island and not _was_on_island:
 		open_talk("general", "landing")
 	_was_on_island = on_island
+	_rafa_story_cue()
 
 
 ## F6: the performance overlay (Calinou's Debug Menu, MIT, addons/debug_menu):
@@ -978,6 +1039,13 @@ func _phone_call(action: String) -> void:
 			_map_toggle()
 		"settings":
 			open_pause()
+		"help":
+			help.visible = true
+		"job_board":
+			if not on_foot and s.parked:
+				_toggle_menu("j")
+			else:
+				s.say("The job board is at the strip: park the aircraft, or walk up to the board and press E.")
 		"desk":
 			_open("hq")
 		"logistics":
@@ -1406,13 +1474,14 @@ func _process(delta: float) -> void:
 		var ch: Campaign.Chapter = camp.chapter
 		briefing.text = "%s  -  %d  -  %s\n\n%s\n\n%s\n\nContinue: %s" % ["EMPLOYMENT" if ch.num == 0 else "CHAPTER %d" % ch.num, ch.year, ch.title, ch.briefing + ("\n\n" + camp.guidance() if camp is Story else ""),
 			"\n".join(camp.objective_lines()), ", ".join(PRESS_KEYS.keys().map(func(code): return OS.get_keycode_string(code))) + " / controller Accept"]
-		if not briefing_panel.visible:
-			Speech.say(briefing.text, true)
 		briefing_panel.visible = true
 		if _pressed.has("confirm"):
 			camp.show_briefing = false
 			briefing_panel.visible = false
 		_pressed.clear()
+	elif s.story != null and s.story.company_choice_ready():
+		if company_choice_dialog == null:
+			_show_company_choice()
 	elif not paused:
 		if _player_key != s.aircraft_key:
 			_build_player()
@@ -1450,7 +1519,7 @@ func _process(delta: float) -> void:
 		_car_race()
 	if m == null:
 		hud.refresh()
-	elif not s.parked:
+	elif not s.parked and not m is CheatMenu:  # the test menu stays open in the air ("fill the tank wherever it is")
 		m.close()
 	elif _frame % 10 == 0:
 		m.refresh()

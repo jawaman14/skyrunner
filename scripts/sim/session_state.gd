@@ -11,6 +11,9 @@ const OPEN_FLOAT := 10000  ## open mode's start: every system live from the firs
 const START_FIELD := "HAR"
 const OFF_FIELD_MAX_GS_KTS := 15.0
 const GEAR_MARGIN := 1.25  ## the gear holds to this multiple of its rated sink rate; between 1x and 1.25x is a hard landing
+const BACK_UP_MS := 1.5  ## Backspace on the ramp: m/s backwards
+const BACK_UP_MAX_KTS := 2.0
+var _backing := false
 const WINGTIP_STRIKE_ROLL_DEG := 18.0  ## on the ground: a Cessna's wingtip is about 1.8 m up, half a span out
 ## The graded ground beside a strip (Terrain._shape_fields levels it out to 50 m) is part of the field for the
 ## "ran off" check, so a rollout that drifts onto the shoulder is a scare, not a crash. Pits and cliffs get none.
@@ -62,7 +65,34 @@ class Spotter:
 
 var world: World
 var seed := 1
-var money := START_MONEY
+var ledger := Ledger.new()  ## every change to money and law_funds is booked here (F-2: against outside:unattributed, until F-3 names them)
+var inventory := Inventory.new()  ## stash stock as lots (F-4 wrap: Logistics reconciles it to its own numbers; call sites move to `move` slice by slice)
+var money := START_MONEY:
+	set(v):
+		ledger.track("org:safe", money, v, time, _pay_other, _pay_reason, _pay_actor)
+		money = v
+## A named change to the safe (F-3): `delta` > 0 comes from `other`, < 0 goes to it. Same value as `money += delta`, but the ledger row
+## says where it went and why, instead of an unattributed adjustment.
+func move_money(delta: int, other: String, reason: String, actor := "org") -> void:
+	_pay_other = other
+	_pay_reason = reason
+	_pay_actor = actor
+	money += delta
+	_pay_other = Ledger.UNATTRIBUTED
+	_pay_reason = "adjust"
+	_pay_actor = "system"
+## The task force's budget, named the same way: `delta` > 0 comes from `other`, < 0 goes to it.
+func move_law_funds(delta: float, other: String, reason: String, actor := "law") -> void:
+	_pay_other = other
+	_pay_reason = reason
+	_pay_actor = actor
+	law_funds += delta
+	_pay_other = Ledger.UNATTRIBUTED
+	_pay_reason = "adjust"
+	_pay_actor = "system"
+var _pay_other := Ledger.UNATTRIBUTED
+var _pay_reason := "adjust"
+var _pay_actor := "system"
 var fuel_spent := {"org": 0.0, "rival": 0.0}  ## what the hired fleet has burned in fuel (Fuel)
 var owned := {"c172p": true}
 var aircraft_key := "c172p"
@@ -73,6 +103,8 @@ var messages: Array = []  ## [[t, text]]
 var phone_calls := PhoneCalls.new()  ## one authoritative incoming queue for all phone surfaces
 var active_jobs: Array = []
 var boards := {}
+var board_at := {}  ## strip code -> sim time its board was dealt (Jobs.ISLAND_BOARD)
+var _stock_next := 0.0
 var jsbsim_root := ""
 var save_path := ""
 var mode := Roles.SOLO
@@ -110,11 +142,15 @@ var casino: Casino = null  ## the Hotel Cielo, the Family's house on the island 
 var airframe: Airframe = null  ## engine and airframe wear, repairs (Airframe; `airframe: true` asks for it)
 var undercover: Undercover = null  ## the agent who plants a tracking beacon (Undercover)
 var analyst: Analyst = null  ## the tip desk (Analyst; a human seat holds tips back from dispatch)
-var law_funds := 8000.0  ## the task force's upgrade money: a budget plus forfeiture from busts and seizures
+var law_funds := 8000.0:  ## the task force's upgrade money: a budget plus forfeiture from busts and seizures
+	set(v):
+		ledger.track("police:budget", law_funds, v, time, _pay_other, _pay_reason, _pay_actor)
+		law_funds = v
 var econ: Economy  ## the markets: what each good is worth where (Economy)
 var _news_seen := 0
 var stash_net: StashNet = null  ## the organisation's stash houses (maps that have them)
 var _stash_ai_t := 0.0
+var investigation: Investigation = null  ## the task force's case files on the stashes (DESIGN §48)
 var arsenals := {}  ## "org" | "law" | "rival" -> Arsenal (Arsenal.REALISM)
 var seats: Seats  ## who holds each role: the AI, or a human (Seats)
 var _ai_defaults := {}  ## what each seat's AI was set to before a human took it
@@ -132,6 +168,9 @@ var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets:
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
+var brng: PyRandom  ## the island boards' draws (Jobs.ISLAND_BOARD, seed + 149): dealing a board for a strip you have not visited moves no other stream
+var barng: PyRandom  ## ... their gun runs (seed + 151)
+var bagrng: PyRandom  ## ... and the Company's offers (seed + 157)
 var ai_law_upgrades := false  ## the AI chief buys law upgrades as money comes in (live play; off in sims and tests)
 var urng: PyRandom  ## upgrade draws (spoiled tips, leaks), off the parity streams
 var _ai_buy_t := 0.0
@@ -431,6 +470,8 @@ func enable_system(key: String, career := false) -> bool:
 			if trade != null or not Trade.ENABLED:
 				return false
 			trade = Trade.new(self, _rng(seed + 131), career)
+			if Orders.ENABLED:
+				trade.orders = Orders.new(self, trade, _rng(seed + 167))  # buyers' orders (own stream)
 		"logistics":
 			if logistics != null or trade == null or stash_net == null:
 				return false
@@ -484,6 +525,7 @@ func unlocked(key: String) -> bool:
 
 
 func refresh_board(code: String) -> void:
+	board_at[code] = time
 	if story != null and story.employment != null and story.employment.active():
 		boards[code] = story.employment.board(self, code)
 		return
@@ -583,3 +625,19 @@ static func read_save(path: String) -> Dictionary:
 		return {}
 	var d = JSON.parse_string(FileAccess.get_file_as_string(path))
 	return d if d is Dictionary else {}
+
+
+## Empty means a new game or a supported save. A failed load must keep its file untouched.
+static func save_load_error(path: String) -> String:
+	if path == "" or not FileAccess.file_exists(path):
+		return ""
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not data is Dictionary:
+		return "Save file is not a valid game save."
+	if not data.has("sim"):
+		return ""  # saves from before the strategic block remain valid
+	if not data.sim is Dictionary or data.sim.is_empty():
+		return "Save has an invalid simulation block."
+	if not (data.sim.get("time") is int or data.sim.get("time") is float):
+		return "Save has an invalid simulation clock."
+	return StrategicSave.migration_error(data.sim)
