@@ -734,6 +734,17 @@ func test_the_phone_apps() -> void:
 	check(not s.autopilot.engaged, "closing a temporary phone hold restores manual flight")
 	s.state.on_ground = false
 	s.state.alt = 1200.0
+	app._open("phone")
+	m.open_app("settings")
+	check(app.pause_menu != null, "Phone Settings opens the pause panel")
+	app._on_pause_choice("controls")
+	app._sync_phone_hold()
+	check(app.controls_menu != null and s.autopilot.engaged, "Phone Settings keeps the flight hold through Controls")
+	app.controls_menu.close()
+	app._sync_phone_hold()
+	check(not s.autopilot.engaged, "closing phone-owned Controls restores manual flight")
+	s.state.on_ground = false
+	s.state.alt = 1200.0
 	app.hud.minimap.big = true
 	app._open("phone")
 	m.page = "home"

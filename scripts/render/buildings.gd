@@ -555,6 +555,68 @@ static func terminal(k: Kit, c: Vector3, w := 36.0, d := 14.0) -> void:
 	k.box(c + Vector3(w / 4, 1.1, 0), Vector3(6, 1.1, 1.0), "wood")
 
 
+## San Telmo's frontage fits the terminal pad: paint and shallow facade detail
+## leave the doorway, interaction approaches and existing colliders authoritative.
+static func san_telmo_frontage(k: Kit, c: Vector3, w: float, d: float) -> void:
+	var front := -d / 2
+	# A faded enamel name board, below the roof and above the upper windows.
+	k.box(c + Vector3(0, 5.55, front - 0.19), Vector3(15, 0.8, 0.06), "pump_cream", false)
+	painted_sign(k, "san-telmo-name", "SAN TELMO INTERNACIONAL", c + Vector3(0, 5.55, front - 0.23), 0.012)
+	# Shallow sunshade over the existing opening, with its underside above head height.
+	k.box(c + Vector3(0, 3.25, front - 0.65), Vector3(7, 0.12, 1.6), "drum_sage", false)
+	k.box(c + Vector3(0, 3.12, front - 1.43), Vector3(7, 0.16, 0.04), "pump_cream", false)
+	# Repairs on the existing concrete forecourt, away from the centre doorway.
+	for side in [-1, 1]:
+		var x: float = side * (w / 2 - 4.0)
+		k.box(c + Vector3(x, 0.009, front - 2.0), Vector3(3.6, 0.012, 1.7), "concrete_dark", false)
+		k.box(c + Vector3(x + side * 0.4, 0.019, front - 2.1), Vector3(0.025, 0.008, 1.4), "asphalt", false)
+		# Broken paint marks keep the middle entrance route visually distinct.
+		for dash in 3:
+			k.box(c + Vector3(side * 2.0, 0.015, front - 0.7 - dash * 1.05), Vector3(0.1, 0.012, 0.6), "pump_cream", false)
+
+
+## Fixed lettering on a facade; it respects depth and does not turn towards the player.
+static func painted_sign(k: Kit, node_name: String, text: String, at: Vector3, pixel_size: float) -> void:
+	var label := Label3D.new()
+	label.name = node_name
+	label.text = text
+	label.font_size = 48
+	label.pixel_size = pixel_size
+	label.outline_size = 0
+	label.modulate = Color(0.22, 0.29, 0.27)
+	label.shaded = true
+	label.double_sided = false
+	label.no_depth_test = false
+	label.position = at
+	label.rotation.y = PI  # the building's front faces local -z
+	k.root.add_child(label)
+
+
+## Distinct rural shed fronts, kept below the roof and outside the doorway.
+static func rural_airfield_frontage(k: Kit, code: String, c: Vector3, w: float, d: float) -> void:
+	var names := {"FRM": "FINCA MORALES", "QRY": "OLD QUARRY", "PNR": "LA SELVA"}
+	if not names.has(code):
+		return
+	var front := -d / 2
+	k.box(c + Vector3(0, 2.5, front - 0.12), Vector3(3.4, 0.4, 0.05), "pump_cream", false)
+	painted_sign(k, "rural-strip-name", str(names[code]), c + Vector3(0, 2.5, front - 0.155), 0.007)
+	match code:
+		"FRM":
+			# Faded planks frame the farm shed's entry.
+			for side in [-1, 1]:
+				for row in 3:
+					k.box(c + Vector3(side * w / 4, 0.7 + row * 0.4, front - 0.115), Vector3(w / 2 - 1.6, 0.035, 0.025), "metal_rust", false)
+		"QRY":
+			# Narrow rusted battens give the old industrial shed a ribbed front.
+			for side in [-1, 1]:
+				for rib in 3:
+					k.box(c + Vector3(side * (1.2 + rib * 0.6), 1.15, front - 0.115), Vector3(0.045, 2.1, 0.025), "metal_rust", false)
+		"PNR":
+			# Repaired wall panels: canvas colours without adding a new shelter.
+			for side in [-1, 1]:
+				k.box(c + Vector3(side * w / 4, 1.25, front - 0.115), Vector3(1.5, 0.75, 0.025), "drum_sage", false)
+
+
 ## The buildings beside one strip, in Godot coordinates, facing the runway.
 static func airfield_site(world: World, af: Airfield) -> Node3D:
 	var k := Kit.new("site-" + af.code)
@@ -563,7 +625,10 @@ static func airfield_site(world: World, af: Airfield) -> Node3D:
 		var c: Vector3 = part.center
 		var dims: Vector3 = part.dimensions
 		match part.kind:
-			"terminal": terminal(k, c, dims.x, dims.z)
+			"terminal":
+				terminal(k, c, dims.x, dims.z)
+				if world.map.map_seed == MapCity.SEED and af.code == "HAR":
+					san_telmo_frontage(k, c, dims.x, dims.z)
 			"tower":
 				tower(k, c, dims.y)
 				if af.code == "HAR": vhf_aerial(k, c + Vector3(0, dims.y + 2.8, 0))
@@ -573,7 +638,10 @@ static func airfield_site(world: World, af: Airfield) -> Node3D:
 					workshop_tools(k, c + Vector3(-dims.x / 2 + 2.0, 0, dims.z / 2 - 1.2))
 			"pump": fuel_pump(k, c)
 			"showroom": showroom(k, c, dims.x, dims.z)
-			"shed": shed(k, c, dims.x, dims.z, "wood" if af.kind == "bush" else "metal_rust")
+			"shed":
+				shed(k, c, dims.x, dims.z, "wood" if af.kind == "bush" else "metal_rust")
+				if world.map.map_seed == MapCity.SEED:
+					rural_airfield_frontage(k, af.code, c, dims.x, dims.z)
 			"drums": drums(k, c, 5 if af.kind == "bush" else 7)
 		records.append(SiteLayout.record(world, part.id, part.kind, SiteLayout.airfield_frame(world, af).translated_local(c), dims))
 	var node := k.finish()
@@ -605,6 +673,7 @@ static func hq(world: World, spec: Dictionary) -> Node3D:
 					_task_force(k)
 				_:
 					_compound(k)
+	hq_identity(k, str(spec.get("style", "")))
 	var node := k.finish()
 	var z := world.ground(spec.x, spec.y)
 	node.transform = SiteLayout.hq_frame(world, spec)
@@ -617,6 +686,86 @@ static func hq(world: World, spec: Dictionary) -> Node3D:
 	node.add_child(fk.finish())
 	node.set_meta("hq", spec.kind)
 	return node
+
+
+## Shallow architectural dressings use the existing walls and floors as authority.
+## The club stairwell, office approaches and HQ interaction points stay untouched.
+static func hq_identity(k: Kit, style: String) -> void:
+	match style:
+		"nightclub":
+			painted_sign(k, "club-name", "CLUB TROPICANA", Vector3(0, 5.6, -8.32), 0.025)
+			# Raised planting stays on the existing pavement wings, clear of both doors.
+			for side in [-1, 1]:
+				forecourt_planter(k, Vector3(side * 8, 0.1, -9.7), Vector2(5, 2), true)
+			k.box(Vector3(0, 3.25, -9.5), Vector3(7, 0.22, 3), "pump_cream", false)
+			k.box(Vector3(0, 3.12, -11.03), Vector3(7, 0.09, 0.06), "neon_cyan", false)
+			for stripe in [-2.4, -1.2, 0.0, 1.2, 2.4]:
+				k.box(Vector3(stripe, 0.112, -11.5), Vector3(0.12, 0.012, 6), "terracotta", false)
+			# Eyebrow ledges shade the existing upper windows, a Miami Deco motif.
+			for i in 6:
+				var x := lerpf(-9.5, 9.5, (i + 0.5) / 6.0)
+				k.box(Vector3(x, 6.93, -8.3), Vector3(1.7, 0.12, 0.55), "pump_cream", false)
+			for side in [-1, 1]:
+				for fin in 3:
+					k.box(Vector3(side * (7.6 + fin * 0.65), 5.7, -8.2), Vector3(0.18, 4.4 - fin * 0.5, 0.12), "pump_cream", false)
+				k.box(Vector3(side * 1.6, 1.15, -8.18), Vector3(0.08, 2.3, 0.08), "brass", false)
+			k.box(Vector3(0, 2.35, -8.18), Vector3(3.3, 0.12, 0.08), "brass", false)
+			# Timber paneling behind the boss, kept west of the stairwell.
+			k.box(Vector3(-3, 6.15, 7.8), Vector3(9, 2.6, 0.06), "wood", false)
+			for x in [-7.0, -5.0, -1.0, 1.0]:
+				k.box(Vector3(x, 6.15, 7.75), Vector3(0.04, 2.6, 0.025), "brass", false)
+			planning_board(k, Vector3(-3, 6.2, 7.72), "green")
+		"customs":
+			painted_sign(k, "customs-name", "ADUANAS / SAN TELMO", Vector3(0, 9, -6.68), 0.017)
+			(k.root.get_node("customs-name") as Label3D).modulate = Color(0.92, 0.88, 0.72)
+			# A maritime blue band between the existing window rows.
+			k.box(Vector3(0, 3.6, -6.72), Vector3(23.5, 0.28, 0.06), "drum_blue", false)
+			for side in [-1, 1]:
+				k.box(Vector3(side * 11.65, 3.6, -6.72), Vector3(0.12, 6.5, 0.06), "pump_cream", false)
+			planning_board(k, Vector3(-2, 2.1, 6.27), "drum_blue")
+			painted_sign(k, "customs-duty-room", "CONTROL COSTERO", Vector3(-2, 3.1, 6.22), 0.009)
+		"hacienda":
+			# Shuttered veranda windows, inside the compound's established envelope.
+			for i in 4:
+				var x := lerpf(-3.0, 15.0, (i + 0.5) / 4.0)
+				for side in [-1, 1]:
+					k.box(Vector3(x + side * 0.85, 1.8, 8.72), Vector3(0.42, 1.5, 0.06), "drum_sage", false)
+					for slat in 4:
+						k.box(Vector3(x + side * 0.85, 1.25 + slat * 0.35, 8.675), Vector3(0.4, 0.025, 0.025), "wood", false)
+			k.box(Vector3(6, 3.25, 8.7), Vector3(6, 0.5, 0.06), "pump_cream", false)
+			painted_sign(k, "hacienda-name", "HACIENDA LOS CUERVOS", Vector3(6, 3.25, 8.66), 0.009)
+			for i in 12:
+				k.box(Vector3(-3 + i * 1.5, 0.115, 7), Vector3(0.65, 0.015, 0.65), "terracotta", false)
+
+
+## Analogue wall map: painted roads and pinned slips, with no live intelligence.
+static func planning_board(k: Kit, at: Vector3, key: String) -> void:
+	k.box(at, Vector3(3.2, 1.6, 0.04), "pump_cream", false)
+	k.box(at + Vector3(0, 0, -0.03), Vector3(2.9, 1.3, 0.025), key, false)
+	for x in [-0.85, 0.25, 0.9]:
+		k.box(at + Vector3(x, 0, -0.05), Vector3(0.025, 1.1, 0.015), "pump_cream", false)
+	for y in [-0.35, 0.2]:
+		k.box(at + Vector3(0, y, -0.05), Vector3(2.6, 0.025, 0.015), "pump_cream", false)
+	for x in [-1.1, 0.65]:
+		k.box(at + Vector3(x, 0.35, -0.07), Vector3(0.22, 0.3, 0.015), "white", false)
+
+
+## Solid raised bed with low foliage; the palm trunk is inside the bed's collider.
+## All geometry batches into the building's existing material surfaces.
+static func forecourt_planter(k: Kit, at: Vector3, size: Vector2, palm := false) -> void:
+	k.box(at + Vector3(0, 0.3, 0), Vector3(size.x, 0.6, size.y), "terracotta")
+	k.box(at + Vector3(0, 0.61, 0), Vector3(size.x - 0.22, 0.03, size.y - 0.22), "wood", false)
+	for i in 5:
+		var x := (i - 2) * (size.x - 0.8) / 5.0
+		k.cylinder(at + Vector3(x, 0.62, 0), 0.38, 0.45 + (i % 2) * 0.15, "green", 6, false)
+		k.box(at + Vector3(x, 1.1, -0.1), Vector3(0.16, 0.1, 0.16), "stucco_pink", false)
+	if palm:
+		k.cylinder(at + Vector3(0, 0.62, 0), 0.16, 4.8, "wood", 6, false)
+		# Narrow staggered fronds rather than the old flat circular palm crown.
+		for i in 3:
+			var spread := 2.2 - i * 0.45
+			k.box(at + Vector3(0, 5.35 + i * 0.14, 0), Vector3(spread * 2, 0.09, 0.3), "green", false)
+			k.box(at + Vector3(0, 5.42 + i * 0.14, 0), Vector3(0.3, 0.09, spread * 2), "drum_sage", false)
 
 
 ## The organisation's villa: stucco, terracotta, a pool, a courtyard wall. The
@@ -691,9 +840,7 @@ static func _task_force(k: Kit) -> void:
 	k.interact(Vector3(-2.0, 1.0, 0.6), "hq_law", "Task-force duty desk")
 	k.lamp(Vector3(-2.0, 3.0, 1.5))
 	for i in 3:  # patrol cars
-		k.box(Vector3(-6 + i * 5.5, 0.7, -12), Vector3(1.9, 1.4, 4.4), "white")
-		k.box(Vector3(-6 + i * 5.5, 1.55, -12.3), Vector3(1.8, 0.1, 0.5), "blue", false)
-		k.box(Vector3(-6 + i * 5.5, 1.5, -11.2), Vector3(1.7, 0.5, 1.8), "glass", false)
+		k.vehicle("police", 4.4, Vector3(-6 + i * 5.5, 0, -12))
 
 
 ## Los Cuervos: a walled compound, a corrugated warehouse, a watchtower, trucks.
@@ -784,8 +931,8 @@ static func _nightclub(k: Kit) -> void:
 	k.lamp(Vector3(0, 7.6, 2.0))
 	# a doorman's rope and the boss's car at the kerb
 	k.box(Vector3(0, 0.5, -d / 2 - 2.0), Vector3(4, 1.0, 0.08), "red", false)
-	k.box(Vector3(9, 0.7, -d / 2 - 4.5), Vector3(4.6, 1.4, 2.0), "black")
-	k.box(Vector3(9, 1.6, -d / 2 - 4.5), Vector3(2.6, 0.6, 1.9), "glass", false)
+	# Keep the existing 4.6 x 2.0 m kerbside footprint clear of the club beds.
+	k.vehicle("suv-luxury", 4.6, Vector3(9, 0, -d / 2 - 4.5), 90.0)
 
 
 ## The customs house extras: a lattice radar tower and a customs launch at the quay.

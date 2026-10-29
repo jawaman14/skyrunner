@@ -20,8 +20,8 @@ func test_every_control_with_a_pad_binding_has_a_pad_glyph() -> void:
 
 func test_binding_text_omits_the_device_already_shown_as_a_glyph() -> void:
 	ControlsConfig.ensure()
-	var pad_text := ControlsGlyphs.other_device_bindings("throttle_up", "pad")
-	var keyboard_text := ControlsGlyphs.other_device_bindings("throttle_up", "keyboard")
+	var pad_text := ControlsGlyphs.other_device_bindings("throttle_up", "pad", true)
+	var keyboard_text := ControlsGlyphs.other_device_bindings("throttle_up", "keyboard", true)
 	var helper := ControlsConfig.helper()
 	var key_labels: Array[String] = []
 	for ev in InputMap.action_get_events(ControlsConfig.action("throttle_up")):
@@ -34,8 +34,17 @@ func test_binding_text_omits_the_device_already_shown_as_a_glyph() -> void:
 	check(keyboard_text.contains("Trigger"), "keyboard glyph leaves the pad binding readable")
 	check(not key_labels.is_empty() and not keyboard_labels.has(key_labels[0]), "keyboard glyph does not repeat the key it draws")
 	check(key_labels.slice(1).all(func(label): return keyboard_labels.has(label)), "a second key binding stays readable")
-	var no_pad_binding := ControlsGlyphs.other_device_bindings("throttle_cut", "pad")
+	var no_pad_binding := ControlsGlyphs.other_device_bindings("throttle_cut", "pad", false)
 	check(no_pad_binding == ControlsConfig.describe("throttle_cut"), "controls without a pad glyph keep all binding text")
+	check(ControlsGlyphs.other_device_bindings("throttle_up", "keyboard", false) == ControlsConfig.describe("throttle_up"), "unsupported key glyph keeps all binding text")
+
+
+func test_headless_menu_keeps_bindings_when_no_glyph_is_drawn() -> void:
+	var menu := ControlsMenu.new()
+	Engine.get_main_loop().root.add_child(menu)
+	check(menu.key_glyphs["throttle_up"].texture == null, "headless menu has no throttle glyph")
+	check(menu.key_rows["throttle_up"].text == ControlsConfig.describe("throttle_up"), "headless menu keeps the first keyboard binding as text")
+	menu.free()
 
 
 func test_without_a_display_server_there_are_no_key_cap_glyphs() -> void:
