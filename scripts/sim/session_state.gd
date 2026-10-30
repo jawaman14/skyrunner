@@ -48,6 +48,9 @@ class FlightLog:
 	var max_touchdown_fpm := 0.0
 	var last_touchdown_fpm := 0.0
 	var touchdowns_seen := 0
+	var t_off := -1.0  ## when the wheels left the ground (the flight debrief)
+	var fuel_off := 0.0  ## lb of fuel at take-off
+	var money_off := 0  ## $ in hand at take-off
 
 	func _init(touchdowns_seen_ := 0) -> void:
 		touchdowns_seen = touchdowns_seen_
@@ -199,6 +202,7 @@ var runner_score := {"bales_delivered": 0, "escapes": 0}
 var fuel_caches := {}  ## shady strips: fuel you flew in yourself
 var turnaround_t := 0.0
 var unloading: Array = []
+var windfall_at := -1e9  ## when the last windfall job was dealt (Comeback; not saved: a load may deal one more)
 var unload_t := 0.0
 var pilot_input := {}  ## police pilots' sticks
 var _scanner_seen := 0.0
@@ -555,6 +559,13 @@ func refresh_board(code: String) -> void:
 		if not trade.connected:
 			# the career: grass until the Colombians call - no cocaine work yet
 			boards[code] = boards[code].filter(func(j): return j.own_good == "marijuana" or Economy.good_of(j) != "cocaine")
+	if Comeback.ENABLED and code == location and money < Comeback.WINDFALL_BELOW and active_jobs.is_empty() and time - windfall_at >= Comeback.WINDFALL_EVERY_S:
+		# only on the board where the pilot stands: a windfall dealt to a strip they cannot reach is no way back
+		var wj = Comeback.windfall_job(af, world.airfields)  # loop idea 8: a way back from a bad stretch
+		if wj != null:
+			boards[code].append(wj)
+			windfall_at = time
+			say("Job board: a windfall at %s for a pilot who's short - %s pays $%s." % [af.name, wj.title, Py.money(wj.payout)])
 	if Economy.REALISM:
 		for j in boards[code]:  # today's prices
 			j.price_mult = econ.job_mult(j)
