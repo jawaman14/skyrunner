@@ -10,7 +10,7 @@ extends CanvasLayer
 signal chosen(action: String)
 
 const GRAPHICS := ["high", "medium", "low"]
-const VOLUMES := [1.0, 0.75, 0.5, 0.25, 0.0]
+const VOLUMES := [0.0, 0.25, 0.5, 0.75, 1.0]
 
 var panel: PanelContainer
 var status: Label
