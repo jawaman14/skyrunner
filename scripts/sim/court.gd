@@ -143,7 +143,7 @@ func arrest(how: String) -> void:
 		"bail": 0, "bail_posted": "", "bail_by": sess.time + BAIL_DECIDE_S, "no_bail": false,
 		"trial_at": sess.time + PRETRIAL_S, "continuances": 0, "motions": [], "plea": {}, "plea_n": 0,
 		"cooperating": false, "tampered": false, "bribed": false, "immunity": false, "frozen": 0,
-		"verdict": "", "years": 0.0, "release_at": -1.0, "appealed": false}
+		"verdict": "", "years": 0.0, "release_at": -1.0, "appealed": false, "lost_load": hot_lb > 0.0}
 	_hot_charges(hot_lb, armed)
 	if case_.charges.is_empty():
 		_charge("possession" if hot_lb > 0.0 else "conspiracy")
@@ -247,6 +247,19 @@ func post_bail(how: String) -> String:
 	return "Cash, a bond, or custody?"
 
 
+## Loop idea 8, the lawyer's valve: a bust that took the load leaves a pilot short, and a lawyer who can see it takes the case at
+## this share of the fee rather than not at all (only when the pilot cannot pay the full one).
+const LOSS_DISCOUNT := 0.5
+
+
+## What `tier` asks for this case: the full fee, or the discount after a seized load when the pilot cannot meet it.
+func fee(tier: String) -> int:
+	var full := int(LAWYERS[tier].cost)
+	if case_ != null and bool(case_.get("lost_load", false)) and sess.money < full:
+		return int(full * LOSS_DISCOUNT / 500.0) * 500
+	return full
+
+
 ## Retain a lawyer ("local" or "miami"; the Family's comes by the Family).
 func hire(tier: String) -> String:
 	if case_ == null or case_.stage in ["prison"]:
@@ -256,12 +269,17 @@ func hire(tier: String) -> String:
 	var l: Dictionary = LAWYERS[tier]
 	if float(l.skill) <= float(lawyer().skill):
 		return "You already have someone as good."
-	if sess.money < int(l.cost):
-		return "%s wants $%s up front." % [l.name, Py.money(int(l.cost))]
-	sess.move_money(-int(l.cost), "outside:market", "fee")
+	var cost := fee(tier)
+	if sess.money < cost:
+		return "%s wants $%s up front." % [l.name, Py.money(cost)]
+	sess.move_money(-cost, "outside:market", "fee")
 	case_.lawyer = tier
 	case_.lawyer_honest = true
-	_say("%s takes the case (%s)." % [l.name, l.blurb], "The pilot has retained %s" % l.name)
+	if cost < int(l.cost):
+		_say("%s takes the case for $%s, not $%s: \"they took your load, I won't take your shirt\" (%s)." % [l.name, Py.money(cost),
+			Py.money(int(l.cost)), l.blurb], "The pilot has retained %s" % l.name)
+	else:
+		_say("%s takes the case (%s)." % [l.name, l.blurb], "The pilot has retained %s" % l.name)
 	return ""
 
 

@@ -116,6 +116,26 @@ func test_a_better_lawyer_changes_the_odds() -> void:
 	s.dispose()
 
 
+func test_a_lawyer_takes_half_after_a_seized_load_when_the_pilot_is_short() -> void:
+	var s := _sess()
+	s.money = 30000
+	_arrest(s)
+	s.money = 4000
+	check_eq(s.court.fee("local"), 3000, "Vega at half: the load was taken and the pilot is short")
+	check(s.command(Roles.PILOT, "court_hire", {"tier": "local"})[0], "hired for what the pilot has")
+	check_eq(s.money, 1000, "paid $3,000")
+	check(s.messages.any(func(m): return "won't take your shirt" in str(m[1])), "he says why")
+	s.money = 100000
+	check_eq(s.court.fee("miami"), 25000, "a pilot who can pay pays in full")
+	s.dispose()
+	var t := _sess()
+	t.money = 30000
+	_arrest(t, 0.0, "arrested on landing")
+	t.money = 4000
+	check_eq(t.court.fee("local"), 6000, "no load lost: no discount")
+	t.dispose()
+
+
 func test_suppression_works_more_for_a_good_lawyer_and_an_illegal_stop() -> void:
 	var rate := func(tier: String, no_warrant: bool) -> float:
 		var s := _sess()
