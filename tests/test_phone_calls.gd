@@ -155,6 +155,13 @@ func test_the_news_shows_what_is_moving_prices_now() -> void:
 		cells.append(m.list.cell(i, 0))
 	check(cells.any(func(c): return "Bumper harvest" in c and "x0.60" in c and "10 min left" in c), "the event, its effect and its time left: %s" % [cells])
 	check(cells.any(func(c): return "IN FORCE NOW" in c.to_upper()), "under its own heading")
+	var row := -1
+	for i in m.list.row_count():
+		if "Bumper harvest" in m.list.cell(i, 0):
+			row = i
+	m.list.select(row)
+	m.list.row_selected.emit(row)
+	check("Bumper harvest" in m._info.text, "selecting a row shows it in full below the list")
 
 
 func test_the_news_list_is_not_rebuilt_while_it_is_unchanged() -> void:

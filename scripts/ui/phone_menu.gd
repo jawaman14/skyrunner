@@ -137,6 +137,7 @@ func _build() -> void:
 		_tiles.append(icon)
 	list = GameMenu.make_table([{"title": "", "expand": true, "ratio": 1, "min": 200}])
 	list.row_activated.connect(func(_i): key("enter"))
+	list.row_selected.connect(func(_i): _update_info())  # a mouse click shows that row's detail, as the arrow keys do
 	list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(list)
 	history_label = UIStyle.label("", 13, UIStyle.CAPTION)
