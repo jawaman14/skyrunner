@@ -457,7 +457,8 @@ func _news_lines() -> Array:
 		for e in s.econ.events:
 			var good := str(e.good)
 			var name := str(Economy.GOODS.get(good, {}).get("name", good.capitalize()))
-			now_on.append("%s: %s x%.2f, %d min left" % [str(e.text), name, float(e.mult), maxi(1, ceili((float(e.until) - s.time) / 60.0))])
+			# the effect and the countdown first: the handset is narrow and a long headline would push them off the edge
+			now_on.append("%s x%.2f, %d min left: %s" % [name, float(e.mult), maxi(1, ceili((float(e.until) - s.time) / 60.0)), str(e.text)])
 	if not now_on.is_empty():
 		out.append("# In force now")
 		out.append_array(now_on)
@@ -546,6 +547,8 @@ func _update_info() -> void:
 	_info.text = ""
 	if page == "contacts" and i >= 0 and i < rows.size():
 		_info.text = str(rows[i][2])
+	elif page in ["news", "done"] and i >= 0 and i < list.row_count():
+		_info.text = list.cell(i, 0)  # the whole line, wrapped, for a headline wider than the handset
 	elif page == "radio" and radio != null and i >= 0 and i < radio.stations.size():
 		_info.text = str(radio.stations[i].blurb)
 	elif page == "work" and i >= 0 and i < _work.size() and str(_work[i][0]) == "job":
