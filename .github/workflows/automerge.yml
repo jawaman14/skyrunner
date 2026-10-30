@@ -1,7 +1,8 @@
 name: Auto-merge
 
-# Merges a pull request once every check on its current head has passed, but only when it is opted in with the
-# `automerge` label, is not a draft and has no conflicts. The repo has no branch protection, so `gh pr merge --auto`
+# Merges a pull request once every check on its current head has passed and the other agent approved that exact head,
+# but only when it is opted in with the `automerge` label, is not a draft, has no open review threads and is current
+# with main. The repo has no branch protection, so `gh pr merge --auto`
 # would merge at once; this waits for the "Skyrunner beta builds" run to finish instead. No code from the pull request
 # is checked out or run here.
 
@@ -47,7 +48,7 @@ jobs:
         run: |
           set -uo pipefail
           for pr in $PRS_FROM_RUN $PR_FROM_LABEL; do
-            info=$(gh pr view "$pr" --json state,isDraft,mergeable,headRefOid,labels,statusCheckRollup)
+            info=$(gh pr view "$pr" --json state,isDraft,mergeable,headRefOid,headRefName,labels,statusCheckRollup,reviews)
             ok=$(jq -r '
               .state == "OPEN" and (.isDraft | not) and .mergeable == "MERGEABLE"
               and ([.labels[].name] | index("automerge") != null)
@@ -58,5 +59,31 @@ jobs:
               continue
             fi
             sha=$(jq -r .headRefOid <<<"$info")
+            branch=$(jq -r .headRefName <<<"$info")
+            case "$branch" in
+              codex/*) other=claude ;;
+              claude/*) other=codex ;;
+              *) echo "#$pr: branch has no agent owner for independent review; skipped"; continue ;;
+            esac
+            reviewed=$(jq -r --arg sha "$sha" --arg other "$other" '
+              [.reviews[] | select((.body // "") | test("<!-- skyrunner-review agent=" + $other + "[^ ]* verdict=(approve|changes|comment) head=" + $sha + " -->"))]
+              | sort_by(.submittedAt) | last | (.body // "") | contains(" verdict=approve ")' <<<"$info")
+            if [ "$reviewed" != "true" ]; then
+              echo "#$pr: no independent approval on exact head $sha; skipped"
+              continue
+            fi
+            owner=${GH_REPO%%/*}
+            repo=${GH_REPO#*/}
+            threads=$(gh api graphql -f query='query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){reviewThreads(first:100){nodes{isResolved} pageInfo{hasNextPage}}}}}' -F owner="$owner" -F repo="$repo" -F number="$pr")
+            threads_clear=$(jq -r '.data.repository.pullRequest.reviewThreads | (.pageInfo.hasNextPage == false) and ([.nodes[].isResolved] | all)' <<<"$threads")
+            if [ "$threads_clear" != "true" ]; then
+              echo "#$pr: review threads remain open or could not be fully checked; skipped"
+              continue
+            fi
+            behind=$(gh api "repos/$GH_REPO/compare/main...$sha" --jq .behind_by)
+            if [ "$behind" != "0" ]; then
+              echo "#$pr: head is behind main or comparison failed; skipped"
+              continue
+            fi
             gh pr merge "$pr" --merge --match-head-commit "$sha" && echo "#$pr: merged at $sha"
           done
