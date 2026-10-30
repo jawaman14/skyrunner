@@ -315,7 +315,8 @@ func refresh() -> void:
 			il.append("%ds ago  %s" % [int(maxf(0.0, s.time - float(m[0]))), str(m[1]).substr(0, 52)])
 	intel.text = "SCANNER • REPORTED, NOT CONFIRMED\n" + "\n".join(il) if not il.is_empty() else ""
 	var camp = s.narrative
-	objectives.text = ("%d - %s\n" % [camp.chapter.year, camp.chapter.title] + "\n".join(camp.objective_lines())) if camp != null else ""
+	var next_goal: String = camp.next_objective_text() if camp != null else ""
+	objectives.text = ("%d - %s\n" % [camp.chapter.year, camp.chapter.title] + ("NEXT: %s\n" % next_goal if next_goal != "" else "") + "\n".join(camp.objective_lines())) if camp != null else ""
 	objectives_heading.visible = objectives.text != ""
 	toasts.sync(s.messages, s.time)
 	_warnings(st, c)
