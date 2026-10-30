@@ -1551,6 +1551,7 @@ func _process(delta: float) -> void:
 		var bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 		s.update(dt, inp, bc)
 		for _extra in (fast_forward - 1 if server == null else 0):  # fast-forward: more whole steps per frame, never a longer one
+			inp.pressed = {}  # a key press is one event: only the first step sees it (held keys and axes carry on)
 			bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 			s.update(dt, inp, bc)
 		_taxi_tick(inp, bc)

@@ -67,6 +67,7 @@ var history_label: Label  ## Contacts: the last few calls, answered, declined or
 var campaign_scroll: ScrollContainer  ## the chapter guide (G, or its button on the home screen), over any app
 var campaign_text: Label
 var campaign_button: Button
+var _read_sig: Array = []  ## what the News or Done list was last built from (see refresh)
 
 
 func _build() -> void:
@@ -269,6 +270,7 @@ func open_app(id: String) -> void:
 				show_feedback("No story in this game: there is no chapter guide.", false)
 			return
 	page = id
+	_read_sig = []
 	campaign_scroll.visible = false
 	if list != null:
 		list.clear_rows()
@@ -317,6 +319,13 @@ func refresh() -> void:
 		footer.text = ""
 		hints.set_hints([["ARROWS", "choose", "right"], ["ENTER", "open", "enter"], ["1-%d" % APPS.size(), "app", ""], ["ESC", "put away", "esc"]])
 		return
+	if page in ["news", "done"]:
+		# the pilot app refreshes an open phone about six times a second; rebuilding an unchanged list snapped a reader's scroll back to
+		# the selected row, so these two read-only lists are only rebuilt when their text changes
+		var lines: Array = _news_lines() if page == "news" else _finished_objectives()
+		if lines == _read_sig and list.row_count() > 0:
+			return
+		_read_sig = lines
 	list.clear_rows()
 	footer.text = ""
 	match page:

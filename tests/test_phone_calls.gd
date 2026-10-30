@@ -119,6 +119,24 @@ func test_the_hub_has_its_apps_in_order() -> void:
 	check_eq(_menu.page, "contacts", "2 opens People")
 
 
+## The pilot app refreshes an open phone about six times a second. A read-only list that rebuilt each time snapped a reader's scroll
+## back to the selected row, so News and Done are only rebuilt when their text changes.
+func test_the_news_list_is_not_rebuilt_while_it_is_unchanged() -> void:
+	var m := _hub()
+	_session.econ.news.append([_session.time, "Refinery strike: avgas is short"])
+	m.open_app("news")
+	var first_rows := m.list.row_count()
+	check(first_rows >= 1, "the market's headline is on the page")
+	var item = m.list._items[0]
+	m.refresh()
+	m.refresh()
+	check_eq(m.list.row_count(), first_rows, "same rows")
+	check(m.list._items[0] == item, "the same row objects: nothing was rebuilt, so a scroll position survives")
+	_session.econ.news.append([_session.time + 1.0, "Spring break: the town is full"])
+	m.refresh()
+	check_eq(m.list.row_count(), first_rows + 1, "a new headline does rebuild it")
+
+
 func test_people_are_grouped_and_a_heading_calls_nobody() -> void:
 	var m := _hub()
 	m.open_app("contacts")
