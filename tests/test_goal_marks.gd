@@ -36,4 +36,21 @@ func test_chapter_one_points_at_grass_work() -> void:
 		var af: Airfield = s.world.nearest_airfield(float(m.x), float(m.y))[0]
 		check_eq(af.kind, "bush", "a bush strip: %s" % m.label)
 	check(marks.size() <= GoalMarks.MAX_MARKS, "a handful, not the whole map")
+	var drop := Maritime.random_drop_point(s.world, PyRandom.new(), s.maritime.cove)
+	s.accept_job(Jobs.airdrop_job(World.airfield("HAR"), drop, PyRandom.new(), 4))
+	marks = GoalMarks.of(s)
+	check(marks.any(func(m): return absf(float(m.x) - float(drop[0])) < 1.0 and "bales" in str(m.label)), "an airdrop points at the sea, not at a strip called SEA")
+	s.dispose()
+
+
+func test_cash_aboard_points_home() -> void:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "career": true, "trade": true, "payroll": true, "logistics": true, "features": Session.SANDBOX_FEATURES})
+	Story.new(1).attach(s)  # chapter 2: street money home
+	check(s.logistics != null, "logistics on in this game")
+	if s.logistics == null:
+		s.dispose()
+		return
+	s.logistics.aboard = 3000
+	var marks := GoalMarks.of(s)
+	check(marks.size() == 1 and "unload" in str(marks[0].label), "the strip the cash goes home to: %s" % [marks])
 	s.dispose()

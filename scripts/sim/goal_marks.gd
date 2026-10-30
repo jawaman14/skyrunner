@@ -24,7 +24,7 @@ static func of(s) -> Array:
 
 static func _employer(s) -> Array:
 	if not s.active_jobs.is_empty():
-		return s.active_jobs.map(func(j): return _at_field(j.dest, "Deliver here"))
+		return s.active_jobs.map(func(j): return _job_mark(j, "Deliver here"))
 	if s.location != null and World.AIRFIELD_BY_CODE.has(s.location):
 		return [_at_field(s.location, "Employer's job board [J]")]
 	return []
@@ -36,7 +36,7 @@ static func _for_goal(s, key: String) -> Array:
 			var out := []
 			for j in s.active_jobs:  # a grass load aboard: where it goes
 				if j.own_good == "marijuana" or Economy.good_of(j) == "marijuana":
-					out.append(_at_field(j.dest, "Land the grass here"))
+					out.append(_job_mark(j, "Land the grass here"))
 			if not out.is_empty():
 				return out
 			for af in s.world.airfields:  # else: the bush strips with grass work on their boards
@@ -52,6 +52,10 @@ static func _for_goal(s, key: String) -> Array:
 		"cash_home":
 			if s.logistics == null:
 				return []
+			if int(s.logistics.aboard) > 0:  # cash in the bags aboard: where it is unloaded home, before more pickups
+				var hq: String = str(s.logistics.hq_strip())
+				if World.AIRFIELD_BY_CODE.has(hq):
+					return [_at_field(hq, "unload the $%s aboard here [U]" % Py.money(int(s.logistics.aboard)))]
 			return _stashes(s, func(sh): return float(s.logistics.cash.get(sh.id, 0.0)) >= 100.0,
 				func(sh): return "$%s to bring home" % Py.money(int(s.logistics.cash.get(sh.id, 0.0))))
 	return []
@@ -65,6 +69,13 @@ static func _stashes(s, keep: Callable, label: Callable) -> Array:
 		if keep.call(sh):
 			out.append({"x": float(sh.x), "y": float(sh.y), "label": str(label.call(sh))})
 	return out
+
+
+## A job's own place: the sea rendezvous for an airdrop (its "dest" is SEA, not a strip), else its strip.
+static func _job_mark(j, label: String) -> Dictionary:
+	if j.is_airdrop():
+		return {"x": float(j.drop_point[0]), "y": float(j.drop_point[1]), "label": "Drop the bales here"}
+	return _at_field(j.dest, label)
 
 
 static func _at_field(code: String, label: String) -> Dictionary:
