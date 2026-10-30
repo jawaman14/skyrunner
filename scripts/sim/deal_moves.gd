@@ -14,6 +14,7 @@ const MOVE_M := 8000.0
 const PAY_MULT := 2.0
 const CUTTER_OFFSET_M := 1800.0  ## the cutter waits this far from the new point
 const RING_S := 30.0
+const PICKET_S := 1500.0  ## the cutter holds its picket this long: long enough for the pilot to fly the detour
 
 var sess
 var rng: PyRandom
@@ -36,8 +37,8 @@ func update(dt: float) -> void:
 		return
 	_t = 0.0
 	for j in sess.active_jobs:
-		if not j.is_airdrop() or offered.has(j.id):
-			continue
+		if not j.is_airdrop() or offered.has(j.id) or not _bales_aboard(j.id):
+			continue  # nothing left aboard (the bales are already in the sea): no deal to move
 		if PyMath.hypot(float(j.drop_point[0]) - sess.state.x, float(j.drop_point[1]) - sess.state.y) < MIN_LEFT_M:
 			continue
 		if rng.random() >= CHANCE_PER_MIN:
@@ -73,16 +74,25 @@ func accept(job_id: int) -> String:
 	var j = Py.first(sess.active_jobs, func(x): return x.id == job_id)
 	if j == null:
 		return "That job is gone."
+	if not _bales_aboard(job_id):
+		return "The bales are already in the water: the deal stands where it was."
 	j.drop_point = p
 	j.payout = int(round(j.payout * PAY_MULT))
 	if j.boat_id:
 		var b = sess.maritime.boat(j.boat_id)
-		if b != null and b.state == "to_rendezvous":
-			b.goal = p
+		if b != null and b.state in ["to_rendezvous", "waiting"]:
+			b.goal = p  # a boat already waiting at the old point goes to the new one, its wait started afresh
+			b.state = "to_rendezvous"
+			b.wait_t = 0.0
 	var a := rng.uniform(0.0, TAU)
-	sess.maritime.new_cutter(null, [p[0] + sin(a) * CUTTER_OFFSET_M, p[1] + cos(a) * CUTTER_OFFSET_M])
+	var cutter: Maritime.Boat = sess.maritime.new_cutter(null, [p[0] + sin(a) * CUTTER_OFFSET_M, p[1] + cos(a) * CUTTER_OFFSET_M])
+	cutter.picket_s = PICKET_S
 	sess.say("New drop point set: %s pays $%s now. Watch for the cutter." % [j.title, Py.money(j.payout)])
 	return ""
+
+
+func _bales_aboard(job_id: int) -> bool:
+	return sess.loadout.items.values().any(func(i): return i.job_id == job_id)
 
 
 func decline(job_id: int) -> void:

@@ -121,6 +121,7 @@ class Boat:
 	var seize_meter := 0.0
 	var wait_t := 0.0
 	var target_id = null  ## cutters: boat being chased
+	var picket_s := 0.0  ## cutters: seconds left holding station at `goal` (a picket), not saved
 
 	func _init(id_: String, kind_: String, x_: float, y_: float, opts := {}) -> void:
 		id = id_
@@ -368,7 +369,10 @@ func _cutter(c: Boat, dt: float, floating: Array, law_goals: Array) -> void:
 				events.append(["bale_seized", {"cutter": c.id, "job_id": bl.job_id, "bale": bl.id}])
 		return
 	if c.goal != null:
-		if c.steer(dt, world, c.goal, 0.8) < 200:
+		var dg := c.steer(dt, world, c.goal, 0.8)
+		if c.picket_s > 0.0:
+			c.picket_s -= dt  # holding station (DealMoves' picket): the goal stays until the time is up
+		elif dg < 200:
 			c.goal = null
 	elif c.state == "return" or law_goals.is_empty():
 		if c.steer(dt, world, c.home, 0.5) < 100:

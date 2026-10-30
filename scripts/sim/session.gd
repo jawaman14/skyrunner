@@ -138,6 +138,9 @@ func _init(opts := {}) -> void:
 ## Break the reference cycles (night director, campaign, bus subscribers) so a
 ## finished Session is freed; batch simulators build thousands of them.
 func dispose() -> void:
+	if deal_moves != null:
+		deal_moves.sess = null  # it holds the session: break the cycle so a disposed session is freed
+	deal_moves = null
 	if analyst != null:
 		analyst.sess = null
 	analyst = null

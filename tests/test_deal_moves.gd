@@ -49,6 +49,29 @@ func test_benny_calls_once_and_answering_moves_the_drop() -> void:
 	s.dispose()
 
 
+func test_no_offer_once_the_bales_are_in_the_water() -> void:
+	var r := _flying_with_drop()
+	var s: Session = r[0]
+	var job: Jobs.Job = r[1]
+	for it in s.loadout.items.values().filter(func(i): return i.job_id == job.id):
+		s.loadout.remove_item(it.id)
+	_ring(s)
+	check(s.phone_calls.pending().is_empty(), "nothing aboard: no deal to move")
+	s.dispose()
+
+
+func test_the_cutter_holds_its_picket() -> void:
+	var r := _flying_with_drop()
+	var s: Session = r[0]
+	_ring(s)
+	s.command(Roles.PILOT, "phone_answer", {"id": s.phone_calls.pending()[0].id})
+	var c = s.maritime.boats.filter(func(b): return b.kind == "cutter").back()
+	for i in 600:  # ten minutes of maritime updates
+		s.maritime.update(1.0, [])
+	check(c.goal != null and c.picket_s > 0.0, "still on station after ten minutes")
+	s.dispose()
+
+
 func test_declining_keeps_the_old_point() -> void:
 	var r := _flying_with_drop()
 	var s: Session = r[0]
