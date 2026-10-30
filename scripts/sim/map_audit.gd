@@ -42,15 +42,21 @@ static func footprint(s: Dictionary, volume := false) -> PackedVector2Array:
 ## The strips' own gate: required fields, kinds and floors, inside the map, no strip inside another's runway or pad.
 ## `half`: half the map's side (World.HALF). Protected volumes may meet over open sea; only a runway inside another strip's volume is a finding.
 static func strips_gate(strips: Array, half: float) -> Array:
+	if strips.is_empty():
+		return ["no strips: strips.json is missing, unreadable or has no strips array"]  # an unreadable file must not pass
 	var out := []
 	var seen := {}
+	var complete := []  ## only whole records go on to the geometry checks: a missing field is a finding, never a crash
 	for s in strips:
 		var code := str(s.get("code", "?"))
+		var whole := true
 		for key in ["code", "name", "x", "y", "heading", "length", "width", "surface", "kind", "setting"]:
 			if not s.has(key):
 				out.append("%s: missing %s" % [code, key])
-		if not s.has("x") or not s.has("length"):
+				whole = false
+		if not whole:
 			continue
+		complete.append(s)
 		if seen.has(code):
 			out.append("%s: listed twice" % code)
 		seen[code] = true
@@ -68,12 +74,14 @@ static func strips_gate(strips: Array, half: float) -> Array:
 		var reach := float(s.length) / 2.0 + EDGE_MARGIN_M
 		if absf(float(s.x)) + reach > half or absf(float(s.y)) + reach > half:
 			out.append("%s: within %.0f m of the map's edge" % [code, EDGE_MARGIN_M])
-	for i in strips.size():
-		for j in range(i + 1, strips.size()):
-			var a: Dictionary = strips[i]
-			var b: Dictionary = strips[j]
-			if not (a.has("x") and b.has("x") and a.has("length") and b.has("length")):
-				continue
+		for p in footprint(s, true):
+			if absf(p.x) > half or absf(p.y) > half:
+				out.append("%s: its protected approach volume leaves the map (the terrain pass could not keep it clear)" % code)
+				break
+	for i in complete.size():
+		for j in range(i + 1, complete.size()):
+			var a: Dictionary = complete[i]
+			var b: Dictionary = complete[j]
 			if _polys_overlap(footprint(a), footprint(b, true)) or _polys_overlap(footprint(b), footprint(a, true)):
 				out.append("%s and %s: a runway lies in the other's protected approach volume" % [str(a.code), str(b.code)])
 	return out
@@ -104,6 +112,16 @@ static func drift(strips: Array, layout_fields: Array) -> Array:
 		for key in ["shop", "police", "tree_lines"]:
 			if bool(s[key]) != bool(a.get(key)):
 				out.append("%s: %s differs" % [code, key])
+		if absf(float(s.get("radar_km", 0.0)) - float(a.get("radar_km"))) > 1e-6:
+			out.append("%s: radar_km differs" % code)
+		var se: Variant = s.get("elev")
+		var ae: Variant = a.get("elev")
+		if (se == null) != (ae == null) or (se != null and absf(float(se) - float(ae)) > 1e-6):
+			out.append("%s: elev is %s in strips.json, %s on the map" % [code, str(se), str(ae)])  # null (the terrain decides) is not 0
+		var sh: Variant = s.get("haul_road")
+		var ah: Variant = a.get("haul_road")
+		if (sh == null) != (ah == null) or (sh != null and int(sh) != int(ah)):
+			out.append("%s: haul_road end differs" % code)
 	for code in by_code:
 		if not strips.any(func(s): return str(s.code) == code):
 			out.append("%s: on the map but not in strips.json" % code)

@@ -19,11 +19,20 @@ func _game_strips() -> Array:
 func test_the_strips_file_loads_and_its_gate_is_clean() -> void:
 	var strips := MapAudit.load_strips()
 	check_eq(strips.size(), 9, "nine strips on the map")
-	check_eq(MapAudit.strips_gate(strips, World.HALF), [], "the strips pass their own gate")
+	# The baseline: today's map has one finding, Cayo Largo's approach out over the sea past the east edge. The new map's L1 must
+	# clear it; until then the gate's output is pinned so a new finding cannot slip in.
+	check_eq(MapAudit.strips_gate(strips, World.HALF), ["ISL: its protected approach volume leaves the map (the terrain pass could not keep it clear)"],
+		"the strips' gate: only the known ISL finding")
 
 
 func test_the_strips_file_matches_what_the_game_generates() -> void:
 	check_eq(MapAudit.drift(MapAudit.load_strips(), _game_strips()), [], "strips.json is the game's map (until MapCity reads it)")
+	var moved := MapAudit.load_strips()
+	moved[0] = (moved[0] as Dictionary).duplicate()
+	moved[0].radar_km = 1.0
+	moved[0].elev = null
+	var found := MapAudit.drift(moved, _game_strips())
+	check(found.any(func(f): return "radar_km" in f) and found.any(func(f): return "elev" in f), "radar range and elevation are compared, null is not a number")
 
 
 func test_the_gate_names_each_rule_it_enforces() -> void:
@@ -43,6 +52,11 @@ func test_the_gate_names_each_rule_it_enforces() -> void:
 	pit.setting = "pit"
 	pit.haul_road = null
 	check(MapAudit.strips_gate([pit], World.HALF).any(func(f): return "haul road" in f), "a pit strip needs its haul road")
+	check_eq(MapAudit.strips_gate([], World.HALF).size(), 1, "an empty or unreadable file fails")
+	var partial := good.duplicate()
+	partial.erase("kind")
+	partial.erase("heading")
+	check(MapAudit.strips_gate([partial, good], World.HALF).any(func(f): return "missing kind" in f), "a missing field is a finding, not a crash")
 	var odd := good.duplicate()
 	odd.kind = "seaplane"
 	check(MapAudit.strips_gate([odd], World.HALF).any(func(f): return "unknown kind" in f), "an unknown kind")
