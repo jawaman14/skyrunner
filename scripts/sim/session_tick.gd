@@ -183,6 +183,8 @@ func _update_world(dt: float) -> void:
 		races.update(dt)
 	if chronicle != null:
 		chronicle.update(dt)
+	if deal_moves != null:
+		deal_moves.update(dt)
 	if agency != null:
 		agency.update(dt)
 	if family != null:

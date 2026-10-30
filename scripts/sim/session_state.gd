@@ -118,6 +118,7 @@ var bus: EventBus
 var radio: RadioNet
 var police: PoliceSystem
 var maritime: Maritime
+var deal_moves: DealMoves = null  ## loop idea 5: Benny moves an airdrop mid-flight (DealMoves)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
