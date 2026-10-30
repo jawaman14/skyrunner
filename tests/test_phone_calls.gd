@@ -119,6 +119,28 @@ func test_the_hub_has_its_apps_in_order() -> void:
 	check_eq(_menu.page, "contacts", "2 opens People")
 
 
+## Owner, 30 Oct: "where is the menu of jobs I have picked up so I can cancel them". The job board does it (J, parked); the phone's
+## My jobs list can too: D asks, D again drops.
+func test_a_job_can_be_dropped_from_the_phones_work_list() -> void:
+	var m := _hub()
+	_session.refresh_board("HAR")
+	var job: Jobs.Job = _session.boards["HAR"][0]
+	check(_session.command(Roles.PILOT, "accept_job", {"job_id": job.id})[0], "job accepted")
+	m.open_app("work")
+	var row := -1
+	for i in m._work.size():
+		if str(m._work[i][0]) == "job":
+			row = i
+	check(row >= 0, "the job is listed under My jobs")
+	m.list.select(row)
+	m.key("d")
+	check(_session.active_jobs.has(job), "the first D only asks")
+	m.key("d")
+	check(not _session.active_jobs.has(job), "the second D drops it")
+	m.free()
+	_menu = null
+
+
 func test_people_are_grouped_and_a_heading_calls_nobody() -> void:
 	var m := _hub()
 	m.open_app("contacts")
