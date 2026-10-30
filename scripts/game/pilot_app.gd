@@ -355,6 +355,21 @@ func _build_player() -> void:
 	_player_key = s.spec.key
 
 
+## Gold beacons over the places that move the next chapter goal on (GoalMarks), so they can be found from the air.
+func _sync_goal_beacons() -> void:
+	var want: Array = GoalMarks.of(s).map(func(g): return [snappedf(float(g.x), 1.0), snappedf(float(g.y), 1.0)])
+	if want == _goal_beacons.map(func(b): return b[0]):
+		return
+	for b in _goal_beacons:
+		b[1].queue_free()
+	_goal_beacons.clear()
+	for xy in want:
+		var b := Models.build_beacon(300, 6, Color(1.0, 0.82, 0.25, 0.35))
+		b.position = MeshBuilder.to_godot([xy[0], xy[1], maxf(0.0, s.world.ground(xy[0], xy[1]))])
+		add_child(b)
+		_goal_beacons.append([xy, b])
+
+
 func _sync_beacons() -> void:
 	var want := []
 	for j in s.active_jobs:
@@ -635,6 +650,7 @@ var car_map: Minimap = null  ## the radar and chart while on foot or driving
 var waypoint = null  ## the ground point you picked on the chart (Vector2), or null
 var _was_parked := true  ## last frame's s.parked, to see the moment of landing
 var _plane_fund_told := false  ## the "you can buy your plane" call has been made this session
+var _goal_beacons: Array = []  ## [[x, y], node] for GoalMarks
 var fast_forward := 1  ## whole simulation steps run per frame (1, 2, 4 or 8)
 var _wp_beacon: MeshInstance3D = null
 var car_dash: CarDash = null  ## the dashboard, shown while driving
@@ -1513,6 +1529,7 @@ func _process(delta: float) -> void:
 		radio.active = driving != null or not on_foot
 	if _frame % 30 == 1:
 		_phone_watch()
+		_sync_goal_beacons()
 		if scene != null and s.stash_net != null:
 			for stash in s.stash_net.stashes:
 				var node := scene.find_child("stash-" + str(stash.id), true, false) as Node3D
