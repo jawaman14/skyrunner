@@ -71,6 +71,8 @@ static func capture(s: Session) -> Dictionary:
 		d["hidden_strips"] = s.discovery.capture()  # optional: an older save has none and keeps every strip on the chart
 	if s.daily_weather != null and s.daily_weather.next_t >= 0.0:
 		d["daily_weather"] = s.daily_weather.capture(s.weather)  # an optional key: older saves simply have none
+	if s.calendar != null and (not s.calendar.upcoming.is_empty() or s.calendar.crackdown_until >= 0.0):
+		d["calendar"] = s.calendar.capture()  # optional, like the weather
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
@@ -249,6 +251,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.discovery.restore(d.hidden_strips)
 	if s.daily_weather != null and d.get("daily_weather") is Dictionary:
 		s.daily_weather.restore(d.daily_weather)
+	if s.calendar != null and d.get("calendar") is Dictionary:
+		s.calendar.restore(d.calendar)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.investigation != null:
