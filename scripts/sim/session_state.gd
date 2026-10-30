@@ -32,6 +32,7 @@ const INFORMANT_BASE := 0.30
 const SPOTTER_LEAK := 0.15
 const FERRY_FUEL_TIP := 0.25
 const GEAR := {
+	"loran": [600, "LORAN-C receiver: bearing and distance to your waypoint or your job's strip"],
 	"scanner": [1800, "Radio scanner: hear police dispatch (unless encrypted)"],
 	"detector": [2500, "Radar detector: warns when a radar paints you"],
 	"ferry_tank": [3000, "Ferry bladder tank: extra fuel in the cabin"],
