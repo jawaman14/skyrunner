@@ -146,6 +146,24 @@ func test_a_job_can_be_dropped_from_the_phones_work_list() -> void:
 	_menu = null
 ## The pilot app refreshes an open phone about six times a second. A read-only list that rebuilt each time snapped a reader's scroll
 ## back to the selected row, so News and Done are only rebuilt when their text changes.
+func test_the_news_shows_what_is_moving_prices_now() -> void:
+	var m := _hub()
+	_session.econ.events.append({"good": "marijuana", "mult": 0.6, "until": _session.time + 600.0, "text": "Bumper harvest: grass is cheap"})
+	m.open_app("news")
+	var cells := []
+	for i in m.list.row_count():
+		cells.append(m.list.cell(i, 0))
+	check(cells.any(func(c): return "Bumper harvest" in c and "x0.60" in c and "10 min left" in c), "the event, its effect and its time left: %s" % [cells])
+	check(cells.any(func(c): return "IN FORCE NOW" in c.to_upper()), "under its own heading")
+	var row := -1
+	for i in m.list.row_count():
+		if "Bumper harvest" in m.list.cell(i, 0):
+			row = i
+	m.list.select(row)
+	m.list.row_selected.emit(row)
+	check("Bumper harvest" in m._info.text, "selecting a row shows it in full below the list")
+
+
 func test_the_news_list_is_not_rebuilt_while_it_is_unchanged() -> void:
 	var m := _hub()
 	_session.econ.news.append([_session.time, "Refinery strike: avgas is short"])
