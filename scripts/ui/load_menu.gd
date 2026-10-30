@@ -260,6 +260,10 @@ func _refresh_fuel_and_wb(preview = null) -> void:
 		details.append("station overload")
 	if not lo.unassigned().is_empty():
 		details.append("%d item(s) left on the ramp" % lo.unassigned().size())
+	if s.carrying_hot():
+		var cover := CoverCargo.factor(lo.items.values())
+		details.append("cover %d%%: %s" % [roundi(cover * 100.0), "honest cargo beside the hot load lowers the customs check" if cover > 0.0
+			else "take a legitimate job too and customs are less likely to open the hot load"])
 	var cr := _cruise()
 	var hours: float = (fuel + ferry) / cr[0]
 	verdict.set_state("OK" if wb.ok() else "OUT OF LIMITS", UIStyle.GREEN if wb.ok() else UIStyle.RED, true)
