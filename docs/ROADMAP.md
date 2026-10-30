@@ -71,7 +71,7 @@ Order (D-75): land the queue above and finish heat step 1, then:
 4. **After the gate:** organisation depth (hierarchy, schedules, budgets, conditional orders, trust D-11), then the campaign pivot
    (story v6 with ventures, the takeover on the ledger, both views kept, the ending and the sandbox), then more cities, each fully explorable (D-81).
 
-Paused by D-75 until the gate: the presentation layers, heat steps 2-3, the rival depot raid and the map redesign. Every PR keeps
+Paused by D-75 until the gate: the presentation layers, heat steps 2-3 and the rival depot raid (the map redesign was resumed by D-86 on 30 October). Every PR keeps
 the sockets lane green (D-71). The owner answered O-1 to O-5 on 19 October (D-81 to D-85): every city fully explorable,
 the next in line takes over when the boss dies or is jailed, the sandbox carries on after any ending, the Morettis are the
 third organisation, and the acceleration caps are as specified.
@@ -241,7 +241,7 @@ Claude's draft split, for the discussion:
 
 ## Map redesign (owner, 18 October; planned)
 
-*Paused by D-75: resumes on the Living District's district data (Empire pivot, above).*
+*Resumed 30 October (D-86): the owner asked for the map to be rebuilt from scratch now. It still starts after #373, #374 and #396 land, and the plan's owner gates stand. Paused earlier by D-75.*
 
 The owner asked for the map to be rebuilt from the ground up with what we have learnt. The plan is
 [MAP_REDESIGN.md](MAP_REDESIGN.md): constraints first (strips and their approach volumes, then terrain shaped for them,
