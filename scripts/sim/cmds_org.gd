@@ -12,12 +12,19 @@ static func _cmd_phone_answer(_role: String, args: Dictionary, session: Session)
 	if source.begins_with("family:") and (session.family == null or session.family.get_offer(source.trim_prefix("family:")) == null):
 		return "The Family offer is no longer available."
 	var result := session.phone_calls.answer(id)
+	if result.ok and source.begins_with("deal:") and session.deal_moves != null:
+		var err: String = session.deal_moves.accept(int(source.trim_prefix("deal:")))
+		return err if err != "" else null
 	return null if result.ok else str(result.reason)
 
 
 static func _cmd_phone_decline(_role: String, args: Dictionary, session: Session):
 	session.phone_calls.tick(session.time)
-	var result := session.phone_calls.decline(int(session._num(args, "id", -1)))
+	var id := int(session._num(args, "id", -1))
+	var call = Py.first(session.phone_calls.pending(), func(c): return int(c.id) == id)
+	var result := session.phone_calls.decline(id)
+	if result.ok and call != null and str(call.get("source", "")).begins_with("deal:") and session.deal_moves != null:
+		session.deal_moves.decline(int(str(call.source).trim_prefix("deal:")))
 	return null if result.ok else "This call is no longer ringing."
 
 

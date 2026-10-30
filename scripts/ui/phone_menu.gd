@@ -137,6 +137,7 @@ func _build() -> void:
 		_tiles.append(icon)
 	list = GameMenu.make_table([{"title": "", "expand": true, "ratio": 1, "min": 200}])
 	list.row_activated.connect(func(_i): key("enter"))
+	list.row_selected.connect(func(_i): _update_info())  # a mouse click shows that row's detail, as the arrow keys do
 	list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(list)
 	history_label = UIStyle.label("", 13, UIStyle.CAPTION)
@@ -383,7 +384,10 @@ func refresh() -> void:
 		"news":
 			title.text = "The Daily Coast"
 			for line in _news_lines():
-				list.add_row([line])
+				if str(line).begins_with("# "):
+					list.section(str(line).substr(2))
+				else:
+					list.add_row([line])
 			if list.row_count() == 0:
 				footer.text = "No news yet today."
 			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
@@ -447,7 +451,21 @@ func _news_lines() -> Array:
 		for n in s.econ.news:
 			items.append([float(n[0]), "Market: %s" % str(n[1])])
 	items.sort_custom(func(a, b): return a[0] > b[0])
-	return items.slice(0, 20).map(func(i): return "%d:%02d  %s" % [int(i[0] / 3600.0), int(i[0] / 60.0) % 60, i[1]])
+	var out := []
+	# what is moving prices right now, and for how long: something to plan a run around, not only to read about afterwards
+	var now_on := []
+	if s.econ != null:
+		for e in s.econ.events:
+			var good := str(e.good)
+			var name := str(Economy.GOODS.get(good, {}).get("name", good.capitalize()))
+			# the effect and the countdown first: the handset is narrow and a long headline would push them off the edge
+			now_on.append("%s x%.2f, %d min left: %s" % [name, float(e.mult), maxi(1, ceili((float(e.until) - s.time) / 60.0)), str(e.text)])
+	if not now_on.is_empty():
+		out.append("# In force now")
+		out.append_array(now_on)
+		out.append("# Headlines")
+	out.append_array(items.slice(0, 20).map(func(i): return "%d:%02d  %s" % [int(i[0] / 3600.0), int(i[0] / 60.0) % 60, i[1]]))
+	return out
 
 
 ## The objectives already met, newest chapter first: a "# heading" line for each chapter, then its ticked goals.
@@ -530,6 +548,8 @@ func _update_info() -> void:
 	_info.text = ""
 	if page == "contacts" and i >= 0 and i < rows.size():
 		_info.text = str(rows[i][2])
+	elif page in ["news", "done"] and i >= 0 and i < list.row_count():
+		_info.text = list.cell(i, 0)  # the whole line, wrapped, for a headline wider than the handset
 	elif page == "radio" and radio != null and i >= 0 and i < radio.stations.size():
 		_info.text = str(radio.stations[i].blurb)
 	elif page == "work" and i >= 0 and i < _work.size() and str(_work[i][0]) == "job":

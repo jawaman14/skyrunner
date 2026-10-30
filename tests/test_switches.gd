@@ -66,7 +66,7 @@ func test_the_parity_set_flips_and_restores() -> void:
 	Switches.parity_on()
 	check(SensorNet.REALISM and Economy.REALISM and Arsenal.REALISM, "and back on")
 	check(GroundWar.ENABLED and Chronicle.ENABLED and Agency.ENABLED and Agent.ENABLED and Fuel.ENABLED, "all of them")
-	check_eq(Switches.PARITY.size(), 13, "thirteen switches in the parity set (+ CoverCargo, loop idea 2; Gigs, side gigs)")
+	check_eq(Switches.PARITY.size(), 15, "fifteen switches in the parity set (+ CoverCargo, Comeback, DealMoves and Gigs)")
 
 func test_scoped_parity_restores_mixed_states_and_nested_overrides() -> void:
 	Switches.parity_on()

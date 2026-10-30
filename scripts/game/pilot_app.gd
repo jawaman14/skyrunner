@@ -161,6 +161,8 @@ var aircraft_body: StaticBody3D = null
 
 func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> PilotApp:
 	s = sess
+	if s.deal_moves != null:
+		s.deal_moves.live = true  # a person is flying: Benny may call about a moved drop
 	quality = Quality.get_preset(graphics)
 	bot = bot_
 	server = server_
@@ -212,6 +214,10 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	notify.offset_top = 78.0
 	notify.offset_bottom = -4.0
 	ui.add_child(notify)
+	banter = Banter.new(s, notify, func(): return scene.hour if scene != null else 12.0)  # Rafa and Benny on the pilot's firsts
+	debrief = FlightDebrief.new()  # the card after a landing: time, touchdown, fuel, pay, records, Benny's time
+	ui.add_child(debrief)
+	s.bus.subscribe("landed", _on_landed)
 	car_map = Minimap.new()  # the radar for the car and for walking: it follows the car or the walker, not the aircraft
 	car_map.visible = false
 	ui.add_child(car_map)
@@ -644,6 +650,8 @@ var controls_menu: ControlsMenu = null
 var pack_menu: PackMenu = null
 var sound: Soundscape = null
 var notify: PhoneNotify = null  ## the phone's banners
+var banter: Banter = null
+var debrief: FlightDebrief = null
 var car_map: Minimap = null  ## the radar and chart while on foot or driving
 var waypoint = null  ## the ground point you picked on the chart (Vector2), or null
 var _was_parked := true  ## last frame's s.parked, to see the moment of landing
@@ -953,6 +961,18 @@ func _map_open() -> bool:
 	return (car_map != null and car_map.big) or hud.minimap.big
 
 
+## A landing after a real flight: the debrief card, and the route's records (RouteBests, per machine).
+func _on_landed(ev) -> void:
+	var d: Dictionary = ev.data
+	var from := str(d.get("from", ""))
+	if debrief == null or from == "" or not World.AIRFIELD_BY_CODE.has(from) or float(d.get("seconds", 0.0)) < 30.0:
+		return
+	var to := str(d.code)
+	var rec := RouteBests.record(from, to, float(d.seconds), float(d.get("touchdown_fpm", 0.0))) if from != to else {}
+	var benny := RouteBests.benny_seconds(from, to, s.aircraft_key) if from != to else 0.0
+	debrief.show_flight(d, rec, benny, World.airfield(from).name, World.airfield(to).name)
+
+
 ## A click on a chart: a waypoint. A pink beam stands at it so you can see where you are going, and the dashboard points the way.
 func _waypoint_picked(p: Vector2) -> void:
 	waypoint = null if p == Vector2.INF else p
@@ -1086,6 +1106,8 @@ func _phone_call(action: String) -> void:
 		"map":
 			_map_toggle()
 			_phone_owned_overlay = "map" if _map_open() else ""
+		"deal_move":
+			pass  # answering took the new drop point (DealMoves.accept); the HUD's drop beacon follows the job
 		"settings":
 			open_pause()
 			_phone_owned_overlay = "pause" if pause_menu != null else ""
@@ -1525,6 +1547,8 @@ func _process(delta: float) -> void:
 		radio.active = driving != null or not on_foot
 	if _frame % 30 == 1:
 		_phone_watch()
+		if banter != null:
+			banter.tick()
 		_sync_goal_beacons()
 		if scene != null and s.stash_net != null:
 			for stash in s.stash_net.stashes:

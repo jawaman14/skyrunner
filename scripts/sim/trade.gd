@@ -66,6 +66,7 @@ var appetite := {}  ## buyer -> good -> room left
 var sold := {"cocaine": 0.0, "marijuana": 0.0}  ## lb sold (street + bulk)
 var landed := {"cocaine": 0.0, "marijuana": 0.0}  ## lb of our own loads delivered
 var earned := 0  ## money the trade made
+var street_earned := 0  ## $ from the dealers' corners only (earned also counts bulk sales); not saved, the banter's first-corner line reads it
 var street_sales := {}  ## market -> $ a minute (the last minute, ours)
 var last := ""
 var bulk_log: Array = []  ## [time, buyer, good, qty] - what following the money finds
@@ -416,6 +417,7 @@ func _sell_street(o: String, step: float) -> void:
 			sess.payroll.earn(o, pay)
 		if o == "org":
 			earned += int(pay)
+			street_earned += int(pay)
 			street_sales[m] += pay / mins
 		if sess.econ.market != null:
 			sess.econ.market.flow(g, m, FLOOD_PER_LB[g] * lb)
