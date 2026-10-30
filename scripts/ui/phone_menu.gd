@@ -247,6 +247,7 @@ func contacts() -> Array:
 ## The home screen, unless a call is ringing: then the phone opens on Contacts, with the call at the top.
 func open() -> void:
 	page = "home"
+	_drop_pending = -1
 	campaign_scroll.visible = false
 	super.open()
 	if not s.phone_calls.pending().is_empty():
@@ -268,6 +269,7 @@ func open_app(id: String) -> void:
 				show_feedback("No story in this game: there is no chapter guide.", false)
 			return
 	page = id
+	_drop_pending = -1
 	campaign_scroll.visible = false
 	if list != null:
 		list.clear_rows()
@@ -514,9 +516,11 @@ func key(k: String) -> void:
 	match k:
 		"up":
 			list.move(-1)
+			_drop_pending = -1  # moving away keeps the job: the next D asks again
 			_update_info()
 		"down":
 			list.move(1)
+			_drop_pending = -1
 			_update_info()
 		"enter":
 			var i := list.selected_row()
