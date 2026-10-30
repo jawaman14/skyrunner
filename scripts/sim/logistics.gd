@@ -39,6 +39,7 @@ var sess
 var stock := {}  ## stash id -> {good: lb}
 var cash := {}  ## stash id -> $ (the HQ's is Session.money)
 var cash_since := {}  ## stash id -> when its cash started piling up (the AI's pickups)
+var auto_supply := true  ## the player's dealers are kept stocked: a truck moves product to the market that has run dry (the AI organisation always does)
 var aboard := 0  ## $ in cash bags in the aircraft
 var convoys := {}  ## truck job_id -> {kind: move|buy|cash_back, from, to, buyer, good, lb, cash}
 var lost := {"product": 0.0, "cash": 0}  ## what trucks, raids and busts cost us
@@ -1077,7 +1078,12 @@ func update(dt: float) -> void:
 	if _t < 60.0:
 		return
 	_t = 0.0
-	if sess.payroll == null or not sess.payroll.ai.get("org", false):
+	if sess.payroll == null:
+		return
+	if not sess.payroll.ai.get("org", false):
+		# the player's own organisation: product follows the dealers when the player has asked for it (Dispatch, A)
+		if auto_supply and sess.trade != null and sess.time - _move_t >= AI_MOVE_EVERY_S:
+			_supply_dealers({})
 		return
 	var busy := {}
 	var cash_moving := false
@@ -1106,9 +1112,18 @@ func update(dt: float) -> void:
 		if not sent:
 			send(fattest, HQ, "cash", cash[fattest], true)
 			busy[fattest] = true
-	if sess.time - _move_t < AI_MOVE_EVERY_S:
+	if sess.time - _move_t < AI_MOVE_EVERY_S or not auto_supply:  # the toggle holds when the AI is the boss too (a session with no human boss)
 		return
-	# product where the dealers work
+	_supply_dealers(busy)
+
+
+## Product where the dealers work: a market with dealers and less than a quarter of their ninety minutes' work in its stashes
+## gets a truck from the fullest stash elsewhere. One move at a time, AI_MOVE_EVERY_S apart. `busy`: stashes with a truck out.
+## Returns true if a truck was sent.
+func _supply_dealers(busy: Dictionary) -> bool:
+	if busy.is_empty():
+		for c in convoys.values():
+			busy[c.from] = true
 	var tr: Trade = sess.trade
 	for m in Economy.MARKETS:
 		var n: int = tr.dealers("org", m).size()
@@ -1126,9 +1141,14 @@ func update(dt: float) -> void:
 					most = stock[st.id][g]
 			var to = Py.first(sess.stash_net.live(), func(st): return st.zone == m)
 			if from != null and to != null:
-				send(from, to.id, g, minf(most, want), true)
-				_move_t = sess.time
-				return
+				var err := send(from, to.id, g, minf(most, want), true)
+				var ai: bool = sess.payroll.ai.get("org", false)
+				if err == "" or ai:  # the AI's one attempt per interval, sent or not, as it always was
+					_move_t = sess.time
+					if err == "" and not ai:
+						sess.say("Supply truck: %s from %s to %s, so the %s corners have stock." % [g, name_of(from), name_of(to.id), Market._name(m)])
+					return err == ""
+	return false
 
 
 func _refresh_routes() -> void:
@@ -1173,7 +1193,7 @@ func view() -> Dictionary:
 	if sess.arsenals.has("org"):
 		arm = {"site": armoury_site(), "at": name_of(armoury_site()), "weapons": sess.arsenals["org"].stock.duplicate(),
 			"count": sess.arsenals["org"].count()}
-	return {"sites": sites, "trucks": trucks, "aboard": aboard, "armoury": arm, "war": sess.ground != null, "hq": name_of(HQ), "hq_strip": hq_strip(),
+	return {"sites": sites, "trucks": trucks, "aboard": aboard, "armoury": arm, "war": sess.ground != null, "auto_supply": auto_supply, "hq": name_of(HQ), "hq_strip": hq_strip(),
 		"lost": lost.duplicate(), "last": last,
 		"fuel": {"ground": snappedf(Fuel.price(sess, "ground"), 0.01), "avgas": snappedf(Fuel.price(sess, "avgas"), 0.01),
 			"trend": snappedf(Fuel.trend(sess), 0.01), "spent": int(sess.fuel_spent.org)}}

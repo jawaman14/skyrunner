@@ -17,6 +17,7 @@ static var AIRFIELDS: Array = layout.airfields
 static var AIRFIELD_BY_CODE: Dictionary = _by_code()
 static var _terrain_cache := {}
 static var _layouts := {}  ## map seed -> MapLayout (the city's post-pass data lives on it)
+static var _post_cache := {}  ## terrain key -> [land_use, roads, buildings]: what the post pass wrote for that terrain variant
 
 
 static func _initial_layout() -> MapLayout:
@@ -90,9 +91,17 @@ func _init(p_seed := 7) -> void:
 			t.generate_custom(seed, map.params, dicts)
 			if map.post:
 				MapCity.post(t, map)
+				_post_cache[key] = [map.land_use, map.roads.duplicate(), map.buildings]
 		else:
 			t.generate(seed, dicts)
 		_terrain_cache[key] = t
+	elif map.post and _post_cache.has(key):
+		# the layout is shared by the natural and the classic terrain, and the post pass wrote its data for whichever was built
+		# last: hand back this variant's own (the buildings' heights belong to the terrain they were placed on)
+		var post: Array = _post_cache[key]
+		map.land_use = post[0]
+		map.roads = post[1].duplicate()
+		map.buildings = post[2]
 	terrain = _terrain_cache[key]
 	field_elev = terrain.get_field_elev()
 	for a in map.foreign:

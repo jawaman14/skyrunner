@@ -150,6 +150,16 @@ static func _cmd_move_goods(role: String, a: Dictionary, session: Session):
 	return err if err != "" else null
 
 
+## Logistics: keep the dealers' corners stocked by truck from the stashes that hold product elsewhere (on or off).
+static func _cmd_auto_supply(role: String, a: Dictionary, session: Session):
+	if session.logistics == null:
+		return "No logistics in this game: the product is just there."
+	var on = a.get("on")
+	session.logistics.auto_supply = (not session.logistics.auto_supply) if on == null else Py.truthy(on)
+	session.say("Dealers' corners %s." % ("restocked by truck when they run dry" if session.logistics.auto_supply else "left to you: move product yourself (Dispatch)"))
+	return null
+
+
 ## Logistics: a truck of cash (to the HQ, usually).
 static func _cmd_move_cash(role: String, a: Dictionary, session: Session):
 	if session.logistics == null:

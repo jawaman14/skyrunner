@@ -191,6 +191,7 @@ func refresh() -> void:
 			_dests.append(s.id)
 			to_ob.add_item(str(s.name))
 	rows.add_child(UIStyle.label("%-26s  the safe: wages, loads, lawyers   cash aboard: $%s" % [str(lv.hq).left(26), Py.money(int(lv.aboard))], 14, UIStyle.CYAN))
+	rows.add_child(UIStyle.label("Dealers' corners: %s  [A]" % ("restocked by truck from the other stashes when they run dry" if bool(lv.get("auto_supply", true)) else "you move the product yourself"), 14, UIStyle.GREEN if bool(lv.get("auto_supply", true)) else UIStyle.DIM))
 	var arm: Dictionary = lv.get("armoury", {})
 	if not arm.is_empty():
 		rows.add_child(UIStyle.label("The armoury at %s: %s" % [arm.at, Arsenal.describe(arm.weapons) if int(arm.count) > 0 else "empty"], 14, UIStyle.AMBER))
@@ -353,6 +354,8 @@ func _input(ev: InputEvent) -> void:
 			KEY_U:
 				if pilot:
 					_act(_command("unload_cash", {}))
+			KEY_A:
+				_act(_command("auto_supply", {}))
 			_:
 				return
 		get_viewport().set_input_as_handled()

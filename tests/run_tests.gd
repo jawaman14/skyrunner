@@ -58,6 +58,7 @@ func _run() -> void:
 			failed += 1
 			continue
 		Terrain.natural = false  # main.gd turns it on for the game; a test that loads main must not leak it into the next file
+		World.use_map(0)  # a file that opens a session on the city map and never switches back (test_cheats) must not hand the next file the wrong airfields
 		var inst = script.new()
 		var names: Array[String] = []
 		for m in script.get_script_method_list():
