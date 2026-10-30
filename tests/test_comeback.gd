@@ -35,6 +35,7 @@ func test_no_windfall_with_money_a_job_on_or_the_switch_off() -> void:
 	check(_windfalls(s, "HAR").is_empty(), "not when there is money")
 	s.money = 400
 	s.refresh_board("VAL")
+	check(s.boards["VAL"].filter(func(j): return j.title.begins_with("Windfall")).is_empty(), "not on a board the pilot is not at")
 	var job: Jobs.Job = s.boards["HAR"][0]
 	s.accept_job(job)
 	s.windfall_at = -1e9

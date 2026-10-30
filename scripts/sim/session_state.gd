@@ -555,7 +555,8 @@ func refresh_board(code: String) -> void:
 		if not trade.connected:
 			# the career: grass until the Colombians call - no cocaine work yet
 			boards[code] = boards[code].filter(func(j): return j.own_good == "marijuana" or Economy.good_of(j) != "cocaine")
-	if Comeback.ENABLED and money < Comeback.WINDFALL_BELOW and active_jobs.is_empty() and time - windfall_at >= Comeback.WINDFALL_EVERY_S:
+	if Comeback.ENABLED and code == location and money < Comeback.WINDFALL_BELOW and active_jobs.is_empty() and time - windfall_at >= Comeback.WINDFALL_EVERY_S:
+		# only on the board where the pilot stands: a windfall dealt to a strip they cannot reach is no way back
 		var wj = Comeback.windfall_job(af, world.airfields)  # loop idea 8: a way back from a bad stretch
 		if wj != null:
 			boards[code].append(wj)
