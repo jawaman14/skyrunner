@@ -32,6 +32,7 @@ const INFORMANT_BASE := 0.30
 const SPOTTER_LEAK := 0.15
 const FERRY_FUEL_TIP := 0.25
 const GEAR := {
+	"loran": [600, "LORAN-C receiver: bearing and distance to your waypoint or your job's strip"],
 	"scanner": [1800, "Radio scanner: hear police dispatch (unless encrypted)"],
 	"detector": [2500, "Radar detector: warns when a radar paints you"],
 	"ferry_tank": [3000, "Ferry bladder tank: extra fuel in the cabin"],
@@ -49,7 +50,7 @@ class FlightLog:
 	var last_touchdown_fpm := 0.0
 	var touchdowns_seen := 0
 	var t_off := -1.0  ## when the wheels left the ground (the flight debrief)
-	var fuel_off := 0.0  ## lb of fuel at take-off
+	var fuel_off := 0.0  ## lb of fuel at take-off, wings and ferry tank together
 	var money_off := 0  ## $ in hand at take-off
 
 	func _init(touchdowns_seen_ := 0) -> void:
@@ -122,6 +123,8 @@ var radio: RadioNet
 var police: PoliceSystem
 var maritime: Maritime
 var discovery: Discovery = null  ## hidden strips the story starts off the chart (Discovery)
+var deal_moves: DealMoves = null  ## loop idea 5: Benny moves an airdrop mid-flight (DealMoves)
+var daily_weather: DailyWeather = null  ## the story game's weather spells (DailyWeather)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper

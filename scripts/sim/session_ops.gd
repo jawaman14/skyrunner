@@ -383,8 +383,8 @@ func buy_gear(name: String):
 	if not GEAR.has(name):
 		return "Unknown gear."
 	var price: int = GEAR[name][0]
-	var feature: String = {"ferry_tank": "ferry"}.get(name, name)
-	if not features.has(feature):
+	var feature: String = {"ferry_tank": "ferry", "loran": ""}.get(name, name)
+	if feature != "" and not features.has(feature):  # the LORAN set is sold everywhere: a first upgrade for a pilot still saving
 		return "Nobody on the island sells that yet."
 	if not parked:
 		return "Buy gear on the ground."

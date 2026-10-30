@@ -292,6 +292,29 @@ func show_banner(text: String, sub := "", color := UIStyle.PINK) -> void:
 	_banner_until = Time.get_ticks_msec() / 1000.0 + 3.5
 
 
+## The LORAN-C receiver's readout (gear "loran"): bearing and distance from the aircraft to the waypoint, else the first job's target.
+## "" without the set, on the ground, or with nowhere to point.
+static func loran_line(sess: Session, waypoint) -> String:
+	if not sess.gear.has("loran") or sess.state == null or sess.state.on_ground:
+		return ""
+	var tx := 0.0
+	var ty := 0.0
+	var name := ""
+	if waypoint is Vector2:
+		tx = waypoint.x
+		ty = waypoint.y
+		name = "WPT"
+	elif not sess.active_jobs.is_empty():
+		var xy: Array = sess.active_jobs[0].target_xy() if sess.active_jobs[0].is_airdrop() else [World.airfield(sess.active_jobs[0].dest).x, World.airfield(sess.active_jobs[0].dest).y]
+		tx = float(xy[0])
+		ty = float(xy[1])
+		name = "DROP" if sess.active_jobs[0].is_airdrop() else str(sess.active_jobs[0].dest)
+	else:
+		return ""
+	var km := PyMath.hypot(tx - sess.state.x, ty - sess.state.y) / 1000.0
+	return "LORAN  %s  %03d°  %.1f km" % [name, int(round(PilotBot.bearing(sess.state.x, sess.state.y, tx, ty))) % 360, km]
+
+
 func refresh() -> void:
 	var left := _banner_until - Time.get_ticks_msec() / 1000.0
 	banner.visible = left > 0.0
@@ -454,6 +477,10 @@ func _wanted() -> void:
 
 func _status(st: FlightModel.FlightState, lo: Loadout) -> void:
 	status.text = "%s   •   $%s%s" % [s.spec.name, Py.money(s.money), ("   •   " + World.airfield(s.location).name) if s.location else ""]
+	var nav := loran_line(s, minimap.waypoint if minimap != null else null)
+	if nav != "":
+		status.text += "
+" + nav
 	var jobs := s.active_jobs.slice(0, 5)
 	mission_heading.visible = not jobs.is_empty()
 	while jobs_box.get_child_count() > jobs.size():

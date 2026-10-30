@@ -15,7 +15,7 @@ extends RefCounted
 const PARITY := [
 	"SensorNet.REALISM", "Economy.REALISM", "Arsenal.REALISM", "GroundWar.ENABLED", "Chronicle.ENABLED",
 	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Orders.ENABLED", "Jobs.ISLAND_BOARD",
-	"Investigation.ENABLED", "CoverCargo.ENABLED", "Comeback.ENABLED",
+	"Investigation.ENABLED", "CoverCargo.ENABLED", "Comeback.ENABLED", "DealMoves.ENABLED",
 ]
 
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
@@ -25,7 +25,7 @@ const OPT_IN := [
 	"Rackets.ENABLED", "Renown.ENABLED", "StashWorks.ENABLED", "CityDress.ENABLED", "ModelLib.ENABLED",
 	"Scenery.ENABLED", "GroundWar.ENGAGEMENT", "GroundWar.SMART_ROUTES", "GroundWar.VETERANS",
 	"Logistics.ROUNDS", "Tactical.PYTHON", "RadioNet.REALISM", "Analyst.ENABLED", "Casino.ENABLED", "Casino.REVOLUTION", "Airframe.ENABLED", "Undercover.ENABLED", "PortDress.ENABLED", "AirfieldDress.ENABLED", "DowntownDress.ENABLED",
-	"CasinoBuilding.ENABLED", "Dealership.ENABLED", "Psychedelics.ENABLED", "Territories.ENABLED", "PoliceSystem.EARLY_PACE",
+	"CasinoBuilding.ENABLED", "DailyWeather.ENABLED", "Dealership.ENABLED", "Psychedelics.ENABLED", "Territories.ENABLED", "PoliceSystem.EARLY_PACE",
 ]
 
 
@@ -36,7 +36,7 @@ static func snapshot() -> Dictionary:
 		"Chronicle.ENABLED": Chronicle.ENABLED, "Agency.ENABLED": Agency.ENABLED,
 		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Orders.ENABLED": Orders.ENABLED,
 		"Jobs.ISLAND_BOARD": Jobs.ISLAND_BOARD,
-		"Investigation.ENABLED": Investigation.ENABLED, "CoverCargo.ENABLED": CoverCargo.ENABLED, "Comeback.ENABLED": Comeback.ENABLED}
+		"Investigation.ENABLED": Investigation.ENABLED, "CoverCargo.ENABLED": CoverCargo.ENABLED, "Comeback.ENABLED": Comeback.ENABLED, "DealMoves.ENABLED": DealMoves.ENABLED}
 
 static func restore(state: Dictionary) -> void:
 	# Validate the complete snapshot before changing any switch.
@@ -57,6 +57,7 @@ static func restore(state: Dictionary) -> void:
 	Investigation.ENABLED = state["Investigation.ENABLED"]
 	CoverCargo.ENABLED = state["CoverCargo.ENABLED"]
 	Comeback.ENABLED = state["Comeback.ENABLED"]
+	DealMoves.ENABLED = state["DealMoves.ENABLED"]
 
 static func parity_off() -> Dictionary:
 	var previous := snapshot()
@@ -73,6 +74,7 @@ static func parity_off() -> Dictionary:
 	Investigation.ENABLED = false
 	CoverCargo.ENABLED = false
 	Comeback.ENABLED = false
+	DealMoves.ENABLED = false
 	return previous
 
 
@@ -90,3 +92,4 @@ static func parity_on() -> void:
 	Investigation.ENABLED = true
 	CoverCargo.ENABLED = true
 	Comeback.ENABLED = true
+	DealMoves.ENABLED = true

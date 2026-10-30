@@ -69,6 +69,8 @@ static func capture(s: Session) -> Dictionary:
 	d["phone_calls"] = s.phone_calls.capture()
 	if s.discovery != null and s.story != null:
 		d["hidden_strips"] = s.discovery.capture()  # optional: an older save has none and keeps every strip on the chart
+	if s.daily_weather != null and s.daily_weather.next_t >= 0.0:
+		d["daily_weather"] = s.daily_weather.capture(s.weather)  # an optional key: older saves simply have none
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
@@ -245,6 +247,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 	s.phone_calls.tick(s.time)
 	if s.discovery != null and d.get("hidden_strips") is Array:
 		s.discovery.restore(d.hidden_strips)
+	if s.daily_weather != null and d.get("daily_weather") is Dictionary:
+		s.daily_weather.restore(d.daily_weather)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.investigation != null:
