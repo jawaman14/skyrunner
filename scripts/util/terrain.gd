@@ -174,7 +174,7 @@ func generate_custom(p_seed: int, params: Dictionary, airfields: Array) -> void:
 
 static func _cache_key(what: Array) -> String:
 	if natural:
-		what = what + ["natural"]  # the classic keys stay as they were, so the shipped bakes still match
+		what = what + ["natural", 2]  # (2: softer quarry walls) the classic keys stay as they were, so the shipped bakes still match
 	return var_to_str([CACHE_VERSION, what]).sha256_text().substr(0, 24)
 
 
@@ -281,8 +281,14 @@ func _shape_fields(h: PackedFloat64Array, p_seed := 0) -> void:
 					hv = hv * (1 - top) + elev * top if dist < 130 else minf(hv, elev - 180 * _smoothstep(130, 260, dist))
 				elif setting == "pit":
 					var flat := _smoothstep(110, 60, dist)
-					var qa := (across - 55) / 30
-					var side := exp(-(qa * qa)) * 70 * _smoothstep(90, 0, along)
+					# the classic walls (70 m, 30 m wide, 55 m off the centreline) are what the Python prototype's fixtures pin; the game's natural
+					# terrain makes them a low, wide shoulder instead of two spikes that read as mountains from the air
+					var qc := (across - 55) / 30
+					var side := exp(-(qc * qc)) * 70 * _smoothstep(90, 0, along)
+					if natural:
+						var qn := (across - 75) / 70
+						var low := exp(-(qn * qn)) * 32 * _smoothstep(90, 0, along) * _smoothstep(8, 45, across)
+						side = side * (1.0 - _smoothstep(0, 6, across)) + low * _smoothstep(0, 6, across)  # the strip itself keeps the classic height
 					hv = hv * (1 - flat) + elev * flat + side
 					if haul >= 0:
 						var s_end := -1.0 if haul == 0 else 1.0

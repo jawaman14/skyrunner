@@ -930,7 +930,7 @@ func _cycle_fast_forward() -> void:
 		s.say("Fast-forward is for solo play: a shared table runs at one speed.")
 		return
 	fast_forward = 1 if fast_forward >= 8 else fast_forward * 2
-	s.say("Speed %dx" % fast_forward if fast_forward > 1 else "Normal speed")
+	s.say(("Speed %dx (paused while you drive: the car moves in normal time)" % fast_forward) if fast_forward > 1 else "Normal speed")
 
 
 func _map_open() -> bool:
@@ -1550,7 +1550,7 @@ func _process(delta: float) -> void:
 		var remote: bool = s.seats.human(Roles.PILOT) and s.seats.seats[Roles.PILOT].token != ""
 		var bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 		s.update(dt, inp, bc)
-		for _extra in (fast_forward - 1 if server == null else 0):  # fast-forward: more whole steps per frame, never a longer one
+		for _extra in (fast_forward - 1 if server == null and driving == null else 0):  # fast-forward: more whole steps per frame, never a longer one
 			inp.pressed = {}  # a key press is one event: only the first step sees it (held keys and axes carry on)
 			bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 			s.update(dt, inp, bc)

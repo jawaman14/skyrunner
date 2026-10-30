@@ -55,6 +55,22 @@ func test_the_goals_count_what_happens() -> void:
 	s.dispose()
 
 
+## The HUD's NEXT line asks `s.narrative` (a Story in play) for the first goal still to do.
+func test_the_hud_next_line_names_the_first_goal_still_to_do() -> void:
+	var s := _story()
+	var first: String = ""
+	for o in s.story.chapter.objectives:
+		if not o.optional:
+			first = o.text
+			break
+	check_eq(s.story.next_objective_text(), first, "starts at the chapter's first required goal")
+	for o in s.story.chapter.objectives:
+		if not o.optional:
+			s.story.progress[o.key] = o.target
+	check_eq(s.story.next_objective_text(), "", "nothing left when every required goal is met")
+	s.dispose()
+
+
 func test_the_company_choice_changes_faction_support_and_port_control() -> void:
 	var s := _story(Story.index_of("The Company"))
 	s.story.progress["agency_jobs"] = 1.0
