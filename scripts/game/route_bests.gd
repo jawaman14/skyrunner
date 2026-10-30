@@ -20,7 +20,7 @@ static func benny_seconds(from_code: String, to_code: String, aircraft_key: Stri
 static func record(from_code: String, to_code: String, seconds: float, touchdown_fpm: float) -> Dictionary:
 	var cf := ConfigFile.new()
 	cf.load(path)
-	var key := "%s>%s" % [from_code, to_code]
+	var key := "%d:%s>%s" % [World.layout.map_seed, from_code, to_code]  # the same codes sit elsewhere on another island
 	var best: float = float(cf.get_value(key, "seconds", INF))
 	var soft: float = float(cf.get_value(key, "fpm", INF))
 	var new_time := seconds < best
