@@ -98,6 +98,7 @@ func _init(opts := {}) -> void:
 			radio.df_stations.append([a.code, a.x, a.y])
 	radio.df_enabled = features.has("df")
 	maritime = Maritime.new(world, _rng(seed + 13))
+	discovery = Discovery.new(self)
 	director = AISmuggler.Director.new(_rng(seed + 21))
 	mapper = ControlMapper.new()
 	autopilot = Autopilot.new()
@@ -137,6 +138,9 @@ func _init(opts := {}) -> void:
 ## Break the reference cycles (night director, campaign, bus subscribers) so a
 ## finished Session is freed; batch simulators build thousands of them.
 func dispose() -> void:
+	if discovery != null:
+		discovery.sess = null
+	discovery = null
 	if analyst != null:
 		analyst.sess = null
 	analyst = null

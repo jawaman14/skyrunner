@@ -118,6 +118,7 @@ var bus: EventBus
 var radio: RadioNet
 var police: PoliceSystem
 var maritime: Maritime
+var discovery: Discovery = null  ## hidden strips the story starts off the chart (Discovery)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper

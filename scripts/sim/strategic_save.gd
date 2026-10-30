@@ -67,6 +67,8 @@ const DIRECTOR := ["_ai_mem", "_paid_before", "ended_at"]
 static func capture(s: Session) -> Dictionary:
 	var d := {"v": VERSION, "time": s.time, "fuel_spent": s.fuel_spent.duplicate()}
 	d["phone_calls"] = s.phone_calls.capture()
+	if s.discovery != null and s.story != null:
+		d["hidden_strips"] = s.discovery.capture()  # optional: an older save has none and keeps every strip on the chart
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
@@ -241,6 +243,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 	s.time = float(d.get("time", 0.0))
 	s.phone_calls.restore(d.get("phone_calls", {}) if d.get("phone_calls") is Dictionary else {})
 	s.phone_calls.tick(s.time)
+	if s.discovery != null and d.get("hidden_strips") is Array:
+		s.discovery.restore(d.hidden_strips)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.investigation != null:

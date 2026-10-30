@@ -321,6 +321,8 @@ func attach(s) -> void:
 	s.story = self
 	s.bus.subscribe("*", _on_event)
 	_set_police_pace(0)
+	if s.discovery != null and s.time < 60.0:
+		s.discovery.hide_shady()  # a new story: the smugglers' strips start off the chart (a loaded game keeps what it had found)
 	if employment != null and employment.active():
 		if employment.loaner:
 			s.owned.erase(EmploymentOpening.AIRCRAFT)
