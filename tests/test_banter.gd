@@ -26,6 +26,8 @@ func test_each_first_is_said_once() -> void:
 	check_eq(n.got.size(), 3, "a legal job is not news")
 	s.bus.emit("job_accepted", s.time, "", ["runner"], {"job_id": 2, "hot": true})
 	check_eq(n.got.size(), 4, "a hot one is")
+	s.bus.emit("upgrade", s.time, "", ["law"], {"side": "law", "id": "jammer"})
+	check_eq(n.got.size(), 4, "a law upgrade is not the pilot's news")
 	s.dispose()
 
 

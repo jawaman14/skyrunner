@@ -74,14 +74,15 @@ func _on_event(ev) -> void:
 		"order_posted":
 			say("order")
 		"upgrade":
-			say("upgrade")
+			if str(d.get("side", "runner")) == "runner":  # a law upgrade in a hosted game is not the pilot's news
+				say("upgrade")
 
 
 ## Called about once a second: what has no event of its own (radar interest, the corners' first money, a windfall on the board).
 func tick() -> void:
 	if s.police != null and float(s.police.case("runner").suspicion) >= 20.0:
 		say("radar")
-	if s.trade != null and float(s.trade.earned) > 0.0:
+	if s.trade != null and int(s.trade.street_earned) > 0:  # the corners, not a bulk sale
 		say("corners")
 	if s.location != null and s.boards.get(s.location, []).any(func(j): return str(j.title).begins_with("Windfall")):
 		say("windfall")
