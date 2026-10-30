@@ -39,6 +39,7 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
             toe brakes (several devices) with invert, deadzone and expo; the colour-safe palette
 View     C cycle camera (chase / cockpit / tower)    M big map    P pause (in the aircraft; ESC anywhere)   F2 time of day
+         BACKSLASH fast-forward: 1x, 2x, 4x, 8x (solo only)
 Seats    F3 hand the aircraft to the AI pilot / take it back (separate from U autopilot)
 Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)   CTRL+F5 skip to the next story chapter (solo, for testing)
          CTRL+F2 site access overlay: footprints, entrances, loading points, runway clearance
@@ -452,6 +453,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 					open_pause()
 				KEY_M:
 					_map_toggle()
+				KEY_BACKSLASH:
+					_cycle_fast_forward()
 				KEY_F1:
 					help.visible = not help.visible
 			get_viewport().set_input_as_handled()
@@ -493,6 +496,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 						open_pause()
 				KEY_M:
 					_map_toggle()
+				KEY_BACKSLASH:
+					_cycle_fast_forward()
 				KEY_F1:
 					help.visible = not help.visible
 				KEY_F2:
@@ -523,7 +528,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			open_talk("general")  # the General's aide on the island frequency
 		elif ev.shift_pressed and k == KEY_C and s.psych != null:
 			open_talk("psych")  # the Sunrise Collective: Nico Cozz, acid for grass (Shift+N is the Family's no)
-		elif ev.shift_pressed and k == KEY_T:
+		elif (ev.shift_pressed or ev.ctrl_pressed) and k == KEY_T:
 			_open("phone")  # the phone from the cockpit: every number you have
 		elif ev.shift_pressed and k == KEY_V and s.dealer != null:
 			_open("dealer")  # the car lot, without the walk
@@ -587,6 +592,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 			s.say("Mouse yoke %s" % ("ON - mouse position is the stick" if mouse_yoke else "OFF"))
 		elif k == KEY_P:
 			paused = not paused
+		elif k == KEY_BACKSLASH:
+			_cycle_fast_forward()
 		elif k == KEY_F10 and s.tutorial != null and s.tutorial.enabled:
 			s.tutorial.skip()
 		elif k == KEY_F1:
@@ -624,6 +631,9 @@ var sound: Soundscape = null
 var notify: PhoneNotify = null  ## the phone's banners
 var car_map: Minimap = null  ## the radar and chart while on foot or driving
 var waypoint = null  ## the ground point you picked on the chart (Vector2), or null
+var _was_parked := true  ## last frame's s.parked, to see the moment of landing
+var _plane_fund_told := false  ## the "you can buy your plane" call has been made this session
+var fast_forward := 1  ## whole simulation steps run per frame (1, 2, 4 or 8)
 var _wp_beacon: MeshInstance3D = null
 var car_dash: CarDash = null  ## the dashboard, shown while driving
 var radio: CarRadio = null  ## the radio: the cockpit's (F7) and the car's (R); silent on foot
@@ -912,6 +922,15 @@ func _map_toggle() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if m.big else Input.MOUSE_MODE_CAPTURED  # the cursor to pick a place with
 		if walker != null:
 			walker.look_enabled = not m.big
+
+
+## Backslash: 1x, 2x, 4x, 8x. Solo only (a shared table runs at one speed), and the pause menu or a dialog stops the clock anyway.
+func _cycle_fast_forward() -> void:
+	if server != null:
+		s.say("Fast-forward is for solo play: a shared table runs at one speed.")
+		return
+	fast_forward = 1 if fast_forward >= 8 else fast_forward * 2
+	s.say(("Speed %dx (paused while you drive: the car moves in normal time)" % fast_forward) if fast_forward > 1 else "Normal speed")
 
 
 func _map_open() -> bool:
@@ -1360,7 +1379,12 @@ func _on_use(action: String, area: Area3D) -> void:
 			_sit_casino(action.trim_prefix("casino_"))
 		"dealer":
 			if s.dealer == null:
-				s.say("The showroom is closed: the dealership is not open in this game yet.")
+				var when := ""
+				for i in Story.CHAPTERS.size():
+					if "dealership" in Story.CHAPTERS[i][3]:
+						when = " It opens in Chapter %d, %s." % [i + 1, Story.CHAPTERS[i][1]]
+						break
+				s.say("The showroom is closed: the dealership is not open in this game yet.%s" % when)
 			else:
 				_open("dealer")
 		"casino_cage", "casino_office":
@@ -1444,6 +1468,12 @@ func _phone_watch() -> void:
 				m.fresh[c[0]] = true
 				notify.push("Phone", "New contact: %s. %s." % [c[1], c[2]], "phone")
 				s.say("New contact on your phone: %s - %s." % [c[1], c[2]])
+	# the employer's Cessna is on loan: tell the pilot once when the savings cover one of their own
+	var emp: EmploymentOpening = s.story.employment if s.story != null else null
+	if emp != null and emp.loaner and not _plane_fund_told and s.money >= EmploymentOpening.PURCHASE_PRICE:
+		_plane_fund_told = true
+		notify.push("Phone", "You've saved $%s: enough for a Cessna of your own. Park at Port Harbor Intl or Valley Regional and use the hangar desk (E): Aircraft sales." % Py.money(EmploymentOpening.PURCHASE_PRICE), "phone")
+		s.say("You can afford your own Cessna now: $%s at the hangar desk at Port Harbor Intl or Valley Regional." % Py.money(EmploymentOpening.PURCHASE_PRICE))
 
 
 ## When an offer is gone so is its card (it was answered, or it ran out).
@@ -1465,6 +1495,9 @@ func _process(delta: float) -> void:
 		menus.phone.visible = false  # landing or taxiing puts the handset away before controls are read
 	var dt := minf(delta, 0.1)
 	_frame += 1
+	if s.parked and not _was_parked and waypoint != null:
+		_waypoint_picked(Vector2.INF)  # the run is over: the pin and its beam go with it
+	_was_parked = s.parked
 	if _air_look_active and not _air_camera_look_allowed():
 		_end_air_camera_look()
 	if s.state == null or s.state.on_ground:
@@ -1517,6 +1550,10 @@ func _process(delta: float) -> void:
 		var remote: bool = s.seats.human(Roles.PILOT) and s.seats.seats[Roles.PILOT].token != ""
 		var bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 		s.update(dt, inp, bc)
+		for _extra in (fast_forward - 1 if server == null and driving == null else 0):  # fast-forward: more whole steps per frame, never a longer one
+			inp.pressed = {}  # a key press is one event: only the first step sees it (held keys and axes carry on)
+			bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
+			s.update(dt, inp, bc)
 		_taxi_tick(inp, bc)
 		nerves.update(s, dt)
 		if _frame % 15 == 0:
