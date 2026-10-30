@@ -2,7 +2,7 @@
 	"version": 1,
 	"region_id": "costa-brava",
 	"map_seed": 100000,
-	"note": "L1 of docs/MAP_REDESIGN.md: the strips as authored data. Today a snapshot of what MapCity.generate() places (tests/test_map_audit.gd fails on drift); the loader that makes MapCity read it comes next.",
+	"note": "L1 of docs/MAP_REDESIGN.md: the strips as authored data. MapCity.generate() reads it on the natural terrain (the game's); the classic terrain (the tests' goldens) keeps the relief search.",
 	"strips": [
 		{
 			"code": "HAR",
