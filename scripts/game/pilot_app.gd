@@ -161,6 +161,8 @@ var aircraft_body: StaticBody3D = null
 
 func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> PilotApp:
 	s = sess
+	if s.deal_moves != null:
+		s.deal_moves.live = true  # a person is flying: Benny may call about a moved drop
 	quality = Quality.get_preset(graphics)
 	bot = bot_
 	server = server_
@@ -1104,6 +1106,8 @@ func _phone_call(action: String) -> void:
 		"map":
 			_map_toggle()
 			_phone_owned_overlay = "map" if _map_open() else ""
+		"deal_move":
+			pass  # answering took the new drop point (DealMoves.accept); the HUD's drop beacon follows the job
 		"settings":
 			open_pause()
 			_phone_owned_overlay = "pause" if pause_menu != null else ""
