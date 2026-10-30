@@ -146,7 +146,7 @@ func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
 	location = af.code
 	if af.kind == "foreign" and island != null:
 		island.on_arrive()  # the General's men, not the task force
-	elif police.landing_check(s, af, carrying_hot()):
+	elif police.landing_check(s, af, carrying_hot(), "runner", CoverCargo.factor(loadout.items.values())):
 		_bust("arrested on landing at %s" % af.name)
 		if phase == "busted":
 			return
