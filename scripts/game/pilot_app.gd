@@ -212,6 +212,7 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	notify.offset_top = 78.0
 	notify.offset_bottom = -4.0
 	ui.add_child(notify)
+	banter = Banter.new(s, notify, func(): return scene.hour if scene != null else 12.0)  # Rafa and Benny on the pilot's firsts
 	car_map = Minimap.new()  # the radar for the car and for walking: it follows the car or the walker, not the aircraft
 	car_map.visible = false
 	ui.add_child(car_map)
@@ -629,6 +630,7 @@ var controls_menu: ControlsMenu = null
 var pack_menu: PackMenu = null
 var sound: Soundscape = null
 var notify: PhoneNotify = null  ## the phone's banners
+var banter: Banter = null
 var car_map: Minimap = null  ## the radar and chart while on foot or driving
 var waypoint = null  ## the ground point you picked on the chart (Vector2), or null
 var _was_parked := true  ## last frame's s.parked, to see the moment of landing
@@ -1509,6 +1511,8 @@ func _process(delta: float) -> void:
 		radio.active = driving != null or not on_foot
 	if _frame % 30 == 1:
 		_phone_watch()
+		if banter != null:
+			banter.tick()
 		if scene != null and s.stash_net != null:
 			for stash in s.stash_net.stashes:
 				var node := scene.find_child("stash-" + str(stash.id), true, false) as Node3D
