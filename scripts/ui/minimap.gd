@@ -343,6 +343,8 @@ func _caption(font: Font) -> void:
 func _world_marks(font: Font) -> void:
 	var fs := 15 if big else 11
 	for af in s.world.airfields:
+		if s.discovery != null and not s.discovery.is_known(af.code):
+			continue  # an unmarked strip: off the chart until found
 		var col := Color(1, 1, 1) if af.kind in ["hub", "regional"] else Color(1, 0.8, 0.3)
 		var a: Array = af.threshold(0)
 		var b: Array = af.threshold(1)

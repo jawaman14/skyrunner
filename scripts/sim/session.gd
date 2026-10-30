@@ -99,6 +99,7 @@ func _init(opts := {}) -> void:
 	radio.df_enabled = features.has("df")
 	maritime = Maritime.new(world, _rng(seed + 13))
 	gig_rng = _rng(seed + 181)
+	discovery = Discovery.new(self)
 	deal_moves = DealMoves.new(self, _rng(seed + 173))
 	daily_weather = DailyWeather.new(self, _rng(seed + 179))
 	director = AISmuggler.Director.new(_rng(seed + 21))
@@ -140,6 +141,9 @@ func _init(opts := {}) -> void:
 ## Break the reference cycles (night director, campaign, bus subscribers) so a
 ## finished Session is freed; batch simulators build thousands of them.
 func dispose() -> void:
+	if discovery != null:
+		discovery.sess = null
+	discovery = null
 	if deal_moves != null:
 		deal_moves.sess = null  # it holds the session: break the cycle so a disposed session is freed
 	deal_moves = null
