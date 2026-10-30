@@ -25,7 +25,7 @@ const OPT_IN := [
 	"Rackets.ENABLED", "Renown.ENABLED", "StashWorks.ENABLED", "CityDress.ENABLED", "ModelLib.ENABLED",
 	"Scenery.ENABLED", "GroundWar.ENGAGEMENT", "GroundWar.SMART_ROUTES", "GroundWar.VETERANS",
 	"Logistics.ROUNDS", "Tactical.PYTHON", "RadioNet.REALISM", "Analyst.ENABLED", "Casino.ENABLED", "Casino.REVOLUTION", "Airframe.ENABLED", "Undercover.ENABLED", "PortDress.ENABLED", "AirfieldDress.ENABLED", "DowntownDress.ENABLED",
-	"CasinoBuilding.ENABLED", "Discovery.ENABLED", "DailyWeather.ENABLED", "Dealership.ENABLED", "Psychedelics.ENABLED", "Territories.ENABLED", "PoliceSystem.EARLY_PACE",
+	"CasinoBuilding.ENABLED", "Discovery.ENABLED", "DailyWeather.ENABLED", "Calendar.ENABLED", "Dealership.ENABLED", "Psychedelics.ENABLED", "Territories.ENABLED", "PoliceSystem.EARLY_PACE",
 ]
 
 

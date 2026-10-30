@@ -102,6 +102,7 @@ func _init(opts := {}) -> void:
 	discovery = Discovery.new(self)
 	deal_moves = DealMoves.new(self, _rng(seed + 173))
 	daily_weather = DailyWeather.new(self, _rng(seed + 179))
+	calendar = Calendar.new(self, _rng(seed + 183))
 	director = AISmuggler.Director.new(_rng(seed + 21))
 	mapper = ControlMapper.new()
 	autopilot = Autopilot.new()
@@ -150,6 +151,9 @@ func dispose() -> void:
 	if daily_weather != null:
 		daily_weather.sess = null  # break the cycle: a disposed session must be freed
 	daily_weather = null
+	if calendar != null:
+		calendar.sess = null  # break the cycle: a disposed session must be freed
+	calendar = null
 	if analyst != null:
 		analyst.sess = null
 	analyst = null

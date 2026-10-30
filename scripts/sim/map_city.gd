@@ -145,6 +145,35 @@ static func generate() -> MapLayout:
 	l.terrain_seed = TERRAIN_SEED
 	l.params = _params()
 	l.post = true
+	l.airfields = _authored_strips() if Terrain.natural else []
+	if l.airfields.is_empty():
+		l.airfields = _searched_strips()
+	_finish(l)
+	return l
+
+
+## The strips as authored in data/maps/costa_brava/strips.json (docs/MAP_REDESIGN.md L1), for the game's natural terrain. Empty
+## when the file is missing or a record lacks a field, so the search stands in. The classic terrain (the tests' goldens) keeps
+## the search: its relief puts several strips elsewhere.
+static func _authored_strips() -> Array:
+	var placed := []
+	for s in MapAudit.load_strips():
+		var d: Dictionary = s
+		for key in ["code", "name", "x", "y", "heading", "length", "width", "surface", "kind", "setting"]:
+			if not d.has(key):
+				return []
+		var opts := {"setting": str(d.setting), "shop": bool(d.get("shop", false)), "police": bool(d.get("police", false)),
+			"radar_km": float(d.get("radar_km", 0.0)), "tree_lines": bool(d.get("tree_lines", false))}
+		if d.get("haul_road") != null:
+			opts["haul_road"] = int(d.haul_road)
+		var elev: Variant = null if d.get("elev") == null else float(d.elev)
+		placed.append(Airfield.new(str(d.code), str(d.name), float(d.x), float(d.y), float(d.heading), float(d.length),
+			float(d.width), elev, str(d.surface), str(d.kind), opts))
+	return placed
+
+
+## The strips sited by search: hand-placed, then nudged on the relief (see _strip_specs).
+static func _searched_strips() -> Array:
 	var base := base_terrain()
 	var rng := PyRandom.new()
 	rng.seed(SEED)
@@ -187,7 +216,11 @@ static func generate() -> MapLayout:
 		if s[11] == "pit":
 			opts["haul_road"] = 1 if sin(deg_to_rad(hdg)) > 0 else 0  # the end facing east
 		placed.append(Airfield.new(s[0], s[1], x, y, hdg, s[5], s[6], elev, s[8], s[9], opts))
-	l.airfields = placed
+	return placed
+
+
+## The zones, territories, aerostat, roads and stash houses around the strips.
+static func _finish(l: MapLayout) -> void:
 	l.zone_fields = {"west": ["FRM", "QRY", "MGR"], "north": ["EGL", "PNR"], "sea": ["COV", "ISL"]}
 	l.zone_centre = {"west": [-3500.0, -3000.0], "north": [1000.0, 8500.0], "sea": [13500.0, -11500.0]}
 	l.territories = [
@@ -208,7 +241,6 @@ static func generate() -> MapLayout:
 	l.bridges = planned.get("bridges", [])
 	l.stashes = STASHES.duplicate(true)
 	l.foreign = [Island.airfield()]  # Isla Soberana, over the southern horizon
-	return l
 
 
 # ------------------------------------------------------------------ shaping

@@ -192,6 +192,8 @@ func _update_world(dt: float) -> void:
 		deal_moves.update(dt)
 	if daily_weather != null:
 		daily_weather.update(dt)
+	if calendar != null:
+		calendar.update(dt)
 	if agency != null:
 		agency.update(dt)
 	if family != null:

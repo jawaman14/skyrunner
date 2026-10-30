@@ -126,6 +126,7 @@ var gig_rng: PyRandom = null  ## side gigs on the boards (Gigs): their own strea
 var discovery: Discovery = null  ## hidden strips the story starts off the chart (Discovery)
 var deal_moves: DealMoves = null  ## loop idea 5: Benny moves an airdrop mid-flight (DealMoves)
 var daily_weather: DailyWeather = null  ## the story game's weather spells (DailyWeather)
+var calendar: Calendar = null  ## loop idea 4: the island's week, posted ahead (Calendar)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
