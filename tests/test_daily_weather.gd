@@ -30,6 +30,23 @@ func test_calm_first_then_a_forecast_then_the_change() -> void:
 	s.dispose()
 
 
+func test_a_spell_and_its_schedule_survive_a_save() -> void:
+	var s := _story()
+	s.daily_weather.update(1.0)
+	s.time = s.daily_weather.next_t + 1.0
+	s.daily_weather.update(1.0)
+	var sky := str(s.weather.sky)
+	var next_t := s.daily_weather.next_t
+	var data := StrategicSave.capture(s)
+	check(data.has("daily_weather"), "saved")
+	var t := _story()
+	StrategicSave.restore(t, data)
+	check_eq(str(t.weather.get("sky", "")), sky, "the same sky after the load")
+	check_near(t.daily_weather.next_t, next_t, 0.01, "the next change at the same time")
+	s.dispose()
+	t.dispose()
+
+
 func test_spells_are_mostly_fair() -> void:
 	var s := _story()
 	var counts := {"clear": 0, "cloud": 0, "storm": 0}

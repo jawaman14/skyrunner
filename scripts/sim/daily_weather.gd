@@ -49,6 +49,22 @@ func update(_dt: float) -> void:
 		announced = false
 
 
+## For StrategicSave: the scheduler and the weather now (its fog too, so restoring draws nothing).
+func capture(now_weather: Dictionary) -> Dictionary:
+	return {"next_t": next_t, "next": next.duplicate(), "announced": announced, "now": now_weather.duplicate()}
+
+
+func restore(d: Dictionary) -> void:
+	next_t = float(d.get("next_t", -1.0))
+	next = (d.get("next", {}) as Dictionary).duplicate() if d.get("next") is Dictionary else {}
+	announced = bool(d.get("announced", false))
+	var now = d.get("now", {})
+	if now is Dictionary and not (now as Dictionary).is_empty():
+		sess.set_weather(now)  # carries its fog, so no fog roll
+	if next.is_empty():
+		next_t = -1.0  # a damaged entry: start the schedule again
+
+
 func _pick() -> Dictionary:
 	var r := rng.random()
 	var sky := "clear"
