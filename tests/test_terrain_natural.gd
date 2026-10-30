@@ -56,6 +56,8 @@ func _check_map(map_seed: int, label: String, post_pass := false) -> void:
 				var lat: float = dx * af.uy - dy * af.ux
 				if absf(lon) > af.length / 2.0 + 300.0 or absf(lat) > af.width / 2.0 + 300.0:
 					continue
+				if af.setting == "pit" and absf(lat) > af.width / 2.0:
+					continue  # a quarry's walls are deliberately softer in the natural terrain (a low shoulder, not two spikes); the strip itself is still untouched
 				seen += 1
 				if absf(_natural[r * Terrain.GRID + c] - _classic[r * Terrain.GRID + c]) > 0.001:
 					moved += 1
