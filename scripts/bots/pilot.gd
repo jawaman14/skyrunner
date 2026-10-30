@@ -788,7 +788,11 @@ static func mission_for(s: Session, job: Jobs.Job, home = null) -> Array:
 		var af := World.airfield(home)
 		return [Leg.new("drop", job.drop_point[0], job.drop_point[1]), Leg.new("land", af.x, af.y, home)]
 	var af := World.airfield(job.dest)
-	return [Leg.new("land", af.x, af.y, job.dest)]
+	var legs := []
+	for k in range(job.visited, job.checkpoints.size()):  # a side gig: its points in order first (the fuel plan's route too)
+		legs.append(Leg.new("goto", float(job.checkpoints[k][0]), float(job.checkpoints[k][1])))
+	legs.append(Leg.new("land", af.x, af.y, job.dest))
+	return legs
 
 
 ## Run the session until the bot is done (headless). Returns the outcome.

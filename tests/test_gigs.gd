@@ -63,6 +63,16 @@ func test_a_gig_can_be_taken_during_the_employer_opening_and_goes_to_remote_crew
 	s.dispose()
 
 
+func test_the_mission_plan_flies_the_points_before_landing() -> void:
+	var s := Session.new({"seed": 8, "location": "HAR"})
+	var j := _gig(s, "photo")
+	var legs := PilotBot.mission_for(s, j, "HAR")
+	check_eq(legs.size(), j.checkpoints.size() + 1, "every point, then the landing")
+	check(legs.slice(0, -1).all(func(l): return l.kind == "goto") and legs.back().kind == "land", "goto legs, then land")
+	check(PilotBot.plan_fuel_lb(s, legs) > PilotBot.plan_fuel_lb(s, [legs.back()]), "the fuel plan counts the detour")
+	s.dispose()
+
+
 func test_boards_carry_one_gig_and_none_with_the_switch_off() -> void:
 	var s := Session.new({"seed": 8, "location": "HAR"})
 	s.refresh_board("VAL")
