@@ -60,6 +60,17 @@ func test_no_offer_once_the_bales_are_in_the_water() -> void:
 	s.dispose()
 
 
+func test_no_deal_once_the_boat_has_gone_home() -> void:
+	var r := _flying_with_drop()
+	var s: Session = r[0]
+	var job: Jobs.Job = r[1]
+	if job.boat_id:
+		s.maritime.boat(job.boat_id).state = "running"
+	_ring(s)
+	check(s.phone_calls.pending().is_empty() or not job.boat_id, "the boat is heading home: no call")
+	s.dispose()
+
+
 func test_the_cutter_holds_its_picket() -> void:
 	var r := _flying_with_drop()
 	var s: Session = r[0]

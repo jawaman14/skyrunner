@@ -37,7 +37,7 @@ func update(dt: float) -> void:
 		return
 	_t = 0.0
 	for j in sess.active_jobs:
-		if not j.is_airdrop() or offered.has(j.id) or not _bales_aboard(j.id):
+		if not j.is_airdrop() or offered.has(j.id) or not _bales_aboard(j.id) or not _boat_on_station(j):
 			continue  # nothing left aboard (the bales are already in the sea): no deal to move
 		if PyMath.hypot(float(j.drop_point[0]) - sess.state.x, float(j.drop_point[1]) - sess.state.y) < MIN_LEFT_M:
 			continue
@@ -76,6 +76,8 @@ func accept(job_id: int) -> String:
 		return "That job is gone."
 	if not _bales_aboard(job_id):
 		return "The bales are already in the water: the deal stands where it was."
+	if not _boat_on_station(j):
+		return "The boat has gone home: there is no drop to move."
 	j.drop_point = p
 	j.payout = int(round(j.payout * PAY_MULT))
 	if j.boat_id:
@@ -105,6 +107,14 @@ func _picket_point(p: Array) -> Array:
 			if sess.world.is_water(x, y):
 				return [x, y]
 	return [float(p[0]), float(p[1])]
+
+
+## The go-fast is still out for this drop (on its way, waiting or hiding from a cutter), not running home or done.
+func _boat_on_station(j) -> bool:
+	if not j.boat_id:
+		return true
+	var b = sess.maritime.boat(j.boat_id)
+	return b != null and b.state in ["to_rendezvous", "waiting", "fleeing"]
 
 
 func _bales_aboard(job_id: int) -> bool:
