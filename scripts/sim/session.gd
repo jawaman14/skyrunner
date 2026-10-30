@@ -98,6 +98,7 @@ func _init(opts := {}) -> void:
 			radio.df_stations.append([a.code, a.x, a.y])
 	radio.df_enabled = features.has("df")
 	maritime = Maritime.new(world, _rng(seed + 13))
+	gig_rng = _rng(seed + 181)
 	director = AISmuggler.Director.new(_rng(seed + 21))
 	mapper = ControlMapper.new()
 	autopilot = Autopilot.new()

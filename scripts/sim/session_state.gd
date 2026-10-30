@@ -118,6 +118,7 @@ var bus: EventBus
 var radio: RadioNet
 var police: PoliceSystem
 var maritime: Maritime
+var gig_rng: PyRandom = null  ## side gigs on the boards (Gigs): their own stream
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
@@ -528,6 +529,10 @@ func refresh_board(code: String) -> void:
 	board_at[code] = time
 	if story != null and story.employment != null and story.employment.active():
 		boards[code] = story.employment.board(self, code)
+		if Gigs.ENABLED and gig_rng != null and World.airfield(code).kind != "foreign":
+			var eg = Gigs.gig_for(world, World.airfield(code), world.airfields, gig_rng)  # side money while working for Rafa
+			if eg != null:
+				boards[code].append(eg)
 		return
 	var af := World.airfield(code)
 	if af.kind == "foreign":
@@ -554,6 +559,10 @@ func refresh_board(code: String) -> void:
 		if not trade.connected:
 			# the career: grass until the Colombians call - no cocaine work yet
 			boards[code] = boards[code].filter(func(j): return j.own_good == "marijuana" or Economy.good_of(j) != "cocaine")
+	if Gigs.ENABLED and gig_rng != null:
+		var gj = Gigs.gig_for(world, af, world.airfields, gig_rng)  # a side gig: photos, a banner tow, a flour pass
+		if gj != null:
+			boards[code].append(gj)
 	if Economy.REALISM:
 		for j in boards[code]:  # today's prices
 			j.price_mult = econ.job_mult(j)

@@ -151,7 +151,10 @@ func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
 		if phase == "busted":
 			return
 		phase = "parked"
-	var delivered := active_jobs.filter(func(j): return j.dest == af.code)
+	var waiting := active_jobs.filter(func(j): return j.dest == af.code and not Gigs.done(j))
+	if not waiting.is_empty():
+		say("%s: the client wants every point flown first (%d of %d done)." % [waiting[0].title.get_slice(" (", 0), waiting[0].visited, waiting[0].checkpoints.size()])
+	var delivered := active_jobs.filter(func(j): return j.dest == af.code and Gigs.done(j))
 	for job in delivered.filter(func(j): return j.stash != "" and stash_net != null):
 		_truck_out(job, af)
 	delivered = delivered.filter(func(j): return j.stash == "")

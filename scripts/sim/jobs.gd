@@ -55,6 +55,8 @@ class Job:
 	var cost := 0  ## paid up front when taken (the island's loads: bought, not consigned)
 	var defector := false  ## a defector flown off the island (Island)
 	var own_good := ""  ## our own load (Trade): "cocaine" / "marijuana" - into the stash on delivery, not paid
+	var checkpoints: Array = []  ## side gigs (Gigs): [x, y, radius_m, max_agl_m] to fly through in order before landing
+	var visited := 0  ## ... how many of them are done
 	var employer_stage := -1
 	var employer_serial := 0
 	var agency := false  ## an Agency arms flight (Agency): protected while you carry it  ## gun runs: "sell" at the street price, or "stock" the organisation's arsenal

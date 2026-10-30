@@ -289,6 +289,7 @@ func _draw() -> void:
 		_terrain()
 		_rim(font)
 	_world_marks(font)
+	_gig_points(font)
 	_goal_marks(font)
 	_waypoint(font)
 	_me()
@@ -476,6 +477,23 @@ func _waypoint(font: Font) -> void:
 		_label(font, p + Vector2(10, -8), text, 12 if big else 11, UIStyle.PINK)
 	elif not big:
 		_pointer(p, UIStyle.PINK, text, font)
+
+
+## A side gig's points still to fly: cyan rings, the next one filled and numbered.
+func _gig_points(font: Font) -> void:
+	var cyan := Color(0.35, 0.9, 1.0)
+	for j in s.active_jobs:
+		for k in range(j.visited, j.checkpoints.size()):
+			var c: Array = j.checkpoints[k]
+			var p := to_screen(float(c[0]), float(c[1]))
+			if not _inside(p, 8.0):
+				if k == j.visited and not big:
+					_pointer(p, cyan, "gig", font)
+				continue
+			if k == j.visited:
+				draw_circle(p, 6.0, cyan)
+			draw_arc(p, 9.0, 0, TAU, 20, cyan, 1.5, true)
+			_label(font, p + Vector2(10, -6), str(k + 1), 11, cyan)
 
 
 ## The next chapter goal's places (GoalMarks): gold diamonds, labelled on the chart, a pointer at the scope's edge when off it.

@@ -78,6 +78,9 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 	if s.valid:
 		loadout.fuel_lb = s.fuel_lb
 	_rules(dt, s)
+	if Gigs.ENABLED and not s.on_ground:
+		for m in Gigs.progress(active_jobs, s.x, s.y, s.agl):
+			say(m)
 	if airframe != null:
 		airframe.update(dt, s)
 	if not (phase in ["crashed", "busted"]):
