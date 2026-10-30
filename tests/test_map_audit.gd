@@ -7,13 +7,20 @@ func after_each() -> void:
 	World.use_map(0)
 
 
-## What the game places: main.gd turns the natural terrain on before the map is generated, and the strip search reads the relief,
-## so the classic terrain (the tests' default) puts several strips elsewhere. The data records the game's map.
+## What the game places: main.gd turns the natural terrain on before the map is generated, and MapCity then reads strips.json.
 func _game_strips() -> Array:
 	Terrain.natural = true
 	var l := MapCity.generate()
 	Terrain.natural = false
 	return l.airfields
+
+
+## What the relief search places on the natural terrain: the file was its snapshot, until the new L1 moves a strip.
+func _searched_strips() -> Array:
+	Terrain.natural = true
+	var placed := MapCity._searched_strips()
+	Terrain.natural = false
+	return placed
 
 
 func test_the_strips_file_loads_and_its_gate_is_clean() -> void:
@@ -26,7 +33,8 @@ func test_the_strips_file_loads_and_its_gate_is_clean() -> void:
 
 
 func test_the_strips_file_matches_what_the_game_generates() -> void:
-	check_eq(MapAudit.drift(MapAudit.load_strips(), _game_strips()), [], "strips.json is the game's map (until MapCity reads it)")
+	check_eq(MapAudit.drift(MapAudit.load_strips(), _game_strips()), [], "MapCity builds every field of strips.json on the game's terrain")
+	check_eq(MapAudit.drift(MapAudit.load_strips(), _searched_strips()), [], "the file is still the search's snapshot (drop when L1 moves a strip)")
 	var moved := MapAudit.load_strips()
 	moved[0] = (moved[0] as Dictionary).duplicate()
 	moved[0].radar_km = 1.0
@@ -60,3 +68,9 @@ func test_the_gate_names_each_rule_it_enforces() -> void:
 	var odd := good.duplicate()
 	odd.kind = "seaplane"
 	check(MapAudit.strips_gate([odd], World.HALF).any(func(f): return "unknown kind" in f), "an unknown kind")
+
+
+func test_the_classic_terrain_keeps_the_search() -> void:
+	var l := MapCity.generate()
+	check_eq(MapAudit.drift(MapAudit.load_strips(), l.airfields).is_empty(), false, "the tests' classic terrain sites its own strips (the goldens)")
+	check_eq(l.airfields.size(), 9, "all nine strips")
