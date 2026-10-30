@@ -390,17 +390,21 @@ static func showroom(k: Kit, c: Vector3, w := 14.0, d := 9.0) -> void:
 	var pz := c.z - d / 2 - 2.0
 	k.box(Vector3(px, 7.0, pz), Vector3(0.5, 14.0, 0.5), "metal", false)
 	k.box(Vector3(px, 15.2, pz), Vector3(8.0, 3.0, 0.4), "pump_cream", false)
-	var sign_text := Label3D.new()
-	sign_text.text = "CAR LOT"
-	sign_text.font_size = 96
-	sign_text.pixel_size = 0.014
-	sign_text.outline_size = 16
-	sign_text.modulate = Color(0.22, 0.29, 0.27)
-	sign_text.outline_modulate = Color(0.81, 0.77, 0.64)
-	sign_text.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
-	sign_text.no_depth_test = false
-	sign_text.position = Vector3(px, 15.2, pz - 0.35)
-	k.root.add_child(sign_text)
+	# the lettering is painted on the board: fixed to each face (never billboarded, which swung it through the board from the side),
+	# a hair off the surface, one side facing the lot (-z) and one facing the back
+	for face in [-1.0, 1.0]:
+		var sign_text := Label3D.new()
+		sign_text.text = "CAR LOT"
+		sign_text.font_size = 96
+		sign_text.pixel_size = 0.0125
+		sign_text.outline_size = 16
+		sign_text.modulate = Color(0.22, 0.29, 0.27)
+		sign_text.outline_modulate = Color(0.81, 0.77, 0.64)
+		sign_text.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+		sign_text.double_sided = false
+		sign_text.position = Vector3(px, 15.2, pz + face * 0.22)
+		sign_text.rotation.y = PI if face < 0.0 else 0.0  # a label reads from +z; the lot side looks along +z at -z, so turn it round
+		k.root.add_child(sign_text)
 	k.interact(Vector3(c.x + 3.0, 1.0, c.z - d / 2 - 2.2), "dealer", "The car lot: cars to drive, trucks for the stash runs", 3.2)
 	k.vehicle("sedan-sports", 4.5, c + Vector3(-4.0, 0, -d / 2 - 4.0), 20.0)
 	k.vehicle("suv-luxury", 5.0, c + Vector3(1.0, 0, -d / 2 - 6.0), -15.0)

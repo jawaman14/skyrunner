@@ -140,20 +140,20 @@ func test_save_writes_and_lobby_asks_first() -> void:
 
 func test_volume_and_graphics_settings_persist() -> void:
 	# Start from known settings: a volume or graphics level saved on this machine must not shift the steps.
-	ControlsConfig.save_setting("volume", 1.0)
+	ControlsConfig.save_setting("volume", 0.0)
 	ControlsConfig.save_setting("graphics", "high")
 	var r := _app()
 	var app: PilotApp = r[0]
 	app.open_pause()
 	var pm: PauseMenu = app.pause_menu
 	pm._step_volume(1)
-	check_near(float(ControlsConfig.settings().volume), 0.75, 0.001, "volume steps down from full")
-	check(not AudioServer.is_bus_mute(0), "not muted at 75%")
-	for i in 4:
+	check_near(float(ControlsConfig.settings().volume), 0.25, 0.001, "volume steps up from silent, not straight to full")
+	check(not AudioServer.is_bus_mute(0), "not muted at 25%")
+	for i in 3:
 		pm._step_volume(1)
-	check_near(float(ControlsConfig.settings().volume), 1.0, 0.001, "and wraps back to full after 0%")
-	pm._step_volume(-1)
-	check_near(float(ControlsConfig.settings().volume), 0.0, 0.001, "left goes to 0%")
+	check_near(float(ControlsConfig.settings().volume), 1.0, 0.001, "reaches full after 25, 50, 75")
+	pm._step_volume(1)
+	check_near(float(ControlsConfig.settings().volume), 0.0, 0.001, "and wraps from full to 0%")
 	check(AudioServer.is_bus_mute(0), "0% mutes")
 	pm._step_graphics(1)
 	check_eq(str(ControlsConfig.settings().graphics), "medium", "graphics steps high -> medium")

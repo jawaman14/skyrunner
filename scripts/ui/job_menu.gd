@@ -17,6 +17,7 @@ var action_button: Button
 var cancel_button: Button
 var action_preview: Label
 var pending_drop := -1
+var _rows_sig: Array = []  ## what the table was last built from (see refresh)
 var _action_refresh := 0.0
 
 
@@ -147,11 +148,20 @@ func refresh() -> void:
 	var af := World.airfield(s.location)
 	title.text = "JOB BOARD"
 	subtitle.text = "%s  -  %.0f m %s" % [af.name, af.length, af.surface]
+	var board: Array = s.boards.get(s.location, [])
+	var est_w: float = s.loadout.compute().weight_lb
+	# The pilot app refreshes an open menu about six times a second. Rebuilding the table each time threw its scroll
+	# position back to the top mid-scroll, so only rebuild when what the table shows has changed.
+	var sig := [s.location, board.map(func(j): return j.id), _far_jobs().map(func(j): return j.id),
+		s.active_jobs.map(func(j): return j.id), int(est_w), s.spec.name]
+	if sig == _rows_sig and list.row_count() > 0:
+		_show_detail()
+		_board_hints()
+		return
+	_rows_sig = sig
 	var keep := list.selected_row()
 	list.clear_rows()
 	rows.clear()
-	var board: Array = s.boards.get(s.location, [])
-	var est_w: float = s.loadout.compute().weight_lb
 	if not board.is_empty():
 		_sep("Available here")
 	for j in board:
@@ -169,6 +179,10 @@ func refresh() -> void:
 		_sep("No work here right now.")
 	list.select_near(keep if keep >= 0 else 0)
 	_show_detail()
+	_board_hints()
+
+
+func _board_hints() -> void:
 	footer.text = ""
 	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "selected action", "enter"], ["C", "keep job", "c"], ["LEFT/RIGHT", "market", "right"],
 		["G", "sell / keep guns", ""], ["L", "load & fuel", ""], ["ESC", "close", "esc"]])
@@ -253,6 +267,7 @@ func _show_detail() -> void:
 
 func open() -> void:
 	pending_drop = -1
+	_rows_sig = []  # a fresh look at the board every time it is opened
 	super.open()
 
 
