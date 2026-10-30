@@ -99,6 +99,7 @@ func _init(opts := {}) -> void:
 	radio.df_enabled = features.has("df")
 	maritime = Maritime.new(world, _rng(seed + 13))
 	deal_moves = DealMoves.new(self, _rng(seed + 173))
+	daily_weather = DailyWeather.new(self, _rng(seed + 179))
 	director = AISmuggler.Director.new(_rng(seed + 21))
 	mapper = ControlMapper.new()
 	autopilot = Autopilot.new()
@@ -141,6 +142,9 @@ func dispose() -> void:
 	if deal_moves != null:
 		deal_moves.sess = null  # it holds the session: break the cycle so a disposed session is freed
 	deal_moves = null
+	if daily_weather != null:
+		daily_weather.sess = null  # break the cycle: a disposed session must be freed
+	daily_weather = null
 	if analyst != null:
 		analyst.sess = null
 	analyst = null
