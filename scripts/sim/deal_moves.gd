@@ -88,6 +88,7 @@ func accept(job_id: int) -> String:
 			b.wait_t = 0.0
 		elif b != null and b.state == "fleeing":
 			b.goal = p  # hiding from a cutter: when it comes back for the drop it comes to the new point
+			b.wait_t = 0.0  # and waits there afresh, not for what was left of the old wait
 	var at := _picket_point(p)
 	var cutter: Maritime.Boat = sess.maritime.new_cutter(null, at)
 	cutter.picket_s = PICKET_S
