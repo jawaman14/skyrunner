@@ -78,7 +78,7 @@ func _rules(dt: float, s: FlightModel.FlightState) -> void:
 			lg.airborne = true
 			lg.departed_from = lg.departed_from if lg.departed_from else location
 			lg.t_off = time
-			lg.fuel_off = s.fuel_lb
+			lg.fuel_off = s.fuel_lb + loadout.ferry_fuel_lb()  # the wings and the ferry bladder: the pump moves fuel between them
 			lg.money_off = money
 		if phase == "parked":
 			if not unloading.is_empty():
@@ -178,7 +178,7 @@ func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
 	var leg := {"code": af.code}
 	if flown.t_off >= 0.0:
 		leg.merge({"from": str(flown.departed_from if flown.departed_from else ""), "seconds": time - flown.t_off,
-			"touchdown_fpm": flown.last_touchdown_fpm, "max_bank": flown.max_bank, "fuel_used_lb": maxf(0.0, flown.fuel_off - s.fuel_lb),
+			"touchdown_fpm": flown.last_touchdown_fpm, "max_bank": flown.max_bank, "fuel_used_lb": maxf(0.0, flown.fuel_off - s.fuel_lb - loadout.ferry_fuel_lb()),
 			"pay": money - flown.money_off})
 	bus.emit("landed", time, "", ["runner"], leg)
 	save()
