@@ -40,7 +40,7 @@ func _rows() -> Array:
 	for a in Aircraft.ROSTER.values():
 		out.append(["aircraft", a])
 	for g in Session.GEAR:
-		if s.features.has({"ferry_tank": "ferry"}.get(g, g)):
+		if g == "loran" or s.features.has({"ferry_tank": "ferry"}.get(g, g)):  # the LORAN set is sold everywhere
 			out.append(["gear", g])
 	if s.features.has("spotters"):
 		out.append(["spotter", s.location])

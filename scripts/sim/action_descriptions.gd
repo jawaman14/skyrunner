@@ -49,7 +49,7 @@ static func build(s, role: String, name: String, args: Dictionary) -> Dictionary
 			else:
 				var price: int = Session.GEAR[key][0]
 				a.preview = "Charge $%s. Fits %s to this aircraft." % [Py.money(price), Session.GEAR[key][1]]
-				if not s.features.has({"ferry_tank": "ferry"}.get(key, key)):
+				if key != "loran" and not s.features.has({"ferry_tank": "ferry"}.get(key, key)):  # the LORAN set is sold everywhere
 					a.disabled_reason = "Nobody sells that yet."
 				elif not s.parked:
 					a.disabled_reason = "Buy gear on the ground."
