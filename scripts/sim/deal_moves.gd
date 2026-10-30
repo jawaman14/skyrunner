@@ -84,11 +84,25 @@ func accept(job_id: int) -> String:
 			b.goal = p  # a boat already waiting at the old point goes to the new one, its wait started afresh
 			b.state = "to_rendezvous"
 			b.wait_t = 0.0
-	var a := rng.uniform(0.0, TAU)
-	var cutter: Maritime.Boat = sess.maritime.new_cutter(null, [p[0] + sin(a) * CUTTER_OFFSET_M, p[1] + cos(a) * CUTTER_OFFSET_M])
+	var at := _picket_point(p)
+	var cutter: Maritime.Boat = sess.maritime.new_cutter(null, at)
 	cutter.picket_s = PICKET_S
 	sess.say("New drop point set: %s pays $%s now. Watch for the cutter." % [j.title, Py.money(j.payout)])
 	return ""
+
+
+## Where the cutter waits: CUTTER_OFFSET_M from the new point, at sea (eight bearings from a random start, then nearer in); the drop
+## itself as a last resort, which _new_point already found to be water. A cutter spawned on land could never move.
+func _picket_point(p: Array) -> Array:
+	var a0 := rng.uniform(0.0, TAU)
+	for r in [CUTTER_OFFSET_M, CUTTER_OFFSET_M * 0.5]:
+		for k in 8:
+			var a := a0 + k * TAU / 8.0
+			var x: float = float(p[0]) + sin(a) * r
+			var y: float = float(p[1]) + cos(a) * r
+			if sess.world.is_water(x, y):
+				return [x, y]
+	return [float(p[0]), float(p[1])]
 
 
 func _bales_aboard(job_id: int) -> bool:

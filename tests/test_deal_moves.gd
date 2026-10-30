@@ -69,6 +69,7 @@ func test_the_cutter_holds_its_picket() -> void:
 	for i in 600:  # ten minutes of maritime updates
 		s.maritime.update(1.0, [])
 	check(c.goal != null and c.picket_s > 0.0, "still on station after ten minutes")
+	check(s.world.is_water(c.x, c.y), "and at sea")
 	s.dispose()
 
 
