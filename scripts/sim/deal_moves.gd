@@ -84,6 +84,8 @@ func accept(job_id: int) -> String:
 			b.goal = p  # a boat already waiting at the old point goes to the new one, its wait started afresh
 			b.state = "to_rendezvous"
 			b.wait_t = 0.0
+		elif b != null and b.state == "fleeing":
+			b.goal = p  # hiding from a cutter: when it comes back for the drop it comes to the new point
 	var at := _picket_point(p)
 	var cutter: Maritime.Boat = sess.maritime.new_cutter(null, at)
 	cutter.picket_s = PICKET_S
