@@ -122,6 +122,7 @@ var bus: EventBus
 var radio: RadioNet
 var police: PoliceSystem
 var maritime: Maritime
+var daily_weather: DailyWeather = null  ## the story game's weather spells (DailyWeather)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
