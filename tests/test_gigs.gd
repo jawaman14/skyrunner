@@ -49,6 +49,20 @@ func test_a_gig_lands_only_when_its_points_are_flown() -> void:
 	s.dispose()
 
 
+func test_a_gig_can_be_taken_during_the_employer_opening_and_goes_to_remote_crews() -> void:
+	var s := Session.new({"seed": 8, "map_seed": MapCity.SEED, "location": "HAR", "career": true})
+	Story.new_employed().attach(s)
+	s.refresh_board("HAR")
+	var gigs: Array = s.boards["HAR"].filter(func(j): return j.kind == "gig")
+	check_eq(gigs.size(), 1, "a gig beside the employer's job")
+	if gigs.size() == 1:
+		check_eq(s.accept_job_reason(gigs[0]), "", "and it can be taken")
+		s.accept_job(gigs[0])
+		var snap: Dictionary = Snapshot._job(s, gigs[0])
+		check_eq((snap.points as Array).size(), gigs[0].checkpoints.size(), "its points go to the remote stations")
+	s.dispose()
+
+
 func test_boards_carry_one_gig_and_none_with_the_switch_off() -> void:
 	var s := Session.new({"seed": 8, "location": "HAR"})
 	s.refresh_board("VAL")
