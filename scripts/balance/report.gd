@@ -169,6 +169,9 @@ const CHANGELOG := [
 	["No rival aircraft, no hijack",
 		"The owner (17 Oct): the rival smugglers' plane that took off to follow the player is a redundant feature and rivals must not take cargo from the air (only ground cargo can be stolen, in a firefight). The strategic season still rolled a hijack chance each night.",
 		"The rival plane, the hijack roll and its constants are gone (`plan[\"hijack_p\"]` is 0). That removed the rival's main way to hurt a run: 8,000 seasons, equilibrium runner win 0.508 -> 0.571, outside the 50% +/- 5 target. A `tune` run over `retire_target` (52k 0.542, 54k 0.522, 56k 0.503, 58k 0.482, 60k 0.465; every ending still at least 8%) put it back with `retire_target` 52,000 -> 56,000 (equilibrium 0.503, mix 2/2)."],
+	["Cover cargo at customs",
+		"A hot load landing at a police airport faced a flat 35% customs inspection (`Police.landing_check`), whatever else was aboard. The load planner was a weight and balance puzzle with no bearing on risk (docs/LOOP_IDEAS.md, lesson 6).",
+		"Loop idea 2 (owner, 30 Oct, D-90): honest cargo or passengers beside the hot load lower that chance, cover = 0.4 x (honest lb / hot lb), capped at 60% off (`CoverCargo`). The same single draw decides, only its threshold moves, so no RNG stream shifts. A 300 lb hot load is opened 35% of the time bare, 30% with 100 lb of honest cargo, 21% with 300 lb and 14% (the floor) from 450 lb; the seeded test (`test_cover_cargo`) shows the same 400 rolls opening about a third as many loads at the cap. Not measured: the balance simulators fly single jobs, so cover never applies in their runs and their numbers are unchanged; how often players carry cover is a playtest question. Off for the Python replays (`Switches.PARITY`)."]
 ]
 
 
