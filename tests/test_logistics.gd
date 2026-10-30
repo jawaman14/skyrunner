@@ -255,6 +255,29 @@ func test_the_organisations_ai_runs_the_trucks() -> void:
 	s.dispose()
 
 
+## Owner, 30 Oct: "move stash from one stash house to another when needed so there is stock to sell". A dealer sells only what
+## is in a stash in his own market, so when his market is dry and another stash holds product, a truck brings some.
+func test_the_players_dealers_are_resupplied_from_another_stash() -> void:
+	var s := _sess()  # the player's own organisation (the AI is off)
+	check(s.logistics.auto_supply, "on by default")
+	s.logistics.add("barn", "marijuana", 800.0)
+	_dealer(s, "north")  # the camp's market: nothing there
+	s.logistics.update(61.0)
+	var views: Array = s.logistics.view().trucks
+	check(Py.any(views, func(t): return "marijuana" in t.what), "a truck is bringing grass to the dealer's market")
+	s.dispose()
+
+
+func test_auto_supply_can_be_switched_off() -> void:
+	var s := _sess()
+	s.logistics.add("barn", "marijuana", 800.0)
+	_dealer(s, "north")
+	check(s.command(Roles.PILOT, "auto_supply", {"on": false})[0], "the toggle is a command")
+	s.logistics.update(61.0)
+	check(s.logistics.view().trucks.is_empty(), "off: product stays where it is")
+	s.dispose()
+
+
 func test_off_means_one_pool() -> void:
 	var s := _sess({"logistics": false})
 	check(s.logistics == null)
