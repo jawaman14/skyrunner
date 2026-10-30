@@ -460,9 +460,14 @@ func _news_lines() -> Array:
 			var name := str(Economy.GOODS.get(good, {}).get("name", good.capitalize()))
 			# the effect and the countdown first: the handset is narrow and a long headline would push them off the edge
 			now_on.append("%s x%.2f, %d min left: %s" % [name, float(e.mult), maxi(1, ceili((float(e.until) - s.time) / 60.0)), str(e.text)])
+	var ahead: Array = s.calendar.lines() if s.calendar != null and s.story != null else []
 	if not now_on.is_empty():
 		out.append("# In force now")
 		out.append_array(now_on)
+	if not ahead.is_empty():
+		out.append("# Coming up")
+		out.append_array(ahead)
+	if not now_on.is_empty() or not ahead.is_empty():
 		out.append("# Headlines")
 	out.append_array(items.slice(0, 20).map(func(i): return "%d:%02d  %s" % [int(i[0] / 3600.0), int(i[0] / 60.0) % 60, i[1]]))
 	return out
