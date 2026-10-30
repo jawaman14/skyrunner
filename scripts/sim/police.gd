@@ -937,7 +937,8 @@ func _inbound_from_sea(sig: SensorNet.Signature) -> bool:
 
 # ---------------------------------------------------- landing
 ## Called once when the player comes to a stop. true -> police grab you.
-func landing_check(s, field_: Airfield, carrying_hot: bool, tid := "runner") -> bool:
+## `cover`: CoverCargo.factor of the load (0..0.6): the share of the customs chance a legitimate load beside the hot one takes away.
+func landing_check(s, field_: Airfield, carrying_hot: bool, tid := "runner", cover := 0.0) -> bool:
 	if frozen:
 		return false
 	var c := case(tid)
@@ -949,7 +950,11 @@ func landing_check(s, field_: Airfield, carrying_hot: bool, tid := "runner") -> 
 			return true
 	if field_.police and c.wanted > 0:
 		return true
-	if field_.police and carrying_hot and not no_customs and rng.random() < 0.35:
-		events.append("Customs inspection!")
-		return true
+	if field_.police and carrying_hot and not no_customs:
+		var r := rng.random()  # the same one draw as before cover existed: only the threshold moves
+		if r < 0.35 * (1.0 - cover):
+			events.append("Customs inspection!")
+			return true
+		if r < 0.35:
+			events.append("Customs went through the manifest and waved the honest cargo through.")
 	return false
