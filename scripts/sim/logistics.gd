@@ -1112,7 +1112,7 @@ func update(dt: float) -> void:
 		if not sent:
 			send(fattest, HQ, "cash", cash[fattest], true)
 			busy[fattest] = true
-	if sess.time - _move_t < AI_MOVE_EVERY_S:
+	if sess.time - _move_t < AI_MOVE_EVERY_S or not auto_supply:  # the toggle holds when the AI is the boss too (a session with no human boss)
 		return
 	_supply_dealers(busy)
 

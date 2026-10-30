@@ -278,6 +278,17 @@ func test_auto_supply_can_be_switched_off() -> void:
 	s.dispose()
 
 
+func test_auto_supply_off_holds_when_the_ai_is_the_boss_too() -> void:
+	var s := _sess()
+	s.payroll.ai["org"] = true  # no human boss seated: the AI runs the organisation
+	s.logistics.add("barn", "marijuana", 800.0)
+	_dealer(s, "north")
+	s.command(Roles.PILOT, "auto_supply", {"on": false})
+	s.logistics.update(61.0)
+	check(not Py.any(s.logistics.view().trucks, func(t): return "marijuana" in t.what), "switched off: no supply truck even with the AI boss")
+	s.dispose()
+
+
 func test_off_means_one_pool() -> void:
 	var s := _sess({"logistics": false})
 	check(s.logistics == null)
