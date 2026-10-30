@@ -77,6 +77,9 @@ func _rules(dt: float, s: FlightModel.FlightState) -> void:
 		if not lg.airborne:
 			lg.airborne = true
 			lg.departed_from = lg.departed_from if lg.departed_from else location
+			lg.t_off = time
+			lg.fuel_off = s.fuel_lb
+			lg.money_off = money
 		if phase == "parked":
 			if not unloading.is_empty():
 				say("Took off with the load still aboard - no deal.")
@@ -142,11 +145,12 @@ func _on_shoulder(x: float, y: float) -> bool:
 
 
 func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
+	var flown := log  # this flight's record, for the debrief on the "landed" event (the log is renewed below)
 	phase = "parked"
 	location = af.code
 	if af.kind == "foreign" and island != null:
 		island.on_arrive()  # the General's men, not the task force
-	elif police.landing_check(s, af, carrying_hot()):
+	elif police.landing_check(s, af, carrying_hot(), "runner", CoverCargo.factor(loadout.items.values())):
 		_bust("arrested on landing at %s" % af.name)
 		if phase == "busted":
 			return
@@ -171,7 +175,12 @@ func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
 		refresh_board(af.code)
 	if delivered.is_empty() and hot_here.is_empty():
 		say("Parked at %s." % af.name)
-	bus.emit("landed", time, "", ["runner"], {"code": af.code})
+	var leg := {"code": af.code}
+	if flown.t_off >= 0.0:
+		leg.merge({"from": str(flown.departed_from if flown.departed_from else ""), "seconds": time - flown.t_off,
+			"touchdown_fpm": flown.last_touchdown_fpm, "max_bank": flown.max_bank, "fuel_used_lb": maxf(0.0, flown.fuel_off - s.fuel_lb),
+			"pay": money - flown.money_off})
+	bus.emit("landed", time, "", ["runner"], leg)
 	save()
 
 

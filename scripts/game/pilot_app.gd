@@ -212,6 +212,9 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	notify.offset_top = 78.0
 	notify.offset_bottom = -4.0
 	ui.add_child(notify)
+	debrief = FlightDebrief.new()  # the card after a landing: time, touchdown, fuel, pay, records, Benny's time
+	ui.add_child(debrief)
+	s.bus.subscribe("landed", _on_landed)
 	car_map = Minimap.new()  # the radar for the car and for walking: it follows the car or the walker, not the aircraft
 	car_map.visible = false
 	ui.add_child(car_map)
@@ -353,6 +356,21 @@ func _build_player() -> void:
 	_player_key = s.spec.key
 
 
+## Gold beacons over the places that move the next chapter goal on (GoalMarks), so they can be found from the air.
+func _sync_goal_beacons() -> void:
+	var want: Array = GoalMarks.of(s).map(func(g): return [snappedf(float(g.x), 1.0), snappedf(float(g.y), 1.0)])
+	if want == _goal_beacons.map(func(b): return b[0]):
+		return
+	for b in _goal_beacons:
+		b[1].queue_free()
+	_goal_beacons.clear()
+	for xy in want:
+		var b := Models.build_beacon(300, 6, Color(1.0, 0.82, 0.25, 0.35))
+		b.position = MeshBuilder.to_godot([xy[0], xy[1], maxf(0.0, s.world.ground(xy[0], xy[1]))])
+		add_child(b)
+		_goal_beacons.append([xy, b])
+
+
 func _sync_beacons() -> void:
 	var want := []
 	for j in s.active_jobs:
@@ -416,7 +434,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			return
 		var m := _active_menu()
 		if m != null:
-			if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k == KEY_G) or (m is HQMenu and k in [KEY_Q, KEY_D])):
+			if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k in [KEY_G, KEY_D]) or (m is HQMenu and k in [KEY_Q, KEY_D])):
 				get_viewport().set_input_as_handled()
 				return  # holding Enter must not confirm a newly armed action
 			if k == KEY_ESCAPE:
@@ -629,10 +647,12 @@ var controls_menu: ControlsMenu = null
 var pack_menu: PackMenu = null
 var sound: Soundscape = null
 var notify: PhoneNotify = null  ## the phone's banners
+var debrief: FlightDebrief = null
 var car_map: Minimap = null  ## the radar and chart while on foot or driving
 var waypoint = null  ## the ground point you picked on the chart (Vector2), or null
 var _was_parked := true  ## last frame's s.parked, to see the moment of landing
 var _plane_fund_told := false  ## the "you can buy your plane" call has been made this session
+var _goal_beacons: Array = []  ## [[x, y], node] for GoalMarks
 var fast_forward := 1  ## whole simulation steps run per frame (1, 2, 4 or 8)
 var _wp_beacon: MeshInstance3D = null
 var car_dash: CarDash = null  ## the dashboard, shown while driving
@@ -935,6 +955,18 @@ func _cycle_fast_forward() -> void:
 
 func _map_open() -> bool:
 	return (car_map != null and car_map.big) or hud.minimap.big
+
+
+## A landing after a real flight: the debrief card, and the route's records (RouteBests, per machine).
+func _on_landed(ev) -> void:
+	var d: Dictionary = ev.data
+	var from := str(d.get("from", ""))
+	if debrief == null or from == "" or not World.AIRFIELD_BY_CODE.has(from) or float(d.get("seconds", 0.0)) < 30.0:
+		return
+	var to := str(d.code)
+	var rec := RouteBests.record(from, to, float(d.seconds), float(d.get("touchdown_fpm", 0.0))) if from != to else {}
+	var benny := RouteBests.benny_seconds(from, to, s.aircraft_key) if from != to else 0.0
+	debrief.show_flight(d, rec, benny, World.airfield(from).name, World.airfield(to).name)
 
 
 ## A click on a chart: a waypoint. A pink beam stands at it so you can see where you are going, and the dashboard points the way.
@@ -1509,6 +1541,7 @@ func _process(delta: float) -> void:
 		radio.active = driving != null or not on_foot
 	if _frame % 30 == 1:
 		_phone_watch()
+		_sync_goal_beacons()
 		if scene != null and s.stash_net != null:
 			for stash in s.stash_net.stashes:
 				var node := scene.find_child("stash-" + str(stash.id), true, false) as Node3D
