@@ -376,6 +376,17 @@ const NAMES := {"logistics": "logistics (stock and cash have to be moved)", "dea
 	"agency": "the Company", "casino": "the Hotel Cielo"}
 
 
+## The one sentence for what to do next (the HUD's NEXT line): the first required goal not yet met or waived ("" when none is left).
+func next_objective_text() -> String:
+	if employment != null and employment.active():
+		var need := 2 if employment.stage == 0 else 1
+		return "Complete employer deliveries (%d/%d)" % [employment.delivered, need]
+	for o in chapter.objectives:
+		if not o.optional and not outcomes.has(o.key) and float(progress.get(o.key, 0.0)) < o.target:
+			return o.text
+	return ""
+
+
 func objective_lines() -> Array:
 	if employment != null and employment.active():
 		return ["[%s] Complete employer deliveries (%d/%d)" % ["x" if employment.delivered >= (2 if employment.stage == 0 else 1) else " ", employment.delivered, 2 if employment.stage == 0 else 1]]

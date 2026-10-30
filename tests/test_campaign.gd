@@ -71,3 +71,14 @@ func test_save_roundtrip() -> void:
 	var d := Campaign.from_dict(c.to_dict())
 	check(d.index == 2 and d.progress == {"kicked": 3}, "roundtrip")
 	check_eq(Campaign.CHAPTERS.size(), 4, "the tutorial is four chapters")
+
+
+func test_next_objective_is_the_first_required_goal_not_yet_met() -> void:
+	var s := _sess()
+	var camp := Campaign.new()
+	camp.attach(s)
+	var first: String = camp.chapter.objectives[0].text
+	check_eq(camp.next_objective_text(), first, "starts at the chapter's first goal")
+	for o in camp.chapter.objectives:
+		camp.progress[o.key] = o.target
+	check_eq(camp.next_objective_text(), "", "nothing left to do when every goal is met")
