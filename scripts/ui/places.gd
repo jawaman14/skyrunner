@@ -45,6 +45,8 @@ static func list(s: Session) -> Array:
 	else:
 		out.append(_locked("lab", "The Sunrise Collective", _opens("Blotter"), s))
 	for af in s.world.airfields:
+		if s.discovery != null and not s.discovery.is_known(af.code):
+			continue
 		out.append({"id": "field:%s" % af.code, "name": "%s - %s" % [af.code, af.name], "kind": "field", "x": af.x, "y": af.y, "state": "open",
 			"note": "%s strip, %d m" % [af.kind, int(af.length)]})
 	return out
