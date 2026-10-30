@@ -67,6 +67,7 @@ var history_label: Label  ## Contacts: the last few calls, answered, declined or
 var campaign_scroll: ScrollContainer  ## the chapter guide (G, or its button on the home screen), over any app
 var campaign_text: Label
 var campaign_button: Button
+var _drop_pending := -1  ## the job id the first D press asked about (Work > My jobs)
 var _read_sig: Array = []  ## what the News or Done list was last built from (see refresh)
 
 
@@ -249,6 +250,7 @@ func contacts() -> Array:
 ## The home screen, unless a call is ringing: then the phone opens on Contacts, with the call at the top.
 func open() -> void:
 	page = "home"
+	_drop_pending = -1
 	campaign_scroll.visible = false
 	super.open()
 	if not s.phone_calls.pending().is_empty():
@@ -270,6 +272,7 @@ func open_app(id: String) -> void:
 				show_feedback("No story in this game: there is no chapter guide.", false)
 			return
 	page = id
+	_drop_pending = -1
 	_read_sig = []
 	campaign_scroll.visible = false
 	if list != null:
@@ -359,14 +362,14 @@ func refresh() -> void:
 			_work.append(["market", null])
 			list.add_row(["Buyers' orders"])
 			_work.append(["orders", null])
-			list.section("My jobs: ENTER puts a waypoint on one")
+			list.section("My jobs: ENTER puts a waypoint on one, D drops it")
 			_work.append(["", null])
 			for j in _jobs:
 				list.add_row(["%s%s   $%s" % ["HOT " if j.hot() else "", j.dest_label(), Py.money(j.payout)]])
 				_work.append(["job", j])
 			if _jobs.is_empty():
 				footer.text = "No jobs taken yet."
-			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "open / waypoint", "enter"], ["ESC", "back", "esc"]])
+			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "open / waypoint", "enter"], ["D", "drop job", "d"], ["ESC", "back", "esc"]])
 		"empire":
 			title.text = "Empire"
 			_empire = []
@@ -576,9 +579,11 @@ func key(k: String) -> void:
 	match k:
 		"up":
 			list.move(-1)
+			_drop_pending = -1  # moving away keeps the job: the next D asks again
 			_update_info()
 		"down":
 			list.move(1)
+			_drop_pending = -1
 			_update_info()
 		"enter":
 			var i := list.selected_row()
@@ -642,6 +647,8 @@ func key(k: String) -> void:
 				var result: Array = s.command(Roles.PILOT, "phone_decline", {"id": rows[i][3]})
 				show_feedback("Call declined. The offer stays open through the contact." if result[0] else str(result[1]), bool(result[0]))
 				refresh()
+			elif page == "work" and i >= 0 and i < _work.size() and str(_work[i][0]) == "job":
+				_drop_job(_work[i][1])
 
 
 func _input(event: InputEvent) -> void:
@@ -656,6 +663,25 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 	super._input(event)
+
+
+## D on one of My jobs: drop it (no delivery pay). The first press asks, the second does it, as the job board does.
+func _drop_job(j: Jobs.Job) -> void:
+	var action: Dictionary = s.job_action(Roles.PILOT, "drop_job", j.id)
+	if not action.enabled:
+		_drop_pending = -1
+		show_feedback(str(action.disabled_reason), false)
+		return
+	if action.confirmation_required and _drop_pending != j.id:
+		_drop_pending = j.id
+		show_feedback("Drop '%s'? You get no delivery pay. Press D again to confirm, or move away to keep it." % j.title, false)
+		return
+	_drop_pending = -1
+	var result: Array = s.command(Roles.PILOT, "drop_job", action.args)
+	show_feedback(("Dropped %s. No delivery pay." % j.title) if result[0] else str(result[1]), bool(result[0]))
+	if result[0]:
+		s.say("Dropped %s. No delivery pay." % j.title)
+	refresh()
 
 
 ## These services need a parked aircraft; calls and the read-only apps work aloft.
