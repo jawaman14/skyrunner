@@ -114,7 +114,7 @@ func _hub() -> PhoneMenu:
 func test_the_hub_has_its_apps_in_order() -> void:
 	_hub()
 	var ids: Array = PhoneMenu.APPS.map(func(a): return a[0])
-	check_eq(ids, ["work", "contacts", "empire", "map", "messages", "guide", "help", "radio", "settings"])
+	check_eq(ids, ["work", "contacts", "empire", "map", "messages", "guide", "help", "radio", "settings", "done", "news"])
 	_menu.key("2")
 	check_eq(_menu.page, "contacts", "2 opens People")
 

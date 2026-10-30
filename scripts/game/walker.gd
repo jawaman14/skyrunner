@@ -188,7 +188,12 @@ func use() -> void:
 func unobstructed(area: Area3D) -> bool:
 	if not is_instance_valid(area) or not is_inside_tree():
 		return false
-	var ray := PhysicsRayQueryParameters3D.create(cam.global_position, area.global_position, collision_mask, [get_rid()])
+	# the thing's own body (a car's box around its door) is not a wall between you and it
+	var skip: Array[RID] = [get_rid()]
+	var owner_body := area.get_parent()
+	if owner_body is CollisionObject3D:
+		skip.append(owner_body.get_rid())
+	var ray := PhysicsRayQueryParameters3D.create(cam.global_position, area.global_position, collision_mask, skip)
 	ray.collide_with_areas = false
 	ray.collide_with_bodies = true
 	return get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
