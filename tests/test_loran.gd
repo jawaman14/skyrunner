@@ -12,6 +12,10 @@ func test_the_set_is_cheap_and_sold_everywhere() -> void:
 	s.money = 1000
 	check(s.command(Roles.PILOT, "buy_gear", {"name": "loran"})[0], "bought at a bush strip with no features on")
 	check(s.gear.has("loran"), "fitted")
+	var hm := HangarMenu.new()
+	hm.s = s
+	check(hm._rows().any(func(r): return r[0] == "gear" and r[1] == "loran"), "on the hangar's shelf with no features on")
+	hm.free()
 	s.dispose()
 
 
