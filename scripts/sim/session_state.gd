@@ -50,7 +50,7 @@ class FlightLog:
 	var last_touchdown_fpm := 0.0
 	var touchdowns_seen := 0
 	var t_off := -1.0  ## when the wheels left the ground (the flight debrief)
-	var fuel_off := 0.0  ## lb of fuel at take-off
+	var fuel_off := 0.0  ## lb of fuel at take-off, wings and ferry tank together
 	var money_off := 0  ## $ in hand at take-off
 
 	func _init(touchdowns_seen_ := 0) -> void:
