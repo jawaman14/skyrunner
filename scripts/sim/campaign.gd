@@ -195,6 +195,14 @@ func objective_lines() -> Array:
 	return out
 
 
+## The one sentence for what to do next: the first required goal not yet met, in the order the chapter lists them ("" when all are).
+func next_objective_text() -> String:
+	for o in chapter.objectives:
+		if not o.optional and float(progress.get(o.key, 0.0)) < o.target:
+			return o.text
+	return ""
+
+
 # ------------------------------------------------------------ progress
 func _bump(key: String, amount := 1.0) -> void:
 	if Py.any(chapter.objectives, func(o): return o.key == key):
