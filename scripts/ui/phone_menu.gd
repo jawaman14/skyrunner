@@ -383,7 +383,10 @@ func refresh() -> void:
 		"news":
 			title.text = "The Daily Coast"
 			for line in _news_lines():
-				list.add_row([line])
+				if str(line).begins_with("# "):
+					list.section(str(line).substr(2))
+				else:
+					list.add_row([line])
 			if list.row_count() == 0:
 				footer.text = "No news yet today."
 			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
@@ -447,7 +450,20 @@ func _news_lines() -> Array:
 		for n in s.econ.news:
 			items.append([float(n[0]), "Market: %s" % str(n[1])])
 	items.sort_custom(func(a, b): return a[0] > b[0])
-	return items.slice(0, 20).map(func(i): return "%d:%02d  %s" % [int(i[0] / 3600.0), int(i[0] / 60.0) % 60, i[1]])
+	var out := []
+	# what is moving prices right now, and for how long: something to plan a run around, not only to read about afterwards
+	var now_on := []
+	if s.econ != null:
+		for e in s.econ.events:
+			var good := str(e.good)
+			var name := str(Economy.GOODS.get(good, {}).get("name", good.capitalize()))
+			now_on.append("%s: %s x%.2f, %d min left" % [str(e.text), name, float(e.mult), maxi(1, ceili((float(e.until) - s.time) / 60.0))])
+	if not now_on.is_empty():
+		out.append("# In force now")
+		out.append_array(now_on)
+		out.append("# Headlines")
+	out.append_array(items.slice(0, 20).map(func(i): return "%d:%02d  %s" % [int(i[0] / 3600.0), int(i[0] / 60.0) % 60, i[1]]))
+	return out
 
 
 ## The objectives already met, newest chapter first: a "# heading" line for each chapter, then its ticked goals.
