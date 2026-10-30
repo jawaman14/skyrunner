@@ -37,6 +37,8 @@ var _c := Vector2.ZERO  ## the screen point of the scope's centre
 var _r := 1.0  ## the radar's radius in px (big mode: half the chart)
 var _h := 0.0  ## the heading the scope is turned to, radians (0 when north-up or the chart)
 var _wc := Vector2.ZERO  ## the world point at the scope's centre
+var _goals: Array = []  ## GoalMarks.of(s), refreshed about once a second
+var _goals_t := 0.0
 
 
 func setup(sess: Session) -> Minimap:
@@ -287,6 +289,7 @@ func _draw() -> void:
 		_terrain()
 		_rim(font)
 	_world_marks(font)
+	_goal_marks(font)
 	_waypoint(font)
 	_me()
 	if not big:
@@ -473,6 +476,24 @@ func _waypoint(font: Font) -> void:
 		_label(font, p + Vector2(10, -8), text, 12 if big else 11, UIStyle.PINK)
 	elif not big:
 		_pointer(p, UIStyle.PINK, text, font)
+
+
+## The next chapter goal's places (GoalMarks): gold diamonds, labelled on the chart, a pointer at the scope's edge when off it.
+func _goal_marks(font: Font) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _goals_t > 1.0:
+		_goals_t = now
+		_goals = GoalMarks.of(s)
+	var gold := Color(1.0, 0.82, 0.25)
+	for g in _goals:
+		var p := to_screen(float(g.x), float(g.y))
+		if _inside(p, 8.0):
+			draw_colored_polygon(PackedVector2Array([p + Vector2(0, -8), p + Vector2(7, 0), p + Vector2(0, 8), p + Vector2(-7, 0)]), gold)
+			draw_arc(p, 11.0, 0, TAU, 20, Color(gold, 0.7), 1.5, true)
+			if big:
+				_label(font, p + Vector2(12, -6), "GOAL  " + str(g.label), 12, gold)
+		elif not big and _goals.size() <= 3:
+			_pointer(p, gold, "goal", font)
 
 
 ## You: a yellow arrow, with a short line ahead on the scope.
