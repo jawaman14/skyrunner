@@ -35,6 +35,8 @@ const APPS := [
 	["help", "Help", Color(0.8, 0.8, 0.5), "help"],
 	["radio", "Radio", Color(0.95, 0.4, 0.7), "radio"],
 	["settings", "Settings", Color(0.65, 0.65, 0.72), "settings"],
+	["done", "Done", Color(0.55, 0.85, 0.55), "guide"],  # past the 1-9 keys: arrows and ENTER reach these two
+	["news", "News", Color(0.9, 0.9, 0.95), "guide"],
 ]
 ## People, in groups: each contact's action, by group.
 const GROUPS := [
@@ -65,6 +67,7 @@ var history_label: Label  ## Contacts: the last few calls, answered, declined or
 var campaign_scroll: ScrollContainer  ## the chapter guide (G, or its button on the home screen), over any app
 var campaign_text: Label
 var campaign_button: Button
+var _read_sig: Array = []  ## what the News or Done list was last built from (see refresh)
 
 
 func _build() -> void:
@@ -267,6 +270,7 @@ func open_app(id: String) -> void:
 				show_feedback("No story in this game: there is no chapter guide.", false)
 			return
 	page = id
+	_read_sig = []
 	campaign_scroll.visible = false
 	if list != null:
 		list.clear_rows()
@@ -315,6 +319,13 @@ func refresh() -> void:
 		footer.text = ""
 		hints.set_hints([["ARROWS", "choose", "right"], ["ENTER", "open", "enter"], ["1-%d" % APPS.size(), "app", ""], ["ESC", "put away", "esc"]])
 		return
+	if page in ["news", "done"]:
+		# the pilot app refreshes an open phone about six times a second; rebuilding an unchanged list snapped a reader's scroll back to
+		# the selected row, so these two read-only lists are only rebuilt when their text changes
+		var lines: Array = _news_lines() if page == "news" else _finished_objectives()
+		if lines == _read_sig and list.row_count() > 0:
+			return
+		_read_sig = lines
 	list.clear_rows()
 	footer.text = ""
 	match page:
@@ -366,6 +377,23 @@ func refresh() -> void:
 					list.add_row([str(item[0])])
 					_empire.append(str(item[1]))
 			hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "open", "enter"], ["ESC", "back", "esc"]])
+		"news":
+			title.text = "The Daily Coast"
+			for line in _news_lines():
+				list.add_row([line])
+			if list.row_count() == 0:
+				footer.text = "No news yet today."
+			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
+		"done":
+			title.text = "Done"
+			for line in _finished_objectives():
+				if line.begins_with("# "):
+					list.section(line.substr(2))
+				else:
+					list.add_row([line])
+			if list.row_count() == 0:
+				footer.text = "Nothing finished yet."
+			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
 		"market":
 			_market_page()
 		"orders":
@@ -403,6 +431,41 @@ func _process(delta: float) -> void:
 				open_app("contacts")
 			else:
 				refresh()
+
+
+## The paper: the island's headlines (the chronicle's, as the runner hears them) and the market's, newest first.
+func _news_lines() -> Array:
+	var items := []
+	if s.chronicle != null:
+		for e in s.chronicle.entries:
+			if e[3] or e[1] == "org" or e[1] == "family":
+				items.append([float(e[0]), str(e[4])])
+	if s.econ != null:
+		for n in s.econ.news:
+			items.append([float(n[0]), "Market: %s" % str(n[1])])
+	items.sort_custom(func(a, b): return a[0] > b[0])
+	return items.slice(0, 20).map(func(i): return "%d:%02d  %s" % [int(i[0] / 3600.0), int(i[0] / 60.0) % 60, i[1]])
+
+
+## The objectives already met, newest chapter first: a "# heading" line for each chapter, then its ticked goals.
+func _finished_objectives() -> Array:
+	var out := []
+	if s.story == null:
+		return ["No story in this game."]
+	var now: Array = s.story.objective_lines().filter(func(l): return str(l).begins_with("[x]"))
+	if not now.is_empty():
+		out.append("# Now: %s" % s.story.chapter.title)
+		for l in now:
+			out.append(str(l).substr(4))
+	for k in range(s.story.history.size() - 1, -1, -1):
+		var entry: Dictionary = s.story.history[k]
+		var done: Array = entry.get("objectives", []).filter(func(l): return str(l).begins_with("[x]"))
+		if done.is_empty():
+			continue
+		out.append("# %s" % entry.get("title", "Earlier"))
+		for l in done:
+			out.append(str(l).substr(4))
+	return out
 
 
 func _messages() -> Array:

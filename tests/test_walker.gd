@@ -790,3 +790,49 @@ func test_the_phone_apps() -> void:
 	s.payroll = null
 	app.free()
 	s.dispose()
+
+
+## The starter car stands by the right wing; walking up to it and pressing E must get you in. (Owner, 30 Oct: "can't get into the
+## vehicle next to the aircraft".) The car's own body must not hide its door from the walker's line of sight.
+func test_the_starter_car_can_be_entered_from_beside_it() -> void:
+	var app := _app({"seed": 9, "location": "HAR"})
+	app._toggle_on_foot()
+	await _frames(6)
+	check(app.car != null, "the car is made when you step out")
+	if app.car == null:
+		app.queue_free()
+		return
+	var c: Car = app.car
+	# three metres off its flank, level with the door, looking at it
+	var side := c.global_transform.basis.x
+	var spot := c.global_position + side * 3.0
+	var heading := rad_to_deg(atan2(c.global_position.x - spot.x, -(c.global_position.z - spot.z)))
+	app.walker.place(spot.x, -spot.z, heading)
+	await _frames(6)
+	app.walker._update_focus()
+	check(app.walker.focus != null and app.walker.focus.get_meta("action", "") == "car", "the car is the thing you would use")
+	app.walker.use()
+	check(app.driving == c, "E gets you in")
+	app.queue_free()
+
+
+## The employer's Cessna is on loan: the phone calls once when the savings cover one of the pilot's own.
+func test_the_phone_says_when_you_can_afford_your_plane() -> void:
+	var s := Session.new({"seed": 9, "location": "HAR", "career": true, "save_path": "user://zz_test_fund.json"})
+	Story.new_employed().attach(s)
+	s.update(1.0 / 30)
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	var seen := func() -> int: return app.notify.history.filter(func(h): return "Cessna of your own" in str(h.body)).size()
+	s.money = EmploymentOpening.PURCHASE_PRICE - 1
+	app._phone_watch()
+	check_eq(seen.call(), 0, "not enough yet: no call")
+	s.money = EmploymentOpening.PURCHASE_PRICE
+	app._phone_watch()
+	check_eq(seen.call(), 1, "enough: the phone says so")
+	app._phone_watch()
+	check_eq(seen.call(), 1, "and only once")
+	app.queue_free()
+	s.dispose()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://zz_test_fund.json"))

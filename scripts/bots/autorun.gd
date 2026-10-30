@@ -53,6 +53,15 @@ func _adopt_flight() -> void:
 		legs = [PilotBot.Leg.new("land", af.x, af.y, af.code)]
 	else:
 		var job: Jobs.Job = s.active_jobs[0]
+		var best := INF
+		for j in s.active_jobs:  # several aboard: the nearest drop first, as the autopilot does
+			if j.is_airdrop():
+				continue
+			var dest := World.airfield(j.dest)
+			var d: float = PyMath.hypot(dest.x - s.state.x, dest.y - s.state.y)
+			if d < best:
+				best = d
+				job = j
 		var home = s.log.departed_from if s.log.departed_from else s.location
 		legs = PilotBot.mission_for(s, job, home)
 	bot = PilotBot.new(s, legs)
