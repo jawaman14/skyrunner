@@ -214,6 +214,10 @@ func _draw_runner() -> void:
 	for j in visible_items("jobs"):
 		_circle(j.x, j.y, 600, Color(0.3, 1, 0.3), 2.0)
 		_text(j.x, j.y, str(j.dest), Color(0.4, 1, 0.4))
+		var pts: Array = j.get("points", []) if j is Dictionary else []
+		for k in pts.size():  # a side gig's points, in order: the remote crew navigates them too
+			_circle(float(pts[k][0]), float(pts[k][1]), 400, Color(0.35, 0.9, 1.0), 2.0 if k == 0 else 1.0)
+			_text(float(pts[k][0]), float(pts[k][1]), str(k + 1), Color(0.35, 0.9, 1.0))
 	for b in visible_items("boats"):
 		var destination = b.get("dest")
 		if destination is Array and destination.size() >= 2:

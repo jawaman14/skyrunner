@@ -61,7 +61,7 @@ func stock_island_boards() -> void:
 
 
 func accept_job_reason(job: Jobs.Job) -> String:
-	if story != null and story.employment != null and story.employment.active():
+	if story != null and story.employment != null and story.employment.active() and job.kind != "gig":  # a side gig is not an employer job and never counts as one
 		if job.employer_stage != story.employment.stage or job.employer_serial <= story.employment.last_completed or job.employer_serial >= story.employment.next_serial:
 			return "Complete the current employer assignment first."
 	if not parked or location != job.origin:

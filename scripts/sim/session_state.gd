@@ -122,6 +122,7 @@ var bus: EventBus
 var radio: RadioNet
 var police: PoliceSystem
 var maritime: Maritime
+var gig_rng: PyRandom = null  ## side gigs on the boards (Gigs): their own stream
 var discovery: Discovery = null  ## hidden strips the story starts off the chart (Discovery)
 var deal_moves: DealMoves = null  ## loop idea 5: Benny moves an airdrop mid-flight (DealMoves)
 var daily_weather: DailyWeather = null  ## the story game's weather spells (DailyWeather)
@@ -536,6 +537,10 @@ func refresh_board(code: String) -> void:
 	board_at[code] = time
 	if story != null and story.employment != null and story.employment.active():
 		boards[code] = story.employment.board(self, code)
+		if Gigs.ENABLED and gig_rng != null and World.airfield(code).kind != "foreign":
+			var eg = Gigs.gig_for(world, World.airfield(code), world.airfields, gig_rng)  # side money while working for Rafa
+			if eg != null:
+				boards[code].append(eg)
 		return
 	var af := World.airfield(code)
 	if af.kind == "foreign":
@@ -562,6 +567,10 @@ func refresh_board(code: String) -> void:
 		if not trade.connected:
 			# the career: grass until the Colombians call - no cocaine work yet
 			boards[code] = boards[code].filter(func(j): return j.own_good == "marijuana" or Economy.good_of(j) != "cocaine")
+	if Gigs.ENABLED and gig_rng != null:
+		var gj = Gigs.gig_for(world, af, world.airfields, gig_rng)  # a side gig: photos, a banner tow, a flour pass
+		if gj != null:
+			boards[code].append(gj)
 	if Comeback.ENABLED and code == location and money < Comeback.WINDFALL_BELOW and active_jobs.is_empty() and time - windfall_at >= Comeback.WINDFALL_EVERY_S:
 		# only on the board where the pilot stands: a windfall dealt to a strip they cannot reach is no way back
 		var wj = Comeback.windfall_job(af, world.airfields)  # loop idea 8: a way back from a bad stretch

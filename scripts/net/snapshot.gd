@@ -271,7 +271,8 @@ static func _job(sess: Session, j: Jobs.Job) -> Dictionary:
 	return {"id": j.id, "title": j.title, "dest": j.dest_label(), "x": _r(xy[0]), "y": _r(xy[1]), "payout": j.payout,
 		"hot": j.hot(), "airdrop": j.is_airdrop(), "bales": j.bales_total, "weight": _r(j.weight_lb()),
 		"pax": Py.count(j.items, func(i): return i.kind == "passenger"), "notes": j.notes,
-		"time_left": _r(tl) if tl != null else null, "weapons": j.weapons, "gun_mode": j.gun_mode}
+		"time_left": _r(tl) if tl != null else null, "weapons": j.weapons, "gun_mode": j.gun_mode,
+		"points": j.checkpoints.slice(j.visited).map(func(c): return [_r(c[0]), _r(c[1])])}  # a side gig's points still to fly
 
 
 static func _law(sess: Session) -> Dictionary:

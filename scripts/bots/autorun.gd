@@ -79,7 +79,7 @@ func _pick():
 	var seats := spec.seat_count() - (1 if s.copilot else 0)
 	var jobs := Py.filter(board, func(j):
 		var pax := Py.count(j.items, func(i): return i.kind == "passenger")
-		return pax <= seats and j.weight_lb() < spec.mtow_lb * 0.25 and not skipped.has(j.id))
+		return pax <= seats and j.weight_lb() < spec.mtow_lb * 0.25 and not skipped.has(j.id) and j.checkpoints.is_empty())  # PilotBot flies to a strip, not through a gig's points
 	if jobs.is_empty():
 		return null
 	# Python's key is the tuple (hot, payout); payouts are far below 1e12
