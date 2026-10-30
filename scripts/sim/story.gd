@@ -196,6 +196,7 @@ var outcomes := {}  ## objective key -> failure/waiver reason
 var history: Array = []  ## completed chapter briefings and actual outcomes
 var opened := {}  ## every system and lock opened so far
 var completed_all := false
+var fresh := true  ## a new story (Story.new), not one rebuilt from a save (from_dict): only a new one hides the smugglers' strips
 var show_briefing := true
 var company_decision := ""  ## remove | spare | declined | skipped: the Company order at the end of Chapter 9 (declined: the player walked away; skipped: the Company cut us loose)
 var _last_t := -1.0  ## the clock at the last tick (for the goals that count minutes)
@@ -259,6 +260,7 @@ static func from_dict(d) -> Story:
 	st.outcomes = d.get("outcomes", {}).duplicate()
 	st.outcome_status = d.get("outcome_status", {}).duplicate()
 	st.history = d.get("history", []).duplicate(true)
+	st.fresh = false  # a loaded story keeps the chart its save restored
 	return st
 
 
@@ -321,7 +323,7 @@ func attach(s) -> void:
 	s.story = self
 	s.bus.subscribe("*", _on_event)
 	_set_police_pace(0)
-	if s.discovery != null and s.time < 60.0:
+	if s.discovery != null and fresh:
 		s.discovery.hide_shady()  # a new story: the smugglers' strips start off the chart (a loaded game keeps what it had found)
 	if employment != null and employment.active():
 		if employment.loaner:

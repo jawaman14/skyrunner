@@ -3,6 +3,7 @@ extends TestCase
 
 
 func after_each() -> void:
+	Discovery.ENABLED = true
 	World.use_map(0)
 
 
@@ -43,6 +44,20 @@ func test_a_job_there_gives_the_coordinates_and_found_strips_are_saved() -> void
 	if shady.size() > 1:
 		check(not t.discovery.is_known(shady[1].code), "the others still hidden")
 	s.dispose()
+	t.dispose()
+
+
+func test_a_loaded_story_keeps_its_chart_and_the_switch_turns_it_off() -> void:
+	var s := Session.new({"seed": 9, "location": "HAR", "career": true})
+	var loaded := Story.from_dict(Story.new(0).to_dict())
+	loaded.attach(s)
+	for af in s.world.airfields:
+		check(s.discovery.is_known(af.code), "a loaded story does not hide %s again" % af.code)
+	s.dispose()
+	Discovery.ENABLED = false
+	var t := _story()
+	for af in t.world.airfields:
+		check(t.discovery.is_known(af.code), "switched off: %s on the chart" % af.code)
 	t.dispose()
 
 

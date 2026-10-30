@@ -6,6 +6,8 @@ extends RefCounted
 ##
 ## Reads positions only: no random draw. The landing rules do not care whether a strip is found; only the chart does.
 
+static var ENABLED := true  ## off: every strip is on the chart, nothing is revealed (an opt-in switch: only story games hide any)
+
 const FIND_RANGE_M := 2500.0
 const FIND_AGL_M := 400.0
 
@@ -20,17 +22,19 @@ func _init(sess_) -> void:
 
 ## Called when the story starts: every shady strip begins hidden.
 func hide_shady() -> void:
+	if not ENABLED:
+		return
 	for af in sess.world.airfields:
 		if af.kind == "shady":
 			hidden[af.code] = true
 
 
 func is_known(code: String) -> bool:
-	return not hidden.has(code)
+	return not ENABLED or not hidden.has(code)
 
 
 func update(dt: float) -> void:
-	if hidden.is_empty() or sess.state == null:
+	if not ENABLED or hidden.is_empty() or sess.state == null:
 		return
 	_t += dt
 	if _t < 1.0:
