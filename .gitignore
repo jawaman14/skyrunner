@@ -11,3 +11,6 @@ __pycache__/
 
 # a stale partial copy of the project sometimes appears here: never track it
 skyrunner-godot/
+
+# dated one-off captures: put them in the PR body or docs/archive, not here (the undated baselines are tracked on purpose)
+sim-results/*-20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]*
