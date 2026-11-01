@@ -8,9 +8,7 @@ const SIM_DIRS := ["res://scripts/sim", "res://scripts/bots"]
 var _original: Dictionary = {}
 
 ## Lines that are allowed to break the determinism rules, with the reason.
-const ALLOWED := {
-	"rng_.seed(randi())": "HQ.Season with no generator handed in (a hand-made one, never a replay): the caller seeds it in every seeded path",
-}
+const ALLOWED := {}
 
 
 func before_each() -> void:
