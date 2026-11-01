@@ -420,225 +420,262 @@ func _unhandled_input(ev: InputEvent) -> void:
 	if ev is InputEventJoypadButton and ev.pressed and _active_menu() == null and not on_foot:
 		_flight_press(ev)
 		return
-	if ev is InputEventKey and ev.pressed:
-		var k: int = ev.physical_keycode if ev.physical_keycode else ev.keycode
-		if k == KEY_F2 and ev.ctrl_pressed and not ev.echo:
-			scene.toggle_access_overlay()
+	if not (ev is InputEventKey and ev.pressed):
+		return
+	var k: int = ev.physical_keycode if ev.physical_keycode else ev.keycode
+	if _key_debug(ev, k):
+		return
+	var m := _active_menu()
+	if m != null:
+		_key_menu(m, ev, k)
+		return
+	if ev.echo:
+		return
+	if _key_always(k):
+		return
+	if on_foot and driving != null:
+		_key_driving(k)
+	elif on_foot:
+		_key_on_foot(k)
+	else:
+		_key_cockpit(ev, k)
+
+
+## Ctrl+F2 / F5 / F6 debug chords. True when one fired (the event is then handled).
+func _key_debug(ev: InputEventKey, k: int) -> bool:
+	if k == KEY_F2 and ev.ctrl_pressed and not ev.echo:
+		scene.toggle_access_overlay()
+		get_viewport().set_input_as_handled()
+		return true
+	if k == KEY_F5 and ev.ctrl_pressed and not ev.echo and s.story != null and server == null:  # debug: solo only, never at a shared table
+		s.story.debug_skip_chapter()
+		s.say("Debug: skipped to chapter %d." % s.story.chapter.num)
+		get_viewport().set_input_as_handled()
+		return true
+	if k == KEY_F6 and ev.ctrl_pressed and not ev.echo and server == null:  # the owner's test menu: solo only, never at a shared table
+		_open("cheat")
+		get_viewport().set_input_as_handled()
+		return true
+	return false
+
+
+## A key while a menu is open: the menu owns the keyboard. Always handles the event.
+func _key_menu(m, ev: InputEventKey, k: int) -> void:
+	if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k in [KEY_G, KEY_D]) or (m is HQMenu and k in [KEY_Q, KEY_D])):
+		get_viewport().set_input_as_handled()
+		return  # holding Enter must not confirm a newly armed action
+	if k == KEY_ESCAPE:
+		m.close()
+	elif MENU_KEYS.has(k):
+		m.key(MENU_KEYS[k])
+	elif k in [KEY_J, KEY_L, KEY_H]:
+		_toggle_menu(OS.get_keycode_string(k).to_lower())
+	elif OS.get_keycode_string(k).length() == 1:
+		m.key(OS.get_keycode_string(k).to_lower())  # any other letter: the menu's own keys (the track's B and N, the tables')
+	get_viewport().set_input_as_handled()
+	return
+
+
+## F8 (controls) and TAB (on foot / in the aircraft) work everywhere. True when one fired.
+func _key_always(k: int) -> bool:
+	if k == KEY_F8:
+		toggle_controls()
+		get_viewport().set_input_as_handled()
+		return true
+	if k == KEY_TAB:
+		_toggle_on_foot()
+		get_viewport().set_input_as_handled()
+		return true
+	return false
+
+
+## A key while driving a car on foot-mode controls. Always handles the event.
+func _key_driving(k: int) -> void:
+	match k:
+		KEY_E:
+			_exit_car()
+		KEY_R:
+			_radio_key("power")
+		KEY_PERIOD, KEY_BRACKETRIGHT:
+			_radio_key("up")
+		KEY_COMMA, KEY_BRACKETLEFT:
+			_radio_key("down")
+		KEY_ESCAPE:
+			open_pause()
+		KEY_M:
+			_map_toggle()
+		KEY_BACKSLASH:
+			_cycle_fast_forward()
+		KEY_F1:
+			help.visible = not help.visible
+	get_viewport().set_input_as_handled()
+	return
+
+
+## A key while walking. Always handles the event.
+func _key_on_foot(k: int) -> void:
+	if gun != null:
+		var gk := OS.get_keycode_string(k).to_lower()
+		if gk in ["1", "2", "3", "4", "h", "r"] and gun.key(gk):
 			get_viewport().set_input_as_handled()
 			return
-		if k == KEY_F5 and ev.ctrl_pressed and not ev.echo and s.story != null and server == null:  # debug: solo only, never at a shared table
-			s.story.debug_skip_chapter()
-			s.say("Debug: skipped to chapter %d." % s.story.chapter.num)
-			get_viewport().set_input_as_handled()
-			return
-		if k == KEY_F6 and ev.ctrl_pressed and not ev.echo and server == null:  # the owner's test menu: solo only, never at a shared table
-			_open("cheat")
-			get_viewport().set_input_as_handled()
-			return
-		var m := _active_menu()
-		if m != null:
-			if ev.echo and (MENU_KEYS.get(k, "") == "enter" or (m is PhoneMenu and k in [KEY_G, KEY_D]) or (m is HQMenu and k in [KEY_Q, KEY_D])):
-				get_viewport().set_input_as_handled()
-				return  # holding Enter must not confirm a newly armed action
-			if k == KEY_ESCAPE:
-				m.close()
-			elif MENU_KEYS.has(k):
-				m.key(MENU_KEYS[k])
-			elif k in [KEY_J, KEY_L, KEY_H]:
-				_toggle_menu(OS.get_keycode_string(k).to_lower())
-			elif OS.get_keycode_string(k).length() == 1:
-				m.key(OS.get_keycode_string(k).to_lower())  # any other letter: the menu's own keys (the track's B and N, the tables')
-			get_viewport().set_input_as_handled()
-			return
-		if ev.echo:
-			return
-		if k == KEY_F8:
-			toggle_controls()
-			get_viewport().set_input_as_handled()
-			return
-		if k == KEY_TAB:
-			_toggle_on_foot()
-			get_viewport().set_input_as_handled()
-			return
-		if on_foot and driving != null:
-			match k:
-				KEY_E:
-					_exit_car()
-				KEY_R:
-					_radio_key("power")
-				KEY_PERIOD, KEY_BRACKETRIGHT:
-					_radio_key("up")
-				KEY_COMMA, KEY_BRACKETLEFT:
-					_radio_key("down")
-				KEY_ESCAPE:
-					open_pause()
-				KEY_M:
-					_map_toggle()
-				KEY_BACKSLASH:
-					_cycle_fast_forward()
-				KEY_F1:
-					help.visible = not help.visible
-			get_viewport().set_input_as_handled()
-			return
-		if on_foot:
-			if gun != null:
-				var gk := OS.get_keycode_string(k).to_lower()
-				if gk in ["1", "2", "3", "4", "h", "r"] and gun.key(gk):
-					get_viewport().set_input_as_handled()
-					return
-			if s.foot != null and k == KEY_5:
-				var err: String = s.foot.use_medkit()
-				s.say(err if err != "" else "Patched up: %d health." % int(s.foot.hp))
-				get_viewport().set_input_as_handled()
-				return
-			if s.foot != null and k == KEY_I:
-				toggle_pack()
-				get_viewport().set_input_as_handled()
-				return
-			match k:
-				KEY_E:
-					walker.use()
-				KEY_F:
-					walker.toggle_torch()
-				KEY_T:
-					_open("phone")  # the phone: the crew, the buyers, the lawyer, the desk without the walk
-				KEY_Z:
-					_field_order("hold")
-				KEY_X:
-					_field_order("come")
-				KEY_C:
-					_field_order("charge")
-				KEY_V:
-					_field_order("fall_back")
-				KEY_ESCAPE:
-					if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-						Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-					else:
-						open_pause()
-				KEY_M:
-					_map_toggle()
-				KEY_BACKSLASH:
-					_cycle_fast_forward()
-				KEY_F1:
-					help.visible = not help.visible
-				KEY_F2:
-					scene.set_hour(scene.hour + 3.0)
-				KEY_J, KEY_L, KEY_H:
-					s.say("On foot: walk up to the job board or the hangar and press E, or get back in (TAB) for J, L and H.")
-				KEY_P:
-					s.say("P pauses in the aircraft; ESC opens the menu anywhere.")
-			get_viewport().set_input_as_handled()
-			return
-		if ev.shift_pressed and k == KEY_W and s.payroll != null:
-			open_talk("crew")  # Manny Ortega's hiring hall
-		elif ev.shift_pressed and k == KEY_F10:
-			if s.tutorial == null:
-				Tutorial.new().attach(s)
-				s.say("Tutorial on.")
-			else:
-				s.tutorial.set_enabled(not s.tutorial.enabled)
-		elif ev.shift_pressed and k == KEY_H and s.logistics != null:
-			toggle_logistics()  # where the product and the cash are; trucks; cash bags
-		elif ev.shift_pressed and k == KEY_B and s.trade != null:
-			open_talk("buyers")  # Benny Ruiz: who's buying, and at what
-		elif ev.shift_pressed and k == KEY_L and s.court != null:
-			open_talk("lawyer")  # your lawyer: motions, the plea, a deal
-		elif ev.shift_pressed and k == KEY_F and s.family != null:
-			open_talk("family")  # a sit-down with the Family
-		elif ev.shift_pressed and k == KEY_G and s.island != null:
-			open_talk("general")  # the General's aide on the island frequency
-		elif ev.shift_pressed and k == KEY_C and s.psych != null:
-			open_talk("psych")  # the Sunrise Collective: Nico Cozz, acid for grass (Shift+N is the Family's no)
-		elif (ev.shift_pressed or ev.ctrl_pressed) and k == KEY_T:
-			_open("phone")  # the phone from the cockpit: every number you have
-		elif ev.shift_pressed and k == KEY_V and s.dealer != null:
-			_open("dealer")  # the car lot, without the walk
-		elif ev.shift_pressed and k == KEY_K and s.casino != null:
-			open_talk("casino")  # the Hotel Cielo: Lenny Vance, the manager
-		elif ev.shift_pressed and k in [KEY_U, KEY_I] and s.island != null:
-			# Isla Soberana quick orders: Shift+U four mules, Shift+I a container
-			var r: Array = s.command(Roles.PILOT, "island_ship", {"method": "mules" if k == KEY_U else "ship", "amount": 4 if k == KEY_U else 500})
-			if not r[0]:
-				s.say(r[1])
-		elif ev.shift_pressed and k in [KEY_Y, KEY_N, KEY_P] and s.family != null:
-			# the Family's newest offer: Shift+Y take it, Shift+N turn it down; Shift+P pay the tribute
-			var r: Array
-			if k == KEY_P:
-				r = s.command(Roles.PILOT, "pay_tribute", {})
-			elif s.family.offers.is_empty():
-				r = [false, "The Family has nothing on the table."]
-			else:
-				r = s.command(Roles.PILOT, "family_accept" if k == KEY_Y else "family_decline", {"id": s.family.offers.back().id})
-			if not r[0]:
-				s.say(r[1])
-		elif _flight_press(ev):
-			pass
-		elif PRESS_KEYS.has(k):
-			_pressed[PRESS_KEYS[k]] = true
-		elif k == KEY_O and ev.shift_pressed:
-			var r: Array = s.command(Roles.PILOT, "call_boat", {"brief": true})  # the codeword burst
-			if not r[0]:
-				s.say(r[1])
-		elif CREW_KEYS.has(k):
-			var args := {}
-			if k == KEY_U and waypoint != null:
-				args["waypoint"] = [waypoint.x, waypoint.y]  # U flies to the waypoint set on the chart
-			if k == KEY_U and _phone_hold_started and s.autopilot.waypoints.is_empty() and waypoint != null:
-				s.command(Roles.PILOT, "autopilot", {"on": false})  # first explicit U uses the selected waypoint
-			var r: Array = s.command(Roles.PILOT, CREW_KEYS[k], args)
-			if k == KEY_U and r[0]:
-				_phone_hold_started = false
-			if not r[0]:
-				s.say(r[1])
-		elif k == KEY_7:
-			# cycle the Mode A code: VFR, then the three emergency codes
-			var codes := ["1200", "7700", "7600", "7500"]
-			var r: Array = s.command(Roles.PILOT, "squawk", {"code": codes[(codes.find(s.squawk_code) + 1) % codes.size()]})
-			if not r[0]:
-				s.say(r[1])
-		elif k in [KEY_J, KEY_L, KEY_H]:
-			_toggle_menu(OS.get_keycode_string(k).to_lower())
-		elif k == KEY_ESCAPE:
-			if help.visible:
-				help.visible = false
+	if s.foot != null and k == KEY_5:
+		var err: String = s.foot.use_medkit()
+		s.say(err if err != "" else "Patched up: %d health." % int(s.foot.hp))
+		get_viewport().set_input_as_handled()
+		return
+	if s.foot != null and k == KEY_I:
+		toggle_pack()
+		get_viewport().set_input_as_handled()
+		return
+	match k:
+		KEY_E:
+			walker.use()
+		KEY_F:
+			walker.toggle_torch()
+		KEY_T:
+			_open("phone")  # the phone: the crew, the buyers, the lawyer, the desk without the walk
+		KEY_Z:
+			_field_order("hold")
+		KEY_X:
+			_field_order("come")
+		KEY_C:
+			_field_order("charge")
+		KEY_V:
+			_field_order("fall_back")
+		KEY_ESCAPE:
+			if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			else:
 				open_pause()
-		elif k == KEY_C:
-			cam_mode = CAM_MODES[(CAM_MODES.find(cam_mode) + 1) % CAM_MODES.size()]
-			_cam_pos = null
-		elif k == KEY_M:
-			hud.minimap.toggle()
-		elif k == KEY_Y:
-			mouse_yoke = not mouse_yoke
-			s.say("Mouse yoke %s" % ("ON - mouse position is the stick" if mouse_yoke else "OFF"))
-		elif k == KEY_P:
-			paused = not paused
-		elif k == KEY_BACKSLASH:
+		KEY_M:
+			_map_toggle()
+		KEY_BACKSLASH:
 			_cycle_fast_forward()
-		elif k == KEY_F10 and s.tutorial != null and s.tutorial.enabled:
-			s.tutorial.skip()
-		elif k == KEY_F1:
+		KEY_F1:
 			help.visible = not help.visible
-		elif k == KEY_F2:
+		KEY_F2:
 			scene.set_hour(scene.hour + 3.0)
-			s.say("Time %02d:00" % int(scene.hour))
-		elif k == KEY_F3:
-			toggle_ai_pilot()
-		elif k == KEY_F6:
-			cycle_debug_menu()
-		elif k == KEY_F9:
-			var mode := screen_filter.cycle()
-			ControlsConfig.save_setting("filter", mode)
-			s.say("Screen: %s" % ScreenFilter.LABELS[mode])
-		elif k == KEY_F12:
-			var path := Beta.report(s, get_viewport())
-			s.say("Feedback bundle saved: %s" % ProjectSettings.globalize_path(path) if path != "" else "Couldn't write the feedback bundle.")
-		elif k == KEY_F7:
-			_radio_key("power")  # the cockpit radio: the same real broadcasts as the car's
-		elif k == KEY_PERIOD:
-			_radio_key("up")
-		elif k == KEY_COMMA:
-			_radio_key("down")
+		KEY_J, KEY_L, KEY_H:
+			s.say("On foot: walk up to the job board or the hangar and press E, or get back in (TAB) for J, L and H.")
+		KEY_P:
+			s.say("P pauses in the aircraft; ESC opens the menu anywhere.")
+	get_viewport().set_input_as_handled()
+	return
+
+
+## A key in the cockpit: the desks, the crew orders, the camera and the function keys.
+func _key_cockpit(ev: InputEventKey, k: int) -> void:
+	if ev.shift_pressed and k == KEY_W and s.payroll != null:
+		open_talk("crew")  # Manny Ortega's hiring hall
+	elif ev.shift_pressed and k == KEY_F10:
+		if s.tutorial == null:
+			Tutorial.new().attach(s)
+			s.say("Tutorial on.")
+		else:
+			s.tutorial.set_enabled(not s.tutorial.enabled)
+	elif ev.shift_pressed and k == KEY_H and s.logistics != null:
+		toggle_logistics()  # where the product and the cash are; trucks; cash bags
+	elif ev.shift_pressed and k == KEY_B and s.trade != null:
+		open_talk("buyers")  # Benny Ruiz: who's buying, and at what
+	elif ev.shift_pressed and k == KEY_L and s.court != null:
+		open_talk("lawyer")  # your lawyer: motions, the plea, a deal
+	elif ev.shift_pressed and k == KEY_F and s.family != null:
+		open_talk("family")  # a sit-down with the Family
+	elif ev.shift_pressed and k == KEY_G and s.island != null:
+		open_talk("general")  # the General's aide on the island frequency
+	elif ev.shift_pressed and k == KEY_C and s.psych != null:
+		open_talk("psych")  # the Sunrise Collective: Nico Cozz, acid for grass (Shift+N is the Family's no)
+	elif (ev.shift_pressed or ev.ctrl_pressed) and k == KEY_T:
+		_open("phone")  # the phone from the cockpit: every number you have
+	elif ev.shift_pressed and k == KEY_V and s.dealer != null:
+		_open("dealer")  # the car lot, without the walk
+	elif ev.shift_pressed and k == KEY_K and s.casino != null:
+		open_talk("casino")  # the Hotel Cielo: Lenny Vance, the manager
+	elif ev.shift_pressed and k in [KEY_U, KEY_I] and s.island != null:
+		# Isla Soberana quick orders: Shift+U four mules, Shift+I a container
+		var r: Array = s.command(Roles.PILOT, "island_ship", {"method": "mules" if k == KEY_U else "ship", "amount": 4 if k == KEY_U else 500})
+		if not r[0]:
+			s.say(r[1])
+	elif ev.shift_pressed and k in [KEY_Y, KEY_N, KEY_P] and s.family != null:
+		# the Family's newest offer: Shift+Y take it, Shift+N turn it down; Shift+P pay the tribute
+		var r: Array
+		if k == KEY_P:
+			r = s.command(Roles.PILOT, "pay_tribute", {})
+		elif s.family.offers.is_empty():
+			r = [false, "The Family has nothing on the table."]
+		else:
+			r = s.command(Roles.PILOT, "family_accept" if k == KEY_Y else "family_decline", {"id": s.family.offers.back().id})
+		if not r[0]:
+			s.say(r[1])
+	elif _flight_press(ev):
+		pass
+	elif PRESS_KEYS.has(k):
+		_pressed[PRESS_KEYS[k]] = true
+	elif k == KEY_O and ev.shift_pressed:
+		var r: Array = s.command(Roles.PILOT, "call_boat", {"brief": true})  # the codeword burst
+		if not r[0]:
+			s.say(r[1])
+	elif CREW_KEYS.has(k):
+		var args := {}
+		if k == KEY_U and waypoint != null:
+			args["waypoint"] = [waypoint.x, waypoint.y]  # U flies to the waypoint set on the chart
+		if k == KEY_U and _phone_hold_started and s.autopilot.waypoints.is_empty() and waypoint != null:
+			s.command(Roles.PILOT, "autopilot", {"on": false})  # first explicit U uses the selected waypoint
+		var r: Array = s.command(Roles.PILOT, CREW_KEYS[k], args)
+		if k == KEY_U and r[0]:
+			_phone_hold_started = false
+		if not r[0]:
+			s.say(r[1])
+	elif k == KEY_7:
+		# cycle the Mode A code: VFR, then the three emergency codes
+		var codes := ["1200", "7700", "7600", "7500"]
+		var r: Array = s.command(Roles.PILOT, "squawk", {"code": codes[(codes.find(s.squawk_code) + 1) % codes.size()]})
+		if not r[0]:
+			s.say(r[1])
+	elif k in [KEY_J, KEY_L, KEY_H]:
+		_toggle_menu(OS.get_keycode_string(k).to_lower())
+	elif k == KEY_ESCAPE:
+		if help.visible:
+			help.visible = false
+		else:
+			open_pause()
+	elif k == KEY_C:
+		cam_mode = CAM_MODES[(CAM_MODES.find(cam_mode) + 1) % CAM_MODES.size()]
+		_cam_pos = null
+	elif k == KEY_M:
+		hud.minimap.toggle()
+	elif k == KEY_Y:
+		mouse_yoke = not mouse_yoke
+		s.say("Mouse yoke %s" % ("ON - mouse position is the stick" if mouse_yoke else "OFF"))
+	elif k == KEY_P:
+		paused = not paused
+	elif k == KEY_BACKSLASH:
+		_cycle_fast_forward()
+	elif k == KEY_F10 and s.tutorial != null and s.tutorial.enabled:
+		s.tutorial.skip()
+	elif k == KEY_F1:
+		help.visible = not help.visible
+	elif k == KEY_F2:
+		scene.set_hour(scene.hour + 3.0)
+		s.say("Time %02d:00" % int(scene.hour))
+	elif k == KEY_F3:
+		toggle_ai_pilot()
+	elif k == KEY_F6:
+		cycle_debug_menu()
+	elif k == KEY_F9:
+		var mode := screen_filter.cycle()
+		ControlsConfig.save_setting("filter", mode)
+		s.say("Screen: %s" % ScreenFilter.LABELS[mode])
+	elif k == KEY_F12:
+		var path := Beta.report(s, get_viewport())
+		s.say("Feedback bundle saved: %s" % ProjectSettings.globalize_path(path) if path != "" else "Couldn't write the feedback bundle.")
+	elif k == KEY_F7:
+		_radio_key("power")  # the cockpit radio: the same real broadcasts as the car's
+	elif k == KEY_PERIOD:
+		_radio_key("up")
+	elif k == KEY_COMMA:
+		_radio_key("down")
 
 
 var debug_menu: CanvasLayer = null

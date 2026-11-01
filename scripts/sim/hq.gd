@@ -294,10 +294,8 @@ class Season:
 	var moon0 := 0.0  ## moon phase on night 1 (0 = new)
 	var sightings: Array = []  ## per night: the zone where the law saw your own run, or ""
 
-	func _init(rng_: PyRandom = null, rules_ := {}) -> void:
-		if rng_ == null:
-			rng_ = PyRandom.new()
-			rng_.seed(randi())
+	## The generator is required: a season is always seeded by its caller (no global draw, so every run replays).
+	func _init(rng_: PyRandom, rules_ := {}) -> void:
 		rng = rng_
 		rules = HQ.RULES.duplicate()
 		rules.merge(rules_, true)

@@ -8,6 +8,7 @@ Dated reports, audits, reviews and planning snapshots. They describe the project
 | Document | Date | What it recorded |
 |---|---|---|
 | [HANDOFF_HISTORY_2026-09.md](HANDOFF_HISTORY_2026-09.md) | Sep 2026 | Earlier handoff checkpoints |
+| [HANDOFF_LOG_2026-10.md](HANDOFF_LOG_2026-10.md) | Oct 2026 | HANDOFF.md Log entries up to 17 October |
 | [REVIEW_2026-10.md](REVIEW_2026-10.md) | Oct | A code review and the plan that followed it |
 | [ROADMAP_HISTORY_2026-10.md](ROADMAP_HISTORY_2026-10.md) | Oct | Earlier roadmap progress and historical counts |
 | [POLISH_PLAN.md](POLISH_PLAN.md) | 4 Oct | The end-user polish plan (the polish week ended 17 Oct, D-20) |
