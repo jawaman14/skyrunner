@@ -1746,7 +1746,7 @@ and no lower), and a clean pass puts it back to the full chance.
   cover, more during a customs operation. `Police.customs_streak` counts the inspections in a row and resets on a hot landing
   that passes. Wanted arrivals and a unit on your tail still bust you every time; only the random inspection eases.
 - **Stops on the road.** With the street war on, a passing patrol pulls over a truck 25% of the time, or 50% for a known stash
-  (`GroundWar._patrol_stops`). Without it, the logistics roadblock roll applies (`Logistics`, 2% + heat/400). `StashNet.truck_streak`
+  (`GroundWar._patrol_stops`). Without it, the roadblock roll applies: a landed load's stash run (`StashNet.dispatch`, 4% + heat/300) and a logistics truck (`Logistics`, 2% + heat/400). A burned stash still stops every truck. `StashNet.truck_streak`
   counts the trucks seized in a row and resets when a truck is delivered. A checkpoint still stops every truck, and a seizure at a
   checkpoint counts towards the streak.
 - **No new draws.** Each roll is the same draw in the same order, against a lower threshold, so the guard can only turn a catch

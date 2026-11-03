@@ -49,11 +49,12 @@ func test_customs_catches_in_a_row_get_rarer_and_a_pass_resets_them() -> void:
 
 
 func test_the_streaks_survive_a_save() -> void:
-	var s := Session.new({"seed": 5, "location": "HAR"})
+	var s := Session.new({"seed": 5, "location": "HAR", "map_seed": MapCity.SEED})
 	s.police.customs_streak = 2
 	s.stash_net.truck_streak = 3
+	check(s.stash_net != null, "the city map has stashes")
 	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
-	var s2 := Session.new({"seed": 6, "location": "HAR"})
+	var s2 := Session.new({"seed": 6, "location": "HAR", "map_seed": MapCity.SEED})
 	StrategicSave.restore(s2, d)
 	check_eq(s2.police.customs_streak, 2, "the customs streak comes back")
 	check_eq(s2.stash_net.truck_streak, 3, "and the trucks'")
