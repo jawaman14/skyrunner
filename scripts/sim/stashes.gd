@@ -140,6 +140,8 @@ var risk_mult := 1.0  ## ... what the fleet's cover leaves of the roadblock odds
 var armour := 0.0  ## ... and the chance a truck drives through the roadblock that would have seized it
 var stashes: Array = []  ## map dictionaries plus state: heat, burned
 var trucks: Array = []
+## Trucks stopped in a row (StreakGuard, D-94): each eases the next stop on the road; a delivered truck resets it. Saved.
+var truck_streak := 0
 var rng: PyRandom
 var events: Array = []  ## [side, text]: "runner" / "law"
 

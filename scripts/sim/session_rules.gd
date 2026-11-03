@@ -240,6 +240,10 @@ func _update_stashes(dt: float) -> void:
 		ground.events.clear()
 	for r in results:
 		var t: StashNet.Truck = r[0]
+		if r[1] == "seized":  # bad-luck protection (StreakGuard): seizures in a row ease the next stop on the road
+			stash_net.truck_streak += 1
+		elif r[1] == "delivered":
+			stash_net.truck_streak = 0
 		if logistics != null and logistics.owns(t):
 			logistics.arrived(t, r[1], r[2])
 			continue

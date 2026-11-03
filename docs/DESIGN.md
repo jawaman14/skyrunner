@@ -1734,3 +1734,20 @@ destination is a separate action on the chart or the phone; opening the phone in
 previous state. Edge cases to test: restoring a route after the phone closes; a route that finishes while the phone is open must
 not restart; a destination set while off must not engage anything. (MiMo suggested P for the destination key; P is the pause key
 in the aircraft, so the key is still to choose.)
+
+## 53. Bad-luck protection on the catastrophic rolls (owner, 4 November 2026, D-94)
+
+`scripts/sim/streak_guard.gd`, behind `StreakGuard.ENABLED` (in `Switches.PARITY`). From the World of Warcraft study: WoW raised a
+quest item's drop chance after every miss, so a streak of bad luck could not run long. Here the rolls that can take a whole run
+in one go get the same treatment. After each catastrophe in a row, the chance of the next one halves (x0.5, x0.25, then x0.125
+and no lower), and a clean pass puts it back to the full chance.
+
+- **Customs on landing** (`Police.landing_check`). This is the inspection of a hot load at a police strip: 35% bare, less with
+  cover, more during a customs operation. `Police.customs_streak` counts the inspections in a row and resets on a hot landing
+  that passes. Wanted arrivals and a unit on your tail still bust you every time; only the random inspection eases.
+- **Stops on the road.** With the street war on, a passing patrol pulls over a truck 25% of the time, or 50% for a known stash
+  (`GroundWar._patrol_stops`). Without it, the logistics roadblock roll applies (`Logistics`, 2% + heat/400). `StashNet.truck_streak`
+  counts the trucks seized in a row and resets when a truck is delivered. A checkpoint still stops every truck, and a seizure at a
+  checkpoint counts towards the streak.
+- **No new draws.** Each roll is the same draw in the same order, against a lower threshold, so the guard can only turn a catch
+  into a pass. The streaks are saved: the customs streak with the runner's case, and the truck streak with the stashes.

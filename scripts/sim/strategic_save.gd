@@ -78,6 +78,7 @@ static func capture(s: Session) -> Dictionary:
 		for x in s.stash_net.stashes:
 			st[x.id] = {"heat": x.heat, "intel": x.intel, "burned": x.burned, "works": x.get("works", {}).duplicate()}
 		d["stashes"] = st
+		d["truck_streak"] = s.stash_net.truck_streak  # bad-luck protection on the road (StreakGuard)
 	if s.investigation != null:
 		d["investigation"] = s.investigation.to_dict()
 	if s.logistics != null:
@@ -97,7 +98,7 @@ static func capture(s: Session) -> Dictionary:
 	if s.renown != null:
 		d["renown"] = {"score": s.renown.score, "recent": s.renown.recent.duplicate(true)}
 	var c = s.police.case("runner")
-	d["case"] = {"suspicion": c.suspicion, "bust_meter": c.bust_meter, "rival_meter": c.rival_meter}
+	d["case"] = {"suspicion": c.suspicion, "bust_meter": c.bust_meter, "rival_meter": c.rival_meter, "customs_streak": s.police.customs_streak}
 	if s.court != null:
 		d["court"] = {"case": s.court.case_, "history": s.court.history.duplicate(true), "mandatory": s.court.mandatory,
 			"serial": s.court._serial, "forfeit_pending": s.court.forfeit_pending, "forfeit_key": s.court.forfeit_key}
@@ -257,6 +258,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.investigation != null:
 		s.investigation.load_dict(d.get("investigation", {}))  # an older save has no case files: the task force starts afresh
+	if s.stash_net != null:
+		s.stash_net.truck_streak = int(d.get("truck_streak", 0))
 	if s.stash_net != null and d.get("stashes") is Dictionary:
 		for id in d.stashes:
 			var st = s.stash_net.get_stash(str(id))
@@ -305,6 +308,7 @@ static func restore(s: Session, d: Dictionary) -> void:
 		var c = s.police.case("runner")
 		c.suspicion = float(d.case.get("suspicion", 0.0))
 		c.bust_meter = float(d.case.get("bust_meter", 0.0))
+		s.police.customs_streak = int(d.case.get("customs_streak", 0))
 		c.rival_meter = 0.0  # nothing fills or decays this any more (no air hijack): an old save must not leave the HUD bar stuck
 	if s.court != null and d.get("court") is Dictionary:
 		s.court.case_ = d.court.get("case")

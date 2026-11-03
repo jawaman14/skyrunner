@@ -716,7 +716,7 @@ func _dispatch(c: Dictionary, a: Vector2, b: Vector2) -> void:
 	if sess.ground != null:
 		t.route = sess.ground.route("org", a, b)
 		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / sn.haul_ms
-	elif sn.rng.random() < clampf(risk * sn.risk_mult, 0.0, 0.8) and not t.waved:
+	elif sn.rng.random() < clampf(risk * sn.risk_mult, 0.0, 0.8) * StreakGuard.factor(sn.truck_streak) and not t.waved:
 		t.stop_at = sn.rng.uniform(0.2, 0.9)
 	var km := (RoadGraph.length(t.route) if t.route.size() >= 2 else a.distance_to(b) * 1.3) / 1000.0
 	var fuel_note := Fuel.truck(sess, t, km)
