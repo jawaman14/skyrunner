@@ -1515,13 +1515,16 @@ who is open for business (the Morettis, the Company, Los Cuervos for guns) asks 
 premium on top of his quote if it arrives in time.
 
 - **The deadline follows the street's demand.** Where demand over supply in the buyer's market is 1.25 or more it is a **rush**:
-  10 to 20 minutes and 25 to 40% on top of the buyer's own quote. Otherwise it is **a night's work**: 45 to 75 minutes and 10 to 20% on top of it. Orders are
+  10 to 20 minutes and 30 to 50% on top of the buyer's own quote. Otherwise it is **a night's work**: 45 to 75 minutes and 15 to 25% on top of it (raised 4 Nov, D-94). Orders are
   likelier for the goods the street is hungriest for.
 - **What the player does.** Rings in as a message and an `order_posted` event (about one every 15 minutes, at most two open, a
   third to two thirds of the buyer's appetite). Any bulk sale to that buyer of that good that **settles** before the deadline
   fills it, whether by a truck reaching the meet or a direct sale, so the lead time of the logistics is what the player races.
   A part delivery pays the premium on the part and leaves the rest open.
-- **The stakes.** A filled order raises the crew's standing (+3); a missed one costs it (-4, scaled by how little arrived). Until the
+- **The stakes.** A filled order raises the crew's standing (+3). An order is an offer (D-94, the World of Warcraft study:
+  reward the play you want rather than punish the play you don't): one nothing was sent for costs nothing and the buyer finds
+  someone else; a part delivery that falls short costs up to 3, scaled by how much was missing, so a shortfall never costs
+  more than a fill earns. Until the
   per-crew trust table of D-11 exists the standing is what each crew already has: the Family's respect, the Company's trust.
 - **The market board.** `Trade.view("org").orders.board` gives, for each hot good in each market, the price against normal, the
   demand over supply, and a trend (up, down, flat against five minutes before); `.orders.open` the open orders with the time

@@ -14,12 +14,12 @@ static var ENABLED := true
 const RUSH_S := [600.0, 1200.0]  ## 10 to 20 minutes
 const NIGHT_S := [2700.0, 4500.0]  ## a night's work: 45 to 75 minutes
 const RUSH_PRESSURE := 1.25  ## demand over supply in the buyer's market from which an order is a rush
-const PREMIUM := {"rush": [1.25, 1.40], "night": [1.10, 1.20]}  ## paid on top of the buyer's own quote (not the street price), on the pounds delivered in time
+const PREMIUM := {"rush": [1.30, 1.50], "night": [1.15, 1.25]}  ## paid on top of the buyer's own quote (not the street price), on the pounds delivered in time
 const EVERY_S := 900.0  ## about one new order this often while there is room for one
 const MAX_OPEN := 2
 const SHARE := [0.35, 0.7]  ## of the buyer's appetite cap
 const DONE_TRUST := 3.0
-const FAIL_TRUST := 4.0
+const FAIL_TRUST := 3.0  ## a started order left short costs this, scaled by the part missing; one never started costs nothing (D-94)
 const SAMPLE_S := 300.0  ## how often the board remembers prices, for its trend arrows
 const TREND_MIN := 0.03
 
@@ -147,10 +147,12 @@ func on_settle(buyer: String, good: String, qty: float, unit_price: float) -> in
 func _expire(o: Dictionary) -> void:
 	open.erase(o)
 	var done := float(o.qty) - float(o.left)
-	var share := 1.0 - done / maxf(1.0, float(o.qty))  # a part delivered costs a part of the trust
-	_trust(str(o.buyer), -FAIL_TRUST * share)
+	# The WoW lesson (D-94): an order is an offer, not a debt. One nothing was sent for costs no trust (the buyer found someone
+	# else); one started and left short costs trust in proportion to what is missing, never more than filling one earns.
+	if done > 0.0:
+		_trust(str(o.buyer), -FAIL_TRUST * (1.0 - done / maxf(1.0, float(o.qty))))
 	_log(o, "part" if done > 0.0 else "missed", done)
-	var text := "%s's order ran out: %s." % [Trade.BUYERS[o.buyer].name, "%d of %d delivered" % [int(done), int(o.qty)] if done > 0.0 else "nothing came"]
+	var text := "%s's order ran out: %s." % [Trade.BUYERS[o.buyer].name, "%d of %d delivered" % [int(done), int(o.qty)] if done > 0.0 else "nothing came, and he found someone else"]
 	sess.say(text)
 	sess.bus.emit("order_missed", sess.time, text, ["runner"], {"id": o.id, "buyer": o.buyer, "good": o.good, "delivered": done})
 
