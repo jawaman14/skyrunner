@@ -281,6 +281,8 @@ static func island_board(sess: Session) -> Array:
 		var af := World.airfield(str(code))
 		var km := PyMath.hypot(af.x - sess.state.x, af.y - sess.state.y) / 1000.0
 		for j in sess.boards[code]:
+			if not j.is_airdrop() and not World.AIRFIELD_BY_CODE.has(j.dest):
+				continue  # a job dealt on another map (a session outliving World.use_map, as tests do): nothing to place
 			var row := _job(sess, j)
 			row["origin"] = str(code)
 			row["origin_km"] = _r(km)
