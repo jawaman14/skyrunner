@@ -118,3 +118,33 @@ func test_the_session_wrap_keeps_values_and_books_every_change() -> void:
 	var net: Dictionary = s.ledger.boundary()
 	check_eq(float(net.get(Ledger.UNATTRIBUTED)) - u0, 450.0 + 1000.0, "the unattributed flow is the to-do list for F-3")
 	s.dispose()
+
+
+## B-2 (docs/EMPIRE_PIVOT.md): Los Cuervos' war chest had money from nowhere. Every change to it is now a named transfer with an
+## explicit outside account, so an hour of the AI war with the news, the Family and the Company books nothing unattributed to it.
+func test_the_war_chest_and_the_news_name_every_counterparty() -> void:
+	var s := Session.new({"seed": 3, "map_seed": MapCity.SEED, "location": "QRY", "features": Session.SANDBOX_FEATURES,
+		"ground_war": true, "family": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "logistics": true})
+	s.police.frozen = true
+	for i in 3600:
+		s.update(1.0)
+	var war: Array = s.ledger.log.filter(func(r): return r.to == "rival:war-chest" or r.from == "rival:war-chest")
+	check(war.size() > 1, "the war chest moved")
+	check(war.all(func(r): return r.from != Ledger.UNATTRIBUTED and r.to != Ledger.UNATTRIBUTED),
+		"no war-chest row is unattributed: %s" % [war.filter(func(r): return r.from == Ledger.UNATTRIBUTED or r.to == Ledger.UNATTRIBUTED).slice(0, 3)])
+	check(war.any(func(r): return r.from == "outside:street" and r.reason == "sales"), "the corners' takings are named as sales")
+	var rec: Dictionary = s.ledger.rebuild()
+	check_near(float(rec.get("rival:war-chest", 0.0)), s.ground.commanders.rival.cash, 0.01, "the ledger agrees with the chest")
+	s.dispose()
+
+
+func test_a_clamped_removal_books_only_what_was_taken() -> void:
+	var s := Session.new({"seed": 3, "map_seed": MapCity.SEED, "location": "QRY", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	var c = s.ground.commanders.rival
+	c.cash = 1200.0
+	c.move_cash(-5000.0, "outside:state", "forfeiture", true)
+	check_eq(c.cash, 0.0, "the clamp holds")
+	var row: Dictionary = s.ledger.log[-1]
+	check_eq([row.from, row.to, row.reason], ["rival:war-chest", "outside:state", "forfeiture"])
+	check_near(float(row.amount), 1200.0, 0.001, "only the 1,200 there was")
+	s.dispose()

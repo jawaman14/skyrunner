@@ -847,7 +847,7 @@ func arrived(t, outcome: String, why: String) -> void:
 	if outcome == "hijacked":
 		last = "Los Cuervos took the truck (%s) near %s." % [what, name_of(c.to)]
 		if sess.ground != null:
-			sess.ground.commanders.rival.cash += c.cash
+			sess.ground.commanders.rival.move_cash(c.cash, "outside:street", "resale")  # our truck's cash, taken
 		sess.bus.emit("truck_hijacked", sess.time, "", ["runner"], {"stash": t.stash})
 	else:
 		last = "The truck (%s) was stopped: %s. All of it forfeited." % [what, why]

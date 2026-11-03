@@ -146,7 +146,7 @@ func ransom() -> String:
 	var have: float = 0.0 if g == null else float(g.commanders.rival.cash)
 	var pay := mini(want, int(have))
 	if g != null:
-		g.commanders.rival.cash -= pay
+		g.commanders.rival.move_cash(-pay, "outside:street", "tribute")
 	sess.money += pay
 	ransom_cash += pay
 	ransomed += held
