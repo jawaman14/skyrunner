@@ -80,3 +80,19 @@ func test_chart_draws_both_without_errors() -> void:
 	check(true, "drew the scope and the chart")
 	viewport.queue_free()
 	s.dispose()
+
+
+## Codex's review of #493: a route to a point off the scope stops at its rim (the scope draws with no clip rect).
+func test_lines_are_clipped_to_the_scope() -> void:
+	var map := Minimap.new()
+	map._c = Vector2(100, 100)
+	map._r = 50.0
+	map.big = false
+	var seg := map.clip_to_scope(Vector2(100, 100), Vector2(400, 100))
+	check_eq(seg.size(), 2)
+	check_near(seg[1].x, 150.0, 0.01, "stops at the rim, 50 px out")
+	check(map.clip_to_scope(Vector2(300, 300), Vector2(400, 300)).is_empty(), "wholly off the disc: nothing drawn")
+	var inside := map.clip_to_scope(Vector2(90, 100), Vector2(110, 100))
+	check_near(inside[0].x, 90.0, 0.01, "inside: untouched")
+	check_near(inside[1].x, 110.0, 0.01)
+	map.free()
