@@ -181,7 +181,7 @@ func sell(buyer: String, good: String, qty: float, tier := "rifle", from := "", 
 		sess.arsenals["org"].take(tier, int(qty))
 	else:
 		stock[good] -= qty
-	sess.money += settle(buyer, good, qty, tier)
+	sess.move_money(settle(buyer, good, qty, tier), "outside:buyers", "delivery")
 	return ""
 
 
@@ -476,7 +476,7 @@ func sweep(m: String) -> String:
 		return "Which market?"
 	if sess.law_funds < SWEEP_COST:
 		return "Need $%d in funds." % SWEEP_COST
-	sess.law_funds -= SWEEP_COST
+	sess.move_law_funds(-SWEEP_COST, "outside:state", "fee")
 	var n := 0
 	if sess.payroll != null:
 		for o in ["org", "rival"]:
@@ -494,7 +494,7 @@ func sweep(m: String) -> String:
 func trace() -> String:
 	if sess.law_funds < TRACE_COST:
 		return "Need $%d in funds." % TRACE_COST
-	sess.law_funds -= TRACE_COST
+	sess.move_law_funds(-TRACE_COST, "outside:state", "fee")
 	var found := []
 	var a = sess.agency
 	if a != null and a.active() and a.coke_lots > 0:
@@ -502,7 +502,7 @@ func trace() -> String:
 		a.exposure = minf(100.0, a.exposure + gain)
 		var seized: float = a.war_chest * 0.25
 		a.war_chest -= seized
-		sess.law_funds += seized
+		sess.move_law_funds(seized, "outside:agency", "forfeiture")
 		found.append("the Company's pipeline: exposure +%d, $%s forfeited; the next load lands in the %s" % [int(gain), Py.money(int(seized)),
 			Market._name(a.next_market)])
 		a._check_exposed()

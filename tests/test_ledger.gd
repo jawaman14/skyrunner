@@ -148,3 +148,17 @@ func test_a_clamped_removal_books_only_what_was_taken() -> void:
 	check_eq([row.from, row.to, row.reason], ["rival:war-chest", "outside:state", "forfeiture"])
 	check_near(float(row.amount), 1200.0, 0.001, "only the 1,200 there was")
 	s.dispose()
+
+
+## F-3 done for the sim: an hour of live play with every money system on books nothing to or from the unattributed account, for the
+## safe, the task force's budget or the war chest.
+func test_an_hour_of_live_play_has_no_unattributed_money() -> void:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES,
+		"ground_war": true, "family": true, "agency": true, "chronicle": true, "payroll": true, "trade": true, "logistics": true,
+		"court": true, "island": true, "rackets": true, "renown": true, "casino": true, "career": true})
+	s.police.frozen = true
+	for i in 3600:
+		s.update(1.0)
+	var bad: Array = s.ledger.log.filter(func(r): return r.from == Ledger.UNATTRIBUTED or r.to == Ledger.UNATTRIBUTED)
+	check(bad.is_empty(), "%d unattributed rows, e.g. %s" % [bad.size(), bad.slice(0, 3)])
+	s.dispose()

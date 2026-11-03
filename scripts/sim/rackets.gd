@@ -104,7 +104,7 @@ func collect() -> int:
 			heat += SQUEEZE_HEAT
 	rounds += 1
 	if total > 0:
-		sess.money += total
+		sess.move_money(total, "outside:street", "tribute")
 		collected += total
 		if heat > 0.0:
 			var c = sess.police.case("runner")
@@ -147,7 +147,7 @@ func ransom() -> String:
 	var pay := mini(want, int(have))
 	if g != null:
 		g.commanders.rival.move_cash(-pay, "outside:street", "tribute")
-	sess.money += pay
+	sess.move_money(pay, "outside:street", "tribute")
 	ransom_cash += pay
 	ransomed += held
 	var n := held

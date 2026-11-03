@@ -77,7 +77,7 @@ var money := START_MONEY:
 		money = v
 ## A named change to the safe (F-3): `delta` > 0 comes from `other`, < 0 goes to it. Same value as `money += delta`, but the ledger row
 ## says where it went and why, instead of an unattributed adjustment.
-func move_money(delta: int, other: String, reason: String, actor := "org") -> void:
+func move_money(delta, other: String, reason: String, actor := "org") -> void:  # delta untyped: `money += delta` converts exactly as the old `money += x` did
 	_pay_other = other
 	_pay_reason = reason
 	_pay_actor = actor
