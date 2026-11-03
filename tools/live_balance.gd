@@ -43,6 +43,8 @@ var hours := 3.0
 func _initialize() -> void:
 	if OS.get_environment("NO_ORDERS") != "":  # the same run without buyers' orders, to measure what they add
 		Orders.ENABLED = false
+	if OS.get_environment("NO_CASES") != "":  # the same run with the old stash-raid roll instead of the case files (DESIGN §48)
+		Investigation.ENABLED = false
 	var a := OS.get_cmdline_user_args()
 	if a.size() > 0:
 		seeds = int(a[0])
@@ -123,6 +125,25 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 	s.law_funds = 9000.0
 	var r := {"money_min": s.money, "tribute_paid": 0, "shipped": 0, "caught_units": 0, "sent_units": 0,
 		"spent_island": 0, "earned_island": 0}
+	# buyers' orders and stash raids, counted off the bus (the sim keeps only the last few)
+	var tally := {"posted": 0, "filled": 0, "missed": 0, "part": 0, "bonus": 0, "raided": 0, "foiled": 0}
+	s.bus.subscribe("*", func(ev):
+		var k: String = ev.kind
+		if k == "order_posted":
+			tally.posted += 1
+		elif k == "order_filled":
+			tally.filled += 1
+			tally.bonus += int(ev.data.get("bonus", 0))
+		elif k == "order_missed":
+			if float(ev.data.get("delivered", 0.0)) > 0.0:
+				tally.part += 1
+			else:
+				tally.missed += 1
+		elif k == "stash_raided":
+			tally.raided += 1
+		elif k == "raid_foiled":
+			tally.foiled += 1)
+	r["tally"] = tally
 	var t := 0.0
 	var next_run := RUN_EVERY_S
 	# air risk: each flight rolls the tactical sweep's odds (AirRisk) through the
@@ -506,6 +527,10 @@ func _summary(rows: Array) -> Dictionary:
 		sm["logistics"] = {"cash_out": _mean(rows, "logistics", "cash_out"), "lost_cash": _mean(rows, "logistics", "lost_cash"),
 			"lost_lb": _mean(rows, "logistics", "lost_lb"), "lost_seized": _mean(rows, "logistics", "lost_seized"),
 			"lost_hijacked": _mean(rows, "logistics", "lost_hijacked"), "lost_raided": _mean(rows, "logistics", "lost_raided")}
+	if rows.any(func(r): return r.has("tally")):
+		sm["tally"] = {}
+		for k in ["posted", "filled", "missed", "part", "bonus", "raided", "foiled"]:
+			sm.tally[k] = _mean(rows, "tally", k)
 	if rows.any(func(r): return r.has("story")):
 		var reached := []
 		for n in Story.CHAPTERS.size() + 1:
