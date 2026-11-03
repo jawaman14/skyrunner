@@ -519,7 +519,7 @@ func _turf_overlay(font: Font) -> void:
 			draw_rect(screen, Color(col, 0.35), false, 1.0)
 		var p := to_screen(row.center.x, row.center.y)
 		if _inside(p, 4.0):
-			_label(font, p, ("%s  %s %d%%" % [row.name, StationMap.TURF_NAME[row.leader], int(round(float(row.share) * 100.0))]) if row.leader != ""
+			_label(font, p, ("%s  %s %d%%" % [row.name, StationMap.turf_name(row.leader, "org"), int(round(float(row.share) * 100.0))]) if row.leader != ""
 				else "%s  contested" % row.name, 10, Color(col, 0.8), HORIZONTAL_ALIGNMENT_CENTER)
 
 

@@ -262,7 +262,12 @@ const SQUAD_COL := {"org": Color(1.0, 0.45, 0.8), "rival": Color(1.0, 0.6, 0.15)
 ## Who holds a district, from its public control numbers (the ground war's own share rule: police count half).
 ## {leader: "org" | "rival" | "police" | "", share: 0..1}; no leader below LEAD_SHARE or when nobody is there.
 const LEAD_SHARE := 0.4
-const TURF_NAME := {"org": "ours", "rival": "Los Cuervos", "police": "the law"}
+const TURF_NAME := {"org": "the organisation", "rival": "Los Cuervos", "police": "the law"}
+
+
+## The holder as the viewer says it: "ours" for the viewer's own side (`own`: "org" for the runner's desks, "police" for the law's).
+static func turf_name(leader: String, own: String) -> String:
+	return "ours" if leader == own else str(TURF_NAME.get(leader, leader))
 static func turf_leader(control: Dictionary) -> Dictionary:
 	var best := ""
 	var best_share := 0.0
@@ -298,6 +303,7 @@ func _draw_turf() -> void:
 	var g = snap.get("ground") if layers.people else null
 	if not (g is Dictionary):
 		return
+	var own := "police" if snap.get("side") == "law" else "org"
 	for row in turf_rows(g):
 		var col: Color = SQUAD_COL.get(row.leader, Color(0.8, 0.8, 0.8))
 		if row.bounds != null:
@@ -308,7 +314,7 @@ func _draw_turf() -> void:
 			if row.leader != "":
 				draw_rect(screen, Color(col, 0.10 + 0.15 * float(row.share)), true)
 			draw_rect(screen, Color(col, 0.45), false, 1.0)
-		var label := "%s  %s %d%%" % [row.name, TURF_NAME[row.leader], int(round(float(row.share) * 100.0))] if row.leader != "" \
+		var label := "%s  %s %d%%" % [row.name, turf_name(row.leader, own), int(round(float(row.share) * 100.0))] if row.leader != "" \
 			else "%s  contested" % row.name
 		_text(row.center.x, row.center.y, label, Color(col, 0.85))
 

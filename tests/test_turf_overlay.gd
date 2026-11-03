@@ -23,6 +23,11 @@ func test_leader_uses_the_ground_war_share_rule() -> void:
 	check_eq(StationMap.turf_leader({"org": 35.0, "rival": 35.0, "police": 60.0}).leader, "", "nobody at 40%: contested")
 	check_eq(StationMap.turf_leader({}).leader, "", "empty district: no holder")
 	check_eq(StationMap.turf_leader({"org": 0.2, "rival": 0.3}).leader, "", "too little presence to count")
+	check_eq(StationMap.turf_name("org", "org"), "ours", "the runner's own districts")
+	check_eq(StationMap.turf_name("org", "police"), "the organisation", "the law's desk never calls the organisation's turf its own")
+	check_eq(StationMap.turf_name("police", "police"), "ours")
+	check_eq(StationMap.turf_name("police", "org"), "the law")
+	check_eq(StationMap.turf_name("rival", "police"), "Los Cuervos")
 
 
 func test_costa_brava_snapshot_carries_every_district_outline() -> void:
