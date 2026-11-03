@@ -288,6 +288,7 @@ func _draw() -> void:
 		draw_circle(_c, _r + 2.0, INK)
 		_terrain()
 		_rim(font)
+	_turf_overlay(font)
 	_world_marks(font)
 	_gig_points(font)
 	_goal_marks(font)
@@ -479,6 +480,47 @@ func _waypoint(font: Font) -> void:
 		_label(font, p + Vector2(10, -8), text, 12 if big else 11, UIStyle.PINK)
 	elif not big:
 		_pointer(p, UIStyle.PINK, text, font)
+
+
+## The chart's turf overlay (big map only): the same rows as the desks' map, from the live ground war, refreshed once a second.
+var _turf: Array = []
+var _turf_t := -10.0
+static func turf_of(sess: Session) -> Array:
+	if sess == null or sess.ground == null or not Territories.ENABLED:
+		return []
+	var areas := {}
+	for area: Dictionary in Territories.records(sess.world.map):
+		var key := Territories.key(sess.world.map, str(area.get("id", "")))
+		var c := Territories.center_of(area)
+		areas[key] = {"name": area.get("name", key), "center": [c.x, c.y], "control": sess.ground.territory_control.get(key, {})}
+		var b: Variant = area.get("bounds")
+		if b is Rect2:
+			var r: Rect2 = b
+			areas[key].bounds = [r.position.x, r.position.y, r.size.x, r.size.y]
+	return StationMap.turf_rows({"territories": areas})
+
+
+func _turf_overlay(font: Font) -> void:
+	if not big:
+		return
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _turf_t > 1.0:
+		_turf_t = now
+		_turf = turf_of(s)
+	for row in _turf:
+		var col: Color = StationMap.SQUAD_COL.get(row.leader, Color(0.8, 0.8, 0.8))
+		if row.bounds != null:
+			var r: Rect2 = row.bounds
+			var a := to_screen(r.position.x, r.end.y)
+			var b := to_screen(r.end.x, r.position.y)
+			var screen := Rect2(a, b - a).abs()
+			if row.leader != "":
+				draw_rect(screen, Color(col, 0.08 + 0.12 * float(row.share)), true)
+			draw_rect(screen, Color(col, 0.35), false, 1.0)
+		var p := to_screen(row.center.x, row.center.y)
+		if _inside(p, 4.0):
+			_label(font, p, ("%s  %s %d%%" % [row.name, StationMap.TURF_NAME[row.leader], int(round(float(row.share) * 100.0))]) if row.leader != ""
+				else "%s  contested" % row.name, 10, Color(col, 0.8), HORIZONTAL_ALIGNMENT_CENTER)
 
 
 ## A side gig's points still to fly: cyan rings, the next one filled and numbered.
