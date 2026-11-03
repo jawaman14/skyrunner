@@ -43,6 +43,18 @@ a Claude review of Claude's own work):
 5. **#373** (scenery) and **#374** (period vehicles) after the owner's screenshot review.
 6. **QA lane (Codex):** goldens and BALANCE for #377, #383, #393 and #396; a hands-on look at the quarry exit and the map lines.
 
+## Repeatable goal: the week's work (owner, 4 November)
+
+The owner asked for a repeatable goal and for the World of Warcraft study's lessons to go into the game (D-93, D-94). The study
+found WoW kept players with a short payoff inside a long one: a weekly raid reset and a tier you could see. Skyrunner's answer is
+the week's work (DESIGN 52): every island week (90 game minutes) posts three goals drawn from what is open, each paying renown,
+all three paying a bonus and a run of cleared weeks; the rank is the Renown tier, whose perks already exist. No money is paid
+(D-65). The phone's Week app shows it.
+
+The other lessons, one PR each (D-94): buyers' orders retuned until taking them pays; the job board led by a few best-fit jobs;
+streak protection on catastrophic rolls (customs, truck stops); the only aircraft never forfeited before the takeover; lying low
+as a visible bonus; loop-length targets in DESIGN, measured by the playtest digest.
+
 ## Empire pivot (owner, 19 October)
 
 The game becomes a hybrid of open-world character play and a persistent empire simulation, with equal design weight on both
