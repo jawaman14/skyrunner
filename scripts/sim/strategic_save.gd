@@ -284,8 +284,10 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.daily_weather.restore(d.daily_weather)
 	if s.calendar != null and d.get("calendar") is Dictionary:
 		s.calendar.restore(d.calendar)
-	if Jobs.ISLAND_BOARD and not s._first_missions() and d.get("boards") is Dictionary:
-		restore_boards(s, d.boards)
+	if Jobs.ISLAND_BOARD and d.get("boards") is Dictionary:
+		s.pending_boards = d.boards  # a story attached after this re-applies them (Story.attach)
+		if not s._first_missions():
+			restore_boards(s, d.boards)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.investigation != null:

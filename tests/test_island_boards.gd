@@ -100,3 +100,25 @@ func test_a_gun_run_and_a_gig_round_trip() -> void:
 	check(back.items[0].hot, "the hot flag survives")
 	check(back.hot(), "so does the job's heat")
 	check(back.accepted_at == null, "a board job is not taken")
+
+
+## Codex's review of #495: main.gd and the dedicated server restore the save, then attach the story, whose chapters deal every
+## board afresh; the saved boards go back on top after the attach.
+func test_a_story_save_keeps_its_boards_through_the_attach() -> void:
+	var s := Session.new({"seed": 4, "location": "HAR", "career": true, "features": Session.SANDBOX_FEATURES})
+	Story.new(1).attach(s)
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	s.time += 300.0
+	s.stock_island_boards()
+	check(not s._first_missions(), "past the employed opening")
+	var before := _ids(s)
+	var data: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	var story_d: Dictionary = SaveVars.through_json(s.story.to_dict())
+	var t := Session.new({"seed": 9, "location": "HAR", "career": true, "features": Session.SANDBOX_FEATURES})
+	StrategicSave.restore(t, data)  # the load order main.gd and the dedicated server use
+	Story.from_dict(story_d).attach(t)
+	check_eq(_ids(t), before, "the saved boards, not the ones the chapters dealt")
+	check(t.pending_boards.is_empty(), "applied once")
+	s.dispose()
+	t.dispose()
