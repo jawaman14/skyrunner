@@ -57,3 +57,16 @@ func test_story_goals_count_once_and_employer_stages_count() -> void:
 		p.poll(s)
 	check_eq(p.goals.size(), 2, "the same goal met three times counts once")
 	s.dispose()
+
+
+## Codex review (#504): a goal the story waived (the Morettis convicted first) is not a finished thing.
+func test_a_waived_goal_is_not_a_beat() -> void:
+	var s := Session.new({"seed": 3, "location": "HAR", "map_seed": MapCity.SEED, "career": true})
+	var st := Story.new(1)
+	st.attach(s)
+	var p := Pacing.new(s)
+	st.outcomes[str(st.chapter.objectives[0].key)] = "waived: the Family is gone"
+	s.time += 60.0
+	p.poll(s)
+	check_eq(p.goals.size(), 0, "a waiver counts for nothing")
+	s.dispose()

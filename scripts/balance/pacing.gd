@@ -56,7 +56,8 @@ static func done_ids(s) -> Array:
 	for i in int(st.index):
 		out.append("chapter %d" % (i + 1))
 	for o in st.chapter.objectives:
-		if st.outcomes.has(o.key) or float(st.progress.get(o.key, 0.0)) >= float(o.target):
+		# met, not waived: Story.outcomes holds why a goal was waived or failed, which is no finished thing
+		if not st.outcomes.has(o.key) and float(st.progress.get(o.key, 0.0)) >= float(o.target):
 			out.append("%d:%s" % [int(st.chapter.num), str(o.key)])
 	if st.get("employment") != null:
 		for i in int(st.employment.stage):
