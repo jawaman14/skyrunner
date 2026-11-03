@@ -96,15 +96,35 @@ func test_a_save_keeps_the_week_and_draws_nothing() -> void:
 	s.bus.emit("job_delivered", s.time, "", ["runner"], {"hot": true})
 	var data: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
 	var t := _story(9)
-	var stream: Array = t.weekly.rng.get_state()
 	StrategicSave.restore(t, data)
 	check_eq(t.weekly.week, s.weekly.week)
 	check_eq(JSON.stringify(t.weekly.goals), JSON.stringify(s.weekly.goals), "the same goals and progress")
 	t.update(1.0 / 30)
 	check_eq(t.weekly.week, s.weekly.week, "not reposted on load")
-	check_eq(t.weekly.rng.get_state(), stream, "restoring draws nothing")
+	check_eq(t.weekly.rng.get_state(), s.weekly.rng.get_state(), "the stream carries on where the save left it, so next week's picks are not the first week's again")
 	var lines := t.weekly.lines()
 	check(str(lines[0]).begins_with("# Week"), "the phone's Week app has the week")
 	check(lines.any(func(l): return str(l).begins_with("Weeks cleared")), "and the run")
 	s.dispose()
 	t.dispose()
+
+
+## Codex review (#499): a goal no buyer can meet is not posted. With every bulk buyer closed, no sale or order goal.
+func test_no_buyer_goals_when_no_buyer_is_open() -> void:
+	var s := _story()
+	s.update(1.0 / 30)
+	var open_buyers := Trade.BUYERS.keys().filter(func(b): return s.trade != null and s.trade.available(b) == "")
+	var kinds: Array = s.weekly._pool().map(func(g): return g[0])
+	if open_buyers.is_empty():
+		check(not kinds.has("bulk") and not kinds.has("order"), "no buyer open: no sale or order goal (%s)" % [kinds])
+	else:
+		check(kinds.has("bulk"), "a buyer open: the sale goal can be posted")
+	if s.family != null:
+		s.family.respect = 0.0  # the Morettis won't deal
+	if s.agency != null:
+		s.agency.hung_out = true
+	var still := Trade.BUYERS.keys().filter(func(b): return s.trade != null and s.trade.available(b) == "")
+	if still.is_empty():
+		kinds = s.weekly._pool().map(func(g): return g[0])
+		check(not kinds.has("bulk") and not kinds.has("order"), "every buyer closed: neither goal (%s)" % [kinds])
+	s.dispose()

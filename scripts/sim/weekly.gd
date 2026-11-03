@@ -66,9 +66,11 @@ func _pool() -> Array:
 	]
 	if sess.trade != null:
 		out.append(["hot", "Deliver %d hot loads", 2 + int(t / 2), false])
-		out.append(["bulk", "Sell %d lb to the bulk buyers", 100 * (1 + t), false])
-		if sess.trade.get("orders") != null and Orders.ENABLED:
-			out.append(["order", "Fill a buyer's order in time", 1, false])
+		# a bulk buyer has to be open for business this week (Trade.available), or the goal could not be met
+		if Trade.BUYERS.keys().any(func(b): return sess.trade.available(b) == ""):
+			out.append(["bulk", "Sell %d lb to the bulk buyers", 100 * (1 + t), false])
+			if sess.trade.get("orders") != null and Orders.ENABLED:
+				out.append(["order", "Fill a buyer's order in time", 1, false])
 	if sess.logistics != null:
 		out.append(["cash", "Truck $%s of street money home", 3000 * (1 + t), false])
 	if sess.discovery != null and not sess.discovery.hidden.is_empty():
@@ -197,7 +199,8 @@ func lines() -> Array:
 # ------------------------------------------------------------------ saves
 ## For StrategicSave: everything, so restoring draws nothing.
 func capture() -> Dictionary:
-	return {"week": week, "ends": ends, "goals": goals.duplicate(true), "run": run, "best": best, "history": history.duplicate(true), "bad": _bad}
+	return {"week": week, "ends": ends, "goals": goals.duplicate(true), "run": run, "best": best, "history": history.duplicate(true), "bad": _bad,
+		"rng": rng.get_state()}  # so the next week's picks continue the sequence instead of repeating the first week's
 
 
 func restore(d: Dictionary) -> void:
@@ -215,3 +218,5 @@ func restore(d: Dictionary) -> void:
 		if h is Dictionary:
 			history.append({"week": int(h.get("week", 0)), "met": int(h.get("met", 0)), "of": int(h.get("of", 0))})
 	_bad = int(d.get("bad", 0))
+	if d.get("rng") is Array:
+		rng.set_state(d.rng)
