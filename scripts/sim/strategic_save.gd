@@ -95,7 +95,7 @@ static func capture(s: Session) -> Dictionary:
 	if s.rackets != null:
 		d["rackets"] = {"policy": s.rackets.policy.duplicate(), "held": s.rackets.held, "collected": s.rackets.collected}
 	if s.renown != null:
-		d["renown"] = {"score": s.renown.score, "recent": s.renown.recent.duplicate(true)}
+		d["renown"] = {"score": s.renown.score, "recent": s.renown.recent.duplicate(true), "quiet_since": s.renown.quiet_since}
 	var c = s.police.case("runner")
 	d["case"] = {"suspicion": c.suspicion, "bust_meter": c.bust_meter, "rival_meter": c.rival_meter}
 	if s.court != null:
@@ -300,6 +300,7 @@ static func restore(s: Session, d: Dictionary) -> void:
 	if s.renown != null and d.get("renown") is Dictionary:
 		s.renown.score = float(d.renown.get("score", 0.0))
 		s.renown.recent = d.renown.get("recent", [])
+		s.renown.quiet_since = float(d.renown.get("quiet_since", s.time))  # an older save: the quiet spell starts at the load
 		s.renown.apply()
 	if d.get("case") is Dictionary:
 		var c = s.police.case("runner")

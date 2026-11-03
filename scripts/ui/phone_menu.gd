@@ -544,6 +544,9 @@ func _bank_lines() -> Array:
 			out.append("In bags aboard: $%s" % Py.money(int(s.logistics.aboard)))
 	if s.renown != null:
 		out.append("Renown: %s (%d)" % [s.renown.title(), int(s.renown.score)])
+		var rested: float = s.renown.rest_bonus(s.time)
+		if rested >= 0.1:  # lying low (D-94): shown so the quiet time reads as a reward building, not time lost
+			out.append("Lying low: the next hot load earns x%.1f renown" % (1.0 + rested))
 	return out
 
 

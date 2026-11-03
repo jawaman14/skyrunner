@@ -1734,3 +1734,14 @@ destination is a separate action on the chart or the phone; opening the phone in
 previous state. Edge cases to test: restoring a route after the phone closes; a route that finishes while the phone is open must
 not restart; a destination set while off must not engage anything. (MiMo suggested P for the destination key; P is the pause key
 in the aircraft, so the key is still to choose.)
+
+## 54. Lying low: rested renown (owner, 4 November 2026, D-94)
+
+From the World of Warcraft study, where rested XP rewards time away instead of punishing time on. `Renown` (no clock, no draws) keeps
+`quiet_since`, the game time of the last hot load or hot setback. A hot delivery earns its renown again in proportion to the
+time since then: none straight away, half again after 15 minutes, and double after 30 minutes (`REST_FULL_S`, at most
+`REST_MAX`). The extra shows as its own line in the renown log ("lying low first (x2.0)"). While the bonus is building, the phone's
+bank page says how much the next hot load will earn ("Lying low: the next hot load earns x1.6 renown"), so a quiet spell reads as
+something being earned rather than time lost. A bust, a seized truck or boat, or a raided stash starts the spell again, and so does
+a hot delivery. Plain (clean) work doesn't end it. Renown is a name, not money (D-65): no money is created. Saved with the renown
+(`quiet_since`).
