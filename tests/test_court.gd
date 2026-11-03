@@ -136,6 +136,28 @@ func test_a_lawyer_takes_half_after_a_seized_load_when_the_pilot_is_short() -> v
 	t.dispose()
 
 
+## Codex's review of #491: a second arrest during pretrial that seizes a load counts for the discount, and the conversation shows
+## the fee the lawyer will actually ask before the pilot hires.
+func test_a_load_seized_on_a_second_arrest_counts_and_the_fee_is_shown() -> void:
+	var s := _sess()
+	s.money = 30000
+	var c := _arrest(s, 0.0, "arrested on landing")
+	check(not bool(c.get("lost_load", false)), "the first arrest took no load")
+	if c.stage == "bail":
+		s.court.post_bail("custody" if not Court.PILOT_FREE else "lawyer")
+	c.stage = "pretrial"
+	s.phase = "parked"
+	_arrest(s, 200.0)
+	check(bool(s.court.case_.get("lost_load", false)), "the second arrest seized a load: the case knows")
+	s.money = 4000
+	check_eq(s.court.fee("local"), 3000, "so the discount applies")
+	var v: Dictionary = s.court.view("runner")
+	check_eq(v.fees, {"local": 3000, "miami": 12500}, "the court view carries the fees asked now")
+	s.money = 30000
+	check_eq(s.court.view("runner").fees.local, 6000, "a pilot who can pay sees the full fee")
+	s.dispose()
+
+
 func test_suppression_works_more_for_a_good_lawyer_and_an_illegal_stop() -> void:
 	var rate := func(tier: String, no_warrant: bool) -> float:
 		var s := _sess()
