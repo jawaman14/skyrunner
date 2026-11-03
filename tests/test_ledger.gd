@@ -161,4 +161,5 @@ func test_an_hour_of_live_play_has_no_unattributed_money() -> void:
 		s.update(1.0)
 	var bad: Array = s.ledger.log.filter(func(r): return r.from == Ledger.UNATTRIBUTED or r.to == Ledger.UNATTRIBUTED)
 	check(bad.is_empty(), "%d unattributed rows, e.g. %s" % [bad.size(), bad.slice(0, 3)])
+	check(s.ledger.overdrawn().is_empty(), "no internal account goes negative: %s" % [s.ledger.overdrawn()])
 	s.dispose()

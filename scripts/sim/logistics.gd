@@ -245,7 +245,7 @@ func add_cash(site: String, amount: float) -> void:
 	if site != HQ and site != "" and cash.get(site, 0.0) < 1.0:
 		cash_since[site] = sess.time
 	if site == HQ or site == "":
-		sess.move_money(int(amount), "org:street-cash", "transfer")
+		sess.move_money(int(amount), "outside:street-cash", "transfer")
 		if amount >= 1.0:
 			sess.bus.emit("cash_home", sess.time, "", ["runner"], {"amount": amount})
 		return
@@ -327,7 +327,7 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 		if amount < 1.0:
 			return "No cash at %s." % name_of(from)
 		if from == HQ:
-			sess.move_money(-(int(amount)), "org:street-cash", "transfer")
+			sess.move_money(-(int(amount)), "outside:street-cash", "transfer")
 		else:
 			cash[from] -= amount
 		c.cash = amount
@@ -372,7 +372,7 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 func _undo(c: Dictionary) -> void:
 	if c.cash > 0.0:
 		if c.from == HQ:
-			sess.move_money(int(c.cash), "org:street-cash", "transfer")
+			sess.move_money(int(c.cash), "outside:street-cash", "transfer")
 		else:
 			cash[c.from] += c.cash
 	if c.lb > 0.0:
@@ -913,7 +913,7 @@ func _spirit_away(site: String, saved: Dictionary, saved_cash: float) -> void:
 		else:
 			lost.product += saved[g]
 	if saved_cash >= 1.0:
-		sess.move_money(int(saved_cash), "org:street-cash", "transfer")
+		sess.move_money(int(saved_cash), "outside:street-cash", "transfer")
 		told.append("$%s" % Py.money(int(saved_cash)))
 	if not told.is_empty():
 		sess.say("The vault held: %s spirited away%s." % [", ".join(told), (" to " + name_of(to)) if to != "" else ""])
@@ -969,7 +969,7 @@ func load_cash(amount: float) -> String:
 	if amount < 1.0:
 		return "No cash at %s." % name_of(site)
 	if site == HQ:
-		sess.move_money(-(int(amount)), "org:street-cash", "transfer")
+		sess.move_money(-(int(amount)), "outside:street-cash", "transfer")
 	else:
 		cash[site] -= amount
 	aboard += int(amount)
