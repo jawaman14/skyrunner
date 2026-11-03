@@ -133,7 +133,6 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 			tally.posted += 1
 		elif k == "order_filled":
 			tally.filled += 1
-			tally.bonus += int(ev.data.get("bonus", 0))
 		elif k == "order_missed":
 			if float(ev.data.get("delivered", 0.0)) > 0.0:
 				tally.part += 1
@@ -143,7 +142,7 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 			tally.raided += 1
 		elif k == "raid_foiled":
 			tally.foiled += 1)
-	r["tally"] = tally
+	r["tally"] = tally  # (the premiums are read from Orders at the end: part deliveries pay one too, with no event)
 	var t := 0.0
 	var next_run := RUN_EVERY_S
 	# air risk: each flight rolls the tactical sweep's odds (AirRisk) through the
@@ -310,6 +309,8 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 		r.money_min = mini(r.money_min, s.money)
 	r["market"] = {"coke_lo": coke[0], "coke_hi": coke[1], "guns": guns_sum / maxf(1.0, ticks), "disruption": dis_max,
 		"coke_lots": s.agency.coke_lots if s.agency != null else 0, "gun_lots": s.agency.gun_lots if s.agency != null else 0}
+	if s.trade != null and s.trade.get("orders") != null:
+		tally.bonus = s.trade.orders.premiums_paid
 	r["money"] = s.money
 	# what the organisation is worth: the safe, product at the town's street price, street money still out
 	r["net_worth"] = float(s.money) + (s.trade.stock_value() if s.trade != null else 0.0) + (s.logistics.cash_out() if s.logistics != null else 0.0)
