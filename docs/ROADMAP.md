@@ -134,7 +134,8 @@ Agreed order (owner, 18 Oct). Each step: a design note first, its own switch, it
 1. **Case files and kinds of heat** (in progress). Design #400 (DESIGN §48); the stash case files (lead, surveillance,
    warrant, raid; lying low drops a case; an emptied stash is raided for nothing) are built on `claude/heat-case-file`.
    The lawyer's warrant challenge, aircraft heat (per tail number) and district heat are built; the balance run against the old
-   raid roll is BALANCE entry 62 (24 seeds; a 200-seed run is still owed). Still to do: pilot evidence. The phone Heat app is in #446 (Codex), using the existing case-file visibility rules.
+   raid roll is BALANCE entry 62. Still to do: pilot evidence, and the street war's police AI raids stashes without
+   reading the case files (`GroundWar._think_police`). The phone Heat app is in #446 (Codex), using the existing case-file visibility rules.
 2. **The police search and the ladder down.** Helicopters search outward from the last known position; checkpoints on
    likely escape roads; dispatch chatter on the scanner; visible ways to cool off from wanted (break line of sight, go
    under cloud, swap the transponder code, hide the aircraft in a hangar, change aircraft or repaint).
@@ -260,7 +261,7 @@ D-58 to D-60): deadlines follow demand, the boss layer organises while flying is
 
 - **Built (the simulation half of addition 1, #419):** `Orders` and the market board data in `Trade.view`, with tests; DESIGN section 49.
 - **Phone interface (#446):** Work has the market board and buyers' orders with premiums/deadlines; Enter calls Benny. Measured in BALANCE entry 61 (the stand-in
-  misses most orders; the premiums pay it about $100 a run and the misses cost the Morettis' respect).
+  misses most orders; the premiums pay it about $150 a run and the misses cost the Morettis' respect).
 - **Not started:** additions 2 to 8, in the order of LOOP_IDEAS section 2 (cover cargo next, then the calendar).
 
 ## Stock, ownership and the money loop (owner, 18 October; planned)
