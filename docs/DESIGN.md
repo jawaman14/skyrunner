@@ -1734,3 +1734,19 @@ destination is a separate action on the chart or the phone; opening the phone in
 previous state. Edge cases to test: restoring a route after the phone closes; a route that finishes while the phone is open must
 not restart; a destination set while off must not engage anything. (MiMo suggested P for the destination key; P is the pause key
 in the aircraft, so the key is still to choose.)
+
+## 55. Pacing targets (owner, 4 November 2026, D-94)
+
+From the World of Warcraft study: WoW was paced so that something was finished every few minutes (a quest handed in, a level, a
+drop) and a long dry spell was a bug to fix, not a mood. Skyrunner now states its targets and measures them.
+
+| Target | Value | What counts |
+|---|---|---|
+| Typical gap between finished things (median) | 5 min or less | A load delivered, bales delivered, a bulk sale, an order filled, money home, a hidden strip found, a container through, a raid foiled, a race run, an acquittal or quashed case, money laundered, a story goal or chapter |
+| Longest dry spell | 15 min or less | The same, from the start of the session to its end |
+| Longest wait for a story goal | 30 min or less | A required or side goal of the chapter met, or a chapter finished |
+
+`scripts/balance/pacing.gd` (`Pacing`) listens to the event bus and polls the story, without a clock or draws of its own.
+`tools/playtest.gd` puts the report in its result as `pacing`, and its `missed` field names any target the run fell short of. The
+AI pilot is a stand-in for a player: a miss on a bot run is a lead to look at, not proof the game is slow, and a pass doesn't
+prove it is paced right. The human playtest is still the judge.
