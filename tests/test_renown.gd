@@ -2,8 +2,13 @@ extends TestCase
 ## Renown: the name on the street, from what the organisation does (read off the event bus), and what it is worth.
 
 
+func before_each() -> void:
+	Weekly.ENABLED = false  # the week's goals pay renown too (test_weekly); these tests count renown's own points
+
+
 func after_each() -> void:
 	Renown.ENABLED = true
+	Weekly.ENABLED = true
 
 
 func _sess(opts := {}) -> Session:

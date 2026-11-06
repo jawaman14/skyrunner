@@ -172,8 +172,22 @@ class Commander:
 	var cash := 0.0:  ## Los Cuervos' war chest (the others pay from the session)
 		set(v):
 			if sess != null:
-				sess.ledger.track(faction + ":war-chest", cash, v, sess.time)
+				sess.ledger.track(faction + ":war-chest", cash, v, sess.time, _other, _reason, _actor)
 			cash = v
+	var _other := Ledger.UNATTRIBUTED
+	var _reason := "adjust"
+	var _actor := "system"
+
+	## A named change to the war chest (F-3): `delta` > 0 comes from `other`, < 0 goes to it. Same value as `cash += delta`,
+	## but the ledger row says where it came from and why. `floor0` keeps the old `maxf(0.0, ...)` clamp of a removal.
+	func move_cash(delta: float, other: String, reason: String, floor0 := false) -> void:
+		_other = other
+		_reason = reason
+		_actor = faction
+		cash = maxf(0.0, cash + delta) if floor0 else cash + delta
+		_other = Ledger.UNATTRIBUTED
+		_reason = "adjust"
+		_actor = "system"
 	var think_t := 0.0
 	var log: Array = []
 
@@ -483,16 +497,16 @@ func recruit(f: String, kind: String, at = null, pay := true):
 		if f == "org":
 			if sess.money < cost:
 				return "Need $%s." % Py.money(cost)
-			sess.money -= cost
+			sess.move_money(-cost, "outside:street", "wages")
 			spent.recruit += cost
 		elif f == "police":
 			if sess.law_funds < cost:
 				return "Need $%s in funds." % Py.money(cost)
-			sess.law_funds -= cost
+			sess.move_law_funds(-cost, "outside:state", "wages")
 		else:
 			if commanders.rival.cash < cost:
 				return "Los Cuervos are broke."
-			commanders.rival.cash -= cost
+			commanders.rival.move_cash(-cost, "outside:street", "wages")  # signing men on
 	_serial += 1
 	var q := Squad.new()
 	q.faction = f
@@ -754,7 +768,7 @@ func update(dt: float) -> void:
 	for f in commanders:
 		var c: Commander = commanders[f]
 		if f == "rival":
-			c.cash += 30.0 * step / 60.0
+			c.move_cash(30.0 * step / 60.0, "outside:street", "sales")  # the corners' takings, as a stand-in (no rival economy yet: B-2)
 		if c.ai and sess.time >= c.think_t:
 			c.think_t = sess.time + THINK_S
 			match f:
@@ -1296,7 +1310,7 @@ func truck_contacts() -> Array:
 				_say("both", "A truck's driver held off Los Cuervos and drove on")
 				continue
 			out.append([t, "hijacked", "Los Cuervos"])
-			commanders.rival.cash += t.pay * 0.5
+			commanders.rival.move_cash(t.pay * 0.5, "outside:street", "resale")  # the hijacked load, fenced
 			if not t.weapons.is_empty():
 				arsenal("rival").add_all(t.weapons)
 			continue
@@ -1387,7 +1401,7 @@ func _patrol_stops(q: Squad, t) -> bool:
 	if not _passed.has(key):
 		var st = sess.stash_net.get_stash(t.stash)
 		var known: bool = st != null and StashNet.suspicion(st) >= StashNet.KNOWN_HEAT
-		_passed[key] = frng.random() < PATROL_STOP + (PATROL_STOP if known else 0.0)
+		_passed[key] = frng.random() < (PATROL_STOP + (PATROL_STOP if known else 0.0)) * StreakGuard.factor(sess.stash_net.truck_streak)
 		if _passed.size() > 400:
 			_passed.clear()
 	return _passed[key]
@@ -1562,13 +1576,13 @@ func _upkeep(dt: float) -> void:
 		if q.faction == "org":
 			_upkeep_acc += c
 		elif q.faction == "police":
-			sess.law_funds -= c * 0.5
+			sess.move_law_funds(-c * 0.5, "outside:state", "wages")
 		else:
-			commanders.rival.cash -= c
+			commanders.rival.move_cash(-c, "outside:street", "wages")
 
 
 	if _upkeep_acc >= 1.0:
-		sess.money -= int(_upkeep_acc)
+		sess.move_money(-int(_upkeep_acc), "outside:street", "wages")
 		spent.upkeep += int(_upkeep_acc)
 		_upkeep_acc -= int(_upkeep_acc)
 
@@ -1772,12 +1786,12 @@ func _recruit_ai(f: String, rich: bool, kind := "") -> void:
 		# nobody sends men out unarmed: buy guns first (the dealer, or police procurement)
 		var price: int = 4 * int(Arsenal.TIERS.rifle.price * (1.0 if f == "police" else 1.4))
 		if f == "org" and sess.money > price + ORG_RESERVE:
-			sess.money -= price
+			sess.move_money(-price, "outside:market", "purchase")
 			spent.arms += price
 		elif f == "police" and sess.law_funds > price + 5000.0:
-			sess.law_funds -= price
+			sess.move_law_funds(-price, "outside:market", "purchase")
 		elif f == "rival" and commanders.rival.cash > price + 5000.0:
-			commanders.rival.cash -= price
+			commanders.rival.move_cash(-price, "outside:market", "purchase")
 		else:
 			return
 		ars.add("rifle", 4)
@@ -1878,6 +1892,10 @@ func snapshot(viewer: String) -> Dictionary:
 			var center := Territories.center_of(area)
 			areas[key] = {"name": area.get("name", area.get("id", "")), "market": area.get("market", "town"),
 				"center": [center.x, center.y], "control": c.duplicate(true)}
+			var bounds: Variant = area.get("bounds")
+			if bounds is Rect2:  # the authored outline, for the map's turf overlay (map data, public like the names)
+				var r: Rect2 = bounds
+				areas[key].bounds = [r.position.x, r.position.y, r.size.x, r.size.y]
 	# Exact fight positions and participant IDs require both participants to be
 	# observed. Public shots-fired news is a separate, coarser report.
 	var observed_fights := fights.filter(func(f): return vis.has(f.a) and vis.has(f.b))

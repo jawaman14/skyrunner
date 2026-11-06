@@ -14,7 +14,7 @@ static func _cmd_sell_weapons(role: String, a: Dictionary, session: Session):
 	if k == 0:
 		return "None of those in the armoury."
 	var pay := session.weapon_price(tier, false) * k
-	session.money += pay
+	session.move_money(pay, "outside:buyers", "resale")
 	session.econ.record_delivery("guns", "town")
 	session.say("Sold %d %s to the fence: +$%s" % [k, Arsenal.TIERS[tier].name.to_lower(), Py.money(pay)])
 	return null
@@ -32,7 +32,7 @@ static func _cmd_buy_weapons(role: String, a: Dictionary, session: Session):
 	var cost := session.weapon_price(tier, true) * n
 	if session.money < cost:
 		return "Need $%s." % Py.money(cost)
-	session.money -= cost
+	session.move_money(-cost, "outside:market", "purchase")
 	session.arsenals["org"].add(tier, n)
 	session.say("Bought %d %s from a dealer: -$%s" % [n, Arsenal.TIERS[tier].name.to_lower(), Py.money(cost)])
 	return null
@@ -186,7 +186,7 @@ static func _cmd_challenge_warrant(role: String, a: Dictionary, session: Session
 	if session.court != null and session.court.case_ != null:
 		key = str(session.court.case_.lawyer)
 	var tier: int = {"public": 0, "local": 1, "miami": 2, "family": 3}.get(key, 1)
-	session.money -= Investigation.CHALLENGE_FEE
+	session.move_money(-Investigation.CHALLENGE_FEE, "outside:market", "fee")
 	var name: String = Court.LAWYERS[key].name if Court.LAWYERS.has(key) else "The lawyer"
 	if session.investigation.challenge(id, tier, session.time):
 		session.say("%s got the warrant on %s thrown out. They are still watching it." % [name.capitalize(), st.name])

@@ -174,6 +174,8 @@ class State:
 	var stage := ""
 	var lawyer_name := ""
 	var lawyer_tier := ""
+	var local_fee := "6,000"  ## what Vega and Kessler ask for this case (Court.fee: the seized-load discount shows before hiring)
+	var miami_fee := "25,000"
 	var judge := ""
 	var judge_known := ""
 	var bribable := false
@@ -339,6 +341,9 @@ class State:
 		stage = str(c.get("stage", ""))
 		lawyer_name = str(c.get("lawyer", "")).capitalize() if str(c.get("lawyer", "")).begins_with("the ") else str(c.get("lawyer", ""))
 		lawyer_tier = str(c.get("lawyer_tier", ""))
+		var fees: Dictionary = c.get("fees", {})
+		local_fee = Py.money(int(fees.get("local", Court.LAWYERS.local.cost)))
+		miami_fee = Py.money(int(fees.get("miami", Court.LAWYERS.miami.cost)))
 		judge = str(c.get("judge", ""))
 		judge_known = str(c.get("judge_known", ""))
 		bribable = bool(c.get("bribable", false))
