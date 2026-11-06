@@ -1866,7 +1866,14 @@ The terrain's own height field draws on the map seed itself (`NpRandom`, matchin
 **The terrain cache.** Generating a map's terrain takes about 10 s in GDScript, so `Terrain` keeps it on disk keyed by everything
 that goes into it. The built-in maps ship baked in `res://data/terrain` (`tools/bake_terrain.gd`); anything else is cached
 in `user://terrain` on first use. `CACHE_VERSION` (now 3) is part of the key: bump it whenever the generator changes, then
-re-bake, or players keep the old terrain from their cache.
+re-bake, or players keep the old terrain from their cache. The natural terrain adds its own tag to the key (now 3: the softer quarry walls, then the cleared HAR
+approach), so the classic bakes and their keys never move when only the natural pass changes.
+
+**A cleared approach** (D-37, `Terrain.CLEAR_APPROACH`, natural terrain only). After the natural pass, the ground under a listed
+runway end's final is held below its 3 degree path from 10 m over the threshold, less 15 m, from 300 m to 3 km out, in a corridor
+160 m wide either side that widens by 15% of the distance and fades out over 220 m; it never lowers ground below 25 m, so the
+strip's own surround, the coast and the lowlands stay as the classic generator made them. Trees are kept off it (their heights
+are still drawn, so every other tree keeps its draw). HAR end 0 is the one listed.
 
 **How a strip shapes the ground** (`Terrain._shape_fields`). First every strip is guaranteed land: a bump about 1.4 km wide
 raises the ground under it to 30 m (offshore strips get an island). Then each strip is flattened to its elevation, which is

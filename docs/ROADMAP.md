@@ -220,7 +220,8 @@ Rewritten 4 November against the code. The items from 18 October that are finish
 
 **Not started, still owed:**
 
-- **HAR runway end 0** (D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain change, re-bake, strip trials).
+- **HAR runway end 0** (D-37): in review (#514). The natural terrain holds the ground under end 0's final below a 3 degree path
+  less 15 m, from 300 m to 3 km out, and keeps trees off it (`Terrain.CLEAR_APPROACH`); the strip audit no longer flags it.
 - **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
 - **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached. Not part
   of the game, listed so it is not lost.
