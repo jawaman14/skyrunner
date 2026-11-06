@@ -109,7 +109,15 @@ Invariants:
 - conservation per good, except through `outside:*`, seizures (`outside:state`) and consumption (`outside:street`);
 - a lot is in exactly one location.
 
-Migration is the same as money: F-4 wraps stash stock, then call sites move by domain. The aircraft load (`Loadout`) becomes a
+Migration is the same as money: F-4 wraps stash stock, then call sites move by domain.
+
+**Where it stands (7 November 2026).** `Session.inventory` holds every stash's stock as lots (`stash:<id>`) and the aircraft load
+(`aircraft:<key>`); goods on the organisation's trucks sit at `road:org`. Logistics books its own changes as named moves before it
+changes the stock numbers: `truck out` and `truck in`, `round out`, `truck recalled`, `sale` (to `outside:buyer:<who>`),
+`street sale` (to `outside:street`), `seized` and `raided` (to `outside:state`), `hijacked` (to `outside:rival`) and `vault`
+(stash to stash). A flown delivery is a move from the aircraft to the stash. The five-second reconcile stays as the safety net and
+books anything else as `unattributed`; in a two-hour AI run nothing but the starting stock was. Conservation runs on running
+boundary totals, and the save keeps the lots inside the map with their ids, origin and age. The aircraft load (`Loadout`) becomes a
 location, so a flown delivery and a trucked one are the same `move`. That's what makes direct and delegated deliveries equal (D-66).
 
 ## 5. The clock

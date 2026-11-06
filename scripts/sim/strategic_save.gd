@@ -82,6 +82,8 @@ static func capture(s: Session) -> Dictionary:
 		d["stashes"] = st
 	if s.investigation != null:
 		d["investigation"] = s.investigation.to_dict()
+	if s.inventory != null and not s.inventory.lots.is_empty():
+		d["inventory"] = s.inventory.capture()  # F-4: the lots keep their origin and age across a load
 	if s.logistics != null:
 		var l: Logistics = s.logistics
 		d["logistics"] = {"stock": l.stock.duplicate(true), "cash": l.cash.duplicate(true), "cash_since": l.cash_since.duplicate(true),
@@ -273,6 +275,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 					st["works"] = {}
 					for k in w:
 						st.works[str(k)] = int(w[k])
+	if s.inventory != null and d.get("inventory") is Dictionary:
+		s.inventory.restore(d.inventory)  # an older save has none: the stash reconcile rebuilds it from the stock
 	if s.logistics != null and d.get("logistics") is Dictionary:
 		var l: Logistics = s.logistics
 		var ld: Dictionary = d.logistics
