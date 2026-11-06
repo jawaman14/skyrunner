@@ -46,6 +46,7 @@ class FlightLog:
 	var departed_from = null
 	var airborne := false
 	var max_bank := 0.0
+	var final_bank := 0.0  ## the most bank on the final: below FINAL_AGL_M since the last time the aircraft was above it (D-38)
 	var max_touchdown_fpm := 0.0
 	var last_touchdown_fpm := 0.0
 	var touchdowns_seen := 0

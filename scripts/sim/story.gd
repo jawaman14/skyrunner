@@ -197,6 +197,21 @@ var history: Array = []  ## completed chapter briefings and actual outcomes
 var opened := {}  ## every system and lock opened so far
 var completed_all := false
 var fresh := true  ## a new story (Story.new), not one rebuilt from a save (from_dict): only a new one hides the smugglers' strips
+## D-38: flight skill gives optional bonus goals that never block a chapter, one each in chapters 1 to 3. They pay renown, a
+## name earned for flying well, not money (D-65: no money from nowhere). Counted from the "landed" event.
+static var FLIGHT_GOALS := true
+const FLIGHT := {
+	0: ["greaser", "Grease a landing: touch down at 120 ft/min or less", 1],
+	1: ["short_strip", "Land on a strip under 650 m long", 1],
+	2: ["steady_landings", "Three steady landings in a row (under 300 ft/min, wings within 20 degrees)", 3],
+}
+const FLIGHT_RENOWN := 8.0
+const GREASE_FPM := 120.0
+const SHORT_M := 650.0
+const STEADY_FPM := 300.0
+const STEADY_BANK := 20.0
+
+
 var show_briefing := true
 var company_decision := ""  ## remove | spare | declined | skipped: the Company order at the end of Chapter 9 (declined: the player walked away; skipped: the Company cut us loose)
 var _last_t := -1.0  ## the clock at the last tick (for the goals that count minutes)
@@ -222,6 +237,11 @@ var chapter: Campaign.Chapter:
 					o.optional = bool(g[3])
 					o.bonus = int(g[4])
 				goals.append(o)
+			if FLIGHT_GOALS and FLIGHT.has(index):  # D-38: the flying goal, optional, paid in renown
+				var f: Array = FLIGHT[index]
+				var fo := Campaign.Objective.new(f[0], f[1], f[2])
+				fo.optional = true
+				goals.append(fo)
 			var briefing: String = c[2]
 			if c[1] == "Kingpin":
 				if company_decision == "remove":
@@ -417,7 +437,9 @@ func objective_lines() -> Array:
 			count = " (%d/%d min)" % [int(v), int(o.target)]
 		elif o.target > 1:
 			count = " (%d/%d)" % [int(v), int(o.target)]
-		if o.optional:
+		if o.optional and o.bonus == 0 and _is_flight(str(o.key)):
+			count += " (optional: renown for flying well)"
+		elif o.optional:
 			count += " (optional before chapter ends: +$%s)" % Py.money(o.bonus)
 		out.append("[%s] %s%s" % [mark, o.text, count])
 	return out
@@ -461,6 +483,8 @@ func _on_event(ev: EventBus.Event) -> void:
 				sess.refresh_board(code)
 		return
 	match ev.kind:
+		"landed":
+			_count_landing(d)
 		"job_delivered":
 			var good := str(d.get("good", ""))
 			if good == "marijuana":
@@ -574,6 +598,11 @@ func tick(s) -> void:
 		var paid := "_paid_" + str(o.key)
 		if o.optional and progress.get(o.key, 0.0) >= o.target and not progress.has(paid):
 			progress[paid] = 1.0
+			if _is_flight(str(o.key)):
+				if s.renown != null:
+					s.renown.add(FLIGHT_RENOWN, "flying: " + str(o.text))
+				s.say("Side goal done: %s. People talk about how you fly." % o.text)
+				continue
 			s.move_money(o.bonus, "outside:buyers", "delivery")
 			s.say("Side goal done: %s. +$%s." % [o.text, Py.money(o.bonus)] if o.bonus > 0 else "Side goal done: %s." % o.text)
 	if not Py.all(ch.objectives, func(o): return o.optional or outcomes.has(o.key) or progress.get(o.key, 0.0) >= o.target):
@@ -638,3 +667,24 @@ func advance() -> void:
 		s.say(ending_summary())
 		s.say("1989. The story is told - the coast is yours, for as long as it lasts. Everything stays open.")
 	s.save()
+
+
+static func _is_flight(key: String) -> bool:
+	return FLIGHT.values().any(func(f): return str(f[0]) == key)
+
+
+## D-38: what a landing counts towards. A landing with no flight before it (a load at the start) carries no rate and counts for nothing.
+func _count_landing(d: Dictionary) -> void:
+	if not FLIGHT_GOALS or not d.has("touchdown_fpm"):
+		return
+	var fpm := absf(float(d.get("touchdown_fpm", 0.0)))
+	var bank := absf(float(d.get("final_bank", d.get("max_bank", 0.0))))  # the bank on the final, not a turn after take-off (Codex on #513)
+	var code := str(d.get("code", ""))
+	if fpm <= GREASE_FPM:
+		progress["greaser"] = 1.0
+	if World.AIRFIELD_BY_CODE.has(code) and float(World.airfield(code).length) < SHORT_M:
+		progress["short_strip"] = 1.0
+	if fpm < STEADY_FPM and bank < STEADY_BANK:
+		progress["steady_landings"] = minf(3.0, float(progress.get("steady_landings", 0.0)) + 1.0)
+	elif float(progress.get("steady_landings", 0.0)) < 3.0:
+		progress["steady_landings"] = 0.0  # in a row: a rough one starts the count again (once three are in, they stay)

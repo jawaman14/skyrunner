@@ -1884,3 +1884,18 @@ Then the strip's `setting` decides its surroundings:
   wide shoulder: 32 m high, centred 75 m out, about 70 m wide. The strip itself keeps the classic height. A `haul_road` end
   (0 or 1) cuts a sloping road out of the pit at that end, 120 m wide at the lip and widening by half its distance beyond.
 - `beach` blends the strip into the ground over 650 m, and anything else over 260 m.
+
+## 57. Flying well (owner, 18 October 2026, D-38)
+
+Flight skill gives optional bonus goals in the story, one in each of the first three chapters, and never blocks a chapter.
+`Story.FLIGHT` holds them; `Story.FLIGHT_GOALS` is the switch (in the parity set).
+
+| Chapter | Goal | Counts when |
+|---|---|---|
+| 1 | Grease a landing | touchdown at 120 ft/min or less |
+| 2 | Land on a strip under 650 m | any landing at a strip shorter than 650 m |
+| 3 | Three steady landings in a row | under 300 ft/min with the wings within 20 degrees, three running; a rough one starts the count again until three are in |
+
+They count from the `landed` event (`touchdown_fpm`, `final_bank` - the most bank below 60 m since the aircraft was last above it, so a turn after take-off does not count - and the strip's code), and only a landing after a flight counts. Each
+pays 8 renown, once, a name earned for flying well, and no money (D-65: nobody gets money except through the same rules). The
+goal card says "optional: renown for flying well".

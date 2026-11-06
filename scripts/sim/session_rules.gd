@@ -62,6 +62,9 @@ func _bust(how: String) -> void:
 	bus.emit("busted", time, "", ["runner", "law"], {"how": how})
 
 
+const FINAL_AGL_M := 60.0  ## about 200 ft: below this on the way down is the final and the flare, whose bank a steady landing judges
+
+
 func _rules(dt: float, s: FlightModel.FlightState) -> void:
 	var lg := log
 	if fm.crash_reason:
@@ -88,6 +91,7 @@ func _rules(dt: float, s: FlightModel.FlightState) -> void:
 			location = null
 			police.reset(true)
 		lg.max_bank = maxf(lg.max_bank, absf(s.roll))
+		lg.final_bank = maxf(lg.final_bank, absf(s.roll)) if s.agl < FINAL_AGL_M else 0.0  # a go-around starts the final again
 	elif phase == "parked" and s.gs_kts > 3:
 		lg.departed_from = lg.departed_from if lg.departed_from else location
 
@@ -181,7 +185,7 @@ func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
 	var leg := {"code": af.code}
 	if flown.t_off >= 0.0:
 		leg.merge({"from": str(flown.departed_from if flown.departed_from else ""), "seconds": time - flown.t_off,
-			"touchdown_fpm": flown.last_touchdown_fpm, "max_bank": flown.max_bank, "fuel_used_lb": maxf(0.0, flown.fuel_off - s.fuel_lb - loadout.ferry_fuel_lb()),
+			"touchdown_fpm": flown.last_touchdown_fpm, "max_bank": flown.max_bank, "final_bank": flown.final_bank, "fuel_used_lb": maxf(0.0, flown.fuel_off - s.fuel_lb - loadout.ferry_fuel_lb()),
 			"pay": money - flown.money_off})
 	bus.emit("landed", time, "", ["runner"], leg)
 	save()
