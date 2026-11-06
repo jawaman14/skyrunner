@@ -51,8 +51,8 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-33 | 2026-10-18 | The wake tool keeps starting Codex turns unattended (the local watcher runs with `--max-per-hour 40`; the checked-in default is 6) | done | wake watcher (local) |
 | D-35 | 2026-10-18 | When Rafa dies, half his empire survives: half the stashes (the least known), half the crew, the trucks that were parked, a quarter of his cash | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
 | D-36 | 2026-10-18 | The AI police and rivals know only what a human in their seat would see (radar, sightings, tips, informants) | planned | ROADMAP: After that: the four product steps |
-| D-37 | 2026-10-18 | HAR: flatten the hill on the approach to runway end 0 so both ends work | planned | ROADMAP: Forgotten or half done (found 18 October) |
-| D-38 | 2026-10-18 | Flight skill (landings, short strips, approaches) gives optional bonus goals in the story; it never blocks a chapter | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
+| D-37 | 2026-10-18 | HAR: flatten the hill on the approach to runway end 0 so both ends work | in-pr | #514 |
+| D-38 | 2026-10-18 | Flight skill (landings, short strips, approaches) gives optional bonus goals in the story; it never blocks a chapter | in-pr | #513 |
 | D-39 | 2026-10-18 | Stay on Godot; the Unity proposal is dropped | done | #326 |
 | D-40 | 2026-10-18 | Claude captures screenshots of #373 (scenery) and #374 (period vehicles) for the owner to approve before they merge | done | #373, #374 |
 | D-41 | 2026-10-18 | The owner approved #374's period vehicles from the screenshots ("Approve") | in-pr | #374 |

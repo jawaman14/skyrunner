@@ -1866,7 +1866,14 @@ The terrain's own height field draws on the map seed itself (`NpRandom`, matchin
 **The terrain cache.** Generating a map's terrain takes about 10 s in GDScript, so `Terrain` keeps it on disk keyed by everything
 that goes into it. The built-in maps ship baked in `res://data/terrain` (`tools/bake_terrain.gd`); anything else is cached
 in `user://terrain` on first use. `CACHE_VERSION` (now 3) is part of the key: bump it whenever the generator changes, then
-re-bake, or players keep the old terrain from their cache.
+re-bake, or players keep the old terrain from their cache. The natural terrain adds its own tag to the key (now 3: the softer quarry walls, then the cleared HAR
+approach), so the classic bakes and their keys never move when only the natural pass changes.
+
+**A cleared approach** (D-37, `Terrain.CLEAR_APPROACH`, natural terrain only). After the natural pass, the ground under a listed
+runway end's final is held below its 3 degree path from 10 m over the threshold, less 15 m, from 300 m to 3 km out, in a corridor
+160 m wide either side that widens by 15% of the distance and fades out over 220 m; it never lowers ground below 25 m, so the
+strip's own surround, the coast and the lowlands stay as the classic generator made them. Trees are kept off it (their heights
+are still drawn, so every other tree keeps its draw). HAR end 0 is the one listed.
 
 **How a strip shapes the ground** (`Terrain._shape_fields`). First every strip is guaranteed land: a bump about 1.4 km wide
 raises the ground under it to 30 m (offshore strips get an island). Then each strip is flattened to its elevation, which is
@@ -1884,3 +1891,18 @@ Then the strip's `setting` decides its surroundings:
   wide shoulder: 32 m high, centred 75 m out, about 70 m wide. The strip itself keeps the classic height. A `haul_road` end
   (0 or 1) cuts a sloping road out of the pit at that end, 120 m wide at the lip and widening by half its distance beyond.
 - `beach` blends the strip into the ground over 650 m, and anything else over 260 m.
+
+## 57. Flying well (owner, 18 October 2026, D-38)
+
+Flight skill gives optional bonus goals in the story, one in each of the first three chapters, and never blocks a chapter.
+`Story.FLIGHT` holds them; `Story.FLIGHT_GOALS` is the switch (in the parity set).
+
+| Chapter | Goal | Counts when |
+|---|---|---|
+| 1 | Grease a landing | touchdown at 120 ft/min or less |
+| 2 | Land on a strip under 650 m | any landing at a strip shorter than 650 m |
+| 3 | Three steady landings in a row | under 300 ft/min with the wings within 20 degrees, three running; a rough one starts the count again until three are in |
+
+They count from the `landed` event (`touchdown_fpm`, `final_bank` - the most bank below 60 m since the aircraft was last above it, so a turn after take-off does not count - and the strip's code), and only a landing after a flight counts. Each
+pays 8 renown, once, a name earned for flying well, and no money (D-65: nobody gets money except through the same rules). The
+goal card says "optional: renown for flying well".
