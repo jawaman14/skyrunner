@@ -163,6 +163,13 @@ the UI can show (D-69).
 `trucked`, `boat`, `mule`). Story goals count by org, not by who flew. This fixes the gap in EMPIRE_PIVOT: today's payload has
 good, pounds, hot and origin but no "who flew".
 
+**Where it stands (7 November 2026).** `scripts/sim/actor.gd` builds actors and checks them (`Actor.refusal`: a known role, an org,
+the role's org is the actor's, the role allowed the command). `Session.command_as(actor, name, args)` runs a command for an
+actor; `command(role, ...)` is now its shim, with the seat as the person (`seat:pilot`) until seats carry people. While a command
+runs, `EventBus.actor` is set, so every event it raises has `actor` and `org`; the world's own events have neither, unless the
+emitter names an `org`. A flown `job_delivered` has `by: "seat:pilot"`, `mode: "flown"`; a truck's has the driver's id and
+`"trucked"`. Not yet: the target-ownership and manager-budget checks (with L-1 and L-4) and the AI orgs calling `command_as`.
+
 **Multiplayer.** No change to protocol v3 in P0. Commands already cross the wire by role; `command_as` maps onto that with
 `person` set by the seat. The sockets CI lane must stay green on every PR (decided 19 Oct).
 

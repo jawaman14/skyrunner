@@ -71,7 +71,9 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - F-2, the ledger wrap, with no behaviour change.
    - F-3a-f, the money sites moved by domain.
    - F-4, inventory.
-   - F-5, `command_as` and actors.
+   - F-5, `command_as` and actors. 7 November: `Actor`, `Session.command_as` with `command` as its shim, events tagged
+     with the actor and org, and `job_delivered` gains `by` and `mode`. The ownership and manager-budget checks wait for
+     businesses (L-1) and managers (L-4); story goals counting by org is L-5.
    - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74).
    - F-7, time acceleration, after D-12.
 3. **The Living District (P0, D-72):** San Telmo Centro, with three organisations (the player's, Los Cuervos and the Morettis, D-84).
