@@ -51,6 +51,27 @@ func test_the_drawn_pose_is_between_the_last_two_steps() -> void:
 	_done(pair)
 
 
+## Codex on #512: the chase camera aimed along the latest step's heading, so its aim jumped at 30 Hz; it now turns with the pose.
+func test_the_camera_heading_is_between_the_last_two_steps_the_short_way() -> void:
+	PilotApp.FIXED_STEP = true
+	var pair := _app()
+	var app: PilotApp = pair[1]
+	app._hdg_a = 350.0
+	app._hdg_b = 10.0
+	app._posed = true
+	app._loop._acc = HostLoop.DT * 0.5
+	check_near(fposmod(app.render_heading(), 360.0), 0.0, 1e-3, "halfway from 350 to 10 is north, not 180")
+	app._loop._acc = 0.0
+	check_near(fposmod(app.render_heading(), 360.0), 350.0, 1e-3, "never ahead of the sim")
+	PilotApp.FIXED_STEP = false
+	check_near(app.render_heading(), (pair[0] as Session).state.heading, 1e-6, "off: the sim's heading")
+	_done(pair)
+
+
+func test_the_switch_is_registered() -> void:
+	check(Switches.OPT_IN.has("PilotApp.FIXED_STEP"), "PilotApp.FIXED_STEP is in Switches.OPT_IN")
+
+
 func test_a_key_press_on_a_frame_with_no_step_is_not_lost() -> void:
 	PilotApp.FIXED_STEP = true
 	var pair := _app()

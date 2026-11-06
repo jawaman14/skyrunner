@@ -668,6 +668,8 @@ var _loop := HostLoop.new()
 var _pose_a := Transform3D()  ## the aircraft at the step before the latest
 var _pose_b := Transform3D()  ## ... and at the latest
 var _posed := false
+var _hdg_a := 0.0  ## the heading (degrees) at those two steps, for the chase camera's aim
+var _hdg_b := 0.0
 var _carry_pressed := {}  ## key presses from frames that ran no step: the next step sees them
 var _wp_beacon: MeshInstance3D = null
 var car_dash: CarDash = null  ## the dashboard, shown while driving
@@ -1764,11 +1766,13 @@ func _fixed_steps(dt: float, inp, remote: bool) -> int:
 	var frame_dt := dt * float(fast_forward if server == null and driving == null else 1)
 	var n := _loop.advance(frame_dt, func(fdt: float):
 		_pose_a = _pose_now()
+		_hdg_a = s.state.heading if s.state != null else 0.0
 		inp.pressed = _carry_pressed
 		_carry_pressed = {}
 		var bc = bot.step(fdt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 		s.update(fdt, inp, bc)
 		_pose_b = _pose_now()
+		_hdg_b = s.state.heading if s.state != null else 0.0
 		_posed = true)
 	return n
 
@@ -1788,6 +1792,15 @@ func render_pose() -> Transform3D:
 	var alpha := clampf(_loop._acc / HostLoop.DT, 0.0, 1.0)
 	return Transform3D(Basis(_pose_a.basis.get_rotation_quaternion().slerp(_pose_b.basis.get_rotation_quaternion(), alpha)),
 		_pose_a.origin.lerp(_pose_b.origin, alpha))
+
+
+## The heading the camera aims along this frame (degrees): the sim's, or with the fixed step, between the last two steps by the
+## same fraction as render_pose, the short way round (Codex on #512: the aim jumped at 30 Hz while the aircraft was smoothed).
+func render_heading() -> float:
+	if not FIXED_STEP or not _posed:
+		return s.state.heading if s.state != null else 0.0
+	var alpha := clampf(_loop._acc / HostLoop.DT, 0.0, 1.0)
+	return rad_to_deg(lerp_angle(deg_to_rad(_hdg_a), deg_to_rad(_hdg_b), alpha))
 
 
 func _sync_scene(dt: float) -> void:
@@ -1981,7 +1994,7 @@ func _sync_squads(dt: float) -> void:
 
 
 func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
-	var h := deg_to_rad(st.heading)
+	var h := deg_to_rad(render_heading())  # D-12: the aim follows the drawn aircraft, not the latest step
 	var fwd := MeshBuilder.to_godot([sin(h), cos(h), 0.0])
 	var L := s.spec.visual.length_m
 	var cockpit := cam_mode == "cockpit"
