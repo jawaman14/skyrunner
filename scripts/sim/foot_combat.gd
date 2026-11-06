@@ -110,7 +110,7 @@ func pack_add(item: String, n := 1) -> String:
 	if item == "medkit":
 		if sess.money < MEDKIT_COST * n:
 			return "A medkit is $%d." % MEDKIT_COST
-		sess.money -= MEDKIT_COST * n
+		sess.move_money(-(MEDKIT_COST * n), "outside:market", "purchase")
 	elif armoury() == null:
 		return "No armoury."
 	elif item == "ammo":
@@ -358,7 +358,7 @@ func _down(how: String) -> void:
 	down = how
 	if how == "hospital":
 		var fee := mini(maxi(0, sess.money), 500)
-		sess.money -= fee
+		sess.move_money(-fee, "outside:market", "fee")
 		sess.say("You went down. You wake up by the aircraft, $%d lighter; the gun and your pack are gone." % fee)
 	elif how == "arrested" and sess.arsenals.has("law"):
 		# the guns and rounds on you go into evidence, then the task force's armoury

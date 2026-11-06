@@ -102,7 +102,7 @@ func spend(o: String, k: float) -> void:
 		else:  # earn() pays in through here: a run's income, not a wage refund
 			sess.move_money(-int(k), "outside:buyers", "delivery")
 	else:
-		sess.ground.commanders.rival.cash -= k
+		sess.ground.commanders.rival.move_cash(-k, "outside:street", "wages")
 
 
 func earn(o: String, k: float) -> void:
@@ -411,7 +411,7 @@ func _rival_hit(weight: float, why: String) -> void:
 	var g = sess.ground
 	if g == null:
 		return
-	g.commanders.rival.cash = maxf(0.0, g.commanders.rival.cash - 2500.0 * weight)
+	g.commanders.rival.move_cash(-2500.0 * weight, "outside:lost", "loss", true)
 	for m in g.control:
 		var multiplier := 1.0 - 0.15 * weight
 		g.control[m]["rival"] *= multiplier

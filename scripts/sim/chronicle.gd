@@ -228,7 +228,7 @@ func fire(id: String) -> String:
 	match id:
 		"windfall":
 			var k := rng.randint(20, 50) * 100
-			sess.money += k
+			sess.move_money(k, "outside:street", "sales")
 			vars.cash = Py.money(k)
 		"surplus_rifles":
 			var k := rng.randint(3, 6)
@@ -250,11 +250,11 @@ func fire(id: String) -> String:
 			vars.stash = st.name
 		"courier_robbed":
 			var k := mini(maxi(0, sess.money), rng.randint(15, 40) * 100)
-			sess.money -= k
+			sess.move_money(-k, "outside:lost", "loss")
 			vars.cash = Py.money(k)
 		"tax_audit":
 			var k := mini(maxi(0, sess.money), 2000)
-			sess.money -= k
+			sess.move_money(-k, "outside:state", "fine")
 			c.suspicion = minf(100.0, c.suspicion + 10.0)
 			vars.cash = Py.money(k)
 		"bad_ammo":
@@ -269,7 +269,7 @@ func fire(id: String) -> String:
 			sess.econ.record_delivery("cocaine", z)
 			sess.econ.record_delivery("cocaine", z)
 			if sess.ground != null:
-				sess.ground.commanders.rival.cash += 8000.0
+				sess.ground.commanders.rival.move_cash(8000.0, "outside:street", "sales")  # their shipment sold
 		"rival_recruits":
 			sess.ground.recruit("rival", "foot", null, false)
 		"rival_arms":
@@ -278,17 +278,17 @@ func fire(id: String) -> String:
 		"rival_boss_arrested":
 			_rival_turf(vars.zone, -0.08)
 			if sess.ground != null:
-				sess.ground.commanders.rival.cash = maxf(0.0, sess.ground.commanders.rival.cash - 5000.0)
+				sess.ground.commanders.rival.move_cash(-5000.0, "outside:state", "forfeiture", true)
 		"rival_infighting":
 			for q in _squads("rival"):
 				q.men = maxi(1, q.men - 1)
 				q.morale = maxf(0.2, q.morale - 0.2)
 		"rival_plane":
 			sess.econ.record_seizure("cocaine", vars.zone)
-			sess.law_funds += 1500.0
+			sess.move_law_funds(1500.0, "outside:state", "forfeiture")
 		"federal_grant":
 			var k := rng.randint(40, 80) * 100
-			sess.law_funds += k
+			sess.move_law_funds(k, "outside:state", "budget")
 			vars.cash = Py.money(k)
 		"informant_turned":
 			var st = _live_stash()
@@ -302,13 +302,13 @@ func fire(id: String) -> String:
 			c.suspicion = minf(100.0, c.suspicion + 10.0)
 		"corruption_scandal":
 			var k := int(minf(sess.law_funds, 4000.0))
-			sess.law_funds -= k
+			sess.move_law_funds(-k, "outside:state", "fine")
 			vars.cash = Py.money(k)
 			for q in _squads("police"):
 				q.morale = maxf(0.3, q.morale - 0.15)
 		"budget_cut":
 			var k := int(minf(sess.law_funds, 3000.0))
-			sess.law_funds -= k
+			sess.move_law_funds(-k, "outside:state", "budget")
 			vars.cash = Py.money(k)
 		"evidence_theft":
 			var k: int = sess.arsenals.law.take("rifle", 4)
@@ -319,7 +319,7 @@ func fire(id: String) -> String:
 			sess.family.respect = minf(100.0, sess.family.respect + 10.0)
 		"sitdown":
 			if sess.ground != null:
-				sess.ground.commanders.rival.cash = maxf(0.0, sess.ground.commanders.rival.cash - 3000.0)
+				sess.ground.commanders.rival.move_cash(-3000.0, "outside:family", "tribute", true)  # the sit-down's price
 			sess.family.respect = minf(100.0, sess.family.respect + 3.0)
 		"casino_skim":
 			sess.family.greed = minf(1.0, sess.family.greed + 0.15)
@@ -334,7 +334,7 @@ func fire(id: String) -> String:
 			c.suspicion = maxf(0.0, c.suspicion - 10.0)
 		"bank_collapse":
 			var k := mini(maxi(0, sess.money), rng.randint(20, 60) * 100)
-			sess.money -= k
+			sess.move_money(-k, "outside:lost", "loss")
 			vars.cash = Py.money(k)
 		"pilot_flips":
 			c.suspicion = minf(100.0, c.suspicion + 15.0)
@@ -383,39 +383,39 @@ func history(i: int) -> String:
 	var c = sess.police.case("runner")
 	match h[0]:
 		"mall_shootout":
-			sess.law_funds += 2000.0
+			sess.move_law_funds(2000.0, "outside:state", "budget")
 			c.suspicion = minf(100.0, c.suspicion + 5.0)
 		"mariel":
 			if sess.ground != null:
-				sess.ground.commanders.rival.cash += 6000.0
+				sess.ground.commanders.rival.move_cash(6000.0, "outside:backers", "funding")
 				sess.ground.recruit("rival", "foot", null, false)
 		"greenback":
-			sess.law_funds += 3000.0
-			sess.money -= mini(maxi(0, sess.money), 1000)  # the bankers want more to look away
+			sess.move_law_funds(3000.0, "outside:state", "budget")
+			sess.move_money(-mini(maxi(0, sess.money), 1000), "outside:bankers", "fee")  # the bankers want more to look away
 		"sfl_task_force":
-			sess.law_funds += 8000.0
+			sess.move_law_funds(8000.0, "outside:state", "budget")
 			if sess.arsenals.has("law"):
 				sess.arsenals.law.add("rifle", 6)
 		"boland":
 			if ag != null:
 				ag.pay_mult = 1.3  # the money goes private: it pays better
 		"interdiction":
-			sess.law_funds += 5000.0
+			sess.move_law_funds(5000.0, "outside:state", "budget")
 		"opa_locka":
-			sess.law_funds += 2000.0
+			sess.move_law_funds(2000.0, "outside:state", "budget")
 		"mia_hangar":
 			sess.econ.scarcity["cocaine"] = minf(0.6, sess.econ.scarcity["cocaine"] + 0.1)
 		"baggage_ring":
 			sess.bus.emit("airport_crackdown", sess.time, "", ["runner", "law"], {})  # the airports tighten up
-			sess.law_funds += 2000.0
+			sess.move_law_funds(2000.0, "outside:state", "budget")
 		"informant_shot":
 			c.suspicion = maxf(0.0, c.suspicion - 5.0)  # informants go quiet
 			if sess.stash_net != null:
 				for st in sess.stash_net.live():
 					st.intel = maxf(0.0, st.intel - 5.0)
 		"noriega":
-			sess.money -= mini(maxi(0, sess.money), 2000)  # the bankers want more to look away
-			sess.law_funds += 4000.0
+			sess.move_money(-mini(maxi(0, sess.money), 2000), "outside:bankers", "fee")  # the bankers want more to look away
+			sess.move_law_funds(4000.0, "outside:state", "budget")
 		"kerry_report":
 			if ag != null and ag.active():
 				ag.exposure = minf(100.0, ag.exposure + 25.0)
@@ -432,7 +432,7 @@ func history(i: int) -> String:
 				ag.exposure = minf(100.0, ag.exposure + {"shootdown": 25.0, "iran_contra": 35.0, "kerry": 20.0}[h[0]])
 				ag._check_exposed()
 		"drug_abuse_act":
-			sess.law_funds += 3000.0
+			sess.move_law_funds(3000.0, "outside:state", "budget")
 			c.suspicion = minf(100.0, c.suspicion + 10.0)
 			if sess.court != null:
 				sess.court.mandatory = true  # mandatory minimums from now on
@@ -485,18 +485,18 @@ func _check(id: String, cond: bool, vars := {}) -> void:
 	var c = sess.police.case("runner")
 	match id:
 		"ten_deliveries":
-			sess.law_funds += 5000.0
+			sess.move_law_funds(5000.0, "outside:state", "budget")
 		"rich_50k":
 			c.suspicion = minf(100.0, c.suspicion + 10.0)
 		"first_bust":
-			sess.law_funds += 2000.0
+			sess.move_law_funds(2000.0, "outside:state", "budget")
 		"stash_burned":
 			for st in sess.stash_net.live():
 				st.intel += 5.0
 		"armoury_20":
-			sess.law_funds += 3000.0
+			sess.move_law_funds(3000.0, "outside:state", "budget")
 		"officers_down":
-			sess.law_funds += 8000.0
+			sess.move_law_funds(8000.0, "outside:state", "budget")
 			c.suspicion = minf(100.0, c.suspicion + 20.0)
 		"ten_arrests":
 			for q in _squads("org"):
