@@ -1734,3 +1734,75 @@ destination is a separate action on the chart or the phone; opening the phone in
 previous state. Edge cases to test: restoring a route after the phone closes; a route that finishes while the phone is open must
 not restart; a destination set while off must not engage anything. (MiMo suggested P for the destination key; P is the pause key
 in the aircraft, so the key is still to choose.)
+
+## 56. Reference: the random streams and the terrain cache
+
+**The random streams.** Every system draws from its own seeded `PyRandom`, offset from the session seed, so adding draws to one
+system never shifts another's (AGENTS.md, Determinism). Pick a new offset that is not in this table, put the draws behind a
+switch in `scripts/sim/switches.gd`, and add a row here in the same PR. The table lists main as of 6 November 2026; open PRs
+that claim an offset are noted.
+
+| Offset | Stream | Built in | What draws from it |
+|---|---|---|---|
+| 0 | `Session.rng` | `session.gd` | the core sim (jobs, police rolls, the Python-parity draws) |
+| 7 | `RadioNet` | `session.gd` | radio chatter |
+| 13 | `Maritime` | `session.gd` | boats and cutters |
+| 21 | `AISmuggler.Director` | `session.gd` | the AI smugglers |
+| 31 | `urng` | `session.gd` | upgrade draws (spoiled tips, leaks); also the old stash raid roll with the case files off |
+| 41 | `StashNet` | `session.gd` | stash runs, roadblocks on them |
+| 51 | `Economy` | `session.gd` | prices |
+| 61, 67 | `GroundWar.rng`, `frng` | `session_state.gd` | the commanders' choices; firefights and patrol stops |
+| 71 | `arng` | `session.gd` | gun runs and arsenal draws |
+| 73 | `FootCombat` | `session_state.gd` | fights on foot |
+| 83 | `Chronicle` | `session_state.gd` | the news |
+| 89, 101 | `Agency` | `session_state.gd` | the Company and its double game |
+| 97 | `Family` | `session_state.gd` | the Morettis |
+| 99 | `PoliceSystem` | `session.gd` | the police units |
+| 103 | `Island` | `session_state.gd` | the island runs and customs there |
+| 107 | `Court` | `session_state.gd` | the federal case |
+| 109 | `Payroll` | `session_state.gd` | the crews |
+| 113 | `Market` | `session.gd` | street supply and demand (`Economy.REALISM`) |
+| 127 | `Agency.prng` | `session_state.gd` | the pipeline: cocaine north, guns south |
+| 131 | `Trade` | `session_state.gd` | the bulk buyers |
+| 137 | `fog_rng` | `session.gd` | sea fog (live play's `fog: true`) |
+| 149, 151, 157 | `brng`, `barng`, `bagrng` | `session.gd` | the island boards (`Jobs.ISLAND_BOARD`): the other strips' boards, their gun runs, the Company's offers, swapped in only while those boards are dealt |
+| 163 | `Investigation` | `session.gd` | the case files (warrant challenges) |
+| 167 | `Orders` | `session_state.gd` | buyers' orders |
+| 173 | `DealMoves` | `session.gd` | deal moves |
+| 179 | `DailyWeather` | `session.gd` | the story's two-hourly weather |
+| 181 | `gig_rng` | `session.gd` | side gigs on the boards |
+| 183 | `Calendar` | `session.gd` | the island's calendar of events |
+| 185 | `Weekly` | `session.gd` (#499, open) | the week's goals |
+| 404, 505 | `Nights` | `nights.gd` | an HQ season's night; its bots |
+| 909 | `Analyst` | `analyst.gd` | the analyst's desk |
+| 919 | `Undercover` | `undercover.gd` | the undercover agent |
+| 929 | `Airframe` | `airframe.gd` | airframe wear |
+| 939, 941 | `Casino` | `casino.gd` | the casino; its games' dice and cards |
+| 947 | `Dealership` | `dealership.gd` | the dealership |
+| 953 | `Psychedelics` | `psychedelics.gd` | the scene's swings |
+| map seed + 1 | trees | `terrain.gd` | tree planting (`NpRandom`) |
+| map seed + 7001 | the natural terrain | `terrain.gd` | `_naturalise`, on its own stream so nothing the classic generator draws moves |
+
+The terrain's own height field draws on the map seed itself (`NpRandom`, matching the Python prototype's NumPy draws).
+
+**The terrain cache.** Generating a map's terrain takes about 10 s in GDScript, so `Terrain` keeps it on disk keyed by everything
+that goes into it. The built-in maps ship baked in `res://data/terrain` (`tools/bake_terrain.gd`); anything else is cached
+in `user://terrain` on first use. `CACHE_VERSION` (now 3) is part of the key: bump it whenever the generator changes, then
+re-bake, or players keep the old terrain from their cache.
+
+**How a strip shapes the ground** (`Terrain._shape_fields`). First every strip is guaranteed land: a bump about 1.4 km wide
+raises the ground under it to 30 m (offshore strips get an island). Then each strip is flattened to its elevation, which is
+pinned or found:
+
+- **Pinned:** a strip with an `elev` in the map data is levelled to that height. Its land bump is capped at the pinned height plus
+  3 m, so a sea-level strip isn't sat in a 30 m bowl.
+- **Found:** a strip without an `elev` takes the height the ground has at its centre after the bump, at least 2 m.
+
+Then the strip's `setting` decides its surroundings:
+
+- `plateau` keeps a flat top out to 80 to 130 m, then drops the ground up to 180 m below it by 260 m.
+- `pit` (the quarry) flattens out to 60 to 110 m. It stands two walls 70 m high and 30 m wide, 55 m either side of the
+  centreline, along the strip's length (the heights the Python fixtures pin). On the natural terrain those walls become a low,
+  wide shoulder: 32 m high, centred 75 m out, about 70 m wide. The strip itself keeps the classic height. A `haul_road` end
+  (0 or 1) cuts a sloping road out of the pit at that end, 120 m wide at the lip and widening by half its distance beyond.
+- `beach` blends the strip into the ground over 650 m, and anything else over 260 m.

@@ -116,7 +116,7 @@ On Windows, run the same through Git Bash or WSL, or call the Godot exe directly
   makes the whole script fail to parse, which looks like a hang in headless runs.
 - An Array used as a `%` format argument must be wrapped: `"%s" % [arr]`.
 - **Determinism:** the sim is seeded and replayable. New random draws go on their own RNG stream
-  (see the stream table in docs/DESIGN.md), never on an existing one, or the parity/golden
+  (see the stream table, docs/DESIGN.md §56, and add your row there), never on an existing one, or the parity/golden
   fixtures shift. New systems sit behind a static `ENABLED`-style switch that the parity tests
   turn off. Register every new switch in `scripts/sim/switches.gd` (`tests/test_switches.gd` fails if one is
   missing, and also scans the sim for global random draws and clock reads).

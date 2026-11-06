@@ -190,8 +190,9 @@ These were finished in part, dropped from the 12 October list, or never written 
   Not part of the game, listed so it is not lost.
 - **Quarry west end and PNR end 1:** one-way by design (terrain or trees in the climb-out); keep documented in `STRIPS.md`.
 - **The uncle story (Rafa Quintero) was missing from the roadmap:** now its own section above.
-- **Docs to update:** HANDOFF and DESIGN (the strip pin option, the pit constants, `CACHE_VERSION` 3, the RNG stream table for
-  the island boards); `docs/ROADMAP.md` itself was stale on 9 and 12 October.
+- **Docs to update:** done 6 November: DESIGN §56 has the stream table (every offset, including the island boards), the
+  terrain cache and `CACHE_VERSION` 3, the strip pin option and the pit constants. `docs/ROADMAP.md` itself was stale on 9 and
+  12 October.
 - **Stale PRs:** #321 (28 behind main), #305 (waits on the strip decision, now made), #370 (superseded by this rewrite).
 - **Local housekeeping:** scratch worktrees under `.claude-worktrees` and terrain cache backups.
 
