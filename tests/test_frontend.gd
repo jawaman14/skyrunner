@@ -467,3 +467,29 @@ func test_the_places_panel_lists_what_is_yours_and_what_is_locked() -> void:
 	check(got.size() == 1 and m.waypoint != null, "a click on a place in the panel sets the waypoint")
 	m.free()
 	s.dispose()
+
+
+## Key audit (#345): a SHIFT shortcut whose system is not in the game says so and does nothing else. It used to fall through
+## to the plain key: SHIFT+K kicked a bale, SHIFT+N switched the transponder off, SHIFT+G dropped the flaps.
+func test_an_unavailable_shift_shortcut_does_not_do_the_plain_keys_job() -> void:
+	var s := Session.new({"seed": 1, "location": "FRM"})
+	var app := PilotApp.new()
+	_tree().root.add_child(app)
+	app.setup(s, "low")
+	for i in 3:
+		app._process(1.0 / 30)
+	check(s.family == null and s.casino == null and s.island == null, "a bare session: no Family, casino or island")
+	var xpdr: bool = s.transponder
+	app._unhandled_input(T.key(KEY_N, true))
+	check_eq(s.transponder, xpdr, "SHIFT+N leaves the transponder alone")
+	app._unhandled_input(T.key(KEY_G, true))
+	check(not app._pressed.has("flaps_down"), "SHIFT+G does not drop the flaps")
+	app._unhandled_input(T.key(KEY_K, true))
+	check(not app._pressed.has("kick"), "SHIFT+K does not kick a bale")
+	var said: Array = s.messages.map(func(m): return str(m[1]))
+	check(said.any(func(t): return t.contains("not yet in this game")), "and it says why: %s" % [said.slice(-3)])
+	app._unhandled_input(T.key(KEY_N))
+	check(s.transponder != xpdr, "plain N still switches the transponder")
+	app.queue_free()
+	app.free()
+	s.dispose()
