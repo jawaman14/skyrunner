@@ -73,6 +73,8 @@ static func capture(s: Session) -> Dictionary:
 		d["daily_weather"] = s.daily_weather.capture(s.weather)  # an optional key: older saves simply have none
 	if s.calendar != null and (not s.calendar.upcoming.is_empty() or s.calendar.crackdown_until >= 0.0):
 		d["calendar"] = s.calendar.capture()  # optional, like the weather
+	if s.weekly != null and s.weekly.week > 0:
+		d["weekly"] = s.weekly.capture()  # optional: an older save starts its first week afresh
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
@@ -253,6 +255,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.daily_weather.restore(d.daily_weather)
 	if s.calendar != null and d.get("calendar") is Dictionary:
 		s.calendar.restore(d.calendar)
+	if s.weekly != null and d.get("weekly") is Dictionary:
+		s.weekly.restore(d.weekly)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.investigation != null:
