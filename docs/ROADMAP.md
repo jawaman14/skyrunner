@@ -191,8 +191,9 @@ These were finished in part, dropped from the 12 October list, or never written 
 - **Backspace reverse (#394):** done; RB is its gamepad binding and the F1 help and GUIDE carry the line.
 - **Map destinations (#390):** done. Boats, trucks and convoys had lines; the station map draws our squads' routes; the pilot's
   chart now draws our squads' routes and the AI pilot's remaining legs (`Minimap.own_squad_lines`, `Minimap.ai_route_of`).
-- **HAR runway end 0** (owner, 18 Oct; D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain
-  change, re-bake, strip trials).
+- **HAR runway end 0** (owner, 18 Oct; D-37): in review. The natural terrain holds the ground under end 0's final below a
+  3 degree path less 15 m, from 300 m to 3 km out, and keeps trees off it (`Terrain.CLEAR_APPROACH`); the strip audit no
+  longer flags it.
 - **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356), the pilot
   app does not. Its own task, needs render interpolation.
 - **Key audit (#345):** every key, which are still used, what the help text says. Not started.

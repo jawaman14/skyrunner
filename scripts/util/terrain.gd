@@ -27,6 +27,16 @@ static var _f := PackedFloat32Array([0.0])
 ## user://terrain on first use. Bump CACHE_VERSION whenever the generator
 ## changes, then re-bake.
 const CACHE_VERSION := 3
+## D-37: runway ends whose approach the natural terrain keeps clear (code -> ends). The ground under the final is held below a
+## 3 degree path from 10 m over the threshold, less CLEAR_MARGIN_M, out to CLEAR_OUT_M; trees are kept off it too. Natural terrain
+## only (the classic one feeds the Python fixtures), and kept out of the airfield data so the classic cache keys don't move.
+const CLEAR_APPROACH := {"HAR": [0]}
+const CLEAR_OUT_M := 3000.0
+const CLEAR_MARGIN_M := 15.0
+const CLEAR_HALF_M := 160.0  ## the corridor's half-width at the threshold; it widens by 15% of the distance out
+const CLEAR_BLEND_M := 220.0  ## beyond the corridor's edge the cap fades out over this
+const CLEAR_FROM_M := 300.0  ## the corridor starts past the strip's own 300 m surround
+const CLEAR_FLOOR_M := 25.0  ## and never lowers ground below the lowland line (the natural pass leaves both alone too)
 const BAKED_DIR := "res://data/terrain"
 const CACHE_DIR := "user://terrain"
 static var disk_cache := true
@@ -174,7 +184,7 @@ func generate_custom(p_seed: int, params: Dictionary, airfields: Array) -> void:
 
 static func _cache_key(what: Array) -> String:
 	if natural:
-		what = what + ["natural", 2]  # (2: softer quarry walls) the classic keys stay as they were, so the shipped bakes still match
+		what = what + ["natural", 3]  # (2: softer quarry walls; 3: clear approaches, D-37) the classic keys stay as they were, so the shipped bakes still match
 	return var_to_str([CACHE_VERSION, what]).sha256_text().substr(0, 24)
 
 
@@ -304,10 +314,59 @@ func _shape_fields(h: PackedFloat64Array, p_seed := 0) -> void:
 		_field_elev[af.code] = elev
 	if natural:
 		_naturalise(h, p_seed)
+		_clear_approaches(h)
 	_h = PackedFloat32Array()
 	_h.resize(h.size())
 	for k in h.size():
 		_h[k] = h[k]  # float64 -> float32, round to nearest like static_cast<float>
+
+
+## D-37: hold the ground under each listed approach below its glide path (CLEAR_APPROACH). After the natural pass, so it stays.
+func _clear_approaches(h: PackedFloat64Array) -> void:
+	var cv := _cv()
+	for af in _fields:
+		if not CLEAR_APPROACH.has(af.code):
+			continue
+		var elev: float = float(_field_elev.get(af.code, af.elev))
+		for end in CLEAR_APPROACH[af.code]:
+			var s := 1.0 if int(end) == 1 else -1.0  # the approach runs outward from this end (Airfield.threshold)
+			var tx: float = af.x + s * af.ux * af.length / 2
+			var ty: float = af.y + s * af.uy * af.length / 2
+			var slope := tan(deg_to_rad(3.0))
+			for r in GRID:
+				var dy: float = cv[r] - ty
+				for c in GRID:
+					var dx: float = cv[c] - tx
+					var along: float = (dx * af.ux + dy * af.uy) * s
+					if along <= CLEAR_FROM_M or along > CLEAR_OUT_M:
+						continue  # the strip and the 300 m around it are the classic field shaping's, left exactly as they are
+					var lateral: float = absf(dx * af.uy - dy * af.ux)
+					var half := CLEAR_HALF_M + 0.15 * along
+					if lateral > half + CLEAR_BLEND_M:
+						continue
+					var cap := maxf(elev + 10.0 + along * slope - CLEAR_MARGIN_M, CLEAR_FLOOR_M)  # never cut into the coast or the lowlands
+					var k := r * GRID + c
+					if h[k] <= cap:
+						continue
+					var w := 1.0 - _smoothstep(half, half + CLEAR_BLEND_M, lateral)  # 1 inside the corridor, 0 at the blend's edge
+					h[k] = h[k] * (1.0 - w) + cap * w
+
+
+## True when (x, y) is under a cleared approach (D-37), where no tree may stand.
+func _in_clear_approach(x: float, y: float) -> bool:
+	if not natural:
+		return false
+	for af in _fields:
+		if not CLEAR_APPROACH.has(af.code):
+			continue
+		for end in CLEAR_APPROACH[af.code]:
+			var s := 1.0 if int(end) == 1 else -1.0
+			var dx: float = x - (af.x + s * af.ux * af.length / 2)
+			var dy: float = y - (af.y + s * af.uy * af.length / 2)
+			var along: float = (dx * af.ux + dy * af.uy) * s
+			if along > 0.0 and along <= CLEAR_OUT_M and absf(dx * af.uy - dy * af.ux) <= CLEAR_HALF_M + 0.15 * along + 40.0:
+				return true
+	return false
 
 
 func _plant_trees(p_seed: int) -> void:
@@ -334,6 +393,8 @@ func _plant_trees(p_seed: int) -> void:
 		if on_field:
 			continue
 		var th := trng.uniform(9, 20)
+		if _in_clear_approach(x, y):
+			continue  # D-37: drawn first and then left out, so every other tree keeps its draw
 		pts.append_array(PackedFloat32Array([x, y, z, th]))
 	# deliberate obstacles: tree lines off both ends of bush strips
 	for af in _fields:
