@@ -127,6 +127,7 @@ var discovery: Discovery = null  ## hidden strips the story starts off the chart
 var deal_moves: DealMoves = null  ## loop idea 5: Benny moves an airdrop mid-flight (DealMoves)
 var daily_weather: DailyWeather = null  ## the story game's weather spells (DailyWeather)
 var calendar: Calendar = null  ## loop idea 4: the island's week, posted ahead (Calendar)
+var weekly: Weekly = null  ## the repeatable goal: the week's work (Weekly, D-93)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
