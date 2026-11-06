@@ -39,6 +39,34 @@ var _h := 0.0  ## the heading the scope is turned to, radians (0 when north-up o
 var _wc := Vector2.ZERO  ## the world point at the scope's centre
 var _goals: Array = []  ## GoalMarks.of(s), refreshed about once a second
 var _goals_t := 0.0
+var ai_route: Array = []  ## the AI pilot's legs still to fly, [{x, y, kind}] (PilotApp sets it from the bot; empty when a human flies)
+
+
+## The legs an AI pilot still has to fly, nearest first: what the announcement (#391) names, drawn on the chart. A read of the bot's plan only.
+static func ai_route_of(runner) -> Array:
+	if runner == null or not ("bot" in runner) or runner.bot == null:
+		return []
+	var pb = runner.bot
+	var out: Array = []
+	for k in range(int(pb.leg_i), pb.legs.size()):
+		var leg = pb.legs[k]
+		out.append({"x": float(leg.x), "y": float(leg.y), "kind": str(leg.kind)})
+	return out
+
+
+## Our own squads' routes on the ground (the organisation's, never a rival's or the law's: a sighting shows a unit, not where it is going).
+## [{id, x, y, tx, ty, label}] for each squad with somewhere to go.
+static func own_squad_lines(sess: Session) -> Array:
+	var out: Array = []
+	if sess == null or sess.ground == null:
+		return out
+	for q in sess.ground.squads:
+		if q.faction != "org" or q.state == "gone" or q.route.size() < 2:
+			continue
+		var end: Vector2 = q.route[-1]
+		var what: String = q.tactic if q.tactic != "" else str(q.order.get("type", ""))
+		out.append({"id": q.id, "x": q.x, "y": q.y, "tx": end.x, "ty": end.y, "label": "%s %s" % [q.id, what]})
+	return out
 
 
 func setup(sess: Session) -> Minimap:
@@ -288,7 +316,10 @@ func _draw() -> void:
 		draw_circle(_c, _r + 2.0, INK)
 		_terrain()
 		_rim(font)
+	_turf_overlay(font)
 	_world_marks(font)
+	_squad_lines(font)
+	_ai_route(font)
 	_gig_points(font)
 	_goal_marks(font)
 	_waypoint(font)
@@ -479,6 +510,124 @@ func _waypoint(font: Font) -> void:
 		_label(font, p + Vector2(10, -8), text, 12 if big else 11, UIStyle.PINK)
 	elif not big:
 		_pointer(p, UIStyle.PINK, text, font)
+
+
+## The chart's turf overlay (big map only): the same rows as the desks' map, from the live ground war, refreshed once a second.
+var _turf: Array = []
+var _turf_t := -10.0
+static func turf_of(sess: Session) -> Array:
+	if sess == null or sess.ground == null or not Territories.ENABLED:
+		return []
+	var areas := {}
+	for area: Dictionary in Territories.records(sess.world.map):
+		var key := Territories.key(sess.world.map, str(area.get("id", "")))
+		var c := Territories.center_of(area)
+		areas[key] = {"name": area.get("name", key), "center": [c.x, c.y], "control": sess.ground.territory_control.get(key, {})}
+		var b: Variant = area.get("bounds")
+		if b is Rect2:
+			var r: Rect2 = b
+			areas[key].bounds = [r.position.x, r.position.y, r.size.x, r.size.y]
+	return StationMap.turf_rows({"territories": areas})
+
+
+func _turf_overlay(font: Font) -> void:
+	if not big:
+		return
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _turf_t > 1.0:
+		_turf_t = now
+		_turf = turf_of(s)
+	for row in _turf:
+		var col: Color = StationMap.SQUAD_COL.get(row.leader, Color(0.8, 0.8, 0.8))
+		if row.bounds != null:
+			var r: Rect2 = row.bounds
+			var a := to_screen(r.position.x, r.end.y)
+			var b := to_screen(r.end.x, r.position.y)
+			var screen := Rect2(a, b - a).abs()
+			if row.leader != "":
+				draw_rect(screen, Color(col, 0.08 + 0.12 * float(row.share)), true)
+			draw_rect(screen, Color(col, 0.35), false, 1.0)
+		var p := to_screen(row.center.x, row.center.y)
+		if _inside(p, 4.0):
+			_label(font, p, ("%s  %s %d%%" % [row.name, StationMap.turf_name(row.leader, "org"), int(round(float(row.share) * 100.0))]) if row.leader != ""
+				else "%s  contested" % row.name, 10, Color(col, 0.8), HORIZONTAL_ALIGNMENT_CENTER)
+
+
+## The part of the segment a-b that lies on the scope (the disc on the radar, the square on the chart), or [] when none does.
+## The scope draws without a clip rect, so a line to something off it would run across the game view.
+func clip_to_scope(a: Vector2, b: Vector2) -> Array:
+	if big:
+		var rect := Rect2(Vector2.ZERO, Vector2(_chart_px(), _chart_px()))
+		var t0 := 0.0
+		var t1 := 1.0
+		var d := b - a
+		for axis in 2:  # Liang-Barsky on x then y
+			var p0: float = a[axis]
+			var dd: float = d[axis]
+			var lo: float = rect.position[axis]
+			var hi: float = rect.end[axis]
+			if absf(dd) < 1e-9:
+				if p0 < lo or p0 > hi:
+					return []
+				continue
+			var ta := (lo - p0) / dd
+			var tb := (hi - p0) / dd
+			t0 = maxf(t0, minf(ta, tb))
+			t1 = minf(t1, maxf(ta, tb))
+		return [a + d * t0, a + d * t1] if t0 <= t1 else []
+	var f := a - _c
+	var dv := b - a
+	var qa := dv.dot(dv)
+	var qb := 2.0 * f.dot(dv)
+	var qc := f.dot(f) - _r * _r
+	if qa < 1e-9:
+		return [a, b] if qc <= 0.0 else []
+	var disc := qb * qb - 4.0 * qa * qc
+	if disc < 0.0:
+		return []
+	var sq := sqrt(disc)
+	var s0 := maxf(0.0, (-qb - sq) / (2.0 * qa))
+	var s1 := minf(1.0, (-qb + sq) / (2.0 * qa))
+	return [a + dv * s0, a + dv * s1] if s0 <= s1 else []
+
+
+## Our squads: a faint line to where each is heading, its end crossed, named on the chart.
+func _squad_lines(font: Font) -> void:
+	var col: Color = StationMap.SQUAD_COL.org
+	for row in own_squad_lines(s):
+		var a := to_screen(float(row.x), float(row.y))
+		var b := to_screen(float(row.tx), float(row.ty))
+		var seg := clip_to_scope(a, b)
+		if seg.is_empty():
+			continue
+		draw_line(seg[0], seg[1], Color(col, 0.35), 1.0)
+		if _inside(b, 4.0):
+			_cross(b, Color(col, 0.8), 3.0)
+			if big:
+				_label(font, b + Vector2(7, 4), str(row.label), 10, col)
+
+
+## The AI pilot's route: a dashed line through the legs it still has to fly, each leg's point ringed.
+func _ai_route(font: Font) -> void:
+	if ai_route.is_empty():
+		return
+	var col := Color(1.0, 0.95, 0.4)
+	var f := _focus()
+	var prev := to_screen(float(f.x), float(f.y)) if not f.is_empty() else Vector2.INF
+	for k in ai_route.size():
+		var leg: Dictionary = ai_route[k]
+		var p := to_screen(float(leg.x), float(leg.y))
+		if prev != Vector2.INF:
+			var seg := clip_to_scope(prev, p)
+			if not seg.is_empty():
+				draw_dashed_line(seg[0], seg[1], Color(col, 0.6), 1.5, 6.0)
+		if _inside(p, 8.0):
+			draw_arc(p, 7.0, 0, TAU, 16, col, 1.5, true)
+			if big:
+				_label(font, p + Vector2(9, -6), "AI %s" % ("drop" if leg.kind == "drop" else ("land" if leg.kind == "land" else str(k + 1))), 11, col)
+		elif k == 0 and not big:
+			_pointer(p, col, "AI", font)
+		prev = p
 
 
 ## A side gig's points still to fly: cyan rings, the next one filled and numbered.

@@ -73,11 +73,16 @@ static func capture(s: Session) -> Dictionary:
 		d["daily_weather"] = s.daily_weather.capture(s.weather)  # an optional key: older saves simply have none
 	if s.calendar != null and (not s.calendar.upcoming.is_empty() or s.calendar.crackdown_until >= 0.0):
 		d["calendar"] = s.calendar.capture()  # optional, like the weather
+	if Jobs.ISLAND_BOARD and not s._first_missions() and not s.boards.is_empty():
+		d["boards"] = capture_boards(s)  # optional: an older save has none and deals every board afresh, as it always did
+	if s.weekly != null and s.weekly.week > 0:
+		d["weekly"] = s.weekly.capture()  # optional: an older save starts its first week afresh
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
 			st[x.id] = {"heat": x.heat, "intel": x.intel, "burned": x.burned, "works": x.get("works", {}).duplicate()}
 		d["stashes"] = st
+		d["truck_streak"] = s.stash_net.truck_streak  # bad-luck protection on the road (StreakGuard)
 	if s.investigation != null:
 		d["investigation"] = s.investigation.to_dict()
 	if s.logistics != null:
@@ -95,9 +100,9 @@ static func capture(s: Session) -> Dictionary:
 	if s.rackets != null:
 		d["rackets"] = {"policy": s.rackets.policy.duplicate(), "held": s.rackets.held, "collected": s.rackets.collected}
 	if s.renown != null:
-		d["renown"] = {"score": s.renown.score, "recent": s.renown.recent.duplicate(true)}
+		d["renown"] = {"score": s.renown.score, "recent": s.renown.recent.duplicate(true), "quiet_since": s.renown.quiet_since}
 	var c = s.police.case("runner")
-	d["case"] = {"suspicion": c.suspicion, "bust_meter": c.bust_meter, "rival_meter": c.rival_meter}
+	d["case"] = {"suspicion": c.suspicion, "bust_meter": c.bust_meter, "rival_meter": c.rival_meter, "customs_streak": s.police.customs_streak}
 	if s.court != null:
 		d["court"] = {"case": s.court.case_, "history": s.court.history.duplicate(true), "mandatory": s.court.mandatory,
 			"serial": s.court._serial, "forfeit_pending": s.court.forfeit_pending, "forfeit_key": s.court.forfeit_key}
@@ -238,6 +243,35 @@ static func migrate(d: Dictionary, steps: Array = STEPS, target: int = VERSION) 
 	return d
 
 
+## The island boards (Jobs.ISLAND_BOARD): every strip's unclaimed jobs and when each board was dealt, so a reload shows the same
+## jobs until they age out instead of dealing them all again. Restoring draws nothing.
+static func capture_boards(s: Session) -> Dictionary:
+	var jobs := {}
+	for code in s.boards:
+		jobs[str(code)] = s.boards[code].map(func(j): return Jobs.job_to_save(j))
+	return {"jobs": jobs, "at": s.board_at.duplicate()}
+
+
+static func restore_boards(s: Session, d: Dictionary) -> void:
+	var jobs = d.get("jobs")
+	if not (jobs is Dictionary):
+		return
+	var top := 0
+	for code in jobs:
+		if not World.AIRFIELD_BY_CODE.has(str(code)) or not (jobs[code] is Array):
+			continue
+		var board: Array = []
+		for row in jobs[code]:
+			if row is Dictionary:
+				board.append(Jobs.job_from_save(row))
+		s.boards[str(code)] = board
+		top = maxi(top, Jobs.max_id(board))
+		var at = d.get("at", {}).get(code)
+		if at != null:
+			s.board_at[str(code)] = float(at)
+	Jobs._next_id = maxi(Jobs._next_id, top + 1)
+
+
 static func restore(s: Session, d: Dictionary) -> void:
 	if d.is_empty():
 		return
@@ -253,10 +287,18 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.daily_weather.restore(d.daily_weather)
 	if s.calendar != null and d.get("calendar") is Dictionary:
 		s.calendar.restore(d.calendar)
+	if Jobs.ISLAND_BOARD and d.get("boards") is Dictionary:
+		s.pending_boards = d.boards  # a story attached after this re-applies them (Story.attach)
+		if not s._first_missions():
+			restore_boards(s, d.boards)
+	if s.weekly != null and d.get("weekly") is Dictionary:
+		s.weekly.restore(d.weekly)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.investigation != null:
 		s.investigation.load_dict(d.get("investigation", {}))  # an older save has no case files: the task force starts afresh
+	if s.stash_net != null:
+		s.stash_net.truck_streak = int(d.get("truck_streak", 0))
 	if s.stash_net != null and d.get("stashes") is Dictionary:
 		for id in d.stashes:
 			var st = s.stash_net.get_stash(str(id))
@@ -300,11 +342,13 @@ static func restore(s: Session, d: Dictionary) -> void:
 	if s.renown != null and d.get("renown") is Dictionary:
 		s.renown.score = float(d.renown.get("score", 0.0))
 		s.renown.recent = d.renown.get("recent", [])
+		s.renown.quiet_since = float(d.renown.get("quiet_since", s.time))  # an older save: the quiet spell starts at the load
 		s.renown.apply()
 	if d.get("case") is Dictionary:
 		var c = s.police.case("runner")
 		c.suspicion = float(d.case.get("suspicion", 0.0))
 		c.bust_meter = float(d.case.get("bust_meter", 0.0))
+		s.police.customs_streak = int(d.case.get("customs_streak", 0))
 		c.rival_meter = 0.0  # nothing fills or decays this any more (no air hijack): an old save must not leave the HUD bar stuck
 	if s.court != null and d.get("court") is Dictionary:
 		s.court.case_ = d.court.get("case")

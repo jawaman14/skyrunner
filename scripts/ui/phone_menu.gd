@@ -37,6 +37,7 @@ const APPS := [
 	["settings", "Settings", Color(0.65, 0.65, 0.72), "settings"],
 	["done", "Done", Color(0.55, 0.85, 0.55), "guide"],  # past the 1-9 keys: arrows and ENTER reach these two
 	["news", "News", Color(0.9, 0.9, 0.95), "guide"],
+	["week", "Week", Color(1.0, 0.82, 0.25), "guide"],  # the repeatable goal (Weekly, D-93)
 ]
 ## People, in groups: each contact's action, by group.
 const GROUPS := [
@@ -323,10 +324,10 @@ func refresh() -> void:
 		footer.text = ""
 		hints.set_hints([["ARROWS", "choose", "right"], ["ENTER", "open", "enter"], ["1-%d" % APPS.size(), "app", ""], ["ESC", "put away", "esc"]])
 		return
-	if page in ["news", "done"]:
+	if page in ["news", "done", "week"]:
 		# the pilot app refreshes an open phone about six times a second; rebuilding an unchanged list snapped a reader's scroll back to
 		# the selected row, so these two read-only lists are only rebuilt when their text changes
-		var lines: Array = _news_lines() if page == "news" else _finished_objectives()
+		var lines: Array = _news_lines() if page == "news" else (_finished_objectives() if page == "done" else (s.weekly.lines() if s.weekly != null else []))
 		if lines == _read_sig and list.row_count() > 0:
 			return
 		_read_sig = lines
@@ -390,6 +391,14 @@ func refresh() -> void:
 					list.add_row([line])
 			if list.row_count() == 0:
 				footer.text = "No news yet today."
+			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
+		"week":
+			title.text = "The week's work"
+			for line in (s.weekly.lines() if s.weekly != null else ["No weekly goals in this game."]):
+				if str(line).begins_with("# "):
+					list.section(str(line).substr(2))
+				else:
+					list.add_row([str(line)])
 			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
 		"done":
 			title.text = "Done"
@@ -544,6 +553,9 @@ func _bank_lines() -> Array:
 			out.append("In bags aboard: $%s" % Py.money(int(s.logistics.aboard)))
 	if s.renown != null:
 		out.append("Renown: %s (%d)" % [s.renown.title(), int(s.renown.score)])
+		var rested: float = s.renown.rest_bonus(s.time)
+		if rested >= 0.1:  # lying low (D-94): shown so the quiet time reads as a reward building, not time lost
+			out.append("Lying low: the next hot load earns x%.1f renown" % (1.0 + rested))
 	return out
 
 
@@ -553,7 +565,7 @@ func _update_info() -> void:
 	_info.text = ""
 	if page == "contacts" and i >= 0 and i < rows.size():
 		_info.text = str(rows[i][2])
-	elif page in ["news", "done"] and i >= 0 and i < list.row_count():
+	elif page in ["news", "done", "week"] and i >= 0 and i < list.row_count():
 		_info.text = list.cell(i, 0)  # the whole line, wrapped, for a headline wider than the handset
 	elif page == "radio" and radio != null and i >= 0 and i < radio.stations.size():
 		_info.text = str(radio.stations[i].blurb)
