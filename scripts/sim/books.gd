@@ -32,7 +32,7 @@ func _init(sess_) -> void:
 
 
 func _on_event(e) -> void:
-	if Debrief.TALLY.has(e.kind):
+	if Debrief.TALLY.has(e.kind) and Debrief.ours(e):
 		_tally[e.kind] = int(_tally.get(e.kind, 0)) + 1
 
 
@@ -65,10 +65,7 @@ func close(t: float) -> Array:
 		var r := _row(o, t)
 		if not r.in.is_empty() or not r.out.is_empty():
 			rows.append(r)
-	var org_row := {}
-	for r in rows:
-		if r.org == "org":
-			org_row = r
+	var org_row := _row("org", t)  # even on a day with no outside money: its balance still ends somewhere (Codex on #515)
 	var heat := Debrief.heat_of(sess)
 	var d := Debrief.build(int(t / DAY_S), t, org_row, _tally, heat, _heat_open, Debrief.street_cash_of(sess))
 	debriefs.append(d)
@@ -141,4 +138,5 @@ func restore(d: Dictionary) -> void:
 	_tally = {}
 	for k in d.get("tally", {}):
 		_tally[str(k)] = int(d.tally[k])  # (JSON brings the counts back as floats)
-	_heat_open = float(d.get("heat_open", Debrief.heat_of(sess)))
+	_heat_open = float(d.get("heat_open", -1.0))  # an older save has no baseline: no change is reported for its first day, rather
+	# than the whole saved heat (the police case is restored after the books, so the session's heat here is not the save's)

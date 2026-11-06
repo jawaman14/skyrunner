@@ -71,3 +71,43 @@ func test_the_line_names_one_and_many_and_leaves_out_the_empty() -> void:
 	check(line.contains("2 busts") and line.contains("1 stash raided"), line)
 	check(not line.contains("heat") and not line.contains("stashes."), "no police, no heat; no street cash, no line: %s" % line)
 	check(line.find("busts") < line.find("stash raided"), "in the debrief's order")
+
+
+## Codex on #515: three fixes. Rival workers' losses are not ours; a quiet day keeps its balance; an older save's first day shows no
+## spurious change in heat.
+func test_only_our_workers_count() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	s.bus.emit("worker_arrested", s.time, "", ["law"], {"outfit": "rival", "role": "dealer"})
+	s.bus.emit("worker_flipped", s.time, "", ["law"], {"outfit": "rival", "role": "dealer"})
+	s.bus.emit("worker_arrested", s.time, "", ["law"], {"outfit": "org", "role": "driver"})
+	var d := _close(s)
+	check_eq(int(d.counts.get("worker_arrested", 0)), 1, "our driver, not their dealer")
+	check(not d.counts.has("worker_flipped"), "their flip is not ours")
+	s.bus.actor = {"org": "police", "role": "chief"}  # a raid the chief ordered
+	s.bus.emit("stash_raided", s.time, "", ["runner", "law"], {"stash": "x"})
+	s.bus.actor = {}
+	check_eq(int(_close(s).counts.get("stash_raided", 0)), 1, "is still our loss")
+	s.dispose()
+
+
+func test_a_quiet_day_keeps_its_closing_balance() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	s.move_money(1500, "outside:buyers", "delivery")
+	_close(s)
+	var d := _close(s)  # nothing moved
+	check_near(float(d.ends), float(s.money), 1.0, "the safe, not zero")
+	s.dispose()
+
+
+func test_an_older_save_without_a_heat_baseline_reports_no_jump() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	s.police.case("runner").suspicion = 40.0
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	(d.books as Dictionary).erase("heat_open")
+	(d.books as Dictionary).erase("tally")
+	var t := Session.new({"seed": 3, "location": "FRM"})
+	StrategicSave.restore(t, d)
+	var got := _close(t)
+	check_near(float(got.heat_change), 0.0, 0.01, "no +40 from a missing baseline")
+	s.dispose()
+	t.dispose()

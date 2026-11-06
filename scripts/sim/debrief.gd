@@ -29,6 +29,12 @@ const ORDER := ["job_delivered", "bales_delivered", "bulk_sale", "cash_home", "o
 	"worker_flipped", "crashed"]
 
 
+## Whether an event is the organisation's: a worker's names its outfit, and one whose data names an org is that org's (Codex on
+## #515: Los Cuervos' arrested workers are not our losses). Not the actor's org: a raid the chief ordered is still our loss.
+static func ours(e) -> bool:
+	return str(e.data.get("outfit", "org")) == "org" and str(e.data.get("org", "org")) == "org"
+
+
 ## The heat on the organisation now: the runner's case suspicion (0 to 100), or -1 with no police.
 static func heat_of(sess) -> float:
 	if sess.police == null:
