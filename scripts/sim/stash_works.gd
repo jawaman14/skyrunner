@@ -60,7 +60,7 @@ static func build(sess, id: String, what: String) -> String:
 		return "The %s here is as good as it gets." % str(WORKS[what].name).to_lower()
 	if sess.money < cost:
 		return "Need $%s." % Py.money(cost)
-	sess.money -= cost
+	sess.move_money(-cost, "outside:market", "purchase")
 	if not st.has("works"):
 		st["works"] = {}
 	st.works[what] = level(st, what) + 1
