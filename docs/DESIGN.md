@@ -1777,6 +1777,17 @@ and no lower), and a clean pass puts it back to the full chance.
 - **No new draws.** Each roll is the same draw in the same order, against a lower threshold, so the guard can only turn a catch
   into a pass. The streaks are saved: the customs streak with the runner's case, and the truck streak with the stashes.
 
+## 54. Lying low: rested renown (owner, 4 November 2026, D-94)
+
+From the World of Warcraft study, where rested XP rewards time away instead of punishing time on. `Renown` (no clock, no draws) keeps
+`quiet_since`, the game time of the last hot load or hot setback. A hot delivery earns its renown again in proportion to the
+time since then: none straight away, half again after 15 minutes, and double after 30 minutes (`REST_FULL_S`, at most
+`REST_MAX`). The extra shows as its own line in the renown log ("lying low first (x2.0)"). While the bonus is building, the phone's
+bank page says how much the next hot load will earn ("Lying low: the next hot load earns x1.6 renown"), so a quiet spell reads as
+something being earned rather than time lost. A bust, a seized truck or boat, or a raided stash starts the spell again, and so does
+a hot delivery. Plain (clean) work doesn't end it. Renown is a name, not money (D-65): no money is created. Saved with the renown
+(`quiet_since`).
+
 ## 55. Pacing targets (owner, 4 November 2026, D-94)
 
 From the World of Warcraft study: WoW was paced so that something was finished every few minutes (a quest handed in, a level, a
