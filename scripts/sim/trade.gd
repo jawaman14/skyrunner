@@ -181,7 +181,7 @@ func sell(buyer: String, good: String, qty: float, tier := "rifle", from := "", 
 		sess.arsenals["org"].take(tier, int(qty))
 	else:
 		stock[good] -= qty
-	sess.money += settle(buyer, good, qty, tier)
+	sess.move_money(settle(buyer, good, qty, tier), "outside:buyers", "delivery")
 	return ""
 
 
@@ -216,7 +216,7 @@ func _effects(buyer: String, good: String, qty: float, pay: int) -> void:
 			if good == "guns":
 				# the Family arms its crews and goes after Los Cuervos
 				if sess.ground != null:
-					sess.ground.commanders.rival.cash = maxf(0.0, sess.ground.commanders.rival.cash - 500.0 * qty)
+					sess.ground.commanders.rival.move_cash(-500.0 * qty, "outside:lost", "loss", true)
 				if mk != null:
 					mk.flow("guns", "town", 0.01 * qty, "the Family's crews are armed")
 				sess.law_say("The Moretti crews are carrying new rifles; Los Cuervos lose a corner downtown")
@@ -236,7 +236,7 @@ func _effects(buyer: String, good: String, qty: float, pay: int) -> void:
 		"rival":
 			if sess.arsenals.has("rival"):
 				sess.arsenals["rival"].add("rifle", int(qty))
-			sess.ground.commanders.rival.cash = maxf(0.0, sess.ground.commanders.rival.cash - pay)
+			sess.ground.commanders.rival.move_cash(-pay, "outside:buyers", "purchase", true)  # our rifles, paid for (our side is booked as the sale)
 			if mk != null:
 				mk.flow("guns", "west", 0.01 * qty)
 				mk.demand_shock("guns", "west", 0.9, 30)
@@ -476,7 +476,7 @@ func sweep(m: String) -> String:
 		return "Which market?"
 	if sess.law_funds < SWEEP_COST:
 		return "Need $%d in funds." % SWEEP_COST
-	sess.law_funds -= SWEEP_COST
+	sess.move_law_funds(-SWEEP_COST, "outside:state", "fee")
 	var n := 0
 	if sess.payroll != null:
 		for o in ["org", "rival"]:
@@ -494,7 +494,7 @@ func sweep(m: String) -> String:
 func trace() -> String:
 	if sess.law_funds < TRACE_COST:
 		return "Need $%d in funds." % TRACE_COST
-	sess.law_funds -= TRACE_COST
+	sess.move_law_funds(-TRACE_COST, "outside:state", "fee")
 	var found := []
 	var a = sess.agency
 	if a != null and a.active() and a.coke_lots > 0:
@@ -502,7 +502,7 @@ func trace() -> String:
 		a.exposure = minf(100.0, a.exposure + gain)
 		var seized: float = a.war_chest * 0.25
 		a.war_chest -= seized
-		sess.law_funds += seized
+		sess.move_law_funds(seized, "outside:agency", "forfeiture")
 		found.append("the Company's pipeline: exposure +%d, $%s forfeited; the next load lands in the %s" % [int(gain), Py.money(int(seized)),
 			Market._name(a.next_market)])
 		a._check_exposed()

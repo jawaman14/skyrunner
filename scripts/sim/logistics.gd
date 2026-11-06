@@ -233,6 +233,7 @@ func take_market(g: String, m: String, lb: float) -> Array:
 	var main: String = sites[0].id if not sites.is_empty() else ""
 	for st in sites:
 		var t := minf(stock[st.id][g], lb - got)
+		_inv("stash:" + str(st.id), Inventory.OUTSIDE + "street", g, t, "street sale")
 		stock[st.id][g] -= t
 		got += t
 		if got >= lb - 0.0001:
@@ -245,7 +246,7 @@ func add_cash(site: String, amount: float) -> void:
 	if site != HQ and site != "" and cash.get(site, 0.0) < 1.0:
 		cash_since[site] = sess.time
 	if site == HQ or site == "":
-		sess.money += int(amount)
+		sess.move_money(int(amount), "outside:street-cash", "transfer")
 		if amount >= 1.0:
 			sess.bus.emit("cash_home", sess.time, "", ["runner"], {"amount": amount})
 		return
@@ -327,7 +328,7 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 		if amount < 1.0:
 			return "No cash at %s." % name_of(from)
 		if from == HQ:
-			sess.money -= int(amount)
+			sess.move_money(-(int(amount)), "outside:street-cash", "transfer")
 		else:
 			cash[from] -= amount
 		c.cash = amount
@@ -347,6 +348,7 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 		amount = minf(amount, stock[from][what])
 		if amount < 0.5:
 			return "No %s at %s." % [what, name_of(from)]
+		_inv("stash:" + from, road_of(c), what, amount, "truck out")
 		stock[from][what] -= amount
 		c.good = what
 		c.lb = amount
@@ -372,10 +374,11 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 func _undo(c: Dictionary) -> void:
 	if c.cash > 0.0:
 		if c.from == HQ:
-			sess.money += int(c.cash)
+			sess.move_money(int(c.cash), "outside:street-cash", "transfer")
 		else:
 			cash[c.from] += c.cash
 	if c.lb > 0.0:
+		_inv(road_of(c), "stash:" + str(c.from), c.good, c.lb, "truck recalled")
 		stock[c.from][c.good] += c.lb
 		sync()
 	if not c.get("weapons", {}).is_empty():
@@ -536,10 +539,11 @@ func goods_round(from: String, stops: Array, good: String, lb_each: float, caref
 			break
 	if cp != "" and careful:
 		return "A police checkpoint (%s) is on the round: waiting." % cp
-	stock[from][good] -= amount
-	sync()
 	var c := {"kind": "multi", "mode": "deliver", "from": from, "to": stops[stops.size() - 1], "stops": stops.slice(0, stops.size() - 1), "good": good,
 		"lb": amount, "cash": 0.0, "buyer": "", "per": lb_each}
+	_inv("stash:" + from, road_of(c), good, amount, "round out")
+	stock[from][good] -= amount
+	sync()
 	_dispatch_multi(c, points)
 	last = "Round out: %s from %s to %s." % [_describe(c), name_of(from), ", ".join(stops.map(func(s): return name_of(s)))]
 	if cp != "":
@@ -623,7 +627,7 @@ func _stop_reached(t, site: String) -> void:
 	else:
 		var lb: float = minf(float(c.lb), float(c.per))
 		if lb > 0.0:
-			add(site, c.good, lb)
+			_arrive(c, site, lb)
 			c.lb -= lb
 			t.pay = _value(c)
 			sess.say("The round left %d lb of %s at %s." % [int(lb), c.good, name_of(site)])
@@ -716,7 +720,7 @@ func _dispatch(c: Dictionary, a: Vector2, b: Vector2) -> void:
 	if sess.ground != null:
 		t.route = sess.ground.route("org", a, b)
 		t.dur = StashNet.TRUCK_LOAD_S + RoadGraph.length(t.route) / sn.haul_ms
-	elif sn.rng.random() < clampf(risk * sn.risk_mult, 0.0, 0.8) and not t.waved:
+	elif sn.rng.random() < clampf(risk * sn.risk_mult, 0.0, 0.8) * StreakGuard.factor(sn.truck_streak) and not t.waved:
 		t.stop_at = sn.rng.uniform(0.2, 0.9)
 	var km := (RoadGraph.length(t.route) if t.route.size() >= 2 else a.distance_to(b) * 1.3) / 1000.0
 	var fuel_note := Fuel.truck(sess, t, km)
@@ -811,7 +815,7 @@ func arrived(t, outcome: String, why: String) -> void:
 		match c.kind:
 			"move":
 				if c.lb > 0.0:
-					add(c.to, c.good, c.lb)
+					_arrive(c, c.to, c.lb)
 				add_cash(c.to, c.cash)
 				if not c.get("weapons", {}).is_empty():
 					sess.arsenals["org"].add_all(c.weapons)
@@ -821,19 +825,21 @@ func arrived(t, outcome: String, why: String) -> void:
 				_settle(c)
 			"cash_back":
 				if c.lb > 0.0:
-					add(c.to, c.good, c.lb)
+					_arrive(c, c.to, c.lb)
 				add_cash(c.to, c.cash)
 				if not c.get("weapons", {}).is_empty():
 					sess.arsenals["org"].add_all(c.weapons)  # what the buyer didn't want: back in the rack
 				last = "The money's home at %s: %s." % [name_of(c.to), _describe(c)]
 			"multi":
 				if c.lb > 0.0:
-					add(c.to, c.good, c.lb)
+					_arrive(c, c.to, c.lb)
 				add_cash(c.to, c.cash)
 				last = "The round is in at %s: %s." % [name_of(c.to), _describe(c)]
 		sess.say(last)
 		return
 	var what := _describe(c)
+	if c.lb > 0.0:  # the load is gone from the road: the state's, or Los Cuervos'
+		_inv(road_of(c), Inventory.OUTSIDE + ("rival" if outcome == "hijacked" else "state"), c.good, c.lb, outcome if outcome == "hijacked" else "seized")
 	lost.product += c.lb
 	lost.cash += int(c.cash)
 	lost_by[outcome if outcome == "hijacked" else "seized"] += _value(c)
@@ -847,11 +853,11 @@ func arrived(t, outcome: String, why: String) -> void:
 	if outcome == "hijacked":
 		last = "Los Cuervos took the truck (%s) near %s." % [what, name_of(c.to)]
 		if sess.ground != null:
-			sess.ground.commanders.rival.cash += c.cash
+			sess.ground.commanders.rival.move_cash(c.cash, "outside:street", "resale")  # our truck's cash, taken
 		sess.bus.emit("truck_hijacked", sess.time, "", ["runner"], {"stash": t.stash})
 	else:
 		last = "The truck (%s) was stopped: %s. All of it forfeited." % [what, why]
-		sess.law_funds += c.cash * 0.5 + 300.0 * t.items
+		sess.move_law_funds(c.cash * 0.5 + 300.0 * t.items, "outside:state", "forfeiture")
 		if c.lb > 0.0:
 			sess.econ.record_seizure(c.good, market_of(c.to))
 		var case_ = sess.police.case("runner")
@@ -867,12 +873,14 @@ func arrived(t, outcome: String, why: String) -> void:
 func _settle(c: Dictionary) -> void:
 	var tr: Trade = sess.trade
 	var name: String = Trade.BUYERS[c.buyer].name
-	var back := {"kind": "cash_back", "from": c.buyer, "to": c.from, "good": c.good, "lb": 0.0, "cash": 0.0, "buyer": c.buyer, "weapons": {}}
+	var back := {"kind": "cash_back", "from": c.buyer, "to": c.from, "good": c.good, "lb": 0.0, "cash": 0.0, "buyer": c.buyer, "weapons": {},
+		"road": road_of(c)}  # the same truck: what the buyer leaves rides back in it
 	var took := []
 	if c.lb > 0.0:
 		var q: Dictionary = tr.quote(c.buyer, c.good)
 		var take := minf(c.lb, float(q.room)) if q.why == "" else 0.0
 		back.lb = c.lb - take
+		_inv(road_of(c), Inventory.OUTSIDE + "buyer:" + str(c.buyer), c.good, take, "sale")  # what he didn't take rides back on the road
 		if take > 0.0:
 			back.cash += tr.settle(c.buyer, c.good, take)
 			took.append("%d lb of %s" % [int(take), c.good])
@@ -907,13 +915,14 @@ func _spirit_away(site: String, saved: Dictionary, saved_cash: float) -> void:
 			break
 	var told := []
 	for g in saved:
+		_inv("stash:" + site, ("stash:" + to) if saved[g] >= 1.0 and to != "" else Inventory.OUTSIDE + "state", g, saved[g], "vault" if saved[g] >= 1.0 and to != "" else "raided", false)  # the raid has zeroed the stash's number already
 		if saved[g] >= 1.0 and to != "":
 			stock[to][g] += saved[g]
 			told.append("%d lb of %s" % [int(saved[g]), g])
 		else:
 			lost.product += saved[g]
 	if saved_cash >= 1.0:
-		sess.money += int(saved_cash)
+		sess.move_money(int(saved_cash), "outside:street-cash", "transfer")
 		told.append("$%s" % Py.money(int(saved_cash)))
 	if not told.is_empty():
 		sess.say("The vault held: %s spirited away%s." % [", ".join(told), (" to " + name_of(to)) if to != "" else ""])
@@ -927,6 +936,7 @@ func _raided(site: String) -> void:
 	var took := []
 	for g in goods():
 		if stock[site][g] >= 1.0:
+			_inv("stash:" + site, Inventory.OUTSIDE + "state", g, stock[site][g] * (1.0 - keep), "raided")
 			saved[g] = stock[site][g] * keep
 			took.append(("%d sheets of acid" % int(stock[site][g] * (1.0 - keep))) if g == "acid" else "%d lb of %s" % [int(stock[site][g] * (1.0 - keep)), g])
 			lost.product += stock[site][g] * (1.0 - keep)
@@ -938,13 +948,15 @@ func _raided(site: String) -> void:
 		lost_by.raided += int(stock[site][g] * price_of(g))
 	if cash[site] >= 1.0:
 		took.append("$%s in cash" % Py.money(int(cash[site])))
-		sess.law_funds += cash[site] * 0.5
+		sess.move_law_funds(cash[site] * 0.5, "outside:state", "forfeiture")
 		lost.cash += int(cash[site])
 		cash[site] = 0.0
 	# trucks the raid took at the door
 	for id in convoys.keys():
 		if not Py.any(sess.stash_net.trucks, func(t): return t.job_id == id):
 			var c: Dictionary = convoys[id]
+			if c.lb > 0.0:
+				_inv(road_of(c), Inventory.OUTSIDE + "state", c.good, c.lb, "raided")
 			lost.product += c.lb
 			lost.cash += int(c.cash)
 			convoys.erase(id)
@@ -969,7 +981,7 @@ func load_cash(amount: float) -> String:
 	if amount < 1.0:
 		return "No cash at %s." % name_of(site)
 	if site == HQ:
-		sess.money -= int(amount)
+		sess.move_money(-(int(amount)), "outside:street-cash", "transfer")
 	else:
 		cash[site] -= amount
 	aboard += int(amount)
@@ -1018,7 +1030,7 @@ func seize_aboard() -> void:
 		return
 	lost.cash += aboard
 	lost_by.bust += aboard
-	sess.law_funds += aboard * 0.5
+	sess.move_law_funds(aboard * 0.5, "outside:state", "forfeiture")
 	sess.say("And the $%s in cash bags." % Py.money(aboard))
 	aboard = 0
 	_bags()
@@ -1041,11 +1053,75 @@ func _bags() -> void:
 ## The organisation's AI (no boss in the chair): cash home, product to where
 ## the dealers are, the surplus to the best buyer.
 ## F-4 wrap: the stash stock dictionary stays the truth; the session's Inventory is brought to match it every few seconds.
+## The moves below (F-4, 7 Nov) book each change the trucks and raids make as it happens, from where to where, so the
+## reconcile only catches what other code still changes directly.
 func _sync_inventory() -> void:
 	for id in stock:
 		for g in stock[id]:
 			sess.inventory.reconcile("stash:" + str(id), str(g), float(stock[id][g]), sess.time)
+	_sync_road()
 	sync_aircraft_load()
+
+
+const ROAD := "road:"  ## each truck's goods are their own place, `road:<n>` (road_of), so a truck only ever unloads its own lots
+var _road_next := -1  ## the next truck's number (-1: not yet counted past the road lots a save brought back)
+
+
+## The inventory place for this convoy's load, given on first use and kept on the convoy.
+func road_of(c: Dictionary) -> String:
+	if not c.has("road"):
+		if _road_next < 0:
+			_road_next = 1
+			for lot in sess.inventory.lots.values():  # never reuse a number a restored lot still sits under
+				if str(lot.at).begins_with(ROAD):
+					_road_next = maxi(_road_next, int(str(lot.at).substr(ROAD.length())) + 1)
+		c["road"] = ROAD + str(_road_next)
+		_road_next += 1
+	return str(c.road)
+
+
+## Each truck's place holds what it carries, and a place with no truck on the road is empty (a safety net, like the stash
+## reconcile; the convoys are not saved, so what a save left on the road goes back to nothing here).
+func _sync_road() -> void:
+	var want := {}  # place -> good -> lb
+	for c in convoys.values():
+		if float(c.get("lb", 0.0)) > 0.0 and str(c.get("good", "")) != "":
+			var r := road_of(c)
+			if not want.has(r):
+				want[r] = {}
+			want[r][c.good] = float(want[r].get(c.good, 0.0)) + float(c.lb)
+	for lot in sess.inventory.lots.values():
+		var at := str(lot.at)
+		if at.begins_with(ROAD):
+			if not want.has(at):
+				want[at] = {}
+			if not want[at].has(lot.good):
+				want[at][lot.good] = 0.0
+	for r in want:
+		for g in want[r]:
+			sess.inventory.reconcile(r, g, want[r][g], sess.time)
+
+
+## Book `lb` of `g` going from `from` to `to` (inventory locations). Call it BEFORE the stock dictionary changes: the source is
+## first brought to what the dictionary holds now, so a move never fails because the five-second reconcile hasn't run.
+func _inv(from: String, to: String, g: String, lb: float, reason: String, sync_from := true) -> void:
+	if lb <= 0.0001 or g == "":
+		return
+	if sync_from and from.begins_with("stash:"):
+		var id := from.substr(6)
+		if stock.has(id):
+			sess.inventory.reconcile(from, g, float(stock[id].get(g, 0.0)), sess.time)
+	# (never re-sync the road here: arrived() drops the convoy before booking its load in)
+	var moved: float = sess.inventory.transfer(from, to, g, lb, reason, "org", sess.time)
+	if moved < lb - 0.0001 and not to.begins_with(Inventory.OUTSIDE):
+		sess.inventory.add(g, lb - moved, to, "unattributed", "", 0.5, 0.0, sess.time)  # the source was short: the rest is unexplained
+
+
+## An arrival at a stash from the road (a truck in, a round's drop, the money home with what the buyer left).
+func _arrive(c: Dictionary, site: String, lb: float) -> void:
+	var at := site if stock.has(site) else nearest_stash(pos(site))
+	_inv(road_of(c), "stash:" + at, c.good, lb, "truck in")
+	add(site, c.good, lb)
 
 
 ## The same wrap for the aircraft load: goods aboard are lots at `aircraft:<key>`, so a flown delivery can later be a `move`.

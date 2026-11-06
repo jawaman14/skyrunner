@@ -140,6 +140,8 @@ var risk_mult := 1.0  ## ... what the fleet's cover leaves of the roadblock odds
 var armour := 0.0  ## ... and the chance a truck drives through the roadblock that would have seized it
 var stashes: Array = []  ## map dictionaries plus state: heat, burned
 var trucks: Array = []
+## Trucks stopped in a row (StreakGuard, D-94): each eases the next stop on the road; a delivered truck resets it. Saved.
+var truck_streak := 0
 var rng: PyRandom
 var events: Array = []  ## [side, text]: "runner" / "law"
 
@@ -214,8 +216,8 @@ func dispatch(job: Jobs.Job, af: Airfield, now: float, pay: int, risk := 0.0) ->
 	t.items = job.items.size()
 	t.weapons = job.weapons
 	t.gun_mode = job.gun_mode
-	var p := clampf((0.04 + float(st.heat) / 300.0 + risk) * risk_mult, 0.0, 0.85)
-	if st.burned:
+	var p := clampf((0.04 + float(st.heat) / 300.0 + risk) * risk_mult, 0.0, 0.85) * StreakGuard.factor(truck_streak)
+	if st.burned:  # a burned stash is watched: every truck is stopped, streak or not
 		p = 1.0
 	if rng.random() < p:
 		t.stop_at = rng.uniform(0.2, 0.9)

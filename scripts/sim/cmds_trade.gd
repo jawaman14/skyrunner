@@ -112,7 +112,7 @@ static func _cmd_airport_crackdown(role: String, a: Dictionary, session: Session
 		return "No island in this game."
 	if session.law_funds < 2000.0:
 		return "Need $2,000 in funds."
-	session.law_funds -= 2000.0
+	session.move_law_funds(-2000.0, "outside:state", "fee")
 	session.island.crackdown_until = session.time + 1800.0
 	session.law_say("Customs profile every passenger off the island flights for 30 min")
 	return null
@@ -123,7 +123,7 @@ static func _cmd_port_inspections(role: String, a: Dictionary, session: Session)
 		return "No island in this game."
 	if session.law_funds < 3000.0:
 		return "Need $3,000 in funds."
-	session.law_funds -= 3000.0
+	session.move_law_funds(-3000.0, "outside:state", "fee")
 	session.island.inspections_until = session.time + 1800.0
 	session.law_say("Every container from Isla Soberana opened for 30 min")
 	return null

@@ -19,6 +19,36 @@ var action_preview: Label
 var pending_drop := -1
 var _rows_sig: Array = []  ## what the table was last built from (see refresh)
 var _action_refresh := 0.0
+var show_all := false  ## A: every job elsewhere on the island, not only the nearest few
+const PICKS := 3  ## "Picked for you": the best few jobs, first (the WoW study, D-94: a few clear choices, not a wall of them)
+const FAR_SHOWN := 6  ## other strips' jobs shown before A
+
+
+## The few jobs worth taking first, best first: ones that move the chapter's next goal on (GoalMarks), then pay per km of the
+## whole trip (from here to the job's strip, then the job). A load whose landing roll would run past 85% of the strip is left
+## out. Read-only: it orders what the board already holds.
+static func picks(s, board: Array, far: Array, est_w: float) -> Array:
+	var here := World.airfield(s.location)
+	var goal_places: Array = GoalMarks.of(s).map(func(m): return Vector2(float(m.x), float(m.y)))
+	var scored := []
+	for j in board + far:
+		var origin := World.airfield(j.origin) if World.AIRFIELD_BY_CODE.has(j.origin) else here
+		var xy: Array = s.job_xy(j)
+		if not j.is_airdrop():
+			if not World.AIRFIELD_BY_CODE.has(j.dest):
+				continue
+			var dst := World.airfield(j.dest)
+			if s.spec.est_landing_roll(est_w + j.weight_lb(), s.world.airfield_elev(dst)) > 0.85 * dst.length:
+				continue
+		var km := (PyMath.hypot(origin.x - here.x, origin.y - here.y) + PyMath.hypot(float(xy[0]) - origin.x, float(xy[1]) - origin.y)) / 1000.0
+		var score := float(j.payout) / maxf(3.0, km)
+		for p in goal_places:
+			if p.distance_to(Vector2(float(xy[0]), float(xy[1]))) < 1500.0 or p.distance_to(Vector2(origin.x, origin.y)) < 1500.0:
+				score *= 3.0  # it moves the story on
+				break
+		scored.append([score, j])
+	scored.sort_custom(func(a, b): return a[0] > b[0] or (a[0] == b[0] and a[1].id < b[1].id))
+	return scored.slice(0, PICKS).map(func(x): return x[1])
 
 
 func _process(dt: float) -> void:
@@ -153,7 +183,7 @@ func refresh() -> void:
 	# The pilot app refreshes an open menu about six times a second. Rebuilding the table each time threw its scroll
 	# position back to the top mid-scroll, so only rebuild when what the table shows has changed.
 	var sig := [s.location, board.map(func(j): return j.id), _far_jobs().map(func(j): return j.id),
-		s.active_jobs.map(func(j): return j.id), int(est_w), s.spec.name]
+		s.active_jobs.map(func(j): return j.id), int(est_w), s.spec.name, show_all]
 	if sig == _rows_sig and list.row_count() > 0:
 		_show_detail()
 		_board_hints()
@@ -162,14 +192,25 @@ func refresh() -> void:
 	var keep := list.selected_row()
 	list.clear_rows()
 	rows.clear()
-	if not board.is_empty():
-		_sep("Available here")
-	for j in board:
-		_row("board", j, af, est_w)
 	var far := _far_jobs()
-	if not far.is_empty():  # every job on the island, not only this strip's: the origin shows, and ENTER says where to fly
-		_sep("Elsewhere on the island  -  fly there to take them" if not board.is_empty() else "Nothing here. Elsewhere on the island  -  fly there to take them")
-	for j in far:
+	var picked := picks(s, board, far, est_w)
+	if not picked.is_empty():
+		_sep("Picked for you")
+		for j in picked:
+			_row("board" if board.has(j) else "far", j, af if board.has(j) else World.airfield(j.origin), est_w)
+	var rest_here := board.filter(func(j): return not picked.has(j))
+	if not rest_here.is_empty():
+		_sep("Also here")
+	for j in rest_here:
+		_row("board", j, af, est_w)
+	var rest_far := far.filter(func(j): return not picked.has(j))
+	var hidden := 0
+	if not show_all and rest_far.size() > FAR_SHOWN:
+		hidden = rest_far.size() - FAR_SHOWN
+		rest_far = rest_far.slice(0, FAR_SHOWN)
+	if not rest_far.is_empty():  # every job on the island, not only this strip's: the origin shows, and ENTER says where to fly
+		_sep("Elsewhere on the island  -  fly there to take them" + ("  (%d more: A)" % hidden if hidden > 0 else ""))
+	for j in rest_far:
 		_row("far", j, World.airfield(j.origin), est_w)
 	if not s.active_jobs.is_empty():
 		_sep("Active jobs  -  ENTER reviews dropping")
@@ -185,7 +226,7 @@ func refresh() -> void:
 func _board_hints() -> void:
 	footer.text = ""
 	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "selected action", "enter"], ["C", "keep job", "c"], ["LEFT/RIGHT", "market", "right"],
-		["G", "sell / keep guns", ""], ["L", "load & fuel", ""], ["ESC", "close", "esc"]])
+		["G", "sell / keep guns", ""], ["L", "load & fuel", ""], ["A", "fewer / all jobs" if show_all else "all jobs", "a"], ["ESC", "close", "esc"]])
 
 
 ## The jobs on every other strip's board, nearest origin first.
@@ -289,6 +330,9 @@ func key(k: String) -> void:
 	match k:
 		"c":
 			_cancel_drop()
+		"a":
+			show_all = not show_all
+			refresh()
 		"up":
 			list.move(-1)
 			_show_detail()

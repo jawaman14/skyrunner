@@ -740,7 +740,8 @@ func _runner_key(k: String, snap: Dictionary) -> void:
 			_cmd("fill_ferry", {"lb": 10000})
 	elif tab == "Jobs" and k == "enter" and i >= 0 and i < _list_keys.size():
 		var r: Array = _list_keys[i]
-		_cmd("accept_job" if r[0] == "board" else "drop_job", {"job_id": r[1]})
+		if r[0] in ["board", "active"]:  # an island row is taken at its own strip
+			_cmd("accept_job" if r[0] == "board" else "drop_job", {"job_id": r[1]})
 
 
 func _hq_key(k: String, snap: Dictionary) -> void:
@@ -1140,6 +1141,9 @@ func _draw_fixer(snap: Dictionary) -> void:
 	for j in snap.get("jobs", []):
 		keys.append(["active", j.id])
 		cells.append(["TAKEN", str(j.title), "$" + Py.money(int(j.payout))])
+	for j in snap.get("island_board", []):
+		keys.append(["island", j.id])
+		cells.append([str(j.origin), str(j.title), "$" + Py.money(int(j.payout))])
 	_set_list("jobs", keys, cells, {}, [{"title": "", "min": 70}, {"title": "Job", "expand": true}, {"title": "Pay", "align": "right", "mono": true, "min": 90}])
 	var lines := []
 	var pr: Dictionary = snap.get("payroll", {})
@@ -1168,7 +1172,8 @@ func _fixer_key(k: String, snap: Dictionary) -> void:
 		"enter":
 			if i >= 0 and i < _list_keys.size():
 				var r: Array = _list_keys[i]
-				_cmd("accept_job" if r[0] == "board" else "drop_job", {"job_id": r[1]})
+				if r[0] in ["board", "active"]:  # an island row is taken at its own strip
+					_cmd("accept_job" if r[0] == "board" else "drop_job", {"job_id": r[1]})
 		"g":
 			_cmd("buy_gear", {"name": "scanner"})
 		"h":
@@ -1331,6 +1336,9 @@ func _draw_runner(snap: Dictionary) -> void:
 		for j in snap.get("jobs", []):
 			keys.append(["active", j.id])
 			cells.append(["TAKEN", str(j.title), "$" + Py.money(int(j.payout))])
+		for j in snap.get("island_board", []):
+			keys.append(["island", j.id])
+			cells.append([str(j.origin), str(j.title), "$" + Py.money(int(j.payout))])
 		if keys.is_empty():
 			detail.text = "Park at a field to see its board."
 		_set_list("jobs", keys, cells, {}, [{"title": "", "min": 70}, {"title": "Job", "expand": true},

@@ -166,10 +166,51 @@ func test_stale_menu_selection_cannot_accept_an_unavailable_job() -> void:
 	Engine.get_main_loop().root.add_child(menu)
 	menu.setup(s)
 	menu.open()
-	menu.list.select(1)
+	menu.list.select(menu.rows.find_custom(func(r): return r != null and r[1] == job))  # its row: "Picked for you" may put another strip's job first
 	s.boards["HAR"].erase(job)
 	menu.key("enter")
 	check(s.active_jobs.is_empty() and s.money == 1000, "stale action cannot mutate the session")
 	check("no longer available" in menu.feedback.text, "stale selection is explained")
 	menu.free()
 	s.dispose()
+
+
+## D-94 (the WoW study): a few clear choices first. "Picked for you" holds at most three jobs, best pay per km of the whole trip
+## first, a load the destination strip is too short for is never picked, a picked job is not listed twice, and the far list shows
+## the nearest few until A shows all.
+func test_the_board_picks_a_few_jobs_first_and_shortens_the_far_list() -> void:
+	var saved := Switches.parity_off()
+	var s := _session()
+	var mk := func(id: int, origin: String, dest: String, pay: int) -> Jobs.Job:
+		return Jobs.Job.new(id, "Job %d" % id, "cargo", origin, dest, [Loadout.Item.new(id + 1, "Crate", "cargo", 20, id)], pay, {})
+	var cheap: Jobs.Job = mk.call(900001, "HAR", "FRM", 50)
+	var rich: Jobs.Job = mk.call(900003, "HAR", "FRM", 5000)
+	s.boards["HAR"] = [cheap, rich]
+	var others := s.world.airfields.filter(func(a): return a.code != "HAR" and a.code != "FRM" and a.kind != "foreign")
+	var far := []
+	for a in others:
+		s.boards[a.code] = []
+	for i in 9:
+		var code: String = others[i % others.size()].code
+		var j: Jobs.Job = mk.call(900100 + i * 2, code, "HAR", 10)
+		far.append(j)
+		s.boards[code].append(j)
+	s.boards["FRM"] = []
+	var picked := JobMenu.picks(s, s.boards["HAR"], far, float(s.loadout.compute().weight_lb))
+	check(picked.size() <= JobMenu.PICKS, "at most three picked")
+	check(not picked.is_empty() and picked[0] == rich, "the best-paying job here leads")
+	check(not picked.has(cheap) or picked.find(cheap) > picked.find(rich), "the poor one does not lead")
+	var menu := JobMenu.new()
+	Engine.get_main_loop().root.add_child(menu)
+	menu.setup(s)
+	menu.open()
+	var listed := menu.rows.filter(func(r): return r != null).map(func(r): return r[1])
+	check_eq(listed.count(rich), 1, "a picked job is listed once")
+	var far_rows := menu.rows.filter(func(r): return r != null and r[0] == "far" and not picked.has(r[1])).size()
+	check(far_rows <= JobMenu.FAR_SHOWN, "the far list shows the nearest few (%d)" % far_rows)
+	menu.key("a")
+	var all_far := menu.rows.filter(func(r): return r != null and r[0] == "far").size()
+	check(all_far >= far.size(), "A shows every job elsewhere (%d of %d)" % [all_far, far.size()])
+	menu.free()
+	s.dispose()
+	Switches.restore(saved)
