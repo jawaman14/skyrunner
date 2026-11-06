@@ -1892,6 +1892,10 @@ func snapshot(viewer: String) -> Dictionary:
 			var center := Territories.center_of(area)
 			areas[key] = {"name": area.get("name", area.get("id", "")), "market": area.get("market", "town"),
 				"center": [center.x, center.y], "control": c.duplicate(true)}
+			var bounds: Variant = area.get("bounds")
+			if bounds is Rect2:  # the authored outline, for the map's turf overlay (map data, public like the names)
+				var r: Rect2 = bounds
+				areas[key].bounds = [r.position.x, r.position.y, r.size.x, r.size.y]
 	# Exact fight positions and participant IDs require both participants to be
 	# observed. Public shots-fired news is a separate, coarser report.
 	var observed_fights := fights.filter(func(f): return vis.has(f.a) and vis.has(f.b))
