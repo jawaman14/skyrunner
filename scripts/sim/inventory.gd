@@ -5,10 +5,13 @@ extends RefCounted
 ## Locations are strings: "org:stash-docks", "aircraft:N123", "truck-7"; "outside:*" is where goods come from and go (growers, state, street).
 
 const OUTSIDE := "outside:"
+const KEEP_LOG := 2000  ## the movement log keeps the latest rows; conservation runs on `boundary`, which is never trimmed
 
 var lots := {}  ## id -> {id, good, lb, origin, quality, heat, born, at}
-var log: Array = []  ## {id, t, lot, good, lb, from, to, reason, actor}
+var log: Array = []  ## {id, t, lot, good, lb, from, to, reason, actor}, the latest KEEP_LOG
+var boundary := {}  ## good -> pounds in across outside:* minus pounds out: what `held` must equal
 var _serial := 0
+var _rows := 0
 
 
 ## A new lot arrives at `at` from outside:`source` (growers, market, ...). Returns its id, or 0 when refused.
@@ -100,15 +103,39 @@ func held(good: String) -> float:
 
 ## Goods that came in across the boundary minus goods that left it: what `held` must equal (conservation per good).
 func net_inflow(good: String) -> float:
+	return float(boundary.get(good, 0.0))
+
+
+## Pounds of `good` that crossed the boundary on rows whose far side is `outside_loc` (e.g. "outside:unattributed"), in both
+## directions: how much of the flow the old code still makes directly. The F-4 slices move it to named moves.
+func flow_via(outside_loc: String, good := "") -> float:
 	var sum := 0.0
 	for row in log:
-		if row.good != good:
-			continue
-		if str(row.from).begins_with(OUTSIDE):
+		if (good == "" or row.good == good) and (row.from == outside_loc or row.to == outside_loc):
 			sum += float(row.lb)
-		if str(row.to).begins_with(OUTSIDE):
-			sum -= float(row.lb)
 	return sum
+
+
+## Save: the lots, their serial and the boundary totals (the log is history, trimmed and not needed to go on).
+func capture() -> Dictionary:
+	var inside := lots.values().filter(func(l): return not str(l.at).begins_with(OUTSIDE))  # what left is history (boundary holds it)
+	return {"lots": inside.map(func(l): return l.duplicate()), "serial": _serial, "boundary": boundary.duplicate()}
+
+
+func restore(d: Dictionary) -> void:
+	lots.clear()
+	for l in d.get("lots", []):
+		var lot: Dictionary = (l as Dictionary).duplicate()
+		lot.id = int(lot.id)
+		lot.lb = float(lot.lb)
+		lots[int(lot.id)] = lot
+	_serial = int(d.get("serial", 0))
+	for id in lots:
+		_serial = maxi(_serial, int(id))
+	boundary = {}
+	var b: Dictionary = d.get("boundary", {})
+	for g in b:
+		boundary[str(g)] = float(b[g])
 
 
 ## Invariant breaches: a lot with no pounds, or no location. (One location per lot holds by construction: `at` is a single field.)
@@ -128,4 +155,12 @@ func _new_lot(good: String, lb: float, at: String, origin: String, quality: floa
 
 
 func _log(lot: Dictionary, lb: float, from: String, to: String, reason: String, actor: String, t: float) -> void:
-	log.append({"id": log.size() + 1, "t": t, "lot": lot.id, "good": lot.good, "lb": lb, "from": from, "to": to, "reason": reason, "actor": actor})
+	_rows += 1
+	log.append({"id": _rows, "t": t, "lot": lot.id, "good": lot.good, "lb": lb, "from": from, "to": to, "reason": reason, "actor": actor})
+	if log.size() > KEEP_LOG:
+		log = log.slice(log.size() - KEEP_LOG)
+	var g := str(lot.good)
+	if from.begins_with(OUTSIDE) and not to.begins_with(OUTSIDE):
+		boundary[g] = float(boundary.get(g, 0.0)) + lb
+	elif to.begins_with(OUTSIDE) and not from.begins_with(OUTSIDE):
+		boundary[g] = float(boundary.get(g, 0.0)) - lb

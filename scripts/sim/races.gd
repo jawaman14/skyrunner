@@ -214,7 +214,7 @@ func enter(id: String, bet := 0, on := "win") -> String:
 			return "The book is shut on that race: it paid within the hour."
 	if sess.money < c.fee + bet:
 		return "The entry is $%s%s." % [Py.money(c.fee), (" and the bet $%s" % Py.money(bet)) if bet > 0 else ""]
-	sess.money -= c.fee + bet
+	sess.move_money(-(c.fee + bet), "outside:races", "fee")
 	run = {"id": c.id, "next": 0, "t0": -1.0, "splits": [], "entered": sess.time, "bet": bet, "on": on}
 	sess.say("RACE - %s: the fee is paid%s. Take the start gate (the first one) to begin; gates in order." % [c.name,
 		(" and $%s down on a %s" % [Py.money(bet), on]) if bet > 0 else ""])
@@ -310,7 +310,7 @@ func _finish(c: Course) -> void:
 	if cool > 0.0:
 		prize = 0  # it has paid within the hour: for the glory only
 	if prize > 0:
-		sess.money += prize
+		sess.move_money(prize, "outside:races", "prize")
 		won += prize
 		paid_at[c.id] = sess.time
 	var bet: int = int(run.get("bet", 0))
@@ -319,7 +319,7 @@ func _finish(c: Course) -> void:
 		var hit: bool = (str(run.on) == "win" and place == 1) or (str(run.on) == "place" and place <= 3)
 		if hit:
 			payout = int(float(bet) * float(BET_ODDS[str(run.on)]))
-			sess.money += payout
+			sess.move_money(payout, "outside:races", "prize")
 			betting += payout - bet
 		else:
 			betting -= bet

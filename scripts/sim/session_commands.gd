@@ -11,6 +11,16 @@ func command(role: String, name: String, args := {}) -> Array:
 		return [false, "Unknown role %s." % role]
 	if not Roles.allowed(role, name):
 		return [false, "%s can't do '%s'." % [role, name]]
+	return command_as(Actor.for_role(role), name, args)  # the shim (F-5): the role's org, the seat as the person
+
+
+## A command by an actor ({org, role, person}, see Actor). Results as `command`: [ok, message], a refusal always with a reason.
+## While it runs, every event it raises carries the actor and its org (EventBus.actor).
+func command_as(actor: Dictionary, name: String, args := {}) -> Array:
+	var why := Actor.refusal(actor, name)
+	if why != "":
+		return [false, why]
+	var role := str(actor.role)
 	if _command_handlers.is_empty():
 		_command_handlers = CommandDomains.handlers()
 	var handler: Callable = _command_handlers.get(name, Callable())
@@ -22,7 +32,10 @@ func command(role: String, name: String, args := {}) -> Array:
 			return [false, action.disabled_reason]
 	var cash_before := money
 	var prisoners_before: int = int(rackets.held) if rackets != null and name == "rackets" else 0
+	var outer: Dictionary = bus.actor
+	bus.actor = actor
 	var err = handler.call(role, args, self)
+	bus.actor = outer
 	if err:
 		return [false, err]
 	var message := "ok"

@@ -220,7 +220,7 @@ func sell(sheets: float, stash := "") -> String:
 		if st != null:
 			st.heat += STASH_HEAT_PER_100LB * n / 4.0  # collectors at the door
 	else:
-		sess.money += pay
+		sess.move_money(pay, "outside:buyers", "sales")
 		held -= n
 	circuit_left -= n
 	sold += n
