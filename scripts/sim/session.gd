@@ -104,6 +104,10 @@ func _init(opts := {}) -> void:
 	daily_weather = DailyWeather.new(self, _rng(seed + 179))
 	calendar = Calendar.new(self, _rng(seed + 183))
 	weekly = Weekly.new(self, _rng(seed + 185))
+	if Schedule.ENABLED:  # F-6: the scheduler and the daily books (no draws)
+		schedule = Schedule.new()
+		books = Books.new(self)
+		schedule.at(Books.next_close(time), "books")
 	director = AISmuggler.Director.new(_rng(seed + 21))
 	mapper = ControlMapper.new()
 	autopilot = Autopilot.new()
@@ -158,6 +162,10 @@ func dispose() -> void:
 	if weekly != null:
 		weekly.sess = null  # break the cycle: a disposed session must be freed
 	weekly = null
+	if books != null:
+		books.sess = null
+	books = null
+	ledger.on_transfer = Callable()
 	if analyst != null:
 		analyst.sess = null
 	analyst = null

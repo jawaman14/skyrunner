@@ -80,7 +80,9 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - F-5, `command_as` and actors. 7 November: `Actor`, `Session.command_as` with `command` as its shim, events tagged
      with the actor and org, and `job_delivered` gains `by` and `mode`. The ownership and manager-budget checks wait for
      businesses (L-1) and managers (L-4); story goals counting by org is L-5.
-   - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74).
+   - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74). 7 November, F-6a:
+     the scheduler (`Schedule`, saved) and the 06:00 books (`Books`, each org's day from the ledger, saved). F-6b, the
+     nights retiring into a report built from the books, is next.
    - F-7, time acceleration, after D-12.
    - Progress on 4 November: F-1 and F-2 are on main; F-3 is finished in #496; F-4 has the inventory model and a session wrap
      with no call sites moved; F-5 to F-7 not started (`job_delivered` has no `by` or `mode` yet).
@@ -201,8 +203,10 @@ Rewritten 4 November against the code. The items from 18 October that are finish
 
 **Half done (some code merged, not finished):**
 
-- **3D pilot app, fixed 30 Hz step with smoothing** (D-12): the host loop has it (#356), the pilot app does not. Needs render
-  interpolation and a person at the controls to judge the feel; F-7 waits on it.
+- **3D pilot app, fixed 30 Hz step with smoothing** (D-12): the host loop has it (#356), and since #512 the pilot app does too,
+  behind `PilotApp.FIXED_STEP` (off by default; `--fixed-step` turns it on): whole 1/30 s steps through `HostLoop`, the
+  aircraft and the chase camera drawn between the last two steps, key presses carried to the next step. What's left is a
+  person at the controls judging the feel, then flipping the default; F-7 waits on that.
 - **Stock lots and pickup orders** (DESIGN 51 slices 2-3): `StockLot`, `StockLedger`, `StockValue` and `PickupOrder` exist with
   tests and have no gameplay call sites. Lands with F-4.
 - **F-4 inventory:** the model and a session wrap exist; the stash and aircraft stock sites have not moved to it.

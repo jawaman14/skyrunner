@@ -77,6 +77,9 @@ static func capture(s: Session) -> Dictionary:
 		d["boards"] = capture_boards(s)  # optional: an older save has none and deals every board afresh, as it always did
 	if s.weekly != null and s.weekly.week > 0:
 		d["weekly"] = s.weekly.capture()  # optional: an older save starts its first week afresh
+	if s.schedule != null:
+		d["schedule"] = s.schedule.capture()  # optional (F-6): an older save sets its next books at load
+		d["books"] = s.books.capture()
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
@@ -295,6 +298,14 @@ static func restore(s: Session, d: Dictionary) -> void:
 			restore_boards(s, d.boards)
 	if s.weekly != null and d.get("weekly") is Dictionary:
 		s.weekly.restore(d.weekly)
+	if s.schedule != null:
+		if d.get("schedule") is Dictionary:
+			s.schedule.restore(d.schedule)
+		else:  # an older save: the books close at the next 06:00 after the loaded clock
+			s.schedule = Schedule.new()
+			s.schedule.at(Books.next_close(s.time), "books")
+		if d.get("books") is Dictionary:
+			s.books.restore(d.books)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.investigation != null:

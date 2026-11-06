@@ -170,6 +170,8 @@ var aircraft_body: StaticBody3D = null
 
 func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> PilotApp:
 	s = sess
+	if "--fixed-step" in OS.get_cmdline_user_args():
+		FIXED_STEP = true
 	if s.deal_moves != null:
 		s.deal_moves.live = true  # a person is flying: Benny may call about a moved drop
 	quality = Quality.get_preset(graphics)
@@ -670,6 +672,17 @@ var _was_parked := true  ## last frame's s.parked, to see the moment of landing
 var _plane_fund_told := false  ## the "you can buy your plane" call has been made this session
 var _goal_beacons: Array = []  ## [[x, y], node] for GoalMarks
 var fast_forward := 1  ## whole simulation steps run per frame (1, 2, 4 or 8)
+## D-12: the sim on a fixed 30 Hz step (HostLoop, as the host desk and the server), the aircraft drawn between its last two
+## steps. Off by default until a person at the controls has judged the feel; `--fixed-step` on the command line turns it on.
+## F-7's time acceleration needs it (the flight model must never take a variable step).
+static var FIXED_STEP := false
+var _loop := HostLoop.new()
+var _pose_a := Transform3D()  ## the aircraft at the step before the latest
+var _pose_b := Transform3D()  ## ... and at the latest
+var _posed := false
+var _hdg_a := 0.0  ## the heading (degrees) at those two steps, for the chase camera's aim
+var _hdg_b := 0.0
+var _carry_pressed := {}  ## key presses from frames that ran no step: the next step sees them
 var _wp_beacon: MeshInstance3D = null
 var car_dash: CarDash = null  ## the dashboard, shown while driving
 var radio: CarRadio = null  ## the radio: the cockpit's (F7) and the car's (R); silent on foot
@@ -1601,12 +1614,17 @@ func _process(delta: float) -> void:
 		_pilot_seat()
 		var inp := _gather_input() if not on_foot else _foot_input()
 		var remote: bool = s.seats.human(Roles.PILOT) and s.seats.seats[Roles.PILOT].token != ""
-		var bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
-		s.update(dt, inp, bc)
-		for _extra in (fast_forward - 1 if server == null and driving == null else 0):  # fast-forward: more whole steps per frame, never a longer one
-			inp.pressed = {}  # a key press is one event: only the first step sees it (held keys and axes carry on)
+		var bc = null
+		if FIXED_STEP:
+			_fixed_steps(dt, inp, remote)
+			bc = s.remote_controls() if remote else null  # the taxi ride runs on foot: no bot controls there
+		else:
 			bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 			s.update(dt, inp, bc)
+			for _extra in (fast_forward - 1 if server == null and driving == null else 0):  # fast-forward: more whole steps per frame, never a longer one
+				inp.pressed = {}  # a key press is one event: only the first step sees it (held keys and axes carry on)
+				bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
+				s.update(dt, inp, bc)
 		_taxi_tick(inp, bc)
 		hud.minimap.ai_route = Minimap.ai_route_of(bot) if not on_foot else []
 		nerves.update(s, dt)
@@ -1753,12 +1771,57 @@ static func _basis(heading: float, pitch := 0.0, roll := 0.0) -> Basis:
 	return Basis.from_euler(Vector3(deg_to_rad(pitch), -deg_to_rad(heading), -deg_to_rad(roll)), EULER_ORDER_YXZ)
 
 
+## D-12: whole 1/30 s steps for this frame's time (and fast-forward's extra ones), keeping the aircraft's pose before and after
+## the latest so the frame can draw between them. A key press on a frame that ran no step waits for the next step.
+func _fixed_steps(dt: float, inp, remote: bool) -> int:
+	_carry_pressed.merge(inp.pressed, true)
+	var frame_dt := dt * float(fast_forward if server == null and driving == null else 1)
+	var n := _loop.advance(frame_dt, func(fdt: float):
+		_pose_a = _pose_now()
+		_hdg_a = s.state.heading if s.state != null else 0.0
+		inp.pressed = _carry_pressed
+		_carry_pressed = {}
+		var bc = bot.step(fdt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
+		s.update(fdt, inp, bc)
+		_pose_b = _pose_now()
+		_hdg_b = s.state.heading if s.state != null else 0.0
+		_posed = true)
+	return n
+
+
+func _pose_now() -> Transform3D:
+	var st: FlightModel.FlightState = s.state
+	if st == null:
+		return Transform3D()
+	return Transform3D(_basis(st.heading, st.pitch, st.roll), MeshBuilder.to_godot([st.x, st.y, st.alt]))
+
+
+## Where to draw the aircraft this frame: the sim's pose, or with the fixed step, between the last two steps by how far the
+## leftover time has run into the next one (one step behind, never ahead of the sim).
+func render_pose() -> Transform3D:
+	if not FIXED_STEP or not _posed:
+		return _pose_now()
+	var alpha := clampf(_loop._acc / HostLoop.DT, 0.0, 1.0)
+	return Transform3D(Basis(_pose_a.basis.get_rotation_quaternion().slerp(_pose_b.basis.get_rotation_quaternion(), alpha)),
+		_pose_a.origin.lerp(_pose_b.origin, alpha))
+
+
+## The heading the camera aims along this frame (degrees): the sim's, or with the fixed step, between the last two steps by the
+## same fraction as render_pose, the short way round (Codex on #512: the aim jumped at 30 Hz while the aircraft was smoothed).
+func render_heading() -> float:
+	if not FIXED_STEP or not _posed:
+		return s.state.heading if s.state != null else 0.0
+	var alpha := clampf(_loop._acc / HostLoop.DT, 0.0, 1.0)
+	return rad_to_deg(lerp_angle(deg_to_rad(_hdg_a), deg_to_rad(_hdg_b), alpha))
+
+
 func _sync_scene(dt: float) -> void:
 	var st: FlightModel.FlightState = s.state
 	if st == null:
 		return
-	player.position = MeshBuilder.to_godot([st.x, st.y, st.alt])
-	player.basis = _basis(st.heading, st.pitch, st.roll)
+	var pose := render_pose()
+	player.position = pose.origin
+	player.basis = pose.basis
 	var thr: float = s.fm.controls.throttle if st.engine_running else 0.0
 	var spin := TAU * 2400 / 60 * dt * maxf(0.15, thr)
 	for p in props:
@@ -1943,7 +2006,7 @@ func _sync_squads(dt: float) -> void:
 
 
 func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
-	var h := deg_to_rad(st.heading)
+	var h := deg_to_rad(render_heading())  # D-12: the aim follows the drawn aircraft, not the latest step
 	var fwd := MeshBuilder.to_godot([sin(h), cos(h), 0.0])
 	var L := s.spec.visual.length_m
 	var cockpit := cam_mode == "cockpit"
@@ -1951,7 +2014,7 @@ func _update_camera(st: FlightModel.FlightState, dt: float) -> void:
 		if c is MeshInstance3D:
 			c.visible = not cockpit
 	glareshield.visible = cockpit
-	var target := MeshBuilder.to_godot([st.x, st.y, st.alt])
+	var target := render_pose().origin  # where the aircraft is drawn (D-12: between steps with the fixed step on)
 	if cockpit:
 		var cockpit_look := Vector3(deg_to_rad(-4.0) - _air_look_pitch, -_air_look_yaw, 0.0)
 		cam.global_transform = player.global_transform * Transform3D(Basis.from_euler(cockpit_look),

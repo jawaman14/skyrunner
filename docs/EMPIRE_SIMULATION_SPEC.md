@@ -143,6 +143,14 @@ One authoritative `Session.time` (decided 19 Oct). Three things hang off it:
   - The strategic balance sim stays on the old path until a new headless "N days" sim replaces it. `strategic_ref` parity
     retires in the same PR.
 
+**Where it stands (7 November 2026), F-6a.** `scripts/sim/schedule.gd` is the heap (`at`, `cancel`, `due`, saved, rebuilt as a heap
+whatever order a save kept). `scripts/sim/books.gd` closes each org's day at 06:00 (game time 0 is midnight): every transfer
+crossing the org's accounts since the last close, summed by reason in and out as it is booked (the ledger trims its oldest
+rows, so the day is counted live and saved, not read back from the log), the net, and the balance it ends on; an
+opening balance is not takings. It emits `books` and keeps the last 14 days, saved. `Schedule.ENABLED` is in the parity set.
+Wages, rent and arrears move onto this tick with the businesses (L-1, L-4); the nights' report built from the closed days is
+F-6b.
+
 **Time acceleration** (new; needs D-12's fixed step first):
 - The desk can run ×1, ×4, ×16 or ×60 by stepping the sim N fixed steps per frame.
 - Only the organisation's leader can change the speed (D-85); a host who isn't the leader can't.
