@@ -114,6 +114,7 @@ func test_the_name_survives_a_save() -> void:
 	var s := _sess()
 	for i in 20:
 		_emit(s, "job_delivered")
+	s.renown.quiet_since = 123.0
 	var d := StrategicSave.capture(s)
 	check(d.has("renown"), "the save has it")
 	var t := _sess()
@@ -121,5 +122,29 @@ func test_the_name_survives_a_save() -> void:
 	StrategicSave.restore(t, JSON.parse_string(JSON.stringify(d)))
 	check_near(t.renown.score, s.renown.score, 0.001, "restored: %.0f" % t.renown.score)
 	check_near(t.police.decay_mult, s.police.decay_mult, 0.001, "and the task force sees it")
+	check_near(t.renown.quiet_since, 123.0, 0.001, "and the quiet spell")
 	s.dispose()
 	t.dispose()
+
+
+## Lying low (D-94, rested XP): the longer since the last hot load, the more renown the next hot delivery earns, up to double after
+## half an hour; a hot setback (a bust, a seized truck) starts the quiet spell again, and a plain delivery does not end it.
+func test_lying_low_raises_the_next_hot_deliverys_renown() -> void:
+	var s := _sess()
+	var r: Renown = s.renown
+	r.quiet_since = s.time
+	_emit(s, "job_delivered", {"hot": true})
+	check_near(r.score, 3.0, 0.001, "straight away: no bonus")
+	s.time += Renown.REST_FULL_S * 0.5
+	_emit(s, "job_delivered", {"hot": false})
+	check_near(r.score, 6.0, 0.001, "a clean load earns its plain 3 and keeps the quiet spell going")
+	check_near(r.rest_bonus(s.time), 0.5, 0.001, "a quarter-hour quiet: half again")
+	s.time += Renown.REST_FULL_S * 2.0
+	check_near(r.rest_bonus(s.time), Renown.REST_MAX, 0.001, "capped at double")
+	_emit(s, "job_delivered", {"hot": true})
+	check_near(r.score, 12.0, 0.001, "a hot load after a long quiet spell earns double (3 + 3)")
+	check(str(r.recent.back()[2]).begins_with("lying low"), "and the log says why: %s" % [r.recent.back()])
+	s.time += Renown.REST_FULL_S
+	_emit(s, "truck_seized")
+	check_near(r.rest_bonus(s.time), 0.0, 0.001, "a seized truck ends the quiet spell")
+	s.dispose()

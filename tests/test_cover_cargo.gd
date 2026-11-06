@@ -14,6 +14,7 @@ class _It:
 
 func after_each() -> void:
 	CoverCargo.ENABLED = true
+	StreakGuard.ENABLED = true
 	World.use_map(0)
 
 
@@ -29,6 +30,7 @@ func test_cover_grows_with_honest_cargo_and_is_capped() -> void:
 
 ## The same customs rolls, with and without cover: cover can only turn an inspection into a pass, never the other way.
 func test_customs_open_fewer_hot_loads_with_cover() -> void:
+	StreakGuard.ENABLED = false  # the plain 35%: bad-luck protection has its own tests
 	var a := Session.new({"seed": 31, "location": "HAR"})
 	var b := Session.new({"seed": 31, "location": "HAR"})
 	var har := World.airfield("HAR")

@@ -196,6 +196,9 @@ func _update_world(dt: float) -> void:
 		calendar.update(dt)
 	if weekly != null:
 		weekly.update(dt)
+	if schedule != null:
+		for e in schedule.due(time):
+			_on_due(str(e[2]), e[3], float(e[0]))
 	if agency != null:
 		agency.update(dt)
 	if family != null:
@@ -357,3 +360,12 @@ func _update_intel(dt: float) -> void:
 		if time - intel[k][0] < 90:
 			fresh[k] = intel[k]
 	intel = fresh
+
+
+## A scheduled entry came due (F-6). Each kind sets its own next one.
+func _on_due(kind: String, _payload: Dictionary, at: float) -> void:
+	match kind:
+		"books":
+			if books != null:
+				books.close(at)
+			schedule.at(at + Books.DAY_S, "books")

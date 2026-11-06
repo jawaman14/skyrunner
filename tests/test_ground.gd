@@ -551,6 +551,9 @@ func test_turf_follows_who_is_on_the_street() -> void:
 	s.dispose()
 
 
+const WAR_HOUR_BUDGET_MS := 45000
+
+
 func test_the_ai_commanders_run_it_within_their_means() -> void:
 	var s := _war(7, true)
 	s.money = 40000
@@ -565,7 +568,9 @@ func test_the_ai_commanders_run_it_within_their_means() -> void:
 	check(g.squads.size() <= GroundWar.MAX_SQUADS, "within the global cap")
 	check(g.squads.all(func(q): return q.state != "gone" and q.men > 0), "no dead squads left on the books")
 	check(s.law_log.size() > 0, "the desk heard about it")
-	check(ms < 30000, "an hour of war in %d ms" % ms)
+	# a performance budget: it catches a war that has got much slower, not a busy machine. CI runs this test in about
+	# 28 to 30 s, so 30 s failed on ordinary runner load (30.47 s on #506, and on #495); 45 s still trips at half again
+	check(ms < WAR_HOUR_BUDGET_MS, "an hour of war in %d ms (budget %d)" % [ms, WAR_HOUR_BUDGET_MS])
 	s.dispose()
 
 

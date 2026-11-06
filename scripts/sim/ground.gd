@@ -172,8 +172,22 @@ class Commander:
 	var cash := 0.0:  ## Los Cuervos' war chest (the others pay from the session)
 		set(v):
 			if sess != null:
-				sess.ledger.track(faction + ":war-chest", cash, v, sess.time)
+				sess.ledger.track(faction + ":war-chest", cash, v, sess.time, _other, _reason, _actor)
 			cash = v
+	var _other := Ledger.UNATTRIBUTED
+	var _reason := "adjust"
+	var _actor := "system"
+
+	## A named change to the war chest (F-3): `delta` > 0 comes from `other`, < 0 goes to it. Same value as `cash += delta`,
+	## but the ledger row says where it came from and why. `floor0` keeps the old `maxf(0.0, ...)` clamp of a removal.
+	func move_cash(delta: float, other: String, reason: String, floor0 := false) -> void:
+		_other = other
+		_reason = reason
+		_actor = faction
+		cash = maxf(0.0, cash + delta) if floor0 else cash + delta
+		_other = Ledger.UNATTRIBUTED
+		_reason = "adjust"
+		_actor = "system"
 	var think_t := 0.0
 	var log: Array = []
 
@@ -194,6 +208,11 @@ var territory_control := {}  ## region/territory -> faction -> local presence (d
 var _control_trends := {}  ## presentation-only change in public influence since last tick
 var events: Array = []  ## [side ("runner" | "law" | "both"), text]
 var stakeouts := {}  ## stash id -> police squad id
+## Heat step 2 (DESIGN §48): the case files' warrants that have run out, waiting for a police raid team (oldest first).
+## A warrant leaves the queue at the breach, not when the team sets out, so a save mid-approach keeps it.
+## With the case files on, these are the only stashes the street-war police raid; a warrant waits while the guards are too
+## strong, and is dropped when the stash is gone or burned. Saved.
+var warrants: Array = []
 var tails := {}  ## truck job_id -> police squad id
 var hot_spots: Array = []  ## [t, x, y] recent shooting
 var arrests_total := 0
@@ -483,16 +502,16 @@ func recruit(f: String, kind: String, at = null, pay := true):
 		if f == "org":
 			if sess.money < cost:
 				return "Need $%s." % Py.money(cost)
-			sess.money -= cost
+			sess.move_money(-cost, "outside:street", "wages")
 			spent.recruit += cost
 		elif f == "police":
 			if sess.law_funds < cost:
 				return "Need $%s in funds." % Py.money(cost)
-			sess.law_funds -= cost
+			sess.move_law_funds(-cost, "outside:state", "wages")
 		else:
 			if commanders.rival.cash < cost:
 				return "Los Cuervos are broke."
-			commanders.rival.cash -= cost
+			commanders.rival.move_cash(-cost, "outside:street", "wages")  # signing men on
 	_serial += 1
 	var q := Squad.new()
 	q.faction = f
@@ -754,7 +773,7 @@ func update(dt: float) -> void:
 	for f in commanders:
 		var c: Commander = commanders[f]
 		if f == "rival":
-			c.cash += 30.0 * step / 60.0
+			c.move_cash(30.0 * step / 60.0, "outside:street", "sales")  # the corners' takings, as a stand-in (no rival economy yet: B-2)
 		if c.ai and sess.time >= c.think_t:
 			c.think_t = sess.time + THINK_S
 			match f:
@@ -1242,6 +1261,7 @@ func _breach(q: Squad) -> void:
 		if g.faction == "org" and g.state != "gone" and g.pos().distance_to(Vector2(st.x, st.y)) < CONTACT_M:
 			return  # the guards first; the fight decides
 	st.intel = maxf(st.intel, StashNet.KNOWN_HEAT)
+	warrants.erase(str(id))  # served (heat step 2)
 	sess._raid(id)
 	q.order = {"type": "hold"}
 	q.tactic = ""
@@ -1296,7 +1316,7 @@ func truck_contacts() -> Array:
 				_say("both", "A truck's driver held off Los Cuervos and drove on")
 				continue
 			out.append([t, "hijacked", "Los Cuervos"])
-			commanders.rival.cash += t.pay * 0.5
+			commanders.rival.move_cash(t.pay * 0.5, "outside:street", "resale")  # the hijacked load, fenced
 			if not t.weapons.is_empty():
 				arsenal("rival").add_all(t.weapons)
 			continue
@@ -1387,7 +1407,7 @@ func _patrol_stops(q: Squad, t) -> bool:
 	if not _passed.has(key):
 		var st = sess.stash_net.get_stash(t.stash)
 		var known: bool = st != null and StashNet.suspicion(st) >= StashNet.KNOWN_HEAT
-		_passed[key] = frng.random() < PATROL_STOP + (PATROL_STOP if known else 0.0)
+		_passed[key] = frng.random() < (PATROL_STOP + (PATROL_STOP if known else 0.0)) * StreakGuard.factor(sess.stash_net.truck_streak)
 		if _passed.size() > 400:
 			_passed.clear()
 	return _passed[key]
@@ -1562,13 +1582,13 @@ func _upkeep(dt: float) -> void:
 		if q.faction == "org":
 			_upkeep_acc += c
 		elif q.faction == "police":
-			sess.law_funds -= c * 0.5
+			sess.move_law_funds(-c * 0.5, "outside:state", "wages")
 		else:
-			commanders.rival.cash -= c
+			commanders.rival.move_cash(-c, "outside:street", "wages")
 
 
 	if _upkeep_acc >= 1.0:
-		sess.money -= int(_upkeep_acc)
+		sess.move_money(-int(_upkeep_acc), "outside:street", "wages")
 		spent.upkeep += int(_upkeep_acc)
 		_upkeep_acc -= int(_upkeep_acc)
 
@@ -1702,8 +1722,16 @@ func _think_police() -> void:
 	var mine := _free("police")
 	if sess.stash_net != null:
 		var live: Array = sess.stash_net.live()
-		# raid: a cordon, then the entry team
-		var ripe = _pick(live.filter(func(s): return StashNet.suspicion(s) >= 55.0), func(s): return StashNet.suspicion(s))
+		var files: bool = Investigation.ENABLED and sess.investigation != null
+		# raid: a cordon, then the entry team. With the case files, only a stash whose warrant has run out (heat step 2);
+		# without them, the busiest house at 55 or more.
+		var ripe = null
+		if files:
+			warrants = warrants.filter(func(id): return live.any(func(s): return str(s.id) == str(id)))
+			if not warrants.is_empty():
+				ripe = live.filter(func(s): return str(s.id) == str(warrants[0]))[0]
+		else:
+			ripe = _pick(live.filter(func(s): return StashNet.suspicion(s) >= 55.0), func(s): return StashNet.suspicion(s))
 		if ripe != null and mine.size() >= 2 and not squads.any(func(q): return q.order.get("type", "") == "raid"):
 			var guards := of("org").filter(func(q): return q.pos().distance_to(Vector2(ripe.x, ripe.y)) < 800.0)
 			var team = _pick(mine, func(q): return strength(q))
@@ -1714,10 +1742,13 @@ func _think_police() -> void:
 					order(cordon, {"type": "checkpoint", "x": ripe.x + 250.0, "y": ripe.y + 250.0, "perimeter": true})
 					mine.erase(cordon)
 				order(team, {"type": "raid", "stash": ripe.id, "perimeter": cordon != null, "cordon": cordon.id if cordon else "", "t": sess.time})
-				mine.erase(team)
+				mine.erase(team)  # the warrant stays queued until the breach: squads' orders are not saved, so a reload re-sends it
 				_log("police", "Raid on %s: %s%s" % [ripe.name, team.id, (", cordon " + cordon.id) if cordon else ""])
-		# stake out the suspected ones
-		for st in live.filter(func(s): return StashNet.suspicion(s) >= 10.0 and StashNet.suspicion(s) < 55.0):
+		# stake out the suspected ones: with the case files, the houses under surveillance (the van across the street the
+		# messages talk about); without them, anything from 10 to 55
+		var watched := live.filter(func(s): return sess.investigation.stage_of(str(s.id)) == "surveillance") if files \
+			else live.filter(func(s): return StashNet.suspicion(s) >= 10.0 and StashNet.suspicion(s) < 55.0)
+		for st in watched:
 			if mine.is_empty():
 				break
 			if stakeouts.has(st.id):
@@ -1772,12 +1803,12 @@ func _recruit_ai(f: String, rich: bool, kind := "") -> void:
 		# nobody sends men out unarmed: buy guns first (the dealer, or police procurement)
 		var price: int = 4 * int(Arsenal.TIERS.rifle.price * (1.0 if f == "police" else 1.4))
 		if f == "org" and sess.money > price + ORG_RESERVE:
-			sess.money -= price
+			sess.move_money(-price, "outside:market", "purchase")
 			spent.arms += price
 		elif f == "police" and sess.law_funds > price + 5000.0:
-			sess.law_funds -= price
+			sess.move_law_funds(-price, "outside:market", "purchase")
 		elif f == "rival" and commanders.rival.cash > price + 5000.0:
-			commanders.rival.cash -= price
+			commanders.rival.move_cash(-price, "outside:market", "purchase")
 		else:
 			return
 		ars.add("rifle", 4)

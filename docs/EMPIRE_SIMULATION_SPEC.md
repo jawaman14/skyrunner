@@ -109,7 +109,15 @@ Invariants:
 - conservation per good, except through `outside:*`, seizures (`outside:state`) and consumption (`outside:street`);
 - a lot is in exactly one location.
 
-Migration is the same as money: F-4 wraps stash stock, then call sites move by domain. The aircraft load (`Loadout`) becomes a
+Migration is the same as money: F-4 wraps stash stock, then call sites move by domain.
+
+**Where it stands (7 November 2026).** `Session.inventory` holds every stash's stock as lots (`stash:<id>`) and the aircraft load
+(`aircraft:<key>`); goods on the organisation's trucks sit at `road:org`. Logistics books its own changes as named moves before it
+changes the stock numbers: `truck out` and `truck in`, `round out`, `truck recalled`, `sale` (to `outside:buyer:<who>`),
+`street sale` (to `outside:street`), `seized` and `raided` (to `outside:state`), `hijacked` (to `outside:rival`) and `vault`
+(stash to stash). A flown delivery is a move from the aircraft to the stash. The five-second reconcile stays as the safety net and
+books anything else as `unattributed`; in a two-hour AI run nothing but the starting stock was. Conservation runs on running
+boundary totals, and the save keeps the lots inside the map with their ids, origin and age. The aircraft load (`Loadout`) becomes a
 location, so a flown delivery and a trucked one are the same `move`. That's what makes direct and delegated deliveries equal (D-66).
 
 ## 5. The clock
@@ -134,6 +142,14 @@ One authoritative `Session.time` (decided 19 Oct). Three things hang off it:
   - HQ actions (launder, buy_front, bribe, lawyer, opsec) become ordinary commands that run any time and cost through the ledger.
   - The strategic balance sim stays on the old path until a new headless "N days" sim replaces it. `strategic_ref` parity
     retires in the same PR.
+
+**Where it stands (7 November 2026), F-6a.** `scripts/sim/schedule.gd` is the heap (`at`, `cancel`, `due`, saved, rebuilt as a heap
+whatever order a save kept). `scripts/sim/books.gd` closes each org's day at 06:00 (game time 0 is midnight): every transfer
+crossing the org's accounts since the last close, summed by reason in and out as it is booked (the ledger trims its oldest
+rows, so the day is counted live and saved, not read back from the log), the net, and the balance it ends on; an
+opening balance is not takings. It emits `books` and keeps the last 14 days, saved. `Schedule.ENABLED` is in the parity set.
+Wages, rent and arrears move onto this tick with the businesses (L-1, L-4); the nights' report built from the closed days is
+F-6b.
 
 **Time acceleration** (new; needs D-12's fixed step first):
 - The desk can run ×1, ×4, ×16 or ×60 by stepping the sim N fixed steps per frame.
@@ -162,6 +178,13 @@ the UI can show (D-69).
 **Events.** Every event on the bus gains `org` and `actor`. `job_delivered` gains `by` (person id) and `mode` (`flown`,
 `trucked`, `boat`, `mule`). Story goals count by org, not by who flew. This fixes the gap in EMPIRE_PIVOT: today's payload has
 good, pounds, hot and origin but no "who flew".
+
+**Where it stands (7 November 2026).** `scripts/sim/actor.gd` builds actors and checks them (`Actor.refusal`: a known role, an org,
+the role's org is the actor's, the role allowed the command). `Session.command_as(actor, name, args)` runs a command for an
+actor; `command(role, ...)` is now its shim, with the seat as the person (`seat:pilot`) until seats carry people. While a command
+runs, `EventBus.actor` is set, so every event it raises has `actor` and `org`; the world's own events have neither, unless the
+emitter names an `org`. A flown `job_delivered` has `by: "seat:pilot"`, `mode: "flown"`; a truck's has the driver's id and
+`"trucked"`. Not yet: the target-ownership and manager-budget checks (with L-1 and L-4) and the AI orgs calling `command_as`.
 
 **Multiplayer.** No change to protocol v3 in P0. Commands already cross the wire by role; `command_as` maps onto that with
 `person` set by the seat. The sockets CI lane must stay green on every PR (decided 19 Oct).

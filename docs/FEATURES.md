@@ -1,8 +1,284 @@
 # Feature reference
 
-The long feature list that used to be the README, kept as a reference (written for the October 2026 state; the
-newest systems, such as renown, the rackets, stash works, the arena, the car and its radio, voice chat and the
-waiting room, are in [DESIGN.md](DESIGN.md) sections 25 to 33). The README has the short version.
+Every mechanic in the game, checked against the code on `main` @ 290832e (3 November 2026) and the open pull requests,
+grouped by domain and system. The status column says what exists, not what is planned in a document: the DECISIONS ledger
+marks many shipped rows "planned", so this table goes by the code. Update a row when its PR merges or its status changes.
+The README has the short version; [DESIGN.md](DESIGN.md) has how each system works.
+
+| Status | Means | Count |
+|---|---|---|
+| Built | On `main` and wired into play (most behind an on-by-default switch). Automated tests only unless PROJECT_STATUS says a person checked it | 112 |
+| In PR | Finished on a branch with tests, waiting on review and merge (#491, #493 to #497) | 9 |
+| Half done | Some code merged, but incomplete: a model with no call sites, part of the scope missing, or a gap found by measurement | 8 |
+| Planned | Decided or designed (a DECISIONS row, a DESIGN section or a roadmap slice), no gameplay code yet | 54 |
+| Paused | Planned, then parked by D-75 until the Living District gate | 12 |
+| Deferred | On ROADMAP's Deferred list | 6 |
+| Removed | Built, then deliberately taken out | 2 |
+
+## Mechanics by domain
+
+### Flight and aircraft
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Flight model | 6-DOF flight dynamics from JSBSim XML | Built | scripts/sim/flight; frozen flight golden stays through the pivot (D-74) | fdm.gd |
+| Flight model | Wind, gusts and turbulence in the FDM | Built | Driven by the weather system |  |
+| Flight model | Fixed 30 Hz step with render smoothing in the pilot app | Half done | The host loop has it (#356); the 3D pilot app doesn't. Needed before desk acceleration | D-12 |
+| Aircraft and loading | Five aircraft, every item a point mass at its station arm | Built |  |  |
+| Aircraft and loading | Load planner: stations, fuel slider and presets, CG on the envelope, range and reserve | Built |  |  |
+| Aircraft and loading | Fuel burn, fuel price and ferry tank (bladder-to-wing pump) | Built |  |  |
+| Aircraft and loading | Airframe and engine wear, repairs, the mechanic | Built | DESIGN §39 | airframe.gd |
+| Aircraft and loading | Rough-strip rolls wear the airframe | Built |  | #393 |
+| Aircraft and loading | First aircraft as an earned milestone | Built | Price still uncalibrated; on the playtest list | #296 · #345 |
+| Aircraft and loading | Additional aircraft | Deferred |  |  |
+| Strips and airfields | Tight strips rated for approach, strip trials harness | Built |  |  |
+| Strips and airfields | Mesa del Aguila 560 m and Old Quarry 620 m with wider exit | Built | C172 lifts full load from EGL and QRY east | #396 · #462 |
+| Strips and airfields | Hidden strips found by flying low (story games) | Built | Discovery.ENABLED; only a fresh story hides them | D-92 |
+| Strips and airfields | Flatten HAR's runway-0 approach hill | Planned | Terrain change, re-bake, strip trials | D-37 |
+| Strips and airfields | Quarry west end and PNR end 1 one-way | Built | By design (terrain/trees in the climb-out) |  |
+| Autopilot and assists | Autopilot, F3 hands the aircraft to the AI | Built |  |  |
+| Autopilot and assists | AI pilot says where it's going, and its route is drawn | In PR | Dashed line through the legs still to fly on the scope and chart | #391 · #493 |
+| Autopilot and assists | Fast-forward x1/x2/x4/x8 (backslash) | Built | Whole sim steps per frame; pauses while driving | D-88 |
+| Autopilot and assists | Backspace slow reverse | Built | RB binding, F1 and GUIDE lines were already on main; the roadmap note was stale | #394 |
+| Pilot experience | Nerves: tunnel vision, heartbeat, shaking hands; co-pilot steadies you | Built |  |  |
+| Pilot experience | Flight debrief with route records and Benny's time to beat | Built |  | D-92 |
+| Pilot experience | LORAN-C receiver, $600 first upgrade | Built | On every hangar shelf | D-92 |
+| Pilot experience | Flight-skill bonus goals (landings, short strips, approaches) | Planned | Optional, never blocks a chapter | D-38 |
+
+### Detection, sensors and comms
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Radar | 4/3-earth horizon, sea and rain clutter, MTI notch, per-site sweep rates | Built | SensorNet.REALISM |  |
+| Radar | Tracks with trails, Mode C, real squawks (7500/7600/7700 get Center) | Built |  |  |
+| Radar | Radar blind-valley shading on the desk (G) | Built |  |  |
+| Radio | VHF line of sight, police and crew channels | Built | RadioNet.REALISM |  |
+| Radio | Call length sets DF quality; least-squares fix with error ellipse | Built | SHIFT+O burst codeword |  |
+| Weather and light | Nightly forecast, cloud, rain, storms, moon phase, sea fog | Built | Storms ground helos and the aerostat |  |
+| Weather and light | Weather spells in the story game, forecast in News | Built |  | D-92 |
+| Weather and light | Day/night cycle | Built |  |  |
+| Task-force intelligence | Pattern of life (repeat routes, up to +45% detection) | Built |  |  |
+| Task-force intelligence | Canary trap via a bribed dispatcher | Built |  |  |
+| Task-force intelligence | The analyst desk every tip crosses | Built | DESIGN §34 | analyst.gd |
+| Task-force intelligence | Undercover agent plants a beacon on the parked aircraft | Built | DESIGN §35 | undercover.gd |
+| Task-force intelligence | Spare helicopters patrol and join as flankers | Built |  |  |
+
+### Law, heat and the court
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Task force | Chief's desk, orders, funds ($40/min + forfeiture), AI chief | Built |  |  |
+| Task force | Task-force upgrade tree (sensors, signals, intel, interdiction) | Built |  |  |
+| Task force | Early-chapter police pace | Built | PoliceSystem.EARLY_PACE |  |
+| Task force | AI knows only what a human in the seat would see | Planned | Audit of where the AI reads more not done | D-36 |
+| Heat step 1: case files | Stash case files: lead, surveillance, warrant, raid; lying low drops a case | Built | Investigation.ENABLED | DESIGN §48 |
+| Heat step 1: case files | Lawyer's warrant challenge as a command | Built | In cmds_ground.gd |  |
+| Heat step 1: case files | Aircraft heat per tail number, district heat | Built |  |  |
+| Heat step 1: case files | Phone Heat app (read-only) | Built |  | #446 |
+| Heat step 1: case files | Step 1 balance run and BALANCE entry | In PR | Measured: the files raid about twice as often as the old roll, from a very low base | #497 |
+| Heat step 1: case files | Street-war police reading the case files | Half done | With the ground war on, the war's police AI raids stashes without consulting the files | GroundWar._think_police |
+| Heat steps 2 and 3 | Police search outward from last position, checkpoints on escape roads, scanner chatter | Paused |  | D-75 |
+| Heat steps 2 and 3 | Ways to cool off: break LOS, cloud, swap squawk, hangar, repaint | Paused |  | D-75 |
+| Heat steps 2 and 3 | Pattern escalation, new agencies (state police, DEA, radar picket) | Paused |  | D-75 |
+| Heat steps 2 and 3 | Paid cops, Internal Affairs, leaks, accountant slows RICO | Paused |  | D-75 |
+| Heat steps 2 and 3 | Short car/foot chases from stops and raids | Paused |  | D-75 |
+| Heat steps 2 and 3 | Dirty money with a clock (loop idea 3) | Planned | Waits on heat step 2 | D-90 · D-27 |
+| Heat steps 2 and 3 | Hidden-informant gameplay | Deferred |  |  |
+| The court | Charges, bail hearing, lawyers, motions, plea/cooperation/jury | Built | DESIGN §16 | court.gd |
+| The court | Sentencing, forfeiture, one appeal, skipping bail | Built |  |  |
+| The court | Pilot is never held; arrest costs money, cargo, aircraft, heat | Built | Court.PILOT_FREE | D-64 |
+
+### Economy and trade
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Markets | Per-market prices moved by turf, police, seizures, gluts, fuel, storms, news | Built | Economy.REALISM |  |
+| Markets | Supply/demand per drug per market, breakable networks, upstream sources | Built | DESIGN §18 |  |
+| Markets | The Company's pipeline: cheap cocaine north, guns south | Built |  |  |
+| Markets | Civilian economy: jobs, demand, neighbourhood prosperity | Planned | Formulas not designed | DESIGN §0 |
+| The trade | Grass before cocaine; cocaine opens when the Colombians call | Built |  |  |
+| The trade | Dealers corner by corner (from Manny's hall) | Built |  |  |
+| The trade | Bulk buyers: Morettis, the Company, rifles to three sides | Built | Benny Ruiz, SHIFT+B |  |
+| The trade | Fixer: business between flights | Built | DESIGN §36 |  |
+| Loop ideas (LOOP_IDEAS.md) | 1. Market board and buyers' orders with deadlines and premiums | In PR | BALANCE entry: the AI stand-in misses most orders; premiums ~$150/run, the cost is trust | #419 · #497 |
+| Loop ideas (LOOP_IDEAS.md) | 2. Cover cargo lowers the customs check | Built | BALANCE entry 55 | D-90 |
+| Loop ideas (LOOP_IDEAS.md) | 3. Dirty money has a clock | Planned | After heat step 2 | D-90 |
+| Loop ideas (LOOP_IDEAS.md) | 4. A readable calendar (carnival, harvest, crackdowns) | Built | Latest merge on main | #490 |
+| Loop ideas (LOOP_IDEAS.md) | 5. The deal moves mid-flight (drop moves, pay doubles, cutter on picket) | Built | BALANCE entry 58 | #479 |
+| Loop ideas (LOOP_IDEAS.md) | 6. Price wars and supply cuts | Planned |  |  |
+| Loop ideas (LOOP_IDEAS.md) | 7. Investments with a return (strip, depot, safehouse, informant) | Planned |  |  |
+| Loop ideas (LOOP_IDEAS.md) | 8. Comeback valves | In PR | Windfall built; lawyer's discount (review fixes pushed); a loan shark already exists as the Family's loan | #480 · #491 |
+| Early-game content | Side gigs: aerial photos, banner tow, flour-sack pass | Built | BALANCE entry 59 | D-92 |
+| Early-game content | Reactive phone banter from Rafa and Benny | Built |  | D-92 |
+| Early-game content | Goal markers and HUD NEXT line | Built |  | D-92 |
+| Businesses | Hotel Cielo casino on Isla Soberana, the tables, walkable | Built | DESIGN §40-42 |  |
+| Businesses | Car dealership | Built | DESIGN §43 |  |
+| Businesses | Laundering on one authority (fronts, nightly cap, delay) | Planned | DESIGN §51 slice 5 |  |
+
+### Logistics, stock and arms
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Physical logistics | Eight stash houses, heat with use, raids burn them | Built |  |  |
+| Physical logistics | Product and cash live somewhere; trucks, escorts, cash bags | Built | DESIGN §22 |  |
+| Physical logistics | Map colours trucks by cargo, Escort button | Built |  |  |
+| Physical logistics | Dealers auto-resupplied from another stash (toggle) | Built |  | D-88 · #472 |
+| Physical logistics | Checked vehicle routes for dispatch | Half done | All 99 audited pairs failed access; waits on the map rebuild's sites and connectors | #241 · D-86 |
+| Physical logistics | Stash works (two works, two levels) | Built | DESIGN §28 |  |
+| Stock rework (DESIGN §51) | Stock lots with grade, age, provenance | Half done | StockLot, StockLedger, StockValue exist with tests; no gameplay call sites | slice 2 |
+| Stock rework (DESIGN §51) | Pickup orders and the pickup person; gun dealer replaces sell/keep | Half done | PickupOrder lifecycle model only | slice 3 |
+| Stock rework (DESIGN §51) | Storage places and the stock ledger screen | Planned |  | slice 4 |
+| Stock rework (DESIGN §51) | Crew relationships, rackets that close under heat | Planned |  | slice 6 |
+| Stock rework (DESIGN §51) | Chapter objectives with deadlines, boss-level unlocks | Planned |  | slice 7 |
+| Arms and ammunition (DESIGN §50) | Arsenals for all three factions, gun runs, police arm from seizures | Built | Arsenal.REALISM |  |
+| Arms and ammunition (DESIGN §50) | Crates of one type and the scarcity ladder | Planned |  | D-61 stage 1 |
+| Arms and ammunition (DESIGN §50) | Ammunition as a traded, trucked good | Planned |  | D-61 stage 2 |
+| Arms and ammunition (DESIGN §50) | Fights consume rounds; dry districts, resupply by port/road | Planned |  | D-61 stage 3 |
+| Arms and ammunition (DESIGN §50) | Pack, logistics and market screens for ammo | Planned |  | D-61 stage 4 |
+| Isla Soberana | Air, mules on the airliner, containers on the freighter | Built | DESIGN §15 |  |
+| Isla Soberana | Customs odds from both sides' perks; the General's passage and purge | Built |  |  |
+| Job board | Island-wide boards that outlive visits | In PR | Remote desks list the other strips; boards saved (optional key, no version bump) | #383 · #495 |
+| Job board | Drop a job from the phone | Built |  | #477 |
+
+### Factions and the ground war
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Organisations | Los Cuervos AI cartel: turf, tempers, truces, backward induction | Built |  |  |
+| Organisations | Rival aircraft and air hijack | Removed | Removed | #377 · #388 |
+| Organisations | The Family (Morettis): offers with a read, street tax, RICO | Built | DESIGN §14 |  |
+| Organisations | The Agency's Contra pipeline and its double game | Built | DESIGN §13 |  |
+| Organisations | The Sunrise Collective: acid for grass | Built | DESIGN §44 |  |
+| Organisations | The news: random and milestone events, real 1979-86 headlines | Built | Chronicle.ENABLED |  |
+| Organisations | Rival money from nowhere | In PR | Every inflow now a named outside account in the ledger; removing them is a Living District balance call | B-2 · #496 |
+| Ground war | Lanchester square-law firefights on weapons, cover, nerve | Built |  |  |
+| Ground war | Doctrines: guerrilla org/rivals vs narcotics-unit police | Built |  |  |
+| Ground war | Engagement geometry, smart routes, veteran squads | Built | GroundWar.ENGAGEMENT/SMART_ROUTES/VETERANS |  |
+| Ground war | Roadside truck firefights | Built |  | #384 · #387 |
+| Ground war | Full NPC truck and squad migration to physical agents | Half done | Listed as needing further evidence | PROJECT_STATUS |
+| Ground war | New combat mechanics | Deferred |  |  |
+| Turf | Map-scoped districts (ten in Costa Brava) rolled into markets | Built | Territories.ENABLED | #378 |
+| Turf | Visible territory map | In PR | Districts tinted by holder on the desks' map and the chart | #494 |
+| Turf | District-control balance calibration | Planned |  |  |
+| Turf | Rackets: tribute and prisoners | Built | DESIGN §27 |  |
+| Turf | Renown | Built | DESIGN §25 |  |
+| Turf | Rival depot raid | Paused | To be redesigned on rival inventories | D-19 · D-75 |
+| Turf | Trust per crew with the trust table | Planned |  | D-11 |
+| Hired hands | Payroll: roles, hiring hall, payday, skim/walk/snitch | Built | DESIGN §17 |  |
+| Hired hands | Workers as bodies on the map with task queues | Built | agent.gd |  |
+| Hired hands | Explicit assignments (product step 2, part one) | Built | Payroll's fixed assignments only |  |
+| Hired hands | Conditional orders and task sequences (step 2 proper) | Planned | Needs a DESIGN note first | D-01 |
+
+### On foot, driving and the world
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| On foot | First-person walker, torch, solid buildings, climbable kerbs | Built |  |  |
+| On foot | Guns on foot (1-4), walls stop rounds, arrest or doctor's bill | Built |  |  |
+| On foot | Pack: guns, rounds, medkits, 24 kg limit | Built |  |  |
+| Driving | Starter car (enterable) and the car radio | Built |  | D-88 |
+| Driving | The arena: street and air races | Built | DESIGN §29 |  |
+| Driving | Multiplayer racing | Deferred |  |  |
+| The phone | Calls, Work, Empire/Heat, News, Done apps | Built | Stays open airborne with a temporary AP hold | #446 · #473 |
+| Map | Costa Brava city coast (San Telmo, ~6,900 buildings) | Built | Default map |  |
+| Map | Generated islands (--map N) | Built | Classic island kept as a test fixture only |  |
+| Map | Map rebuild L1: strips as authored data, map audit, MapCity loader | Built |  | D-86 · #476 · #489 |
+| Map | Map rebuild L2-L10: terrain, water, districts, roads, parcels, sites, fill, props, hooks | Planned | Owner gates: layout sketch, screenshots, playtest | D-86 |
+| Map | Enterable sites: club, stashes, hangar, customs house | Planned |  | D-45 |
+| Map | Valle Verde as a small town | Planned |  | D-46 |
+| Map | More cities, each fully explorable | Planned | Phase 4 | D-80 · D-81 |
+| Look and sound | Terrain, sea, sky, vegetation, lights, fire, smoke, wet streets | Built |  |  |
+| Look and sound | Kenney/KayKit/Quaternius models, docks and downtown dress | Built |  |  |
+| Look and sound | Period vehicles and Costa Brava frontage | Built | Merged after screenshot review | #373 · #374 |
+| Look and sound | Synth sound; one radio for cockpit and car | Built | Radio redistribution rights unresolved | #175 |
+| Look and sound | Shift from low-poly towards a PS2-era look | Planned | Polygon/texture budgets need an owner call | #380 |
+| Presentation layers | Territory radio and era music | Paused |  | D-23 · D-75 |
+| Presentation layers | Era fashion and liveries | Paused |  |  |
+| Presentation layers | Crew colours, signage, graffiti that repaint | Paused |  |  |
+| Presentation layers | City pulse: rhythm, motifs, stingers | Paused |  |  |
+| Presentation layers | Heat in the look | Paused |  |  |
+
+### Story and progression
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Campaign | Twelve chapters, 1979 Square Grouper to 1988 Last Flight | Built | Includes Blotter and The House |  |
+| Campaign | Four-chapter flying-lessons campaign | Built |  |  |
+| Campaign | Employed-pilot opening (Costa Brava Air Services) | Built |  | #296 |
+| Campaign | Rafa as employer, Benny his fixer; rafa.dialogue cues | Built | Chapter 4 news beat still held for the takeover | D-76 · #422 |
+| Campaign | Optional tutorial for every seat and system | Built |  |  |
+| Campaign | Open mode with every system and a $10k float | Built |  |  |
+| Takeover and boss layer | Rafa killed by Los Cuervos (heard, not seen) in chapter 4 | Planned |  | D-09 · D-78 |
+| Takeover and boss layer | Half the empire survives the takeover | Planned | Own RNG stream | D-35 |
+| Takeover and boss layer | Boss layer: organise; delivering optional, direct play stays first-class | Planned |  | D-58 · D-79 |
+| Takeover and boss layer | Delegating a flight costs money | Planned |  | D-10 |
+| Takeover and boss layer | Succession: next in line takes over when the boss dies or is jailed | Planned |  | D-82 |
+| Campaign pivot (Phase 3) | Story v6: Blotter, The House, arena become optional ventures | Planned |  | D-77 |
+| Campaign pivot (Phase 3) | Goals counted by org (direct or delegated) | Planned | Needs F-5 |  |
+| Campaign pivot (Phase 3) | Ending choice, then an alternate-history sandbox after 1989 | Planned |  | D-70 · D-83 |
+| Campaign pivot (Phase 3) | New chapters beyond twelve | Deferred |  |  |
+
+### Empire simulation (the pivot)
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Foundations | F-1 save migration chain; unsupported versions refuse visibly | Built | strategic_save.gd STEPS | D-73 |
+| Foundations | F-2 ledger wrap: money and law funds booked as transfers | Built | ledger.gd; war chests tracked | D-65 |
+| Foundations | F-3 named transfers by domain | In PR | 166 named sites, 0 raw; an hour of live play books nothing unattributed | #496 |
+| Foundations | F-4 inventory lots and locations | Half done | Pure model plus a session wrap; call sites not moved |  |
+| Foundations | F-5 command_as and actors; job_delivered gets by and mode | Planned | job_delivered payload has neither yet | B-7 |
+| Foundations | F-6 scheduler and daily books; nights become a report | Planned | No Nights.ENABLED switch yet | D-67 |
+| Foundations | F-7 desk time acceleration x1/x4/x16/x60 | Planned | After D-12 | D-85 |
+| Living District (P0 gate) | L-1 business entities and San Telmo Centro district state | Planned |  | D-72 |
+| Living District (P0 gate) | L-2 product chain on the ledger plus a legit import-to-retail chain | Planned |  |  |
+| Living District (P0 gate) | L-3 Morettis as an economic org; org AI v1 | Planned |  | D-84 |
+| Living District (P0 gate) | L-4 desk business books, staff, orders, blocked reasons | Planned |  | D-69 |
+| Living District (P0 gate) | L-5 direct vs delegated delivery equivalence | Planned |  | D-66 |
+| Living District (P0 gate) | L-6 operations settle while the player is away | Planned |  |  |
+| Living District (P0 gate) | L-7 acceptance A1-A9, P1 perf, N-days balance sim | Planned | Then the owner's G1 playtest |  |
+| After the gate | Org depth: hierarchy, schedules, budgets | Planned | Phase 2 |  |
+| After the gate | Boss desk: worker control, area marking, heat map, ledger tab | Planned |  | D-62 |
+| After the gate | Detail levels (tick_full / tick_aggregate) | Planned | Required before a second city | D-68 |
+| After the gate | Co-op authority: who's boss, disconnects, simultaneous orders | Planned | Phase 6 |  |
+
+### Multiplayer and seats
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Seats | Every role AI until a human takes it; 30 s reconnect token | Built | DESIGN §12 |  |
+| Seats | Remote desks (station app), table talk | Built |  |  |
+| Networking | Protocol v3, bounded framing, command dedup, seat generations | Built |  |  |
+| Networking | Host service, LAN discovery, waiting room, dedicated server | Built | #97 steps 1-9 | #364 |
+| Networking | Radio-style voice chat | Built | DESIGN §31 |  |
+| Networking | Two-machine seat, action and voice session | Half done | Never run by a human | release gate |
+| Networking | New multiplayer features | Paused | Frozen until the Living District passes | D-71 |
+| Networking | UDP prediction | Deferred |  |  |
+
+### UI, controls and accessibility
+
+| System | Mechanic | Status | Notes | Ref |
+|---|---|---|---|---|
+| Controls | Full rebinding, analogue axes by name, invert/deadzone/expo | Built |  |  |
+| Controls | Controller glyphs with fallback | Built |  | #414 · #468 |
+| Controls | Key audit (every key, what help says) | Planned | Not started | #345 |
+| Accessibility | Colour-safe palette (ΔE ≥ 20 under all three simulations) | Built |  |  |
+| Accessibility | VHS filter and colour-blindness sims (F9) | Built |  |  |
+| Accessibility | Read-aloud | Removed | Removed | #385 |
+| Feedback | One UI theme, real tables, clickable key caps | Built |  |  |
+| Feedback | Destination lines: boats and stash trucks | Built |  | #390 |
+| Feedback | Destination lines for squads, convoys, station map, AI pilot route | In PR | Desk map already had squads; the chart gains our squads and the AI route | #493 |
+| Design epics (agreed order) | First-session playtest protocol | Planned |  | #172 |
+| Design epics (agreed order) | Readability and accessibility | Planned |  | #138 · #156 |
+| Design epics (agreed order) | Cockpit clutter | Planned |  | #142 |
+| Design epics (agreed order) | One event model and interruption policy | Planned |  | #120 · #151 |
+| Design epics (agreed order) | Contextual lessons and first-use hints as one system | Planned |  | #134 · #148 |
+| Design epics (agreed order) | Failure fairness and explicit assists | Planned |  | #165 · #164 |
+| Design epics (agreed order) | "Why did that happen" reasons | Planned |  | #147 · #173 |
+
+## Feature descriptions
+
+The longer descriptions below were written for the October 2026 state and are kept as a reference for how the built
+systems play. Where a description and the table above disagree, the table is current.
 
 It has:
 - five aircraft with every item a point mass at its station arm
