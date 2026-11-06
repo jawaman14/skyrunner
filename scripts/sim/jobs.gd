@@ -24,6 +24,46 @@ const CONTRABAND := [
 ]
 
 
+## A board's job as plain data, for StrategicSave (the island boards outlive a save now). A board job has not been taken, so it
+## carries no acceptance, boat or deliveries; those keys are left out and come back at their defaults.
+const SAVE_KEYS := ["title", "kind", "origin", "dest", "payout", "deadline_s", "notes", "comfort", "drop_point", "bales_total",
+	"price_mult", "stash", "weapons", "gun_mode", "cost", "defector", "own_good", "checkpoints", "visited", "employer_stage",
+	"employer_serial", "agency"]
+const ITEM_KEYS := ["label", "kind", "weight_lb", "hot", "fragile", "good", "droppable", "fuel_lb", "fuel_cap_lb"]
+
+
+static func job_to_save(j: Job) -> Dictionary:
+	var d := SaveVars.capture(j, SAVE_KEYS)
+	d["id"] = j.id
+	d["items"] = j.items.map(func(it): return SaveVars.capture(it, ITEM_KEYS).merged({"id": it.id, "job_id": it.job_id}))
+	return d
+
+
+## The inverse; unknown or missing keys keep their defaults, so a row from an older build still loads.
+static func job_from_save(d: Dictionary) -> Job:
+	var items := []
+	for row in d.get("items", []):
+		if row is Dictionary:
+			var it := Loadout.Item.new(int(row.get("id", 0)), "", "cargo", 0.0, int(row.get("job_id", 0)))
+			SaveVars.restore(it, row, ITEM_KEYS)
+			items.append(it)
+	var j := Job.new(int(d.get("id", 0)), "", "cargo", "", "", items, 0)
+	SaveVars.restore(j, d, SAVE_KEYS)
+	for t in j.weapons.keys():  # JSON has no ints: counts come back floats
+		j.weapons[t] = int(j.weapons[t])
+	return j
+
+
+## Highest job or item id in a set of jobs, so new ids never collide with restored ones.
+static func max_id(jobs: Array) -> int:
+	var m := 0
+	for j in jobs:
+		m = maxi(m, j.id)
+		for it in j.items:
+			m = maxi(m, it.id)
+	return m
+
+
 ## Unique id shared by jobs and items (and ferry tanks).
 static func new_id() -> int:
 	var i := _next_id

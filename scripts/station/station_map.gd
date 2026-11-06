@@ -186,6 +186,7 @@ func _draw() -> void:
 			if patrol != null:
 				var c: Array = HQ.ZONE_CENTRE[patrol]
 				_circle(c[0], c[1], 5600, Color(0.4, 0.6, 1), 3.0)
+	_draw_turf()
 	if snap.get("side") == "law":
 		_draw_law()
 	else:
@@ -256,6 +257,66 @@ func _draw_runner() -> void:
 const TRUCK_COL := {"cash": Color(0.35, 0.95, 0.45), "product": Color(0.95, 0.95, 0.95), "guns": Color(1.0, 0.3, 0.25),
 	"buyer": Color(1.0, 0.7, 0.2), "load": Color(1, 0.85, 0.3)}
 const SQUAD_COL := {"org": Color(1.0, 0.45, 0.8), "rival": Color(1.0, 0.6, 0.15), "police": Color(0.35, 0.65, 1.0)}
+
+
+## Who holds a district, from its public control numbers (the ground war's own share rule: police count half).
+## {leader: "org" | "rival" | "police" | "", share: 0..1}; no leader below LEAD_SHARE or when nobody is there.
+const LEAD_SHARE := 0.4
+const TURF_NAME := {"org": "the organisation", "rival": "Los Cuervos", "police": "the law"}
+
+
+## The holder as the viewer says it: "ours" for the viewer's own side (`own`: "org" for the runner's desks, "police" for the law's).
+static func turf_name(leader: String, own: String) -> String:
+	return "ours" if leader == own else str(TURF_NAME.get(leader, leader))
+static func turf_leader(control: Dictionary) -> Dictionary:
+	var best := ""
+	var best_share := 0.0
+	for f in ["org", "rival", "police"]:
+		var share := GroundWar._control_share(control, f)
+		if share > best_share:
+			best = f
+			best_share = share
+	if best_share < LEAD_SHARE:
+		return {"leader": "", "share": maxf(best_share, 0.0)}
+	return {"leader": best, "share": best_share}
+
+
+## The turf overlay rows from a ground snapshot: [{name, center, bounds (Rect2 or null), leader, share}].
+static func turf_rows(g: Dictionary) -> Array:
+	var out: Array = []
+	var areas = g.get("territories", {})
+	if not (areas is Dictionary):
+		return out
+	for key in areas:
+		var a: Dictionary = areas[key]
+		var lead := turf_leader(a.get("control", {}))
+		var b = a.get("bounds")
+		var c: Array = a.get("center", [0.0, 0.0])
+		out.append({"id": key, "name": str(a.get("name", key)), "center": Vector2(float(c[0]), float(c[1])),
+			"bounds": Rect2(float(b[0]), float(b[1]), float(b[2]), float(b[3])) if b is Array and b.size() >= 4 else null,
+			"leader": lead.leader, "share": lead.share})
+	return out
+
+
+## Districts tinted by who holds them: a faint fill and outline in the holder's colour, the name and the share.
+func _draw_turf() -> void:
+	var g = snap.get("ground") if layers.people else null
+	if not (g is Dictionary):
+		return
+	var own := "police" if snap.get("side") == "law" else "org"
+	for row in turf_rows(g):
+		var col: Color = SQUAD_COL.get(row.leader, Color(0.8, 0.8, 0.8))
+		if row.bounds != null:
+			var r: Rect2 = row.bounds
+			var a := w2m(r.position.x, r.end.y)  # north-west corner on screen (w2m turns y up)
+			var b := w2m(r.end.x, r.position.y)
+			var screen := Rect2(a, b - a).abs()
+			if row.leader != "":
+				draw_rect(screen, Color(col, 0.10 + 0.15 * float(row.share)), true)
+			draw_rect(screen, Color(col, 0.45), false, 1.0)
+		var label := "%s  %s %d%%" % [row.name, turf_name(row.leader, own), int(round(float(row.share) * 100.0))] if row.leader != "" \
+			else "%s  contested" % row.name
+		_text(row.center.x, row.center.y, label, Color(col, 0.85))
 
 
 ## The ground war: squads as chevrons (a bar per man), our own with their

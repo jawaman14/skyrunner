@@ -1596,6 +1596,7 @@ func _process(delta: float) -> void:
 			bc = bot.step(dt) if bot != null and not on_foot else (s.remote_controls() if remote else null)
 			s.update(dt, inp, bc)
 		_taxi_tick(inp, bc)
+		hud.minimap.ai_route = Minimap.ai_route_of(bot) if not on_foot else []
 		nerves.update(s, dt)
 		if _frame % 15 == 0:
 			_talk_cues()
