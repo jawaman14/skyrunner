@@ -150,14 +150,47 @@ func test_a_truck_between_stashes_is_booked_out_onto_the_road_and_in_at_the_othe
 	var said: String = s.logistics.send(a, b, "cocaine", 60.0)
 	check(not said.begins_with("No "), "the truck goes: %s" % said)
 	check_near(inv.stock("stash:" + a, "cocaine"), 40.0, 0.01, "the stash's lots are short by the load at once (no five-second wait)")
-	check_near(inv.stock(Logistics.ROAD, "cocaine"), 60.0, 0.01, "the load is on the road")
+	var road: String = s.logistics.road_of(s.logistics.convoys.values()[0])
+	check(road.begins_with(Logistics.ROAD), "the truck is its own place: %s" % road)
+	check_near(inv.stock(road, "cocaine"), 60.0, 0.01, "the load is on the road")
 	_drive(s)
 	check_near(inv.stock("stash:" + b, "cocaine"), 60.0, 0.01, "and in at the other stash")
-	check_near(inv.stock(Logistics.ROAD, "cocaine"), 0.0, 0.01, "off the road")
+	check_near(inv.stock(road, "cocaine"), 0.0, 0.01, "off the road")
 	var r := _reasons(inv, "cocaine")
-	check(r.has("stash:%s>road:org:truck out" % a) and r.has("road:org>stash:%s:truck in" % b), "booked as truck out and in: %s" % [r])
+	check(r.has("stash:%s>%s:truck out" % [a, road]) and r.has("%s>stash:%s:truck in" % [road, b]), "booked as truck out and in: %s" % [r])
 	check(not r.any(func(x): return x.contains("unattributed") and not x.begins_with("outside:unattributed>stash:%s" % a)), "nothing unexplained but the first stock: %s" % [r])
 	check_near(inv.held("cocaine"), inv.net_inflow("cocaine"), 0.01, "conservation holds")
+	s.dispose()
+
+
+## Codex on #509: with one shared road, the truck that arrived first unloaded the oldest lots on the road, whoever carried them.
+func test_two_trucks_with_the_same_good_each_unload_their_own_lots() -> void:
+	var s := _logi()
+	var inv: Inventory = s.inventory
+	var a: String = s.stash_net.stashes[0].id
+	var b: String = s.stash_net.stashes[1].id
+	var c: String = s.stash_net.stashes[2].id
+	inv.add("cocaine", 50.0, "stash:" + a, "growers", "from-a", 0.5, 0.0, s.time)  # the older lot
+	inv.add("cocaine", 50.0, "stash:" + c, "growers", "from-c", 0.9, 0.0, s.time)
+	s.logistics.stock[a]["cocaine"] = 50.0
+	s.logistics.stock[c]["cocaine"] = 50.0
+	s.logistics.send(a, b, "cocaine", 50.0)
+	s.logistics.send(c, b, "cocaine", 50.0)
+	var roads := {}
+	for cv in s.logistics.convoys.values():
+		roads[s.logistics.road_of(cv)] = true
+	check_eq(roads.size(), 2, "two trucks, two places on the road")
+	var from_c = null
+	for t in s.stash_net.trucks:
+		if str(s.logistics.convoys[t.job_id].from) == c:
+			from_c = t
+	s.logistics.arrived(from_c, "delivered", "")  # the newer load gets in first
+	s.stash_net.trucks.erase(from_c)
+	var at_b := inv.lots.values().filter(func(l): return l.at == "stash:" + b)
+	check(not at_b.is_empty() and at_b.all(func(l): return l.origin == "from-c"), "b got the truck's own lots: %s" % [at_b.map(func(l): return l.origin)])
+	check_near(inv.stock("stash:" + b, "cocaine"), 50.0, 0.01, "all of it")
+	var still := inv.lots.values().filter(func(l): return str(l.at).begins_with(Logistics.ROAD) and float(l.lb) > 0.0)
+	check(not still.is_empty() and still.all(func(l): return l.origin == "from-a"), "the other truck still carries its own")
 	s.dispose()
 
 
