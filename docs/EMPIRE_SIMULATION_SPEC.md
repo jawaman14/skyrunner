@@ -151,6 +151,14 @@ opening balance is not takings. It emits `books` and keeps the last 14 days, sav
 Wages, rent and arrears move onto this tick with the businesses (L-1, L-4); the nights' report built from the closed days is
 F-6b.
 
+**F-6b, first part (7 November): the debrief.** At each close the books also build the organisation's debrief (`scripts/sim/debrief.gd`):
+the day's money in, out and net from its row, a count of the day's events (loads, bale drops, bulk sales, cash runs, orders filled and
+missed, raids foiled; busts, trucks seized or hijacked, stashes raided, boats and weapons seized, workers arrested or flipped, crashes),
+the runner's heat at the close and its change on the day, and the cash still in the stashes. The tally is kept as the events happen (a
+`*` subscription on the bus, whose log is capped and not saved) and saved with the day under way, so a load mid-day gives the same
+debrief. It is emitted as `debrief` and said in one line; the last 14 are kept and saved. No draws, no money. Still to do (F-6b,
+second part): `NightDirector` behind `Nights.ENABLED`, the HQ actions as ordinary commands, and `strategic_ref` retired.
+
 **Time acceleration** (new; needs D-12's fixed step first):
 - The desk can run ×1, ×4, ×16 or ×60 by stepping the sim N fixed steps per frame.
 - Only the organisation's leader can change the speed (D-85); a host who isn't the leader can't.
