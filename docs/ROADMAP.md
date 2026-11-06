@@ -74,7 +74,9 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - F-1, the save migration chain, comes first.
    - F-2, the ledger wrap, with no behaviour change.
    - F-3a-f, the money sites moved by domain.
-   - F-4, inventory.
+   - F-4, inventory. The model, the stash and aircraft wrap, and (7 November) the trucks' and raids' moves booked by name and
+     the lots saved; what is still booked as unattributed is the code that changes stock directly (psychedelics, the trade's
+     own stock), moved by the stock-rework slices.
    - F-5, `command_as` and actors.
    - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74).
    - F-7, time acceleration, after D-12.
