@@ -107,6 +107,7 @@ var messages: Array = []  ## [[t, text]]
 var phone_calls := PhoneCalls.new()  ## one authoritative incoming queue for all phone surfaces
 var active_jobs: Array = []
 var boards := {}
+var pending_boards := {}  ## a save's island boards (StrategicSave), kept until a story attaches, whose chapters deal every board afresh
 var board_at := {}  ## strip code -> sim time its board was dealt (Jobs.ISLAND_BOARD)
 var _stock_next := 0.0
 var jsbsim_root := ""

@@ -73,6 +73,8 @@ static func capture(s: Session) -> Dictionary:
 		d["daily_weather"] = s.daily_weather.capture(s.weather)  # an optional key: older saves simply have none
 	if s.calendar != null and (not s.calendar.upcoming.is_empty() or s.calendar.crackdown_until >= 0.0):
 		d["calendar"] = s.calendar.capture()  # optional, like the weather
+	if Jobs.ISLAND_BOARD and not s._first_missions() and not s.boards.is_empty():
+		d["boards"] = capture_boards(s)  # optional: an older save has none and deals every board afresh, as it always did
 	if s.weekly != null and s.weekly.week > 0:
 		d["weekly"] = s.weekly.capture()  # optional: an older save starts its first week afresh
 	if s.stash_net != null:
@@ -240,6 +242,35 @@ static func migrate(d: Dictionary, steps: Array = STEPS, target: int = VERSION) 
 	return d
 
 
+## The island boards (Jobs.ISLAND_BOARD): every strip's unclaimed jobs and when each board was dealt, so a reload shows the same
+## jobs until they age out instead of dealing them all again. Restoring draws nothing.
+static func capture_boards(s: Session) -> Dictionary:
+	var jobs := {}
+	for code in s.boards:
+		jobs[str(code)] = s.boards[code].map(func(j): return Jobs.job_to_save(j))
+	return {"jobs": jobs, "at": s.board_at.duplicate()}
+
+
+static func restore_boards(s: Session, d: Dictionary) -> void:
+	var jobs = d.get("jobs")
+	if not (jobs is Dictionary):
+		return
+	var top := 0
+	for code in jobs:
+		if not World.AIRFIELD_BY_CODE.has(str(code)) or not (jobs[code] is Array):
+			continue
+		var board: Array = []
+		for row in jobs[code]:
+			if row is Dictionary:
+				board.append(Jobs.job_from_save(row))
+		s.boards[str(code)] = board
+		top = maxi(top, Jobs.max_id(board))
+		var at = d.get("at", {}).get(code)
+		if at != null:
+			s.board_at[str(code)] = float(at)
+	Jobs._next_id = maxi(Jobs._next_id, top + 1)
+
+
 static func restore(s: Session, d: Dictionary) -> void:
 	if d.is_empty():
 		return
@@ -255,6 +286,10 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.daily_weather.restore(d.daily_weather)
 	if s.calendar != null and d.get("calendar") is Dictionary:
 		s.calendar.restore(d.calendar)
+	if Jobs.ISLAND_BOARD and d.get("boards") is Dictionary:
+		s.pending_boards = d.boards  # a story attached after this re-applies them (Story.attach)
+		if not s._first_missions():
+			restore_boards(s, d.boards)
 	if s.weekly != null and d.get("weekly") is Dictionary:
 		s.weekly.restore(d.weekly)
 	if d.get("fuel_spent") is Dictionary:

@@ -197,7 +197,7 @@ These were finished in part, dropped from the 12 October list, or never written 
   app does not. Its own task, needs render interpolation.
 - **Key audit (#345):** every key, which are still used, what the help text says. Not started.
 - **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
-- **Job board (#383):** remote desks still get only the current strip's board; boards are not saved (a load redeals once).
+- **Job board (#383):** done. Remote desks list the other strips' jobs (`island_board` in the snapshot, nearest first, read-only), and the boards are saved (`StrategicSave` optional key `boards`; no version bump, older saves deal afresh as before).
 - **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached.
   Not part of the game, listed so it is not lost.
 - **Quarry west end and PNR end 1:** one-way by design (terrain or trees in the climb-out); keep documented in `STRIPS.md`.
