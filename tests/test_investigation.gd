@@ -218,6 +218,7 @@ func test_in_the_street_war_the_files_run_and_queue_the_warrant() -> void:
 	_sess = _war()
 	var st: Dictionary = _sess.stash_net.live()[0]
 	var id := str(st.id)
+	_sess.ground.commanders["police"].ai = true  # the AI runs the street police (who runs the files)
 	_sess.investigation.cases[id] = {"stage": "warrant", "since": 0.0, "until": _sess.time}
 	_sess._stash_ai_t = 0.0
 	_sess.update(1.0)
@@ -266,3 +267,34 @@ func test_a_save_mid_approach_keeps_the_warrant() -> void:
 	StrategicSave.restore(t, d)
 	check_eq(t.ground.warrants, [id], "the reloaded game still has the warrant")
 	t.dispose()
+
+
+
+## Codex review (#508): while a ran-out warrant waits for the war's police, no second case opens on that stash.
+func test_a_queued_warrant_blocks_a_second_case_on_the_same_stash() -> void:
+	var net := _net()
+	var inv := Investigation.new()
+	net.get_stash("a").heat = 80.0
+	inv.update(0.0, net, ["a"])
+	check_eq(inv.stage_of("a"), "", "no new lead while the warrant waits")
+	inv.update(60.0, net, [])
+	check_eq(inv.stage_of("a"), "lead", "once it is served the house can be investigated again")
+
+
+## Codex review (#508): with the street war, the war's police commander runs the files, not the radar controller's seat.
+func test_in_the_street_war_the_files_follow_the_police_commander_not_the_radar_seat() -> void:
+	_sess = _war()
+	_sess.ground.commanders["police"].ai = true
+	_sess.police.controller = "human"  # a person on the radar desk
+	var st: Dictionary = _sess.stash_net.live()[0]
+	var id := str(st.id)
+	_sess.investigation.cases[id] = {"stage": "warrant", "since": 0.0, "until": _sess.time}
+	_sess._stash_ai_t = 0.0
+	_sess.update(1.0)
+	check_eq(_sess.ground.warrants, [id], "the street police still serve the files with a human at the radar")
+	_sess.ground.commanders["police"].ai = false  # a person commands the street police
+	_sess.ground.warrants = []
+	_sess.investigation.cases[id] = {"stage": "warrant", "since": 0.0, "until": _sess.time}
+	_sess._stash_ai_t = 0.0
+	_sess.update(1.0)
+	check(_sess.ground.warrants.is_empty(), "and leave the files to the person commanding them")
