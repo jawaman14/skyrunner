@@ -1735,6 +1735,44 @@ previous state. Edge cases to test: restoring a route after the phone closes; a 
 not restart; a destination set while off must not engage anything. (MiMo suggested P for the destination key; P is the pause key
 in the aircraft, so the key is still to choose.)
 
+## 52. The week's work: the repeatable goal (owner, 4 November 2026; D-93)
+
+`scripts/sim/weekly.gd`, held by the Session (`weekly`), on its own RNG stream (`seed + 185`), behind `Weekly.ENABLED` (opt-in).
+Every island week (`WEEK_S`, 90 game minutes) posts three goals, drawn from what this game has open:
+
+| Goal | Counted from | Target (grows with the renown tier t) | Needs |
+|---|---|---|---|
+| Deliver loads | `job_delivered` | 3 + t | always |
+| Deliver hot loads | `job_delivered` with `hot` | 2 + t/2 | trade |
+| Sell to the bulk buyers | `bulk_sale` qty (not guns) | 100 x (1 + t) lb | trade |
+| Fill a buyer's order | `order_filled` | 1 | trade with orders |
+| Truck street money home | `cash_home` amount | $3,000 x (1 + t) | logistics |
+| Find a hidden strip | `strip_found` | 1 | hidden strips left |
+| Keep it clean | no `busted` or `stash_raided` all week | checked at the week's end | always |
+| Hold a district | our share of a district's streets at least half | checked at the week's end | the ground war |
+
+A goal met pays `POINTS` (10) renown at once; all three pay `CLEAR_BONUS` (15) more and extend the run of cleared weeks (a missed
+week resets it; the best run is kept). The rank is the Renown tier, whose perks (hires, bulk prices, a slower-cooling case) are the
+lasting reward. No money is paid (D-65). Live once the employed opening is over and never over an HQ season. The draws happen only
+when a week is posted; counting and the week's end draw nothing. Saved in `StrategicSave` (optional key `weekly`). The phone's
+Week app shows the goals, their progress, the standing and the past weeks.
+
+## 55. Pacing targets (owner, 4 November 2026, D-94)
+
+From the World of Warcraft study: WoW was paced so that something was finished every few minutes (a quest handed in, a level, a
+drop) and a long dry spell was a bug to fix, not a mood. Skyrunner now states its targets and measures them.
+
+| Target | Value | What counts |
+|---|---|---|
+| Typical gap between finished things (median) | 5 min or less | A load delivered, bales delivered, a bulk sale, an order filled, money home, a hidden strip found, a container through, a raid foiled, a race run, an acquittal or quashed case, money laundered, a story goal or chapter |
+| Longest dry spell | 15 min or less | The same, from the start of the session to its end |
+| Longest wait for a story goal | 30 min or less | A required or side goal of the chapter met, or a chapter finished |
+
+`scripts/balance/pacing.gd` (`Pacing`) listens to the event bus and polls the story, without a clock or draws of its own.
+`tools/playtest.gd` puts the report in its result as `pacing`, and its `missed` field names any target the run fell short of. The
+AI pilot is a stand-in for a player: a miss on a bot run is a lead to look at, not proof the game is slow, and a pass doesn't
+prove it is paced right. The human playtest is still the judge.
+
 ## 56. Reference: the random streams and the terrain cache
 
 **The random streams.** Every system draws from its own seeded `PyRandom`, offset from the session seed, so adding draws to one
@@ -1772,7 +1810,7 @@ that claim an offset are noted.
 | 179 | `DailyWeather` | `session.gd` | the story's two-hourly weather |
 | 181 | `gig_rng` | `session.gd` | side gigs on the boards |
 | 183 | `Calendar` | `session.gd` | the island's calendar of events |
-| 185 | `Weekly` | `session.gd` (#499, open) | the week's goals |
+| 185 | `Weekly` | `session.gd` | the week's goals |
 | 404, 505 | `Nights` | `nights.gd` | an HQ season's night; its bots |
 | 909 | `Analyst` | `analyst.gd` | the analyst's desk |
 | 919 | `Undercover` | `undercover.gd` | the undercover agent |

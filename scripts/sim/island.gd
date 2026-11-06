@@ -455,7 +455,7 @@ func _rival_trade() -> void:
 	if g == null or not open() or status == "hurricane" or g.commanders.rival.cash < 15000.0:
 		return
 	var cost: float = 500 * PRICE_PER_LB * price_mult * sess.econ.wholesale("cocaine") + SHIP_FREIGHT + (4000 if controller == "mob" else 0)
-	g.commanders.rival.cash -= cost
+	g.commanders.rival.move_cash(-cost, "outside:island", "purchase")
 	var p := 0.08 * (1.0 + port_heat / 100.0) * (2.0 if law_has("container_xray") else 1.0) * (2.0 if inspections_until > sess.time else 1.0)
 	rival_shipped += 1
 	if rng.random() < p:
@@ -467,7 +467,7 @@ func _rival_trade() -> void:
 		sess.law_say("Port of San Telmo: a Los Cuervos container from Isla Soberana, 500 lb under the fish")
 		sess.say("NEWS - Customs open a container from the island: Los Cuervos lose a load.")
 	else:
-		g.commanders.rival.cash += 500 * STREET_PER_LB * sess.econ.mult("cocaine", "sea")  # sold at what the street pays
+		g.commanders.rival.move_cash(500 * STREET_PER_LB * sess.econ.mult("cocaine", "sea"), "outside:street", "sales")  # sold at what the street pays
 		port_heat = minf(100.0, port_heat + 5.0)
 		sess.econ.record_delivery("cocaine", "sea")
 		sess.econ.record_delivery("cocaine", "sea")  # a glut on the street: prices fall for everyone
