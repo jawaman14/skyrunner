@@ -81,6 +81,24 @@ func test_a_day_busier_than_the_ledger_log_keeps_every_dollar() -> void:
 	s.dispose()
 
 
+## Codex on #511 (ea07740): a coalesced budget row that runs past 06:00 must not fall between two days, and a day's `ends` must
+## agree with its flows. The day is whatever was booked between two closes, so day two's end less day one's is day two's net.
+func test_coalesced_rows_and_the_ending_balance_reconcile_across_a_close() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	var c1 := Books.next_close(s.time)
+	s.ledger.transfer("outside:state", "police:budget", 50.0, "budget", "system", c1 - 10.0)
+	var d1: Array = s.books.close(c1).filter(func(r): return r.org == "police")
+	s.ledger.transfer("outside:state", "police:budget", 70.0, "budget", "system", c1 + 5.0)  # coalesces into the row stamped c1 - 10
+	s.move_money(-200, "outside:market", "fuel")
+	var d2: Array = s.books.close(c1 + Books.DAY_S).filter(func(r): return r.org == "police")
+	check(not d1.is_empty() and not d2.is_empty(), "the police in both days")
+	if not d1.is_empty() and not d2.is_empty():
+		check_near(float(d1[0].in.get("budget", 0.0)), 50.0, 0.01, "day one: what came before the close")
+		check_near(float(d2[0].in.get("budget", 0.0)), 70.0, 0.01, "day two: what the same ledger row gained after it")
+		check_near(float(d2[0].ends) - float(d1[0].ends), float(d2[0].net), 0.01, "the end of day two less day one's is day two's net")
+	s.dispose()
+
+
 func test_a_save_mid_day_keeps_the_day_under_way() -> void:
 	var s := Session.new({"seed": 2, "location": "FRM"})
 	s.move_money(700, "outside:buyers", "delivery")
