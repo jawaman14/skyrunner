@@ -193,8 +193,10 @@ These were finished in part, dropped from the 12 October list, or never written 
   chart now draws our squads' routes and the AI pilot's remaining legs (`Minimap.own_squad_lines`, `Minimap.ai_route_of`).
 - **HAR runway end 0** (owner, 18 Oct; D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain
   change, re-bake, strip trials).
-- **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356), the pilot
-  app does not. Its own task, needs render interpolation.
+- **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356). 7 November:
+  the pilot app has it too, behind `PilotApp.FIXED_STEP` (off by default; `--fixed-step` turns it on): whole 1/30 s steps
+  through `HostLoop`, the aircraft and the chase camera drawn between the last two steps, key presses carried to the next
+  step. What's left is a person at the controls judging the feel, then flipping the default; F-7 waits on that.
 - **Key audit (#345):** every key, which are still used, what the help text says. Not started.
 - **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
 - **Job board (#383):** remote desks still get only the current strip's board; boards are not saved (a load redeals once).
