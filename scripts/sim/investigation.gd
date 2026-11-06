@@ -49,12 +49,16 @@ func _init(rng_: PyRandom = null) -> void:
 
 
 ## One step of the files at `now`. Returns the stash ids whose warrant has run out: the session raids them.
-func update(now: float, stash_net) -> Array:
+## `served` lists stashes whose ran-out warrant is still waiting for the street war's police (GroundWar.warrants): no new
+## case opens on them until it is served, so one stash never carries two warrants.
+func update(now: float, stash_net, served: Array = []) -> Array:
 	var raids := []
 	for st in stash_net.stashes:
 		var id := str(st.id)
 		if st.burned:
 			cases.erase(id)
+			continue
+		if served.has(id):
 			continue
 		var heat := StashNet.suspicion(st)
 		var c = cases.get(id)

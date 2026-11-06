@@ -1503,7 +1503,16 @@ time; lying low drops a case at surveillance; emptying the stash makes the raid 
 the switch off keeps the old behaviour. Raids become predictable, so stash losses should fall: a strategic and tactical
 balance run and a BALANCE entry go with it.
 
-**Not in step 1:** the police search pattern, scanner chatter and the ladder down (step 2); pattern detection,
+**The street war reads the files** (6 November 2026, the first piece of step 2). Until now the case files ran only with the
+street war off: with it on, `GroundWar._think_police` kept the hidden lines (raid anything at 55, stake out anything from 10
+to 55). Now the files tick in both modes. With the war off, a warrant that runs out is the instant raid, as before. With it
+on, the warrant goes onto `GroundWar.warrants` and the war's police serve it on foot, with an entry team and a cordon, and
+only once they can beat the guards (a strong guard keeps the warrant waiting). Their stakeout cars go to the houses under
+surveillance, so the van in the message is a car on the map. The raid still ends in `Session._raid`, so a lookout's warning
+and an emptied house work the same. With `Investigation.ENABLED` off, the war keeps its old lines. The queue is saved with
+the war. No new draws.
+
+**Not yet:** the police search pattern, scanner chatter and the ladder down (the rest of step 2); pattern detection,
 escalation by agency, corruption and ground chases (step 3).
 
 **Island boards** (`Jobs.ISLAND_BOARD`, a parity switch). Every strip keeps a board that outlives your visits, so the job board can show the whole island: `Session.stock_island_boards` deals each other strip's board from `update()` (at the first tick, then once a minute), a board lives `Jobs.BOARD_TTL_S` (30 sim minutes) and is dealt afresh when stale, and arriving at a strip keeps its fresh board instead of rerolling it. The employed opening deals its own board and is left alone. The extra draws sit on their own streams (`brng` seed + 149, gun runs `barng` seed + 151, the Company's offers `bagrng` seed + 157), swapped in only while the boards are dealt, so nothing else moves. Accepting a job still needs the pilot parked at its origin.
