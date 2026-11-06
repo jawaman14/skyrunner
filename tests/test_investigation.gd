@@ -209,7 +209,9 @@ func test_in_the_street_war_the_police_raid_on_a_warrant_not_on_heat() -> void:
 	g._think_police()
 	var raid = g.squads.filter(func(q): return q.order.get("type", "") == "raid")
 	check(raid.size() == 1 and str(raid[0].order.stash) == id, "a warrant that ran out sends a raid team to that house")
-	check(g.warrants.is_empty(), "and is served")
+	check_eq(g.warrants, [id], "the warrant stays queued while the team is on its way (Codex, #508: orders are not saved)")
+	g._think_police()
+	check_eq(g.squads.filter(func(q): return q.order.get("type", "") == "raid").size(), 1, "and is not sent twice")
 
 
 func test_in_the_street_war_the_files_run_and_queue_the_warrant() -> void:
@@ -245,4 +247,22 @@ func test_the_queued_warrants_survive_a_save() -> void:
 	var t := _war()
 	StrategicSave.restore(t, d)
 	check_eq(t.ground.warrants, _sess.ground.warrants, "the queue comes back")
+	t.dispose()
+
+
+
+## Codex review (#508): a save while the raid team is on its way keeps the warrant, and the reload sends a team again.
+func test_a_save_mid_approach_keeps_the_warrant() -> void:
+	_sess = _war()
+	var g := _sess.ground
+	var st: Dictionary = _sess.stash_net.live()[0]
+	var id := str(st.id)
+	_cops(g, Vector2(float(st.x) + 2000.0, float(st.y)))
+	g.warrants = [id]
+	g._think_police()
+	check(g.squads.any(func(q): return q.order.get("type", "") == "raid"), "the team set out")
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(_sess))
+	var t := _war()
+	StrategicSave.restore(t, d)
+	check_eq(t.ground.warrants, [id], "the reloaded game still has the warrant")
 	t.dispose()

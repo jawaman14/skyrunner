@@ -195,6 +195,7 @@ var _control_trends := {}  ## presentation-only change in public influence since
 var events: Array = []  ## [side ("runner" | "law" | "both"), text]
 var stakeouts := {}  ## stash id -> police squad id
 ## Heat step 2 (DESIGN §48): the case files' warrants that have run out, waiting for a police raid team (oldest first).
+## A warrant leaves the queue at the breach, not when the team sets out, so a save mid-approach keeps it.
 ## With the case files on, these are the only stashes the street-war police raid; a warrant waits while the guards are too
 ## strong, and is dropped when the stash is gone or burned. Saved.
 var warrants: Array = []
@@ -1246,6 +1247,7 @@ func _breach(q: Squad) -> void:
 		if g.faction == "org" and g.state != "gone" and g.pos().distance_to(Vector2(st.x, st.y)) < CONTACT_M:
 			return  # the guards first; the fight decides
 	st.intel = maxf(st.intel, StashNet.KNOWN_HEAT)
+	warrants.erase(str(id))  # served (heat step 2)
 	sess._raid(id)
 	q.order = {"type": "hold"}
 	q.tactic = ""
@@ -1726,8 +1728,7 @@ func _think_police() -> void:
 					order(cordon, {"type": "checkpoint", "x": ripe.x + 250.0, "y": ripe.y + 250.0, "perimeter": true})
 					mine.erase(cordon)
 				order(team, {"type": "raid", "stash": ripe.id, "perimeter": cordon != null, "cordon": cordon.id if cordon else "", "t": sess.time})
-				mine.erase(team)
-				warrants.erase(str(ripe.id))
+				mine.erase(team)  # the warrant stays queued until the breach: squads' orders are not saved, so a reload re-sends it
 				_log("police", "Raid on %s: %s%s" % [ripe.name, team.id, (", cordon " + cordon.id) if cordon else ""])
 		# stake out the suspected ones: with the case files, the houses under surveillance (the van across the street the
 		# messages talk about); without them, anything from 10 to 55
