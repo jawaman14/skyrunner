@@ -77,7 +77,7 @@ var money := START_MONEY:
 		money = v
 ## A named change to the safe (F-3): `delta` > 0 comes from `other`, < 0 goes to it. Same value as `money += delta`, but the ledger row
 ## says where it went and why, instead of an unattributed adjustment.
-func move_money(delta: int, other: String, reason: String, actor := "org") -> void:
+func move_money(delta, other: String, reason: String, actor := "org") -> void:  # delta untyped: `money += delta` converts exactly as the old `money += x` did
 	_pay_other = other
 	_pay_reason = reason
 	_pay_actor = actor
@@ -107,6 +107,7 @@ var messages: Array = []  ## [[t, text]]
 var phone_calls := PhoneCalls.new()  ## one authoritative incoming queue for all phone surfaces
 var active_jobs: Array = []
 var boards := {}
+var pending_boards := {}  ## a save's island boards (StrategicSave), kept until a story attaches, whose chapters deal every board afresh
 var board_at := {}  ## strip code -> sim time its board was dealt (Jobs.ISLAND_BOARD)
 var _stock_next := 0.0
 var jsbsim_root := ""
@@ -127,6 +128,7 @@ var discovery: Discovery = null  ## hidden strips the story starts off the chart
 var deal_moves: DealMoves = null  ## loop idea 5: Benny moves an airdrop mid-flight (DealMoves)
 var daily_weather: DailyWeather = null  ## the story game's weather spells (DailyWeather)
 var calendar: Calendar = null  ## loop idea 4: the island's week, posted ahead (Calendar)
+var weekly: Weekly = null  ## the repeatable goal: the week's work (Weekly, D-93)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
