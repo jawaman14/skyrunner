@@ -574,7 +574,7 @@ func tick(s) -> void:
 		var paid := "_paid_" + str(o.key)
 		if o.optional and progress.get(o.key, 0.0) >= o.target and not progress.has(paid):
 			progress[paid] = 1.0
-			s.money += o.bonus
+			s.move_money(o.bonus, "outside:buyers", "delivery")
 			s.say("Side goal done: %s. +$%s." % [o.text, Py.money(o.bonus)] if o.bonus > 0 else "Side goal done: %s." % o.text)
 	if not Py.all(ch.objectives, func(o): return o.optional or outcomes.has(o.key) or progress.get(o.key, 0.0) >= o.target):
 		return
