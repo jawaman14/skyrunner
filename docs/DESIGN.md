@@ -1734,3 +1734,26 @@ destination is a separate action on the chart or the phone; opening the phone in
 previous state. Edge cases to test: restoring a route after the phone closes; a route that finishes while the phone is open must
 not restart; a destination set while off must not engage anything. (MiMo suggested P for the destination key; P is the pause key
 in the aircraft, so the key is still to choose.)
+
+## 52. The week's work: the repeatable goal (owner, 4 November 2026; D-93)
+
+`scripts/sim/weekly.gd`, held by the Session (`weekly`), on its own RNG stream (`seed + 185`), behind `Weekly.ENABLED` (opt-in).
+Every island week (`WEEK_S`, 90 game minutes) posts three goals, drawn from what this game has open:
+
+| Goal | Counted from | Target (grows with the renown tier t) | Needs |
+|---|---|---|---|
+| Deliver loads | `job_delivered` | 3 + t | always |
+| Deliver hot loads | `job_delivered` with `hot` | 2 + t/2 | trade |
+| Sell to the bulk buyers | `bulk_sale` qty (not guns) | 100 x (1 + t) lb | trade |
+| Fill a buyer's order | `order_filled` | 1 | trade with orders |
+| Truck street money home | `cash_home` amount | $3,000 x (1 + t) | logistics |
+| Find a hidden strip | `strip_found` | 1 | hidden strips left |
+| Keep it clean | no `busted` or `stash_raided` all week | checked at the week's end | always |
+| Hold a district | our share of a district's streets at least half | checked at the week's end | the ground war |
+
+A goal met pays `POINTS` (10) renown at once; all three pay `CLEAR_BONUS` (15) more and extend the run of cleared weeks (a missed
+week resets it; the best run is kept). The rank is the Renown tier, whose perks (hires, bulk prices, a slower-cooling case) are the
+lasting reward. No money is paid (D-65). Live once the employed opening is over and never over an HQ season. The draws happen only
+when a week is posted; counting and the week's end draw nothing. Saved in `StrategicSave` (optional key `weekly`). The phone's
+Week app shows the goals, their progress, the standing and the past weeks.
+

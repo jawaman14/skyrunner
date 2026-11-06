@@ -243,7 +243,7 @@ func update(dt: float) -> void:
 	if _insured >= 1.0:
 		var due := int(_insured)
 		_insured -= due
-		sess.money -= mini(due, maxi(0, sess.money))
+		sess.move_money(-(mini(due, maxi(0, sess.money))), "outside:market", "fee")
 	if auto:
 		_auto_t += dt
 		if _auto_t >= AUTO_EVERY_S:

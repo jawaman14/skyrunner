@@ -144,6 +144,7 @@ static func _runner(sess: Session, role: String) -> Dictionary:
 	out["loadout"] = _loadout(sess)
 	out["jobs"] = sess.active_jobs.map(func(j): return _job(sess, j))
 	out["board"] = sess.boards.get(sess.location, []).map(func(j): return _job(sess, j)) if sess.parked else []
+	out["island_board"] = island_board(sess)
 	var boats := []
 	for b in sess.maritime.boats:
 		if b.kind == "gofast":
@@ -263,6 +264,31 @@ static func _loadout(sess: Session) -> Dictionary:
 		"fuel": _r(lo.fuel_lb), "fuel_cap": _r(lo.mass.fuel_capacity_lb()),
 		"crew": sess.crew_count(),
 	}
+
+
+## The other strips' boards (Jobs.ISLAND_BOARD), nearest origin first, as the pilot's job menu lists them: so a remote desk sees the
+## island too, not only the strip the aircraft is parked at. Read-only rows with their origin; a job is still taken at its strip.
+const ISLAND_ROWS := 30
+static func island_board(sess: Session) -> Array:
+	if not Jobs.ISLAND_BOARD or sess.state == null:
+		return []
+	var rows := []
+	for code in sess.boards:
+		if code == sess.location and sess.parked:
+			continue  # that one is "board"
+		if not World.AIRFIELD_BY_CODE.has(str(code)):
+			continue
+		var af := World.airfield(str(code))
+		var km := PyMath.hypot(af.x - sess.state.x, af.y - sess.state.y) / 1000.0
+		for j in sess.boards[code]:
+			if not j.is_airdrop() and not World.AIRFIELD_BY_CODE.has(j.dest):
+				continue  # a job dealt on another map (a session outliving World.use_map, as tests do): nothing to place
+			var row := _job(sess, j)
+			row["origin"] = str(code)
+			row["origin_km"] = _r(km)
+			rows.append(row)
+	rows.sort_custom(func(a, b): return float(a.origin_km) < float(b.origin_km) or (float(a.origin_km) == float(b.origin_km) and int(a.id) < int(b.id)))
+	return rows.slice(0, ISLAND_ROWS)
 
 
 static func _job(sess: Session, j: Jobs.Job) -> Dictionary:
