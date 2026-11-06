@@ -7,6 +7,9 @@ extends SceneTree
 ##   godot --headless --path . --script res://tools/playtest.gd -- [--seed N] [--seconds S] [--every T] [--open]
 ##       [--no-bot] [--chapter N] [--location CODE] [--out PATH]
 ##
+## The result also carries `pacing` (Pacing, DESIGN §55): how often something was finished, the longest dry spell and the
+## longest wait for a story goal, against the pacing targets, with `missed` naming any target the run fell short of.
+##
 ## Prints one line, `PLAYTEST_JSON {...}`, and writes the same JSON to --out when given. Through the MCP:
 ## skyrunner_run_tool(script="playtest.gd", args=[...], queue=true).
 
@@ -61,6 +64,8 @@ func _run() -> void:
 		st.attach(s)
 		st.select_chapter(int(_args.chapter))
 	var runner: AutoRunner = AutoRunner.new(s) if _args.bot else null
+	var pacing := Pacing.new(s)
+	var next_poll := 1.0
 	var samples := []
 	var next_sample: float = float(_args.every) if float(_args.every) > 0.0 else INF
 	while s.time < float(_args.seconds):
@@ -68,10 +73,13 @@ func _run() -> void:
 			s.update(DT, null, runner.step(DT))
 		else:
 			s.update(DT)
+		if s.time >= next_poll:
+			pacing.poll(s)
+			next_poll += 1.0
 		if s.time >= next_sample:
 			samples.append(digest(s, runner))
 			next_sample += float(_args.every)
-	var result := {"args": _args, "final": digest(s, runner), "samples": samples}
+	var result := {"args": _args, "final": digest(s, runner), "samples": samples, "pacing": pacing.report(s.time)}
 	var line := JSON.stringify(result)
 	print("PLAYTEST_JSON ", line)
 	if _args.out != "":
