@@ -183,7 +183,7 @@ These were finished in part, dropped from the 12 October list, or never written 
   change, re-bake, strip trials).
 - **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356), the pilot
   app does not. Its own task, needs render interpolation.
-- **Key audit (#345):** every key, which are still used, what the help text says. Not started.
+- **Key audit (#345):** done 6 November (PR with the audit table): one real bug, the SHIFT shortcuts falling through to the plain key when their system was missing, is fixed. F1 and F8 now match the code.
 - **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
 - **Job board (#383):** remote desks still get only the current strip's board; boards are not saved (a load redeals once).
 - **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached.
