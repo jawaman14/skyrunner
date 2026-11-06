@@ -203,8 +203,10 @@ Rewritten 4 November against the code. The items from 18 October that are finish
 
 **Half done (some code merged, not finished):**
 
-- **3D pilot app, fixed 30 Hz step with smoothing** (D-12): the host loop has it (#356), the pilot app does not. Needs render
-  interpolation and a person at the controls to judge the feel; F-7 waits on it.
+- **3D pilot app, fixed 30 Hz step with smoothing** (D-12): the host loop has it (#356), and since #512 the pilot app does too,
+  behind `PilotApp.FIXED_STEP` (off by default; `--fixed-step` turns it on): whole 1/30 s steps through `HostLoop`, the
+  aircraft and the chase camera drawn between the last two steps, key presses carried to the next step. What's left is a
+  person at the controls judging the feel, then flipping the default; F-7 waits on that.
 - **Stock lots and pickup orders** (DESIGN 51 slices 2-3): `StockLot`, `StockLedger`, `StockValue` and `PickupOrder` exist with
   tests and have no gameplay call sites. Lands with F-4.
 - **F-4 inventory:** the model and a session wrap exist; the stash and aircraft stock sites have not moved to it.
