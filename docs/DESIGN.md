@@ -1757,3 +1757,19 @@ lasting reward. No money is paid (D-65). Live once the employed opening is over 
 when a week is posted; counting and the week's end draw nothing. Saved in `StrategicSave` (optional key `weekly`). The phone's
 Week app shows the goals, their progress, the standing and the past weeks.
 
+
+
+## 57. Flying well (owner, 18 October 2026, D-38)
+
+Flight skill gives optional bonus goals in the story, one in each of the first three chapters, and never blocks a chapter.
+`Story.FLIGHT` holds them; `Story.FLIGHT_GOALS` is the switch (in the parity set).
+
+| Chapter | Goal | Counts when |
+|---|---|---|
+| 1 | Grease a landing | touchdown at 120 ft/min or less |
+| 2 | Land on a strip under 650 m | any landing at a strip shorter than 650 m |
+| 3 | Three steady landings in a row | under 300 ft/min with the wings within 20 degrees, three running; a rough one starts the count again until three are in |
+
+They count from the `landed` event (`touchdown_fpm`, `max_bank`, the strip's code), and only a landing after a flight counts. Each
+pays 8 renown, once, a name earned for flying well, and no money (D-65: nobody gets money except through the same rules). The
+goal card says "optional: renown for flying well".
