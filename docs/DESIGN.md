@@ -1515,13 +1515,16 @@ who is open for business (the Morettis, the Company, Los Cuervos for guns) asks 
 premium on top of his quote if it arrives in time.
 
 - **The deadline follows the street's demand.** Where demand over supply in the buyer's market is 1.25 or more it is a **rush**:
-  10 to 20 minutes and 25 to 40% on top of the buyer's own quote. Otherwise it is **a night's work**: 45 to 75 minutes and 10 to 20% on top of it. Orders are
+  10 to 20 minutes and 30 to 50% on top of the buyer's own quote. Otherwise it is **a night's work**: 45 to 75 minutes and 15 to 25% on top of it (raised 4 Nov, D-94). Orders are
   likelier for the goods the street is hungriest for.
 - **What the player does.** Rings in as a message and an `order_posted` event (about one every 15 minutes, at most two open, a
   third to two thirds of the buyer's appetite). Any bulk sale to that buyer of that good that **settles** before the deadline
   fills it, whether by a truck reaching the meet or a direct sale, so the lead time of the logistics is what the player races.
   A part delivery pays the premium on the part and leaves the rest open.
-- **The stakes.** A filled order raises the crew's standing (+3); a missed one costs it (-4, scaled by how little arrived). Until the
+- **The stakes.** A filled order raises the crew's standing (+3). An order is an offer (D-94, the World of Warcraft study:
+  reward the play you want rather than punish the play you don't): one nothing was sent for costs nothing and the buyer finds
+  someone else; a part delivery that falls short costs up to 3, scaled by how much was missing, so a shortfall never costs
+  more than a fill earns. Until the
   per-crew trust table of D-11 exists the standing is what each crew already has: the Family's respect, the Company's trust.
 - **The market board.** `Trade.view("org").orders.board` gives, for each hot good in each market, the price against normal, the
   demand over supply, and a trend (up, down, flat against five minutes before); `.orders.open` the open orders with the time
@@ -1735,6 +1738,28 @@ previous state. Edge cases to test: restoring a route after the phone closes; a 
 not restart; a destination set while off must not engage anything. (MiMo suggested P for the destination key; P is the pause key
 in the aircraft, so the key is still to choose.)
 
+## 52. The week's work: the repeatable goal (owner, 4 November 2026; D-93)
+
+`scripts/sim/weekly.gd`, held by the Session (`weekly`), on its own RNG stream (`seed + 185`), behind `Weekly.ENABLED` (opt-in).
+Every island week (`WEEK_S`, 90 game minutes) posts three goals, drawn from what this game has open:
+
+| Goal | Counted from | Target (grows with the renown tier t) | Needs |
+|---|---|---|---|
+| Deliver loads | `job_delivered` | 3 + t | always |
+| Deliver hot loads | `job_delivered` with `hot` | 2 + t/2 | trade |
+| Sell to the bulk buyers | `bulk_sale` qty (not guns) | 100 x (1 + t) lb | trade |
+| Fill a buyer's order | `order_filled` | 1 | trade with orders |
+| Truck street money home | `cash_home` amount | $3,000 x (1 + t) | logistics |
+| Find a hidden strip | `strip_found` | 1 | hidden strips left |
+| Keep it clean | no `busted` or `stash_raided` all week | checked at the week's end | always |
+| Hold a district | our share of a district's streets at least half | checked at the week's end | the ground war |
+
+A goal met pays `POINTS` (10) renown at once; all three pay `CLEAR_BONUS` (15) more and extend the run of cleared weeks (a missed
+week resets it; the best run is kept). The rank is the Renown tier, whose perks (hires, bulk prices, a slower-cooling case) are the
+lasting reward. No money is paid (D-65). Live once the employed opening is over and never over an HQ season. The draws happen only
+when a week is posted; counting and the week's end draw nothing. Saved in `StrategicSave` (optional key `weekly`). The phone's
+Week app shows the goals, their progress, the standing and the past weeks.
+
 ## 53. Bad-luck protection on the catastrophic rolls (owner, 4 November 2026, D-94)
 
 `scripts/sim/streak_guard.gd`, behind `StreakGuard.ENABLED` (in `Switches.PARITY`). From the World of Warcraft study: WoW raised a
@@ -1751,3 +1776,91 @@ and no lower), and a clean pass puts it back to the full chance.
   checkpoint counts towards the streak.
 - **No new draws.** Each roll is the same draw in the same order, against a lower threshold, so the guard can only turn a catch
   into a pass. The streaks are saved: the customs streak with the runner's case, and the truck streak with the stashes.
+
+## 55. Pacing targets (owner, 4 November 2026, D-94)
+
+From the World of Warcraft study: WoW was paced so that something was finished every few minutes (a quest handed in, a level, a
+drop) and a long dry spell was a bug to fix, not a mood. Skyrunner now states its targets and measures them.
+
+| Target | Value | What counts |
+|---|---|---|
+| Typical gap between finished things (median) | 5 min or less | A load delivered, bales delivered, a bulk sale, an order filled, money home, a hidden strip found, a container through, a raid foiled, a race run, an acquittal or quashed case, money laundered, a story goal or chapter |
+| Longest dry spell | 15 min or less | The same, from the start of the session to its end |
+| Longest wait for a story goal | 30 min or less | A required or side goal of the chapter met, or a chapter finished |
+
+`scripts/balance/pacing.gd` (`Pacing`) listens to the event bus and polls the story, without a clock or draws of its own.
+`tools/playtest.gd` puts the report in its result as `pacing`, and its `missed` field names any target the run fell short of. The
+AI pilot is a stand-in for a player: a miss on a bot run is a lead to look at, not proof the game is slow, and a pass doesn't
+prove it is paced right. The human playtest is still the judge.
+
+## 56. Reference: the random streams and the terrain cache
+
+**The random streams.** Every system draws from its own seeded `PyRandom`, offset from the session seed, so adding draws to one
+system never shifts another's (AGENTS.md, Determinism). Pick a new offset that is not in this table, put the draws behind a
+switch in `scripts/sim/switches.gd`, and add a row here in the same PR. The table lists main as of 6 November 2026; open PRs
+that claim an offset are noted.
+
+| Offset | Stream | Built in | What draws from it |
+|---|---|---|---|
+| 0 | `Session.rng` | `session.gd` | the core sim (jobs, police rolls, the Python-parity draws) |
+| 7 | `RadioNet` | `session.gd` | radio chatter |
+| 13 | `Maritime` | `session.gd` | boats and cutters |
+| 21 | `AISmuggler.Director` | `session.gd` | the AI smugglers |
+| 31 | `urng` | `session.gd` | upgrade draws (spoiled tips, leaks); also the old stash raid roll with the case files off |
+| 41 | `StashNet` | `session.gd` | stash runs, roadblocks on them |
+| 51 | `Economy` | `session.gd` | prices |
+| 61, 67 | `GroundWar.rng`, `frng` | `session_state.gd` | the commanders' choices; firefights and patrol stops |
+| 71 | `arng` | `session.gd` | gun runs and arsenal draws |
+| 73 | `FootCombat` | `session_state.gd` | fights on foot |
+| 83 | `Chronicle` | `session_state.gd` | the news |
+| 89, 101 | `Agency` | `session_state.gd` | the Company and its double game |
+| 97 | `Family` | `session_state.gd` | the Morettis |
+| 99 | `PoliceSystem` | `session.gd` | the police units |
+| 103 | `Island` | `session_state.gd` | the island runs and customs there |
+| 107 | `Court` | `session_state.gd` | the federal case |
+| 109 | `Payroll` | `session_state.gd` | the crews |
+| 113 | `Market` | `session.gd` | street supply and demand (`Economy.REALISM`) |
+| 127 | `Agency.prng` | `session_state.gd` | the pipeline: cocaine north, guns south |
+| 131 | `Trade` | `session_state.gd` | the bulk buyers |
+| 137 | `fog_rng` | `session.gd` | sea fog (live play's `fog: true`) |
+| 149, 151, 157 | `brng`, `barng`, `bagrng` | `session.gd` | the island boards (`Jobs.ISLAND_BOARD`): the other strips' boards, their gun runs, the Company's offers, swapped in only while those boards are dealt |
+| 163 | `Investigation` | `session.gd` | the case files (warrant challenges) |
+| 167 | `Orders` | `session_state.gd` | buyers' orders |
+| 173 | `DealMoves` | `session.gd` | deal moves |
+| 179 | `DailyWeather` | `session.gd` | the story's two-hourly weather |
+| 181 | `gig_rng` | `session.gd` | side gigs on the boards |
+| 183 | `Calendar` | `session.gd` | the island's calendar of events |
+| 185 | `Weekly` | `session.gd` | the week's goals |
+| 404, 505 | `Nights` | `nights.gd` | an HQ season's night; its bots |
+| 909 | `Analyst` | `analyst.gd` | the analyst's desk |
+| 919 | `Undercover` | `undercover.gd` | the undercover agent |
+| 929 | `Airframe` | `airframe.gd` | airframe wear |
+| 939, 941 | `Casino` | `casino.gd` | the casino; its games' dice and cards |
+| 947 | `Dealership` | `dealership.gd` | the dealership |
+| 953 | `Psychedelics` | `psychedelics.gd` | the scene's swings |
+| map seed + 1 | trees | `terrain.gd` | tree planting (`NpRandom`) |
+| map seed + 7001 | the natural terrain | `terrain.gd` | `_naturalise`, on its own stream so nothing the classic generator draws moves |
+
+The terrain's own height field draws on the map seed itself (`NpRandom`, matching the Python prototype's NumPy draws).
+
+**The terrain cache.** Generating a map's terrain takes about 10 s in GDScript, so `Terrain` keeps it on disk keyed by everything
+that goes into it. The built-in maps ship baked in `res://data/terrain` (`tools/bake_terrain.gd`); anything else is cached
+in `user://terrain` on first use. `CACHE_VERSION` (now 3) is part of the key: bump it whenever the generator changes, then
+re-bake, or players keep the old terrain from their cache.
+
+**How a strip shapes the ground** (`Terrain._shape_fields`). First every strip is guaranteed land: a bump about 1.4 km wide
+raises the ground under it to 30 m (offshore strips get an island). Then each strip is flattened to its elevation, which is
+pinned or found:
+
+- **Pinned:** a strip with an `elev` in the map data is levelled to that height. Its land bump is capped at the pinned height plus
+  3 m, so a sea-level strip isn't sat in a 30 m bowl.
+- **Found:** a strip without an `elev` takes the height the ground has at its centre after the bump, at least 2 m.
+
+Then the strip's `setting` decides its surroundings:
+
+- `plateau` keeps a flat top out to 80 to 130 m, then drops the ground up to 180 m below it by 260 m.
+- `pit` (the quarry) flattens out to 60 to 110 m. It stands two walls 70 m high and 30 m wide, 55 m either side of the
+  centreline, along the strip's length (the heights the Python fixtures pin). On the natural terrain those walls become a low,
+  wide shoulder: 32 m high, centred 75 m out, about 70 m wide. The strip itself keeps the classic height. A `haul_road` end
+  (0 or 1) cuts a sloping road out of the pit at that end, 120 m wide at the lip and widening by half its distance beyond.
+- `beach` blends the strip into the ground over 650 m, and anything else over 260 m.

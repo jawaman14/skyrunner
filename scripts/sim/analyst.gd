@@ -124,7 +124,7 @@ func _forward(e: Dictionary, why: String) -> void:
 	police.release_tip(float(e.x), float(e.y), float(e.r), str(e.text), str(e.squawk), e.target)
 	if not bool(e.truth):
 		wasted += 1
-		sess.law_funds = maxf(0.0, sess.law_funds - BAD_SORTIE)
+		sess.move_law_funds(maxf(0.0, sess.law_funds - BAD_SORTIE) - sess.law_funds, "outside:state", "fee")  # a wasted sortie, never below zero
 		sess.law_say("ANALYST: %s was a false lead; the sortie cost $%s." % [e.id, Py.money(BAD_SORTIE)])
 	elif why != "":
 		sess.law_say("ANALYST: %s went to dispatch (%s)." % [e.id, why])

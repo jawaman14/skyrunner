@@ -245,7 +245,7 @@ func add_cash(site: String, amount: float) -> void:
 	if site != HQ and site != "" and cash.get(site, 0.0) < 1.0:
 		cash_since[site] = sess.time
 	if site == HQ or site == "":
-		sess.money += int(amount)
+		sess.move_money(int(amount), "outside:street-cash", "transfer")
 		if amount >= 1.0:
 			sess.bus.emit("cash_home", sess.time, "", ["runner"], {"amount": amount})
 		return
@@ -327,7 +327,7 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 		if amount < 1.0:
 			return "No cash at %s." % name_of(from)
 		if from == HQ:
-			sess.money -= int(amount)
+			sess.move_money(-(int(amount)), "outside:street-cash", "transfer")
 		else:
 			cash[from] -= amount
 		c.cash = amount
@@ -372,7 +372,7 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 func _undo(c: Dictionary) -> void:
 	if c.cash > 0.0:
 		if c.from == HQ:
-			sess.money += int(c.cash)
+			sess.move_money(int(c.cash), "outside:street-cash", "transfer")
 		else:
 			cash[c.from] += c.cash
 	if c.lb > 0.0:
@@ -847,11 +847,11 @@ func arrived(t, outcome: String, why: String) -> void:
 	if outcome == "hijacked":
 		last = "Los Cuervos took the truck (%s) near %s." % [what, name_of(c.to)]
 		if sess.ground != null:
-			sess.ground.commanders.rival.cash += c.cash
+			sess.ground.commanders.rival.move_cash(c.cash, "outside:street", "resale")  # our truck's cash, taken
 		sess.bus.emit("truck_hijacked", sess.time, "", ["runner"], {"stash": t.stash})
 	else:
 		last = "The truck (%s) was stopped: %s. All of it forfeited." % [what, why]
-		sess.law_funds += c.cash * 0.5 + 300.0 * t.items
+		sess.move_law_funds(c.cash * 0.5 + 300.0 * t.items, "outside:state", "forfeiture")
 		if c.lb > 0.0:
 			sess.econ.record_seizure(c.good, market_of(c.to))
 		var case_ = sess.police.case("runner")
@@ -913,7 +913,7 @@ func _spirit_away(site: String, saved: Dictionary, saved_cash: float) -> void:
 		else:
 			lost.product += saved[g]
 	if saved_cash >= 1.0:
-		sess.money += int(saved_cash)
+		sess.move_money(int(saved_cash), "outside:street-cash", "transfer")
 		told.append("$%s" % Py.money(int(saved_cash)))
 	if not told.is_empty():
 		sess.say("The vault held: %s spirited away%s." % [", ".join(told), (" to " + name_of(to)) if to != "" else ""])
@@ -938,7 +938,7 @@ func _raided(site: String) -> void:
 		lost_by.raided += int(stock[site][g] * price_of(g))
 	if cash[site] >= 1.0:
 		took.append("$%s in cash" % Py.money(int(cash[site])))
-		sess.law_funds += cash[site] * 0.5
+		sess.move_law_funds(cash[site] * 0.5, "outside:state", "forfeiture")
 		lost.cash += int(cash[site])
 		cash[site] = 0.0
 	# trucks the raid took at the door
@@ -969,7 +969,7 @@ func load_cash(amount: float) -> String:
 	if amount < 1.0:
 		return "No cash at %s." % name_of(site)
 	if site == HQ:
-		sess.money -= int(amount)
+		sess.move_money(-(int(amount)), "outside:street-cash", "transfer")
 	else:
 		cash[site] -= amount
 	aboard += int(amount)
@@ -1018,7 +1018,7 @@ func seize_aboard() -> void:
 		return
 	lost.cash += aboard
 	lost_by.bust += aboard
-	sess.law_funds += aboard * 0.5
+	sess.move_law_funds(aboard * 0.5, "outside:state", "forfeiture")
 	sess.say("And the $%s in cash bags." % Py.money(aboard))
 	aboard = 0
 	_bags()
