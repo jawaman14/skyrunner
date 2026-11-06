@@ -256,12 +256,12 @@ func _update_stashes(dt: float) -> void:
 		if r[1] == "delivered" and not t.weapons.is_empty() and t.gun_mode == "stock" and Arsenal.REALISM:
 			_stock_weapons(t.weapons, st.id)
 			say("Truck in at %s: %s into the armoury here" % [st.name, Arsenal.describe(t.weapons)])
-			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": 0, "dest": t.stash, "hot": true})
+			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": 0, "dest": t.stash, "hot": true, "by": str(t.driver), "mode": "trucked", "org": "org"})
 		elif r[1] == "delivered":
 			move_money(t.pay, "outside:buyers", "delivery")
 			econ.record_delivery("guns" if not t.weapons.is_empty() else "cocaine", st.zone)
 			say("Truck in at %s: +$%s" % [st.name, Py.money(t.pay)])
-			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": t.pay, "dest": t.stash, "hot": true})
+			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": t.pay, "dest": t.stash, "hot": true, "by": str(t.driver), "mode": "trucked", "org": "org"})
 		else:
 			if payroll != null and t.driver != "":
 				payroll.lose(t.driver, "arrested")
@@ -465,7 +465,8 @@ func _delivered(job: Jobs.Job, pay: int, af: Airfield, hot: bool) -> Dictionary:
 		if it.label != "Fuel drum":
 			lb += it.weight_lb
 	var data := {"job_id": job.id, "pay": pay, "dest": af.code, "hot": hot, "good": good, "lb": lb,
-		"agency": job.agency, "origin": job.origin, "weapons": not job.weapons.is_empty()}
+		"agency": job.agency, "origin": job.origin, "weapons": not job.weapons.is_empty(),
+		"by": "seat:" + Roles.PILOT, "mode": "flown", "org": "org"}  # F-5: who delivered it and how (story goals count by org)
 	if job.employer_serial > 0:
 		data["employer_stage"] = job.employer_stage
 		data["employer_serial"] = job.employer_serial
