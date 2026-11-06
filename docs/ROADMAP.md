@@ -72,7 +72,9 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - F-3a-f, the money sites moved by domain.
    - F-4, inventory.
    - F-5, `command_as` and actors.
-   - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74).
+   - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74). 7 November, F-6a:
+     the scheduler (`Schedule`, saved) and the 06:00 books (`Books`, each org's day from the ledger, saved). F-6b, the
+     nights retiring into a report built from the books, is next.
    - F-7, time acceleration, after D-12.
 3. **The Living District (P0, D-72):** San Telmo Centro, with three organisations (the player's, Los Cuervos and the Morettis, D-84).
    - Two supply chains.

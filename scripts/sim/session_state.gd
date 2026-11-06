@@ -128,6 +128,8 @@ var deal_moves: DealMoves = null  ## loop idea 5: Benny moves an airdrop mid-fli
 var daily_weather: DailyWeather = null  ## the story game's weather spells (DailyWeather)
 var calendar: Calendar = null  ## loop idea 4: the island's week, posted ahead (Calendar)
 var weekly: Weekly = null  ## the repeatable goal: the week's work (Weekly, D-93)
+var schedule: Schedule = null  ## things due at a time (F-6): the daily books, later production and the org AI
+var books: Books = null  ## the daily books, closed at 06:00 from the ledger (F-6)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
