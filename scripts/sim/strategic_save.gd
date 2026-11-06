@@ -75,6 +75,8 @@ static func capture(s: Session) -> Dictionary:
 		d["calendar"] = s.calendar.capture()  # optional, like the weather
 	if Jobs.ISLAND_BOARD and not s._first_missions() and not s.boards.is_empty():
 		d["boards"] = capture_boards(s)  # optional: an older save has none and deals every board afresh, as it always did
+	if s.weekly != null and s.weekly.week > 0:
+		d["weekly"] = s.weekly.capture()  # optional: an older save starts its first week afresh
 	if s.stash_net != null:
 		var st := {}
 		for x in s.stash_net.stashes:
@@ -288,6 +290,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.pending_boards = d.boards  # a story attached after this re-applies them (Story.attach)
 		if not s._first_missions():
 			restore_boards(s, d.boards)
+	if s.weekly != null and d.get("weekly") is Dictionary:
+		s.weekly.restore(d.weekly)
 	if d.get("fuel_spent") is Dictionary:
 		s.fuel_spent = {"org": float(d.fuel_spent.get("org", 0.0)), "rival": float(d.fuel_spent.get("rival", 0.0))}
 	if s.investigation != null:
