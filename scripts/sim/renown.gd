@@ -12,6 +12,10 @@ extends RefCounted
 ##   * the bulk buyers pay +1.5% a tier
 ##   * and the task force watches the famous: suspicion cools 6% slower a tier
 ## Off for the replays (Renown.ENABLED = false); a session asks for it with `renown: true`.
+##
+## Lying low (owner, 4 Nov, D-94: the World of Warcraft study's rested XP). Time away from hot work is not wasted: the longer since
+## the last hot load (delivered, seized or busted), the more renown the next hot delivery earns, up to double after half an hour.
+## A reward for pacing yourself, never a penalty for playing on. It reads the event times on the bus, so it needs no clock either.
 
 static var ENABLED := true
 
@@ -19,6 +23,10 @@ const TIERS := [0.0, 40.0, 120.0, 300.0, 650.0]
 const NAMES := ["Nobody", "A name on the street", "Known", "Feared", "A legend"]
 const LOSS_SHARE := 0.5  ## a setback costs this much of what the same success would earn
 const KEEP := 12  ## the last few changes, for the panel
+const REST_FULL_S := 1800.0  ## lying low this long doubles the next hot delivery's renown
+const REST_MAX := 1.0  ## ... at most this much extra (x2)
+## The hot outcomes that end a quiet spell: what the task force notices.
+const HOT_ENDS := ["busted", "truck_seized", "stash_raided", "boat_seized"]
 
 ## event kind -> [points, what to call it]. A gain is a success; a loss is paid out at LOSS_SHARE.
 const GAINS := {
@@ -44,6 +52,7 @@ const LOSSES := {
 var sess
 var score := 0.0
 var recent: Array = []  ## [[time, points, what]], newest last
+var quiet_since := 0.0  ## game time of the last hot load or hot setback: lying low is measured from here
 
 
 func _init(sess_) -> void:
@@ -54,12 +63,28 @@ func _init(sess_) -> void:
 		sess.bus.subscribe(kind, _on_loss)
 	sess.bus.subscribe("bulk_sale", _on_sale)
 	sess.bus.subscribe("worker_flipped", _on_flip)
+	for kind in HOT_ENDS:
+		sess.bus.subscribe(kind, _on_hot_end)
 
 
 # ------------------------------------------------------------------ the bus
 func _on_gain(ev) -> void:
 	var g: Array = GAINS[ev.kind]
 	add(float(g[0]), str(g[1]))
+	if ev.kind == "job_delivered" and bool(ev.data.get("hot", false)):
+		var extra := float(g[0]) * rest_bonus(float(ev.t))
+		if extra >= 0.1:
+			add(extra, "lying low first (x%.1f)" % (1.0 + rest_bonus(float(ev.t))))
+		quiet_since = float(ev.t)
+
+
+func _on_hot_end(ev) -> void:
+	quiet_since = maxf(quiet_since, float(ev.t))
+
+
+## 0..REST_MAX: the extra share of renown the next hot delivery earns for the time since the last hot load.
+func rest_bonus(now: float) -> float:
+	return clampf((now - quiet_since) / REST_FULL_S, 0.0, 1.0) * REST_MAX
 
 
 func _on_loss(ev) -> void:
@@ -151,5 +176,5 @@ static func effects_text(t: int) -> String:
 
 func view() -> Dictionary:
 	var t := tier()
-	return {"score": score, "tier": t, "title": NAMES[t], "next": next_at(), "effects": effects_text(t),
+	return {"score": score, "tier": t, "title": NAMES[t], "next": next_at(), "effects": effects_text(t), "rested": 1.0 + rest_bonus(sess.time),
 		"recent": recent.map(func(r): return {"t": r[0], "points": r[1], "what": r[2]})}

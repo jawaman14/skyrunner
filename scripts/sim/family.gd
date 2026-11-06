@@ -199,13 +199,13 @@ func accept(id: String) -> String:
 		return "Need $%s." % Py.money(int(o.cost))
 	offers.erase(o)
 	accepted += 1
-	sess.money -= int(o.cost)
+	sess.move_money(-int(o.cost), "outside:family", "purchase")
 	var c = sess.police.case("runner")
 	var honest: bool = o.honest
 	match str(o.kind):
 		"loan":
 			loans_taken += 1
-			sess.money += int(o.amount)
+			sess.move_money(int(o.amount), "outside:family", "loan")
 			loan = {"amount": o.amount, "owed": int(o.amount * (1.2 if honest else 1.8)), "due": sess.time + LOAN_DUE_S, "honest": honest}
 			_did("$%s from the Family's shylock, due in %d min" % [Py.money(int(o.amount)), int(LOAN_DUE_S / 60)])
 		"laundry":
@@ -215,7 +215,7 @@ func accept(id: String) -> String:
 				_did("The cash comes back clean: the case cools")
 			else:
 				var skim := int(o.amount * 0.25)
-				sess.money -= mini(skim, maxi(0, sess.money))
+				sess.move_money(-mini(skim, maxi(0, sess.money)), "outside:family", "loss")
 				c.suspicion = minf(100.0, c.suspicion + 8.0)
 				rico = minf(100.0, rico + 5.0)
 				_con("The count room skimmed another $%s - and the FBI had a wire in it" % Py.money(skim))
@@ -236,7 +236,7 @@ func accept(id: String) -> String:
 				_did("%d rifles in the armoury" % int(o.amount))
 			else:
 				c.suspicion = minf(100.0, c.suspicion + 20.0)
-				sess.law_funds += float(o.cost)
+				sess.move_law_funds(float(o.cost), "outside:state", "forfeiture")
 				if sess.arsenals.has("law"):
 					sess.arsenals.law.add("rifle", int(o.amount))
 				_con("The fence was a federal agent: the money's gone, the case grows")
@@ -247,7 +247,7 @@ func accept(id: String) -> String:
 			if honest:
 				var q = sess.ground.recruit("org", "foot", Vector2(st.x, st.y), false)
 				if q is String:
-					sess.money += int(o.cost)
+					sess.move_money(int(o.cost), "outside:family", "refund")
 					return q
 				sess.ground.arsenal("org").give_back(q.loadout)  # their own guns, not ours
 				q.loadout = {"rifle": q.men}
@@ -259,7 +259,7 @@ func accept(id: String) -> String:
 			else:
 				st.heat += 25.0  # Los Cuervos know it now
 				var k := mini(maxi(0, sess.money), 4000)
-				sess.money -= k
+				sess.move_money(-k, "outside:family", "loss")
 				if sess.ground != null:
 					var free: Array = sess.ground._free("rival")
 					if not free.is_empty():
@@ -339,13 +339,13 @@ func lawyer_bust(how: String) -> bool:
 		_con("The lawyer worked for the prosecutor all along")
 		return false
 	var fine := 2000 + int(maxi(0, sess.money) * 0.1)
-	sess.money -= fine
+	sess.move_money(-fine, "outside:state", "fine")
 	for j in sess.active_jobs.duplicate():
 		if j.hot():
 			sess.econ.record_seizure(Economy.good_of(j), Economy.job_market(j))
 			sess.active_jobs.erase(j)
 			sess.loadout.remove_job(j.id)
-	sess.law_funds += 1500.0
+	sess.move_law_funds(1500.0, "outside:state", "forfeiture")
 	sess.police.reset(false)
 	_did("The lawyer gets it down to a fine: -$%s and the cargo (%s)" % [Py.money(fine), how])
 	sess.law_say("The pilot walks on a technicality: a fine and the cargo. Somebody paid for a very good lawyer")
@@ -369,7 +369,7 @@ func pay_tribute() -> String:
 		return "Nobody's asking."
 	if sess.money < tribute_due:
 		return "Need $%s." % Py.money(tribute_due)
-	sess.money -= tribute_due
+	sess.move_money(-tribute_due, "outside:family", "tribute")
 	tribute_total += tribute_due
 	respect = minf(100.0, respect + 10.0)
 	_did("Tribute paid: $%s. The Family is satisfied - for now" % Py.money(tribute_due))
@@ -385,7 +385,7 @@ func rico_case() -> String:
 		return "The Family's bosses are already in prison."
 	if sess.law_funds < RICO_CASE_COST:
 		return "Need $%d in funds." % RICO_CASE_COST
-	sess.law_funds -= RICO_CASE_COST
+	sess.move_law_funds(-RICO_CASE_COST, "outside:state", "fee")
 	rico = minf(100.0, rico + 5.0 + rng.uniform(0.0, 5.0) + (6.0 if rat else 0.0))
 	sess.law_say("RICO: the organised-crime squad files for more wiretaps on the Morettis - case %d%%" % int(rico))
 	_check_trial()
@@ -401,7 +401,7 @@ func _check_trial() -> void:
 	payroll_until = -1.0
 	lawyer = ""
 	sess.apply_upgrades()
-	sess.law_funds += 12000.0
+	sess.move_law_funds(12000.0, "outside:state", "forfeiture")
 	var n := 0
 	if sess.stash_net != null:
 		for id in knows:
@@ -521,13 +521,13 @@ func _collect() -> void:
 	var honest: bool = loan.honest
 	loan = {}
 	if honest and sess.money >= owed:
-		sess.money -= owed
+		sess.move_money(-owed, "outside:family", "loan")
 		respect = minf(100.0, respect + 8.0)
 		_did("The loan is repaid with the vig: -$%s" % Py.money(owed))
 		return
 	# the vig changed, or we can't pay: the enforcers
 	var k := mini(maxi(0, sess.money), owed)
-	sess.money -= k
+	sess.move_money(-k, "outside:family", "loan")
 	var text := "The shylock's enforcers: the vig was $%s, they took $%s" % [Py.money(owed), Py.money(k)]
 	if k < owed:
 		text += _break_something()
@@ -563,7 +563,7 @@ func _break_something() -> String:
 		knows[st.id] = true
 		return ": %s was turned over, and now the whole street knows it" % st.name
 	var k := mini(maxi(0, sess.money), 5000)
-	sess.money -= k
+	sess.move_money(-k, "outside:family", "loss")
 	return ": the club's windows, and $%s" % Py.money(k)
 
 
@@ -574,7 +574,7 @@ func _business() -> void:
 	if r < 0.3 and sess.arsenals.has("rival"):
 		sess.arsenals.rival.add("rifle", 3)
 		if sess.ground != null:
-			sess.ground.commanders.rival.cash += 2000.0
+			sess.ground.commanders.rival.move_cash(2000.0, "outside:family", "funding")
 		if respect < 40.0 and sess.stash_net != null and not sess.stash_net.live().is_empty():
 			var st = Py.max_by(sess.stash_net.live(), func(s): return StashNet.suspicion(s))
 			st.heat += 15.0

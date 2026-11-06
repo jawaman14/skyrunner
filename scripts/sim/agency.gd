@@ -216,7 +216,7 @@ func flight_done(job) -> bool:
 	# the check's in the mail
 	if drng != null and drng.random() < 0.12 + (0.12 if pay_mult > 1.0 else 0.0):
 		var k := mini(maxi(0, sess.money), int(job.payout * 0.4))
-		sess.money -= k
+		sess.move_money(-k, "outside:agency", "loss")
 		withheld += k
 		last_read = "$%s of the last flight's pay is 'in the mail'" % Py.money(k)
 		sess.say("The Company: $%s of that pay is 'in the mail'. It won't come." % Py.money(k))
@@ -230,7 +230,7 @@ func investigate() -> String:
 		return "It's already all over the papers."
 	if sess.law_funds < INVESTIGATE_COST:
 		return "Need $%d in funds." % INVESTIGATE_COST
-	sess.law_funds -= INVESTIGATE_COST
+	sess.move_law_funds(-INVESTIGATE_COST, "outside:state", "fee")
 	var gain := 8.0 + 4.0 * quashed + rng.uniform(0.0, 8.0)
 	exposure = minf(100.0, exposure + gain)
 	sess.law_say("Investigators follow the money from the quashed cases: exposure %d%%" % int(exposure))
@@ -244,7 +244,7 @@ func _check_exposed() -> void:
 	burned = true
 	protected_until = -1.0
 	trust = 0.0
-	sess.law_funds += 15000.0
+	sess.move_law_funds(15000.0, "outside:state", "budget")
 	var c = sess.police.case("runner")
 	c.suspicion = minf(100.0, c.suspicion + 25.0)
 	var text := "The hearings: the Agency's southern supply network is exposed - the arms flights, the protected pilots, the quashed cases."
@@ -302,7 +302,7 @@ func _double_game(step: float) -> void:
 	var r := drng.random()
 	var live: Array = sess.stash_net.live() if sess.stash_net != null else []
 	if r < 0.25 and sess.ground != null:
-		sess.ground.commanders.rival.cash += 4000.0
+		sess.ground.commanders.rival.move_cash(4000.0, "outside:agency", "funding")
 		last_read = "Los Cuervos' planes get waved through too: the Company plays both sides"
 		sess.say("Word from the strips: Los Cuervos' planes are getting waved through too.")
 	elif r < 0.45 and trust >= 40.0 and not hung_out and not live.is_empty():
@@ -317,7 +317,7 @@ func _double_game(step: float) -> void:
 		last_read = "Someone with a government accent tipped the task force about %s" % st.name
 		sess.law_say("An anonymous caller with a government accent names %s" % st.name)
 	elif r < 0.7 and trust >= 50.0 and not hung_out and sess.family != null and sess.family.active():
-		sess.money += 3000
+		sess.move_money(3000, "outside:agency", "funding")
 		trust = minf(100.0, trust + 5.0)
 		sess.family.respect = minf(100.0, sess.family.respect + 5.0)
 		last_read = "We brokered the Company's cash through the Family's casinos (+$3,000)"

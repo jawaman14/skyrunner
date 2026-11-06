@@ -9,7 +9,7 @@ const UNATTRIBUTED := "outside:unattributed"
 const COALESCE := ["budget"]  ## reasons booked every frame: consecutive rows with the same names merge within COALESCE_S
 const COALESCE_S := 60.0
 ## The closed list of reasons (spec section 3, invariant 3); a transfer with any other is refused. Later F-3 slices add to it.
-const REASONS := ["open", "adjust", "purchase", "resale", "fee", "fuel", "repair", "upgrade", "fine", "delivery", "forfeiture", "budget", "wages", "refund", "bribe"]
+const REASONS := ["open", "adjust", "purchase", "resale", "fee", "fuel", "repair", "upgrade", "fine", "delivery", "forfeiture", "budget", "wages", "refund", "bribe", "sales", "funding", "tribute", "loss", "loan", "prize", "transfer"]
 const TRIM := 1000  ## rows folded into `opening` at a time, so trimming is not a shift of the whole array on every transfer
 const LOG_MAX := 20000  ## the oldest rows are folded into `opening` past this, so rebuild() stays exact; F-3 saves both.
 
@@ -17,6 +17,7 @@ var log: Array = []  ## {id, t, from, to, amount, reason, actor, ref}
 var balances := {}
 var opening := {}  ## balances of the rows trimmed off the front of the log
 var _serial := 0
+var on_transfer := Callable()  ## told of every transfer as it is booked (from, to, amount, reason, t): the daily books, whose day the trimming above must not lose
 
 
 func balance(account: String) -> float:
@@ -33,6 +34,8 @@ func transfer(from: String, to: String, amount: float, reason: String, actor := 
 		last.amount = float(last.amount) + amount  # a per-frame accrual is one row a minute, not sixty a second
 		balances[from] = balance(from) - amount
 		balances[to] = balance(to) + amount
+		if on_transfer.is_valid():
+			on_transfer.call(from, to, amount, reason, t)
 		return true
 	_serial += 1
 	log.append({"id": _serial, "t": t, "from": from, "to": to, "amount": amount, "reason": reason, "actor": actor, "ref": ref})
@@ -43,6 +46,8 @@ func transfer(from: String, to: String, amount: float, reason: String, actor := 
 		log = log.slice(TRIM)
 	balances[from] = balance(from) - amount
 	balances[to] = balance(to) + amount
+	if on_transfer.is_valid():
+		on_transfer.call(from, to, amount, reason, t)
 	return true
 
 
