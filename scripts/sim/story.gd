@@ -339,6 +339,15 @@ static func opens_through(n: int) -> Array:
 ## Takes over the session: everything the chapters so far opened is built, the
 ## rest waits. The trade starts in career mode (grass until the connection).
 func attach(s) -> void:
+	_attach(s)
+	# opening the chapters deals every board afresh; a save's boards (StrategicSave) go back on top, past the employed opening
+	if not s.pending_boards.is_empty():
+		if not s._first_missions():
+			StrategicSave.restore_boards(s, s.pending_boards)
+		s.pending_boards = {}
+
+
+func _attach(s) -> void:
 	sess = s
 	s.story = self
 	s.bus.subscribe("*", _on_event)
@@ -594,7 +603,7 @@ func tick(s) -> void:
 					s.renown.add(FLIGHT_RENOWN, "flying: " + str(o.text))
 				s.say("Side goal done: %s. People talk about how you fly." % o.text)
 				continue
-			s.money += o.bonus
+			s.move_money(o.bonus, "outside:buyers", "delivery")
 			s.say("Side goal done: %s. +$%s." % [o.text, Py.money(o.bonus)] if o.bonus > 0 else "Side goal done: %s." % o.text)
 	if not Py.all(ch.objectives, func(o): return o.optional or outcomes.has(o.key) or progress.get(o.key, 0.0) >= o.target):
 		return

@@ -13,6 +13,8 @@ class Event:
 	var data: Dictionary
 	var audience: Array  ## sides that may see it
 	var text: String
+	var actor: Dictionary = {}  ## who did it (F-5): {org, role, person}, or empty for the world's own doings
+	var org := ""  ## the actor's org, or data.org when the emitter names one
 
 	func _init(kind_: String, t_: float, data_: Dictionary, audience_: Array, text_: String) -> void:
 		kind = kind_
@@ -24,6 +26,7 @@ class Event:
 
 var _subs := {}
 var log: Array = []
+var actor: Dictionary = {}  ## the command being run (Session.command_as sets it); its events carry it
 
 
 ## kind "*" receives everything.
@@ -35,6 +38,8 @@ func subscribe(kind: String, fn: Callable) -> void:
 
 func emit(kind: String, t: float, text := "", audience := ["runner", "law"], data := {}) -> Event:
 	var ev := Event.new(kind, t, data, audience, text)
+	ev.actor = actor
+	ev.org = str(actor.get("org", data.get("org", "")))
 	log.append(ev)
 	Py.keep_last(log, 400)
 	var fns: Array = _subs.get(kind, []).duplicate() + _subs.get("*", []).duplicate()

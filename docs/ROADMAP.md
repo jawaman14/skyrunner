@@ -12,12 +12,14 @@ git history (`git show 40bf0d44:docs/ROADMAP.md`); older progress is in
 The approved direction is [DESIGN.md §0](DESIGN.md#0-where-the-game-is-heading-owner-approved-direction-8-october-2026):
 build an empire from nothing, starting as a hired pilot. Four steps, in order:
 
-| Step | Status (18 Oct) | Evidence |
+| Step | Status (4 Nov, checked against the code) | Evidence |
 |---|---|---|
-| 1. The early rise: employed pilot, the business slides into smuggling, first aircraft earned | **Done**, polish continuing | Employed opening #296 merged; first missions free and retryable (#376); chapter 1 goals reworded (#390 draft). A human pacing walkthrough and the first-aircraft price remain on the playtest list (#345). |
-| 2. Setup-driven automation: assignments, then conditional orders and task sequences; manual play always remains | **Not started** | Payroll's fixed assignments are the only merged piece. Needs a design note in `DESIGN.md` first. |
-| 3. Faction competition and the civilian economy | **In progress** | Rivals cannot take cargo from the air (#377 merged); the rival plane and hijack are removed (#388 draft, retire target 56,000); roadside truck firefights (#384, #387); turf-war districts and the General's choice (#378 draft, landing now). Rival depot raid designed, not built. |
-| 4. Multiplayer: co-op and competitive modes for 2–16 players | **Furthest along** | Host service steps 1–9 of #97 merged (#364 and earlier); #97 stays open for broader entry-path coverage. Two-machine play and voice are not yet verified by a human. |
+| 1. The early rise: employed pilot, the business slides into smuggling, first aircraft earned | **Done**, polish continuing | Employed opening (#296), free retryable first missions (#376), and the D-92 early-chapter pass on main: goal markers and the NEXT line, flight debrief, banter, the LORAN upgrade, story weather, side gigs, hidden strips. A human pacing walkthrough and the first-aircraft price remain on the playtest list (#345). |
+| 2. Setup-driven automation: assignments, then conditional orders and task sequences; manual play always remains | **Not started** | Payroll's fixed assignments and the dealers' auto-resupply toggle are the only pieces. Needs a design note in `DESIGN.md` first. |
+| 3. Faction competition and the civilian economy | **In progress** | Turf districts (#378), roadside truck fights (#384, #387) and the end of the rival plane and air hijack (#377, #388) are on main. The visible territory map is #494. Every rival inflow is a named ledger account in #496; removing them (D-65) waits on the Living District. Rival depot raid paused (D-75). |
+| 4. Multiplayer: co-op and competitive modes for 2–16 players | **Furthest along** | Host service steps 1–9 of #97, protocol v3, seats, voice and the waiting room are on main. Two-machine play and voice are not yet verified by a person. New multiplayer features wait on the Living District (D-71). |
+
+The full mechanic-by-mechanic status (112 built, 9 in PR, 8 half done, 54 planned, 12 paused) is in [FEATURES.md](FEATURES.md).
 
 ## Owner decisions of 17 October
 
@@ -30,18 +32,20 @@ build an empire from nothing, starting as a hired pilot. Four steps, in order:
 
 ## Now: land the queue
 
-Draft PRs, each tested; none merged yet. Review order (Codex's exact-head review is required for each, since the server refuses
-a Claude review of Claude's own work):
+Open PRs on 4 November, all green on CI with no review findings left. Each author merges their own (D-52); the risk-class
+ones need the other agent's exact-head review or D-91.
 
-1. **#378** turf war expansion (owner: land now).
-2. **The small fixes:** #390 (chapter 1 wording, boat pickup messages, destination lines on the map), #391 (the AI pilot says
-   where it is going), #392 (radar tip), #393 (rolling on a rough strip wears the airframe), #394 (Backspace slow reverse),
-   #395 (Deliver step covers unloading), #385 (read-aloud removed).
-3. **Ground and economy:** #383 (island-wide job board), #384 (roadside firefight, redundant once #387 lands), #388 (rival
-   aircraft and hijack removed, retire target 56,000).
-4. **#396** the strip changes, stacked on #323 and #319 (the strip evidence PRs).
-5. **#373** (scenery) and **#374** (period vehicles) after the owner's screenshot review.
-6. **QA lane (Codex):** goldens and BALANCE for #377, #383, #393 and #396; a hands-on look at the quarry exit and the map lines.
+| PR | What | Risk class |
+|---|---|---|
+| #493 | The pilot's chart: our squads' routes and the AI pilot's remaining legs, clipped to the scope | No |
+| #494 | Territory map: districts tinted by holder on the desks' map and the chart | No |
+| #495 | Island job boards on remote desks; boards survive a save, story games included | Yes (save format) |
+| #496 | F-3 finished: every money change is a named ledger transfer, the rivals' free inflows included | Yes (money, Session layer) |
+| #491 | Loop idea 8b: the lawyer's discount after a seized load | Yes (balance) |
+| #497 | BALANCE entries 62 and 63: buyers' orders and the case files, measured | No |
+
+#491 took BALANCE entry 61, so #497's entries became 62 and 63. #493 and #495 also edit this file's
+half-done list; the version below supersedes them.
 
 ## Repeatable goal: the week's work (owner, 4 November)
 
@@ -70,10 +74,16 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - F-1, the save migration chain, comes first.
    - F-2, the ledger wrap, with no behaviour change.
    - F-3a-f, the money sites moved by domain.
-   - F-4, inventory.
-   - F-5, `command_as` and actors.
+   - F-4, inventory. The model, the stash and aircraft wrap, and (7 November) the trucks' and raids' moves booked by name and
+     the lots saved; what is still booked as unattributed is the code that changes stock directly (psychedelics, the trade's
+     own stock), moved by the stock-rework slices.
+   - F-5, `command_as` and actors. 7 November: `Actor`, `Session.command_as` with `command` as its shim, events tagged
+     with the actor and org, and `job_delivered` gains `by` and `mode`. The ownership and manager-budget checks wait for
+     businesses (L-1) and managers (L-4); story goals counting by org is L-5.
    - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74).
    - F-7, time acceleration, after D-12.
+   - Progress on 4 November: F-1 and F-2 are on main; F-3 is finished in #496; F-4 has the inventory model and a session wrap
+     with no call sites moved; F-5 to F-7 not started (`job_delivered` has no `by` or `mode` yet).
 3. **The Living District (P0, D-72):** San Telmo Centro, with three organisations (the player's, Los Cuervos and the Morettis, D-84).
    - Two supply chains.
    - The desk's business books.
@@ -145,8 +155,9 @@ Agreed order (owner, 18 Oct). Each step: a design note first, its own switch, it
 
 1. **Case files and kinds of heat** (in progress). Design #400 (DESIGN §48); the stash case files (lead, surveillance,
    warrant, raid; lying low drops a case; an emptied stash is raided for nothing) are built on `claude/heat-case-file`.
-   Still to do in step 1: the lawyer's warrant challenge as a command; pilot evidence, aircraft heat (per tail number)
-   and district heat; the balance run and BALANCE entry. The phone Heat app is in #446 (Codex), using the existing case-file visibility rules.
+   The lawyer's warrant challenge, aircraft heat (per tail number) and district heat are built; the balance run against the old
+   raid roll is BALANCE entry 63. Still to do: pilot evidence, and the street war's police AI raids stashes without
+   reading the case files (`GroundWar._think_police`). The phone Heat app is in #446 (Codex), using the existing case-file visibility rules.
 2. **The police search and the ladder down.** Helicopters search outward from the last known position; checkpoints on
    likely escape roads; dispatch chatter on the scanner; visible ways to cool off from wanted (break line of sight, go
    under cloud, swap the transponder code, hide the aircraft in a hangar, change aircraft or repaint).
@@ -186,26 +197,33 @@ stream, tests first, as a follow-up to #384/#387. Depends on #378 and #387 landi
 
 ## Forgotten or half done (found 18 October)
 
-These were finished in part, dropped from the 12 October list, or never written down.
+Rewritten 4 November against the code. The items from 18 October that are finished are listed once at the end.
 
-- **Backspace reverse (#394):** done; RB is its gamepad binding and the F1 help and GUIDE carry the line.
-- **Map destinations (#390):** done. Boats, trucks and convoys had lines; the station map draws our squads' routes; the pilot's
-  chart now draws our squads' routes and the AI pilot's remaining legs (`Minimap.own_squad_lines`, `Minimap.ai_route_of`).
-- **HAR runway end 0** (owner, 18 Oct; D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain
-  change, re-bake, strip trials).
-- **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356), the pilot
-  app does not. Its own task, needs render interpolation.
-- **Key audit (#345):** every key, which are still used, what the help text says. Not started.
+**Half done (some code merged, not finished):**
+
+- **3D pilot app, fixed 30 Hz step with smoothing** (D-12): the host loop has it (#356), the pilot app does not. Needs render
+  interpolation and a person at the controls to judge the feel; F-7 waits on it.
+- **Stock lots and pickup orders** (DESIGN 51 slices 2-3): `StockLot`, `StockLedger`, `StockValue` and `PickupOrder` exist with
+  tests and have no gameplay call sites. Lands with F-4.
+- **F-4 inventory:** the model and a session wrap exist; the stash and aircraft stock sites have not moved to it.
+- **Street-war police and the case files:** with the ground war on, `GroundWar._think_police` raids stashes without reading
+  the case files, so heat step 1 only runs when the war is off (found by BALANCE entry 63, #497). A heat step 2 item.
+- **Checked vehicle routes:** all 99 audited logistics pairs fail access; waits on the map rebuild's sites and connectors
+  (D-86). Never raise connector limits to make the numbers pass.
+- **Full NPC truck and squad migration** to physical agents: partly done; needs its own evidence.
+- **District-control balance calibration:** the districts and their map are built (#378, #494); the tuning is not.
+- **Two-machine multiplayer:** seat, action and voice are implemented and never run by a person (release gate).
+
+**Not started, still owed:**
+
+- **HAR runway end 0** (D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain change, re-bake, strip trials).
 - **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
-- **Job board (#383):** remote desks still get only the current strip's board; boards are not saved (a load redeals once).
-- **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached.
-  Not part of the game, listed so it is not lost.
-- **Quarry west end and PNR end 1:** one-way by design (terrain or trees in the climb-out); keep documented in `STRIPS.md`.
-- **The uncle story (Rafa Quintero) was missing from the roadmap:** now its own section above.
-- **Docs to update:** HANDOFF and DESIGN (the strip pin option, the pit constants, `CACHE_VERSION` 3, the RNG stream table for
-  the island boards); `docs/ROADMAP.md` itself was stale on 9 and 12 October.
-- **Stale PRs:** #321 (28 behind main), #305 (waits on the strip decision, now made), #370 (superseded by this rewrite).
-- **Local housekeeping:** scratch worktrees under `.claude-worktrees` and terrain cache backups.
+- **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached. Not part
+  of the game, listed so it is not lost.
+
+**Finished or in PR since 18 October:** Backspace reverse (RB binding and help line were on main), map destination lines (#493), the
+island job board gaps (#495), the BALANCE entries for orders and heat step 1 (#497), the rivals' unattributed money (#496),
+the lawyer's discount valve (#491), the docs' stream table, terrain cache, strip pins and pit (DESIGN §56, #505), the key audit (#506: the SHIFT shortcuts no longer fall through to the plain key when their system is missing; F1 and F8 match the code). The quarry's west end and PNR end 1 stay one-way by design (`STRIPS.md`).
 
 ## The design epics, in order (owner, 18 October)
 
@@ -271,8 +289,8 @@ calendar, a deal that moves mid-flight, price wars, investments with a return, a
 D-58 to D-60): deadlines follow demand, the boss layer organises while flying is optional, and to begin as seen fit.
 
 - **Built (the simulation half of addition 1, #419):** `Orders` and the market board data in `Trade.view`, with tests; DESIGN section 49.
-- **Phone interface (#446):** Work has the market board and buyers' orders with premiums/deadlines; Enter calls Benny. Still to do: a BALANCE entry for the premium
-  payouts (the live balance run with and without orders, see BALANCE).
+- **Phone interface (#446):** Work has the market board and buyers' orders with premiums/deadlines; Enter calls Benny. Measured in BALANCE entry 62 (the stand-in
+  misses most orders; the premiums pay it about $150 a run and the misses cost the Morettis' respect).
 - **Not started:** additions 2 to 8, in the order of LOOP_IDEAS section 2 (cover cargo next, then the calendar).
 
 ## Stock, ownership and the money loop (owner, 18 October; planned)
@@ -354,7 +372,7 @@ already-implemented work must not create duplicate systems. Keep issues needing 
 decisions or two real machines unresolved until their evidence exists. Publishing a draft PR is not integration or proof of
 release acceptance.
 
-- **Turf expansion (Codex, branch codex/turf-war-expansion):** `Territories` adds map-scoped district IDs while retaining the four economy markets as parent rollups. Costa Brava has ten authored areas; classic/generated maps use their current market centres. Ground control, squad decisions and exposed one-leg truck routes read the local layer. Stable region IDs allow later maps to bring their own districts. Initial local verification passed (898 tests, Costa Brava smoke, and a 200-seed war balance run); the balance run shifts the war economy and losses and needs interpretation before tuning. Not yet: a visible territory map, balance calibration for district control, and authored content for an additional region.
+- **Turf expansion (Codex, branch codex/turf-war-expansion):** `Territories` adds map-scoped district IDs while retaining the four economy markets as parent rollups. Costa Brava has ten authored areas; classic/generated maps use their current market centres. Ground control, squad decisions and exposed one-leg truck routes read the local layer. Stable region IDs allow later maps to bring their own districts. Initial local verification passed (898 tests, Costa Brava smoke, and a 200-seed war balance run); the balance run shifts the war economy and losses and needs interpretation before tuning. The visible territory map is built (districts tinted by holder on the desks' map and the pilot's chart, `StationMap.turf_rows`). Not yet: balance calibration for district control, and authored content for an additional region.
 
 ### UI decision follow-through (19 October 2026)
 

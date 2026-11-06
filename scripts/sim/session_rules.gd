@@ -240,6 +240,10 @@ func _update_stashes(dt: float) -> void:
 		ground.events.clear()
 	for r in results:
 		var t: StashNet.Truck = r[0]
+		if r[1] == "seized":  # bad-luck protection (StreakGuard): seizures in a row ease the next stop on the road
+			stash_net.truck_streak += 1
+		elif r[1] == "delivered":
+			stash_net.truck_streak = 0
 		if logistics != null and logistics.owns(t):
 			logistics.arrived(t, r[1], r[2])
 			continue
@@ -252,12 +256,12 @@ func _update_stashes(dt: float) -> void:
 		if r[1] == "delivered" and not t.weapons.is_empty() and t.gun_mode == "stock" and Arsenal.REALISM:
 			_stock_weapons(t.weapons, st.id)
 			say("Truck in at %s: %s into the armoury here" % [st.name, Arsenal.describe(t.weapons)])
-			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": 0, "dest": t.stash, "hot": true})
+			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": 0, "dest": t.stash, "hot": true, "by": str(t.driver), "mode": "trucked", "org": "org"})
 		elif r[1] == "delivered":
 			move_money(t.pay, "outside:buyers", "delivery")
 			econ.record_delivery("guns" if not t.weapons.is_empty() else "cocaine", st.zone)
 			say("Truck in at %s: +$%s" % [st.name, Py.money(t.pay)])
-			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": t.pay, "dest": t.stash, "hot": true})
+			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": t.pay, "dest": t.stash, "hot": true, "by": str(t.driver), "mode": "trucked", "org": "org"})
 		else:
 			if payroll != null and t.driver != "":
 				payroll.lose(t.driver, "arrested")
@@ -271,14 +275,20 @@ func _update_stashes(dt: float) -> void:
 			_seize_weapons(t.weapons, "the truck")
 			police.case("runner").suspicion = minf(100.0, police.case("runner").suspicion + 15.0)
 			bus.emit("truck_seized", time, "", ["runner", "law"], {"stash": t.stash})
-	# the AI task force raids a stash it knows is busy
-	if police.controller == "ai" and time >= _stash_ai_t and ground == null:
+	# the AI task force raids a stash it knows is busy. Who runs the files: with the street war, its police commander (the
+	# PATROL seat); without it, the radar controller (Codex, #508)
+	var files_ai: bool = bool(ground.commanders["police"].ai) if ground != null and ground.commanders.has("police") else police.controller == "ai"
+	if files_ai and time >= _stash_ai_t:
 		_stash_ai_t = time + 60.0
 		if Investigation.ENABLED and investigation != null:
-			for id in investigation.update(time, stash_net):  # the case files: lead, surveillance, warrant, raid (DESIGN §48)
-				_raid(id)
+			var queued: Array = ground.warrants if ground != null else []
+			for id in investigation.update(time, stash_net, queued):  # the case files: lead, surveillance, warrant, raid (DESIGN §48)
+				if ground == null:
+					_raid(id)
+				elif not ground.warrants.has(id):
+					ground.warrants.append(id)  # heat step 2: with the street war on, its police serve the warrant on foot
 			_case_messages()
-		else:
+		elif ground == null:
 			for st in stash_net.known():
 				if not st.burned and st.heat >= 55.0 and urng.random() < 0.3:
 					_raid(st.id)
@@ -455,7 +465,8 @@ func _delivered(job: Jobs.Job, pay: int, af: Airfield, hot: bool) -> Dictionary:
 		if it.label != "Fuel drum":
 			lb += it.weight_lb
 	var data := {"job_id": job.id, "pay": pay, "dest": af.code, "hot": hot, "good": good, "lb": lb,
-		"agency": job.agency, "origin": job.origin, "weapons": not job.weapons.is_empty()}
+		"agency": job.agency, "origin": job.origin, "weapons": not job.weapons.is_empty(),
+		"by": "seat:" + Roles.PILOT, "mode": "flown", "org": "org"}  # F-5: who delivered it and how (story goals count by org)
 	if job.employer_serial > 0:
 		data["employer_stage"] = job.employer_stage
 		data["employer_serial"] = job.employer_serial
