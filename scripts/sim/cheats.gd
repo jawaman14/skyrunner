@@ -23,10 +23,10 @@ const ACTIONS := [
 static func run(s: Session, id: String) -> String:
 	match id:
 		"money_100k":
-			s.money += 100000
+			s.move_money(100000, "outside:cheat", "adjust")
 			return "Added $100,000."
 		"money_1m":
-			s.money += 1000000
+			s.move_money(1000000, "outside:cheat", "adjust")
 			return "Added $1,000,000."
 		"fill_stashes":
 			if s.logistics == null:

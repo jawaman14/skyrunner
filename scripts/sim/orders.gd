@@ -29,6 +29,7 @@ var rng: PyRandom
 var open: Array = []  ## {id, buyer, good, qty, left, premium, kind, posted, due}
 var history: Array = []  ## the last few: {id, buyer, good, qty, result: "filled"|"missed"|"part", filled}
 var _next_id := 1
+var premiums_paid := 0  ## every premium on_settle has returned, part deliveries included (the balance tool reads it; not saved)
 var _sample_t := 0.0
 var _prev := {}  ## "good|market" -> the factor at the last sample
 
@@ -132,6 +133,7 @@ func on_settle(buyer: String, good: String, qty: float, unit_price: float) -> in
 		if fill <= 0.0:
 			continue
 		var bonus := int(unit_price * fill * (float(o.premium) - 1.0))
+		premiums_paid += bonus
 		o.left = float(o.left) - fill
 		if float(o.left) < 0.5 or (good == "guns" and float(o.left) < 1.0):
 			open.erase(o)

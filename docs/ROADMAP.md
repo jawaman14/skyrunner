@@ -43,6 +43,18 @@ a Claude review of Claude's own work):
 5. **#373** (scenery) and **#374** (period vehicles) after the owner's screenshot review.
 6. **QA lane (Codex):** goldens and BALANCE for #377, #383, #393 and #396; a hands-on look at the quarry exit and the map lines.
 
+## Repeatable goal: the week's work (owner, 4 November)
+
+The owner asked for a repeatable goal and for the World of Warcraft study's lessons to go into the game (D-93, D-94). The study
+found WoW kept players with a short payoff inside a long one: a weekly raid reset and a tier you could see. Skyrunner's answer is
+the week's work (DESIGN 52): every island week (90 game minutes) posts three goals drawn from what is open, each paying renown,
+all three paying a bonus and a run of cleared weeks; the rank is the Renown tier, whose perks already exist. No money is paid
+(D-65). The phone's Week app shows it.
+
+The other lessons, one PR each (D-94): buyers' orders retuned until taking them pays; the job board led by a few best-fit jobs;
+streak protection on catastrophic rolls (customs, truck stops); the only aircraft never forfeited before the takeover; lying low
+as a visible bonus; loop-length targets in DESIGN, measured by the playtest digest.
+
 ## Empire pivot (owner, 19 October)
 
 The game becomes a hybrid of open-world character play and a persistent empire simulation, with equal design weight on both
@@ -133,8 +145,9 @@ Agreed order (owner, 18 Oct). Each step: a design note first, its own switch, it
 
 1. **Case files and kinds of heat** (in progress). Design #400 (DESIGN §48); the stash case files (lead, surveillance,
    warrant, raid; lying low drops a case; an emptied stash is raided for nothing) are built on `claude/heat-case-file`.
-   Still to do in step 1: the lawyer's warrant challenge as a command; pilot evidence, aircraft heat (per tail number)
-   and district heat; the balance run and BALANCE entry. The phone Heat app is in #446 (Codex), using the existing case-file visibility rules.
+   The lawyer's warrant challenge, aircraft heat (per tail number) and district heat are built; the balance run against the old
+   raid roll is BALANCE entry 63. Still to do: pilot evidence, and the street war's police AI raids stashes without
+   reading the case files (`GroundWar._think_police`). The phone Heat app is in #446 (Codex), using the existing case-file visibility rules.
 2. **The police search and the ladder down.** Helicopters search outward from the last known position; checkpoints on
    likely escape roads; dispatch chatter on the scanner; visible ways to cool off from wanted (break line of sight, go
    under cloud, swap the transponder code, hide the aircraft in a hangar, change aircraft or repaint).
@@ -176,16 +189,16 @@ stream, tests first, as a follow-up to #384/#387. Depends on #378 and #387 landi
 
 These were finished in part, dropped from the 12 October list, or never written down.
 
-- **Backspace reverse (#394):** no gamepad binding and no F1/GUIDE help line.
-- **Map destinations (#390):** only go-fast boats and stash trucks have destination lines. Squads, convoys and the station map
-  (`station_map.gd`) do not; the AI pilot's route is announced (#391) but not drawn.
+- **Backspace reverse (#394):** done; RB is its gamepad binding and the F1 help and GUIDE carry the line.
+- **Map destinations (#390):** done. Boats, trucks and convoys had lines; the station map draws our squads' routes; the pilot's
+  chart now draws our squads' routes and the AI pilot's remaining legs (`Minimap.own_squad_lines`, `Minimap.ai_route_of`).
 - **HAR runway end 0** (owner, 18 Oct; D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain
   change, re-bake, strip trials).
 - **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356), the pilot
   app does not. Its own task, needs render interpolation.
 - **Key audit (#345):** every key, which are still used, what the help text says. Not started.
 - **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
-- **Job board (#383):** remote desks still get only the current strip's board; boards are not saved (a load redeals once).
+- **Job board (#383):** done. Remote desks list the other strips' jobs (`island_board` in the snapshot, nearest first, read-only), and the boards are saved (`StrategicSave` optional key `boards`; no version bump, older saves deal afresh as before).
 - **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached.
   Not part of the game, listed so it is not lost.
 - **Quarry west end and PNR end 1:** one-way by design (terrain or trees in the climb-out); keep documented in `STRIPS.md`.
@@ -259,8 +272,8 @@ calendar, a deal that moves mid-flight, price wars, investments with a return, a
 D-58 to D-60): deadlines follow demand, the boss layer organises while flying is optional, and to begin as seen fit.
 
 - **Built (the simulation half of addition 1, #419):** `Orders` and the market board data in `Trade.view`, with tests; DESIGN section 49.
-- **Phone interface (#446):** Work has the market board and buyers' orders with premiums/deadlines; Enter calls Benny. Still to do: a BALANCE entry for the premium
-  payouts (the live balance run with and without orders, see BALANCE).
+- **Phone interface (#446):** Work has the market board and buyers' orders with premiums/deadlines; Enter calls Benny. Measured in BALANCE entry 62 (the stand-in
+  misses most orders; the premiums pay it about $150 a run and the misses cost the Morettis' respect).
 - **Not started:** additions 2 to 8, in the order of LOOP_IDEAS section 2 (cover cargo next, then the calendar).
 
 ## Stock, ownership and the money loop (owner, 18 October; planned)
@@ -342,7 +355,7 @@ already-implemented work must not create duplicate systems. Keep issues needing 
 decisions or two real machines unresolved until their evidence exists. Publishing a draft PR is not integration or proof of
 release acceptance.
 
-- **Turf expansion (Codex, branch codex/turf-war-expansion):** `Territories` adds map-scoped district IDs while retaining the four economy markets as parent rollups. Costa Brava has ten authored areas; classic/generated maps use their current market centres. Ground control, squad decisions and exposed one-leg truck routes read the local layer. Stable region IDs allow later maps to bring their own districts. Initial local verification passed (898 tests, Costa Brava smoke, and a 200-seed war balance run); the balance run shifts the war economy and losses and needs interpretation before tuning. Not yet: a visible territory map, balance calibration for district control, and authored content for an additional region.
+- **Turf expansion (Codex, branch codex/turf-war-expansion):** `Territories` adds map-scoped district IDs while retaining the four economy markets as parent rollups. Costa Brava has ten authored areas; classic/generated maps use their current market centres. Ground control, squad decisions and exposed one-leg truck routes read the local layer. Stable region IDs allow later maps to bring their own districts. Initial local verification passed (898 tests, Costa Brava smoke, and a 200-seed war balance run); the balance run shifts the war economy and losses and needs interpretation before tuning. The visible territory map is built (districts tinted by holder on the desks' map and the pilot's chart, `StationMap.turf_rows`). Not yet: balance calibration for district control, and authored content for an additional region.
 
 ### UI decision follow-through (19 October 2026)
 
