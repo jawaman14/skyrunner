@@ -194,6 +194,10 @@ var territory_control := {}  ## region/territory -> faction -> local presence (d
 var _control_trends := {}  ## presentation-only change in public influence since last tick
 var events: Array = []  ## [side ("runner" | "law" | "both"), text]
 var stakeouts := {}  ## stash id -> police squad id
+## Heat step 2 (DESIGN §48): the case files' warrants that have run out, waiting for a police raid team (oldest first).
+## With the case files on, these are the only stashes the street-war police raid; a warrant waits while the guards are too
+## strong, and is dropped when the stash is gone or burned. Saved.
+var warrants: Array = []
 var tails := {}  ## truck job_id -> police squad id
 var hot_spots: Array = []  ## [t, x, y] recent shooting
 var arrests_total := 0
@@ -1702,8 +1706,16 @@ func _think_police() -> void:
 	var mine := _free("police")
 	if sess.stash_net != null:
 		var live: Array = sess.stash_net.live()
-		# raid: a cordon, then the entry team
-		var ripe = _pick(live.filter(func(s): return StashNet.suspicion(s) >= 55.0), func(s): return StashNet.suspicion(s))
+		var files: bool = Investigation.ENABLED and sess.investigation != null
+		# raid: a cordon, then the entry team. With the case files, only a stash whose warrant has run out (heat step 2);
+		# without them, the busiest house at 55 or more.
+		var ripe = null
+		if files:
+			warrants = warrants.filter(func(id): return live.any(func(s): return str(s.id) == str(id)))
+			if not warrants.is_empty():
+				ripe = live.filter(func(s): return str(s.id) == str(warrants[0]))[0]
+		else:
+			ripe = _pick(live.filter(func(s): return StashNet.suspicion(s) >= 55.0), func(s): return StashNet.suspicion(s))
 		if ripe != null and mine.size() >= 2 and not squads.any(func(q): return q.order.get("type", "") == "raid"):
 			var guards := of("org").filter(func(q): return q.pos().distance_to(Vector2(ripe.x, ripe.y)) < 800.0)
 			var team = _pick(mine, func(q): return strength(q))
@@ -1715,9 +1727,13 @@ func _think_police() -> void:
 					mine.erase(cordon)
 				order(team, {"type": "raid", "stash": ripe.id, "perimeter": cordon != null, "cordon": cordon.id if cordon else "", "t": sess.time})
 				mine.erase(team)
+				warrants.erase(str(ripe.id))
 				_log("police", "Raid on %s: %s%s" % [ripe.name, team.id, (", cordon " + cordon.id) if cordon else ""])
-		# stake out the suspected ones
-		for st in live.filter(func(s): return StashNet.suspicion(s) >= 10.0 and StashNet.suspicion(s) < 55.0):
+		# stake out the suspected ones: with the case files, the houses under surveillance (the van across the street the
+		# messages talk about); without them, anything from 10 to 55
+		var watched := live.filter(func(s): return sess.investigation.stage_of(str(s.id)) == "surveillance") if files \
+			else live.filter(func(s): return StashNet.suspicion(s) >= 10.0 and StashNet.suspicion(s) < 55.0)
+		for st in watched:
 			if mine.is_empty():
 				break
 			if stakeouts.has(st.id):

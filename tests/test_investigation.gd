@@ -172,3 +172,77 @@ func test_in_a_game_a_raid_heats_its_district() -> void:
 	s._raid(st.id)
 	check(st.burned, "the raid went in")
 	check(s.investigation.district_risk(str(st.zone)) > 0.0, "and the district is hotter")
+
+
+## Heat step 2 (DESIGN §48): with the street war on, the case files still run, and the war's police raid only a stash whose
+## warrant has run out (no instant raid, no hidden 55 line); their stakeout cars go to the houses under surveillance.
+func _war() -> Session:
+	var s := Session.new({"seed": 3, "map_seed": MapCity.SEED, "location": "QRY", "features": Session.SANDBOX_FEATURES,
+		"ground_war": true})
+	s.police.frozen = true
+	s.ground._started = true
+	for f in s.ground.commanders:
+		s.ground.commanders[f].ai = false
+	s.update(1.0 / 30)
+	for q in s.ground.squads.duplicate():  # nobody about but the squads the test places
+		s.ground.squads.erase(q)
+	return s
+
+
+func _cops(g: GroundWar, at: Vector2) -> void:
+	for kind in ["foot", "foot", "car"]:
+		var q = g.recruit("police", kind, at, false)
+		q.morale = 0.8
+		q.state = "holding"
+
+
+func test_in_the_street_war_the_police_raid_on_a_warrant_not_on_heat() -> void:
+	_sess = _war()
+	var g := _sess.ground
+	var st: Dictionary = _sess.stash_net.live()[0]
+	var id := str(st.id)
+	st.heat = 80.0
+	_cops(g, Vector2(float(st.x) + 2000.0, float(st.y)))
+	g._think_police()
+	check(not g.squads.any(func(q): return q.order.get("type", "") == "raid"), "a hot house with no warrant is not raided")
+	g.warrants = [id]
+	g._think_police()
+	var raid = g.squads.filter(func(q): return q.order.get("type", "") == "raid")
+	check(raid.size() == 1 and str(raid[0].order.stash) == id, "a warrant that ran out sends a raid team to that house")
+	check(g.warrants.is_empty(), "and is served")
+
+
+func test_in_the_street_war_the_files_run_and_queue_the_warrant() -> void:
+	_sess = _war()
+	var st: Dictionary = _sess.stash_net.live()[0]
+	var id := str(st.id)
+	_sess.investigation.cases[id] = {"stage": "warrant", "since": 0.0, "until": _sess.time}
+	_sess._stash_ai_t = 0.0
+	_sess.update(1.0)
+	check_eq(_sess.ground.warrants, [id], "the files tick with the war on, and the ran-out warrant waits for the war's police")
+	check(not st.burned, "no instant raid")
+
+
+func test_in_the_street_war_stakeouts_follow_the_surveillance_stage() -> void:
+	_sess = _war()
+	var g := _sess.ground
+	var live: Array = _sess.stash_net.live()
+	var watched: Dictionary = live[0]
+	var warm: Dictionary = live[1]
+	watched.heat = 46.0
+	warm.heat = 30.0  # warm enough for the old 10-55 band, but no case file
+	_sess.investigation.cases[str(watched.id)] = {"stage": "surveillance", "since": 0.0, "until": 0.0}
+	_cops(g, Vector2(float(watched.x) + 1500.0, float(watched.y)))
+	g._think_police()
+	check(g.stakeouts.has(str(watched.id)) or g.stakeouts.has(watched.id), "the house under surveillance gets the stakeout car")
+	check(not g.stakeouts.has(str(warm.id)) and not g.stakeouts.has(warm.id), "a warm house without a case does not")
+
+
+func test_the_queued_warrants_survive_a_save() -> void:
+	_sess = _war()
+	_sess.ground.warrants = [str(_sess.stash_net.live()[0].id)]
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(_sess))
+	var t := _war()
+	StrategicSave.restore(t, d)
+	check_eq(t.ground.warrants, _sess.ground.warrants, "the queue comes back")
+	t.dispose()
