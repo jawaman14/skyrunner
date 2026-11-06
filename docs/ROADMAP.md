@@ -188,9 +188,9 @@ stream, tests first, as a follow-up to #384/#387. Depends on #378 and #387 landi
 
 These were finished in part, dropped from the 12 October list, or never written down.
 
-- **Backspace reverse (#394):** no gamepad binding and no F1/GUIDE help line.
-- **Map destinations (#390):** only go-fast boats and stash trucks have destination lines. Squads, convoys and the station map
-  (`station_map.gd`) do not; the AI pilot's route is announced (#391) but not drawn.
+- **Backspace reverse (#394):** done; RB is its gamepad binding and the F1 help and GUIDE carry the line.
+- **Map destinations (#390):** done. Boats, trucks and convoys had lines; the station map draws our squads' routes; the pilot's
+  chart now draws our squads' routes and the AI pilot's remaining legs (`Minimap.own_squad_lines`, `Minimap.ai_route_of`).
 - **HAR runway end 0** (owner, 18 Oct; D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain
   change, re-bake, strip trials).
 - **3D pilot app, fixed 30 Hz step with smoothing** (owner, 12 Oct; DECISIONS D-12): the host loop has it (#356), the pilot
