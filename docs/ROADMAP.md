@@ -208,8 +208,9 @@ Rewritten 4 November against the code. The items from 18 October that are finish
   aircraft and the chase camera drawn between the last two steps, key presses carried to the next step. What's left is a
   person at the controls judging the feel, then flipping the default; F-7 waits on that.
 - **Stock lots and pickup orders** (DESIGN 51 slices 2-3): `StockLot`, `StockLedger`, `StockValue` and `PickupOrder` exist with
-  tests and have no gameplay call sites. Lands with F-4.
-- **F-4 inventory:** the model and a session wrap exist; the stash and aircraft stock sites have not moved to it.
+  tests and have no gameplay call sites. F-4's inventory (#509) is where they would land; not wired yet.
+- **F-4 inventory:** the trucks' and raids' moves are booked by name and the lots saved (#509, each truck its own place); what
+  is still booked as unattributed is code that changes stock directly (psychedelics, the trade's own stock).
 - **Street-war police and the case files:** with the ground war on, `GroundWar._think_police` raids stashes without reading
   the case files, so heat step 1 only runs when the war is off (found by BALANCE entry 63, #497). A heat step 2 item.
 - **Checked vehicle routes:** all 99 audited logistics pairs fail access; waits on the map rebuild's sites and connectors
@@ -220,15 +221,13 @@ Rewritten 4 November against the code. The items from 18 October that are finish
 
 **Not started, still owed:**
 
-- **HAR runway end 0** (D-37): in review (#514). The natural terrain holds the ground under end 0's final below a 3 degree path
-  less 15 m, from 300 m to 3 km out, and keeps trees off it (`Terrain.CLEAR_APPROACH`); the strip audit no longer flags it.
 - **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
 - **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached. Not part
   of the game, listed so it is not lost.
 
 **Finished or in PR since 18 October:** Backspace reverse (RB binding and help line were on main), map destination lines (#493), the
 island job board gaps (#495), the BALANCE entries for orders and heat step 1 (#497), the rivals' unattributed money (#496),
-the lawyer's discount valve (#491), the docs' stream table, terrain cache, strip pins and pit (DESIGN §56, #505), the key audit (#506: the SHIFT shortcuts no longer fall through to the plain key when their system is missing; F1 and F8 match the code). The quarry's west end and PNR end 1 stay one-way by design (`STRIPS.md`).
+the lawyer's discount valve (#491), the docs' stream table, terrain cache, strip pins and pit (DESIGN §56, #505), the key audit (#506: the SHIFT shortcuts no longer fall through to the plain key when their system is missing; F1 and F8 match the code), the cleared approach to HAR end 0 (D-37, #514). The quarry's west end and PNR end 1 stay one-way by design (`STRIPS.md`).
 
 ## The design epics, in order (owner, 18 October)
 
