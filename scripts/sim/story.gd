@@ -678,7 +678,7 @@ func _count_landing(d: Dictionary) -> void:
 	if not FLIGHT_GOALS or not d.has("touchdown_fpm"):
 		return
 	var fpm := absf(float(d.get("touchdown_fpm", 0.0)))
-	var bank := absf(float(d.get("max_bank", 0.0)))
+	var bank := absf(float(d.get("final_bank", d.get("max_bank", 0.0))))  # the bank on the final, not a turn after take-off (Codex on #513)
 	var code := str(d.get("code", ""))
 	if fpm <= GREASE_FPM:
 		progress["greaser"] = 1.0

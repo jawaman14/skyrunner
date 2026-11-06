@@ -74,3 +74,32 @@ func test_off_for_the_replays() -> void:
 	var s := _story(0)
 	check(not s.story.chapter.objectives.any(func(o): return Story._is_flight(str(o.key))), "no flying goals with the switch off")
 	s.dispose()
+
+
+## Codex on #513: a steep turn after take-off must not spoil a steady landing; only the bank on the final counts.
+func test_a_steady_landing_is_judged_by_the_bank_on_the_final() -> void:
+	var s := _story(2)
+	for i in 3:
+		s.bus.emit("landed", s.time, "", ["runner"], {"code": "FRM", "touchdown_fpm": 150.0, "max_bank": 40.0, "final_bank": 6.0, "seconds": 600.0})
+	check_eq(float(s.story.progress.get("steady_landings", 0.0)), 3.0, "three in a row, whatever the turns on the way")
+	s.dispose()
+
+
+func test_the_final_bank_is_kept_below_sixty_metres_only() -> void:
+	var s := Session.new({"seed": 5, "location": "FRM"})
+	var st: FlightModel.FlightState = s.state
+	st.on_ground = false
+	st.alt += 600.0
+	st.agl = 600.0
+	st.roll = 40.0
+	s._rules(0.1, st)
+	st.agl = 40.0
+	st.roll = 7.0
+	s._rules(0.1, st)
+	check_near(s.log.max_bank, 40.0, 0.01, "the flight's most bank")
+	check_near(s.log.final_bank, 7.0, 0.01, "the final's: only what was flown below 60 m")
+	st.agl = 120.0
+	st.roll = 2.0
+	s._rules(0.1, st)
+	check_near(s.log.final_bank, 0.0, 0.01, "a go-around starts it again")
+	s.dispose()

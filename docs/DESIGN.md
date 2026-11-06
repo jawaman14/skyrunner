@@ -1896,6 +1896,6 @@ Flight skill gives optional bonus goals in the story, one in each of the first t
 | 2 | Land on a strip under 650 m | any landing at a strip shorter than 650 m |
 | 3 | Three steady landings in a row | under 300 ft/min with the wings within 20 degrees, three running; a rough one starts the count again until three are in |
 
-They count from the `landed` event (`touchdown_fpm`, `max_bank`, the strip's code), and only a landing after a flight counts. Each
+They count from the `landed` event (`touchdown_fpm`, `final_bank` - the most bank below 60 m since the aircraft was last above it, so a turn after take-off does not count - and the strip's code), and only a landing after a flight counts. Each
 pays 8 renown, once, a name earned for flying well, and no money (D-65: nobody gets money except through the same rules). The
 goal card says "optional: renown for flying well".
