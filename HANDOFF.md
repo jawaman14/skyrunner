@@ -56,9 +56,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 |---|---|
 | **Holder** | Dual work (D-52). Claude, 7 November: landed its own queue under D-91 (its own risk-class PRs merge on green CI with every finding fixed and answered; in practice each also waited for Codex's clean review of the exact head). |
 | **Task** | Done: #495-#514 merged, one at a time in order, each with `main` merged in first. BALANCE entries renumbered as they landed (61 lawyer's discount, 62-63 orders and case files, 64 orders, 65 streak guard, 66 lying low, 67 the street war's case files, re-measured after #502/#503, 68 flying well). PARITY is 18 (StreakGuard, Schedule, Story.FLIGHT_GOALS). |
-| **Branches / PRs** | Open: #515 `claude/f6b-debrief` (F-6b first part, the day's debrief; risk class: an optional save sub-key). This docs PR syncs the ledger. #492 is not Claude's. |
+| **Branches / PRs** | None open of Claude's: #515 (F-6b first part, the day's debrief, `Debrief`) merged too. #492 is not Claude's. |
 | **Next step** | F-6b second part: `NightDirector` behind `Nights.ENABLED`, the HQ actions as ordinary commands, `strategic_ref` retired (D-74, replacement goldens). Then F-7 (time acceleration) once a person has judged D-12's feel (`--fixed-step`), and L-1 (businesses as data). |
-| **Codex task** | Review #515's head. |
+| **Codex task** | Nothing assigned; post-merge review of #509-#515 is welcome. |
 | **Watch out** | Codex's findings on an earlier commit stay open until answered: before merging, list every unresolved thread with no reply, not only the head's. `ci_then_merge`-style scripts must refuse a thread with no reply rather than resolve it. When a PR's merge of `main` changes numbers it measured (a BALANCE entry), re-run the measurement against the new `main` instead of only renumbering. |
 
 **Vehicle rebuild draft (Codex, 14 Oct), #374:** Separate branch off main, original procedural period bodies for all 12 dealer/squad model keys. IDs, catalogue prices/specs, saves, physics and collision remain unchanged. Five new render-contract tests pass clean locally; eight existing car-physics tests also pass with baseline cleanup resource warnings. Local full import retains ActionReview.COMMANDS error under 4.6.3. Capture script passes parse check; read-only pinned CI will render 15 staged asset views in WorldScene plus the actual dealership. References: 1981 Ford brochure, 1983 C/K pickup brochure, Mercedes W123/Porsche 944 archives, Vice City/Stories and Driver Parallel Lines (1978 fleet). No copied assets or real brands shipped. Scenery PR #373 remains independent. First pinned capture/import/inventory and export passed on f004e14. Visual review exposed dropped hull panels from mixed indexed/unindexed batches; fixed by expanding primitive indices and checking every triangle winding plus hull presence. Five render tests pass again. Next: inspect corrected captures, latest pinned CI and review; no merge or human gate passed.
@@ -181,7 +181,7 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
   (re-measured), F-4 named stock moves (fixed: each truck is its own inventory place), F-5 actors, F-6a scheduler and books
   (fixed: the day is counted as booked, not read back from the trimmed log), D-12 the pilot app's fixed step (fixed: the camera
   aims along the drawn heading; the switch registered), D-38 flight goals (fixed: judged by the bank on the final; BALANCE 68)
-  and D-37 the cleared HAR approach. Opened #515, F-6b's debrief.
+  and D-37 the cleared HAR approach, then #515, F-6b's debrief (fixed: only our side counted, a quiet day keeps its balance).
 
 - **2026-10-27 - Codex, #373 after #414/#446/#447:** Synced the scenery PR with `main` `6f2d2344`, preserved both handoff histories and regenerated the project status after importing the new glyph add-on. Focused `city_dress` 12/12, `period_props` 8/8 and `docs` 3/3 pass. The awning regression remains in place. Next: exact-head CI, scenery captures, independent review and resolution of open threads before merging; the `automerge` label remains removed.
 
