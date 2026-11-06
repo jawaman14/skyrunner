@@ -66,6 +66,35 @@ func test_the_books_and_the_schedule_survive_a_save() -> void:
 	t.dispose()
 
 
+## Codex on #511: the ledger folds its oldest rows away past LOG_MAX, and a war day books more than that before 06:00. The books
+## count each transfer as it is booked, so a day busier than the log still sums to every dollar.
+func test_a_day_busier_than_the_ledger_log_keeps_every_dollar() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	var n := Ledger.LOG_MAX + 2 * Ledger.TRIM
+	for i in n:
+		s.ledger.transfer("outside:street", "rival:safe", 1.0, "sales", "system", s.time)
+	check(s.ledger.log.size() < n, "the ledger did trim (%d rows kept of %d)" % [s.ledger.log.size(), n])
+	var rows: Array = s.books.close(Books.next_close(s.time)).filter(func(r): return r.org == "rival")
+	check(not rows.is_empty(), "the rivals' day is in the books")
+	if not rows.is_empty():
+		check_near(float(rows[0].in.get("sales", 0.0)), float(n), 0.01, "every sale counted, trimmed rows included")
+	s.dispose()
+
+
+func test_a_save_mid_day_keeps_the_day_under_way() -> void:
+	var s := Session.new({"seed": 2, "location": "FRM"})
+	s.move_money(700, "outside:buyers", "delivery")
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	var t := Session.new({"seed": 3, "location": "FRM"})
+	StrategicSave.restore(t, d)
+	t.move_money(300, "outside:buyers", "delivery")
+	var rows: Array = t.books.close(Books.next_close(t.time)).filter(func(r): return r.org == "org")
+	check(not rows.is_empty() and is_equal_approx(float(rows[0].in.get("delivery", 0.0)), 1000.0),
+		"the day's deliveries before and after the load: %s" % [rows])
+	s.dispose()
+	t.dispose()
+
+
 func test_off_for_the_replays() -> void:
 	Schedule.ENABLED = false
 	var s := Session.new({"seed": 2, "location": "FRM"})

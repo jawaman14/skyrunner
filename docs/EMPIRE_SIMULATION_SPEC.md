@@ -144,8 +144,9 @@ One authoritative `Session.time` (decided 19 Oct). Three things hang off it:
     retires in the same PR.
 
 **Where it stands (7 November 2026), F-6a.** `scripts/sim/schedule.gd` is the heap (`at`, `cancel`, `due`, saved, rebuilt as a heap
-whatever order a save kept). `scripts/sim/books.gd` closes each org's day at 06:00 (game time 0 is midnight): every ledger row
-crossing the org's accounts in [the day's start, 06:00), summed by reason in and out, the net, and the balance it ends on; an
+whatever order a save kept). `scripts/sim/books.gd` closes each org's day at 06:00 (game time 0 is midnight): every transfer
+crossing the org's accounts since the last close, summed by reason in and out as it is booked (the ledger trims its oldest
+rows, so the day is counted live and saved, not read back from the log), the net, and the balance it ends on; an
 opening balance is not takings. It emits `books` and keeps the last 14 days, saved. `Schedule.ENABLED` is in the parity set.
 Wages, rent and arrears move onto this tick with the businesses (L-1, L-4); the nights' report built from the closed days is
 F-6b.

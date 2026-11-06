@@ -13,11 +13,31 @@ const ORGS := ["org", "police", "rival", "family"]
 var sess
 var closed: Array = []  ## [{day, t, org, in: {reason: $}, out: {reason: $}, net, ends}]
 var _since := 0.0  ## when the day being kept began
+## The day being kept, per org: {in: {reason: $}, out: {reason: $}}. Summed as each transfer is booked, because the ledger folds
+## its oldest rows away (Ledger.LOG_MAX) and a busy war day books more than that before 06:00 (Codex on #511). Saved.
+var _open := {}
 
 
 func _init(sess_) -> void:
 	sess = sess_
 	_since = float(sess.time)
+	sess.ledger.on_transfer = _note
+
+
+## The ledger's hook: count a transfer into the day it falls in. A row stamped at or after the close lands in the next day.
+func _note(from: String, to: String, amount: float, reason: String, _t: float) -> void:
+	if reason == "open":
+		return  # an opening balance is not a day's takings; `ends` carries it
+	for o in ORGS:
+		var pre: String = o + ":"
+		var a_in := to.begins_with(pre)
+		var a_out := from.begins_with(pre)
+		if a_in == a_out:
+			continue  # not this org's, or between its own accounts
+		if not _open.has(o):
+			_open[o] = {"in": {}, "out": {}}
+		var bucket: Dictionary = _open[o]["in" if a_in else "out"]
+		bucket[reason] = float(bucket.get(reason, 0.0)) + amount
 
 
 ## The next 06:00 strictly after `t`.
@@ -30,9 +50,10 @@ static func next_close(t: float) -> float:
 func close(t: float) -> Array:
 	var rows := []
 	for o in ORGS:
-		var r := day_of(o, _since, t)
+		var r := _row(o, t)
 		if not r.in.is_empty() or not r.out.is_empty():
 			rows.append(r)
+	_open = {}
 	closed.append_array(rows)
 	while closed.size() > KEEP * ORGS.size():
 		closed.pop_front()
@@ -41,8 +62,28 @@ func close(t: float) -> Array:
 	return rows
 
 
-## One org's money in [`from`, `to`), from the ledger: rows that cross the org's accounts (its own transfers between its
-## accounts are neither in nor out).
+## One org's closing row from the day kept so far.
+func _row(o: String, to: float) -> Dictionary:
+	var day: Dictionary = _open.get(o, {"in": {}, "out": {}})
+	return _summed(o, to, (day.in as Dictionary).duplicate(), (day.out as Dictionary).duplicate())
+
+
+func _summed(o: String, to: float, into: Dictionary, out: Dictionary) -> Dictionary:
+	var pre := o + ":"
+	var net := 0.0
+	for k in into:
+		net += float(into[k])
+	for k in out:
+		net -= float(out[k])
+	var ends := 0.0
+	for acct in sess.ledger.balances:
+		if str(acct).begins_with(pre):
+			ends += float(sess.ledger.balances[acct])
+	return {"day": int(to / DAY_S), "t": to, "org": o, "in": into, "out": out, "net": net, "ends": ends}
+
+
+## One org's money in [`from`, `to`), read back from the ledger's log: rows that cross the org's accounts (its own transfers
+## between its accounts are neither in nor out). Only what the log still holds; the close uses the running day instead.
 func day_of(o: String, from: float, to: float) -> Dictionary:
 	var pre := o + ":"
 	var into := {}
@@ -59,22 +100,14 @@ func day_of(o: String, from: float, to: float) -> Dictionary:
 			continue
 		var bucket: Dictionary = into if a_in else out
 		bucket[str(row.reason)] = float(bucket.get(str(row.reason), 0.0)) + float(row.amount)
-	var net := 0.0
-	for k in into:
-		net += float(into[k])
-	for k in out:
-		net -= float(out[k])
-	var ends := 0.0
-	for acct in sess.ledger.balances:
-		if str(acct).begins_with(pre):
-			ends += float(sess.ledger.balances[acct])
-	return {"day": int(to / DAY_S), "t": to, "org": o, "in": into, "out": out, "net": net, "ends": ends}
+	return _summed(o, to, into, out)
 
 
 func capture() -> Dictionary:
-	return {"closed": closed.duplicate(true), "since": _since}
+	return {"closed": closed.duplicate(true), "since": _since, "open": _open.duplicate(true)}
 
 
 func restore(d: Dictionary) -> void:
 	closed = (d.get("closed", []) as Array).duplicate(true)
 	_since = float(d.get("since", _since))
+	_open = (d.get("open", {}) as Dictionary).duplicate(true)  # the day under way (an older save: counted from the load on)

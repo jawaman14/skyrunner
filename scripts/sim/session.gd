@@ -165,6 +165,7 @@ func dispose() -> void:
 	if books != null:
 		books.sess = null
 	books = null
+	ledger.on_transfer = Callable()
 	if analyst != null:
 		analyst.sess = null
 	analyst = null
