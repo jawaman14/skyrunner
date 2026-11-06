@@ -19,6 +19,13 @@ signal leave(to: String)
 ## The flight keys are rebindable actions (ControlsConfig: F8), the analogue axes FlightAxes.
 const CREW_KEYS := {KEY_N: "transponder", KEY_U: "autopilot", KEY_K: "kick", KEY_O: "call_boat", KEY_V: "pump", KEY_I: "turn_around"}
 const PRESS_KEYS := {KEY_ENTER: "confirm", KEY_KP_ENTER: "confirm"}
+## The SHIFT shortcuts to people and desks (key audit, #345). Each works only once its system is in the game; until then
+## SHIFT+the key must do nothing rather than fall through to the plain key (SHIFT+K kicked a bale, SHIFT+N switched the
+## transponder off, SHIFT+G dropped the flaps).
+const SHIFT_SHORTCUTS := {KEY_W: "the hiring hall", KEY_H: "logistics", KEY_B: "the buyers", KEY_L: "the lawyer",
+	KEY_F: "the Family", KEY_G: "the General's aide", KEY_C: "the Sunrise Collective", KEY_V: "the car lot",
+	KEY_K: "the Hotel Cielo", KEY_U: "the island's mules", KEY_I: "the island's containers", KEY_Y: "the Family's offers",
+	KEY_N: "the Family's offers", KEY_P: "the Family's tribute"}
 const TAXI_MS := 13.0  ## m/s the cab averages
 const TAXI_ROAD := 1.3  ## roads wind: this much longer than the crow flies
 const TAXI_BASE := 15  ## $ flag-fall
@@ -38,15 +45,16 @@ Flight   W/S or UP/DOWN pitch     A/D or LEFT/RIGHT roll     Q/E rudder / nosewh
          Air look: hold RIGHT mouse and drag while airborne (independent of Y)
          F8 controls: rebind any flight key or button; bind a yoke, throttle quadrant, pedals and
             toe brakes (several devices) with invert, deadzone and expo; the colour-safe palette
-View     C cycle camera (chase / cockpit / tower)    M big map    P pause (in the aircraft; ESC anywhere)   F2 time of day
+View     F1 this help   C cycle camera (chase / cockpit / tower)    M big map    P pause (in the aircraft; ESC anywhere)
+         F2 time of day (in the aircraft and on foot)
          BACKSLASH fast-forward: 1x, 2x, 4x, 8x (solo only)
 Seats    F3 hand the aircraft to the AI pilot / take it back (separate from U autopilot)
 Debug    F6 performance overlay: FPS, frame times, graphs (Debug Menu add-on, MIT)   CTRL+F5 skip to the next story chapter (solo, for testing)
-         CTRL+F2 site access overlay: footprints, entrances, loading points, runway clearance
+         CTRL+F2 site access overlay: footprints, entrances, loading points, runway clearance   CTRL+F6 test menu (solo)
 Table    F4 multiplayer menu: games on your network, who is at the table (mute, remove), chat, voice settings
 Voice    hold ` (default, rebind in F4) to talk on your side's net (a radio: range, hills, static);
          SHIFT + that key talks to the whole table (hosting or joined)
-Radio    F7 radio on / off, , and . tune (in the aircraft); in the car R, , and . : real 1979-86 broadcasts, the same dial
+Radio    F7 radio on / off, , and . tune (in the aircraft); in the car R, and , . or [ ] : real 1979-86 broadcasts, the same dial
 Learn    F10 skip a tutorial step   SHIFT+F10 tutorial on / off (the lobby's Tutorial box, or --tutorial)
 Screen   F9 filter: off / VHS / colour-blindness simulations (protan, deutan, tritan, mono)
 Beta     F12 feedback bundle: a zip of what happened (build, machine, flight, log, screenshot) to send back
@@ -71,7 +79,8 @@ Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
             stay low with a hot load, direct at cruise otherwise; squawk unless there's already heat
          K kick a bale   O call the boat (SHIFT+O: the 1 s codeword - harder to DF)
          V ferry fuel pump   I push aircraft round (stopped)   ENTER continue   ESC close menu / pause menu
-SHIFT    the SHIFT keys below work in the aircraft; on foot SHIFT runs, so use T, the phone, for the same people
+SHIFT    the SHIFT keys below work in the aircraft; on foot SHIFT runs, so use T, the phone, for the same people.
+         One for something not yet in your game says so and does nothing else
 Family   SHIFT+F sit down with Sal Moretti: hear the offer, your man's read on it, press him for
          another, take it or leave it; pay or stall the tribute (1-4 answer, ENTER go on, ESC leave)
          SHIFT+Y / SHIFT+N take or turn down the newest offer without the talk, SHIFT+P pay the tribute
@@ -571,6 +580,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 				r = s.command(Roles.PILOT, "family_accept" if k == KEY_Y else "family_decline", {"id": s.family.offers.back().id})
 			if not r[0]:
 				s.say(r[1])
+		elif ev.shift_pressed and SHIFT_SHORTCUTS.has(k):
+			# the system behind this shortcut is not in this game yet: say so, and never do the plain key's job
+			s.say("SHIFT+%s: %s - not yet in this game." % [OS.get_keycode_string(k), SHIFT_SHORTCUTS[k]])
 		elif _flight_press(ev):
 			pass
 		elif PRESS_KEYS.has(k):

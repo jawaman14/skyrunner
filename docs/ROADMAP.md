@@ -213,14 +213,13 @@ Rewritten 4 November against the code. The items from 18 October that are finish
 **Not started, still owed:**
 
 - **HAR runway end 0** (D-37): flatten the hill about 22 m high 1.2 km out so both ends work (terrain change, re-bake, strip trials).
-- **Key audit (#345):** every key, which are still used, what the help text says.
 - **Autopilot mentions (#345):** the owner was asked where an unprompted mention appeared; no answer yet.
 - **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached. Not part
   of the game, listed so it is not lost.
 
 **Finished or in PR since 18 October:** Backspace reverse (RB binding and help line were on main), map destination lines (#493), the
 island job board gaps (#495), the BALANCE entries for orders and heat step 1 (#497), the rivals' unattributed money (#496),
-the lawyer's discount valve (#491), the docs' stream table, terrain cache, strip pins and pit (DESIGN §56, #505). The quarry's west end and PNR end 1 stay one-way by design (`STRIPS.md`).
+the lawyer's discount valve (#491), the docs' stream table, terrain cache, strip pins and pit (DESIGN §56, #505), the key audit (#506: the SHIFT shortcuts no longer fall through to the plain key when their system is missing; F1 and F8 match the code). The quarry's west end and PNR end 1 stay one-way by design (`STRIPS.md`).
 
 ## The design epics, in order (owner, 18 October)
 
