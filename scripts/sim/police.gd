@@ -940,6 +940,8 @@ func _inbound_from_sea(sig: SensorNet.Signature) -> bool:
 ## `cover`: CoverCargo.factor of the load (0..0.6): the share of the customs chance a legitimate load beside the hot one takes away.
 ## A customs operation the Calendar announced: inspections at the police strips x(1 + crackdown). 0 otherwise.
 var crackdown := 0.0
+## Customs catches of the runner in a row (StreakGuard): each eases the next inspection; a clean pass with a hot load resets it.
+var customs_streak := 0
 
 
 func landing_check(s, field_: Airfield, carrying_hot: bool, tid := "runner", cover := 0.0) -> bool:
@@ -956,9 +958,11 @@ func landing_check(s, field_: Airfield, carrying_hot: bool, tid := "runner", cov
 		return true
 	if field_.police and carrying_hot and not no_customs:
 		var r := rng.random()  # the same one draw as before cover existed: only the threshold moves
-		if r < 0.35 * (1.0 - cover) * (1.0 + crackdown):
+		if r < 0.35 * (1.0 - cover) * (1.0 + crackdown) * StreakGuard.factor(customs_streak):
 			events.append("Customs inspection!")
+			customs_streak += 1
 			return true
+		customs_streak = 0
 		if r < 0.35:
 			events.append("Customs went through the manifest and waved the honest cargo through.")
 	return false

@@ -1401,7 +1401,7 @@ func _patrol_stops(q: Squad, t) -> bool:
 	if not _passed.has(key):
 		var st = sess.stash_net.get_stash(t.stash)
 		var known: bool = st != null and StashNet.suspicion(st) >= StashNet.KNOWN_HEAT
-		_passed[key] = frng.random() < PATROL_STOP + (PATROL_STOP if known else 0.0)
+		_passed[key] = frng.random() < (PATROL_STOP + (PATROL_STOP if known else 0.0)) * StreakGuard.factor(sess.stash_net.truck_streak)
 		if _passed.size() > 400:
 			_passed.clear()
 	return _passed[key]
