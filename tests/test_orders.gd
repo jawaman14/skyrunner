@@ -113,7 +113,8 @@ func test_a_part_delivery_pays_on_the_part_and_a_missed_one_costs_trust() -> voi
 	var trust0: float = s.agency.trust
 	s.time += 101.0
 	s.trade.orders.update(s.time, 60.0)
-	check_near(trust0 - float(s.agency.trust), Orders.FAIL_TRUST, 0.01, "nothing delivered costs the Company's trust in full")
+	check_near(trust0 - float(s.agency.trust), 0.0, 0.01, "an order nothing was sent for costs no trust: it was an offer (D-94)")
+	check(Orders.FAIL_TRUST <= Orders.DONE_TRUST, "a shortfall never costs more than a fill earns")
 	s.dispose()
 
 

@@ -11,7 +11,7 @@ current are in [archive/](archive/). They are kept as records, not as instructio
 | [../INSTALL.md](../INSTALL.md) | Download a build or run from source, step by step |
 | [../BETA.md](../BETA.md) | The tester's guide: what to try, and how to report (F12) |
 | [GUIDE.md](GUIDE.md) | The player's guide: every role, every mechanic, every key |
-| [FEATURES.md](FEATURES.md) | The long feature reference, system by system |
+| [FEATURES.md](FEATURES.md) | Every mechanic by domain and system with its verified status (built, in PR, half done, planned), then the long feature descriptions |
 | [SERVER.md](SERVER.md) | Running a dedicated server (Docker, systemd, a cloud VM) |
 
 ## How the game works

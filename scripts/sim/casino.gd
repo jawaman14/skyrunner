@@ -225,7 +225,7 @@ func buy_stake() -> String:
 		return "You hold as much of the house as the Family will sell."
 	if sess.money < STAKE_PRICE:
 		return "A tenth of the house is $%s." % Py.money(STAKE_PRICE)
-	sess.money -= STAKE_PRICE
+	sess.move_money(-STAKE_PRICE, "outside:casino", "purchase")
 	stake = minf(STAKE_MAX, stake + STAKE_STEP)
 	sess.family.respect = minf(100.0, sess.family.respect + 3.0)
 	last = "You hold %d%% of the %s." % [int(round(stake * 100.0)), NAME]
@@ -242,7 +242,7 @@ func collect() -> String:
 		return "Nothing owed yet."
 	var got := owed
 	owed = 0
-	sess.money += got
+	sess.move_money(got, "outside:casino", "sales")
 	collected += got
 	sess.say("The cage pays out your share: $%s." % Py.money(got))
 	return ""
@@ -268,7 +268,7 @@ func launder(stash_id: String, amount: int) -> String:
 	sess.logistics.cash[stash_id] = have - n
 	var cut := int(round(float(n) * (CAGE_FAMILY_CUT + skim())))
 	var net := n - cut
-	sess.money += net
+	sess.move_money(net, "outside:casino", "sales")
 	fees += cut
 	laundered += n
 	cage_log.append([sess.time, n])
@@ -287,7 +287,7 @@ func pay_general() -> String:
 		return err
 	if sess.money < GENERAL_PAYOFF:
 		return "The General's aide wants $%s." % Py.money(GENERAL_PAYOFF)
-	sess.money -= GENERAL_PAYOFF
+	sess.move_money(-GENERAL_PAYOFF, "outside:island", "bribe")
 	sess.island.relations = minf(100.0, sess.island.relations + 8.0)
 	unrest = maxf(0.0, unrest - 10.0)
 	heat = maxf(0.0, heat - 5.0)
@@ -303,7 +303,7 @@ func buy_out_rival() -> String:
 		return "%s is already yours." % RIVAL
 	if sess.money < RIVAL_BUYOUT:
 		return "%s will go for $%s." % [RIVAL_BOSS, Py.money(RIVAL_BUYOUT)]
-	sess.money -= RIVAL_BUYOUT
+	sess.move_money(-RIVAL_BUYOUT, "outside:casino", "purchase")
 	rival = 0.0
 	bought_out_until = sess.time + 6 * 3600.0
 	sess.say("%s sells %s to the Family's friends. The tables fill." % [RIVAL_BOSS, RIVAL])
@@ -316,7 +316,7 @@ func evacuate() -> String:
 		return "There is nothing to get out of."
 	var cash := int(float(owed) * EVAC_OWED)
 	var sold := int(round(stake / STAKE_STEP * float(STAKE_PRICE) * EVAC_STAKE))
-	sess.money += cash + sold
+	sess.move_money(cash + sold, "outside:casino", "resale")
 	sess.say("You get out on the last launch with $%s: your share and what the stake would fetch (the rest is the revolution's)." % Py.money(cash + sold))
 	owed = 0
 	stake = 0.0
@@ -347,7 +347,7 @@ func _house(net: int) -> void:
 
 
 func _settle(game: String, net: int, text: String, extra := {}) -> void:
-	sess.money += net
+	sess.move_money(net, "outside:casino", "prize")
 	_house(net)
 	last_play = {"game": game, "net": net, "text": text}
 	last_play.merge(extra)
