@@ -80,7 +80,9 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - F-5, `command_as` and actors. 7 November: `Actor`, `Session.command_as` with `command` as its shim, events tagged
      with the actor and org, and `job_delivered` gains `by` and `mode`. The ownership and manager-budget checks wait for
      businesses (L-1) and managers (L-4); story goals counting by org is L-5.
-   - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74).
+   - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74). 7 November, F-6a:
+     the scheduler (`Schedule`, saved) and the 06:00 books (`Books`, each org's day from the ledger, saved). F-6b, the
+     nights retiring into a report built from the books, is next.
    - F-7, time acceleration, after D-12.
    - Progress on 4 November: F-1 and F-2 are on main; F-3 is finished in #496; F-4 has the inventory model and a session wrap
      with no call sites moved; F-5 to F-7 not started (`job_delivered` has no `by` or `mode` yet).

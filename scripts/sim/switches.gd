@@ -15,7 +15,7 @@ extends RefCounted
 const PARITY := [
 	"SensorNet.REALISM", "Economy.REALISM", "Arsenal.REALISM", "GroundWar.ENABLED", "Chronicle.ENABLED",
 	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Orders.ENABLED", "Jobs.ISLAND_BOARD",
-	"Investigation.ENABLED", "CoverCargo.ENABLED", "Comeback.ENABLED", "DealMoves.ENABLED", "Gigs.ENABLED", "StreakGuard.ENABLED",
+	"Investigation.ENABLED", "CoverCargo.ENABLED", "Comeback.ENABLED", "DealMoves.ENABLED", "Gigs.ENABLED", "StreakGuard.ENABLED", "Schedule.ENABLED",
 ]
 
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
@@ -37,7 +37,7 @@ static func snapshot() -> Dictionary:
 		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Orders.ENABLED": Orders.ENABLED,
 		"Jobs.ISLAND_BOARD": Jobs.ISLAND_BOARD,
 		"Investigation.ENABLED": Investigation.ENABLED, "CoverCargo.ENABLED": CoverCargo.ENABLED, "Comeback.ENABLED": Comeback.ENABLED, "DealMoves.ENABLED": DealMoves.ENABLED, "Gigs.ENABLED": Gigs.ENABLED,
-		"StreakGuard.ENABLED": StreakGuard.ENABLED}
+		"StreakGuard.ENABLED": StreakGuard.ENABLED, "Schedule.ENABLED": Schedule.ENABLED}
 
 static func restore(state: Dictionary) -> void:
 	# Validate the complete snapshot before changing any switch.
@@ -61,6 +61,7 @@ static func restore(state: Dictionary) -> void:
 	DealMoves.ENABLED = state["DealMoves.ENABLED"]
 	Gigs.ENABLED = state["Gigs.ENABLED"]
 	StreakGuard.ENABLED = state["StreakGuard.ENABLED"]
+	Schedule.ENABLED = state["Schedule.ENABLED"]
 
 static func parity_off() -> Dictionary:
 	var previous := snapshot()
@@ -80,6 +81,7 @@ static func parity_off() -> Dictionary:
 	DealMoves.ENABLED = false
 	Gigs.ENABLED = false
 	StreakGuard.ENABLED = false
+	Schedule.ENABLED = false
 	return previous
 
 
@@ -100,3 +102,4 @@ static func parity_on() -> void:
 	DealMoves.ENABLED = true
 	Gigs.ENABLED = true
 	StreakGuard.ENABLED = true
+	Schedule.ENABLED = true
