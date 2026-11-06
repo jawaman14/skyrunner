@@ -124,6 +124,7 @@ func arrest(how: String) -> void:
 		case_.stage = "pretrial" if PILOT_FREE else "custody"
 		case_.bail_posted = "lawyer" if PILOT_FREE else ""
 		case_.trial_at = sess.time + 300.0
+		case_.lost_load = bool(case_.get("lost_load", false)) or hot_lb > 0.0  # a load seized this time counts for the discount too
 		_hot_charges(hot_lb, armed)
 		_say("Arrested again while the case is open: the case is reopened, heavier. Trial in 5 min.",
 			("The pilot is free to fly - the lawyer reopens the case (%s)" if PILOT_FREE else "The pilot is back in custody - bail revoked (%s)") % how)
@@ -143,7 +144,7 @@ func arrest(how: String) -> void:
 		"bail": 0, "bail_posted": "", "bail_by": sess.time + BAIL_DECIDE_S, "no_bail": false,
 		"trial_at": sess.time + PRETRIAL_S, "continuances": 0, "motions": [], "plea": {}, "plea_n": 0,
 		"cooperating": false, "tampered": false, "bribed": false, "immunity": false, "frozen": 0,
-		"verdict": "", "years": 0.0, "release_at": -1.0, "appealed": false}
+		"verdict": "", "years": 0.0, "release_at": -1.0, "appealed": false, "lost_load": hot_lb > 0.0}
 	_hot_charges(hot_lb, armed)
 	if case_.charges.is_empty():
 		_charge("possession" if hot_lb > 0.0 else "conspiracy")
@@ -247,6 +248,19 @@ func post_bail(how: String) -> String:
 	return "Cash, a bond, or custody?"
 
 
+## Loop idea 8, the lawyer's valve: a bust that took the load leaves a pilot short, and a lawyer who can see it takes the case at
+## this share of the fee rather than not at all (only when the pilot cannot pay the full one).
+const LOSS_DISCOUNT := 0.5
+
+
+## What `tier` asks for this case: the full fee, or the discount after a seized load when the pilot cannot meet it.
+func fee(tier: String) -> int:
+	var full := int(LAWYERS[tier].cost)
+	if case_ != null and bool(case_.get("lost_load", false)) and sess.money < full:
+		return int(full * LOSS_DISCOUNT / 500.0) * 500
+	return full
+
+
 ## Retain a lawyer ("local" or "miami"; the Family's comes by the Family).
 func hire(tier: String) -> String:
 	if case_ == null or case_.stage in ["prison"]:
@@ -256,12 +270,17 @@ func hire(tier: String) -> String:
 	var l: Dictionary = LAWYERS[tier]
 	if float(l.skill) <= float(lawyer().skill):
 		return "You already have someone as good."
-	if sess.money < int(l.cost):
-		return "%s wants $%s up front." % [l.name, Py.money(int(l.cost))]
-	sess.move_money(-int(l.cost), "outside:market", "fee")
+	var cost := fee(tier)
+	if sess.money < cost:
+		return "%s wants $%s up front." % [l.name, Py.money(cost)]
+	sess.move_money(-cost, "outside:market", "fee")
 	case_.lawyer = tier
 	case_.lawyer_honest = true
-	_say("%s takes the case (%s)." % [l.name, l.blurb], "The pilot has retained %s" % l.name)
+	if cost < int(l.cost):
+		_say("%s takes the case for $%s, not $%s: \"they took your load, I won't take your shirt\" (%s)." % [l.name, Py.money(cost),
+			Py.money(int(l.cost)), l.blurb], "The pilot has retained %s" % l.name)
+	else:
+		_say("%s takes the case (%s)." % [l.name, l.blurb], "The pilot has retained %s" % l.name)
 	return ""
 
 
@@ -668,7 +687,8 @@ func view(side: String) -> Dictionary:
 		"no_bail": c.no_bail, "bail_s": maxi(0, int(float(c.bail_by) - now)), "plea": c.plea.duplicate(),
 		"release_s": maxi(0, int(float(c.release_at) - now)) if c.stage == "prison" else 0, "verdict": c.verdict,
 		"years": float(c.years), "cooperating": c.cooperating, "motions": c.motions.duplicate(),
-		"continuances": int(c.continuances), "appealed": c.appealed}
+		"continuances": int(c.continuances), "appealed": c.appealed,
+		"fees": {"local": fee("local"), "miami": fee("miami")}}  # what each lawyer asks now (the seized-load discount included)
 	if side == "law" or c.discovered:
 		v["evidence"] = int(c.evidence)
 		v["witnesses"] = int(c.witnesses)
