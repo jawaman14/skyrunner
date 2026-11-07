@@ -170,3 +170,18 @@ func test_off_means_none() -> void:
 	check(s.command(Roles.PILOT, "black_market_buy", {"i": 0})[1].contains("no black market"), "and the command says so")
 	s.dispose()
 	BlackMarket.ENABLED = true
+
+
+func test_a_hot_job_lost_with_its_board_is_replaced() -> void:
+	var s := _sess()
+	for code in ["HAR", "FRM", "QRY"]:
+		if not s.boards.has(code):
+			s.refresh_board(code)
+	_week(s)
+	var hot: Dictionary = s.black_market.hot.duplicate()
+	s.refresh_board(str(hot.code))  # the board went stale and was dealt afresh
+	s.time += BlackMarket.CHECK_S + 1.0
+	s.black_market.update()
+	check(not s.black_market.hot.is_empty(), "another hot job")
+	check(s.black_market._find(int(s.black_market.hot.job_id)) != null, "on a board")
+	s.dispose()

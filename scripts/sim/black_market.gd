@@ -27,6 +27,7 @@ const FILE_PRICE := 4000  ## times (1 + renown tier)
 const HOT_PAY := 1.5
 const HOT_RENOWN := 20.0
 const HOT_TAG := "HOT JOB OF THE WEEK: "
+const CHECK_S := 60.0
 
 var sess
 var rng: PyRandom
@@ -34,6 +35,7 @@ var week := 0  ## the week the offers below are for
 var offers: Array = []  ## {kind, text, price, sold, ...}
 var hot := {}  ## {job_id, code, base}: the week's hot job (empty when none)
 var bought := 0
+var _check_t := 0.0  ## when the hot job was last looked for (a stale board can be dealt afresh under it)
 
 
 func _init(sess_, rng_: PyRandom) -> void:
@@ -47,10 +49,26 @@ func live() -> bool:
 
 
 func update() -> void:
-	if not live() or int(sess.weekly.week) == week:
+	if not live():
 		return
-	week = int(sess.weekly.week)
-	_post()
+	if int(sess.weekly.week) != week:
+		week = int(sess.weekly.week)
+		_post()
+		return
+	if sess.time - _check_t >= CHECK_S:
+		_check_t = sess.time
+		_still_there()
+
+
+## The hot job went with its board (a stale board is dealt afresh) and nobody took it: choose another for the rest of the week.
+func _still_there() -> void:
+	if hot.is_empty() or hot.get("done", false):
+		return
+	var id := int(hot.job_id)
+	if _find(id) != null or sess.active_jobs.any(func(j): return j.id == id):
+		return
+	hot = {}
+	_post_hot()
 
 
 func _tier() -> int:
