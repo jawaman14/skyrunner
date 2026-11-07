@@ -1870,6 +1870,7 @@ that claim an offset are noted.
 | 185 | `Weekly` | `session.gd` | the week's goals |
 | 187 | `Wanted` | `session_state.gd` | the Wanted names' prizes, one draw a take-down (D-95) |
 | 189 | `Curses` | `session.gd` | which board jobs offer a condition, and which one (D-95) |
+| 191 | `BlackMarket` | `session.gd` | the week's black-market stock and the week's hot job (D-95) |
 | 404, 505 | `Nights` | `nights.gd` | an HQ season's night; its bots |
 | 909 | `Analyst` | `analyst.gd` | the analyst's desk |
 | 919 | `Undercover` | `undercover.gd` | the undercover agent |
@@ -1991,3 +1992,27 @@ employer's work or a windfall) carries a condition, drawn when the board is deal
 (seed + 189). The offer and the choice are saved with the board's jobs (`Jobs.SAVE_KEYS`: `curse`, `cursed`); the counts and
 the stream with the game (`curses`). Jobs in flight are not saved, as before. Not measured by the balance simulators: their
 bots never take a condition. Behind `Curses.ENABLED`, in the parity set. Tests: `tests/test_curses.gd`.
+
+## 61. The weekly black market and the week's hot job (owner, 7 November 2026, D-95)
+
+From the Borderlands study's round two (its weekly vendor and its rotating featured mission). `scripts/sim/black_market.gd`
+(`BlackMarket`, `Session.black_market`). Both turn over with the island week (DESIGN 52, `Weekly`), so every week has something
+worth checking, and both live in the phone's Week app under "The black market".
+
+**The stock.** When a week posts, a fence offers three one-off deals drawn from what this game has open, each bought once and
+gone when the week turns (`black_market_buy`, ENTER on the Week page; the money goes to `outside:black-market`):
+
+| Offer | Needs | What it is |
+|---|---|---|
+| `arms` | the organisation's armoury | 6 rifles (2 machine guns from renown tier 2) at 55% of the street price |
+| `vehicle` | the dealership | a stash truck at 30% off the lot's price (into the fleet as any truck) |
+| `fuel` | a bush or shady strip | 400 lb of fuel left at that strip for $150 (the strip's fuel cache) |
+| `file` | the task force | a bent clerk takes 20 off the suspicion on you, for $4,000 times (1 + renown tier) |
+
+**The hot job.** The best eligible job on one strip's board (cargo, passengers, contraband, medical, fugitives; not airdrops,
+side gigs, the employer's work or a windfall) is marked "HOT JOB OF THE WEEK" in its title, pays 1.5 times as much and pays
+20 renown on delivery (`hot_job_done`). Untaken when the week turns, it goes back to its own title and pay, and another is chosen.
+
+Drawn when the week posts, on its own stream (seed + 191). Saved (`black_market`: the week, the stock and what is sold, the hot
+job and its base pay, the stream). Live only while the week's work is (`Weekly.live`). Not measured by the balance simulators:
+their stand-ins don't shop. Behind `BlackMarket.ENABLED`, in the parity set. Tests: `tests/test_black_market.gd`.

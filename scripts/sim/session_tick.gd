@@ -200,6 +200,8 @@ func _update_world(dt: float) -> void:
 		calendar.update(dt)
 	if weekly != null:
 		weekly.update(dt)
+	if black_market != null:
+		black_market.update()  # after the week: a new week posts new stock
 	if schedule != null:
 		for e in schedule.due(time):
 			_on_due(str(e[2]), e[3], float(e[0]))

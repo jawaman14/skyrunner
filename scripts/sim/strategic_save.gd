@@ -79,6 +79,8 @@ static func capture(s: Session) -> Dictionary:
 		d["weekly"] = s.weekly.capture()  # optional: an older save starts its first week afresh
 	if s.curses != null:
 		d["curses"] = s.curses.capture()  # optional (D-95): the board's offers are on the saved jobs
+	if s.black_market != null and s.black_market.week > 0:
+		d["black_market"] = s.black_market.capture()  # optional (D-95): this week's stock and its hot job
 	if s.breakaway != null:
 		d["breakaway"] = s.breakaway.capture()  # optional (D-95): an older save starts with today's breakaway unused
 	if s.schedule != null:
@@ -308,6 +310,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.weekly.restore(d.weekly)
 	if s.curses != null and d.get("curses") is Dictionary:
 		s.curses.restore(d.curses)
+	if s.black_market != null and d.get("black_market") is Dictionary:
+		s.black_market.restore(d.black_market)
 	if s.breakaway != null and d.get("breakaway") is Dictionary:
 		s.breakaway.restore(d.breakaway)
 	if s.schedule != null:

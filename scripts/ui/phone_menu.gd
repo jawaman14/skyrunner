@@ -63,6 +63,7 @@ var _jobs: Array = []
 var _work: Array = []  ## the Work page's rows: [kind, payload] - "board", "job" (a Job), or "" for a heading
 var _empire: Array = []  ## the Empire page's rows: an action to call, or "" for a line
 var _order_rows: Array = []
+var _week_rows: Array = []  ## the Week page's rows: a black-market offer index, or -1
 var _call_ids: Array = []  ## the ringing calls last drawn: a new one refreshes the phone
 var history_label: Label  ## Contacts: the last few calls, answered, declined or missed
 var campaign_scroll: ScrollContainer  ## the chapter guide (G, or its button on the home screen), over any app
@@ -394,12 +395,21 @@ func refresh() -> void:
 			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
 		"week":
 			title.text = "The week's work"
+			_week_rows = []
 			for line in (s.weekly.lines() if s.weekly != null else ["No weekly goals in this game."]):
 				if str(line).begins_with("# "):
 					list.section(str(line).substr(2))
 				else:
 					list.add_row([str(line)])
-			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
+				_week_rows.append(-1)  # (a section is a row of the list too)
+			var market: Array = s.black_market.rows() if s.black_market != null else []
+			if not market.is_empty():  # the weekly black market and the week's hot job (D-95)
+				list.section("The black market (ENTER buys)")
+				_week_rows.append(-1)
+				for r in market:
+					list.add_row([str(r[0])])
+					_week_rows.append(int(r[1]))
+			hints.set_hints([["UP/DOWN", "scroll", "down"], ["ENTER", "buy", "enter"], ["ESC", "back", "esc"]] if not market.is_empty() else [["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
 		"done":
 			title.text = "Done"
 			for line in _finished_objectives():
@@ -668,6 +678,11 @@ func key(k: String) -> void:
 						page = "home"
 						super.close()
 						called.emit(str(_empire[i]))
+				"week":
+					if i >= 0 and i < _week_rows.size() and int(_week_rows[i]) >= 0:
+						var rb: Array = s.command(Roles.PILOT, "black_market_buy", {"i": int(_week_rows[i])})
+						show_feedback("Bought." if rb[0] else str(rb[1]), bool(rb[0]))
+						refresh()
 				"orders":
 					if i >= 0 and i < _order_rows.size():
 						page = "home"
