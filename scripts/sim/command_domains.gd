@@ -60,6 +60,7 @@ static func handlers() -> Dictionary:
 		"casino": Callable(TRADE, "_cmd_casino"),
 		"acid_barter": Callable(TRADE, "_cmd_acid_barter"),
 		"acid_sell": Callable(TRADE, "_cmd_acid_sell"),
+		"black_market_buy": Callable(TRADE, "_cmd_black_market_buy"),
 		"acid_auto": Callable(TRADE, "_cmd_acid_auto"),
 		"buy_vehicle": Callable(TRADE, "_cmd_buy_vehicle"),
 		"sell_vehicle": Callable(TRADE, "_cmd_sell_vehicle"),
