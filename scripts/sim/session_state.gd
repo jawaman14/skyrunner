@@ -184,6 +184,7 @@ var races: Races = null  ## the arena: a street race and an air circuit for priz
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var curses: Curses = null  ## cursed jobs: optional conditions for a premium (D-95)
 var black_market: BlackMarket = null  ## the weekly black market and the week's hot job (D-95)
+var heat_dial: HeatDial = null  ## the heat dial: more danger for more pay (D-95)
 var wanted: Wanted = null  ## named lieutenants and captains with a prize each (D-95; built with the ground war)
 var pending_wanted := {}  ## a save's Wanted roster, kept until the ground war is built (a story opens it after the restore)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
@@ -598,6 +599,10 @@ func refresh_board(code: String) -> void:
 		for j in boards[code]:  # today's prices
 			j.price_mult = econ.job_mult(j)
 			j.payout = int(j.payout * j.price_mult)
+	if heat_dial != null and heat_dial.level != HeatDial.STEADY:
+		for j in boards[code]:  # the heat dial's pay (D-95): boards dealt from now on
+			if j.employer_serial <= 0:
+				j.payout = int(round(float(j.payout) * heat_dial.pay_mult()))
 	if curses != null:
 		curses.offer(boards[code])  # after the prices: a premium is a share of the job's pay as dealt
 

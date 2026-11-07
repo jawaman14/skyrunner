@@ -108,6 +108,8 @@ func _init(opts := {}) -> void:
 		curses = Curses.new(self, _rng(seed + 189))
 	if BlackMarket.ENABLED:  # D-95: turns over with the week, on its own stream
 		black_market = BlackMarket.new(self, _rng(seed + 191))
+	if HeatDial.ENABLED:  # D-95: no draws; Steady is the game as it was
+		heat_dial = HeatDial.new(self)
 	if Breakaway.ENABLED:  # D-95: a stop on the ground can be got out of (no draws)
 		breakaway = Breakaway.new(self)
 	if Schedule.ENABLED:  # F-6: the scheduler and the daily books (no draws)
@@ -168,6 +170,9 @@ func dispose() -> void:
 	if black_market != null:
 		black_market.sess = null
 	black_market = null
+	if heat_dial != null:
+		heat_dial.sess = null
+	heat_dial = null
 	if weekly != null:
 		weekly.sess = null  # break the cycle: a disposed session must be freed
 	weekly = null
