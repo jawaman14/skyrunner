@@ -151,6 +151,7 @@ func test_a_retailer_buys_from_the_warehouse_first() -> void:
 	c.businesses._on_books(null)  # the warehouse has nothing on day one: the bodega buys outside, dearer
 	check_near(c.businesses.shelf("biz-6"), Businesses.SHELF_LB, 0.01, "stocked")
 	var w0 := c.businesses.balance("biz-9")
+	c.businesses.tick_aggregate(Books.DAY_S)  # a day's shoppers
 	c.businesses._on_books(null)
 	var bought: float = c.inventory.log.filter(func(r): return r.reason == "wholesale" and r.to == "biz-6").reduce(func(a, r): return a + float(r.lb), 0.0)
 	check(bought > 0.0, "the bodega restocked from the warehouse")
@@ -185,4 +186,62 @@ func test_other_owners_wait_for_their_ai() -> void:
 	c.businesses._on_books(null)
 	check_eq(c.businesses.shelf("biz-6"), 0.0, "Los Cuervos' bodega trades from L-3")
 	check_eq(c.businesses.shelf("biz-10"), 0.0, "so does the Morettis' fish market")
+	c.dispose()
+
+
+# ------------------------------------------------------------------ the shoppers' day and leaving the district (L-6)
+func _bodega(c: Session) -> void:
+	c.businesses.owner["biz-6"] = "org"
+	c.inventory.add(Businesses.GOOD, 200.0, "biz-6", "market", "", 0.5, 0.0, c.time)
+
+
+func test_the_shoppers_buy_in_open_hours() -> void:
+	var c := _city()
+	_bodega(c)
+	check_eq(Businesses.open_hours(Businesses.spec("biz-6")).size(), 17, "the bodega is open 6 to 23")
+	check_eq(Businesses.open_hours(Businesses.spec("biz-4")), [0, 1, 2, 3, 20, 21, 22, 23], "the club past midnight")
+	c.businesses.tick_full(0.0)
+	var t0 := c.time
+	while c.time < t0 + 3.0 * 3600.0:
+		c.time += 60.0
+		c.businesses.tick_full(60.0)
+	var h0 := int(floorf(t0 / 3600.0)) % 24
+	var open := Businesses.open_hours(Businesses.spec("biz-6")).filter(func(h): return h in [h0, (h0 + 1) % 24, (h0 + 2) % 24]).size()
+	var per := c.businesses.daily_want(Businesses.spec("biz-6")) / 17.0
+	check_near(200.0 - c.businesses.shelf("biz-6"), per * open, 0.01, "an hour's share for each open hour (%d of 3)" % open)
+	c.dispose()
+
+
+func test_a_full_day_matches_the_aggregate() -> void:
+	var a := _city()
+	var b := _city()
+	_bodega(a)
+	_bodega(b)
+	a.businesses.tick_full(0.0)
+	var t0 := a.time
+	while a.time < t0 + Books.DAY_S:
+		a.time += 30.0
+		a.businesses.tick_full(30.0)
+	b.businesses.tick_aggregate(Books.DAY_S)
+	check_near(a.businesses.shelf("biz-6"), b.businesses.shelf("biz-6"), 1.0, "D-68: 24 h of tick_full ends where tick_aggregate(24 h) does")
+	check_near(float(a.businesses.balance("biz-6")), float(b.businesses.balance("biz-6")), 5.0, "and so does the till")
+	a.dispose()
+	b.dispose()
+
+
+func test_the_books_settle_with_the_player_away() -> void:
+	var c := _city()
+	c.money = 10000
+	c.businesses.fund("biz-4", 3000)
+	_bodega(c)
+	c.businesses.fund("biz-6", 500)
+	var days := c.books.closed.size()
+	var t0 := c.time
+	while c.time < t0 + 2.0 * Books.DAY_S + 60.0:
+		c.update(60.0)
+	check(str(c.location) == "HAR", "A8: parked at the airport, out of the district")
+	check_eq(c.businesses.balance("biz-4"), 3000 - 2 * 390, "the club paid two days")
+	check(c.businesses.shelf("biz-6") < 200.0 + Businesses.SHELF_LB, "the bodega's shoppers kept buying")
+	check(c.ledger.balance("outside:shoppers") < 0.0, "and paying")
+	check(c.books.closed.size() >= days, "the books closed")
 	c.dispose()

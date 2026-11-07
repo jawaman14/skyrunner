@@ -71,6 +71,7 @@ var owner := {}  ## business id -> org id ("" free, "outside" not for sale)
 var arrears := {}  ## business id -> dollars owed
 var blocked := {}  ## business id -> why the day's costs weren't paid, or absent
 var districts := {}  ## district id -> {prosperity, demand{good: float}}
+var _hour := -1  ## the last whole game hour the shoppers were run for (tick_full)
 var ai: OrgAI = null  ## the Morettis' and Los Cuervos' AI (L-3); null with OrgAI off, and then only ours run
 
 
@@ -258,19 +259,11 @@ func shelf(id: String) -> float:
 	return sess.inventory.stock(id, GOOD)
 
 
-## The day's trade, before the rent: shoppers buy, the retailers restock (from a warehouse in the chain first), then the warehouse
+## The day's trade, before the rent (the shoppers buy through the day, tick_full): the retailers restock (from a warehouse in the chain first), then the warehouse
 ## sells what's left over to the shops outside and restocks from the market. Every pound is an inventory move and every dollar a
 ## transfer between tills and outside accounts; a till that can't pay buys what it can.
 func _trade_day() -> void:
 	var t: float = sess.time
-	for b in DATA:
-		if is_retail(b) and runs(b.id):
-			var d: Dictionary = districts.get(str(b.district), {"prosperity": 0.5, "demand": {}})
-			var want := SHOPPERS_LB * float(d.demand.get(GOOD, 1.0)) * (0.5 + float(d.prosperity))
-			var lb := minf(want, shelf(b.id))
-			if lb > 0.01:
-				sess.inventory.transfer(b.id, Inventory.OUTSIDE + "shoppers", GOOD, lb, "sale", owner[b.id], t)
-				sess.ledger.transfer("outside:shoppers", till(b.id), lb * price(str(b.district)), "sales", "system:books", t)
 	for b in DATA:
 		if is_retail(b) and runs(b.id):
 			_restock_retail(b, t)
@@ -286,6 +279,53 @@ func _trade_day() -> void:
 			if buy >= 1.0:
 				sess.ledger.transfer(till(b.id), "outside:market", buy * WHOLESALE, "purchase", "system:books", t)
 				sess.inventory.add(GOOD, buy, b.id, "market", "", 0.5, 0.0, t)
+
+
+# ------------------------------------------------------------------ the shoppers, through the day (L-6, spec section 8)
+## What a retail business's shoppers want in a day: its district's demand and prosperity.
+func daily_want(b: Dictionary) -> float:
+	var d: Dictionary = districts.get(str(b.district), {"prosperity": 0.5, "demand": {}})
+	return SHOPPERS_LB * float(d.demand.get(GOOD, 1.0)) * (0.5 + float(d.prosperity))
+
+
+## The hours of the day a business is open.
+static func open_hours(b: Dictionary) -> Array:
+	var from := int(b.hours[0])
+	var to := int(b.hours[1])
+	var out := []
+	for h in 24:
+		if (from < to and h >= from and h < to) or (from >= to and (h >= from or h < to)):
+			out.append(h)
+	return out
+
+
+## The detailed tick (P0 runs it everywhere): each game hour a shop is open, its shoppers buy that hour's share of the day.
+func tick_full(_dt: float) -> void:
+	var now := int(floorf(float(sess.time) / 3600.0))
+	if _hour < 0:
+		_hour = now
+	while _hour < now:
+		var h := _hour % 24  # the hour just gone
+		_hour += 1
+		for b in DATA:
+			if is_retail(b) and runs(b.id):
+				var hours := open_hours(b)
+				if h in hours:
+					_sell(b, daily_want(b) / float(hours.size()))
+
+
+## The aggregate tick (D-68, reserved: no district runs on it yet): a window's shoppers at once, as its share of the day.
+func tick_aggregate(window: float) -> void:
+	for b in DATA:
+		if is_retail(b) and runs(b.id):
+			_sell(b, daily_want(b) * window / Books.DAY_S)
+
+
+func _sell(b: Dictionary, want: float) -> void:
+	var lb := minf(want, shelf(b.id))
+	if lb > 0.0001:
+		sess.inventory.transfer(b.id, Inventory.OUTSIDE + "shoppers", GOOD, lb, "sale", owner[b.id], sess.time)
+		sess.ledger.transfer("outside:shoppers", till(b.id), lb * price(str(b.district)), "sales", "system:books", sess.time)
 
 
 ## What shoppers pay a pound in a district: dearer where it's prosperous.
@@ -327,7 +367,8 @@ func ours() -> Array:
 
 
 func capture() -> Dictionary:
-	var d := {"owner": owner.duplicate(), "arrears": arrears.duplicate(), "blocked": blocked.duplicate(), "districts": districts.duplicate(true)}
+	var d := {"owner": owner.duplicate(), "arrears": arrears.duplicate(), "blocked": blocked.duplicate(), "districts": districts.duplicate(true),
+		"hour": _hour}
 	if ai != null:
 		d["ai"] = ai.capture()
 	return d
@@ -346,5 +387,6 @@ func restore(d: Dictionary) -> void:
 	for k in d.get("districts", {}):
 		if d.districts[k] is Dictionary:
 			districts[str(k)] = d.districts[k].duplicate(true)
+	_hour = int(d.get("hour", -1))  # an older save starts counting from the load
 	if ai != null and d.get("ai") is Dictionary:
 		ai.restore(d.ai)

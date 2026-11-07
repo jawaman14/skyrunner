@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, leaving the district (L-6):** shoppers buy hour by hour in open hours (`tick_full`, every frame,
+  wherever the player is); `tick_aggregate` reserved, its 24 h equivalence tested; A8 two days away (DESIGN 68).
 - **2026-11-08 - Claude, org AI v1 (L-3):** the Morettis (`moretti:safe`, $25k) and Los Cuervos (war chest) run their
   businesses through command_as on their own safes: policy tops tills up, strategy scores fund/skim/buy/hold daily (DESIGN 67).
 - **2026-11-08 - Claude, the legit chain (L-2b):** groceries: market → Costa Imports → bodega/fish market → shoppers at the

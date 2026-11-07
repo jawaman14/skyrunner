@@ -204,6 +204,8 @@ func _update_world(dt: float) -> void:
 		weekly.update(dt)
 	if black_market != null:
 		black_market.update()  # after the week: a new week posts new stock
+	if businesses != null:
+		businesses.tick_full(dt)  # the shoppers, hour by hour, wherever the player is (L-6)
 	if schedule != null:
 		for e in schedule.due(time):
 			_on_due(str(e[2]), e[3], float(e[0]))
