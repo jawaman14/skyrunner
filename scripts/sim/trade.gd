@@ -412,7 +412,7 @@ func _sell_street(o: String, step: float) -> void:
 			sold[g] += lb
 		var pay := lb * street_price(g, m)
 		if lg != null:
-			lg.add_cash(site, pay)  # the corner's money goes to the stash, not the club
+			lg.add_cash(site, pay, "outside:street", "sales")  # the corner's money goes to the stash, not the club (a sale, L-2)
 		else:
 			sess.payroll.earn(o, pay)
 		if o == "org":
