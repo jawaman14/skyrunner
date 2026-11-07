@@ -39,7 +39,7 @@ static func run(s: Session, id: String) -> String:
 				for g in s.logistics.goods():
 					s.logistics.add(site, g, FILL_LB, "cheat")
 				if site != Logistics.HQ:
-					s.logistics.add_cash(site, FILL_CASH)
+					s.logistics.add_cash(site, FILL_CASH, "outside:cheat", "adjust")
 				n += 1
 			return "Filled %d stash houses." % n
 		"clear_heat":

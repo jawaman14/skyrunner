@@ -265,10 +265,11 @@ func launder(stash_id: String, amount: int) -> String:
 		return "There is no cash at that stash."
 	if n < 100:
 		return "The cage is full for the hour." if cage_left() < 100 else "Too little to bother the cage with."
-	sess.logistics.cash[stash_id] = have - n
 	var cut := int(round(float(n) * (CAGE_FAMILY_CUT + skim())))
 	var net := n - cut
-	sess.move_money(net, "outside:casino", "sales")
+	sess.logistics.book_cash(Logistics.STREET, "outside:casino", float(cut), "fee")  # the cage's cut (L-2: the street money is ours already)
+	sess.logistics.cash[stash_id] = have - n
+	sess.move_money(net, Logistics.STREET, "transfer")
 	fees += cut
 	laundered += n
 	cage_log.append([sess.time, n])

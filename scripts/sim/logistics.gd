@@ -23,6 +23,10 @@ extends RefCounted
 
 const CASH_PER_LB := 4500.0  ## street money, mostly fives to twenties
 const HQ := "hq"
+## L-2: the street's money (the stashes' cash, the trucks', the bags aboard) is one organisation account, so bringing it home is
+## a move inside the organisation and the corners' takings are booked as sales when they are made. Kept equal to cash_out()
+## (anything not named where it happens is booked as an unattributed adjustment, which tests/test_logistics_ledger.gd keeps small).
+const STREET := "org:street-cash"
 const CHECKPOINT_M := 250.0  ## a checkpoint this close to the road stops what comes down it
 const AI_CASH_HOME := 8000.0  ## the organisation's AI batches a stash's cash home past this (fewer, fatter trucks)
 const AI_CASH_SHORT := 3000.0  ## ... or past this when the safe can't meet the payroll
@@ -245,15 +249,31 @@ func take_market(g: String, m: String, lb: float) -> Array:
 	return [got, main]
 
 
-func add_cash(site: String, amount: float) -> void:
+## `from`/`reason`: where new money came from (a sale, a buyer); left empty, it is street money already on the books (a truck in).
+func add_cash(site: String, amount: float, from := "", reason := "transfer") -> void:
 	if site != HQ and site != "" and cash.get(site, 0.0) < 1.0:
 		cash_since[site] = sess.time
 	if site == HQ or site == "":
-		sess.move_money(int(amount), "outside:street-cash", "transfer")
+		sess.move_money(int(amount), STREET if from == "" else from, reason)
 		if amount >= 1.0:
 			sess.bus.emit("cash_home", sess.time, "", ["runner"], {"amount": amount})
 		return
+	if from != "":
+		book_cash(from, STREET, amount, reason)
 	cash[site] += amount
+
+
+## Book street money moving in or out (call it with the change it names): one side is STREET.
+func book_cash(from: String, to: String, amount: float, reason: String) -> void:
+	if not sess.ledger.balances.has(STREET):
+		_sync_street()  # first seen (an older save): open it at what the street holds now, not at an adjustment
+	sess.ledger.transfer(from, to, amount, reason, "org", sess.time)
+
+
+## Bring the street account to what the street holds; a difference no one named is an unattributed adjustment.
+func _sync_street() -> void:
+	var v := cash_out()
+	sess.ledger.track(STREET, v, v, sess.time)
 
 
 # ------------------------------------------------------------------ trucks
@@ -331,7 +351,7 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 		if amount < 1.0:
 			return "No cash at %s." % name_of(from)
 		if from == HQ:
-			sess.move_money(-(int(amount)), "outside:street-cash", "transfer")
+			sess.move_money(-(int(amount)), STREET, "transfer")
 		else:
 			cash[from] -= amount
 		c.cash = amount
@@ -377,7 +397,7 @@ func send(from: String, to: String, what: String, amount: float, careful := fals
 func _undo(c: Dictionary) -> void:
 	if c.cash > 0.0:
 		if c.from == HQ:
-			sess.move_money(int(c.cash), "outside:street-cash", "transfer")
+			sess.move_money(int(c.cash), STREET, "transfer")
 		else:
 			cash[c.from] += c.cash
 	if c.lb > 0.0:
@@ -843,6 +863,8 @@ func arrived(t, outcome: String, why: String) -> void:
 	var what := _describe(c)
 	if c.lb > 0.0:  # the load is gone from the road: the state's, or Los Cuervos'
 		_inv(road_of(c), Inventory.OUTSIDE + ("rival" if outcome == "hijacked" else "state"), c.good, c.lb, outcome if outcome == "hijacked" else "seized")
+	if c.cash > 0.0:
+		book_cash(STREET, "outside:rival" if outcome == "hijacked" else "outside:state", c.cash, "loss" if outcome == "hijacked" else "forfeiture")
 	lost.product += c.lb
 	lost.cash += int(c.cash)
 	lost_by[outcome if outcome == "hijacked" else "seized"] += _value(c)
@@ -925,7 +947,7 @@ func _spirit_away(site: String, saved: Dictionary, saved_cash: float) -> void:
 		else:
 			lost.product += saved[g]
 	if saved_cash >= 1.0:
-		sess.move_money(int(saved_cash), "outside:street-cash", "transfer")
+		sess.move_money(int(saved_cash), STREET, "transfer")
 		told.append("$%s" % Py.money(int(saved_cash)))
 	if not told.is_empty():
 		sess.say("The vault held: %s spirited away%s." % [", ".join(told), (" to " + name_of(to)) if to != "" else ""])
@@ -950,6 +972,7 @@ func _raided(site: String) -> void:
 	for g in goods():
 		lost_by.raided += int(stock[site][g] * price_of(g))
 	if cash[site] >= 1.0:
+		book_cash(STREET, "outside:state", cash[site], "forfeiture")
 		took.append("$%s in cash" % Py.money(int(cash[site])))
 		sess.move_law_funds(cash[site] * 0.5, "outside:state", "forfeiture")
 		lost.cash += int(cash[site])
@@ -960,6 +983,8 @@ func _raided(site: String) -> void:
 			var c: Dictionary = convoys[id]
 			if c.lb > 0.0:
 				_inv(road_of(c), Inventory.OUTSIDE + "state", c.good, c.lb, "raided")
+			if c.cash > 0.0:
+				book_cash(STREET, "outside:state", c.cash, "forfeiture")
 			lost.product += c.lb
 			lost.cash += int(c.cash)
 			convoys.erase(id)
@@ -984,7 +1009,7 @@ func load_cash(amount: float) -> String:
 	if amount < 1.0:
 		return "No cash at %s." % name_of(site)
 	if site == HQ:
-		sess.move_money(-(int(amount)), "outside:street-cash", "transfer")
+		sess.move_money(-(int(amount)), STREET, "transfer")
 	else:
 		cash[site] -= amount
 	aboard += int(amount)
@@ -1158,6 +1183,7 @@ func update(dt: float) -> void:
 	_watch_t += dt
 	if _watch_t >= 5.0:
 		_sync_inventory()
+		_sync_street()
 		_pull_over(_watch_t)
 		_watch_t = 0.0
 	_route_t += dt
