@@ -104,6 +104,8 @@ func _init(opts := {}) -> void:
 	daily_weather = DailyWeather.new(self, _rng(seed + 179))
 	calendar = Calendar.new(self, _rng(seed + 183))
 	weekly = Weekly.new(self, _rng(seed + 185))
+	if Breakaway.ENABLED:  # D-95: a stop on the ground can be got out of (no draws)
+		breakaway = Breakaway.new(self)
 	if Schedule.ENABLED:  # F-6: the scheduler and the daily books (no draws)
 		schedule = Schedule.new()
 		books = Books.new(self)
@@ -162,6 +164,9 @@ func dispose() -> void:
 	if weekly != null:
 		weekly.sess = null  # break the cycle: a disposed session must be freed
 	weekly = null
+	if breakaway != null:
+		breakaway.sess = null
+	breakaway = null
 	if books != null:
 		books.sess = null
 	books = null
@@ -194,6 +199,9 @@ func dispose() -> void:
 	rackets = null
 	races = null
 	ground = null
+	if wanted != null:
+		wanted.sess = null
+	wanted = null
 	if nights != null:
 		nights.sess = null
 	nights = null

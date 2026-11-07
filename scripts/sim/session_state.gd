@@ -132,6 +132,7 @@ var calendar: Calendar = null  ## loop idea 4: the island's week, posted ahead (
 var weekly: Weekly = null  ## the repeatable goal: the week's work (Weekly, D-93)
 var schedule: Schedule = null  ## things due at a time (F-6): the daily books, later production and the org AI
 var books: Books = null  ## the daily books, closed at 06:00 from the ledger (F-6)
+var breakaway: Breakaway = null  ## a stop on the ground the pilot can still get out of (D-95)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper
@@ -181,6 +182,8 @@ var renown: Renown = null  ## how big the name is (Renown; `renown: true` asks f
 var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets: true` with a ground war)
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
+var wanted: Wanted = null  ## named lieutenants and captains with a prize each (D-95; built with the ground war)
+var pending_wanted := {}  ## a save's Wanted roster, kept until the ground war is built (a story opens it after the restore)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
 var brng: PyRandom  ## the island boards' draws (Jobs.ISLAND_BOARD, seed + 149): dealing a board for a strip you have not visited moves no other stream
 var barng: PyRandom  ## ... their gun runs (seed + 151)
@@ -469,6 +472,11 @@ func enable_system(key: String, career := false) -> bool:
 			if ground != null or not GroundWar.ENABLED:
 				return false
 			ground = GroundWar.new(self, _rng(seed + 61), _rng(seed + 67))
+			if Wanted.ENABLED:
+				wanted = Wanted.new(self, _rng(seed + 187))
+				if not pending_wanted.is_empty():
+					wanted.restore(pending_wanted)  # the save's roster, now the war is open
+					pending_wanted = {}
 			foot = FootCombat.new(self, _rng(seed + 73))
 		"agency":
 			if agency != null or not Agency.ENABLED:
@@ -617,6 +625,8 @@ func weapon_price(tier: String, buying: bool) -> int:
 func save() -> void:
 	if save_path == "":
 		return
+	if breakaway != null and breakaway.active():
+		return  # a stop under way (Breakaway): saved once it is settled, so a reload can't skip it
 	DirAccess.make_dir_recursive_absolute(save_path.get_base_dir())
 	var o := owned.keys()
 	o.sort()

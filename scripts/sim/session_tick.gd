@@ -87,6 +87,8 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 		_crew_work(dt, s)
 	if phase == "parked" and not unloading.is_empty():
 		_unload_tick(dt)
+	if breakaway != null:
+		breakaway.update()
 
 
 ## Backspace: creep backwards at BACK_UP_MS, only stopped on a strip with the engine at idle (owner, 12 Oct: a way out when stuck).

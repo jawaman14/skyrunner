@@ -171,6 +171,10 @@ func test_hot_load_unloads_slowly_and_can_be_raided() -> void:
 	s.police.units.append(PoliceSystem.Pursuer.new("heli", af.x + 800, af.y, s.state.alt + 150, 0.0, [0, 0], {"id": "Hawk-9"}))
 	for i in 20:
 		s.update(0.1)
+	check(s.breakaway != null and s.breakaway.active(), "raided: stopped, with a window to get out (Breakaway, D-95)")
+	check(s.unloading.is_empty(), "the count stops")
+	s.time += Breakaway.WINDOW_S
+	s.update(0.1)  # nobody moves: the window shuts and the raid is the bust it always was
 	check_eq(s.phase, "busted")
 	check("raided" in s.last_outcome, s.last_outcome)
 	s.dispose()
