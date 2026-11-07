@@ -73,11 +73,11 @@ func _pull() -> void:
 
 
 ## Hand the season's books back to the session. The money change is a named ledger transfer (F-6): the season's orders,
-## overheads and takings, booked to outside:hq under `reason`, never an unattributed adjustment.
-func _push(reason := "hq") -> void:
+## overheads and takings, booked to outside:hq as "hq", never an unattributed adjustment.
+func _push() -> void:
 	var delta := int(season.org.dirty) - int(sess.money)
 	if delta != 0:
-		sess.move_money(delta, "outside:hq", reason)
+		sess.move_money(delta, "outside:hq", "hq")
 	for g in ["scanner", "detector"]:
 		if season.org.gear.has(g):
 			sess.gear[g] = true
@@ -104,7 +104,7 @@ func order(side: String, name: String, args := {}):
 func _order_now(side: String, name: String, args: Dictionary):
 	_pull()
 	var err = season.runner_cmd(name, args) if side == "runner" else season.law_cmd(name, args)
-	_push(name)
+	_push()
 	return err
 
 
@@ -128,7 +128,7 @@ func _run_ai() -> void:
 		HQBots.RUNNER_POLICIES[runner_ai].call(season, _bot_rng, _ai_mem[0])
 	if law_ai:
 		HQBots.LAW_POLICIES[law_ai].call(season, _bot_rng, _ai_mem[1])
-	_push("hq orders")
+	_push()
 	_ai_planned = true
 
 
@@ -282,7 +282,7 @@ func _finish() -> void:
 			if absf(d) >= 0.005:
 				ss.rival.turf[z] = clampf(ss.rival.turf[z] + d, 0.05, 0.9)
 				sess.say("NEWS: %s %s ground in the %s" % [ss.rival.name, "gained" if d > 0 else "lost", z])
-	_push("the night")
+	_push()
 	for line in rep.lines:
 		sess.say("NEWS: " + line)
 		sess.law_say("NEWS: " + line)
@@ -302,7 +302,7 @@ func _finish() -> void:
 		return
 	ss.next_night()
 	_show_forecast()
-	_push("hq overheads")  # tonight's overheads and standing bribes came off the books
+	_push()  # tonight's overheads and standing bribes came off the books
 	_ai_planned = false
 	sess.say("Night %d of %d: HQ is planning." % [ss.night, int(ss.rules["nights"])])
 

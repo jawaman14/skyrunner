@@ -51,7 +51,7 @@ func test_orders_wait_for_the_crew_to_be_back_on_the_ground() -> void:
 	check(ok == null or ok is String and not str(ok).begins_with("HQ orders wait"), "an order in planning is taken or refused on its merits: %s" % [ok])
 	n.phase = "operation"
 	var r = n.order("runner", "ready")
-	check(r is String and str(r).begins_with("HQ orders wait"), "in operation: %s" % [r])
+	check(r == null and n.queued.size() == 1, "in operation it is queued for the crew's return (F-6b): %s" % [r])
 	n.phase = "planning"
 	n.season.phase = "over"
 	n.season.winner = "law"
@@ -138,7 +138,7 @@ func test_an_order_during_the_run_waits_for_the_crew_and_is_booked_by_name() -> 
 	check_eq(n.queued.size(), 0, "and the queue is empty")
 	check_eq(s.money, 19000, "it cost what it costs")
 	check_eq(float(s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0)), u0, "booked by name, not unattributed")
-	check(s.ledger.log.any(func(row): return str(row.get("reason", "")) == "opsec"), "under the order's name")
+	check(s.ledger.log.any(func(row): return str(row.get("reason", "")) == "hq" and str(row.get("to", "")) == "outside:hq"), "as the HQ's books")
 	s.dispose()
 
 

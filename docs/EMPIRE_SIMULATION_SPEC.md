@@ -163,8 +163,12 @@ second part): `NightDirector` behind `Nights.ENABLED`, the HQ actions as ordinar
 **F-6b, second part, first PR (8 November).** `NightDirector.ENABLED` (the spec's `Nights.ENABLED`; opt-in list): off, a game
 with the HQ layer runs on the books alone, and every caller already allows for no director (the HQ command says there is no
 HQ, nothing of the nights is saved). `strategic_ref.json` and its generator are retired for `strategic_golden.json`
-(`tools/regen_strategic_golden.gd`), the same values from the game, so the season simulator is pinned by its own golden. Still
-to do: the HQ actions (launder, buy a front, bribe, lawyer, opsec) as ordinary commands that run any time.
+(`tools/regen_strategic_golden.gd`), the same values from the game, so the season simulator is pinned by its own golden. The
+HQ actions (launder, buy a front, bribe, lawyer, opsec and the rest) run any time: given while the crew is out, an order is
+queued (`NightDirector.queued`, saved, at most 8) and goes out, in order, when the crew is back on the ground, since that
+night's plan is already in the air. The season's money comes back to the session as a named transfer (`outside:hq`, reason
+`hq`) instead of a direct write to the safe. A new ledger test scans every money call in the sim for a reason the ledger
+refuses (it found Wanted's "seized" and the cursed jobs' "premium", now "prize" and "delivery").
 
 **Time acceleration** (new; needs D-12's fixed step first):
 - The desk can run ×1, ×4, ×16 or ×60 by stepping the sim N fixed steps per frame.

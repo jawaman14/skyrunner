@@ -123,8 +123,8 @@ func _grant(p: Dictionary) -> String:
 			var usd := int(p.usd)
 			if sess.ground != null and sess.ground.commanders.has("rival"):
 				usd = mini(usd, maxi(0, int(sess.ground.commanders.rival.cash)))
-				sess.ground.commanders.rival.move_cash(-usd, "outside:street", "seized", true)
-			sess.move_money(usd, "outside:street", "seized")
+				sess.ground.commanders.rival.move_cash(-usd, "outside:street", "prize", true)
+			sess.move_money(usd, "outside:street", "prize")
 			return " ($%s)" % Py.money(usd)
 		"file":
 			if sess.police != null:

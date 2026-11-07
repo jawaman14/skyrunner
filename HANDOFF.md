@@ -179,7 +179,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
   x0.75 to x1.6, board pay x0.85 to x1.45; Steady is the game as it was (DESIGN 62).
 
 - **2026-11-08 - Claude, F-6b second part, first PR:** the nights behind `NightDirector.ENABLED`; the Python `strategic_ref.json`
-  retired for `strategic_golden.json` (the same values from the game). Next: the HQ actions as ordinary commands.
+  retired for `strategic_golden.json` (the same values from the game); HQ orders run any time (queued while the crew is out) and
+  book as `hq`; a ledger test now scans the sim for refused reasons (Wanted's "seized", cursed jobs' "premium" fixed).
 - **2026-11-08 - Claude, the weekly black market and hot job (D-95):** three one-off deals a week (arms, a truck, fuel at a
   strip, a file lost) on the Week page, and one strip's best job marked for 1.5x pay and 20 renown (DESIGN 61).
 - **2026-11-08 - Claude, the last WoW lesson (D-94):** in a story game the first sentence that would forfeit the pilot's
