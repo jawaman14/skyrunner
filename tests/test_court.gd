@@ -564,22 +564,28 @@ func test_the_free_pilots_sentence_still_reaches_the_event_bus() -> void:
 	s.dispose()
 
 
-# ------------------------------------------------------------------ D-94: the only aircraft before the takeover
-func _story_sess(chapter: String) -> Session:
+# ------------------------------------------------------------------ D-94: the only aircraft is never lost early
+## A story game as the story opens the court (The Task Force), not a sandbox with court: true (Codex on #520).
+func _story_sess() -> Session:
 	Court.PILOT_FREE = true
-	var s := _sess()
-	Story.new(Story.index_of(chapter)).attach(s)
+	var s := Session.new({"seed": 8, "map_seed": MapCity.SEED, "location": "HAR", "career": true})
+	Story.new(Story.index_of("The Task Force")).attach(s)
+	s.police.frozen = true
+	s.update(1.0 / 30)
 	s.court.prosecutor_ai = false
 	s.money = 60000
 	s.owned = {"c182": true}
 	s._switch_aircraft("c182", 0.5)
-	s.phase = "parked"
-	s.location = "HAR"
 	return s
 
 
-func test_the_only_aircraft_is_spared_before_the_takeover() -> void:
-	var s := _story_sess("The Connection")
+func test_the_story_opens_the_court_after_the_takeover() -> void:
+	check(Story.index_of("The Task Force") > Story.index_of("Cocaine Cowboys"), "so the first sentence is the early one")
+
+
+func test_the_first_sentence_spares_the_only_aircraft_the_second_takes_it() -> void:
+	var s := _story_sess()
+	check(s.court != null, "the story opened the court")
 	_arrest(s)
 	s.phase = "parked"
 	var m0: int = s.money
@@ -588,31 +594,37 @@ func test_the_only_aircraft_is_spared_before_the_takeover() -> void:
 	s.court.update(0.1)
 	check(s.owned.has("c182") and s.aircraft_key == "c182", "the only aircraft stays")
 	check(s.money < m0, "the fine still stands")
-	check(s.bus.log.any(func(e): return e.kind == "aircraft_spared"), "and the player is told why")
+	check(s.bus.log.any(func(e): return e.kind == "aircraft_spared"), "and the player is told why, and warned")
+	_arrest(s)
+	s.phase = "parked"
+	s.court._sentence("convicted", 12.0, 0)
+	check(s.court.forfeit_pending, "the second time it is owed")
+	s.court.update(0.1)
+	check(not s.owned.has("c182") and s.aircraft_key == "c172p", "taken; a used Skyhawk in its place")
 	s.dispose()
 
 
-func test_a_second_aircraft_is_still_forfeited_before_the_takeover() -> void:
-	var s := _story_sess("The Connection")
+func test_a_second_aircraft_is_still_forfeited() -> void:
+	var s := _story_sess()
 	s.owned["c172p"] = true
 	_arrest(s)
 	s.phase = "parked"
 	s.court._sentence("convicted", 12.0, 0)
 	check(s.court.forfeit_pending, "two owned: the sentenced one is owed")
-	s.court.update(0.1)
-	check(not s.owned.has("c182") and s.aircraft_key == "c172p", "it goes; the Skyhawk stays")
+	check(not s.court.spared, "and the sparing is not used up")
 	s.dispose()
 
 
-func test_from_the_takeover_on_the_only_aircraft_goes_as_before() -> void:
-	var s := _story_sess("Cocaine Cowboys")
+func test_the_sparing_is_saved() -> void:
+	var s := _story_sess()
 	_arrest(s)
-	s.phase = "parked"
 	s.court._sentence("convicted", 12.0, 0)
-	check(s.court.forfeit_pending, "owed")
-	s.court.update(0.1)
-	check(not s.owned.has("c182") and s.aircraft_key == "c172p", "taken, and a used Skyhawk in its place")
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	var t := _story_sess()
+	StrategicSave.restore(t, d)
+	check(t.court.spared, "used, and remembered")
 	s.dispose()
+	t.dispose()
 
 
 func test_open_play_is_unchanged() -> void:
@@ -621,17 +633,15 @@ func test_open_play_is_unchanged() -> void:
 	s.owned = {"c182": true}
 	s._switch_aircraft("c182", 0.5)
 	_arrest(s)
-	s.phase = "parked"
 	s.court._sentence("convicted", 12.0, 0)
-	check(s.court.forfeit_pending, "no story, no takeover: as before")
+	check(s.court.forfeit_pending, "no story: as before")
 	s.dispose()
 
 
 func test_off_means_the_old_forfeiture() -> void:
 	Court.SPARE_ONLY = false
-	var s := _story_sess("The Connection")
+	var s := _story_sess()
 	_arrest(s)
-	s.phase = "parked"
 	s.court._sentence("convicted", 12.0, 0)
 	check(s.court.forfeit_pending, "switched off: owed")
 	s.dispose()
