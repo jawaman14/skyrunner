@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, the last WoW lesson (D-94):** in a story game the first sentence that would forfeit the pilot's
+  only aircraft spares it, with a warning (`Court.SPARE_ONLY`); the fine stands. Then on through the mechanics tree's open items, in roadmap order.
+
 - **2026-11-08 - Claude, F-4 finished:** the Collective's barter and circuit sales and the cheat fill book named moves
   (`Logistics.book`); nothing changes a stash's stock without one.
 - **2026-11-07 - Claude, Makers (D-95):** four fictional makers across the dealership (Halcyon, Corsair, Mercy, Bastion), one

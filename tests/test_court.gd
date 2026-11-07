@@ -562,3 +562,87 @@ func test_the_free_pilots_sentence_still_reaches_the_event_bus() -> void:
 	s.court.update(0.1)
 	check(heard[0] >= 1 or s.court.case_ != null, "a conviction emits sentenced before the case closes")
 	s.dispose()
+
+
+# ------------------------------------------------------------------ D-94: the only aircraft is never lost early
+## A story game as the story opens the court (The Task Force), not a sandbox with court: true (Codex on #520).
+func _story_sess() -> Session:
+	Court.PILOT_FREE = true
+	var s := Session.new({"seed": 8, "map_seed": MapCity.SEED, "location": "HAR", "career": true})
+	Story.new(Story.index_of("The Task Force")).attach(s)
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	s.court.prosecutor_ai = false
+	s.money = 60000
+	s.owned = {"c182": true}
+	s._switch_aircraft("c182", 0.5)
+	return s
+
+
+func test_the_story_opens_the_court_after_the_takeover() -> void:
+	check(Story.index_of("The Task Force") > Story.index_of("Cocaine Cowboys"), "so the first sentence is the early one")
+
+
+func test_the_first_sentence_spares_the_only_aircraft_the_second_takes_it() -> void:
+	var s := _story_sess()
+	check(s.court != null, "the story opened the court")
+	_arrest(s)
+	s.phase = "parked"
+	var m0: int = s.money
+	s.court._sentence("convicted", 12.0, 2000)
+	check(not s.court.forfeit_pending, "nothing owed")
+	s.court.update(0.1)
+	check(s.owned.has("c182") and s.aircraft_key == "c182", "the only aircraft stays")
+	check(s.money < m0, "the fine still stands")
+	check(s.bus.log.any(func(e): return e.kind == "aircraft_spared"), "and the player is told why, and warned")
+	_arrest(s)
+	s.phase = "parked"
+	s.court._sentence("convicted", 12.0, 0)
+	check(s.court.forfeit_pending, "the second time it is owed")
+	s.court.update(0.1)
+	check(not s.owned.has("c182") and s.aircraft_key == "c172p", "taken; a used Skyhawk in its place")
+	s.dispose()
+
+
+func test_a_second_aircraft_is_still_forfeited() -> void:
+	var s := _story_sess()
+	s.owned["c172p"] = true
+	_arrest(s)
+	s.phase = "parked"
+	s.court._sentence("convicted", 12.0, 0)
+	check(s.court.forfeit_pending, "two owned: the sentenced one is owed")
+	check(not s.court.spared, "and the sparing is not used up")
+	s.dispose()
+
+
+func test_the_sparing_is_saved() -> void:
+	var s := _story_sess()
+	_arrest(s)
+	s.court._sentence("convicted", 12.0, 0)
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	var t := _story_sess()
+	StrategicSave.restore(t, d)
+	check(t.court.spared, "used, and remembered")
+	s.dispose()
+	t.dispose()
+
+
+func test_open_play_is_unchanged() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.owned = {"c182": true}
+	s._switch_aircraft("c182", 0.5)
+	_arrest(s)
+	s.court._sentence("convicted", 12.0, 0)
+	check(s.court.forfeit_pending, "no story: as before")
+	s.dispose()
+
+
+func test_off_means_the_old_forfeiture() -> void:
+	Court.SPARE_ONLY = false
+	var s := _story_sess()
+	_arrest(s)
+	s.court._sentence("convicted", 12.0, 0)
+	check(s.court.forfeit_pending, "switched off: owed")
+	s.dispose()
+	Court.SPARE_ONLY = true
