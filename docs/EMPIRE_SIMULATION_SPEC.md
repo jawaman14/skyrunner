@@ -149,8 +149,8 @@ whatever order a save kept). `scripts/sim/books.gd` closes each org's day at 06:
 crossing the org's accounts since the last close, summed by reason in and out as it is booked (the ledger trims its oldest
 rows, so the day is counted live and saved, not read back from the log), the net, and the balance it ends on; an
 opening balance is not takings. It emits `books` and keeps the last 14 days, saved. `Schedule.ENABLED` is in the parity set.
-Wages, rent and arrears move onto this tick with the businesses (L-1, L-4); the nights' report built from the closed days is
-F-6b.
+Rent and utilities settle on this tick from each business's till into arrears (L-1, `Businesses`, DESIGN §64); wages move
+onto it with L-4. The nights' report built from the closed days is F-6b.
 
 **F-6b, first part (7 November): the debrief.** At each close the books also build the organisation's debrief (`scripts/sim/debrief.gd`):
 the day's money in, out and net from its row, a count of the day's events (loads, bale drops, bulk sales, cash runs, orders filled and
