@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, the acceptance suite (L-7):** A4, A6, A7, A9, P1 in tests/test_acceptance.gd (A1-A3, A5, A8 named); A9
+  found the tills and the Morettis' safe unsaved (fixed); `cli.gd -- days` runs the district N days (DESIGN 71). G1 is the owner's.
 - **2026-11-08 - Claude, staff and orders (L-4b, A2):** a worker in charge of a business on its hours; restock / hold / skim
   orders with a day's budget; M and O on the phone's books (DESIGN 70).
 - **2026-11-08 - Claude, the business books on the phone (L-4a):** Empire → Businesses: ours with tills, debts and why;

@@ -203,7 +203,9 @@ the role's org is the actor's, the role allowed the command). `Session.command_a
 actor; `command(role, ...)` is now its shim, with the seat as the person (`seat:pilot`) until seats carry people. While a command
 runs, `EventBus.actor` is set, so every event it raises has `actor` and `org`; the world's own events have neither, unless the
 emitter names an `org`. A flown `job_delivered` has `by: "seat:pilot"`, `mode: "flown"`; a truck's has the driver's id and
-`"trucked"`. Not yet: the target-ownership and manager-budget checks (with L-1 and L-4) and the AI orgs calling `command_as`.
+`"trucked"`, and a delegated one (L-5) the pilot's id and `"delegated"`. Since L-3 the AI orgs call `command_as` in the boss's
+seat, limited to the commands on their own org (`Actor.AI_COMMANDS`), and the business commands check the target's owner; a
+manager's budget is the stock budget of L-4b's orders (DESIGN §70).
 
 **Multiplayer.** No change to protocol v3 in P0. Commands already cross the wire by role; `command_as` maps onto that with
 `person` set by the seat. The sockets CI lane must stay green on every PR (decided 19 Oct).
@@ -306,6 +308,9 @@ small).
 | A9 | Save and load reproduce everything | Round-trip equality of `sim.empire` (including the closed debriefs), **and** a game saved mid-day and run 2 more days after loading ends identical (ledger, inventory, orders, RNG draws) to the same game run 2 days without saving |
 | P1 | Performance scales | On the CI Linux runner, headless: (a) 4× the district's entities costs at most 5× the time per sim day, so growth is no worse than about linear; (b) at 1× size and ×60 desk speed, the sim's work per rendered frame stays under 8 ms; (c) no more than 10% slower than the previous recorded P1 run. Thresholds are initial and recalibrated once, in the PR that first measures them |
 | G1 | Gameplay gate | Owner playtest: it's interesting without story missions |
+
+**Where it stands (8 November 2026).** Built: L-1 to L-7 (DESIGN §64 to §71). A1 to A9 and P1 are tests (`tests/test_acceptance.gd`
+names where each lives); the "N days" sim is `cli.gd -- days`. Open: placing the businesses in the 3D world, and G1.
 
 ## 11. Owner answers to the open questions (19 October)
 
