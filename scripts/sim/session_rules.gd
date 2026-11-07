@@ -460,6 +460,17 @@ func _pay(fn: Callable):
 	return err if err != "" else null
 
 
+## The delivery adapter (L-5): a flown delivery and a delegated one go through the same rules, so they change the money and the
+## goods the same way (A5); only who made it and how differ (the event's `by` and `mode`, which are provenance).
+func deliver(job: Jobs.Job, af: Airfield, by: String, mode: String) -> void:
+	var was := [_delivery_by, _delivery_mode]
+	_delivery_by = by
+	_delivery_mode = mode
+	_complete_delivery(job, af)
+	_delivery_by = str(was[0])
+	_delivery_mode = str(was[1])
+
+
 func _complete_delivery(job: Jobs.Job, af: Airfield) -> void:
 	var drums := job.items.filter(func(i): return i.label == "Fuel drum")
 	if not drums.is_empty() and af.kind in ["bush", "shady"]:
@@ -517,7 +528,7 @@ func _delivered(job: Jobs.Job, pay: int, af: Airfield, hot: bool) -> Dictionary:
 			lb += it.weight_lb
 	var data := {"job_id": job.id, "pay": pay, "dest": af.code, "hot": hot, "good": good, "lb": lb,
 		"agency": job.agency, "origin": job.origin, "weapons": not job.weapons.is_empty(),
-		"by": "seat:" + Roles.PILOT, "mode": "flown", "org": "org"}  # F-5: who delivered it and how (story goals count by org)
+		"by": _delivery_by, "mode": _delivery_mode, "org": "org"}  # F-5: who delivered it and how (story goals count by org)
 	if job.employer_serial > 0:
 		data["employer_stage"] = job.employer_stage
 		data["employer_serial"] = job.employer_serial
@@ -568,7 +579,7 @@ func _grade(job: Jobs.Job) -> Array:
 	if left != null and left < 0:
 		pay *= 0.4
 		notes.append("(late)")
-	if Py.any(job.items, func(i): return i.fragile) and lg.max_touchdown_fpm > 400:
+	if _delivery_mode == "flown" and Py.any(job.items, func(i): return i.fragile) and lg.max_touchdown_fpm > 400:  # a contract pilot's landing isn't ours
 		pay *= 0.5
 		notes.append("(breakage)")
 	if job.comfort and (lg.max_bank > 45 or lg.max_touchdown_fpm > 300):

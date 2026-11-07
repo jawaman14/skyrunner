@@ -182,3 +182,11 @@ static func _cmd_business_take(_role: String, a: Dictionary, session: Session):
 		return "There are no businesses on this map."
 	var err: String = session.businesses.take(str(a.get("id", "")), int(session._num(a, "amount", 0)), str(session.bus.actor.get("org", "org")))
 	return err if err != "" else null
+
+
+## A delegated delivery (L-5, D-10): hand active job `job_id` to free pilot `pilot`, for the contract fee.
+static func _cmd_delegate_job(_role: String, a: Dictionary, session: Session):
+	if session.delegation == null:
+		return "No contract pilots in this game."
+	var err: String = session.delegation.delegate(int(session._num(a, "job_id", -1)), str(a.get("pilot", "")))
+	return err if err != "" else null

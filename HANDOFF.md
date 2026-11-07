@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, delegated deliveries (L-5, D-10):** `delegate_job` hands a job to a hired pilot for 10%; both kinds
+  go through `Session.deliver`, and A5 shows equal economic state but for the fee (DESIGN 69).
 - **2026-11-08 - Claude, leaving the district (L-6):** shoppers buy hour by hour in open hours (`tick_full`, every frame,
   wherever the player is); `tick_aggregate` reserved, its 24 h equivalence tested; A8 two days away (DESIGN 68).
 - **2026-11-08 - Claude, org AI v1 (L-3):** the Morettis (`moretti:safe`, $25k) and Los Cuervos (war chest) run their

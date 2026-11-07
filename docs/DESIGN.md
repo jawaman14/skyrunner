@@ -2161,3 +2161,23 @@ settling with the player parked anywhere (A8).
 district runs on it: P0 has one detailed district. A test shows that 24 hours of `tick_full` end where
 `tick_aggregate(24 h)` does: the shelf to the pound, the till to a few dollars. That keeps the door open for detail levels
 without building materialisation now. The hour counter is saved with the businesses. Tests: `tests/test_businesses.gd`.
+
+## 69. Delegated deliveries (L-5; D-10, D-66, docs/EMPIRE_SIMULATION_SPEC.md A5)
+
+`scripts/sim/delegation.gd` (`Delegation`, `Session.delegation`). `delegate_job {job_id, pilot}` hands a job the
+organisation has taken to one of its free hired pilots. The boss or the pilot can give the order.
+
+- **The fee (D-10).** Delegating costs 10% of the job's pay: one `delegation_fee` transfer from the safe to
+  `outside:crew`, when the job is handed over.
+- **The run.** The job and its cargo leave the aircraft. The pilot is busy for the leg at 70 m/s plus a ten-minute turnaround,
+  then delivers at the destination.
+- **The adapter.** A flown delivery and a delegated one both go through `Session.deliver(job, af, by, mode)`, so the money and
+  the goods change the same way (A5). Only the event's `by` (the seat or the pilot's id) and `mode` (`flown`, `delegated`)
+  differ, and those are provenance. The contract pilot's landing isn't the player's, so a fragile load's pay doesn't read the
+  player's touchdowns.
+- **What stays ours.** An Agency flight, a defector, our own load, a stash job and a gun run.
+- **Risk.** v1 draws nothing: a delegated run is safe. The pilots' risk is their own runs (Payroll).
+
+Saved: the runs under way, as saved jobs (an optional `delegated` key). Behind `Delegation.ENABLED`, in the parity set.
+Tests: `tests/test_delegation.gd`. This includes A5: two runs of the same seed, one flown and one delegated, compared on the
+spec's economic projection (transfers as a multiset, balances recomputed without the one fee, lots).

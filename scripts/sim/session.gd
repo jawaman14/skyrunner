@@ -110,6 +110,8 @@ func _init(opts := {}) -> void:
 		black_market = BlackMarket.new(self, _rng(seed + 191))
 	if HeatDial.ENABLED:  # D-95: no draws; Steady is the game as it was
 		heat_dial = HeatDial.new(self)
+	if Delegation.ENABLED:  # L-5: a hired pilot can fly a job of ours (no draws)
+		delegation = Delegation.new(self)
 	if Breakaway.ENABLED:  # D-95: a stop on the ground can be got out of (no draws)
 		breakaway = Breakaway.new(self)
 	if Schedule.ENABLED:  # F-6: the scheduler and the daily books (no draws)
@@ -179,6 +181,9 @@ func dispose() -> void:
 	if heat_dial != null:
 		heat_dial.sess = null
 	heat_dial = null
+	if delegation != null:
+		delegation.sess = null
+	delegation = null
 	if businesses != null:
 		if businesses.ai != null:
 			businesses.ai.biz = null
