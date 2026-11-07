@@ -39,6 +39,7 @@ var resume := ""  ## what the stop interrupted, picked up again once it is settl
 var resume_af := ""  ## the airfield of an interrupted landing
 var held: Array = []  ## job ids being counted out when a raid stopped it
 var lose: Array = []  ## job ids gone however he gets out (a sting's load: the Agency's buyer was the DEA)
+var staged: Array = []  ## jobs to put back aboard if this stop opens a window (a sting's, taken off the list for Washington's check)
 
 
 func _init(sess_) -> void:
@@ -84,6 +85,11 @@ func start(how_: String) -> void:
 	resume_af = ""
 	held = []
 	lose = []
+	for j in staged:  # back aboard before the quote, so the bribe counts them
+		if not sess.active_jobs.has(j):
+			sess.active_jobs.append(j)
+		lose.append(j.id)
+	staged = []
 	until = sess.time + WINDOW_S
 	at = [sess.state.x, sess.state.y]
 	var line := "STOPPED (%s). %d s to get out: take off and get clear, 1 dump the load, 2 pay him off ($%s)." % [
@@ -183,6 +189,8 @@ func _free(way: String) -> void:
 		"pay": "Free. The officer's pocket is heavier."}[way]
 	sess.say("BREAKAWAY: " + line)
 	sess.bus.emit("broke_away", sess.time, line, ["runner", "law"], {"how": how, "way": way})
+	if way != "run":
+		sess.save()  # settled on the ground: the save the stop held back (Session.save waits while a window is open)
 
 
 ## A breakable stop at the spot that was settled (dumped or paid), within the alert after it: nobody stops him twice for it.

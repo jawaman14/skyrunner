@@ -315,7 +315,26 @@ func test_a_sting_keeps_its_load_aboard_until_he_is_out() -> void:
 	check(j in s.active_jobs, "the load is still aboard")
 	if j.hot():
 		check(s.breakaway.bribe() > Breakaway.BRIBE_BASE, "and the bribe counts it")
+	var quote = Py.first(s.bus.log, func(e): return e.kind == "breakaway")
+	check_eq(int(quote.data.bribe), s.breakaway.bribe(), "the first quote is the price he asks")
 	s.money = 1000000
 	check(s.breakaway.pay()[0], "paid")
 	check(not (j in s.active_jobs), "the sting's load is gone however he gets out")
 	s.dispose()
+
+
+func test_no_save_while_stopped() -> void:
+	var path := "user://test_breakaway_save.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	var s := Session.new({"seed": 8, "location": "HAR", "save_path": path})
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	_load(s)
+	s._bust("arrested on landing at Harbor", true)
+	s.save()
+	check(not FileAccess.file_exists(path), "a stop under way is not saved (a reload can't skip it)")
+	s.money = 100000
+	s.breakaway.pay()
+	check(FileAccess.file_exists(path), "settled: saved")
+	s.dispose()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))

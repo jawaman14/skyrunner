@@ -472,12 +472,13 @@ func _complete_delivery(job: Jobs.Job, af: Airfield) -> void:
 			var may_break := breakaway != null and breakaway.can_start()
 			if not may_break:
 				loadout.remove_job(job.id)
+			if may_break:
+				breakaway.staged = [job]  # a window puts it back aboard (before quoting the bribe): dump it, or it is burned anyway
 			_bust("a DEA sting at %s - the Agency's contact never came" % af.name, true)
-			if breakaway != null and breakaway.active():
-				active_jobs.append(job)  # still aboard while he gets out: dump it, or it is burned anyway
-				breakaway.lose.append(job.id)
-			elif may_break:
-				loadout.remove_job(job.id)
+			if breakaway != null:
+				breakaway.staged = []
+			if may_break and not active_jobs.has(job):
+				loadout.remove_job(job.id)  # no window after all (quashed, or a first mission): gone, as it always was
 			return
 	if Arsenal.REALISM and not job.weapons.is_empty() and job.gun_mode == "stock" and not job.agency:
 		_stock_weapons(job.weapons, "")

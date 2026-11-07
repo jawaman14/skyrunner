@@ -618,6 +618,8 @@ func weapon_price(tier: String, buying: bool) -> int:
 func save() -> void:
 	if save_path == "":
 		return
+	if breakaway != null and breakaway.active():
+		return  # a stop under way (Breakaway): saved once it is settled, so a reload can't skip it
 	DirAccess.make_dir_recursive_absolute(save_path.get_base_dir())
 	var o := owned.keys()
 	o.sort()
