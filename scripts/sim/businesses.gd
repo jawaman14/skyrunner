@@ -9,7 +9,8 @@ extends RefCounted
 ## between the safe and the till: `business_fund`, `business_take`), and at every 06:00 books close (Books) each pays its day's
 ## rent and utilities from its till. What the till can't cover is owed: it goes into the business's arrears, with the blocked
 ## reason, and is paid first when money comes in. (Only the organisation's pay yet; the Morettis' and Los Cuervos' from L-3.) Nothing ever reaches into an owner's safe by itself, so a game whose
-## businesses nobody funds sees no change in its money. Revenue (the product and legit chains) is L-2; staff and orders, L-4;
+## businesses nobody funds sees no change in its money. The legit chain (L-2) trades groceries through the warehouse and the
+## retailers at the same close; staff and orders, L-4;
 ## the Morettis' and Los Cuervos' AI running theirs, L-3; placing them in the world is the 3D side's.
 ##
 ## Built only on a map that has San Telmo Centro. No random draws. Saved (owners, arrears, district state; the tills are ledger
@@ -20,6 +21,21 @@ static var ENABLED := true
 const DISTRICT := "san-telmo-centro"
 const LANDLORD := "outside:landlord"
 const UTILITIES := "outside:utilities"
+
+## L-2, the legit import-to-retail chain (spec section 10): the import warehouse buys groceries from outside:market and sells them
+## on, to the district's retail businesses first and the shops outside the twelve after; the retail businesses sell to shoppers at
+## the district's demand. Settled at the books close, from the tills, the same rules for every owner the chain runs for.
+const GOOD := "groceries"
+const WHOLESALE := 2.0  ## $/lb the warehouse pays outside:market
+const TRADE := 3.0  ## $/lb a retailer pays the warehouse
+const TRADE_OUTSIDE := 3.6  ## $/lb a retailer pays outside:market when no warehouse in the chain has stock
+const RETAIL := 4.5  ## $/lb shoppers pay, at a district's prosperity 0.5
+const WAREHOUSE_LB := 400.0  ## what the warehouse restocks to a day
+const SHELF_LB := 120.0  ## what a retailer restocks to a day
+const SHOPPERS_LB := 100.0  ## what a retailer's shoppers buy a day at demand 1 and prosperity 0.5
+const OUTSIDE_SHOPS_LB := 150.0  ## what the shops outside the twelve take from the warehouse a day
+## The owners whose businesses run the chain. The Morettis' and Los Cuervos' join with their AI and money (L-3).
+const RUNS := ["org"]
 
 ## id, name, kind, district, site [x, y], starting owner (org id, "" free, "outside" not for sale), price to buy, rent and
 ## utilities a day, the chain it belongs to (L-2), open hours [from, to].
@@ -154,6 +170,7 @@ func _ours(id: String) -> String:
 func _on_books(_e) -> void:
 	if sess == null:
 		return
+	_trade_day()
 	for b in DATA:
 		var id: String = b.id
 		if str(owner[id]) != "org":
@@ -184,6 +201,77 @@ func _settle_arrears(id: String) -> void:
 		blocked.erase(id)
 
 
+# ------------------------------------------------------------------ the legit chain (L-2)
+func runs(id: String) -> bool:
+	return str(owner.get(id, "")) in RUNS
+
+
+static func is_warehouse(b: Dictionary) -> bool:
+	return str(b.chain) == "retail" and str(b.kind) == "warehouse"
+
+
+static func is_retail(b: Dictionary) -> bool:
+	return str(b.chain) == "retail" and str(b.kind) != "warehouse"
+
+
+func shelf(id: String) -> float:
+	return sess.inventory.stock(id, GOOD)
+
+
+## The day's trade, before the rent: shoppers buy, the retailers restock (from a warehouse in the chain first), then the warehouse
+## sells what's left over to the shops outside and restocks from the market. Every pound is an inventory move and every dollar a
+## transfer between tills and outside accounts; a till that can't pay buys what it can.
+func _trade_day() -> void:
+	var t: float = sess.time
+	for b in DATA:
+		if is_retail(b) and runs(b.id):
+			var d: Dictionary = districts.get(str(b.district), {"prosperity": 0.5, "demand": {}})
+			var want := SHOPPERS_LB * float(d.demand.get(GOOD, 1.0)) * (0.5 + float(d.prosperity))
+			var lb := minf(want, shelf(b.id))
+			if lb > 0.01:
+				sess.inventory.transfer(b.id, Inventory.OUTSIDE + "shoppers", GOOD, lb, "sale", owner[b.id], t)
+				sess.ledger.transfer("outside:shoppers", till(b.id), lb * price(str(b.district)), "sales", "system:books", t)
+	for b in DATA:
+		if is_retail(b) and runs(b.id):
+			_restock_retail(b, t)
+	for b in DATA:
+		if is_warehouse(b) and runs(b.id):
+			var lb := minf(OUTSIDE_SHOPS_LB, shelf(b.id))
+			if lb > 0.01:
+				sess.inventory.transfer(b.id, Inventory.OUTSIDE + "retail", GOOD, lb, "sale", owner[b.id], t)
+				sess.ledger.transfer("outside:retail", till(b.id), lb * TRADE, "sales", "system:books", t)
+			var need := WAREHOUSE_LB - shelf(b.id)
+			var afford := floorf(float(balance(b.id)) / WHOLESALE)
+			var buy := minf(need, afford)
+			if buy >= 1.0:
+				sess.ledger.transfer(till(b.id), "outside:market", buy * WHOLESALE, "purchase", "system:books", t)
+				sess.inventory.add(GOOD, buy, b.id, "market", "", 0.5, 0.0, t)
+
+
+## What shoppers pay a pound in a district: dearer where it's prosperous.
+func price(district_id: String) -> float:
+	var d: Dictionary = districts.get(district_id, {"prosperity": 0.5})
+	return RETAIL * (0.8 + 0.4 * float(d.prosperity))
+
+
+func _restock_retail(b: Dictionary, t: float) -> void:
+	var need := SHELF_LB - shelf(b.id)
+	for w in DATA:
+		if need < 1.0:
+			return
+		if not is_warehouse(w) or not runs(w.id):
+			continue
+		var lb := minf(minf(need, shelf(w.id)), floorf(float(balance(b.id)) / TRADE))
+		if lb >= 1.0:
+			var moved: float = sess.inventory.transfer(w.id, b.id, GOOD, lb, "wholesale", owner[b.id], t)
+			sess.ledger.transfer(till(b.id), till(w.id), moved * TRADE, "sales", "system:books", t)
+			need -= moved
+	var lb := minf(need, floorf(float(balance(b.id)) / TRADE_OUTSIDE))
+	if lb >= 1.0:
+		sess.ledger.transfer(till(b.id), "outside:market", lb * TRADE_OUTSIDE, "purchase", "system:books", t)
+		sess.inventory.add(GOOD, lb, b.id, "market", "", 0.5, 0.0, t)
+
+
 # ------------------------------------------------------------------ the books, for the desk (L-4) and A1
 func view(id: String) -> Dictionary:
 	var b := spec(id)
@@ -191,7 +279,7 @@ func view(id: String) -> Dictionary:
 		return {}
 	return {"id": id, "name": b.name, "kind": b.kind, "district": b.district, "owner": owner[id], "till": balance(id),
 		"arrears": int(arrears.get(id, 0)), "blocked": str(blocked.get(id, "")), "rent": int(b.rent), "utilities": int(b.utilities),
-		"price": int(b.price), "chain": b.chain, "hours": b.hours.duplicate(), "stock": id}
+		"price": int(b.price), "chain": b.chain, "hours": b.hours.duplicate(), "stock": id, "shelf": snappedf(shelf(id), 0.1)}
 
 
 func ours() -> Array:

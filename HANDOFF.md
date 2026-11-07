@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, the legit chain (L-2b):** groceries: market → Costa Imports → bodega/fish market → shoppers at the
+  books close, every pound and dollar named; runs for the org's businesses now, the others' with L-3 (DESIGN 66).
 - **2026-11-08 - Claude, the Living District's businesses (L-1):** the twelve businesses as data on the city coast, each with a
   till and a stock place; buy/fund/take; rent and bills from the till at the 06:00 close, arrears never from the safe (DESIGN 64).
 - **2026-11-08 - Claude, the last run (D-95):** the lobby's third choice: everything open, $5,000, two game hours, one life;

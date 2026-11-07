@@ -120,3 +120,64 @@ func test_the_district_reads_control_from_the_street_war() -> void:
 	check_eq(d.id, Businesses.DISTRICT, "the district")
 	check(d.has("prosperity") and d.has("demand") and d.has("control"), "prosperity, demand and control")
 	c.dispose()
+
+
+# ------------------------------------------------------------------ the legit chain (L-2)
+func test_the_warehouse_imports_and_sells_on() -> void:
+	var c := _city()
+	c.money = 40000
+	check_eq(c.businesses.buy("biz-9"), "", "Costa Imports")
+	c.businesses.fund("biz-9", 2000)
+	c.businesses._on_books(null)
+	check_near(c.businesses.shelf("biz-9"), 400.0, 0.01, "restocked from the market")
+	check_eq(c.businesses.balance("biz-9"), 2000 - 800 - 270, "paid $2 a pound, then the day's rent and bills")
+	c.businesses._on_books(null)
+	check_near(c.ledger.balance("outside:retail"), -150.0 * Businesses.TRADE, 0.01, "the shops outside took 150 lb at the trade price")
+	check_near(c.businesses.shelf("biz-9"), 400.0, 0.01, "and it restocked what it could")
+	check(c.inventory.violations().is_empty(), "the inventory's invariants hold: %s" % [c.inventory.violations()])
+	check(absf(c.ledger.total()) < 0.01, "conservation")
+	c.dispose()
+
+
+func test_a_retailer_buys_from_the_warehouse_first() -> void:
+	var c := _city()
+	c.money = 40000
+	c.businesses.buy("biz-9")
+	c.businesses.fund("biz-9", 2000)
+	c.businesses.owner["biz-6"] = "org"  # the bodega, as if taken over (L-3 gives the others' their own)
+	c.businesses.fund("biz-6", 1000)
+	c.businesses._on_books(null)  # the warehouse has nothing on day one: the bodega buys outside, dearer
+	check_near(c.businesses.shelf("biz-6"), Businesses.SHELF_LB, 0.01, "stocked")
+	var w0 := c.businesses.balance("biz-9")
+	c.businesses._on_books(null)
+	var bought: float = c.inventory.log.filter(func(r): return r.reason == "wholesale" and r.to == "biz-6").reduce(func(a, r): return a + float(r.lb), 0.0)
+	check(bought > 0.0, "the bodega restocked from the warehouse")
+	check(c.businesses.balance("biz-9") > w0 - 800, "and the warehouse was paid for it")
+	check(c.ledger.balance("outside:shoppers") < 0.0, "shoppers paid the bodega")
+	check(c.inventory.violations().is_empty(), "no pound made or lost")
+	check(absf(c.ledger.total()) < 0.01, "conservation")
+	c.dispose()
+
+
+func test_seven_days_flow_without_duplication() -> void:
+	var c := _city()
+	c.money = 40000
+	c.businesses.buy("biz-9")
+	c.businesses.fund("biz-9", 3000)
+	c.businesses.owner["biz-10"] = "org"
+	c.businesses.fund("biz-10", 1500)
+	var held0: float = c.inventory.held(Businesses.GOOD)
+	for d in 7:
+		c.businesses._on_books(null)
+	check_near(c.inventory.held(Businesses.GOOD), c.inventory.net_inflow(Businesses.GOOD), 0.01, "A3: what's held is what came in less what left")
+	check_near(c.inventory.held(Businesses.GOOD) - held0, c.businesses.shelf("biz-9") + c.businesses.shelf("biz-10"), 0.01, "and it's on the two shelves")
+	check(c.businesses.balance("biz-10") >= 0 and c.businesses.balance("biz-9") >= 0, "no till overdrawn")
+	c.dispose()
+
+
+func test_other_owners_wait_for_their_ai() -> void:
+	var c := _city()
+	c.businesses._on_books(null)
+	check_eq(c.businesses.shelf("biz-6"), 0.0, "Los Cuervos' bodega trades from L-3")
+	check_eq(c.businesses.shelf("biz-10"), 0.0, "so does the Morettis' fish market")
+	c.dispose()
