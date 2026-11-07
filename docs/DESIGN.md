@@ -2035,3 +2035,22 @@ The heat side is `PoliceSystem.dial_mult` (on every sighting, beside the chapter
 prices (the employer's work is never scaled), so a board already on the wall keeps the pay it was posted with. Saved as an
 optional `heat_dial` key (absent is Steady). No random draws. Behind `HeatDial.ENABLED`, in the parity set; Steady is the
 identity. Not measured by the balance simulators, which play at Steady. Tests: `tests/test_heat_dial.gd`.
+
+## 63. The last run: one life, bank what you can (owner, 7 November 2026, D-95)
+
+From the Borderlands study's round two, its last item (a one-life extraction run as its own mode). `scripts/sim/last_run.gd`
+(`LastRun`, `Session.last_run`), started from the lobby's third choice, "Last run" (`--unlocks lastrun`;
+`GameSetup.last_run`): every system open, $5,000, and two hours of game time from the home strip (where it starts).
+
+- **Money counts once banked.** Landing back at the home strip banks what is in hand (the HUD shows the clock, the bank and
+  what is in hand).
+- **One life.** A bust (once any Breakaway window has run out) or a crash ends the run on what was last banked; so does the
+  clock running out away from home. At home when the clock runs out, everything counts.
+- **Cash out.** Parked at home, SHIFT+X (`last_run_out`) banks everything and ends the run on the pilot's terms.
+- **The best runs** (the top five, with how each ended) are kept in `user://last_run_best.json`; the end says where this one
+  placed (`run_over`).
+- **Never saved.** Main starts every last run new and deletes its file (`SavePaths.LAST_RUN`), so a reload cannot undo a crash;
+  the lobby's save slot reads "never saved".
+
+No random draws. Built only when the options ask (`last_run: true`), so nothing else changes; `LastRun.ENABLED` is on the
+opt-in list. Tests: `tests/test_last_run.gd`.

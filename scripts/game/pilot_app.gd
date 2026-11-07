@@ -75,6 +75,7 @@ Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT:
          SHIFT+T phone from the cockpit   SHIFT+V car lot (when available)
 Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
 Stopped  on the ground with the law at the door: take off and get clear, 1 dump the hot load, 2 pay the officer
+Last run SHIFT+X cash out, parked at home (land at home to bank what you hold)
          U autopilot: from off, with a chart waypoint set, fly there; U again turns it off. Otherwise U holds
             course and altitude, U again routes to an airfield, U again turns it off. Routed flights
             stay low with a hot load, direct at cruise otherwise; squawk unless there's already heat
@@ -546,6 +547,12 @@ func _unhandled_input(ev: InputEvent) -> void:
 			var rb: Array = s.command(Roles.PILOT, "breakaway_dump" if k == KEY_1 else "breakaway_pay", {})
 			if not rb[0]:
 				s.say(rb[1])
+			get_viewport().set_input_as_handled()
+			return
+		if ev.shift_pressed and k == KEY_X and s.last_run != null:
+			var rx: Array = s.command(Roles.PILOT, "last_run_out", {})  # D-95: cash out of the last run, parked at home
+			if not rx[0]:
+				s.say(rx[1])
 			get_viewport().set_input_as_handled()
 			return
 		if ev.shift_pressed and k == KEY_W and s.payroll != null:
