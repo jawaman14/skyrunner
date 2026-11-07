@@ -86,6 +86,14 @@ static func _cmd_breakaway_pay(role: String, a: Dictionary, session: Session):
 	return null if r[0] else r[1]
 
 
+## The last run (D-95): cash out, parked at home.
+static func _cmd_last_run_out(role: String, a: Dictionary, session: Session):
+	if session.last_run == null:
+		return "This is not a last run."
+	var err: String = session.last_run.cash_out()
+	return err if err != "" else null
+
+
 static func _cmd_upgrade(role: String, a: Dictionary, session: Session):
 	return session.buy_upgrade(Roles.side(role), str(a.get("id", "")))
 

@@ -183,6 +183,7 @@ var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets:
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var curses: Curses = null  ## cursed jobs: optional conditions for a premium (D-95)
+var last_run: LastRun = null  ## the one-life extraction mode (D-95), only when asked for
 var wanted: Wanted = null  ## named lieutenants and captains with a prize each (D-95; built with the ground war)
 var pending_wanted := {}  ## a save's Wanted roster, kept until the ground war is built (a story opens it after the restore)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams

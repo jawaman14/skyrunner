@@ -33,7 +33,8 @@ var hints: KeyHints
 
 const MODES := [["Solo", "solo"], ["Flying lessons (Costa Brava)", "campaign"], ["Co-op: friends crew for you", "coop"],
 	["Versus: friends run the task force", "versus"], ["Task-force desk vs AI runners", "police"]]
-const UNLOCKS := [["Story: Costa Brava 1979-1989", "story"], ["Open: every faction and mechanic", "open"]]
+const UNLOCKS := [["Story: Costa Brava 1979-1989", "story"], ["Open: every faction and mechanic", "open"],
+	["Last run: one life, two hours, bank what you can", "lastrun"]]
 const JOIN_ROLES := ["", "copilot", "spotter", "boat", "boss", "lieutenant", "fixer", "mechanic", "controller", "interceptor", "cutter", "chief", "patrol", "analyst", "undercover"]
 
 
@@ -72,7 +73,7 @@ func _ready() -> void:
 	unlocks_ob = OptionButton.new()
 	for u in UNLOCKS:
 		unlocks_ob.add_item(u[0])
-	unlocks_ob.tooltip_text = "Story: grass in 1979, the connection, Los Cuervos, the Family, the court, the island and the Company open one chapter at a time.\nOpen: all of it from the first minute."
+	unlocks_ob.tooltip_text = "Story: grass in 1979, the connection, Los Cuervos, the Family, the court, the island and the Company open one chapter at a time.\nOpen: all of it from the first minute.\nLast run: everything open, $5,000, two hours and one life; land at home to bank, a bust or a crash ends it."
 	unlocks_ob.item_selected.connect(func(_i): _slots())
 	_row(g, "Unlocks", unlocks_ob)
 	slot_ob = OptionButton.new()
@@ -225,6 +226,10 @@ func _slots() -> void:
 	var mode: String = MODES[mode_ob.selected][1]
 	if mode == "police":
 		slot_ob.add_item("The task-force desk is not saved")
+		slot_ob.disabled = true
+		return
+	if UNLOCKS[unlocks_ob.selected][1] == "lastrun":
+		slot_ob.add_item("A last run is never saved: one life")
 		slot_ob.disabled = true
 		return
 	slot_ob.disabled = false

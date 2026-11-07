@@ -146,6 +146,8 @@ func _init(opts := {}) -> void:
 	if runner_active() and not opts.get("pilot_ai", false):
 		local[Roles.PILOT] = opts.get("name", "pilot")  # the host flies
 	seats = Seats.new(self, local)
+	if LastRun.ENABLED and opts.get("last_run", false):  # D-95: the one-life mode, after the spawn so it knows the home strip
+		last_run = LastRun.new(self)
 
 
 ## Break the reference cycles (night director, campaign, bus subscribers) so a
@@ -169,6 +171,9 @@ func dispose() -> void:
 	if curses != null:
 		curses.sess = null
 	curses = null
+	if last_run != null:
+		last_run.sess = null
+	last_run = null
 	if breakaway != null:
 		breakaway.sess = null
 	breakaway = null

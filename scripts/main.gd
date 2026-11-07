@@ -216,7 +216,10 @@ func start() -> void:
 	var story: bool = args["unlocks"] == "story" and mode != Roles.CAMPAIGN and mode != Roles.POLICE and features == null
 	if save_dir == SavePaths.DIR:
 		SavePaths.migrate()  # an old player's loose save files move into the folder once
-	var save := save_dir + SavePaths.file_name(mode, story, int(args["slot"]))
+	var last_run: bool = args["unlocks"] == "lastrun" and mode == Roles.SOLO and features == null
+	var save := save_dir + (SavePaths.LAST_RUN if last_run else SavePaths.file_name(mode, story, int(args["slot"])))
+	if last_run:
+		args["new"] = true  # one life: a last run is never picked up from a save
 	if not args["new"]:
 		var load_error := Session.save_load_error(save)
 		if load_error != "":
@@ -228,7 +231,7 @@ func start() -> void:
 			return
 	if args["new"] and FileAccess.file_exists(save):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(save))
-	var opts: Dictionary = GameSetup.police(int(args["seed"]), int(args["map"])) if mode == Roles.POLICE else GameSetup.options(mode, int(args["seed"]), story)  # the one shared builder (scripts/net/game_setup.gd)
+	var opts: Dictionary = GameSetup.police(int(args["seed"]), int(args["map"])) if mode == Roles.POLICE else (GameSetup.last_run(int(args["seed"])) if last_run else GameSetup.options(mode, int(args["seed"]), story))  # the one shared builder (scripts/net/game_setup.gd)
 	if features != null:
 		opts.erase("money")  # a layer-plan game has its own start; the open-mode float is for the plain open game
 	var ms := GameSetup.map_seed(int(args["map"]), FileAccess.file_exists(save))  # a new game starts on the city coast; an old save keeps its island

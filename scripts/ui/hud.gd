@@ -340,6 +340,8 @@ func refresh() -> void:
 	var camp = s.narrative
 	var next_goal: String = camp.next_objective_text() if camp != null else ""
 	objectives.text = ("%d - %s\n" % [camp.chapter.year, camp.chapter.title] + ("NEXT: %s\n" % next_goal if next_goal != "" else "") + "\n".join(camp.objective_lines())) if camp != null else ""
+	if s.last_run != null:
+		objectives.text = s.last_run.hud_line()  # D-95: the one-life mode's clock and bank
 	objectives_heading.visible = objectives.text != ""
 	toasts.sync(s.messages, s.time)
 	_warnings(st, c)
