@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, the heat dial (D-95):** Quiet / Steady / Hot / Burning on the phone's Heat page: sightings and customs
+  x0.75 to x1.6, board pay x0.85 to x1.45; Steady is the game as it was (DESIGN 62).
+
 - **2026-11-08 - Claude, F-6b second part, first PR:** the nights behind `NightDirector.ENABLED`; the Python `strategic_ref.json`
   retired for `strategic_golden.json` (the same values from the game). Next: the HQ actions as ordinary commands.
 - **2026-11-08 - Claude, the weekly black market and hot job (D-95):** three one-off deals a week (arms, a truck, fuel at a

@@ -2016,3 +2016,22 @@ side gigs, the employer's work or a windfall) is marked "HOT JOB OF THE WEEK" in
 Drawn when the week posts, on its own stream (seed + 191). Saved (`black_market`: the week, the stock and what is sold, the hot
 job and its base pay, the stream). Live only while the week's work is (`Weekly.live`). Not measured by the balance simulators:
 their stand-ins don't shop. Behind `BlackMarket.ENABLED`, in the parity set. Tests: `tests/test_black_market.gd`.
+
+## 62. The heat dial (owner, 7 November 2026, D-95)
+
+From the Borderlands study's round two (its Mayhem levels: turn the danger up for a bigger payout). `scripts/sim/heat_dial.gd`
+(`HeatDial`, `Session.heat_dial`). Four settings, turned on the phone's Heat page (Q quieter, E hotter; the `heat_dial`
+command), only while parked:
+
+| Setting | Sightings add | Customs checks | Board jobs pay |
+|---|---|---|---|
+| Quiet | x0.75 | x0.75 | x0.85 |
+| Steady (the default, the game as it was) | x1 | x1 | x1 |
+| Hot | x1.3 | x1.3 | x1.2 |
+| Burning | x1.6 | x1.6 | x1.45 |
+
+The heat side is `PoliceSystem.dial_mult` (on every sighting, beside the chapter's pace and the tail's heat) and `dial_customs`
+(on the customs roll's threshold: still the one draw). The pay side lands on every board dealt from then on, after the day's
+prices (the employer's work is never scaled), so a board already on the wall keeps the pay it was posted with. Saved as an
+optional `heat_dial` key (absent is Steady). No random draws. Behind `HeatDial.ENABLED`, in the parity set; Steady is the
+identity. Not measured by the balance simulators, which play at Steady. Tests: `tests/test_heat_dial.gd`.

@@ -86,6 +86,14 @@ static func _cmd_breakaway_pay(role: String, a: Dictionary, session: Session):
 	return null if r[0] else r[1]
 
 
+## The heat dial (D-95): 0 Quiet .. 3 Burning, while parked.
+static func _cmd_heat_dial(role: String, a: Dictionary, session: Session):
+	if session.heat_dial == null:
+		return "There is no heat dial in this game."
+	var err: String = session.heat_dial.set_level(int(session._num(a, "level", -1)))
+	return err if err != "" else null
+
+
 static func _cmd_upgrade(role: String, a: Dictionary, session: Session):
 	return session.buy_upgrade(Roles.side(role), str(a.get("id", "")))
 

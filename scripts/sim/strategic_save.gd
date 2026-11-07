@@ -75,6 +75,8 @@ static func capture(s: Session) -> Dictionary:
 		d["calendar"] = s.calendar.capture()  # optional, like the weather
 	if Jobs.ISLAND_BOARD and not s._first_missions() and not s.boards.is_empty():
 		d["boards"] = capture_boards(s)  # optional: an older save has none and deals every board afresh, as it always did
+	if s.heat_dial != null and s.heat_dial.level != HeatDial.STEADY:
+		d["heat_dial"] = s.heat_dial.capture()  # optional (D-95): absent is Steady
 	if s.weekly != null and s.weekly.week > 0:
 		d["weekly"] = s.weekly.capture()  # optional: an older save starts its first week afresh
 	if s.curses != null:
@@ -306,6 +308,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.pending_boards = d.boards  # a story attached after this re-applies them (Story.attach)
 		if not s._first_missions():
 			restore_boards(s, d.boards)
+	if s.heat_dial != null and d.get("heat_dial") is Dictionary:
+		s.heat_dial.restore(d.heat_dial)
 	if s.weekly != null and d.get("weekly") is Dictionary:
 		s.weekly.restore(d.weekly)
 	if s.curses != null and d.get("curses") is Dictionary:

@@ -265,12 +265,14 @@ var radio: RadioNet
 var controller := "ai"  ## ai | human
 var features := {"interceptors": true, "rivals": true}
 var suspicion_scale := 1.0  ## see EARLY_PACE
+var dial_mult := 1.0  ## the heat dial (HeatDial, D-95): what every sighting is worth on top of the chapter's pace
+var dial_customs := 1.0  ## ... and how often customs looks
 var tail_heat_mult := 1.0  ## the runner's aircraft is known (Investigation, DESIGN §48): its sightings count for more
 
 
 ## What a sighting of `c` is worth: the chapter's pace, and for the runner how known the aircraft is.
 func _scale(c: Case) -> float:
-	return suspicion_scale * (tail_heat_mult if c.target_id == "runner" else 1.0)
+	return suspicion_scale * dial_mult * (tail_heat_mult if c.target_id == "runner" else 1.0)
 var stock := {"heli": 1, "interceptor": 2, "cutter": 1}
 var units: Array = []
 var cases := {}
@@ -958,7 +960,7 @@ func landing_check(s, field_: Airfield, carrying_hot: bool, tid := "runner", cov
 		return true
 	if field_.police and carrying_hot and not no_customs:
 		var r := rng.random()  # the same one draw as before cover existed: only the threshold moves
-		if r < 0.35 * (1.0 - cover) * (1.0 + crackdown) * StreakGuard.factor(customs_streak):
+		if r < 0.35 * (1.0 - cover) * (1.0 + crackdown) * dial_customs * StreakGuard.factor(customs_streak):
 			events.append("Customs inspection!")
 			customs_streak += 1
 			return true
