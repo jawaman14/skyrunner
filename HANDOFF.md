@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, the last run (D-95):** the lobby's third choice: everything open, $5,000, two game hours, one life;
+  land at home to bank, a bust or a crash ends it, SHIFT+X cashes out at home; best five kept; never saved (DESIGN 63).
 - **2026-11-08 - Claude, the last WoW lesson (D-94):** in a story game the first sentence that would forfeit the pilot's
   only aircraft spares it, with a warning (`Court.SPARE_ONLY`); the fine stands. Then on through the mechanics tree's open items, in roadmap order.
 
