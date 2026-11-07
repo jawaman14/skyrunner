@@ -19,6 +19,13 @@ deliberately change the flight model, the aircraft data or the pilot bot, and sa
 The trial inputs still come from `trials_ref.json`, and the Python `fm`/`flight` entries in
 `core_ref.json` and `bots_ref.json` are kept as history.
 
+## Strategic golden (`strategic_golden.json`)
+
+The HQ season simulator's values (seasons, the win matrix, equilibrium, dominance, summary, action values, the calibration from
+`tactical_sample.json`), from the game itself (`godot --headless --script tools/regen_strategic_golden.gd`). It replaced the
+Python `strategic_ref.json` on 8 November (F-6, D-74), written from a build that matched Python exactly, so the numbers carried
+over unchanged. Regenerate it only for a deliberate change to the season rules, and say so in the commit.
+
 ## Strategic save v1 (`strategic_save_v1.json`)
 
 A v1 `StrategicSave.capture` written once by the game itself (not the Python prototype) and never regenerated. `test_strategic_save.gd`

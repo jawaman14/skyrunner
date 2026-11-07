@@ -195,7 +195,7 @@ func _delivered(id: int, dest: String) -> void:
 	if t.broken:
 		return
 	kept += 1
-	sess.move_money(int(t.premium), "outside:clients", "premium")
+	sess.move_money(int(t.premium), "outside:clients", "delivery")  # (the ledger's reason: the client pays more for the delivery)
 	var text := "Condition kept: the client pays the $%s premium." % Py.money(int(t.premium))
 	sess.say(text)
 	sess.bus.emit("curse_kept", sess.time, text, ["runner"], {"job_id": id, "curse": t.curse, "premium": int(t.premium), "dest": dest})

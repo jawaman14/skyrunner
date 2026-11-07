@@ -10,7 +10,13 @@ extends RefCounted
 ##   wrap-up    the pilot's flight has ended; once the crews and decoys are done
 ##              too, the night is scored and the next planning phase begins.
 
+## Behind a switch (F-6, the empire pivot): the nights are the old strategic model, kept for the HQ season and the strategic
+## balance sim until an "N days" sim replaces them; the day's books (Books) and debrief (Debrief) are the new report. Off, a
+## session with the HQ layer runs on the books alone. Opt-in list: nights only exist when the HQ layer is asked for.
+static var ENABLED := true
+
 const WRAP_TIMEOUT_S := 600.0
+const MAX_QUEUED := 8
 
 
 static func zone_of(job: Jobs.Job) -> String:
@@ -34,6 +40,7 @@ var _ai_mem := [{}, {}]
 var _bot_rng: PyRandom
 var _ai_planned := false
 var _paid_before := 0
+var queued: Array = []  ## [side, order, args]: orders given while the crew was out (F-6b), run when it is back
 
 
 func _init(sess_, runner_ai_ = "adaptive", law_ai_ = "adaptive", rules := {}) -> void:
@@ -65,23 +72,54 @@ func _pull() -> void:
 	o.tier = tier
 
 
+## Hand the season's books back to the session. The money change is a named ledger transfer (F-6): the season's orders,
+## overheads and takings, booked to outside:hq as "hq", never an unattributed adjustment.
 func _push() -> void:
-	sess.money = int(season.org.dirty)
+	var delta := int(season.org.dirty) - int(sess.money)
+	if delta != 0:
+		sess.move_money(delta, "outside:hq", "hq")
 	for g in ["scanner", "detector"]:
 		if season.org.gear.has(g):
 			sess.gear[g] = true
 
 
-## An HQ order from a human (via Session.command) or a bot.
+## An HQ order from a human (via Session.command) or a bot. It runs any time (F-6b): placed while the crew is out, it is
+## queued and runs, in order, as soon as they are back on the ground (the night's plan is already in the air).
 func order(side: String, name: String, args := {}):
 	if season.phase == "over":
 		return "The season is over: %s (%s)." % [season.winner, season.reason]
 	if phase != "planning":
-		return "HQ orders wait until the crew is back on the ground."
+		if queued.size() >= MAX_QUEUED:
+			return "Enough orders are waiting for the crew to land."
+		queued.append([side, name, args.duplicate()])
+		var line := "Order noted (%s): it goes out when the crew is back on the ground." % name.replace("_", " ")
+		if side == "runner":
+			sess.say(line)
+		else:
+			sess.law_say(line)
+		return null
+	return _order_now(side, name, args)
+
+
+func _order_now(side: String, name: String, args: Dictionary):
 	_pull()
 	var err = season.runner_cmd(name, args) if side == "runner" else season.law_cmd(name, args)
 	_push()
 	return err
+
+
+## The orders that waited for the crew to land, in the order they were given.
+func _run_queued() -> void:
+	var q := queued
+	queued = []
+	for o in q:
+		var err = _order_now(str(o[0]), str(o[1]), o[2] if o[2] is Dictionary else {})
+		if err != null:
+			var line := "The %s order could not go out: %s" % [str(o[1]).replace("_", " "), str(err)]
+			if str(o[0]) == "runner":
+				sess.say(line)
+			else:
+				sess.law_say(line)
 
 
 func _run_ai() -> void:
@@ -255,6 +293,8 @@ func _finish() -> void:
 	sess.police.no_customs = false
 	phase = "planning"
 	crews = []
+	if ss.phase != "over":
+		_run_queued()
 	if ss.phase == "over":
 		var text := "SEASON OVER - %s wins: %s" % ["the Organisation" if ss.winner == "runner" else "the Task Force", ss.reason]
 		sess.say(text)

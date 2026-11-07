@@ -38,13 +38,14 @@ prove it. Later PRs move call sites one domain at a time.
 
 ### What the parity lane actually covers [repo]
 
-The parity tests are `test_core_parity`, `test_session_parity`, `test_strategic` (`strategic_ref.json`), `test_bots_parity`,
+The parity tests are `test_core_parity`, `test_session_parity`, `test_strategic` (now its own Godot golden, `strategic_golden.json`), `test_bots_parity`,
 `test_trials_parity` and `test_police`.
 
 `Switches.PARITY` turns off `GroundWar`, `Chronicle`, `Agency`, `Economy.REALISM`, `Fuel`, `Orders` and `Investigation` in
 those runs. So **Los Cuervos' cash and every injection above is already outside parity** and can change without retiring a
 fixture. The fixtures that the pivot will actually retire are:
-- `strategic_ref.json`, when nights stop being the strategic model (F-6);
+- `strategic_ref.json`, when nights stop being the strategic model (F-6; retired 8 November for `strategic_golden.json`, the
+  same numbers from the game itself);
 - the money and jobs parts of `session_ref.json` and `core_ref.json`, if and when the shared delivery and pay rules change (L-2).
 
 The ledger wrap (F-2) changes no values and keeps all of them green.
@@ -158,6 +159,16 @@ the runner's heat at the close and its change on the day, and the cash still in 
 `*` subscription on the bus, whose log is capped and not saved) and saved with the day under way, so a load mid-day gives the same
 debrief. It is emitted as `debrief` and said in one line; the last 14 are kept and saved. No draws, no money. Still to do (F-6b,
 second part): `NightDirector` behind `Nights.ENABLED`, the HQ actions as ordinary commands, and `strategic_ref` retired.
+
+**F-6b, second part, first PR (8 November).** `NightDirector.ENABLED` (the spec's `Nights.ENABLED`; opt-in list): off, a game
+with the HQ layer runs on the books alone, and every caller already allows for no director (the HQ command says there is no
+HQ, nothing of the nights is saved). `strategic_ref.json` and its generator are retired for `strategic_golden.json`
+(`tools/regen_strategic_golden.gd`), the same values from the game, so the season simulator is pinned by its own golden. The
+HQ actions (launder, buy a front, bribe, lawyer, opsec and the rest) run any time: given while the crew is out, an order is
+queued (`NightDirector.queued`, saved, at most 8) and goes out, in order, when the crew is back on the ground, since that
+night's plan is already in the air. The season's money comes back to the session as a named transfer (`outside:hq`, reason
+`hq`) instead of a direct write to the safe. A new ledger test scans every money call in the sim for a reason the ledger
+refuses (it found Wanted's "seized" and the cursed jobs' "premium", now "prize" and "delivery").
 
 **Time acceleration** (new; needs D-12's fixed step first):
 - The desk can run ×1, ×4, ×16 or ×60 by stepping the sim N fixed steps per frame.

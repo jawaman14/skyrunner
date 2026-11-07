@@ -163,3 +163,36 @@ func test_an_hour_of_live_play_has_no_unattributed_money() -> void:
 	check(bad.is_empty(), "%d unattributed rows, e.g. %s" % [bad.size(), bad.slice(0, 3)])
 	check(s.ledger.overdrawn().is_empty(), "no internal account goes negative: %s" % [s.ledger.overdrawn()])
 	s.dispose()
+
+
+## Every money call in the sim names a reason the ledger accepts: a reason missing from Ledger.REASONS is refused, the safe
+## changes anyway, and the amount is booked later under the next change's name. Found by F-6b ("seized", "premium").
+func test_every_money_call_names_a_reason_the_ledger_accepts() -> void:
+	var call := RegEx.create_from_string("move_(money|law_funds|cash)\\((.*)$")
+	var lit := RegEx.create_from_string("\"([^\"]*)\"")
+	var bad := []
+	var dir := DirAccess.open("res://scripts/sim")
+	for f in dir.get_files():
+		if not f.ends_with(".gd"):
+			continue
+		var lines := FileAccess.get_file_as_string("res://scripts/sim/" + f).split("\n")
+		for n in lines.size():
+			var line: String = lines[n]
+			if line.strip_edges().begins_with("func ") or line.strip_edges().begins_with("#"):
+				continue
+			var m := call.search(line)
+			if m == null:
+				continue
+			var lits: Array = lit.search_all(m.get_string(2)).map(func(x): return x.get_string(1))
+			if lits.is_empty():
+				continue
+			var reason := ""
+			for i in lits.size():
+				if str(lits[i]).contains(":"):
+					reason = str(lits[i + 1]) if i + 1 < lits.size() else ""
+					break
+			if reason == "" and not str(lits[0]).contains(":"):
+				reason = str(lits[0])  # the account is a variable: the first literal is the reason
+			if reason != "" and not Ledger.REASONS.has(reason):
+				bad.append("%s:%d %s" % [f, n + 1, reason])
+	check(bad.is_empty(), "reasons the ledger refuses: %s" % [bad])

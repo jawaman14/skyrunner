@@ -99,7 +99,9 @@ Order (D-75): land the queue above and finish heat step 1, then:
      businesses (L-1) and managers (L-4); story goals counting by org is L-5.
    - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74). 7 November, F-6a:
      the scheduler (`Schedule`, saved) and the 06:00 books (`Books`, each org's day from the ledger, saved). F-6b first part:
-     the day's debrief from the books and the day's events (`Debrief`, saved). Next: the nights behind `Nights.ENABLED`.
+     the day's debrief from the books and the day's events (`Debrief`, saved). 8 November: the nights behind a switch
+     (`NightDirector.ENABLED`), `strategic_ref` retired for its Godot golden, and the HQ orders run any time (queued while the
+     crew is out), their money a named transfer. F-6 is finished; the "N days" balance sim that replaces the nights is L-7.
    - F-7, time acceleration, after D-12.
    - Progress on 4 November: F-1 and F-2 are on main; F-3 is finished in #496; F-4 has the inventory model and a session wrap
      with no call sites moved; F-5 to F-7 not started (`job_delivered` has no `by` or `mode` yet).

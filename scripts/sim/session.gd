@@ -130,7 +130,7 @@ func _init(opts := {}) -> void:
 		if upgrades["runner"].has(g):
 			gear[g] = true
 	apply_upgrades()
-	if features.has("hq"):
+	if features.has("hq") and NightDirector.ENABLED:
 		# no human boss: the pilot runs the organisation (AI only when nobody flies);
 		# no human chief: a human controller runs the budget, else the AI chief does
 		var runner_ai = "adaptive" if mode == Roles.POLICE and not humans.has(Roles.BOSS) else null
