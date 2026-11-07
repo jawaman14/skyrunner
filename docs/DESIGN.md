@@ -2084,8 +2084,8 @@ Tests: `tests/test_businesses.gd`.
 The second supply chain, small and legal, in `Businesses` (§64). It trades one good, groceries, at every 06:00 books close,
 before the rent:
 
-1. **Shoppers buy.** Each retail business (the bodega and the fish market) sells to `outside:shoppers`. It sells up to 100 lb ×
-   the district's grocery demand × (0.5 + prosperity), at $4.50 a pound scaled by prosperity.
+1. **Shoppers buy** through the day, not at the close (L-6, §68). Each retail business sells to `outside:shoppers` up to
+   100 lb a day × the district's grocery demand × (0.5 + prosperity), at $4.50 a pound scaled by prosperity.
 2. **Retailers restock** to 120 lb. They buy from an import warehouse in the chain first, at $3 a pound, paid till to till. If
    no warehouse has stock, they buy from `outside:market` at $3.60.
 3. **The warehouse** (Costa Imports, at the docks) sells up to 150 lb a day to the shops outside the twelve (`outside:retail`,
@@ -2131,3 +2131,15 @@ businesses trade and pay rent on the same rules as ours (§64, §66).
 Streams: seed + 1202 (Los Cuervos) and + 1203 (the Morettis) for strategy, i.e. 1201 + the org's index; + 1301 is reserved
 for policy, which draws nothing in v1. The log and the streams are saved with the businesses. Behind `OrgAI.ENABLED`, in the
 parity set. Tests: `tests/test_org_ai.gd`.
+
+## 68. Leaving the district, and the aggregate tick (L-6; D-68, docs/EMPIRE_SIMULATION_SPEC.md section 8 and A8)
+
+**The detailed tick.** `Businesses.tick_full(dt)` runs every frame from the session tick, wherever the player is. Each game
+hour a retail business is open (`Businesses.open_hours`, from its `hours`), its shoppers buy that hour's share of the day's
+want. The books close at 06:00 as before, with the restock, the warehouse's trade and the costs, so the district keeps
+settling with the player parked anywhere (A8).
+
+**The aggregate tick** is the spec's reserved hook. `tick_aggregate(window)` sells a window's share of the day at once. No
+district runs on it: P0 has one detailed district. A test shows that 24 hours of `tick_full` end where
+`tick_aggregate(24 h)` does: the shelf to the pound, the till to a few dollars. That keeps the door open for detail levels
+without building materialisation now. The hour counter is saved with the businesses. Tests: `tests/test_businesses.gd`.
