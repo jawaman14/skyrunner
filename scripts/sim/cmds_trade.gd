@@ -30,6 +30,14 @@ static func _cmd_acid_barter(role: String, a: Dictionary, session: Session):
 	return err if err != "" else null
 
 
+## The weekly black market (D-95): buy offer `i`.
+static func _cmd_black_market_buy(role: String, a: Dictionary, session: Session):
+	if session.black_market == null:
+		return "There is no black market in this game."
+	var err: String = session.black_market.buy(int(session._num(a, "i", -1)))
+	return err if err != "" else null
+
+
 static func _cmd_acid_sell(role: String, a: Dictionary, session: Session):
 	if session.psych == null:
 		return "There is no Collective in this game."

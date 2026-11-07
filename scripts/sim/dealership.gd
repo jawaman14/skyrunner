@@ -109,7 +109,8 @@ static func spec(id: String) -> Dictionary:
 
 
 ## "" when the vehicle can be bought now, else why not.
-func why_not(id: String, by_ai := false) -> String:
+## `price`: what this sale asks (the black market's discount, D-95); -1 is the lot's price.
+func why_not(id: String, by_ai := false, price := -1) -> String:
 	if not ENABLED:
 		return "There is no dealership in this game."
 	var sp := spec(id)
@@ -119,26 +120,28 @@ func why_not(id: String, by_ai := false) -> String:
 		return "You are at the limit: %d vehicles. Sell one first." % MAX_OWNED
 	if not by_ai and sp.use == "drive" and not sess.parked:
 		return "Come to a full stop at an airfield first: the car is delivered to the aircraft."
-	if sess.money < int(sp.price):
-		return "%s costs $%s." % [sp.name, Py.money(int(sp.price))]
+	var ask: int = int(sp.price) if price < 0 else price
+	if sess.money < ask:
+		return "%s costs $%s." % [sp.name, Py.money(ask)]
 	return ""
 
 
-func buy(id: String, by_ai := false) -> String:
-	var err := why_not(id, by_ai)
+func buy(id: String, by_ai := false, price := -1, seller := "outside:market") -> String:
+	var err := why_not(id, by_ai, price)
 	if err != "":
 		return err
 	var sp := spec(id)
-	sess.move_money(-int(sp.price), "outside:market", "purchase", "org")
-	spent += int(sp.price)
+	var paid: int = int(sp.price) if price < 0 else price
+	sess.move_money(-paid, seller, "purchase", "org")
+	spent += paid
 	_serial += 1
 	owned.append({"serial": _serial, "id": id, "bought": sess.time})
 	if sp.use == "drive" and active == 0:
 		active = _serial
 		rev += 1  # the first car you buy is the one you drive
 	apply()
-	sess.say("Bought: %s ($%s)." % [sp.name, Py.money(int(sp.price))])
-	sess.bus.emit("vehicle_bought", sess.time, "", ["runner"], {"id": id, "price": int(sp.price)})
+	sess.say("Bought: %s ($%s)." % [sp.name, Py.money(paid)])
+	sess.bus.emit("vehicle_bought", sess.time, "", ["runner"], {"id": id, "price": paid})
 	return ""
 
 
