@@ -181,6 +181,7 @@ var renown: Renown = null  ## how big the name is (Renown; `renown: true` asks f
 var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets: true` with a ground war)
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
+var wanted: Wanted = null  ## named lieutenants and captains with a prize each (D-95; built with the ground war)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
 var brng: PyRandom  ## the island boards' draws (Jobs.ISLAND_BOARD, seed + 149): dealing a board for a strip you have not visited moves no other stream
 var barng: PyRandom  ## ... their gun runs (seed + 151)
@@ -469,6 +470,8 @@ func enable_system(key: String, career := false) -> bool:
 			if ground != null or not GroundWar.ENABLED:
 				return false
 			ground = GroundWar.new(self, _rng(seed + 61), _rng(seed + 67))
+			if Wanted.ENABLED:
+				wanted = Wanted.new(self, _rng(seed + 187))
 			foot = FootCombat.new(self, _rng(seed + 73))
 		"agency":
 			if agency != null or not Agency.ENABLED:

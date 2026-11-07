@@ -1851,6 +1851,7 @@ that claim an offset are noted.
 | 181 | `gig_rng` | `session.gd` | side gigs on the boards |
 | 183 | `Calendar` | `session.gd` | the island's calendar of events |
 | 185 | `Weekly` | `session.gd` | the week's goals |
+| 187 | `Wanted` | `session_state.gd` | the Wanted names' prizes, one draw a take-down (D-95) |
 | 404, 505 | `Nights` | `nights.gd` | an HQ season's night; its bots |
 | 909 | `Analyst` | `analyst.gd` | the analyst's desk |
 | 919 | `Undercover` | `undercover.gd` | the undercover agent |
@@ -1906,3 +1907,21 @@ Flight skill gives optional bonus goals in the story, one in each of the first t
 They count from the `landed` event (`touchdown_fpm`, `final_bank` - the most bank below 60 m since the aircraft was last above it, so a turn after take-off does not count - and the strip's code), and only a landing after a flight counts. Each
 pays 8 renown, once, a name earned for flying well, and no money (D-65: nobody gets money except through the same rules). The
 goal card says "optional: renown for flying well".
+
+## 59. Wanted names (owner, 7 November 2026, D-95)
+
+From the Borderlands study (a boss's dedicated drop). Five named men, three Los Cuervos lieutenants and two task-force
+captains (`Wanted.ROSTER`), each with one signature prize: an arms cache into the organisation's armoury, a cartel take (Los
+Cuervos' chest to the safe, at most what the chest holds), or a captain's file (suspicion off the organisation's case).
+
+- **Who leads:** one squad in `EVERY` (3) that an outfit raises is led by the next name on its roster who is still at large
+  and not already in the field. The organisation's squads have none.
+- **The card:** the first fight between an organisation squad and a named one puts his title card on the radio (his name,
+  his outfit, one line) and a `wanted_seen` event.
+- **The take-down:** routing a named squad (a fight the organisation wins) rolls 1 in `ODDS` (3) for his prize on its own
+  stream (seed + 187). A miss: he gets away and leads again later (`wanted_escaped`), so he can be hunted. A hit: the prize
+  lands, he is finished (`wanted_prize`), and the roster moves on.
+
+Saved: the roster (who is finished, who has been seen, how many squads each outfit has raised, take-downs) and each named
+squad's leader. Behind `Wanted.ENABLED`, in the parity set; built with the ground war.
+

@@ -118,8 +118,12 @@ static func capture(s: Session) -> Dictionary:
 				continue  # trucks and in-progress fights do not survive a save
 			squads.append({"id": q.id, "faction": q.faction, "kind": q.kind, "men": q.men, "men0": q.men0, "loadout": q.loadout.duplicate(),
 				"ammo": q.ammo, "morale": q.morale, "tag": q.tag, "xp": q.xp, "x": q.x, "y": q.y, "hx": q.home.x, "hy": q.home.y})
+			if q.leader != "":
+				squads[-1]["leader"] = q.leader  # D-95: only a named squad carries it, so older records read the same
 		d["squads"] = {"list": squads, "serial": s.ground._serial, "full": true}
 		d["war"] = _capture_war(s.ground)
+		if s.wanted != null:
+			d["wanted"] = s.wanted.capture()  # optional (D-95): an older save starts the roster afresh
 	_capture_world(s, d)
 	if s.nights != null:
 		d["nights"] = _capture_nights(s.nights)
@@ -376,6 +380,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		_restore_squads(s, d.squads)
 	if s.ground != null and d.get("war") is Dictionary:
 		_restore_war(s.ground, d.war)
+	if s.wanted != null and d.get("wanted") is Dictionary:
+		s.wanted.restore(d.wanted)
 	_restore_world(s, d)
 	if s.payroll != null and d.get("people") is Dictionary:
 		s.payroll.people.restore(d.people)
@@ -529,6 +535,7 @@ static func _restore_squads(s: Session, d: Dictionary) -> void:
 		q.morale = float(sd.get("morale", GroundWar.MORALE0.org))
 		q.tag = str(sd.get("tag", ""))
 		q.xp = float(sd.get("xp", 0.0))
+		q.leader = str(sd.get("leader", ""))
 		if f == "org" or not full:
 			var base: Vector2 = g.hq("org")
 			q.x = base.x

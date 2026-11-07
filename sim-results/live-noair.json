@@ -1,0 +1,188 @@
+{
+  "configs": {
+    "noair": {
+      "agency": {
+        "burned_rate": 0.04,
+        "exposure": 51.27,
+        "flights": 5.4,
+        "hangout_rate": 0.0,
+        "withheld": 1681.56
+      },
+      "family": {
+        "cons": 0.12,
+        "loans": 0.12,
+        "rat_rate": 0.04,
+        "respect": 51.8217764837266,
+        "taxed_rate": 0.0,
+        "trial_rate": 0.0,
+        "tribute_paid": {
+          "mean": 0.0,
+          "p10": 0.0,
+          "p50": 0.0,
+          "p90": 0.0
+        }
+      },
+      "island": {
+        "catch_rate": 0.258928571428571,
+        "closed_frac": 0.0,
+        "intercepts": 0.0,
+        "relations": 56.0,
+        "shipments": {
+          "mean": 1.12,
+          "p10": 0.0,
+          "p50": 1.0,
+          "p90": 2.0
+        },
+        "spent": 168272,
+        "units_caught": 29,
+        "units_sent": 112
+      },
+      "law_funds": {
+        "mean": 7799.5743046775,
+        "p10": 3809.7083333336,
+        "p50": 7584.66666666554,
+        "p90": 11134.8596869039
+      },
+      "logistics": {
+        "cash_out": 17665.4338139626,
+        "lost_cash": 3082.76,
+        "lost_hijacked": 11066.16,
+        "lost_lb": 1130.13388949333,
+        "lost_raided": 2055.32,
+        "lost_seized": 2347.08
+      },
+      "market": {
+        "coke_hi": 1.73233335489446,
+        "coke_lo": 0.613858605180055,
+        "coke_lots": 25.08,
+        "disruption": 1.0,
+        "gun_lots": 27.04,
+        "guns": 1.45371802088109
+      },
+      "money": {
+        "mean": 16883.0,
+        "p10": 6704.0,
+        "p50": 18539.0,
+        "p90": 24810.0
+      },
+      "money_min": {
+        "mean": 4983.12,
+        "p10": 82.0,
+        "p50": 5164.0,
+        "p90": 8028.0
+      },
+      "net_worth": {
+        "mean": 52382.0505853575,
+        "p10": 34525.2894306745,
+        "p50": 54289.5483441337,
+        "p90": 63339.340763118
+      },
+      "open": {
+        "first_squad_min": {
+          "mean": 0.166666666666667,
+          "p10": 0.166666666666667,
+          "p50": 0.166666666666667,
+          "p90": 0.166666666666667
+        },
+        "squad_rate": 1.0,
+        "squads_max": 2.6
+      },
+      "payroll": {
+        "crew": 23.0,
+        "flips": 1.44,
+        "lost": 13.2,
+        "loyalty": 0.774658195038456,
+        "paid": 26658.28,
+        "short_rate": 0.0
+      },
+      "suspicion": {
+        "mean": 0.96,
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 0.0
+      },
+      "tally": {
+        "bonus": 398.44,
+        "filled": 0.4,
+        "foiled": 0.4,
+        "missed": 6.08,
+        "part": 0.12,
+        "posted": 7.56,
+        "raided": 0.44
+      },
+      "trade": {
+        "bulk": 6.84,
+        "connected_min": 63.4,
+        "dealers": 5.12,
+        "earned": 22994.68,
+        "sold_coke": 191.581273173333,
+        "sold_weed": 1223.30528,
+        "stock_coke": 223.7488688,
+        "stock_value": 17833.6167713949,
+        "stock_weed": 417.251968
+      },
+      "war": {
+        "arms": 201.6,
+        "burned": 0.44,
+        "fights": 19.24,
+        "org_arrested": 14.0,
+        "org_lost": 5.6,
+        "police_lost": 15.36,
+        "police_squads": 7.6,
+        "recruit": 200.0,
+        "rival_lost": 5.4,
+        "rival_squads": 3.52,
+        "squads": 0.52,
+        "upkeep": 1572.84
+      }
+    }
+  },
+  "hours": 3.0,
+  "odds": [
+    {
+      "case": "cold",
+      "mule_p": 0.1,
+      "mule_roi": 0.56,
+      "ship_p": 0.08,
+      "ship_roi": 0.58
+    },
+    {
+      "case": "law: dogs + profiling",
+      "mule_p": 0.224,
+      "mule_roi": 0.35,
+      "ship_p": 0.092,
+      "ship_roi": 0.56
+    },
+    {
+      "case": "law: everything + crackdown",
+      "mule_p": 0.403,
+      "mule_roi": 0.04,
+      "ship_p": 0.368,
+      "ship_roi": 0.08
+    },
+    {
+      "case": "ours: all perks",
+      "mule_p": 0.028,
+      "mule_roi": 0.69,
+      "ship_p": 0.04,
+      "ship_roi": 0.65
+    },
+    {
+      "case": "both: everything",
+      "mule_p": 0.113,
+      "mule_roi": 0.54,
+      "ship_p": 0.184,
+      "ship_roi": 0.4
+    }
+  ],
+  "seconds": 1685.28,
+  "seeds": 25,
+  "stand_ins": {
+    "law_every_s": 600.0,
+    "law_pay": 900.0,
+    "mule_max": 0.3,
+    "run_every_s": 300.0,
+    "run_pay": 1500,
+    "ship_max": 0.25
+  }
+}
