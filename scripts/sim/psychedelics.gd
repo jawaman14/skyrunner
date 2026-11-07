@@ -218,6 +218,7 @@ func sell(sheets: float, stash := "") -> String:
 	if sess.logistics != null:
 		sess.logistics.book("stash:" + stash, Inventory.OUTSIDE + "circuit", "acid", n, "circuit sale")
 		sess.logistics.stock[stash]["acid"] -= n
+		sess.logistics.book_cash("outside:buyers", Logistics.STREET, pay, "sales")
 		sess.logistics.cash[stash] += pay
 		var st = sess.stash_net.get_stash(stash)
 		if st != null:
