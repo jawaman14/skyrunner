@@ -23,6 +23,8 @@ static func handlers() -> Dictionary:
 		"hire_spotter": Callable(CREW, "_cmd_hire_spotter"),
 		"spotter_move": Callable(CREW, "_cmd_spotter_move"),
 		"squawk": Callable(AIR, "_cmd_squawk"),
+		"breakaway_dump": Callable(AIR, "_cmd_breakaway_dump"),
+		"breakaway_pay": Callable(AIR, "_cmd_breakaway_pay"),
 		"upgrade": Callable(AIR, "_cmd_upgrade"),
 		"jam": Callable(AIR, "_cmd_jam"),
 		"transponder": Callable(AIR, "_cmd_transponder"),

@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-07 - Claude, the Borderlands study (D-95):** Breakaway (DESIGN 58, BALANCE 69): a ground stop opens a 45 s
+  window to take off, dump the hot load or pay; one a game day plus one per two renown tiers. Wanted names and Makers follow as
+  their own PRs.
 - **2026-11-07 - Claude, the merge queue and the unfinished work:** Merged #495-#514 in order (D-91), each after merging `main`
   and rerunning its focused tests: island boards, F-3 named money, BALANCE 62-63, docs, the curated job board, orders retuned,
   streak guard, lying low, pacing targets, DESIGN 56, key audit, the war performance budget, the street war's case files
