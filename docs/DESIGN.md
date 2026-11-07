@@ -2094,6 +2094,6 @@ ledger transfer between tills and outside accounts, by `system:books`. A till th
 can. The chain runs only for businesses whose owner is in `Businesses.RUNS`, which is the organisation for now. The Morettis'
 fish market and Los Cuervos' bodega join with their AI and money in L-3, on the same rules (A4).
 
-So buying the warehouse ($30,000) is a legal earner. At these prices it makes about $150 a day net, from the outside shops
-alone, against $270 of rent and bills. It needs a retailer in the chain to pay. Tests: `tests/test_businesses.gd`, including
+So buying the warehouse ($30,000) is a legal earner, but not on its own: from the outside shops it makes about $150 a day in margin
+against $270 of rent and bills, so it needs a retailer in the chain to pay. Tests: `tests/test_businesses.gd`, including
 A3's seven-day no-duplication check.
