@@ -2174,4 +2174,15 @@ The phone's Empire app gains **Businesses → the books** (`PhoneMenu._books_pag
 
 F puts $1,000 into the selected till (`business_fund`) and T takes it (`business_take`). Everything goes through the commands,
 so the desk can't do anything the commands wouldn't. A1 (buy a business and read its books) is
-`tests/test_phone_books.gd`. Staff, shifts and orders per business (A2) are the second half of L-4.
+`tests/test_phone_books.gd`.
+
+**Staff and orders** (L-4b, A2). `business_staff {id, worker}` puts a free worker of ours in charge of one of our businesses,
+on its hours (the shift). An empty `worker` lets them go. `business_order {id, order, budget}` gives the one in charge an
+order, with a day's spending `budget` for stock (0 is no cap). The orders are:
+- `restock`, the default: keep the shelf stocked.
+- `hold`: buy nothing.
+- `skim`: after the costs, send what the till holds over the budget, or over two days' costs, to the safe.
+
+An order needs someone to take it. A manager who is lost (arrested, killed) takes the orders with him. Staff and orders are
+saved with the businesses. On the phone's books, M puts the first free hand in charge (or lets them go) and O cycles the order.
+The line reads who runs it, the shift and the order.

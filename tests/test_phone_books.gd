@@ -77,3 +77,24 @@ func test_debts_and_refusals_show_with_their_reasons() -> void:
 	check(rows.any(func(r): return str(r).begins_with("Club Tropicana") and str(r).contains("OWES $390")), "our club owes, with why: %s" % [rows])
 	check(rows.has("REFUSED AND BLOCKED"), "the refused moves have their own heading")
 	check(rows.any(func(r): return str(r).begins_with("The Morettis: The safe is empty")), "with the Morettis' reason")
+
+
+func test_m_puts_someone_in_charge_and_o_gives_the_orders() -> void:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "payroll": true, "features": Session.SANDBOX_FEATURES})
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	var w: Dictionary = s.payroll._person("org", "lookout")
+	w.status = "free"
+	s.payroll.workers.append(w)
+	_menu = PhoneMenu.new()
+	Engine.get_main_loop().root.add_child(_menu)
+	_menu.setup(s)
+	_menu.open()
+	_menu.open_app("books")
+	_select(_menu, "biz-4")
+	_menu.key("m")
+	check_eq(s.businesses.staff.get("biz-4"), str(w.id), "M: the free hand runs the club")
+	_select(_menu, "biz-4")
+	_menu.key("o")
+	check_eq(s.businesses.order_of("biz-4"), "hold", "O: the next order")
+	check(_text(_menu).any(func(r): return str(r).contains("runs it 20:00-04:00: buy nothing")), "the line says who and what: %s" % [_text(_menu)])

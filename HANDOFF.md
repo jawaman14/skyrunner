@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, staff and orders (L-4b, A2):** a worker in charge of a business on its hours; restock / hold / skim
+  orders with a day's budget; M and O on the phone's books (DESIGN 70).
 - **2026-11-08 - Claude, the business books on the phone (L-4a):** Empire → Businesses: ours with tills, debts and why;
   the free ones (ENTER buys), F funds, T takes; the AI orgs' refusals (DESIGN 70, GUIDE). Staff and orders (A2) next.
 - **2026-11-08 - Claude, delegated deliveries (L-5, D-10):** `delegate_job` hands a job to a hired pilot for 10%; both kinds

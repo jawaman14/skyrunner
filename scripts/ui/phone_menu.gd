@@ -630,6 +630,21 @@ func key(k: String) -> void:
 					_sel = int(k) - 1
 					open_app(str(APPS[_sel][0]))
 		return
+	if page == "books" and k in ["m", "o"] and s.businesses != null:
+		var bj := list.selected_row()
+		if bj >= 0 and bj < _books_rows.size() and str(_books_rows[bj]) != "":
+			var bid := str(_books_rows[bj])
+			var rm: Array
+			if k == "m":
+				var free: Array = s.payroll.of("org", "", "free") if s.payroll != null else []
+				rm = s.command(Roles.PILOT, "business_staff", {"id": bid, "worker": str(free[0].id) if not free.is_empty() else "?"}) \
+					if s.businesses.manager(bid) == null else s.command(Roles.PILOT, "business_staff", {"id": bid, "worker": ""})
+			else:
+				var next: String = Businesses.ORDERS[(Businesses.ORDERS.find(s.businesses.order_of(bid)) + 1) % Businesses.ORDERS.size()]
+				rm = s.command(Roles.PILOT, "business_order", {"id": bid, "order": next})
+			show_feedback(str(rm[1]) if not rm[0] else ("Orders: " + Businesses.ORDER_TEXT[s.businesses.order_of(bid)] if k == "o" else "Done."), bool(rm[0]))
+			refresh()
+		return
 	if page == "books" and k in ["f", "t"] and s.businesses != null:
 		var bi := list.selected_row()
 		if bi >= 0 and bi < _books_rows.size() and str(_books_rows[bi]) != "":
@@ -878,7 +893,7 @@ func _books_page() -> void:
 				_books_rows.append("")
 	footer.text = "The day's rent and bills come out of each till at 06:00; what a till can't pay is owed, never taken from the safe."
 	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "buy", "enter"], ["F", "fund $%s" % Py.money(BOOKS_FUND), "f"],
-		["T", "take the till", "t"], ["ESC", "back", "esc"]])
+		["T", "take the till", "t"], ["M", "who runs it", "m"], ["O", "orders", "o"], ["ESC", "back", "esc"]])
 
 
 ## One business on the books, as the desk reads it.
@@ -892,6 +907,8 @@ static func books_line(biz: Businesses, id: String) -> String:
 	var line := "%s: till $%s, costs $%s a day" % [v.name, Py.money(int(v.till)), Py.money(int(v.rent) + int(v.utilities))]
 	if float(v.shelf) >= 1.0:
 		line += ", %d lb on the shelf" % int(v.shelf)
+	if str(v.manager) != "":
+		line += ". %s runs it %s: %s" % [v.manager, v.shift, Businesses.ORDER_TEXT.get(str(v.order), str(v.order))]
 	if int(v.arrears) > 0:
 		line += ". OWES $%s: %s" % [Py.money(int(v.arrears)), str(v.blocked)]
 	return line

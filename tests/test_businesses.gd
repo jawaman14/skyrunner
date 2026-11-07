@@ -245,3 +245,72 @@ func test_the_books_settle_with_the_player_away() -> void:
 	check(c.ledger.balance("outside:shoppers") < 0.0, "and paying")
 	check(c.books.closed.size() >= days, "the books closed")
 	c.dispose()
+
+
+# ------------------------------------------------------------------ staff and orders (L-4b; A2)
+func _hand(c: Session) -> String:
+	var w: Dictionary = c.payroll._person("org", "lookout")
+	w.status = "free"
+	c.payroll.workers.append(w)
+	return str(w.id)
+
+
+func _staffed() -> Session:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "payroll": true, "features": Session.SANDBOX_FEATURES})
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	s.money = 40000
+	return s
+
+
+func test_a2_staff_get_a_shift_a_budget_and_orders() -> void:
+	var c := _staffed()
+	var wid := _hand(c)
+	check(c.command(Roles.BOSS, "business_order", {"id": "biz-4", "order": "skim"})[0] == false, "an order needs someone to take it")
+	check_eq(c.command(Roles.BOSS, "business_staff", {"id": "biz-4", "worker": wid})[0], true, "put in charge of the club")
+	check_eq(c.payroll.get_worker(wid).assigned, "biz-4", "assigned there")
+	check_eq(c.businesses.view("biz-4").shift, "20:00-04:00", "on its hours")
+	check_eq(c.command(Roles.BOSS, "business_order", {"id": "biz-4", "order": "skim", "budget": 500})[0], true, "skim, keeping $500")
+	c.businesses.fund("biz-4", 3000)
+	var safe := int(c.money)
+	var t0 := c.time
+	while c.time < t0 + Books.DAY_S + 60.0:
+		c.update(60.0)
+	var v: Dictionary = c.businesses.view("biz-4")
+	check_eq(v.order, "skim", "A2: after a day the order stands")
+	check_eq(v.manager, str(c.payroll.get_worker(wid).name), "and so does the manager")
+	check_eq(int(v.till), 500, "the till kept its budget")
+	check(int(c.money) >= safe + 3000 - 390 - 500 - 50, "and the rest went to the safe (%d from %d)" % [int(c.money), safe])
+	c.dispose()
+
+
+func test_a_budget_caps_the_restock_and_hold_stops_it() -> void:
+	var c := _staffed()
+	c.businesses.owner["biz-6"] = "org"
+	c.businesses.fund("biz-6", 2000)
+	var wid := _hand(c)
+	c.businesses.set_staff("biz-6", wid)
+	c.businesses.set_order("biz-6", "restock", 180)
+	c.businesses._on_books(null)
+	check_near(c.businesses.shelf("biz-6"), 50.0, 0.01, "$180 buys 50 lb at $3.60")
+	c.businesses.set_order("biz-6", "hold")
+	c.businesses._on_books(null)
+	check_near(c.businesses.shelf("biz-6"), 50.0, 0.01, "hold buys nothing")
+	c.dispose()
+
+
+func test_staff_and_orders_are_saved_and_a_lost_manager_clears_them() -> void:
+	var c := _staffed()
+	var wid := _hand(c)
+	c.businesses.set_staff("biz-4", wid)
+	c.businesses.set_order("biz-4", "hold", 100)
+	var d: Dictionary = JSON.parse_string(JSON.stringify(StrategicSave.capture(c)))
+	var r := _staffed()
+	StrategicSave.restore(r, d)
+	check_eq(r.businesses.staff.get("biz-4"), wid, "the manager")
+	check_eq(r.businesses.orders.get("biz-4", {}).get("order"), "hold", "and the order")
+	c.payroll.lose(wid, "arrested")
+	c.businesses._on_books(null)
+	check(not c.businesses.staff.has("biz-4") and c.businesses.order_of("biz-4") == "restock", "an arrested manager takes the orders with him")
+	c.dispose()
+	r.dispose()

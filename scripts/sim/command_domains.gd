@@ -15,6 +15,8 @@ static func handlers() -> Dictionary:
 		"business_fund": Callable(ORG, "_cmd_business_fund"),
 		"business_take": Callable(ORG, "_cmd_business_take"),
 		"delegate_job": Callable(ORG, "_cmd_delegate_job"),
+		"business_staff": Callable(ORG, "_cmd_business_staff"),
+		"business_order": Callable(ORG, "_cmd_business_order"),
 		"phone_decline": Callable(ORG, "_cmd_phone_decline"),
 		"accept_job": Callable(AIR, "_cmd_accept_job"),
 		"drop_job": Callable(AIR, "_cmd_drop_job"),

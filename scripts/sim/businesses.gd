@@ -71,6 +71,9 @@ var owner := {}  ## business id -> org id ("" free, "outside" not for sale)
 var arrears := {}  ## business id -> dollars owed
 var blocked := {}  ## business id -> why the day's costs weren't paid, or absent
 var districts := {}  ## district id -> {prosperity, demand{good: float}}
+var staff := {}  ## business id -> the worker in charge (L-4b): ours only
+var orders := {}  ## business id -> {order: restock|hold|skim, budget: $ a day the manager may spend on stock, 0 no cap}
+var _spend_left := {}  ## business id -> what is left of today's budget, during the close
 var _hour := -1  ## the last whole game hour the shoppers were run for (tick_full)
 var ai: OrgAI = null  ## the Morettis' and Los Cuervos' AI (L-3); null with OrgAI off, and then only ours run
 
@@ -214,6 +217,7 @@ func _on_books(_e) -> void:
 			continue  # free, outside, or an org with no AI running it
 		arrears[id] = int(arrears.get(id, 0)) + int(b.rent) + int(b.utilities)
 		_settle_arrears(id)
+	_after_costs()
 	if ai != null:
 		ai.strategy()  # then each picks the day's move
 
@@ -264,8 +268,12 @@ func shelf(id: String) -> float:
 ## transfer between tills and outside accounts; a till that can't pay buys what it can.
 func _trade_day() -> void:
 	var t: float = sess.time
+	_spend_left = {}
 	for b in DATA:
-		if is_retail(b) and runs(b.id):
+		var cap := int(orders.get(b.id, {}).get("budget", 0))
+		_spend_left[b.id] = float(cap) if cap > 0 else INF
+	for b in DATA:
+		if is_retail(b) and runs(b.id) and order_of(b.id) != "hold":
 			_restock_retail(b, t)
 	for b in DATA:
 		if is_warehouse(b) and runs(b.id):
@@ -273,12 +281,101 @@ func _trade_day() -> void:
 			if lb > 0.01:
 				sess.inventory.transfer(b.id, Inventory.OUTSIDE + "retail", GOOD, lb, "sale", owner[b.id], t)
 				sess.ledger.transfer("outside:retail", till(b.id), lb * TRADE, "sales", "system:books", t)
-			var need := WAREHOUSE_LB - shelf(b.id)
-			var afford := floorf(float(balance(b.id)) / WHOLESALE)
-			var buy := minf(need, afford)
+			var need := WAREHOUSE_LB - shelf(b.id) if order_of(b.id) != "hold" else 0.0
+			var buy := minf(need, _afford(b.id, WHOLESALE))
 			if buy >= 1.0:
+				_spent(b.id, buy * WHOLESALE)
 				sess.ledger.transfer(till(b.id), "outside:market", buy * WHOLESALE, "purchase", "system:books", t)
 				sess.inventory.add(GOOD, buy, b.id, "market", "", 0.5, 0.0, t)
+
+
+## Pounds a business can buy at `unit` today: its till, within the manager's budget.
+func _afford(id: String, unit: float) -> float:
+	return floorf(minf(float(balance(id)), float(_spend_left.get(id, INF))) / unit)
+
+
+func _spent(id: String, amount: float) -> void:
+	_spend_left[id] = float(_spend_left.get(id, INF)) - amount
+
+
+# ------------------------------------------------------------------ staff and orders (L-4b; spec A2)
+const ORDERS := ["restock", "hold", "skim"]
+const ORDER_TEXT := {"restock": "keep the shelf stocked", "hold": "buy nothing", "skim": "send the surplus to the safe"}
+
+
+func order_of(id: String) -> String:
+	return str(orders.get(id, {}).get("order", "restock"))
+
+
+func manager(id: String):
+	var wid := str(staff.get(id, ""))
+	if wid == "" or sess.payroll == null:
+		return null
+	var w = sess.payroll.get_worker(wid)
+	return w if w != null and str(w.status) == "assigned" and str(w.assigned) == id else null
+
+
+## Put worker `wid` (a free one of ours) in charge of one of our businesses; "" lets the one there go. "" or why not.
+func set_staff(id: String, wid: String) -> String:
+	var err := _ours(id)
+	if err != "":
+		return err
+	if sess.payroll == null:
+		return "No payroll in this game: hire someone first."
+	var old = manager(id)
+	if wid == "":
+		if old == null:
+			return "Nobody is in charge there."
+		sess.payroll.release([str(old.id)])
+		staff.erase(id)
+		orders.erase(id)
+		return ""
+	var w = sess.payroll.get_worker(wid)
+	if w == null or str(w.outfit) != "org":
+		return "No worker of ours by that name."
+	if str(w.status) != "free":
+		return "%s is busy." % str(w.name)
+	if old != null:
+		sess.payroll.release([str(old.id)])
+	w.status = "assigned"
+	w.assigned = id
+	staff[id] = wid
+	sess.say("%s runs %s now, on its hours (%s)." % [str(w.name), spec(id).name, shift_text(spec(id))])
+	return ""
+
+
+## An order for the one in charge: restock (the default), hold or skim, and a day's spending budget (0: none). "" or why not.
+func set_order(id: String, order: String, budget := 0) -> String:
+	var err := _ours(id)
+	if err != "":
+		return err
+	if manager(id) == null:
+		return "Nobody there to take the order: put someone in charge first."
+	if not order in ORDERS:
+		return "Orders are %s." % ", ".join(ORDERS)
+	orders[id] = {"order": order, "budget": maxi(0, budget)}
+	return ""
+
+
+static func shift_text(b: Dictionary) -> String:
+	return "%02d:00-%02d:00" % [int(b.hours[0]), int(b.hours[1])]
+
+
+## After the costs: a skim order sends what a till holds over its budget (or two days' costs) to the owner's safe; staff who have
+## gone (arrested, killed) leave the business without a manager, and their orders with them.
+func _after_costs() -> void:
+	for id in staff.keys():
+		if manager(id) == null:
+			staff.erase(id)
+			orders.erase(id)
+	for id in orders:
+		if order_of(id) != "skim" or not runs(id):
+			continue
+		var b := spec(id)
+		var keep := float(int(orders[id].get("budget", 0))) if int(orders[id].get("budget", 0)) > 0 else 2.0 * float(int(b.rent) + int(b.utilities))
+		var spare := float(balance(id)) - keep
+		if spare >= 1.0:
+			_pay(str(owner[id]), floorf(spare), till(id), "transfer")
 
 
 # ------------------------------------------------------------------ the shoppers, through the day (L-6, spec section 8)
@@ -341,13 +438,15 @@ func _restock_retail(b: Dictionary, t: float) -> void:
 			return
 		if not is_warehouse(w) or not runs(w.id):
 			continue
-		var lb := minf(minf(need, shelf(w.id)), floorf(float(balance(b.id)) / TRADE))
+		var lb := minf(minf(need, shelf(w.id)), _afford(b.id, TRADE))
 		if lb >= 1.0:
 			var moved: float = sess.inventory.transfer(w.id, b.id, GOOD, lb, "wholesale", owner[b.id], t)
+			_spent(b.id, moved * TRADE)
 			sess.ledger.transfer(till(b.id), till(w.id), moved * TRADE, "sales", "system:books", t)
 			need -= moved
-	var lb := minf(need, floorf(float(balance(b.id)) / TRADE_OUTSIDE))
+	var lb := minf(need, _afford(b.id, TRADE_OUTSIDE))
 	if lb >= 1.0:
+		_spent(b.id, lb * TRADE_OUTSIDE)
 		sess.ledger.transfer(till(b.id), "outside:market", lb * TRADE_OUTSIDE, "purchase", "system:books", t)
 		sess.inventory.add(GOOD, lb, b.id, "market", "", 0.5, 0.0, t)
 
@@ -359,7 +458,9 @@ func view(id: String) -> Dictionary:
 		return {}
 	return {"id": id, "name": b.name, "kind": b.kind, "district": b.district, "owner": owner[id], "till": balance(id),
 		"arrears": int(arrears.get(id, 0)), "blocked": str(blocked.get(id, "")), "rent": int(b.rent), "utilities": int(b.utilities),
-		"price": int(b.price), "chain": b.chain, "hours": b.hours.duplicate(), "stock": id, "shelf": snappedf(shelf(id), 0.1)}
+		"price": int(b.price), "chain": b.chain, "hours": b.hours.duplicate(), "stock": id, "shelf": snappedf(shelf(id), 0.1),
+		"manager": str(manager(id).name) if manager(id) != null else "", "shift": shift_text(b), "order": order_of(id),
+		"budget": int(orders.get(id, {}).get("budget", 0))}
 
 
 func ours() -> Array:
@@ -368,7 +469,7 @@ func ours() -> Array:
 
 func capture() -> Dictionary:
 	var d := {"owner": owner.duplicate(), "arrears": arrears.duplicate(), "blocked": blocked.duplicate(), "districts": districts.duplicate(true),
-		"hour": _hour}
+		"hour": _hour, "staff": staff.duplicate(), "orders": orders.duplicate(true)}
 	if ai != null:
 		d["ai"] = ai.capture()
 	return d
@@ -387,6 +488,13 @@ func restore(d: Dictionary) -> void:
 	for k in d.get("districts", {}):
 		if d.districts[k] is Dictionary:
 			districts[str(k)] = d.districts[k].duplicate(true)
-	_hour = int(d.get("hour", -1))  # an older save starts counting from the load
+	_hour = int(d.get("hour", -1))
+	staff = {}
+	for k in d.get("staff", {}):
+		staff[str(k)] = str(d.staff[k])
+	orders = {}
+	for k in d.get("orders", {}):
+		if d.orders[k] is Dictionary:
+			orders[str(k)] = {"order": str(d.orders[k].get("order", "restock")), "budget": int(d.orders[k].get("budget", 0))}  # an older save starts counting from the load
 	if ai != null and d.get("ai") is Dictionary:
 		ai.restore(d.ai)
