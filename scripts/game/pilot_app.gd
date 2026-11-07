@@ -74,6 +74,7 @@ Ground   J job board   L load planner & fuel   H hangar, gear, crew (LEFT/RIGHT:
             on foot walk up to the board or the hangar and press E
          SHIFT+T phone from the cockpit   SHIFT+V car lot (when available)
 Crew     N transponder on/off   7 squawk code (1200 VFR / 7700 / 7600 / 7500)
+Stopped  on the ground with the law at the door: take off and get clear, 1 dump the hot load, 2 pay the officer
          U autopilot: from off, with a chart waypoint set, fly there; U again turns it off. Otherwise U holds
             course and altitude, U again routes to an airfield, U again turns it off. Routed flights
             stay low with a hot load, direct at cruise otherwise; squawk unless there's already heat
@@ -538,6 +539,13 @@ func _unhandled_input(ev: InputEvent) -> void:
 					s.say("On foot: walk up to the job board or the hangar and press E, or get back in (TAB) for J, L and H.")
 				KEY_P:
 					s.say("P pauses in the aircraft; ESC opens the menu anywhere.")
+			get_viewport().set_input_as_handled()
+			return
+		if not ev.shift_pressed and k in [KEY_1, KEY_2] and s.breakaway != null and s.breakaway.active():
+			# Breakaway (D-95): stopped on the ground, 1 leaves them the load, 2 pays the officer
+			var rb: Array = s.command(Roles.PILOT, "breakaway_dump" if k == KEY_1 else "breakaway_pay", {})
+			if not rb[0]:
+				s.say(rb[1])
 			get_viewport().set_input_as_handled()
 			return
 		if ev.shift_pressed and k == KEY_W and s.payroll != null:

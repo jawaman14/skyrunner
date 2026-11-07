@@ -269,7 +269,10 @@ func test_a_stung_flight_is_a_bust() -> void:
 	s.active_jobs.append(j)
 	check(not s.agency.protecting(), "no call from Washington for that one")
 	s._complete_delivery(j, World.airfield(j.dest))
-	check_eq(s.phase, "busted", "a DEA sting at the strip")
+	check(s.breakaway != null and s.breakaway.active(), "a DEA sting at the strip: stopped (Breakaway, D-95)")
+	s.time += Breakaway.WINDOW_S
+	s.breakaway.update()
+	check_eq(s.phase, "busted", "and with nothing done, the bust")
 	s.dispose()
 
 

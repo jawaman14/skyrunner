@@ -77,6 +77,8 @@ static func capture(s: Session) -> Dictionary:
 		d["boards"] = capture_boards(s)  # optional: an older save has none and deals every board afresh, as it always did
 	if s.weekly != null and s.weekly.week > 0:
 		d["weekly"] = s.weekly.capture()  # optional: an older save starts its first week afresh
+	if s.breakaway != null:
+		d["breakaway"] = s.breakaway.capture()  # optional (D-95): an older save starts with today's breakaway unused
 	if s.schedule != null:
 		d["schedule"] = s.schedule.capture()  # optional (F-6): an older save sets its next books at load
 		d["books"] = s.books.capture()
@@ -298,6 +300,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 			restore_boards(s, d.boards)
 	if s.weekly != null and d.get("weekly") is Dictionary:
 		s.weekly.restore(d.weekly)
+	if s.breakaway != null and d.get("breakaway") is Dictionary:
+		s.breakaway.restore(d.breakaway)
 	if s.schedule != null:
 		if d.get("schedule") is Dictionary:
 			s.schedule.restore(d.schedule)

@@ -59,6 +59,20 @@ The other lessons, one PR each (D-94): buyers' orders retuned until taking them 
 streak protection on catastrophic rolls (customs, truck stops); the only aircraft never forfeited before the takeover; lying low
 as a visible bonus; loop-length targets in DESIGN, measured by the playtest digest.
 
+## The Borderlands study (owner, 7 November)
+
+The owner asked for a Borderlands study like the WoW one and said yes to building its first three ideas (D-95); the study is a doc,
+"Borderlands deep-dive: what Skyrunner can take". One PR each, in order:
+- **Breakaway** (DESIGN 58): a stop on the ground (arrest on landing, raid while unloading, a sting) opens a 45 s window to get
+  out: take off and get clear, dump the hot load, or pay the officer. One an island day, more with renown; the window running out
+  is the bust as before. In review.
+- **Wanted names:** rival lieutenants and task-force captains with one signature prize each, at a stated 1-in-N per take-down,
+  and a title card on first contact (DESIGN 59). Built; its PR follows this one.
+- **Makers:** four fictional brands with one behaviour each across the dealership, with small two- and three-model set
+  bonuses (DESIGN 43, Makers). Built; its PR follows Wanted. Aircraft parts and the arsenal can take makers later.
+Then, from the study's second round: cursed jobs (optional conditions for more pay), a weekly black market and weekly hot job,
+the heat dial, and last, the one-life extraction run as its own mode.
+
 ## Empire pivot (owner, 19 October)
 
 The game becomes a hybrid of open-world character play and a persistent empire simulation, with equal design weight on both
