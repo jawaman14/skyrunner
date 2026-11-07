@@ -1908,6 +1908,29 @@ They count from the `landed` event (`touchdown_fpm`, `final_bank` - the most ban
 pays 8 renown, once, a name earned for flying well, and no money (D-65: nobody gets money except through the same rules). The
 goal card says "optional: renown for flying well".
 
+## 58. Breakaway: a stop you can get out of (owner, 7 November 2026, D-95)
+
+From the Borderlands study (Fight For Your Life). A bust on the ground used to end the run in one event, so the most frightening
+moment had no decisions in it. Now an arrest on landing (customs, a patrol, a wanted pilot), a raid while a hot load is counted
+out, or a sting opens a window of `Breakaway.WINDOW_S` (45 s), shown on the HUD as a draining bar and a red line:
+
+- **Run:** take off and get `RUN_M` (1,200 m) from the stop. Free, with the patrol on your tail (wanted at least 1) and
+  suspicion +25.
+- **Dump (1):** leave the hot loads to them; they are seized as a bust's would be (the market's seizure, the weapons to the
+  task force). Free, suspicion +10. Cash bags aboard stay: money isn't contraband.
+- **Pay (2):** a bribe of $2,000 plus 40% of the hot loads' pay, raised by the suspicion on you (`bribe()`, rounded to $50),
+  booked to `outside:police` as "bribe". Free, suspicion +5.
+
+The window running out is `Session._bust_now`, the bust exactly as it was. Earned, not free: one breakaway an island day, one
+more for every second renown tier (1, 1, 2, 2, 3); after one, the task force is on alert for 10 minutes and the next stop goes
+straight through, as does a second stop inside an open window. Not covered: the air chase (it has its own escape, the bust
+meter) and an arrest on foot (the foot fight). No random draws. Settled by dumping or paying while parked, the landing or the
+count the stop interrupted goes on (`_after_breakaway`; the landing isn't checked again), and the same stop doesn't come round
+while he stays (`settled_here`). A sting's load stays aboard during the window and is gone however he gets out. Saved: only
+today's count and the alert (`breakaway` in the strategic save). `Session.save()` waits while a window is open and a dump or a
+bribe saves once settled, so a stop under way is never on disk and a reload can't skip it. Behind `Breakaway.ENABLED`, in the
+parity set.
+
 ## 59. Wanted names (owner, 7 November 2026, D-95)
 
 From the Borderlands study (a boss's dedicated drop). Five named men, three Los Cuervos lieutenants and two task-force

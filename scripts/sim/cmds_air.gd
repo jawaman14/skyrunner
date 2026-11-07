@@ -71,6 +71,21 @@ static func _cmd_squawk(role: String, a: Dictionary, session: Session):
 	return null
 
 
+## Breakaway (D-95): stopped on the ground, leave the hot load to them, or pay the officer.
+static func _cmd_breakaway_dump(role: String, a: Dictionary, session: Session):
+	if session.breakaway == null:
+		return "Nobody has stopped you."
+	var r: Array = session.breakaway.dump()
+	return null if r[0] else r[1]
+
+
+static func _cmd_breakaway_pay(role: String, a: Dictionary, session: Session):
+	if session.breakaway == null:
+		return "Nobody has stopped you."
+	var r: Array = session.breakaway.pay()
+	return null if r[0] else r[1]
+
+
 static func _cmd_upgrade(role: String, a: Dictionary, session: Session):
 	return session.buy_upgrade(Roles.side(role), str(a.get("id", "")))
 
