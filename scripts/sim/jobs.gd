@@ -28,7 +28,7 @@ const CONTRABAND := [
 ## carries no acceptance, boat or deliveries; those keys are left out and come back at their defaults.
 const SAVE_KEYS := ["title", "kind", "origin", "dest", "payout", "deadline_s", "notes", "comfort", "drop_point", "bales_total",
 	"price_mult", "stash", "weapons", "gun_mode", "cost", "defector", "own_good", "checkpoints", "visited", "employer_stage",
-	"employer_serial", "agency"]
+	"employer_serial", "agency", "curse", "cursed"]
 const ITEM_KEYS := ["label", "kind", "weight_lb", "hot", "fragile", "good", "droppable", "fuel_lb", "fuel_cap_lb"]
 
 
@@ -99,6 +99,8 @@ class Job:
 	var visited := 0  ## ... how many of them are done
 	var employer_stage := -1
 	var employer_serial := 0
+	var curse := ""  ## an optional condition the client offers for a premium (Curses, D-95), or ""
+	var cursed := false  ## ... taken (X on the board, before accepting)
 	var agency := false  ## an Agency arms flight (Agency): protected while you carry it  ## gun runs: "sell" at the street price, or "stock" the organisation's arsenal
 
 	func _init(id_: int, title_: String, kind_: String, origin_: String, dest_: String, items_: Array, payout_: int, opts := {}) -> void:

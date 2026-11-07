@@ -104,6 +104,10 @@ func _init(opts := {}) -> void:
 	daily_weather = DailyWeather.new(self, _rng(seed + 179))
 	calendar = Calendar.new(self, _rng(seed + 183))
 	weekly = Weekly.new(self, _rng(seed + 185))
+	if Curses.ENABLED:  # D-95: cursed jobs, their offers drawn on their own stream when a board is dealt
+		curses = Curses.new(self, _rng(seed + 189))
+	if BlackMarket.ENABLED:  # D-95: turns over with the week, on its own stream
+		black_market = BlackMarket.new(self, _rng(seed + 191))
 	if HeatDial.ENABLED:  # D-95: no draws; Steady is the game as it was
 		heat_dial = HeatDial.new(self)
 	if Breakaway.ENABLED:  # D-95: a stop on the ground can be got out of (no draws)
@@ -163,12 +167,18 @@ func dispose() -> void:
 	if calendar != null:
 		calendar.sess = null  # break the cycle: a disposed session must be freed
 	calendar = null
+	if black_market != null:
+		black_market.sess = null
+	black_market = null
 	if heat_dial != null:
 		heat_dial.sess = null
 	heat_dial = null
 	if weekly != null:
 		weekly.sess = null  # break the cycle: a disposed session must be freed
 	weekly = null
+	if curses != null:
+		curses.sess = null
+	curses = null
 	if breakaway != null:
 		breakaway.sess = null
 	breakaway = null

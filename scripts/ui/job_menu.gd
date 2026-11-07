@@ -225,7 +225,7 @@ func refresh() -> void:
 
 func _board_hints() -> void:
 	footer.text = ""
-	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "selected action", "enter"], ["C", "keep job", "c"], ["LEFT/RIGHT", "market", "right"],
+	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "selected action", "enter"], ["C", "keep job", "c"], ["X", "take the condition", "x"], ["LEFT/RIGHT", "market", "right"],
 		["G", "sell / keep guns", ""], ["L", "load & fuel", ""], ["A", "fewer / all jobs" if show_all else "all jobs", "a"], ["ESC", "close", "esc"]])
 
 
@@ -304,6 +304,10 @@ func _show_detail() -> void:
 		facts.append("on delivery: %s [G]" % ("SELL" if j.gun_mode == "sell" else "KEEP for the armoury"))
 	card_facts.text = "   ".join(facts)
 	detail.text = j.notes if j.notes else ("Paid per bale landed at the cove." if j.is_airdrop() else "")
+	if j.curse != "":  # a cursed job (D-95): the client's optional condition and its premium
+		var on_board: bool = rows[i][0] in ["board", "far"]
+		var state := ("TAKEN" if j.cursed else "not taken") + (" [X]" if on_board else "")
+		detail.text = (detail.text + "\n\n" if detail.text != "" else "") + "Optional condition, %s: %s. Break it and you lose only the premium." % [state, Curses.line(j)]
 
 
 func open() -> void:
@@ -339,6 +343,11 @@ func key(k: String) -> void:
 		"down":
 			list.move(1)
 			_show_detail()
+		"x":
+			var xi := list.selected_row()
+			if xi >= 0 and rows[xi] != null and rows[xi][0] in ["board", "far"]:
+				show_feedback(Curses.toggle(rows[xi][1]), true)
+				_show_detail()
 		"g":
 			var i := list.selected_row()
 			if i >= 0 and rows[i] != null and not rows[i][1].weapons.is_empty():
