@@ -12,6 +12,11 @@ extends RefCounted
 ## The speed is the fleet's best truck, cover and steel the best of each, so a heavy truck alone is slower than the hired van
 ## it replaces and a quick van beside it brings the speed back. Owned vehicles cost insurance by the hour. Selling gets RESALE of the price back.
 ##
+## Makers (owner, 7 Nov, D-95: the Borderlands study's manufacturers). Every vehicle on the lot is built by one of four fictional
+## makers, and each maker has one behaviour you can read off the badge: Halcyon is cheap to keep, Corsair holds its value, Mercy
+## is built for the back roads, Bastion's steel stacks. Owning different models from one maker is a set: two models give a small
+## fleet bonus, three a bigger one (see MAKERS). Sets count models, not vehicles, so three hatches are not a set.
+##
 ## The dealership can also be run by the AI (`auto`): when the organisation is flush and has no better truck than the
 ## ones it owns, it buys one. Nothing here draws random numbers, so no stream is needed.
 ##
@@ -31,27 +36,49 @@ const AUTO_RESERVE := 40000  ## the AI keeps this much in hand after a purchase
 ## drive: road m/s, cross-country m/s, acceleration m/s^2.  haul: m/s, stealth (cuts roadblock odds), armour (the chance it
 ## gets through a roadblock that would have seized it).
 const CATALOGUE := [
-	{"id": "hatch", "name": "Sunrise Hatch", "use": "drive", "price": 4000, "model": "hatchback-sports", "len": 4.0, "road": 23.0, "off": 10.0, "accel": 8.5,
+	{"id": "hatch", "maker": "halcyon", "name": "Sunrise Hatch", "use": "drive", "price": 4000, "model": "hatchback-sports", "len": 4.0, "road": 23.0, "off": 10.0, "accel": 8.5,
 		"blurb": "cheap, cheerful, and gone before the owner notices"},
-	{"id": "coupe", "name": "Harbor Coupe", "use": "drive", "price": 6500, "model": "sedan", "len": 4.6, "road": 26.0, "off": 11.0, "accel": 9.0,
+	{"id": "coupe", "maker": "halcyon", "name": "Harbor Coupe", "use": "drive", "price": 6500, "model": "sedan", "len": 4.6, "road": 26.0, "off": 11.0, "accel": 9.0,
 		"blurb": "the starter car's twin, in a better colour"},
-	{"id": "suv", "name": "Valley SUV", "use": "drive", "price": 12000, "model": "suv", "len": 4.8, "road": 25.0, "off": 16.0, "accel": 8.0,
+	{"id": "suv", "maker": "mercy", "name": "Valley SUV", "use": "drive", "price": 12000, "model": "suv", "len": 4.8, "road": 25.0, "off": 16.0, "accel": 8.0,
 		"blurb": "the one for the cane roads and the farm tracks"},
-	{"id": "roadster", "name": "Marlin GT", "use": "drive", "price": 21000, "model": "sedan-sports", "len": 4.5, "road": 34.0, "off": 12.0, "accel": 13.0,
+	{"id": "roadster", "maker": "corsair", "name": "Marlin GT", "use": "drive", "price": 21000, "model": "sedan-sports", "len": 4.5, "road": 34.0, "off": 12.0, "accel": 13.0,
 		"blurb": "the fastest thing on four wheels in the county"},
-	{"id": "luxury", "name": "Palmetto Limited", "use": "drive", "price": 30000, "model": "suv-luxury", "len": 5.0, "road": 29.0, "off": 17.0, "accel": 10.0,
+	{"id": "luxury", "maker": "mercy", "name": "Palmetto Limited", "use": "drive", "price": 30000, "model": "suv-luxury", "len": 5.0, "road": 29.0, "off": 17.0, "accel": 10.0,
 		"blurb": "leather, air conditioning and a bar; the Family's own choice"},
-	{"id": "van", "name": "Courier Van", "use": "haul", "price": 14000, "model": "van", "len": 5.2, "speed": 12.5, "stealth": 0.15, "armour": 0.0,
+	{"id": "van", "maker": "halcyon", "name": "Courier Van", "use": "haul", "price": 14000, "model": "van", "len": 5.2, "speed": 12.5, "stealth": 0.15, "armour": 0.0,
 		"blurb": "a plain white van; nobody looks twice"},
-	{"id": "box", "name": "Steel Box Truck", "use": "haul", "price": 24000, "model": "delivery", "len": 6.0, "speed": 11.5, "stealth": 0.05, "armour": 0.25,
+	{"id": "box", "maker": "bastion", "name": "Steel Box Truck", "use": "haul", "price": 24000, "model": "delivery", "len": 6.0, "speed": 11.5, "stealth": 0.05, "armour": 0.25,
 		"blurb": "a delivery truck with a steel liner and a heavy bumper"},
-	{"id": "fast", "name": "Midnight Van", "use": "haul", "price": 38000, "model": "van", "len": 5.2, "speed": 15.0, "stealth": 0.25, "armour": 0.0,
+	{"id": "fast", "maker": "corsair", "name": "Midnight Van", "use": "haul", "price": 38000, "model": "van", "len": 5.2, "speed": 15.0, "stealth": 0.25, "armour": 0.0,
 		"blurb": "a van with the Marlin's engine in it"},
-	{"id": "ambulance", "name": "Ambulance Conversion", "use": "haul", "price": 55000, "model": "ambulance", "len": 5.8, "speed": 14.0, "stealth": 0.45, "armour": 0.0,
+	{"id": "ambulance", "maker": "mercy", "name": "Ambulance Conversion", "use": "haul", "price": 55000, "model": "ambulance", "len": 5.8, "speed": 14.0, "stealth": 0.45, "armour": 0.0,
 		"blurb": "lights and a siren; no cop will stop it, and fewer will look in the back"},
-	{"id": "armoured", "name": "Armoured Truck", "use": "haul", "price": 70000, "model": "truck", "len": 6.4, "speed": 9.5, "stealth": 0.0, "armour": 0.6,
+	{"id": "armoured", "maker": "bastion", "name": "Armoured Truck", "use": "haul", "price": 70000, "model": "truck", "len": 6.4, "speed": 9.5, "stealth": 0.0, "armour": 0.6,
 		"blurb": "slow, heavy, and a roadblock is a speed bump"},
 ]
+
+## The makers: the name on the badge, the one-line pitch, the behaviour, and the set bonuses (models owned -> fleet numbers).
+## Traits:  halcyon  insurance at HALCYON_INSURANCE;   corsair  resale at CORSAIR_RESALE;
+##          mercy    its cars MERCY_OFF faster across country, its trucks MERCY_COVER more cover;
+##          bastion  steel stacks: a second Bastion truck adds BASTION_STACK of its own steel to the fleet's best.
+const MAKERS := {
+	"halcyon": {"name": "Halcyon Motors", "pitch": "cheap to keep", "trait": "half the insurance",
+		"sets": {2: {"stealth": 0.05}, 3: {"stealth": 0.10}}},
+	"corsair": {"name": "Corsair", "pitch": "built to run", "trait": "resells for 70%",
+		"sets": {2: {"speed": 1.5, "road": 2.0}}},
+	"mercy": {"name": "Mercy Coachworks", "pitch": "built for the back roads", "trait": "cars quicker across country, trucks better cover",
+		"sets": {2: {"stealth": 0.10}, 3: {"stealth": 0.10, "armour": 0.10}}},
+	"bastion": {"name": "Bastion Works", "pitch": "built like a vault", "trait": "steel stacks across its trucks",
+		"sets": {2: {"armour": 0.10}}},
+}
+const HALCYON_INSURANCE := 0.5
+const CORSAIR_RESALE := 0.70
+const MERCY_OFF := 3.0  ## m/s across country
+const MERCY_COVER := 0.05
+const BASTION_STACK := 0.5
+const MAX_COVER := 0.6  ## the fleet's cover and steel never pass these, however the bonuses add up
+const MAX_STEEL := 0.8
 
 var sess
 var owned: Array = []  ## [{serial, id, bought}]
@@ -123,7 +150,7 @@ func sell(serial: int) -> String:
 		return "You do not own that."
 	var v: Dictionary = owned[i]
 	var sp := spec(str(v.id))
-	var back := int(float(sp.price) * RESALE)
+	var back := resale(str(sp.id))
 	owned.remove_at(i)
 	sess.move_money(back, "outside:market", "resale", "org")
 	if active == serial:
@@ -161,6 +188,71 @@ func set_auto(on: bool) -> String:
 	return ""
 
 
+## What a vehicle fetches when it is sold.
+static func resale(id: String) -> int:
+	var sp := spec(id)
+	return int(float(sp.price) * (CORSAIR_RESALE if sp.get("maker") == "corsair" else RESALE))
+
+
+## maker -> how many different models of it the organisation owns.
+func models() -> Dictionary:
+	var seen := {}
+	for v in owned:
+		var sp := spec(str(v.id))
+		seen["%s/%s" % [sp.maker, sp.id]] = str(sp.maker)
+	var out := {}
+	for k in seen:
+		out[seen[k]] = int(out.get(seen[k], 0)) + 1
+	return out
+
+
+## The set bonus a maker gives with `n` models owned: the biggest tier reached, or {}.
+static func set_bonus(maker: String, n: int) -> Dictionary:
+	var best := {}
+	var sets: Dictionary = MAKERS[maker].sets
+	for need in sets:
+		if n >= int(need):
+			best = sets[need]
+	return best
+
+
+## Every set bonus the fleet has earned, added up: {speed, stealth, armour, road}.
+func bonuses() -> Dictionary:
+	var b := {"speed": 0.0, "stealth": 0.0, "armour": 0.0, "road": 0.0}
+	var m := models()
+	for maker in m:
+		var got := set_bonus(str(maker), int(m[maker]))
+		for k in got:
+			b[k] = float(b[k]) + float(got[k])
+	return b
+
+
+## The makers' line for the screen: "Halcyon Motors 2 of 3 (+5% cover)", one for each maker owned.
+func sets_line() -> String:
+	var m := models()
+	var parts := []
+	for maker in MAKERS:
+		if not m.has(maker):
+			continue
+		var n := int(m[maker])
+		var of := 0
+		for sp in CATALOGUE:
+			if sp.maker == maker:
+				of += 1
+		var got := set_bonus(maker, n)
+		var what := []
+		if got.has("speed"):
+			what.append("+%d km/h trucks" % int(float(got.speed) * 3.6))
+		if got.has("road"):
+			what.append("+%d km/h its cars" % int(float(got.road) * 3.6))
+		if got.has("stealth"):
+			what.append("+%d%% cover" % int(round(float(got.stealth) * 100.0)))
+		if got.has("armour"):
+			what.append("+%d%% steel" % int(round(float(got.armour) * 100.0)))
+		parts.append("%s %d of %d%s" % [MAKERS[maker].name, n, of, (" (%s)" % ", ".join(what)) if not what.is_empty() else ""])
+	return "   ".join(parts)
+
+
 func _find(serial: int) -> int:
 	for i in owned.size():
 		if int(owned[i].serial) == serial:
@@ -173,7 +265,14 @@ func drive_spec() -> Dictionary:
 	if not ENABLED or active == 0:
 		return {}
 	var i := _find(active)
-	return spec(str(owned[i].id)) if i >= 0 else {}
+	if i < 0:
+		return {}
+	var sp: Dictionary = spec(str(owned[i].id)).duplicate()
+	if sp.maker == "mercy":
+		sp.off = float(sp.off) + MERCY_OFF
+	var b := set_bonus(str(sp.maker), int(models().get(sp.maker, 0)))
+	sp.road = float(sp.road) + float(b.get("road", 0.0))
+	return sp
 
 
 func haulers() -> Array:
@@ -191,13 +290,26 @@ func fleet() -> Dictionary:
 	if not ENABLED:
 		return f
 	var best := 0.0
+	var steel := []  # each Bastion truck's steel, for the stack
 	for sp in haulers():
 		f.count += 1
 		best = maxf(best, float(sp.speed))
-		f.stealth = maxf(float(f.stealth), float(sp.stealth))
+		var cover := float(sp.stealth) + (MERCY_COVER if sp.maker == "mercy" else 0.0)
+		f.stealth = maxf(float(f.stealth), cover)
 		f.armour = maxf(float(f.armour), float(sp.armour))
+		if sp.maker == "bastion":
+			steel.append(float(sp.armour))
 	if f.count > 0:
 		f.speed = best  # the trucks you own are the trucks that run: an armoured one alone is slower than the hired van it replaces
+		steel.sort()
+		steel.reverse()
+		var stack := 0.0
+		for i in range(1, steel.size()):
+			stack += float(steel[i]) * BASTION_STACK
+		var b := bonuses()
+		f.speed = float(f.speed) + float(b.speed)
+		f.stealth = minf(MAX_COVER, float(f.stealth) + float(b.stealth))
+		f.armour = minf(MAX_STEEL, float(f.armour) + stack + float(b.armour))
 	return f
 
 
@@ -231,7 +343,8 @@ func gets_past(job_id: int, squad_id: String) -> bool:
 func insurance_hour() -> int:
 	var t := 0.0
 	for v in owned:
-		t += INSURANCE_DRIVE if spec(str(v.id)).use == "drive" else INSURANCE_HAUL
+		var sp := spec(str(v.id))
+		t += (INSURANCE_DRIVE if sp.use == "drive" else INSURANCE_HAUL) * (HALCYON_INSURANCE if sp.maker == "halcyon" else 1.0)
 	return int(t)
 
 
@@ -282,7 +395,7 @@ func view_lite() -> Dictionary:
 	var last_truck := {}
 	for v in owned:
 		var sp := spec(str(v.id))
-		var row := {"serial": int(v.serial), "name": str(sp.name), "resale": int(float(sp.price) * RESALE)}
+		var row := {"serial": int(v.serial), "name": str(sp.name), "resale": resale(str(sp.id))}
 		if sp.use == "drive":
 			cars += 1
 			last_car = row
@@ -291,7 +404,7 @@ func view_lite() -> Dictionary:
 			last_truck = row
 	var f := fleet()
 	return {"cat": cat, "cars": cars, "trucks": trucks, "last_car": last_car, "last_truck": last_truck, "insurance": insurance_hour(), "auto": auto,
-		"speed": int(float(f.speed) * 3.6), "cover": int(float(f.stealth) * 100.0), "steel": int(float(f.armour) * 100.0), "limit": MAX_OWNED}
+		"speed": int(float(f.speed) * 3.6), "cover": int(float(f.stealth) * 100.0), "steel": int(float(f.armour) * 100.0), "limit": MAX_OWNED, "sets": sets_line()}
 
 
 func view() -> Dictionary:
@@ -303,6 +416,6 @@ func view() -> Dictionary:
 	var mine := []
 	for v in owned:
 		var sp := spec(str(v.id))
-		mine.append({"serial": int(v.serial), "id": str(v.id), "name": str(sp.name), "use": str(sp.use), "resale": int(float(sp.price) * RESALE), "active": int(v.serial) == active})
+		mine.append({"serial": int(v.serial), "id": str(v.id), "name": str(sp.name), "use": str(sp.use), "resale": resale(str(sp.id)), "active": int(v.serial) == active})
 	return {"catalogue": cat, "owned": mine, "active": active, "fleet": fleet(), "insurance": insurance_hour(), "auto": auto, "spent": spent,
-		"limit": MAX_OWNED}
+		"limit": MAX_OWNED, "sets": sets_line()}
