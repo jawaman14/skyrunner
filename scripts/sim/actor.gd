@@ -5,6 +5,10 @@ extends RefCounted
 ## `Roles.side()` gives sides, not org ids, so the side-to-org map is explicit here.
 
 const ORG_OF_SIDE := {"runner": "org", "law": "police"}
+## L-3: the organisations an AI runs (OrgAI) act in the boss's seat, but only for the commands that work on the actor's own org
+## (its own safe, its own businesses). Anything else stays refused: they can't use the player's boss seat for the player's org.
+const AI_ORGS := ["rival", "moretti"]
+const AI_COMMANDS := ["business_buy", "business_fund", "business_take"]
 
 
 static func of(org: String, role: String, person := "") -> Dictionary:
@@ -29,7 +33,7 @@ static func refusal(actor: Dictionary, command: String) -> String:
 		return "Unknown role %s." % role
 	if str(actor.get("org", "")) == "":
 		return "Nobody's acting: the actor has no organisation."
-	if str(actor.org) != org_of(role):
+	if str(actor.org) != org_of(role) and not (str(actor.org) in AI_ORGS and role == Roles.BOSS and command in AI_COMMANDS):
 		return "%s can't act as %s." % [str(actor.org), role]
 	if not Roles.allowed(role, command):
 		return "%s can't do '%s'." % [role, command]

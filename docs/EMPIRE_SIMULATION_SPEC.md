@@ -228,7 +228,7 @@ Rules:
   as they are; D-11 trust comes in Phase 2.
 
 RNG: one new stream per org for strategy (seed + 1201 + org index) and one for business policy (seed + 1301). Both get
-registered in DESIGN's stream table.
+registered in DESIGN's stream table. v1 is `OrgAI` (DESIGN §67): policy and strategy for the Morettis and Los Cuervos.
 
 ## 8. Detail levels (reserved, not built)
 

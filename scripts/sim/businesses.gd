@@ -8,7 +8,8 @@ extends RefCounted
 ## What they do in L-1: they can be bought (a free one, by the organisation: `business_buy`), funded and drawn on (moving money
 ## between the safe and the till: `business_fund`, `business_take`), and at every 06:00 books close (Books) each pays its day's
 ## rent and utilities from its till. What the till can't cover is owed: it goes into the business's arrears, with the blocked
-## reason, and is paid first when money comes in. (Only the organisation's pay yet; the Morettis' and Los Cuervos' from L-3.) Nothing ever reaches into an owner's safe by itself, so a game whose
+## reason, and is paid first when money comes in. The Morettis' and Los Cuervos' businesses run on the same rules once their AI
+## is on (OrgAI, L-3), through `command_as` on their own safes. Nothing ever reaches into an owner's safe by itself, so a game whose
 ## businesses nobody funds sees no change in its money. The legit chain (L-2) trades groceries through the warehouse and the
 ## retailers at the same close; staff and orders, L-4;
 ## the Morettis' and Los Cuervos' AI running theirs, L-3; placing them in the world is the 3D side's.
@@ -34,8 +35,7 @@ const WAREHOUSE_LB := 400.0  ## what the warehouse restocks to a day
 const SHELF_LB := 120.0  ## what a retailer restocks to a day
 const SHOPPERS_LB := 100.0  ## what a retailer's shoppers buy a day at demand 1 and prosperity 0.5
 const OUTSIDE_SHOPS_LB := 150.0  ## what the shops outside the twelve take from the warehouse a day
-## The owners whose businesses run the chain. The Morettis' and Los Cuervos' join with their AI and money (L-3).
-const RUNS := ["org"]
+const ORG_NAMES := {"org": "The organisation", "rival": "Los Cuervos", "moretti": "The Morettis"}
 
 ## id, name, kind, district, site [x, y], starting owner (org id, "" free, "outside" not for sale), price to buy, rent and
 ## utilities a day, the chain it belongs to (L-2), open hours [from, to].
@@ -71,6 +71,7 @@ var owner := {}  ## business id -> org id ("" free, "outside" not for sale)
 var arrears := {}  ## business id -> dollars owed
 var blocked := {}  ## business id -> why the day's costs weren't paid, or absent
 var districts := {}  ## district id -> {prosperity, demand{good: float}}
+var ai: OrgAI = null  ## the Morettis' and Los Cuervos' AI (L-3); null with OrgAI off, and then only ours run
 
 
 func _init(sess_) -> void:
@@ -114,54 +115,87 @@ func district(id: String) -> Dictionary:
 	return d
 
 
-# ------------------------------------------------------------------ the organisation's commands
-## Buy a free business. "" or why not.
-func buy(id: String) -> String:
+# ------------------------------------------------------------------ the owners' commands
+## Every org's money goes through here, so the same command works for each on its own safe (spec section 7, equal rules): the
+## organisation's is the session's safe, Los Cuervos' their war chest, the Morettis' a ledger account (L-3).
+func safe_balance(o: String) -> float:
+	match o:
+		"org":
+			return float(sess.money)
+		"rival":
+			return float(sess.ground.commanders.rival.cash) if sess.ground != null and sess.ground.commanders.has("rival") else 0.0
+	return sess.ledger.balance(o + ":safe")
+
+
+## Move `delta` into (> 0) or out of (< 0) an org's safe, against `other`. False when the org has no safe to pay from.
+func _pay(o: String, delta: float, other: String, reason: String) -> bool:
+	match o:
+		"org":
+			sess.move_money(int(delta), other, reason)
+			return true
+		"rival":
+			if sess.ground == null or not sess.ground.commanders.has("rival"):
+				return false
+			sess.ground.commanders.rival.move_cash(delta, other, reason)
+			return true
+	if delta > 0.0:
+		return sess.ledger.transfer(other, o + ":safe", delta, reason, o, sess.time)
+	return sess.ledger.transfer(o + ":safe", other, -delta, reason, o, sess.time)
+
+
+## Buy a free business for `o`. "" or why not.
+func buy(id: String, o := "org") -> String:
 	var b := spec(id)
 	if b.is_empty():
 		return "No such business."
-	if str(owner[id]) == "org":
+	if str(owner[id]) == o:
 		return "It's already ours."
 	if str(owner[id]) != "":
 		return "%s isn't for sale." % b.name
-	if sess.money < int(b.price):
+	if safe_balance(o) < float(b.price):
 		return "%s costs $%s." % [b.name, Py.money(int(b.price))]
-	sess.move_money(-int(b.price), "outside:market", "purchase")
-	owner[id] = "org"
-	sess.say("Bought %s ($%s). Its till is empty: fund it to pay the rent [business_fund]." % [b.name, Py.money(int(b.price))])
-	sess.bus.emit("business_bought", sess.time, "", ["runner"], {"id": id, "price": int(b.price)})
+	if not _pay(o, -float(b.price), "outside:market", "purchase"):
+		return "No money to buy with."
+	owner[id] = o
+	if o == "org":
+		sess.say("Bought %s ($%s). Its till is empty: fund it to pay the rent [business_fund]." % [b.name, Py.money(int(b.price))])
+	else:
+		sess.say("%s bought %s." % [ORG_NAMES.get(o, o), b.name])
+	sess.bus.emit("business_bought", sess.time, "", ["runner"], {"id": id, "price": int(b.price), "org": o})
 	return ""
 
 
-## Money from the safe into one of our tills (it pays the arrears first). "" or why not.
-func fund(id: String, amount: int) -> String:
-	var err := _ours(id)
+## Money from `o`'s safe into one of its tills (it pays the arrears first). "" or why not.
+func fund(id: String, amount: int, o := "org") -> String:
+	var err := _ours(id, o)
 	if err != "":
 		return err
-	amount = mini(amount, maxi(0, sess.money))
+	amount = mini(amount, maxi(0, int(safe_balance(o))))
 	if amount <= 0:
 		return "Nothing to put in."
-	sess.move_money(-amount, till(id), "transfer")
+	if not _pay(o, -float(amount), till(id), "transfer"):
+		return "No money to put in."
 	_settle_arrears(id)
 	return ""
 
 
-## Money from one of our tills into the safe. "" or why not.
-func take(id: String, amount: int) -> String:
-	var err := _ours(id)
+## Money from one of `o`'s tills into its safe. "" or why not.
+func take(id: String, amount: int, o := "org") -> String:
+	var err := _ours(id, o)
 	if err != "":
 		return err
 	amount = mini(amount, balance(id))
 	if amount <= 0:
 		return "The till is empty."
-	sess.move_money(amount, till(id), "transfer")
+	if not _pay(o, float(amount), till(id), "transfer"):
+		return "Nowhere to take it."
 	return ""
 
 
-func _ours(id: String) -> String:
+func _ours(id: String, o := "org") -> String:
 	if spec(id).is_empty():
 		return "No such business."
-	if str(owner[id]) != "org":
+	if str(owner[id]) != o:
 		return "That isn't ours."
 	return ""
 
@@ -170,13 +204,17 @@ func _ours(id: String) -> String:
 func _on_books(_e) -> void:
 	if sess == null:
 		return
+	if ai != null:
+		ai.policy()  # the AI orgs top their tills up first, through command_as
 	_trade_day()
 	for b in DATA:
 		var id: String = b.id
-		if str(owner[id]) != "org":
-			continue  # free, outside, or another org's: theirs to run from L-3 (org AI v1)
+		if not runs(id):
+			continue  # free, outside, or an org with no AI running it
 		arrears[id] = int(arrears.get(id, 0)) + int(b.rent) + int(b.utilities)
 		_settle_arrears(id)
+	if ai != null:
+		ai.strategy()  # then each picks the day's move
 
 
 ## Pay what is owed from the till, rent first; what can't be paid stays owed, with the reason.
@@ -202,8 +240,10 @@ func _settle_arrears(id: String) -> void:
 
 
 # ------------------------------------------------------------------ the legit chain (L-2)
+## Whether a business is run: ours, or an org whose AI is on (L-3). The chain and the costs are the same rules for every owner.
 func runs(id: String) -> bool:
-	return str(owner.get(id, "")) in RUNS
+	var o := str(owner.get(id, ""))
+	return o == "org" or (ai != null and ai.runs_for(o))
 
 
 static func is_warehouse(b: Dictionary) -> bool:
@@ -287,7 +327,10 @@ func ours() -> Array:
 
 
 func capture() -> Dictionary:
-	return {"owner": owner.duplicate(), "arrears": arrears.duplicate(), "blocked": blocked.duplicate(), "districts": districts.duplicate(true)}
+	var d := {"owner": owner.duplicate(), "arrears": arrears.duplicate(), "blocked": blocked.duplicate(), "districts": districts.duplicate(true)}
+	if ai != null:
+		d["ai"] = ai.capture()
+	return d
 
 
 func restore(d: Dictionary) -> void:
@@ -303,3 +346,5 @@ func restore(d: Dictionary) -> void:
 	for k in d.get("districts", {}):
 		if d.districts[k] is Dictionary:
 			districts[str(k)] = d.districts[k].duplicate(true)
+	if ai != null and d.get("ai") is Dictionary:
+		ai.restore(d.ai)

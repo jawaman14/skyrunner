@@ -46,7 +46,7 @@ func test_rent_is_paid_from_the_till_only() -> void:
 	check_eq(int(c.money), safe, "an empty till never reaches into the safe")
 	check_eq(int(c.businesses.arrears["biz-4"]), 390, "the club owes its day: rent 300 and bills 90")
 	check(c.businesses.blocked.has("biz-4"), "with the reason")
-	check(not c.businesses.arrears.has("biz-3"), "the Morettis' laundromat is theirs to run, from L-3")
+	check_eq(int(c.businesses.arrears.get("biz-3", 0)), 0, "the Morettis run their laundromat and pay its rent from their own safe (L-3)")
 	check_eq(int(c.businesses.arrears.get("biz-2", 0)), 0, "a free corner nobody runs owes nothing")
 	c.dispose()
 
@@ -60,8 +60,10 @@ func test_funding_pays_the_arrears_first() -> void:
 	check_eq(c.businesses.balance("biz-4"), 610, "the arrears came out first")
 	check_eq(int(c.businesses.arrears["biz-4"]), 0, "nothing owed")
 	check(not c.businesses.blocked.has("biz-4"), "not blocked")
-	check_near(c.ledger.balance(Businesses.LANDLORD), 300.0, 0.01, "the rent went to the landlord")
-	check_near(c.ledger.balance(Businesses.UTILITIES), 90.0, 0.01, "and the bills")
+	var paid := func(to: String) -> float:
+		return c.ledger.log.filter(func(r): return r.from == Businesses.till("biz-4") and r.to == to).reduce(func(a, r): return a + float(r.amount), 0.0)
+	check_near(paid.call(Businesses.LANDLORD), 300.0, 0.01, "the rent went to the landlord")
+	check_near(paid.call(Businesses.UTILITIES), 90.0, 0.01, "and the bills")
 	c.businesses._on_books(null)
 	check_eq(c.businesses.balance("biz-4"), 220, "the next day comes out of the till")
 	check_eq(c.command(Roles.PILOT, "business_take", {"id": "biz-4", "amount": 500})[0], true, "draw on it")
@@ -176,7 +178,10 @@ func test_seven_days_flow_without_duplication() -> void:
 
 
 func test_other_owners_wait_for_their_ai() -> void:
+	var saved := OrgAI.ENABLED
+	OrgAI.ENABLED = false
 	var c := _city()
+	OrgAI.ENABLED = saved
 	c.businesses._on_books(null)
 	check_eq(c.businesses.shelf("biz-6"), 0.0, "Los Cuervos' bodega trades from L-3")
 	check_eq(c.businesses.shelf("biz-10"), 0.0, "so does the Morettis' fish market")

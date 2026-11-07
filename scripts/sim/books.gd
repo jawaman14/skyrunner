@@ -8,7 +8,7 @@ extends RefCounted
 const DAY_S := 86400.0
 const HOUR := 6.0  ## the books close at 06:00
 const KEEP := 14  ## closed days kept
-const ORGS := ["org", "police", "rival", "family"]
+const ORGS := ["org", "police", "rival", "family", "moretti"]
 
 var sess
 var closed: Array = []  ## [{day, t, org, in: {reason: $}, out: {reason: $}, net, ends}]

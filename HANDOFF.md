@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, org AI v1 (L-3):** the Morettis (`moretti:safe`, $25k) and Los Cuervos (war chest) run their
+  businesses through command_as on their own safes: policy tops tills up, strategy scores fund/skim/buy/hold daily (DESIGN 67).
 - **2026-11-08 - Claude, the legit chain (L-2b):** groceries: market → Costa Imports → bodega/fish market → shoppers at the
   books close, every pound and dollar named; runs for the org's businesses now, the others' with L-3 (DESIGN 66).
 - **2026-11-08 - Claude, the Living District's businesses (L-1):** the twelve businesses as data on the city coast, each with a
