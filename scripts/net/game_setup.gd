@@ -29,6 +29,14 @@ static func options(mode: String, seed_: int, story: bool) -> Dictionary:
 	return o
 
 
+## The last run (D-95): everything open, LastRun.START money, one life (Main never loads one from a save).
+static func last_run(seed_: int) -> Dictionary:
+	var o := options(Roles.SOLO, seed_, false)
+	o["money"] = LastRun.START
+	o["last_run"] = true
+	return o
+
+
 ## A task-force table for remote players against AI runners.
 static func police(seed_: int, map_arg: int) -> Dictionary:
 	var o := {"mode": Roles.POLICE, "seed": seed_, "map_seed": map_arg if map_arg >= 0 else MapCity.SEED, "career": true, "fog": true, "money": Session.OPEN_FLOAT}

@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, the last run (D-95):** the lobby's third choice: everything open, $5,000, two game hours, one life;
+  land at home to bank, a bust or a crash ends it, SHIFT+X cashes out at home; best five kept; never saved (DESIGN 63).
 - **2026-11-08 - Claude, the heat dial (D-95):** Quiet / Steady / Hot / Burning on the phone's Heat page: sightings and customs
   x0.75 to x1.6, board pay x0.85 to x1.45; Steady is the game as it was (DESIGN 62).
 

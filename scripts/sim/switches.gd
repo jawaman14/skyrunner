@@ -28,7 +28,7 @@ const OPT_IN := [
 	"Scenery.ENABLED", "GroundWar.ENGAGEMENT", "GroundWar.SMART_ROUTES", "GroundWar.VETERANS",
 	"Logistics.ROUNDS", "Tactical.PYTHON", "RadioNet.REALISM", "Analyst.ENABLED", "Casino.ENABLED", "Casino.REVOLUTION", "Airframe.ENABLED", "Undercover.ENABLED", "PortDress.ENABLED", "AirfieldDress.ENABLED", "DowntownDress.ENABLED",
 	"CasinoBuilding.ENABLED", "Discovery.ENABLED", "DailyWeather.ENABLED", "Calendar.ENABLED", "Weekly.ENABLED", "Dealership.ENABLED", "Psychedelics.ENABLED", "Territories.ENABLED", "PoliceSystem.EARLY_PACE",
-	"PilotApp.FIXED_STEP", "Court.SPARE_ONLY", "NightDirector.ENABLED",
+	"PilotApp.FIXED_STEP", "Court.SPARE_ONLY", "LastRun.ENABLED", "NightDirector.ENABLED",
 ]
 
 

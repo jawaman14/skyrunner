@@ -10,6 +10,7 @@ extends RefCounted
 ##   user://saves/dedicated.json  the dedicated server's game
 
 const DIR := "user://saves/"
+const LAST_RUN := "last_run.json"  ## the one-life mode's file: deleted at every start, so never loaded (D-95)
 const SLOTS := 5  ## save slots per mode (owner, 18 Oct: pick which save to use); slot 1 is the file every older game already has
 const OLD_DIR := "user://"
 ## Old name -> new name. save.json was the open game; the rest keep their names.

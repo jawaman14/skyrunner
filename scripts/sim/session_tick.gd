@@ -89,6 +89,8 @@ func _update_runner(dt: float, inp: ControlMapper.InputFrame, bot_controls: Flig
 		_unload_tick(dt)
 	if breakaway != null:
 		breakaway.update()
+	if last_run != null:
+		last_run.update()
 	if curses != null:
 		curses.update(bot_controls != null)
 
