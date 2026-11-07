@@ -156,6 +156,7 @@ func _grass_at(stash: String) -> float:
 
 func _take_grass(stash: String, lb: float) -> void:
 	if sess.logistics != null:
+		sess.logistics.book("stash:" + stash, Inventory.OUTSIDE + "collective", "marijuana", lb, "barter")  # F-4: a named move
 		sess.logistics.stock[stash]["marijuana"] -= lb
 		sess.logistics.sync()
 	else:
@@ -184,6 +185,7 @@ func barter(stash: String, lb: float) -> String:
 	_take_grass(stash, lb)
 	stock -= sheets
 	if sess.logistics != null:
+		sess.logistics.book(Inventory.OUTSIDE + "collective", "stash:" + stash, "acid", sheets, "barter")
 		sess.logistics.stock[stash]["acid"] = float(sess.logistics.stock[stash].get("acid", 0.0)) + sheets  # the van leaves the sheets at the stash
 	else:
 		held += sheets
@@ -214,6 +216,7 @@ func sell(sheets: float, stash := "") -> String:
 		return "The circuit has had enough for now."
 	var pay := int(price() * n)
 	if sess.logistics != null:
+		sess.logistics.book("stash:" + stash, Inventory.OUTSIDE + "circuit", "acid", n, "circuit sale")
 		sess.logistics.stock[stash]["acid"] -= n
 		sess.logistics.cash[stash] += pay
 		var st = sess.stash_net.get_stash(stash)

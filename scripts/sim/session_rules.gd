@@ -195,6 +195,8 @@ func _arrive(af: Airfield, s: FlightModel.FlightState, checked := false) -> void
 		if phase == "busted":
 			return
 		phase = "parked"
+	if curses != null:
+		curses.arrived(af.code, flown)  # judged at the landing, before any unload count or truck (#522)
 	var waiting := active_jobs.filter(func(j): return j.dest == af.code and not Gigs.done(j))
 	if not waiting.is_empty():
 		say("%s: the client wants every point flown first (%d of %d done)." % [waiting[0].title.get_slice(" (", 0), waiting[0].visited, waiting[0].checkpoints.size()])

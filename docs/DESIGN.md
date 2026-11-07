@@ -1869,6 +1869,7 @@ that claim an offset are noted.
 | 183 | `Calendar` | `session.gd` | the island's calendar of events |
 | 185 | `Weekly` | `session.gd` | the week's goals |
 | 187 | `Wanted` | `session_state.gd` | the Wanted names' prizes, one draw a take-down (D-95) |
+| 189 | `Curses` | `session.gd` | which board jobs offer a condition, and which one (D-95) |
 | 191 | `BlackMarket` | `session.gd` | the week's black-market stock and the week's hot job (D-95) |
 | 404, 505 | `Nights` | `nights.gd` | an HQ season's night; its bots |
 | 909 | `Analyst` | `analyst.gd` | the analyst's desk |
@@ -1968,6 +1969,29 @@ no prize. Saved: the roster (who is finished, who has been seen, how many squads
 stream's state (so a reload can't replay a miss) and each named squad's leader; a story save, whose war opens after the restore,
 keeps the roster in `pending_wanted` until `enable_system("ground_war")` builds it. Behind `Wanted.ENABLED`, in the parity set;
 built with the ground war.
+
+## 60. Cursed jobs: an optional condition for a premium (owner, 7 November 2026, D-95)
+
+From the Borderlands study's round two (its optional modifiers that pay more). `scripts/sim/curses.gd` (`Curses`,
+`Session.curses`). A job on the board can carry an optional condition the client asks for, with a stated premium (a share of
+the job's pay as dealt, rounded to $50). The job board shows it under the job's notes; **X** takes it (or leaves it), only
+while the job is still on the board. Accepted with it, the job is flown under it:
+
+| Condition | | Premium |
+|---|---|---|
+| `low` | Under the radar: never above 150 m off the ground after take-off | +30% |
+| `squawk` | Nothing to hide: the transponder on the whole flight | +35% |
+| `hands` | Hands on: no autopilot and no AI pilot | +20% |
+| `gentle` | Fragile: touch down at the destination at 250 fpm or less | +25% |
+| `clock` | On the clock: land at the destination within the stated minutes of take-off (the straight line at 45 m/s, plus 4 minutes) | +30% |
+
+Kept to the end, the premium is paid on delivery (`outside:clients`, "premium"; `curse_kept`). Broken, it is lost, and only
+the premium: the job pays as it always did (`curse_broken`, with what broke it). The clock starts at take-off, not at
+acceptance. About one eligible job in four (cargo, passengers, contraband, medical, fugitives; not airdrops, side gigs, the
+employer's work or a windfall) carries a condition, drawn when the board is dealt, after the day's prices, on its own stream
+(seed + 189). The offer and the choice are saved with the board's jobs (`Jobs.SAVE_KEYS`: `curse`, `cursed`); the counts and
+the stream with the game (`curses`). Jobs in flight are not saved, as before. Not measured by the balance simulators: their
+bots never take a condition. Behind `Curses.ENABLED`, in the parity set. Tests: `tests/test_curses.gd`.
 
 ## 61. The weekly black market and the week's hot job (owner, 7 November 2026, D-95)
 

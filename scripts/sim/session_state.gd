@@ -182,6 +182,7 @@ var renown: Renown = null  ## how big the name is (Renown; `renown: true` asks f
 var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets: true` with a ground war)
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
+var curses: Curses = null  ## cursed jobs: optional conditions for a premium (D-95)
 var black_market: BlackMarket = null  ## the weekly black market and the week's hot job (D-95)
 var wanted: Wanted = null  ## named lieutenants and captains with a prize each (D-95; built with the ground war)
 var pending_wanted := {}  ## a save's Wanted roster, kept until the ground war is built (a story opens it after the restore)
@@ -597,6 +598,8 @@ func refresh_board(code: String) -> void:
 		for j in boards[code]:  # today's prices
 			j.price_mult = econ.job_mult(j)
 			j.payout = int(j.payout * j.price_mult)
+	if curses != null:
+		curses.offer(boards[code])  # after the prices: a premium is a share of the job's pay as dealt
 
 
 ## Weapons taken by the police go into their arsenal and arm their patrols.

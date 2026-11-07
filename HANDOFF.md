@@ -179,6 +179,12 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
   strip, a file lost) on the Week page, and one strip's best job marked for 1.5x pay and 20 renown (DESIGN 61).
 - **2026-11-08 - Claude, the last WoW lesson (D-94):** in a story game the first sentence that would forfeit the pilot's
   only aircraft spares it, with a warning (`Court.SPARE_ONLY`); the fine stands. Then on through the mechanics tree's open items, in roadmap order.
+
+- **2026-11-08 - Claude, F-4 finished:** the Collective's barter and circuit sales and the cheat fill book named moves
+  (`Logistics.book`); nothing changes a stash's stock without one.
+
+- **2026-11-08 - Claude, cursed jobs (D-95):** about one board job in four offers an optional condition (low, squawk, hands,
+  gentle, clock) for a 20-35% premium; X takes it; breaking it loses only the premium (DESIGN 60).
 - **2026-11-07 - Claude, Makers (D-95):** four fictional makers across the dealership (Halcyon, Corsair, Mercy, Bastion), one
   behaviour each and two- and three-model set bonuses on the fleet and the car you drive (DESIGN 43, Makers).
 - **2026-11-07 - Claude, Wanted names (D-95) and working alone (D-96):** five named squad leaders with one prize each at a
