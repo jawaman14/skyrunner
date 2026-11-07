@@ -1871,6 +1871,8 @@ that claim an offset are noted.
 | 187 | `Wanted` | `session_state.gd` | the Wanted names' prizes, one draw a take-down (D-95) |
 | 189 | `Curses` | `session.gd` | which board jobs offer a condition, and which one (D-95) |
 | 191 | `BlackMarket` | `session.gd` | the week's black-market stock and the week's hot job (D-95) |
+| 1202, 1203 | `OrgAI.rng` | `session.gd` | Los Cuervos' and the Morettis' strategy: a near-tie between the day's moves (L-3; seed + 1201 + org index) |
+| 1301 | `OrgAI.policy_rng` | `session.gd` | the businesses' policy layer (L-3; reserved, v1 draws nothing) |
 | 404, 505 | `Nights` | `nights.gd` | an HQ season's night; its bots |
 | 909 | `Analyst` | `analyst.gd` | the analyst's desk |
 | 919 | `Undercover` | `undercover.gd` | the undercover agent |
@@ -2109,9 +2111,41 @@ before the rent:
 
 Every pound is an inventory move (`biz-N` locations; reasons `sale`, `wholesale`, arrivals from the market). Every dollar is a
 ledger transfer between tills and outside accounts, by `system:books`. A till that can't pay for a full restock buys what it
-can. The chain runs only for businesses whose owner is in `Businesses.RUNS`, which is the organisation for now. The Morettis'
-fish market and Los Cuervos' bodega join with their AI and money in L-3, on the same rules (A4).
+can. The chain runs for the organisation's businesses, and for the Morettis' and Los Cuervos' once their AI runs them (§67),
+on the same rules (A4).
 
 So buying the warehouse ($30,000) is a legal earner, but not on its own: from the outside shops it makes about $150 a day in margin
 against $270 of rent and bills, so it needs a retailer in the chain to pay. Tests: `tests/test_businesses.gd`, including
 A3's seven-day no-duplication check.
+
+## 67. Organisation AI v1: the Morettis and Los Cuervos in business (L-3; D-84, docs/EMPIRE_SIMULATION_SPEC.md section 7)
+
+`scripts/sim/org_ai.gd` (`OrgAI`, `Businesses.ai`), built with the businesses. It runs two of the spec's three layers for each
+AI organisation, at every 06:00 books close:
+
+- **Policy** (fixed rules, a personality's numbers), before the day's trade: every business of theirs whose till is under its
+  floor is topped up from the org's safe. The floor is a few days' rent and bills, plus a restock for a shop or the warehouse.
+- **Strategy**, after the costs, is a scored choice between the day's moves:
+  - pay off a business's arrears (2 + $/1000)
+  - skim a till holding more than it needs (1 + $/5000)
+  - buy a free business of a kind it likes, keeping its reserve (1.5)
+  - hold (0.2)
+
+  Moves within 0.05 of the best are a tie, broken on the org's own stream.
+- **The personalities.** The Morettis like fronts and retail (reserve $8,000, three days' floor). Los Cuervos like corners,
+  covers and the club's kind (reserve $6,000, two days' floor), so with money in their chest they go for the free corner.
+
+**Equal rules.** Every move is a `command_as` with the org's own actor in the boss's seat. `Actor.AI_ORGS` may act there only
+for `Actor.AI_COMMANDS`, the commands that work on the actor's own org (`business_buy`, `business_fund`, `business_take`).
+`Businesses` pays each org from its own safe:
+- the organisation's: the session's safe
+- Los Cuervos': their war chest, so they run only with the street war on
+- the Morettis': `moretti:safe`, a ledger account opened at $25,000, now one of the books' orgs
+
+Every move is logged (`OrgAI.log`, with `refused()` for the desk, L-4). A refused one carries its reason: an empty safe is a
+logged block, and the business goes into arrears with its blocked reason as the player's would. Once the AI runs them, their
+businesses trade and pay rent on the same rules as ours (§64, §66).
+
+Streams: seed + 1202 (Los Cuervos) and + 1203 (the Morettis) for strategy, i.e. 1201 + the org's index; + 1301 is reserved
+for policy, which draws nothing in v1. The log and the streams are saved with the businesses. Behind `OrgAI.ENABLED`, in the
+parity set. Tests: `tests/test_org_ai.gd`.

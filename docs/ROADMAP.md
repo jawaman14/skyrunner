@@ -113,7 +113,8 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - The owner's playtest (G1).
    - Progress on 8 November: L-1's sim side is on main (DESIGN §64: the twelve businesses as data, tills, buy/fund/take, rent
      and bills at the books close into arrears, district state); placing them in the world is the 3D side's. L-2 is on main:
-     the product chain's money on the ledger (DESIGN §65) and the legit import-to-retail chain (§66). L-3 (the Morettis and org AI v1) is next.
+     the product chain's money on the ledger (DESIGN §65) and the legit import-to-retail chain (§66). L-3, the Morettis and
+     org AI v1, is DESIGN §67. L-4 (the desk) to L-7 next.
 4. **After the gate:** organisation depth (hierarchy, schedules, budgets, conditional orders, trust D-11), then the campaign pivot
    (story v6 with ventures, the takeover on the ledger, both views kept, the ending and the sandbox), then more cities, each fully explorable (D-81).
 

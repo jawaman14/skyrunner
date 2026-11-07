@@ -166,19 +166,19 @@ static func _cmd_rico_case(role: String, a: Dictionary, session: Session):
 static func _cmd_business_buy(_role: String, a: Dictionary, session: Session):
 	if session.businesses == null:
 		return "There are no businesses on this map."
-	var err: String = session.businesses.buy(str(a.get("id", "")))
+	var err: String = session.businesses.buy(str(a.get("id", "")), str(session.bus.actor.get("org", "org")))
 	return err if err != "" else null
 
 
 static func _cmd_business_fund(_role: String, a: Dictionary, session: Session):
 	if session.businesses == null:
 		return "There are no businesses on this map."
-	var err: String = session.businesses.fund(str(a.get("id", "")), int(session._num(a, "amount", 0)))
+	var err: String = session.businesses.fund(str(a.get("id", "")), int(session._num(a, "amount", 0)), str(session.bus.actor.get("org", "org")))
 	return err if err != "" else null
 
 
 static func _cmd_business_take(_role: String, a: Dictionary, session: Session):
 	if session.businesses == null:
 		return "There are no businesses on this map."
-	var err: String = session.businesses.take(str(a.get("id", "")), int(session._num(a, "amount", 0)))
+	var err: String = session.businesses.take(str(a.get("id", "")), int(session._num(a, "amount", 0)), str(session.bus.actor.get("org", "org")))
 	return err if err != "" else null

@@ -118,6 +118,8 @@ func _init(opts := {}) -> void:
 		schedule.at(Books.next_close(time), "books")
 		if Businesses.ENABLED and Businesses.on_this_map():  # L-1: rent and bills settle at the books close (no draws)
 			businesses = Businesses.new(self)
+			if OrgAI.ENABLED:  # L-3: the Morettis and Los Cuervos run theirs, each on its own stream
+				businesses.ai = OrgAI.new(businesses, {"rival": _rng(seed + 1202), "moretti": _rng(seed + 1203)}, _rng(seed + 1301))
 	director = AISmuggler.Director.new(_rng(seed + 21))
 	mapper = ControlMapper.new()
 	autopilot = Autopilot.new()
@@ -178,6 +180,9 @@ func dispose() -> void:
 		heat_dial.sess = null
 	heat_dial = null
 	if businesses != null:
+		if businesses.ai != null:
+			businesses.ai.biz = null
+		businesses.ai = null
 		businesses.sess = null
 	businesses = null
 	if weekly != null:
