@@ -2054,3 +2054,25 @@ From the Borderlands study's round two, its last item (a one-life extraction run
 
 No random draws. Built only when the options ask (`last_run: true`), so nothing else changes; `LastRun.ENABLED` is on the
 opt-in list. Tests: `tests/test_last_run.gd`.
+
+## 64. The Living District's businesses (L-1; D-72, docs/EMPIRE_SIMULATION_SPEC.md sections 2 and 10)
+
+`scripts/sim/businesses.gd` (`Businesses`, `Session.businesses`), built only on a map that has San Telmo Centro (the city
+coast). The spec's twelve businesses are data (`Businesses.DATA`): fictional names, a kind, a district, a site inside that
+district's bounds, a starting owner (`org`, `rival`, `moretti`, free, or `outside` for the dealership), a price for a free one,
+the day's rent and utilities, its chain (for L-2) and open hours. Each has a till, the ledger account `biz-N:till`, and a stock
+place in the inventory, `biz-N`.
+
+- **Buy, fund, take.** `business_buy {id}` buys a free business from the safe (`purchase`, to `outside:market`);
+  `business_fund {id, amount}` moves money from the safe into one of ours and `business_take {id, amount}` back (`transfer`).
+  Pilot and boss.
+- **The day's costs.** At every 06:00 books close (F-6's `books` event) each business the organisation owns owes its rent and
+  utilities. The till pays (rent first, to `outside:landlord`, then `outside:utilities`, both `fee`); what it can't is kept as
+  arrears with a blocked reason, and is paid first the next time the till is funded. The safe is never touched, so a game that
+  leaves its businesses alone keeps the money it had. The Morettis' and Los Cuervos' businesses pay from L-3, with their AI.
+- **District state.** Each of the three districts has a prosperity and a demand per good (for L-2); its control is read from
+  the street war's `territory_control`, which it wraps rather than replaces.
+
+Saved as an optional `businesses` key (owners, arrears, reasons, district state; the tills are ledger balances). No random
+draws. Behind `Businesses.ENABLED`, in the parity set. Revenue is L-2, staff and orders L-4, the desk's books L-4.
+Tests: `tests/test_businesses.gd`.

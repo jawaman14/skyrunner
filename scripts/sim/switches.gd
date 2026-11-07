@@ -17,7 +17,7 @@ const PARITY := [
 	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Orders.ENABLED", "Jobs.ISLAND_BOARD",
 	"Investigation.ENABLED", "CoverCargo.ENABLED", "Comeback.ENABLED", "DealMoves.ENABLED", "Gigs.ENABLED", "StreakGuard.ENABLED", "Schedule.ENABLED", "Story.FLIGHT_GOALS",
 	"Breakaway.ENABLED",
-	"Wanted.ENABLED", "Curses.ENABLED", "BlackMarket.ENABLED", "HeatDial.ENABLED",
+	"Wanted.ENABLED", "Curses.ENABLED", "BlackMarket.ENABLED", "HeatDial.ENABLED", "Businesses.ENABLED",
 ]
 
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
@@ -40,7 +40,7 @@ static func snapshot() -> Dictionary:
 		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Orders.ENABLED": Orders.ENABLED,
 		"Jobs.ISLAND_BOARD": Jobs.ISLAND_BOARD,
 		"Investigation.ENABLED": Investigation.ENABLED, "CoverCargo.ENABLED": CoverCargo.ENABLED, "Comeback.ENABLED": Comeback.ENABLED, "DealMoves.ENABLED": DealMoves.ENABLED, "Gigs.ENABLED": Gigs.ENABLED,
-		"StreakGuard.ENABLED": StreakGuard.ENABLED, "Schedule.ENABLED": Schedule.ENABLED, "Story.FLIGHT_GOALS": Story.FLIGHT_GOALS, "Breakaway.ENABLED": Breakaway.ENABLED, "Wanted.ENABLED": Wanted.ENABLED, "Curses.ENABLED": Curses.ENABLED, "BlackMarket.ENABLED": BlackMarket.ENABLED, "HeatDial.ENABLED": HeatDial.ENABLED}
+		"StreakGuard.ENABLED": StreakGuard.ENABLED, "Schedule.ENABLED": Schedule.ENABLED, "Story.FLIGHT_GOALS": Story.FLIGHT_GOALS, "Breakaway.ENABLED": Breakaway.ENABLED, "Wanted.ENABLED": Wanted.ENABLED, "Curses.ENABLED": Curses.ENABLED, "BlackMarket.ENABLED": BlackMarket.ENABLED, "HeatDial.ENABLED": HeatDial.ENABLED, "Businesses.ENABLED": Businesses.ENABLED}
 
 static func restore(state: Dictionary) -> void:
 	# Validate the complete snapshot before changing any switch.
@@ -71,6 +71,7 @@ static func restore(state: Dictionary) -> void:
 	Curses.ENABLED = state["Curses.ENABLED"]
 	BlackMarket.ENABLED = state["BlackMarket.ENABLED"]
 	HeatDial.ENABLED = state["HeatDial.ENABLED"]
+	Businesses.ENABLED = state["Businesses.ENABLED"]
 
 static func parity_off() -> Dictionary:
 	var previous := snapshot()
@@ -97,6 +98,7 @@ static func parity_off() -> Dictionary:
 	Curses.ENABLED = false
 	BlackMarket.ENABLED = false
 	HeatDial.ENABLED = false
+	Businesses.ENABLED = false
 	return previous
 
 
@@ -124,3 +126,4 @@ static func parity_on() -> void:
 	Curses.ENABLED = true
 	BlackMarket.ENABLED = true
 	HeatDial.ENABLED = true
+	Businesses.ENABLED = true

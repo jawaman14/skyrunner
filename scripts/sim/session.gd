@@ -116,6 +116,8 @@ func _init(opts := {}) -> void:
 		schedule = Schedule.new()
 		books = Books.new(self)
 		schedule.at(Books.next_close(time), "books")
+		if Businesses.ENABLED and Businesses.on_this_map():  # L-1: rent and bills settle at the books close (no draws)
+			businesses = Businesses.new(self)
 	director = AISmuggler.Director.new(_rng(seed + 21))
 	mapper = ControlMapper.new()
 	autopilot = Autopilot.new()
@@ -175,6 +177,9 @@ func dispose() -> void:
 	if heat_dial != null:
 		heat_dial.sess = null
 	heat_dial = null
+	if businesses != null:
+		businesses.sess = null
+	businesses = null
 	if weekly != null:
 		weekly.sess = null  # break the cycle: a disposed session must be freed
 	weekly = null

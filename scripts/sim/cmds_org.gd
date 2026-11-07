@@ -160,3 +160,25 @@ static func _cmd_rico_case(role: String, a: Dictionary, session: Session):
 		return "No Family in this game."
 	var err := session.family.rico_case()
 	return err if err != "" else null
+
+
+## The Living District (L-1): buy a free business, fund one of ours, or draw on its till.
+static func _cmd_business_buy(_role: String, a: Dictionary, session: Session):
+	if session.businesses == null:
+		return "There are no businesses on this map."
+	var err: String = session.businesses.buy(str(a.get("id", "")))
+	return err if err != "" else null
+
+
+static func _cmd_business_fund(_role: String, a: Dictionary, session: Session):
+	if session.businesses == null:
+		return "There are no businesses on this map."
+	var err: String = session.businesses.fund(str(a.get("id", "")), int(session._num(a, "amount", 0)))
+	return err if err != "" else null
+
+
+static func _cmd_business_take(_role: String, a: Dictionary, session: Session):
+	if session.businesses == null:
+		return "There are no businesses on this map."
+	var err: String = session.businesses.take(str(a.get("id", "")), int(session._num(a, "amount", 0)))
+	return err if err != "" else null
