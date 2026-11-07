@@ -77,6 +77,8 @@ static func capture(s: Session) -> Dictionary:
 		d["boards"] = capture_boards(s)  # optional: an older save has none and deals every board afresh, as it always did
 	if s.weekly != null and s.weekly.week > 0:
 		d["weekly"] = s.weekly.capture()  # optional: an older save starts its first week afresh
+	if s.curses != null:
+		d["curses"] = s.curses.capture()  # optional (D-95): the board's offers are on the saved jobs
 	if s.breakaway != null:
 		d["breakaway"] = s.breakaway.capture()  # optional (D-95): an older save starts with today's breakaway unused
 	if s.schedule != null:
@@ -304,6 +306,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 			restore_boards(s, d.boards)
 	if s.weekly != null and d.get("weekly") is Dictionary:
 		s.weekly.restore(d.weekly)
+	if s.curses != null and d.get("curses") is Dictionary:
+		s.curses.restore(d.curses)
 	if s.breakaway != null and d.get("breakaway") is Dictionary:
 		s.breakaway.restore(d.breakaway)
 	if s.schedule != null:
