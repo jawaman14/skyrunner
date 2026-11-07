@@ -119,3 +119,36 @@ func test_off_the_hq_layer_runs_without_nights() -> void:
 	check(not d.has("nights"), "and nothing of the nights is saved")
 	s.dispose()
 	NightDirector.ENABLED = true
+
+
+## F-6b: an HQ order given while the crew is out is queued and goes out when it lands; the money it moves is a named transfer.
+func test_an_order_during_the_run_waits_for_the_crew_and_is_booked_by_name() -> void:
+	var s := Session.new({"seed": 33, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES + ["hq"], "ground_war": false})
+	var n: NightDirector = s.nights
+	s.money = 20000
+	n.phase = "operation"
+	var r: Array = s.command(Roles.PILOT, "hq", {"order": "opsec"})
+	check(r[0], "accepted: %s" % [r])
+	check_eq(n.queued.size(), 1, "queued")
+	check(not n.season.org.opsec, "not yet")
+	var u0 := float(s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0))
+	n.phase = "planning"
+	n._run_queued()
+	check(n.season.org.opsec, "it went out once the crew was back")
+	check_eq(n.queued.size(), 0, "and the queue is empty")
+	check_eq(s.money, 19000, "it cost what it costs")
+	check_eq(float(s.ledger.boundary().get(Ledger.UNATTRIBUTED, 0.0)), u0, "booked by name, not unattributed")
+	check(s.ledger.log.any(func(row): return str(row.get("reason", "")) == "opsec"), "under the order's name")
+	s.dispose()
+
+
+func test_the_queue_is_saved() -> void:
+	var s := Session.new({"seed": 33, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES + ["hq"], "ground_war": false})
+	s.nights.phase = "operation"
+	s.command(Roles.PILOT, "hq", {"order": "lawyer", "on": true})
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	var t := Session.new({"seed": 34, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES + ["hq"], "ground_war": false})
+	StrategicSave.restore(t, d)
+	check_eq(t.nights.queued.size(), 1, "the waiting order")
+	s.dispose()
+	t.dispose()

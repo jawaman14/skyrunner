@@ -61,7 +61,7 @@ const RIVAL := ["name", "strength", "cash", "turf", "truce_nights", "grudge", "b
 	"betrayals", "revealed", "betrayed", "zone", "runs", "tipped", "hit"]
 const TASK_FORCE := ["bank_k", "support", "evidence", "informants", "encryption", "fed_arrived", "budget_k", "funded", "aerostat", "patrol",
 	"wiretap", "audit", "ia_sweep", "press", "gang_unit", "canary", "canary_zone", "actions", "ready"]
-const DIRECTOR := ["_ai_mem", "_paid_before", "ended_at"]
+const DIRECTOR := ["_ai_mem", "_paid_before", "ended_at", "queued"]
 
 
 static func capture(s: Session) -> Dictionary:

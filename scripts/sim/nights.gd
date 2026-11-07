@@ -16,6 +16,7 @@ extends RefCounted
 static var ENABLED := true
 
 const WRAP_TIMEOUT_S := 600.0
+const MAX_QUEUED := 8
 
 
 static func zone_of(job: Jobs.Job) -> String:
@@ -39,6 +40,7 @@ var _ai_mem := [{}, {}]
 var _bot_rng: PyRandom
 var _ai_planned := false
 var _paid_before := 0
+var queued: Array = []  ## [side, order, args]: orders given while the crew was out (F-6b), run when it is back
 
 
 func _init(sess_, runner_ai_ = "adaptive", law_ai_ = "adaptive", rules := {}) -> void:
@@ -70,23 +72,54 @@ func _pull() -> void:
 	o.tier = tier
 
 
-func _push() -> void:
-	sess.money = int(season.org.dirty)
+## Hand the season's books back to the session. The money change is a named ledger transfer (F-6): the season's orders,
+## overheads and takings, booked to outside:hq under `reason`, never an unattributed adjustment.
+func _push(reason := "hq") -> void:
+	var delta := int(season.org.dirty) - int(sess.money)
+	if delta != 0:
+		sess.move_money(delta, "outside:hq", reason)
 	for g in ["scanner", "detector"]:
 		if season.org.gear.has(g):
 			sess.gear[g] = true
 
 
-## An HQ order from a human (via Session.command) or a bot.
+## An HQ order from a human (via Session.command) or a bot. It runs any time (F-6b): placed while the crew is out, it is
+## queued and runs, in order, as soon as they are back on the ground (the night's plan is already in the air).
 func order(side: String, name: String, args := {}):
 	if season.phase == "over":
 		return "The season is over: %s (%s)." % [season.winner, season.reason]
 	if phase != "planning":
-		return "HQ orders wait until the crew is back on the ground."
+		if queued.size() >= MAX_QUEUED:
+			return "Enough orders are waiting for the crew to land."
+		queued.append([side, name, args.duplicate()])
+		var line := "Order noted (%s): it goes out when the crew is back on the ground." % name.replace("_", " ")
+		if side == "runner":
+			sess.say(line)
+		else:
+			sess.law_say(line)
+		return null
+	return _order_now(side, name, args)
+
+
+func _order_now(side: String, name: String, args: Dictionary):
 	_pull()
 	var err = season.runner_cmd(name, args) if side == "runner" else season.law_cmd(name, args)
-	_push()
+	_push(name)
 	return err
+
+
+## The orders that waited for the crew to land, in the order they were given.
+func _run_queued() -> void:
+	var q := queued
+	queued = []
+	for o in q:
+		var err = _order_now(str(o[0]), str(o[1]), o[2] if o[2] is Dictionary else {})
+		if err != null:
+			var line := "The %s order could not go out: %s" % [str(o[1]).replace("_", " "), str(err)]
+			if str(o[0]) == "runner":
+				sess.say(line)
+			else:
+				sess.law_say(line)
 
 
 func _run_ai() -> void:
@@ -95,7 +128,7 @@ func _run_ai() -> void:
 		HQBots.RUNNER_POLICIES[runner_ai].call(season, _bot_rng, _ai_mem[0])
 	if law_ai:
 		HQBots.LAW_POLICIES[law_ai].call(season, _bot_rng, _ai_mem[1])
-	_push()
+	_push("hq orders")
 	_ai_planned = true
 
 
@@ -249,7 +282,7 @@ func _finish() -> void:
 			if absf(d) >= 0.005:
 				ss.rival.turf[z] = clampf(ss.rival.turf[z] + d, 0.05, 0.9)
 				sess.say("NEWS: %s %s ground in the %s" % [ss.rival.name, "gained" if d > 0 else "lost", z])
-	_push()
+	_push("the night")
 	for line in rep.lines:
 		sess.say("NEWS: " + line)
 		sess.law_say("NEWS: " + line)
@@ -260,6 +293,8 @@ func _finish() -> void:
 	sess.police.no_customs = false
 	phase = "planning"
 	crews = []
+	if ss.phase != "over":
+		_run_queued()
 	if ss.phase == "over":
 		var text := "SEASON OVER - %s wins: %s" % ["the Organisation" if ss.winner == "runner" else "the Task Force", ss.reason]
 		sess.say(text)
@@ -267,7 +302,7 @@ func _finish() -> void:
 		return
 	ss.next_night()
 	_show_forecast()
-	_push()  # tonight's overheads and standing bribes came off the books
+	_push("hq overheads")  # tonight's overheads and standing bribes came off the books
 	_ai_planned = false
 	sess.say("Night %d of %d: HQ is planning." % [ss.night, int(ss.rules["nights"])])
 
