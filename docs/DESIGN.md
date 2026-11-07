@@ -1923,6 +1923,10 @@ out, or a sting opens a window of `Breakaway.WINDOW_S` (45 s), shown on the HUD 
 The window running out is `Session._bust_now`, the bust exactly as it was. Earned, not free: one breakaway an island day, one
 more for every second renown tier (1, 1, 2, 2, 3); after one, the task force is on alert for 10 minutes and the next stop goes
 straight through, as does a second stop inside an open window. Not covered: the air chase (it has its own escape, the bust
-meter) and an arrest on foot (the foot fight). No random draws. Saved (`breakaway` in the strategic save: today's count, the
-alert, an open window). Behind `Breakaway.ENABLED`, in the parity set.
+meter) and an arrest on foot (the foot fight). No random draws. Settled by dumping or paying while parked, the landing or the
+count the stop interrupted goes on (`_after_breakaway`; the landing isn't checked again), and the same stop doesn't come round
+while he stays (`settled_here`). A sting's load stays aboard during the window and is gone however he gets out. Saved: only
+today's count and the alert (`breakaway` in the strategic save). `Session.save()` waits while a window is open and a dump or a
+bribe saves once settled, so a stop under way is never on disk and a reload can't skip it. Behind `Breakaway.ENABLED`, in the
+parity set.
 
