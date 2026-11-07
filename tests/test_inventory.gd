@@ -229,3 +229,29 @@ func test_the_inventory_survives_a_save_with_its_lots_and_boundary() -> void:
 	check(t.inventory.add("cocaine", 1.0, "stash:" + a) > id, "new lots never reuse an id")
 	s.dispose()
 	t.dispose()
+
+
+## F-4, the last direct changes: the Collective's barter (grass out, acid in) and its circuit sales are named moves, so nothing of
+## either good is left to the unattributed flow.
+func test_the_collectives_barter_and_sales_are_named_moves() -> void:
+	var s := Session.new({"seed": 71, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES,
+		"trade": true, "logistics": true, "psychedelics": true, "money": 50000})
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	var inv: Inventory = s.inventory
+	var st: String = s.stash_net.stashes[0].id
+	inv.add("marijuana", 400.0, "stash:" + st, "growers", "", 0.5, 0.0, s.time)
+	s.logistics.stock[st]["marijuana"] = 400.0
+	s.logistics.sync()
+	var u_weed := inv.flow_via("outside:unattributed", "marijuana")
+	var u_acid := inv.flow_via("outside:unattributed", "acid")
+	check_eq(s.psych.barter(st, 200.0), "", "a barter")
+	check_eq(s.psych.sell(5.0, st), "", "a circuit sale")
+	s.logistics._sync_inventory()  # the five-second reconcile: it should find nothing left to explain
+	check_near(inv.flow_via("outside:unattributed", "marijuana"), u_weed, 0.01, "no grass booked as unexplained")
+	check_near(inv.flow_via("outside:unattributed", "acid"), u_acid, 0.01, "no acid booked as unexplained")
+	check_near(inv.stock("outside:collective", "marijuana"), 200.0, 0.01, "the grass went to the Collective")
+	check(inv.stock("outside:circuit", "acid") >= 4.99, "the sheets went to the circuit")
+	check_near(inv.held("acid"), inv.net_inflow("acid"), 0.01, "conservation holds for acid")
+	check_near(inv.held("marijuana"), inv.net_inflow("marijuana"), 0.01, "and for grass")
+	s.dispose()

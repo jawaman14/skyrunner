@@ -208,9 +208,12 @@ func sync() -> void:
 		sess.trade.stock[g] = total(g)
 
 
-func add(site: String, g: String, lb: float) -> void:
+## `source`: where it came from outside the map ("" when the caller has already booked the move into the inventory).
+func add(site: String, g: String, lb: float, source := "") -> void:
 	if not stock.has(site):
 		site = nearest_stash(pos(site))
+	if source != "":
+		book(Inventory.OUTSIDE + source, "stash:" + site, g, lb, "arrive")
 	stock[site][g] += lb
 	sync()
 
@@ -1100,6 +1103,17 @@ func _sync_road() -> void:
 	for r in want:
 		for g in want[r]:
 			sess.inventory.reconcile(r, g, want[r][g], sess.time)
+
+
+## The named move for code outside Logistics that changes a stash's stock (the Collective's barter and sales, F-4): call it
+## before the stock dictionary changes. From outside:<x> it is an arrival from there; to outside:<x>, a loss to there.
+func book(from: String, to: String, g: String, lb: float, reason: String) -> void:
+	if lb <= 0.0001 or g == "":
+		return
+	if from.begins_with(Inventory.OUTSIDE):
+		sess.inventory.add(g, lb, to, from.substr(Inventory.OUTSIDE.length()), "", 0.5, 0.0, sess.time)
+		return
+	_inv(from, to, g, lb, reason)
 
 
 ## Book `lb` of `g` going from `from` to `to` (inventory locations). Call it BEFORE the stock dictionary changes: the source is

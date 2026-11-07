@@ -37,7 +37,7 @@ static func run(s: Session, id: String) -> String:
 				if site != Logistics.HQ and s.stash_net != null and not live.has(str(site)):
 					continue  # a burned stash is unreachable; stocking it would only inflate the totals
 				for g in s.logistics.goods():
-					s.logistics.add(site, g, FILL_LB)
+					s.logistics.add(site, g, FILL_LB, "cheat")
 				if site != Logistics.HQ:
 					s.logistics.add_cash(site, FILL_CASH)
 				n += 1
