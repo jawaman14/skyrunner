@@ -1370,6 +1370,23 @@ balance runs build no dealership).
 Also in this change: the flying tutorial is four chapters (see section 6) and the former chapters 5 to 8 are cut. Its player-facing geography is now Costa Brava.
 
 
+### Makers (owner, 7 November 2026, D-95)
+
+The Borderlands study's manufacturers. Every vehicle on the lot carries a `maker`, one of four fictional builders, and each
+maker has one behaviour you can read off the badge (`Dealership.MAKERS`; the dealer screen leads every row with it):
+
+| Maker | Builds | Behaviour | Set (models owned) |
+|---|---|---|---|
+| Halcyon Motors | Sunrise Hatch, Harbor Coupe, Courier Van | insurance at half (`HALCYON_INSURANCE`) | 2: +5% cover; 3: +10% cover |
+| Corsair | Marlin GT, Midnight Van | resells for 70% (`CORSAIR_RESALE`) | 2: trucks +1.5 m/s, a Corsair car +2 m/s on the road |
+| Mercy Coachworks | Valley SUV, Palmetto Limited, Ambulance Conversion | its cars +3 m/s across country, its trucks +5% cover | 2: +10% cover; 3: +10% cover and +10% steel |
+| Bastion Works | Steel Box Truck, Armoured Truck | steel stacks: every Bastion truck past the best adds half its own steel | 2: +10% steel |
+
+A set counts different models, not vehicles: three hatches are one Halcyon model. The bonuses land on `fleet()` (so on
+`StashNet` through `apply()`) and on `drive_spec()` (a copy; the catalogue is untouched), and the fleet's cover and steel are
+capped at `MAX_COVER` 60% and `MAX_STEEL` 80%. Nothing is drawn and nothing new is saved: the makers are read off the owned
+vehicles' ids. `sets_line()` is the footer's summary ("Halcyon Motors 2 of 3 (+5% cover)"). Tests: `tests/test_makers.gd`.
+
 ## 44. The Sunrise Collective: acid for grass
 
 `scripts/sim/psychedelics.gd` (`Psychedelics`, `Session.psych`, behind `ENABLED` and the `psychedelics` system; the story's 1980 chapter,

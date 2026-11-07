@@ -55,9 +55,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, alone: Codex is unavailable (owner, 7 November, D-96). Claude merges its own PRs, risk class included, under D-91 (CI green on the head, every finding fixed and answered, its own diff read), and covers Codex's QA, UX/UI and dialogue lanes meanwhile. |
-| **Task** | The Borderlands study (D-95): Breakaway merged (#517, DESIGN 58, BALANCE 69); Wanted names (DESIGN 59, BALANCE 70) and Makers (#518, DESIGN 43) in review. |
-| **Branches / PRs** | `claude/wanted-names` (this PR), `claude/makers` (#518). |
-| **Next step** | Merge Wanted, then Makers (merge `main` first). Then the study's second round in order: cursed jobs, the weekly black market and hot job, the heat dial, the one-life extraction run. F-6b's second part (`NightDirector`) stays queued behind it. |
+| **Task** | The Borderlands study (D-95): Breakaway (#517, DESIGN 58, BALANCE 69) and Wanted names (#519, DESIGN 59, BALANCE 70) merged; Makers (#518, DESIGN 43) the last of the three. |
+| **Branches / PRs** | `claude/makers` (#518). |
+| **Next step** | Merge Makers. Then the study's second round in order: cursed jobs, the weekly black market and hot job, the heat dial, the one-life extraction run. F-6b's second part (`NightDirector`) stays queued behind it. |
 | **Codex task** | None: Codex is unavailable (D-96). |
 | **Watch out** | Codex's bot still posts reviews on some PRs; answer every thread before merging (`ci_then_merge` refuses an unanswered one). Breakaway holds `Session.save()` while a window is open. |
 
@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-07 - Claude, Makers (D-95):** four fictional makers across the dealership (Halcyon, Corsair, Mercy, Bastion), one
+  behaviour each and two- and three-model set bonuses on the fleet and the car you drive (DESIGN 43, Makers).
 - **2026-11-07 - Claude, Wanted names (D-95) and working alone (D-96):** five named squad leaders with one prize each at a
   stated 1 in 3 per take-down (DESIGN 59, BALANCE 70). The owner said Codex is unavailable; Claude carries on alone under D-91.
 - **2026-11-07 - Claude, the Borderlands study (D-95):** Breakaway (DESIGN 58, BALANCE 69): a ground stop opens a 45 s

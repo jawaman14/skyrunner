@@ -67,9 +67,9 @@ The owner asked for a Borderlands study like the WoW one and said yes to buildin
   out: take off and get clear, dump the hot load, or pay the officer. One an island day, more with renown; the window running out
   is the bust as before. Merged (#517).
 - **Wanted names:** rival lieutenants and task-force captains with one signature prize each, at a stated 1-in-N per take-down,
-  and a title card on first contact (DESIGN 59, BALANCE 70). This PR.
+  and a title card on first contact (DESIGN 59, BALANCE 70). Merged (#519).
 - **Makers:** four fictional brands with one behaviour each across the dealership, with small two- and three-model set
-  bonuses (DESIGN 43, Makers). In review (#518). Aircraft parts and the arsenal can take makers later.
+  bonuses (DESIGN 43, Makers). Merged (#518). Aircraft parts and the arsenal can take makers later.
 Then, from the study's second round: cursed jobs (optional conditions for more pay), a weekly black market and weekly hot job,
 the heat dial, and last, the one-life extraction run as its own mode.
 

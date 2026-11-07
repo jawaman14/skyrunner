@@ -40,6 +40,7 @@ func test_the_catalogue_is_sound() -> void:
 		else:
 			haul += 1
 			check(float(c.speed) > 0.0 and float(c.stealth) >= 0.0 and float(c.armour) >= 0.0, "%s has haul numbers" % c.id)
+		check(Dealership.MAKERS.has(str(c.get("maker", ""))), "%s has a maker" % c.id)
 	check(drive >= 4 and haul >= 4, "cars to drive and trucks to haul: %d and %d" % [drive, haul])
 
 
@@ -124,7 +125,7 @@ func test_trucks_change_what_the_stash_runs_do() -> void:
 	check_eq(sn.haul_ms, 15.0, "the fleet's best speed")
 	check_near(sn.armour, 0.6, 0.001, "and its best steel")
 	s.dealer.buy("ambulance")
-	check_near(sn.risk_mult, 0.55, 0.001, "the ambulance's cover is the best")
+	check_near(sn.risk_mult, 1.0 - 0.45 - Dealership.MERCY_COVER, 0.001, "the ambulance's cover is the best (and Mercy's trucks carry a little more)")
 	for v in s.dealer.owned.duplicate():
 		s.dealer.sell(int(v.serial))
 	check(sn.haul_ms == StashNet.TRUCK_MS and sn.risk_mult == 1.0 and sn.armour == 0.0, "sold off: the old numbers")
@@ -178,7 +179,7 @@ func test_vehicles_cost_insurance_by_the_hour() -> void:
 	var d: Dealership = s.dealer
 	d.buy("coupe")
 	d.buy("van")
-	check_eq(d.insurance_hour(), int(Dealership.INSURANCE_DRIVE + Dealership.INSURANCE_HAUL), "a car and a truck")
+	check_eq(d.insurance_hour(), int((Dealership.INSURANCE_DRIVE + Dealership.INSURANCE_HAUL) * Dealership.HALCYON_INSURANCE), "a car and a truck, both Halcyons at half")
 	var m := s.money
 	for i in 3600:
 		d.update(1.0)
@@ -227,7 +228,7 @@ func test_the_dealership_survives_a_save() -> void:
 	check_eq(t.dealer.owned.size(), 2, "both vehicles")
 	check_eq(t.dealer.active, serial, "the same car to drive")
 	check(t.dealer.auto, "the AI still runs the fleet")
-	check_eq(t.stash_net.haul_ms, 15.0, "and the trucks are at the fleet's speed again")
+	check_eq(t.stash_net.haul_ms, 15.0 + 1.5, "and the trucks are at the fleet's speed again (the Corsair set: Marlin and Midnight Van)")
 
 
 func test_the_story_opens_it_with_logistics() -> void:
