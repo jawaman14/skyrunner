@@ -88,6 +88,8 @@ static func capture(s: Session) -> Dictionary:
 	if s.schedule != null:
 		d["schedule"] = s.schedule.capture()  # optional (F-6): an older save sets its next books at load
 		d["books"] = s.books.capture()
+	if s.delegation != null and not s.delegation.runs.is_empty():
+		d["delegated"] = s.delegation.capture()  # optional (L-5): the contract runs under way
 	if s.businesses != null:
 		d["businesses"] = s.businesses.capture()  # optional (L-1): an older save starts with the businesses as dealt
 	if s.stash_net != null:
@@ -318,6 +320,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.curses.restore(d.curses)
 	if s.black_market != null and d.get("black_market") is Dictionary:
 		s.black_market.restore(d.black_market)
+	if s.delegation != null and d.get("delegated") is Array:
+		s.delegation.restore(d.delegated)
 	if s.businesses != null and d.get("businesses") is Dictionary:
 		s.businesses.restore(d.businesses)
 	if s.breakaway != null and d.get("breakaway") is Dictionary:
