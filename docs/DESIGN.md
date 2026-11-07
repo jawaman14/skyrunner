@@ -2076,3 +2076,21 @@ place in the inventory, `biz-N`.
 Saved as an optional `businesses` key (owners, arrears, reasons, district state; the tills are ledger balances). No random
 draws. Behind `Businesses.ENABLED`, in the parity set. Revenue is L-2, staff and orders L-4, the desk's books L-4.
 Tests: `tests/test_businesses.gd`.
+
+## 65. The street's money on the ledger (L-2, the product chain; docs/EMPIRE_SIMULATION_SPEC.md section 3)
+
+The product chain's goods were on the inventory since F-4 (strip to stash to corner, each move named); its money now is too. The
+street's cash, wherever it is (the stashes' `Logistics.cash`, the trucks', the bags aboard: `Logistics.cash_out()`), is one
+organisation account, `org:street-cash` (`Logistics.STREET`):
+
+- **The corners' takings** are booked as `sales` from `outside:street` into it where they are made (`add_cash(site, pay, from,
+  reason)`), and the circuit's acid sales from `outside:buyers`. So the books count a sale the day it is made.
+- **A run home**, a load of bags, a cash truck out from the safe and the vault's spiriting away are moves inside the organisation
+  (`org:street-cash` to and from `org:safe`), so bringing money home is no longer counted as income.
+- **What takes it** is named: a raid's or a stopped truck's cash goes to `outside:state` (`forfeiture`), a hijacked truck's to
+  `outside:rival` (`loss`), the casino cage's cut to `outside:casino` (`fee`, the rest home as a move).
+- **The rest** (a direct write the old code still makes, rounding to whole dollars on the way home) is caught every five seconds
+  by `Logistics._sync_street()`, which brings the account to `cash_out()` as an unattributed adjustment.
+  `tests/test_logistics_ledger.gd` keeps that to rounding over an hour of corner sales.
+
+No draws and no change to play. An older save opens the account at what its street holds.
