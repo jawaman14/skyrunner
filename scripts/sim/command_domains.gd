@@ -25,6 +25,7 @@ static func handlers() -> Dictionary:
 		"squawk": Callable(AIR, "_cmd_squawk"),
 		"breakaway_dump": Callable(AIR, "_cmd_breakaway_dump"),
 		"breakaway_pay": Callable(AIR, "_cmd_breakaway_pay"),
+		"heat_dial": Callable(AIR, "_cmd_heat_dial"),
 		"upgrade": Callable(AIR, "_cmd_upgrade"),
 		"jam": Callable(AIR, "_cmd_jam"),
 		"transponder": Callable(AIR, "_cmd_transponder"),

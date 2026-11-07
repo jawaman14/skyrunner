@@ -613,6 +613,12 @@ func key(k: String) -> void:
 					_sel = int(k) - 1
 					open_app(str(APPS[_sel][0]))
 		return
+	if page == "heat" and k in ["q", "e"] and s.heat_dial != null:
+		var to: int = s.heat_dial.level + (1 if k == "e" else -1)
+		var rh: Array = s.command(Roles.PILOT, "heat_dial", {"level": to})
+		show_feedback(s.heat_dial.line() if rh[0] else str(rh[1]), bool(rh[0]))
+		refresh()
+		return
 	match k:
 		"up":
 			list.move(-1)
@@ -764,8 +770,13 @@ func _orders_page() -> void:
 
 func _heat_page() -> void:
 	title.text = "Heat and case files"
+	if s.heat_dial != null:  # D-95: more danger for more pay
+		list.section("The heat dial")
+		list.add_row([s.heat_dial.line()])
 	if s.investigation == null:
 		footer.text = "Case files are not available in this game."
+		if s.heat_dial != null:
+			hints.set_hints([["Q/E", "heat dial", "e"], ["ESC", "back", "esc"]])
 		return
 	var investigation: Investigation = s.investigation
 	list.section("Aircraft")
@@ -795,4 +806,4 @@ func _heat_page() -> void:
 	if cases.is_empty():
 		list.add_row(["No active stash case files."])
 	footer.text = "Park (a hangar cools the tail faster), lie low or move stock. Call your lawyer about a warrant. Raid timing needs a posted lookout."
-	hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
+	hints.set_hints([["UP/DOWN", "scroll", "down"], ["Q/E", "heat dial", "e"], ["ESC", "back", "esc"]])

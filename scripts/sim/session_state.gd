@@ -182,6 +182,7 @@ var renown: Renown = null  ## how big the name is (Renown; `renown: true` asks f
 var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets: true` with a ground war)
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
+var heat_dial: HeatDial = null  ## the heat dial: more danger for more pay (D-95)
 var wanted: Wanted = null  ## named lieutenants and captains with a prize each (D-95; built with the ground war)
 var pending_wanted := {}  ## a save's Wanted roster, kept until the ground war is built (a story opens it after the restore)
 var arng: PyRandom  ## gun runs and arsenal draws, off the board and parity streams
@@ -596,6 +597,10 @@ func refresh_board(code: String) -> void:
 		for j in boards[code]:  # today's prices
 			j.price_mult = econ.job_mult(j)
 			j.payout = int(j.payout * j.price_mult)
+	if heat_dial != null and heat_dial.level != HeatDial.STEADY:
+		for j in boards[code]:  # the heat dial's pay (D-95): boards dealt from now on
+			if j.employer_serial <= 0:
+				j.payout = int(round(float(j.payout) * heat_dial.pay_mult()))
 
 
 ## Weapons taken by the police go into their arsenal and arm their patrols.

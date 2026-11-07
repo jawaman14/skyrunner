@@ -104,6 +104,8 @@ func _init(opts := {}) -> void:
 	daily_weather = DailyWeather.new(self, _rng(seed + 179))
 	calendar = Calendar.new(self, _rng(seed + 183))
 	weekly = Weekly.new(self, _rng(seed + 185))
+	if HeatDial.ENABLED:  # D-95: no draws; Steady is the game as it was
+		heat_dial = HeatDial.new(self)
 	if Breakaway.ENABLED:  # D-95: a stop on the ground can be got out of (no draws)
 		breakaway = Breakaway.new(self)
 	if Schedule.ENABLED:  # F-6: the scheduler and the daily books (no draws)
@@ -161,6 +163,9 @@ func dispose() -> void:
 	if calendar != null:
 		calendar.sess = null  # break the cycle: a disposed session must be freed
 	calendar = null
+	if heat_dial != null:
+		heat_dial.sess = null
+	heat_dial = null
 	if weekly != null:
 		weekly.sess = null  # break the cycle: a disposed session must be freed
 	weekly = null

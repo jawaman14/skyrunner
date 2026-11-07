@@ -17,7 +17,7 @@ const PARITY := [
 	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Orders.ENABLED", "Jobs.ISLAND_BOARD",
 	"Investigation.ENABLED", "CoverCargo.ENABLED", "Comeback.ENABLED", "DealMoves.ENABLED", "Gigs.ENABLED", "StreakGuard.ENABLED", "Schedule.ENABLED", "Story.FLIGHT_GOALS",
 	"Breakaway.ENABLED",
-	"Wanted.ENABLED",
+	"Wanted.ENABLED", "HeatDial.ENABLED",
 ]
 
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
@@ -40,7 +40,7 @@ static func snapshot() -> Dictionary:
 		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Orders.ENABLED": Orders.ENABLED,
 		"Jobs.ISLAND_BOARD": Jobs.ISLAND_BOARD,
 		"Investigation.ENABLED": Investigation.ENABLED, "CoverCargo.ENABLED": CoverCargo.ENABLED, "Comeback.ENABLED": Comeback.ENABLED, "DealMoves.ENABLED": DealMoves.ENABLED, "Gigs.ENABLED": Gigs.ENABLED,
-		"StreakGuard.ENABLED": StreakGuard.ENABLED, "Schedule.ENABLED": Schedule.ENABLED, "Story.FLIGHT_GOALS": Story.FLIGHT_GOALS, "Breakaway.ENABLED": Breakaway.ENABLED, "Wanted.ENABLED": Wanted.ENABLED}
+		"StreakGuard.ENABLED": StreakGuard.ENABLED, "Schedule.ENABLED": Schedule.ENABLED, "Story.FLIGHT_GOALS": Story.FLIGHT_GOALS, "Breakaway.ENABLED": Breakaway.ENABLED, "Wanted.ENABLED": Wanted.ENABLED, "HeatDial.ENABLED": HeatDial.ENABLED}
 
 static func restore(state: Dictionary) -> void:
 	# Validate the complete snapshot before changing any switch.
@@ -68,6 +68,7 @@ static func restore(state: Dictionary) -> void:
 	Story.FLIGHT_GOALS = state["Story.FLIGHT_GOALS"]
 	Breakaway.ENABLED = state["Breakaway.ENABLED"]
 	Wanted.ENABLED = state["Wanted.ENABLED"]
+	HeatDial.ENABLED = state["HeatDial.ENABLED"]
 
 static func parity_off() -> Dictionary:
 	var previous := snapshot()
@@ -91,6 +92,7 @@ static func parity_off() -> Dictionary:
 	Story.FLIGHT_GOALS = false
 	Breakaway.ENABLED = false
 	Wanted.ENABLED = false
+	HeatDial.ENABLED = false
 	return previous
 
 
@@ -115,3 +117,4 @@ static func parity_on() -> void:
 	Story.FLIGHT_GOALS = true
 	Breakaway.ENABLED = true
 	Wanted.ENABLED = true
+	HeatDial.ENABLED = true

@@ -71,8 +71,8 @@ The owner asked for a Borderlands study like the WoW one and said yes to buildin
   and a title card on first contact (DESIGN 59, BALANCE 70). Merged (#519).
 - **Makers:** four fictional brands with one behaviour each across the dealership, with small two- and three-model set
   bonuses (DESIGN 43, Makers). Merged (#518). Aircraft parts and the arsenal can take makers later.
-Then, from the study's second round: cursed jobs (optional conditions for more pay), a weekly black market and weekly hot job,
-the heat dial, and last, the one-life extraction run as its own mode.
+Then, from the study's second round, one PR each: cursed jobs (#522), a weekly black market and weekly hot job (#523), **the heat
+dial** (DESIGN 62; in review), and last, the one-life extraction run as its own mode.
 
 ## Empire pivot (owner, 19 October)
 
