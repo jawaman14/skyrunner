@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-07 - Claude, Makers (D-95):** four fictional makers across the dealership (Halcyon, Corsair, Mercy, Bastion), one
+  behaviour each and two- and three-model set bonuses on the fleet and the car you drive (DESIGN 43, Makers).
 - **2026-11-07 - Claude, the merge queue and the unfinished work:** Merged #495-#514 in order (D-91), each after merging `main`
   and rerunning its focused tests: island boards, F-3 named money, BALANCE 62-63, docs, the curated job board, orders retuned,
   streak guard, lying low, pacing targets, DESIGN 56, key audit, the war performance budget, the street war's case files

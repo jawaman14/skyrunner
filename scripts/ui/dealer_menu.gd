@@ -7,7 +7,8 @@ extends GameMenu
 ##   S          sell the one you own (it fetches 55 % of the price)
 ##   A          let the AI manage the fleet (it buys the trucks the organisation can afford)
 ## Cars are for the pilot to drive and wait by the aircraft. Trucks go to the stash drivers: the fleet's best speed is the
-## trucks' speed, its best cover cuts the roadblock odds, steel can drive through the roadblock.
+## trucks' speed, its best cover cuts the roadblock odds, steel can drive through the roadblock. Each vehicle's maker and its
+## behaviour lead the "What it does" column; the footer shows the maker sets the fleet has (two or three models from one maker).
 
 var lot: DataTable
 var mine: DataTable
@@ -55,9 +56,11 @@ func browse() -> void:
 
 
 static func stats(sp: Dictionary) -> String:
+	var mk: Dictionary = Dealership.MAKERS.get(str(sp.get("maker", "")), {})
+	var badge := ("%s (%s): " % [mk.name, mk.trait]) if not mk.is_empty() else ""
 	if sp.use == "drive":
-		return "%d km/h on the road, %d across country; %s" % [int(float(sp.road) * 3.6), int(float(sp.off) * 3.6), str(sp.blurb)]
-	return "%d km/h, %d%% cover, %d%% steel; %s" % [int(float(sp.speed) * 3.6), int(float(sp.stealth) * 100.0), int(float(sp.armour) * 100.0), str(sp.blurb)]
+		return "%s%d km/h on the road, %d across country; %s" % [badge, int(float(sp.road) * 3.6), int(float(sp.off) * 3.6), str(sp.blurb)]
+	return "%s%d km/h, %d%% cover, %d%% steel; %s" % [badge, int(float(sp.speed) * 3.6), int(float(sp.stealth) * 100.0), int(float(sp.armour) * 100.0), str(sp.blurb)]
 
 
 func refresh() -> void:
@@ -104,8 +107,10 @@ func refresh() -> void:
 			var serials: Array = my_rows.map(func(o): return int(o.serial))
 			mine.select_near(serials.find(serial) if serials.has(serial) else maxi(0, keep_m))
 	focus = active
-	footer.text = note if note != "" else ("The trucks run at %d km/h with %d%% cover and %d%% steel (%d owned). The starter car is the one you drive until you buy another." % [
-		int(float(fl.speed) * 3.6), int(float(fl.stealth) * 100.0), int(float(fl.armour) * 100.0), int(fl.count)])
+	var sets := str(v.get("sets", ""))
+	footer.text = note if note != "" else ("The trucks run at %d km/h with %d%% cover and %d%% steel (%d owned). %s" % [
+		int(float(fl.speed) * 3.6), int(float(fl.stealth) * 100.0), int(float(fl.armour) * 100.0), int(fl.count),
+		("Makers: " + sets) if sets != "" else "Two or three models from one maker make a set; the starter car is the one you drive until you buy another."])
 	hints.set_hints([["UP/DOWN", "choose", "down"], ["LEFT/RIGHT", "lot or yours", "right"], ["ENTER", "buy / drive", "enter"], ["S", "sell", "s"], ["A", "AI fleet", "a"], ["ESC", "leave", "esc"]])
 
 
