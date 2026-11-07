@@ -21,6 +21,7 @@ const LOW_AGL_M := 150.0
 const GENTLE_FPM := 250.0
 const CLOCK_MS := 45.0  ## the clock's speed: the straight line at this, plus CLOCK_SLACK_S
 const CLOCK_SLACK_S := 240.0
+const KEEP_LANDED_S := 10800.0  ## a judged job's premium waits this long for its truck or count to pay out
 const KINDS := ["cargo", "passenger", "contraband", "medical", "fugitive"]
 
 ## id -> [the condition, the premium as a share of the job's pay]
@@ -111,7 +112,7 @@ func _accepted(id: int) -> void:
 	for j in sess.active_jobs:
 		if j.id == id and j.cursed and j.curse != "":
 			taken[id] = {"curse": j.curse, "broken": false, "why": "", "until": -1.0, "premium": premium(j), "dest": str(j.dest),
-				"clock": clock_s(j)}
+				"clock": clock_s(j), "landed": -1.0}
 			sess.say("The client's condition: %s. Keep it and the premium is yours." % line(j))
 
 
@@ -135,14 +136,18 @@ func update(bot_flying: bool) -> void:
 	for j in sess.active_jobs:
 		ids[j.id] = true
 	for id in taken.keys():
-		if not ids.has(id):
-			taken.erase(id)  # dropped, seized or lost: nothing to pay
+		var t0: Dictionary = taken[id]
+		if float(t0.landed) >= 0.0:
+			if sess.time - float(t0.landed) > KEEP_LANDED_S:
+				taken.erase(id)  # judged at the landing; the truck or the count never paid out
+		elif not ids.has(id):
+			taken.erase(id)  # dropped, seized or lost before landing: nothing to pay
 	var s = sess.state
 	var up: bool = sess.log != null and sess.log.airborne and not s.on_ground
 	for id in taken:
 		var t: Dictionary = taken[id]
-		if t.broken:
-			continue
+		if t.broken or float(t.landed) >= 0.0:
+			continue  # judged already (broken, or landed at the destination)
 		if up and float(t.until) < 0.0:
 			t.until = sess.time + float(t.clock)  # the clock starts at take-off
 		match str(t.curse):
@@ -160,18 +165,33 @@ func update(bot_flying: bool) -> void:
 					_break(id, "out of time")
 
 
+## Landed at `code` (Session._arrive, before any delivery, unload count or truck): the conditions of the jobs bound here are
+## judged now, on this flight's record, and are not watched again; the premium waits for the job to be paid.
+func arrived(code: String, flown) -> void:
+	for id in taken:
+		var t: Dictionary = taken[id]
+		if str(t.dest) != code or float(t.landed) >= 0.0:
+			continue
+		if not sess.active_jobs.any(func(j): return j.id == id):
+			continue
+		t.landed = sess.time
+		if t.broken:
+			continue
+		match str(t.curse):
+			"gentle":
+				var fpm: float = float(flown.last_touchdown_fpm) if flown != null else 0.0
+				if fpm > GENTLE_FPM:
+					_break(id, "touched down at %d fpm" % int(fpm))
+			"clock":
+				if float(t.until) >= 0.0 and sess.time > float(t.until):
+					_break(id, "out of time")
+
+
 func _delivered(id: int, dest: String) -> void:
 	if not taken.has(id):
 		return
 	var t: Dictionary = taken[id]
 	taken.erase(id)
-	if not t.broken and t.curse == "gentle" and sess.log != null and float(sess.log.last_touchdown_fpm) > GENTLE_FPM:
-		t.broken = true
-		broken += 1
-		var text := "Condition broken (touched down at %d fpm): no premium." % int(sess.log.last_touchdown_fpm)
-		sess.say(text)
-		sess.bus.emit("curse_broken", sess.time, text, ["runner"], {"job_id": id, "curse": t.curse, "why": "a hard landing"})
-		return
 	if t.broken:
 		return
 	kept += 1

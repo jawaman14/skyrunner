@@ -28,7 +28,10 @@ func _fly(s: Session) -> void:
 	s.state.on_ground = false
 
 
-func _deliver(s: Session, j: Jobs.Job) -> void:
+func _deliver(s: Session, j: Jobs.Job, fpm := 100.0) -> void:
+	var flown := Session.FlightLog.new()
+	flown.last_touchdown_fpm = fpm
+	s.curses.arrived("FRM", flown)  # the landing judges the conditions
 	s.bus.emit("job_delivered", s.time, "", ["runner"], {"job_id": j.id, "dest": "FRM"})
 
 
@@ -148,14 +151,12 @@ func test_fragile_is_judged_by_the_touchdown() -> void:
 	var s := _sess()
 	var j := _job(s, "gentle")
 	_take(s, j)
-	s.log.last_touchdown_fpm = Curses.GENTLE_FPM + 100.0
 	var m: int = s.money
-	_deliver(s, j)
+	_deliver(s, j, Curses.GENTLE_FPM + 100.0)
 	check_eq(s.money, m, "a hard landing: no premium")
 	var k := _job(s, "gentle")
 	_take(s, k)
-	s.log.last_touchdown_fpm = Curses.GENTLE_FPM - 50.0
-	_deliver(s, k)
+	_deliver(s, k, Curses.GENTLE_FPM - 50.0)
 	check_eq(s.money, m + Curses.premium(k), "a gentle one: paid")
 	s.dispose()
 
@@ -191,3 +192,39 @@ func test_off_means_no_offers() -> void:
 	check(s.curses == null, "not built")
 	s.dispose()
 	Curses.ENABLED = true
+
+
+## Codex on #522: a hot load's 60 s count or a stash run's truck pays after the landing; the landing is what is judged.
+func test_the_landing_is_judged_not_the_payout() -> void:
+	var s := _sess()
+	var j := _job(s, "clock")
+	_take(s, j)
+	_fly(s)
+	s.curses.update(false)
+	var flown := Session.FlightLog.new()
+	flown.last_touchdown_fpm = 500.0
+	s.curses.arrived("FRM", flown)  # in time
+	s.time += Curses.clock_s(j) * 3.0  # the count (or the truck) takes its time
+	s.curses.update(false)
+	check(not s.curses.taken[j.id].broken, "the clock stopped at the landing")
+	s.active_jobs.erase(j)  # a stash run: the job leaves the aircraft with the truck
+	s.curses.update(false)
+	check(s.curses.taken.has(j.id), "and the premium waits for the truck")
+	var m: int = s.money
+	s.bus.emit("job_delivered", s.time, "", ["runner"], {"job_id": j.id, "dest": "FRM"})
+	check_eq(s.money, m + Curses.premium(j), "paid when the truck arrives")
+	s.dispose()
+
+
+func test_a_gentle_landing_is_read_off_the_flight_not_the_next_log() -> void:
+	var s := _sess()
+	var j := _job(s, "gentle")
+	_take(s, j)
+	var flown := Session.FlightLog.new()
+	flown.last_touchdown_fpm = Curses.GENTLE_FPM + 200.0
+	s.curses.arrived("FRM", flown)
+	s.log = Session.FlightLog.new()  # the session renews its log at the landing: 0 fpm
+	var m: int = s.money
+	s.bus.emit("job_delivered", s.time, "", ["runner"], {"job_id": j.id, "dest": "FRM"})
+	check_eq(s.money, m, "the hard landing still counts")
+	s.dispose()
