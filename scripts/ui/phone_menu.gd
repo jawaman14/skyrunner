@@ -46,6 +46,7 @@ const GROUPS := [
 	["Leisure", ["casino", "track", "psych"]],
 	["Rides", ["taxi"]],
 ]
+const BOOKS_FUND := 1000  ## what F puts in a till on the Books page
 const W := 380.0
 const H := 540.0
 
@@ -63,6 +64,7 @@ var _jobs: Array = []
 var _work: Array = []  ## the Work page's rows: [kind, payload] - "board", "job" (a Job), or "" for a heading
 var _empire: Array = []  ## the Empire page's rows: an action to call, or "" for a line
 var _order_rows: Array = []
+var _books_rows: Array = []  ## the Books page's rows: a business id, or "" for a heading or a line (L-4)
 var _week_rows: Array = []  ## the Week page's rows: a black-market offer index, or -1
 var _call_ids: Array = []  ## the ringing calls last drawn: a new one refreshes the phone
 var history_label: Label  ## Contacts: the last few calls, answered, declined or missed
@@ -426,6 +428,8 @@ func refresh() -> void:
 			_orders_page()
 		"heat":
 			_heat_page()
+		"books":
+			_books_page()
 		"radio":
 			title.text = "Radio"
 			if radio != null:
@@ -539,6 +543,9 @@ func _empire_parts() -> Array:
 	if s.dealer != null:
 		fleet.append(["The car lot: cars, vans and trucks", "dealer"])
 	var parts := [["Money", money], ["Fleet", fleet], ["The law", [["Heat and case files", "heat"]]]]
+	if s.businesses != null:
+		var ours: Array = s.businesses.ours()
+		parts.append(["Businesses", [["The books: %d of ours, the district's others" % ours.size(), "books"]]])
 	var turf := []
 	if s.rackets != null:
 		turf.append(["The collectors: the streets we hold", "rackets"])
@@ -623,6 +630,30 @@ func key(k: String) -> void:
 					_sel = int(k) - 1
 					open_app(str(APPS[_sel][0]))
 		return
+	if page == "books" and k in ["m", "o"] and s.businesses != null:
+		var bj := list.selected_row()
+		if bj >= 0 and bj < _books_rows.size() and str(_books_rows[bj]) != "":
+			var bid := str(_books_rows[bj])
+			var rm: Array
+			if k == "m":
+				var free: Array = s.payroll.of("org", "", "free") if s.payroll != null else []
+				rm = s.command(Roles.PILOT, "business_staff", {"id": bid, "worker": str(free[0].id) if not free.is_empty() else "?"}) \
+					if s.businesses.manager(bid) == null else s.command(Roles.PILOT, "business_staff", {"id": bid, "worker": ""})
+			else:
+				var next: String = Businesses.ORDERS[(Businesses.ORDERS.find(s.businesses.order_of(bid)) + 1) % Businesses.ORDERS.size()]
+				rm = s.command(Roles.PILOT, "business_order", {"id": bid, "order": next})
+			show_feedback(str(rm[1]) if not rm[0] else ("Orders: " + Businesses.ORDER_TEXT[s.businesses.order_of(bid)] if k == "o" else "Done."), bool(rm[0]))
+			refresh()
+		return
+	if page == "books" and k in ["f", "t"] and s.businesses != null:
+		var bi := list.selected_row()
+		if bi >= 0 and bi < _books_rows.size() and str(_books_rows[bi]) != "":
+			var id := str(_books_rows[bi])
+			var rf: Array = s.command(Roles.PILOT, "business_fund" if k == "f" else "business_take",
+				{"id": id, "amount": BOOKS_FUND if k == "f" else 1000000000})
+			show_feedback(("Put $%s in." % Py.money(BOOKS_FUND)) if rf[0] and k == "f" else ("Took the till." if rf[0] else str(rf[1])), bool(rf[0]))
+			refresh()
+		return
 	if page == "heat" and k in ["q", "e"] and s.heat_dial != null:
 		var to: int = s.heat_dial.level + (1 if k == "e" else -1)
 		var rh: Array = s.command(Roles.PILOT, "heat_dial", {"level": to})
@@ -676,14 +707,21 @@ func key(k: String) -> void:
 						waypoint_to.emit(Vector2(float(xy[0]), float(xy[1])))
 				"empire":
 					if i >= 0 and i < _empire.size() and str(_empire[i]) != "":
-						if str(_empire[i]) == "heat":
-							open_app("heat")
+						if str(_empire[i]) in ["heat", "books"]:
+							open_app(str(_empire[i]))
 							return
 						if not _can_call(str(_empire[i])):
 							return
 						page = "home"
 						super.close()
 						called.emit(str(_empire[i]))
+				"books":
+					if i >= 0 and i < _books_rows.size() and str(_books_rows[i]) != "":
+						var id := str(_books_rows[i])
+						var rb: Array = s.command(Roles.PILOT, "business_buy", {"id": id}) if str(s.businesses.owner.get(id, "")) == "" \
+								else [false, "ENTER buys a free business. F puts $1,000 in one of ours, T takes its till."]
+						show_feedback(str(rb[1]) if not rb[0] else "Bought.", bool(rb[0]))
+						refresh()
 				"week":
 					if i >= 0 and i < _week_rows.size() and int(_week_rows[i]) >= 0:
 						var rb: Array = s.command(Roles.PILOT, "black_market_buy", {"i": int(_week_rows[i])})
@@ -822,3 +860,55 @@ func _heat_page() -> void:
 		list.add_row(["No active stash case files."])
 	footer.text = "Park (a hangar cools the tail faster), lie low or move stock. Call your lawyer about a warrant. Raid timing needs a posted lookout."
 	hints.set_hints([["UP/DOWN", "scroll", "down"], ["Q/E", "heat dial", "e"], ["ESC", "back", "esc"]])
+
+
+## The business books (L-4; spec A1): ours with their tills, what they owe and why, and their shelves; the free ones for sale; the
+## other orgs' with their owner; then the AI orgs' moves that were refused or blocked, with the reasons.
+func _books_page() -> void:
+	title.text = "The books"
+	_books_rows = []
+	if s.businesses == null:
+		footer.text = "There are no businesses on this map."
+		hints.set_hints([["ESC", "back", "esc"]])
+		return
+	var biz: Businesses = s.businesses
+	var groups := [["Ours", func(o): return o == "org"], ["For sale (ENTER buys)", func(o): return o == ""],
+		["The district's others", func(o): return o != "org" and o != ""]]
+	for g in groups:
+		var shown := Businesses.DATA.filter(func(b): return g[1].call(str(biz.owner[b.id])))
+		if shown.is_empty():
+			continue
+		list.section(str(g[0]))
+		_books_rows.append("")
+		for b in shown:
+			list.add_row([books_line(biz, str(b.id))])
+			_books_rows.append(str(b.id))
+	if biz.ai != null:
+		var refused: Array = biz.ai.refused().slice(0, 5)
+		if not refused.is_empty():
+			list.section("Refused and blocked")
+			_books_rows.append("")
+			for r in refused:
+				list.add_row(["%s: %s" % [Businesses.ORG_NAMES.get(str(r.org), str(r.org)), str(r.why)]])
+				_books_rows.append("")
+	footer.text = "The day's rent and bills come out of each till at 06:00; what a till can't pay is owed, never taken from the safe."
+	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "buy", "enter"], ["F", "fund $%s" % Py.money(BOOKS_FUND), "f"],
+		["T", "take the till", "t"], ["M", "who runs it", "m"], ["O", "orders", "o"], ["ESC", "back", "esc"]])
+
+
+## One business on the books, as the desk reads it.
+static func books_line(biz: Businesses, id: String) -> String:
+	var v: Dictionary = biz.view(id)
+	var o := str(v.owner)
+	if o == "":
+		return "%s (%s): $%s" % [v.name, v.kind, Py.money(int(v.price))]
+	if o != "org":
+		return "%s (%s): %s" % [v.name, v.kind, Businesses.ORG_NAMES.get(o, "not for sale" if o == "outside" else o)]
+	var line := "%s: till $%s, costs $%s a day" % [v.name, Py.money(int(v.till)), Py.money(int(v.rent) + int(v.utilities))]
+	if float(v.shelf) >= 1.0:
+		line += ", %d lb on the shelf" % int(v.shelf)
+	if str(v.manager) != "":
+		line += ". %s runs it %s: %s" % [v.manager, v.shift, Businesses.ORDER_TEXT.get(str(v.order), str(v.order))]
+	if int(v.arrears) > 0:
+		line += ". OWES $%s: %s" % [Py.money(int(v.arrears)), str(v.blocked)]
+	return line

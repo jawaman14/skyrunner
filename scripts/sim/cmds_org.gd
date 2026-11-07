@@ -190,3 +190,19 @@ static func _cmd_delegate_job(_role: String, a: Dictionary, session: Session):
 		return "No contract pilots in this game."
 	var err: String = session.delegation.delegate(int(session._num(a, "job_id", -1)), str(a.get("pilot", "")))
 	return err if err != "" else null
+
+
+## Staff and orders (L-4b): put worker `worker` in charge of business `id` ("" lets them go).
+static func _cmd_business_staff(_role: String, a: Dictionary, session: Session):
+	if session.businesses == null:
+		return "There are no businesses on this map."
+	var err: String = session.businesses.set_staff(str(a.get("id", "")), str(a.get("worker", "")))
+	return err if err != "" else null
+
+
+## An order for the one in charge of business `id`: restock, hold or skim, with a day's `budget`.
+static func _cmd_business_order(_role: String, a: Dictionary, session: Session):
+	if session.businesses == null:
+		return "There are no businesses on this map."
+	var err: String = session.businesses.set_order(str(a.get("id", "")), str(a.get("order", "")), int(session._num(a, "budget", 0)))
+	return err if err != "" else null
