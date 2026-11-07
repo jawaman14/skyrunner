@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, the last WoW lesson (D-94):** before Cocaine Cowboys, a sentence never takes the pilot's only
+  aircraft (`Court.SPARE_ONLY`); the fine stands. Then on through the mechanics tree's open items, in roadmap order.
 - **2026-11-07 - Claude, Makers (D-95):** four fictional makers across the dealership (Halcyon, Corsair, Mercy, Bastion), one
   behaviour each and two- and three-model set bonuses on the fleet and the car you drive (DESIGN 43, Makers).
 - **2026-11-07 - Claude, Wanted names (D-95) and working alone (D-96):** five named squad leaders with one prize each at a

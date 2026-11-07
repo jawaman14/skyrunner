@@ -562,3 +562,77 @@ func test_the_free_pilots_sentence_still_reaches_the_event_bus() -> void:
 	s.court.update(0.1)
 	check(heard[0] >= 1 or s.court.case_ != null, "a conviction emits sentenced before the case closes")
 	s.dispose()
+
+
+# ------------------------------------------------------------------ D-94: the only aircraft before the takeover
+func _story_sess(chapter: String) -> Session:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	Story.new(Story.index_of(chapter)).attach(s)
+	s.court.prosecutor_ai = false
+	s.money = 60000
+	s.owned = {"c182": true}
+	s._switch_aircraft("c182", 0.5)
+	s.phase = "parked"
+	s.location = "HAR"
+	return s
+
+
+func test_the_only_aircraft_is_spared_before_the_takeover() -> void:
+	var s := _story_sess("The Connection")
+	_arrest(s)
+	s.phase = "parked"
+	var m0: int = s.money
+	s.court._sentence("convicted", 12.0, 2000)
+	check(not s.court.forfeit_pending, "nothing owed")
+	s.court.update(0.1)
+	check(s.owned.has("c182") and s.aircraft_key == "c182", "the only aircraft stays")
+	check(s.money < m0, "the fine still stands")
+	check(s.bus.log.any(func(e): return e.kind == "aircraft_spared"), "and the player is told why")
+	s.dispose()
+
+
+func test_a_second_aircraft_is_still_forfeited_before_the_takeover() -> void:
+	var s := _story_sess("The Connection")
+	s.owned["c172p"] = true
+	_arrest(s)
+	s.phase = "parked"
+	s.court._sentence("convicted", 12.0, 0)
+	check(s.court.forfeit_pending, "two owned: the sentenced one is owed")
+	s.court.update(0.1)
+	check(not s.owned.has("c182") and s.aircraft_key == "c172p", "it goes; the Skyhawk stays")
+	s.dispose()
+
+
+func test_from_the_takeover_on_the_only_aircraft_goes_as_before() -> void:
+	var s := _story_sess("Cocaine Cowboys")
+	_arrest(s)
+	s.phase = "parked"
+	s.court._sentence("convicted", 12.0, 0)
+	check(s.court.forfeit_pending, "owed")
+	s.court.update(0.1)
+	check(not s.owned.has("c182") and s.aircraft_key == "c172p", "taken, and a used Skyhawk in its place")
+	s.dispose()
+
+
+func test_open_play_is_unchanged() -> void:
+	Court.PILOT_FREE = true
+	var s := _sess()
+	s.owned = {"c182": true}
+	s._switch_aircraft("c182", 0.5)
+	_arrest(s)
+	s.phase = "parked"
+	s.court._sentence("convicted", 12.0, 0)
+	check(s.court.forfeit_pending, "no story, no takeover: as before")
+	s.dispose()
+
+
+func test_off_means_the_old_forfeiture() -> void:
+	Court.SPARE_ONLY = false
+	var s := _story_sess("The Connection")
+	_arrest(s)
+	s.phase = "parked"
+	s.court._sentence("convicted", 12.0, 0)
+	check(s.court.forfeit_pending, "switched off: owed")
+	s.dispose()
+	Court.SPARE_ONLY = true

@@ -39,6 +39,12 @@ static var ENABLED := true
 ## The pilot is never held (owner, 18 Oct, D-64): the lawyer attends, play goes on, and the case ends in money, forfeiture and
 ## heat. Only caught workers wait (Payroll.JAIL_S). Off restores bail, custody and prison for the tests of that process.
 static var PILOT_FREE := true
+## Your only aircraft is never forfeited before the takeover (owner, 4 Nov, D-94, the WoW study: never strip a new player of the
+## one thing they can't play without). In a story game before Cocaine Cowboys (TAKEOVER), a sentence that would take the
+## aircraft spares it when it is the only one the pilot owns; the fine and the rest of the sentence stand. Open play and later
+## chapters are unchanged.
+static var SPARE_ONLY := true
+const TAKEOVER := "Cocaine Cowboys"  ## the chapter where Rafa dies and the seat is the player's (D-09, D-78)
 
 const BAIL_DECIDE_S := 90.0
 const PRETRIAL_S := 1200.0
@@ -583,6 +589,20 @@ func _trial() -> void:
 		_close("acquitted")
 
 
+## Does the rule above keep `key`? (Only before the takeover, only the pilot's one aircraft.)
+func spares(key: String) -> bool:
+	if not SPARE_ONLY or sess.story == null:
+		return false
+	if int(sess.story.index) >= Story.index_of(TAKEOVER):
+		return false
+	return sess.owned.size() <= 1 and (sess.owned.is_empty() or sess.owned.has(key))
+
+
+func _spared_line() -> void:
+	_say("Your lawyer kept the aircraft out of it: it's the only one you have.", "The pilot's only aircraft was spared forfeiture")
+	sess.bus.emit("aircraft_spared", sess.time, "", ["runner", "law"], {"aircraft": str(sess.aircraft_key)})
+
+
 func _sentence(how: String, years: float, fine: int) -> void:
 	case_.verdict = how
 	case_.years = years
@@ -591,7 +611,10 @@ func _sentence(how: String, years: float, fine: int) -> void:
 	var k := mini(maxi(0, sess.money), fine + int(maxi(0, sess.money) * share))
 	sess.move_money(-k, "outside:state", "fine")
 	sess.move_law_funds(float(k) * 0.8, "outside:state", "forfeiture")
-	if how == "convicted" and sess.aircraft_key != "c172p" and not PILOT_FREE:
+	var takes: bool = (how == "convicted" and not PILOT_FREE) or (how in ["convicted", "pleaded guilty"] and years >= 8.0 and PILOT_FREE)
+	if takes and sess.aircraft_key != "c172p" and spares(str(sess.aircraft_key)):
+		_spared_line()  # D-94: before the takeover, the only aircraft stays
+	elif how == "convicted" and sess.aircraft_key != "c172p" and not PILOT_FREE:
 		sess._switch_aircraft("c172p", 0.5)  # forfeited; a used Skyhawk waits when you get out
 	elif how in ["convicted", "pleaded guilty"] and years >= 8.0 and PILOT_FREE and sess.aircraft_key != "c172p":
 		forfeit_pending = true
@@ -627,6 +650,9 @@ func _take_aircraft() -> void:
 	var key: String = forfeit_key if forfeit_key != "" else str(sess.aircraft_key)  # a save from before the key was recorded: the one flown now
 	forfeit_key = ""
 	if key == "c172p":
+		return
+	if spares(key):
+		_spared_line()  # sold the others since the sentence: it's the only one now (D-94)
 		return
 	sess.owned.erase(key)
 	if sess.aircraft_key != key:

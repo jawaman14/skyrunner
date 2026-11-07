@@ -57,7 +57,8 @@ all three paying a bonus and a run of cleared weeks; the rank is the Renown tier
 
 The other lessons, one PR each (D-94): buyers' orders retuned until taking them pays; the job board led by a few best-fit jobs;
 streak protection on catastrophic rolls (customs, truck stops); the only aircraft never forfeited before the takeover; lying low
-as a visible bonus; loop-length targets in DESIGN, measured by the playtest digest.
+as a visible bonus; loop-length targets in DESIGN, measured by the playtest digest. All six are on `main` (the last, the only
+aircraft spared by the court before Cocaine Cowboys, 8 November).
 
 ## The Borderlands study (owner, 7 November)
 
