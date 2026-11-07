@@ -384,8 +384,11 @@ static func restore(s: Session, d: Dictionary) -> void:
 		_restore_squads(s, d.squads)
 	if s.ground != null and d.get("war") is Dictionary:
 		_restore_war(s.ground, d.war)
-	if s.wanted != null and d.get("wanted") is Dictionary:
-		s.wanted.restore(d.wanted)
+	if d.get("wanted") is Dictionary:
+		if s.wanted != null:
+			s.wanted.restore(d.wanted)
+		else:
+			s.pending_wanted = d.wanted  # the story opens the war after the restore: enable_system picks it up
 	_restore_world(s, d)
 	if s.payroll != null and d.get("people") is Dictionary:
 		s.payroll.people.restore(d.people)

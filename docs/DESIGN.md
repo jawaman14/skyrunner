@@ -1945,6 +1945,9 @@ Cuervos' chest to the safe, at most what the chest holds), or a captain's file (
   stream (seed + 187). A miss: he gets away and leads again later (`wanted_escaped`), so he can be hunted. A hit: the prize
   lands, he is finished (`wanted_prize`), and the roster moves on.
 
-Saved: the roster (who is finished, who has been seen, how many squads each outfit has raised, take-downs) and each named
-squad's leader. Behind `Wanted.ENABLED`, in the parity set; built with the ground war.
+A named rival squad that surrenders to the task force puts him in custody (`captured`, `wanted_captured`): off the roster,
+no prize. Saved: the roster (who is finished, who has been seen, how many squads each outfit has raised, take-downs), the prize
+stream's state (so a reload can't replay a miss) and each named squad's leader; a story save, whose war opens after the restore,
+keeps the roster in `pending_wanted` until `enable_system("ground_war")` builds it. Behind `Wanted.ENABLED`, in the parity set;
+built with the ground war.
 

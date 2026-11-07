@@ -10,7 +10,8 @@ extends RefCounted
 ## radio and as a `wanted_seen` event. The prizes use systems that already exist: an arms cache into the organisation's
 ## arsenal, a cartel man's take (Los Cuervos' cash to the safe), a captain's file (suspicion off the organisation's case).
 ##
-## Own RNG stream (seed + 187), drawn only on a take-down. Behind ENABLED (in the parity set); built with the ground war.
+## A named rival squad that surrenders to the task force puts him in custody: off the roster, no prize.
+## Own RNG stream (seed + 187), drawn only on a take-down, saved with the roster. Behind ENABLED (in the parity set); built with the ground war.
 
 static var ENABLED := true
 
@@ -81,6 +82,17 @@ func contact(leader: String) -> void:
 	sess.bus.emit("wanted_seen", sess.time, line, ["runner"], {"id": leader, "name": e.name, "outfit": e.outfit})
 
 
+## His squad surrendered to the task force: in custody, so he is off the roster (no prize: the organisation didn't take him).
+func captured(leader: String) -> void:
+	if leader == "" or done.has(leader):
+		return
+	done[leader] = true
+	var e := entry(leader)
+	var line := "%s is in custody. The task force got to him first." % e.name
+	sess.say(line)
+	sess.bus.emit("wanted_captured", sess.time, line, ["runner", "law"], {"id": leader})
+
+
 ## He was beaten by the organisation: roll for his prize.
 func taken_down(leader: String) -> void:
 	if leader == "" or done.has(leader):
@@ -123,7 +135,7 @@ func _grant(p: Dictionary) -> String:
 
 
 func capture() -> Dictionary:
-	return {"raised": raised.duplicate(), "done": done.keys(), "seen": seen.keys(), "takedowns": takedowns.duplicate()}
+	return {"raised": raised.duplicate(), "done": done.keys(), "seen": seen.keys(), "takedowns": takedowns.duplicate(), "rng": rng.get_state()}
 
 
 func restore(d: Dictionary) -> void:
@@ -138,3 +150,5 @@ func restore(d: Dictionary) -> void:
 	takedowns = {}
 	for k in d.get("takedowns", {}):
 		takedowns[str(k)] = int(d.takedowns[k])
+	if d.get("rng") is Array:
+		rng.set_state(d.rng)  # the prize rolls carry on where they were, so a reload can't replay a miss

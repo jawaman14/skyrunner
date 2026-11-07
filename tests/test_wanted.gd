@@ -153,3 +153,43 @@ func test_off_means_no_names() -> void:
 		check(_raise(s.ground, "rival").leader == "", "nobody named")
 	s.dispose()
 	Wanted.ENABLED = true
+
+
+func test_the_prize_rolls_carry_on_after_a_reload() -> void:
+	var s := _war()
+	s.wanted.taken_down("flaca")
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	var next: float = s.wanted.rng.random()
+	var t := Session.new({"seed": 3, "map_seed": MapCity.SEED, "location": "QRY", "features": Session.SANDBOX_FEATURES, "ground_war": true})
+	StrategicSave.restore(t, d)
+	check_eq(t.wanted.rng.random(), next, "the next roll is the one after, not the first again")
+	s.dispose()
+	t.dispose()
+
+
+func test_captured_by_the_task_force_is_off_the_roster() -> void:
+	var s := _war()
+	var g := s.ground
+	var them = null
+	for i in Wanted.EVERY:
+		them = _raise(g, "rival")
+	var cop = _raise(g, "police")
+	var who: String = them.leader
+	g._surrender(them, cop)
+	check(s.wanted.done.has(who), "in custody: finished")
+	check(not s.wanted.takedowns.has(who), "no take-down, no prize")
+	check(s.bus.log.any(func(e): return e.kind == "wanted_captured"), "on the bus")
+	s.dispose()
+
+
+func test_a_save_waits_for_the_war_to_open() -> void:
+	var s := _war()
+	s.wanted.done["padrino"] = true
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	var t := Session.new({"seed": 4, "map_seed": MapCity.SEED, "location": "QRY", "features": Session.SANDBOX_FEATURES})
+	check(t.wanted == null, "no war yet (a story opens it after the restore)")
+	StrategicSave.restore(t, d)
+	t.enable_system("ground_war")
+	check(t.wanted != null and t.wanted.done.has("padrino"), "the roster comes back once it opens")
+	s.dispose()
+	t.dispose()

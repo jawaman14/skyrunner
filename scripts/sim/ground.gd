@@ -970,6 +970,8 @@ func _will_fight(perp: Squad, cop: Squad) -> bool:
 
 func _surrender(perp: Squad, cop: Squad) -> void:
 	var n := perp.men
+	if sess.wanted != null and perp.leader != "" and cop.faction == "police":
+		sess.wanted.captured(perp.leader)  # D-95: in custody, off the roster
 	_arrest(perp, cop, n)
 	_say("both", "%s surrendered to %s: %d arrested" % [perp.id, cop.id, n])
 
