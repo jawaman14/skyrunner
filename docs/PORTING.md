@@ -33,7 +33,7 @@ For each module, a generator under `tools/reference/` runs the Python game and w
 | `core_ref.json` | `gen_core.py` | `test_core_parity.gd` | Mass data, auto-balance and seeded job boards exact (the take-off roll now checks against `flight_golden.json`) |
 | `session_ref.json` | `gen_session.py` | `test_session_parity.gd` | 300 s police-mode world exact at every minute; all 40 HQ bot pairings exact |
 | `bots_ref.json` | `gen_bots.py` | `test_bots_parity.gd` | Route plans, approaches and departures for every strip exact (the seeded bot flight now checks against `flight_golden.json`) |
-| `strategic_ref.json` | `gen_strategic.py` | `test_strategic.gd` | Seasons, win matrix, equilibrium, dominance, summary and action values exact. At n=200 the calibrated equilibrium is 0.497361506980898 in both |
+| `strategic_golden.json` | `tools/regen_strategic_golden.gd` (Godot) | `test_strategic.gd` | Seasons, win matrix, equilibrium, dominance, summary and action values. Replaced the Python `strategic_ref.json` (retired 8 November, F-6, D-74); written from a build that matched it exactly (at n=200 the calibrated equilibrium was 0.497361506980898 in both) |
 | `trials_ref.json` | `gen_trials.py` | `test_trials_parity.gd` | The trial inputs; the flown results now check against `flight_golden.json` |
 | `flight_golden.json` | `tools/regen_flight_golden.gd` (Godot) | `test_core_parity.gd`, `test_bots_parity.gd`, `test_trials_parity.gd` | Everything that flies, as the game's own flight model flies it: a determinism check, bit for bit |
 

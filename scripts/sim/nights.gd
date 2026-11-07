@@ -10,6 +10,11 @@ extends RefCounted
 ##   wrap-up    the pilot's flight has ended; once the crews and decoys are done
 ##              too, the night is scored and the next planning phase begins.
 
+## Behind a switch (F-6, the empire pivot): the nights are the old strategic model, kept for the HQ season and the strategic
+## balance sim until an "N days" sim replaces them; the day's books (Books) and debrief (Debrief) are the new report. Off, a
+## session with the HQ layer runs on the books alone. Opt-in list: nights only exist when the HQ layer is asked for.
+static var ENABLED := true
+
 const WRAP_TIMEOUT_S := 600.0
 
 

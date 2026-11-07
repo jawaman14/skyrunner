@@ -104,3 +104,18 @@ func test_the_view_says_which_phase_the_director_is_in() -> void:
 	var v: Dictionary = s.nights.view("runner")
 	check_eq(v["director_phase"], "planning", "in the runner's view")
 	check(v.has("night"), "with the season's own numbers")
+
+
+## F-6: the nights behind a switch. Off, a game with the HQ layer runs on the day's books alone; the HQ command says so.
+func test_off_the_hq_layer_runs_without_nights() -> void:
+	NightDirector.ENABLED = false
+	var s := Session.new({"seed": 33, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES + ["hq"], "ground_war": false})
+	check(s.nights == null, "no night director")
+	check(s.books != null, "the day's books still close")
+	for i in 30:
+		s.update(1.0 / 30)
+	check(str(s.command(Roles.PILOT, "hq", {"order": "launder"})[1]).contains("No HQ"), "the HQ orders say there is no HQ")
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	check(not d.has("nights"), "and nothing of the nights is saved")
+	s.dispose()
+	NightDirector.ENABLED = true

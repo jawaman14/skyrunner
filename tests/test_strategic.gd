@@ -1,7 +1,7 @@
 extends TestCase
-## The ported season simulator against Python (tools/reference/gen_strategic.py
-## -> tests/fixtures/strategic_ref.json), plus the sim-matrix checks from
-## tests/test_hq.py.
+## The season simulator against its Godot golden (tools/regen_strategic_golden.gd -> tests/fixtures/strategic_golden.json),
+## plus the sim-matrix checks from the prototype's tests/test_hq.py. The golden replaced the Python fixture strategic_ref.json
+## (F-6, D-74), written from a build that matched Python exactly, so the numbers carried over unchanged.
 
 var ref: Dictionary
 const TOL := 1e-9
@@ -9,7 +9,7 @@ const TOL := 1e-9
 
 func before_each() -> void:
 	if ref.is_empty():
-		ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/strategic_ref.json"))
+		ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/strategic_golden.json"))
 
 
 func _same(got, want, what: String) -> bool:
@@ -41,17 +41,17 @@ func _cal() -> HQ.Calibration:
 	return HQ.Calibration.from_dict(ref.cal)
 
 
-func test_seasons_match_python() -> void:
+func test_seasons_match_the_golden() -> void:
 	for s in ref.seasons:
 		var a: Array = s.args
-		var rules := HQ.PYTHON_RULES.duplicate()  # Python has no rival cartel
+		var rules := HQ.PYTHON_RULES.duplicate()  # the pinned season rules (no rival cartel)
 		if a[3] is Dictionary:
 			rules.merge(a[3])
 		var got := Strategic.play_season(a[0], a[1], int(a[2]), rules, _cal() if a[4] else null, a[5])
 		_same(got, s.result, "%s vs %s seed %d %s" % [a[0], a[1], a[2], a[5]])
 
 
-func test_matrix_equilibrium_and_summary_match_python() -> void:
+func test_matrix_equilibrium_and_summary_match_the_golden() -> void:
 	var res := Strategic.run_matrix(3, HQ.PYTHON_RULES, _cal())
 	var want: Dictionary = ref.matrix
 	for i in want.results.size():
@@ -76,7 +76,7 @@ func test_matrix_equilibrium_and_summary_match_python() -> void:
 		_same(av, want.action_values[side], side + " action values")
 
 
-func test_calibration_from_python_flights() -> void:
+func test_calibration_from_the_tactical_sample() -> void:
 	var tac = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/tactical_sample.json"))
 	_same(Tactical.calibrate(tac).to_dict(), ref.calibrate_tactical, "calibration")
 
@@ -111,3 +111,11 @@ func test_worker_pool_matches_in_process() -> void:
 	check_eq(pooled.size(), local.size())
 	for i in local.size():
 		_same(pooled[i], local[i], "job %d" % i)
+
+
+## The golden tool and the test build the same thing: a regenerated golden is what this test reads.
+func test_the_golden_tool_reproduces_the_golden() -> void:
+	var tool: Variant = load("res://tools/regen_strategic_golden.gd")
+	var built: Dictionary = SaveVars.through_json(tool.build())
+	_same(built.matrix.v, ref.matrix.v, "the equilibrium value")
+	_same(built.seasons.map(func(x): return x.result), ref.seasons.map(func(x): return x.result), "the seasons")
