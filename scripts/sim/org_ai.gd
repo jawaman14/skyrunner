@@ -53,7 +53,7 @@ func runs_for(o: String) -> bool:
 
 func _act(o: String, layer: String, cmd: String, args: Dictionary) -> bool:
 	var r: Array = biz.sess.command_as(Actor.of(o, Roles.BOSS, o + ":boss"), cmd, args)
-	log.append({"t": biz.sess.time, "org": o, "layer": layer, "cmd": cmd, "args": args.duplicate(), "ok": bool(r[0]),
+	log.append({"t": biz.sess.time, "org": o, "layer": layer, "cmd": cmd, "args": JSON.parse_string(JSON.stringify(args)), "ok": bool(r[0]),  # as a load reads it back
 		"why": "" if r[0] else str(r[1])})
 	while log.size() > LOG_MAX:
 		log.pop_front()
@@ -75,7 +75,7 @@ func policy() -> void:
 	for o in ORGS:
 		if not runs_for(o):
 			continue
-		for b in Businesses.DATA:
+		for b in biz.catalog:
 			if str(biz.owner[b.id]) != o:
 				continue
 			var short := floor_of(o, b) + float(biz.arrears.get(b.id, 0)) - float(biz.balance(b.id))
@@ -94,7 +94,7 @@ func moves(o: String) -> Array:
 	var p: Dictionary = PERSONALITY[o]
 	var safe: float = biz.safe_balance(o)
 	var out := [{"cmd": "", "args": {}, "score": 0.2, "why": "hold"}]
-	for b in Businesses.DATA:
+	for b in biz.catalog:
 		var id: String = b.id
 		var owner := str(biz.owner[id])
 		if owner == o:

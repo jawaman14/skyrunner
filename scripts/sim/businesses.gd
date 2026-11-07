@@ -67,6 +67,8 @@ const DATA := [
 ]
 
 var sess
+var catalog: Array = []  ## the businesses this game runs: DATA (P1's benchmark adds copies, scale_up)
+var _by_id := {}
 var owner := {}  ## business id -> org id ("" free, "outside" not for sale)
 var arrears := {}  ## business id -> dollars owed
 var blocked := {}  ## business id -> why the day's costs weren't paid, or absent
@@ -81,7 +83,7 @@ var ai: OrgAI = null  ## the Morettis' and Los Cuervos' AI (L-3); null with OrgA
 func _init(sess_) -> void:
 	sess = sess_
 	for b in DATA:
-		owner[b.id] = str(b.owner)
+		_add(b.duplicate(true))
 	for d in [DISTRICT, "the-docks", "barrio-chino"]:
 		districts[d] = {"prosperity": 0.5, "demand": {"cocaine": 1.0, "marijuana": 1.0, "groceries": 1.0}}
 	sess.bus.subscribe("books", _on_books)
@@ -97,6 +99,26 @@ static func spec(id: String) -> Dictionary:
 		if b.id == id:
 			return b
 	return {}
+
+
+func _add(b: Dictionary) -> void:
+	catalog.append(b)
+	_by_id[str(b.id)] = b
+	owner[str(b.id)] = str(b.owner)
+
+
+## One of this game's businesses, or {}.
+func find(id: String) -> Dictionary:
+	return _by_id.get(id, {})
+
+
+## P1's benchmark: run `k` copies of the district's businesses (ids biz-N-x2 ...). Never in play.
+func scale_up(k: int) -> void:
+	for n in range(2, k + 1):
+		for b in DATA:
+			var c: Dictionary = b.duplicate(true)
+			c.id = "%s-x%d" % [b.id, n]
+			_add(c)
 
 
 static func till(id: String) -> String:
@@ -149,7 +171,7 @@ func _pay(o: String, delta: float, other: String, reason: String) -> bool:
 
 ## Buy a free business for `o`. "" or why not.
 func buy(id: String, o := "org") -> String:
-	var b := spec(id)
+	var b := find(id)
 	if b.is_empty():
 		return "No such business."
 	if str(owner[id]) == o:
@@ -197,7 +219,7 @@ func take(id: String, amount: int, o := "org") -> String:
 
 
 func _ours(id: String, o := "org") -> String:
-	if spec(id).is_empty():
+	if find(id).is_empty():
 		return "No such business."
 	if str(owner[id]) != o:
 		return "That isn't ours."
@@ -211,7 +233,7 @@ func _on_books(_e) -> void:
 	if ai != null:
 		ai.policy()  # the AI orgs top their tills up first, through command_as
 	_trade_day()
-	for b in DATA:
+	for b in catalog:
 		var id: String = b.id
 		if not runs(id):
 			continue  # free, outside, or an org with no AI running it
@@ -230,7 +252,7 @@ func _settle_arrears(id: String) -> void:
 		return
 	var pay := mini(owed, balance(id))
 	if pay > 0:
-		var b := spec(id)
+		var b := find(id)
 		var to_rent := mini(pay, int(b.rent))
 		if to_rent > 0:
 			sess.ledger.transfer(till(id), LANDLORD, float(to_rent), "fee", "system:books", sess.time)
@@ -269,13 +291,13 @@ func shelf(id: String) -> float:
 func _trade_day() -> void:
 	var t: float = sess.time
 	_spend_left = {}
-	for b in DATA:
+	for b in catalog:
 		var cap := int(orders.get(b.id, {}).get("budget", 0))
 		_spend_left[b.id] = float(cap) if cap > 0 else INF
-	for b in DATA:
+	for b in catalog:
 		if is_retail(b) and runs(b.id) and order_of(b.id) != "hold":
 			_restock_retail(b, t)
-	for b in DATA:
+	for b in catalog:
 		if is_warehouse(b) and runs(b.id):
 			var lb := minf(OUTSIDE_SHOPS_LB, shelf(b.id))
 			if lb > 0.01:
@@ -340,7 +362,7 @@ func set_staff(id: String, wid: String) -> String:
 	w.status = "assigned"
 	w.assigned = id
 	staff[id] = wid
-	sess.say("%s runs %s now, on its hours (%s)." % [str(w.name), spec(id).name, shift_text(spec(id))])
+	sess.say("%s runs %s now, on its hours (%s)." % [str(w.name), find(id).name, shift_text(find(id))])
 	return ""
 
 
@@ -371,7 +393,7 @@ func _after_costs() -> void:
 	for id in orders:
 		if order_of(id) != "skim" or not runs(id):
 			continue
-		var b := spec(id)
+		var b := find(id)
 		var keep := float(int(orders[id].get("budget", 0))) if int(orders[id].get("budget", 0)) > 0 else 2.0 * float(int(b.rent) + int(b.utilities))
 		var spare := float(balance(id)) - keep
 		if spare >= 1.0:
@@ -404,7 +426,7 @@ func tick_full(_dt: float) -> void:
 	while _hour < now:
 		var h := _hour % 24  # the hour just gone
 		_hour += 1
-		for b in DATA:
+		for b in catalog:
 			if is_retail(b) and runs(b.id):
 				var hours := open_hours(b)
 				if h in hours:
@@ -413,7 +435,7 @@ func tick_full(_dt: float) -> void:
 
 ## The aggregate tick (D-68, reserved: no district runs on it yet): a window's shoppers at once, as its share of the day.
 func tick_aggregate(window: float) -> void:
-	for b in DATA:
+	for b in catalog:
 		if is_retail(b) and runs(b.id):
 			_sell(b, daily_want(b) * window / Books.DAY_S)
 
@@ -433,7 +455,7 @@ func price(district_id: String) -> float:
 
 func _restock_retail(b: Dictionary, t: float) -> void:
 	var need := SHELF_LB - shelf(b.id)
-	for w in DATA:
+	for w in catalog:
 		if need < 1.0:
 			return
 		if not is_warehouse(w) or not runs(w.id):
@@ -453,7 +475,7 @@ func _restock_retail(b: Dictionary, t: float) -> void:
 
 # ------------------------------------------------------------------ the books, for the desk (L-4) and A1
 func view(id: String) -> Dictionary:
-	var b := spec(id)
+	var b := find(id)
 	if b.is_empty():
 		return {}
 	return {"id": id, "name": b.name, "kind": b.kind, "district": b.district, "owner": owner[id], "till": balance(id),
@@ -464,12 +486,19 @@ func view(id: String) -> Dictionary:
 
 
 func ours() -> Array:
-	return DATA.filter(func(b): return str(owner[b.id]) == "org").map(func(b): return view(b.id))
+	return catalog.filter(func(b): return str(owner[b.id]) == "org").map(func(b): return view(b.id))
 
 
 func capture() -> Dictionary:
 	var d := {"owner": owner.duplicate(), "arrears": arrears.duplicate(), "blocked": blocked.duplicate(), "districts": districts.duplicate(true),
 		"hour": _hour, "staff": staff.duplicate(), "orders": orders.duplicate(true)}
+	# the tills and the Morettis' safe live only in the ledger, which the strategic save doesn't carry: they are saved here (L-7, A9)
+	var tills := {}
+	for b in catalog:
+		if absf(sess.ledger.balance(till(b.id))) >= 0.005:
+			tills[b.id] = sess.ledger.balance(till(b.id))
+	d["tills"] = tills
+	d["safes"] = {"moretti": sess.ledger.balance("moretti:safe")}
 	if ai != null:
 		d["ai"] = ai.capture()
 	return d
@@ -489,6 +518,11 @@ func restore(d: Dictionary) -> void:
 		if d.districts[k] is Dictionary:
 			districts[str(k)] = d.districts[k].duplicate(true)
 	_hour = int(d.get("hour", -1))
+	var tills: Dictionary = d.get("tills", {})
+	for b in catalog:  # a till the save doesn't list was empty
+		sess.ledger.restate(till(b.id), float(tills.get(b.id, 0.0)), sess.time)
+	for o in d.get("safes", {}):
+		sess.ledger.restate(str(o) + ":safe", float(d.safes[o]), sess.time)
 	staff = {}
 	for k in d.get("staff", {}):
 		staff[str(k)] = str(d.staff[k])

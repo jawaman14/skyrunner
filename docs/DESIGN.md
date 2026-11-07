@@ -2186,3 +2186,27 @@ order, with a day's spending `budget` for stock (0 is no cap). The orders are:
 An order needs someone to take it. A manager who is lost (arrested, killed) takes the orders with him. Staff and orders are
 saved with the businesses. On the phone's books, M puts the first free hand in charge (or lets them go) and O cycles the order.
 The line reads who runs it, the shift and the order.
+
+## 71. The Living District's acceptance suite, P1 and the "N days" sim (L-7; docs/EMPIRE_SIMULATION_SPEC.md section 10)
+
+**The acceptance suite.** `tests/test_acceptance.gd` holds A4, A6, A7, A9 and P1. Its header names where the others live:
+A1 and A2 on the desk and the businesses, A3 the seven days, A5 the delegated delivery, A8 two days away.
+- **A4:** every transfer on an AI org's tills or safe is a settlement by `system:books` or a move by the org itself, and
+  each such move is a logged `command_as`. Their outside boundary is reported.
+- **A6:** 14 days with every chain running. The ledger sums to zero, no till is overdrawn, no lot is broken, and the groceries
+  held equal what came in less what left.
+- **A7:** who owns what, what is owed and who holds the district all survive a save and load.
+- **A9:** a game saved mid-day and run two more days ends identical to one played straight through: tills, shelves, owners,
+  arrears, orders, the AI's moves and its streams. This found that the tills and the Morettis' safe, which live only in the
+  ledger, were not in the strategic save. They are now saved with the businesses and restated on load.
+- **P1:** the district's sim day at 1× and at 4× the businesses (`Businesses.scale_up`, a benchmark-only copy of the twelve).
+  4× costs at most 5× (first measurement: 1.6 ms against 4.6 ms a day), and the district's share of a frame at ×60 is far
+  under 8 ms. The thresholds are the spec's initial ones, recalibrated here once. (c), the 10% against the last recorded run,
+  is read off the PR bodies.
+
+**The "N days" sim.** `cli.gd -- days --n 14 --seeds 3` (`scripts/balance/district_days.gd`) runs the district day by day per
+seed. The organisation buys the warehouse and funds it and the club; the AI orgs run theirs. Each close it prints every org's
+money, who owns what, what is owed and the AI's moves, and checks conservation. It replaces the HQ nights as the way to judge
+the empire's economy over weeks. Its first run reads that the fronts (the laundromat, the restaurant, the club) have costs and
+no revenue yet, so the Morettis lose about $590 a day and our club goes into arrears from day six. Revenue for fronts
+(laundering) is not built. The prices are left for the owner's G1 playtest.

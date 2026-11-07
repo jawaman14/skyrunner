@@ -6,6 +6,7 @@ extends SceneTree
 ##   godot --headless --script res://scripts/balance/cli.gd -- strategic --n 200
 ##   godot --headless --script res://scripts/balance/cli.gd -- report     # rebuild docs/BALANCE.md
 ##   godot --headless --script res://scripts/balance/cli.gd -- all
+##   godot --headless --script res://scripts/balance/cli.gd -- days --n 14 --seeds 3   # the Living District, day by day (L-7)
 ##
 ## Options: --workers N (default 4), --seeds N (3), --n N (200), --uncalibrated,
 ## --results DIR (sim-results), --out FILE (docs/BALANCE.md).
@@ -34,7 +35,7 @@ func _init() -> void:
 			i += 1
 		elif a == "--uncalibrated":
 			opts["calibrated"] = false
-		elif a in ["feasibility", "tactical", "strategic", "report", "all", "tune", "crew"]:
+		elif a in ["feasibility", "tactical", "strategic", "report", "all", "tune", "crew", "days"]:
 			what = a
 		else:
 			printerr("unknown argument " + a)
@@ -42,7 +43,7 @@ func _init() -> void:
 			return
 		i += 1
 	if what == "":
-		print("usage: cli.gd -- feasibility|tactical|strategic|crew|report|all [--workers N] [--seeds N] [--n N]")
+		print("usage: cli.gd -- feasibility|tactical|strategic|crew|days|report|all [--workers N] [--seeds N] [--n N]")
 		quit(2)
 		return
 	var steps := ["feasibility", "tactical", "strategic", "report"] if what == "all" else [what]
@@ -70,6 +71,18 @@ func _load(name: String):
 
 func _secs(t0: int) -> float:
 	return (Time.get_ticks_msec() - t0) / 1000.0
+
+
+## The Living District for --n days (default 14 when --n is the strategic default) over --seeds seeds (DistrictDays).
+func cmd_days() -> void:
+	var t0 := Time.get_ticks_msec()
+	var n: int = 14 if int(opts["n"]) == 200 else int(opts["n"])
+	var rows := []
+	for k in int(opts["seeds"]):
+		rows.append_array(DistrictDays.run(k + 1, n))
+	_save("days", rows)
+	print(DistrictDays.table(rows))
+	print("%d seeds x %d days in %.1f s; conserved every day: %s" % [int(opts["seeds"]), n, _secs(t0), rows.all(func(r): return r.conserved)])
 
 
 func cmd_crew() -> void:

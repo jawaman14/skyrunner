@@ -875,7 +875,7 @@ func _books_page() -> void:
 	var groups := [["Ours", func(o): return o == "org"], ["For sale (ENTER buys)", func(o): return o == ""],
 		["The district's others", func(o): return o != "org" and o != ""]]
 	for g in groups:
-		var shown := Businesses.DATA.filter(func(b): return g[1].call(str(biz.owner[b.id])))
+		var shown := biz.catalog.filter(func(b): return g[1].call(str(biz.owner[b.id])))
 		if shown.is_empty():
 			continue
 		list.section(str(g[0]))
