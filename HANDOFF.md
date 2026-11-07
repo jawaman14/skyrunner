@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-08 - Claude, the business books on the phone (L-4a):** Empire → Businesses: ours with tills, debts and why;
+  the free ones (ENTER buys), F funds, T takes; the AI orgs' refusals (DESIGN 70, GUIDE). Staff and orders (A2) next.
 - **2026-11-08 - Claude, delegated deliveries (L-5, D-10):** `delegate_job` hands a job to a hired pilot for 10%; both kinds
   go through `Session.deliver`, and A5 shows equal economic state but for the fee (DESIGN 69).
 - **2026-11-08 - Claude, leaving the district (L-6):** shoppers buy hour by hour in open hours (`tick_full`, every frame,

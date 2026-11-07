@@ -2163,3 +2163,15 @@ organisation has taken to one of its free hired pilots. The boss or the pilot ca
 Saved: the runs under way, as saved jobs (an optional `delegated` key). Behind `Delegation.ENABLED`, in the parity set.
 Tests: `tests/test_delegation.gd`. This includes A5: two runs of the same seed, one flown and one delegated, compared on the
 spec's economic projection (transfers as a multiset, balances recomputed without the one fee, lots).
+
+## 70. The business books on the desk (L-4, first half; docs/EMPIRE_SIMULATION_SPEC.md A1)
+
+The phone's Empire app gains **Businesses → the books** (`PhoneMenu._books_page`). The page has four parts:
+- **Ours:** till, costs a day, the shelf, and any debt with its blocked reason.
+- **For sale:** the price. ENTER buys (`business_buy`).
+- **The district's others:** the owner, or "not for sale".
+- **Refused and blocked:** the AI organisations' last refused or blocked moves, with their reasons (`OrgAI.refused()`).
+
+F puts $1,000 into the selected till (`business_fund`) and T takes it (`business_take`). Everything goes through the commands,
+so the desk can't do anything the commands wouldn't. A1 (buy a business and read its books) is
+`tests/test_phone_books.gd`. Staff, shifts and orders per business (A2) are the second half of L-4.
