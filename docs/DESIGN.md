@@ -2094,3 +2094,24 @@ organisation account, `org:street-cash` (`Logistics.STREET`):
   `tests/test_logistics_ledger.gd` keeps that to rounding over an hour of corner sales.
 
 No draws and no change to play. An older save opens the account at what its street holds.
+
+## 66. The legit import-to-retail chain (L-2; docs/EMPIRE_SIMULATION_SPEC.md section 10)
+
+The second supply chain, small and legal, in `Businesses` (§64). It trades one good, groceries, at every 06:00 books close,
+before the rent:
+
+1. **Shoppers buy.** Each retail business (the bodega and the fish market) sells to `outside:shoppers`. It sells up to 100 lb ×
+   the district's grocery demand × (0.5 + prosperity), at $4.50 a pound scaled by prosperity.
+2. **Retailers restock** to 120 lb. They buy from an import warehouse in the chain first, at $3 a pound, paid till to till. If
+   no warehouse has stock, they buy from `outside:market` at $3.60.
+3. **The warehouse** (Costa Imports, at the docks) sells up to 150 lb a day to the shops outside the twelve (`outside:retail`,
+   $3). It then restocks to 400 lb from `outside:market` at $2.
+
+Every pound is an inventory move (`biz-N` locations; reasons `sale`, `wholesale`, arrivals from the market). Every dollar is a
+ledger transfer between tills and outside accounts, by `system:books`. A till that can't pay for a full restock buys what it
+can. The chain runs only for businesses whose owner is in `Businesses.RUNS`, which is the organisation for now. The Morettis'
+fish market and Los Cuervos' bodega join with their AI and money in L-3, on the same rules (A4).
+
+So buying the warehouse ($30,000) is a legal earner, but not on its own: from the outside shops it makes about $150 a day in margin
+against $270 of rent and bills, so it needs a retailer in the chain to pay. Tests: `tests/test_businesses.gd`, including
+A3's seven-day no-duplication check.
