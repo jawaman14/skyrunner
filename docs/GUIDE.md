@@ -196,12 +196,13 @@ market indices, not cash sale quotes. **Buyers' orders** lists the named buyer, 
 **Enter** on one of your jobs sets a waypoint.
 
 **Empire → Heat and case files** separates the current aircraft's tail heat, district heat and stash case stages.
+A raid countdown appears only where your organisation has a posted lookout. Park (a hangar cools the tail faster),
+lie low or move stock; call your lawyer about a warrant.
+
 **Empire → Businesses** (the city coast) opens **the books**. They list our businesses: each one's till, its costs a day,
 its shelf, and what it owes and why. They also list the free ones with their price (ENTER buys), and the Morettis' and Los Cuervos'.
 **F** puts $1,000 in the selected till and **T** takes it all. The day's rent and bills come out of each till at 06:00 and
 are never taken from the safe. Below that, the other organisations' refused or blocked moves show with their reasons.
-A raid countdown appears only where your organisation has a posted lookout. Park (a hangar cools the tail faster),
-lie low or move stock; call your lawyer about a warrant.
 
 The phone stays open while flying. If autopilot was off, opening it starts a temporary heading/altitude hold until you
 put it away and finish its conversation or map. An existing route keeps running and is never restarted by the phone.
