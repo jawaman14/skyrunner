@@ -90,8 +90,9 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - F-2, the ledger wrap, with no behaviour change.
    - F-3a-f, the money sites moved by domain.
    - F-4, inventory. The model, the stash and aircraft wrap, and (7 November) the trucks' and raids' moves booked by name and
-     the lots saved; what is still booked as unattributed is the code that changes stock directly (psychedelics, the trade's
-     own stock), moved by the stock-rework slices.
+     the lots saved; 8 November, the last direct changes: the Collective's barter and circuit sales and the cheat fill are
+     named moves (`Logistics.book`), so a stash's stock changes only by a named move. Finished; the five-second reconcile stays
+     as the safety net. (The trade's own `stock` with no logistics has no stashes and no inventory places, so nothing to move.)
    - F-5, `command_as` and actors. 7 November: `Actor`, `Session.command_as` with `command` as its shim, events tagged
      with the actor and org, and `job_delivered` gains `by` and `mode`. The ownership and manager-budget checks wait for
      businesses (L-1) and managers (L-4); story goals counting by org is L-5.
@@ -224,8 +225,6 @@ Rewritten 4 November against the code. The items from 18 October that are finish
   person at the controls judging the feel, then flipping the default; F-7 waits on that.
 - **Stock lots and pickup orders** (DESIGN 51 slices 2-3): `StockLot`, `StockLedger`, `StockValue` and `PickupOrder` exist with
   tests and have no gameplay call sites. F-4's inventory (#509) is where they would land; not wired yet.
-- **F-4 inventory:** the trucks' and raids' moves are booked by name and the lots saved (#509, each truck its own place); what
-  is still booked as unattributed is code that changes stock directly (psychedelics, the trade's own stock).
 - **Street-war police and the case files:** with the ground war on, `GroundWar._think_police` raids stashes without reading
   the case files, so heat step 1 only runs when the war is off (found by BALANCE entry 63, #497). A heat step 2 item.
 - **Checked vehicle routes:** all 99 audited logistics pairs fail access; waits on the map rebuild's sites and connectors
