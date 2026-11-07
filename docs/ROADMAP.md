@@ -65,11 +65,11 @@ The owner asked for a Borderlands study like the WoW one and said yes to buildin
 "Borderlands deep-dive: what Skyrunner can take". One PR each, in order:
 - **Breakaway** (DESIGN 58): a stop on the ground (arrest on landing, raid while unloading, a sting) opens a 45 s window to get
   out: take off and get clear, dump the hot load, or pay the officer. One an island day, more with renown; the window running out
-  is the bust as before. In review.
+  is the bust as before. Merged (#517).
 - **Wanted names:** rival lieutenants and task-force captains with one signature prize each, at a stated 1-in-N per take-down,
-  and a title card on first contact (DESIGN 59). Built; its PR follows this one.
+  and a title card on first contact (DESIGN 59, BALANCE 70). This PR.
 - **Makers:** four fictional brands with one behaviour each across the dealership, with small two- and three-model set
-  bonuses (DESIGN 43, Makers). Built; its PR follows Wanted. Aircraft parts and the arsenal can take makers later.
+  bonuses (DESIGN 43, Makers). In review (#518). Aircraft parts and the arsenal can take makers later.
 Then, from the study's second round: cursed jobs (optional conditions for more pay), a weekly black market and weekly hot job,
 the heat dial, and last, the one-life extraction run as its own mode.
 
@@ -262,6 +262,12 @@ Then Tier 2 with the story, map and presentation layers (#163, #133/#132, #130/#
 are foundations, not done: each gets a gap audit before it is scheduled. #169 is deferred.
 
 ## Working structure (owner, 18 October)
+
+**Codex unavailable (owner, 7 November, D-96).** Codex isn't available for now and Claude works on the project mostly alone:
+Claude merges its own PRs, risk class included, under D-91 (CI green on the exact head, every review finding fixed and
+answered, its own diff read end to end), with no wait for a second agent's review. Codex's QA lane (sims, full suites, sweeps,
+balance runs) and its UX/UI and dialogue lead fall to Claude meanwhile. Any review that does arrive is still answered before a
+merge.
 
 The owner changed the structure (D-52): Claude and Codex each do their own work end to end, including merging it, instead
 of Codex being mainly the approver. They hand each other coding jobs through the board. **In effect from 18 October (08:50,

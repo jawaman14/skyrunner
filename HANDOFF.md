@@ -54,12 +54,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Dual work (D-52). Claude, 7 November: landed its own queue under D-91 (its own risk-class PRs merge on green CI with every finding fixed and answered; in practice each also waited for Codex's clean review of the exact head). |
-| **Task** | Done: #495-#514 merged, one at a time in order, each with `main` merged in first. BALANCE entries renumbered as they landed (61 lawyer's discount, 62-63 orders and case files, 64 orders, 65 streak guard, 66 lying low, 67 the street war's case files, re-measured after #502/#503, 68 flying well). PARITY is 18 (StreakGuard, Schedule, Story.FLIGHT_GOALS). |
-| **Branches / PRs** | None open of Claude's: #515 (F-6b first part, the day's debrief, `Debrief`) merged too. #492 is not Claude's. |
-| **Next step** | F-6b second part: `NightDirector` behind `Nights.ENABLED`, the HQ actions as ordinary commands, `strategic_ref` retired (D-74, replacement goldens). Then F-7 (time acceleration) once a person has judged D-12's feel (`--fixed-step`), and L-1 (businesses as data). |
-| **Codex task** | Nothing assigned; post-merge review of #509-#515 is welcome. |
-| **Watch out** | Codex's findings on an earlier commit stay open until answered: before merging, list every unresolved thread with no reply, not only the head's. `ci_then_merge`-style scripts must refuse a thread with no reply rather than resolve it. When a PR's merge of `main` changes numbers it measured (a BALANCE entry), re-run the measurement against the new `main` instead of only renumbering. |
+| **Holder** | Claude, alone: Codex is unavailable (owner, 7 November, D-96). Claude merges its own PRs, risk class included, under D-91 (CI green on the head, every finding fixed and answered, its own diff read), and covers Codex's QA, UX/UI and dialogue lanes meanwhile. |
+| **Task** | The Borderlands study (D-95): Breakaway merged (#517, DESIGN 58, BALANCE 69); Wanted names (DESIGN 59, BALANCE 70) and Makers (#518, DESIGN 43) in review. |
+| **Branches / PRs** | `claude/wanted-names` (this PR), `claude/makers` (#518). |
+| **Next step** | Merge Wanted, then Makers (merge `main` first). Then the study's second round in order: cursed jobs, the weekly black market and hot job, the heat dial, the one-life extraction run. F-6b's second part (`NightDirector`) stays queued behind it. |
+| **Codex task** | None: Codex is unavailable (D-96). |
+| **Watch out** | Codex's bot still posts reviews on some PRs; answer every thread before merging (`ci_then_merge` refuses an unanswered one). Breakaway holds `Session.save()` while a window is open. |
 
 **Vehicle rebuild draft (Codex, 14 Oct), #374:** Separate branch off main, original procedural period bodies for all 12 dealer/squad model keys. IDs, catalogue prices/specs, saves, physics and collision remain unchanged. Five new render-contract tests pass clean locally; eight existing car-physics tests also pass with baseline cleanup resource warnings. Local full import retains ActionReview.COMMANDS error under 4.6.3. Capture script passes parse check; read-only pinned CI will render 15 staged asset views in WorldScene plus the actual dealership. References: 1981 Ford brochure, 1983 C/K pickup brochure, Mercedes W123/Porsche 944 archives, Vice City/Stories and Driver Parallel Lines (1978 fleet). No copied assets or real brands shipped. Scenery PR #373 remains independent. First pinned capture/import/inventory and export passed on f004e14. Visual review exposed dropped hull panels from mixed indexed/unindexed batches; fixed by expanding primitive indices and checking every triangle winding plus hull presence. Five render tests pass again. Next: inspect corrected captures, latest pinned CI and review; no merge or human gate passed.
 
@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-07 - Claude, Wanted names (D-95) and working alone (D-96):** five named squad leaders with one prize each at a
+  stated 1 in 3 per take-down (DESIGN 59, BALANCE 70). The owner said Codex is unavailable; Claude carries on alone under D-91.
 - **2026-11-07 - Claude, the Borderlands study (D-95):** Breakaway (DESIGN 58, BALANCE 69): a ground stop opens a 45 s
   window to take off, dump the hot load or pay; one a game day plus one per two renown tiers. Wanted names and Makers follow as
   their own PRs.

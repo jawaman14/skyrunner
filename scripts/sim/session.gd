@@ -199,6 +199,9 @@ func dispose() -> void:
 	rackets = null
 	races = null
 	ground = null
+	if wanted != null:
+		wanted.sess = null
+	wanted = null
 	if nights != null:
 		nights.sess = null
 	nights = null

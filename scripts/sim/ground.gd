@@ -112,6 +112,7 @@ class Squad:
 	var tag := ""  ## "family": soldiers lent by the Morettis (drawn in their suits)
 	var home := Vector2.ZERO
 	var xp := 0.0  ## what it has learned: fights survived (GroundWar._learn)
+	var leader := ""  ## a Wanted name leading it (Wanted.ROSTER id), or ""
 
 	func pos() -> Vector2:
 		return Vector2(x, y)
@@ -519,6 +520,8 @@ func recruit(f: String, kind: String, at = null, pay := true):
 	q.men = MEN[kind]
 	q.men0 = q.men
 	q.id = "%s-%d" % [{"org": "S", "rival": "C", "police": "P"}[f], _serial]
+	if sess.wanted != null and f != "org":
+		q.leader = sess.wanted.assign(f, squads)  # D-95: one in three is led by a name
 	var ars = arsenal(f)
 	if ars != null:
 		q.loadout = ars.issue(q.men)
@@ -967,11 +970,18 @@ func _will_fight(perp: Squad, cop: Squad) -> bool:
 
 func _surrender(perp: Squad, cop: Squad) -> void:
 	var n := perp.men
+	if sess.wanted != null and perp.leader != "" and cop.faction == "police":
+		sess.wanted.captured(perp.leader)  # D-95: in custody, off the roster
 	_arrest(perp, cop, n)
 	_say("both", "%s surrendered to %s: %d arrested" % [perp.id, cop.id, n])
 
 
 func _open(a: Squad, b: Squad) -> void:
+	if sess.wanted != null:
+		for q in [a, b]:
+			var other: Squad = b if q == a else a
+			if q.leader != "" and other.faction == "org":
+				sess.wanted.contact(q.leader)  # his title card, the first time
 	_fight_serial += 1
 	var f := Fight.new()
 	f.id = _fight_serial
@@ -1131,6 +1141,8 @@ func _learn(q: Squad, points: float) -> void:
 
 func _rout(q: Squad, f: Fight) -> void:
 	var winner: Squad = f.b if q == f.a else f.a
+	if sess.wanted != null and q.leader != "" and winner.faction == "org":
+		sess.wanted.taken_down(q.leader)  # D-95: a take-down, a roll for his prize
 	f.over = true
 	fights.erase(f)
 	q.fight = null
