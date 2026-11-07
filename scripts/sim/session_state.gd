@@ -185,6 +185,7 @@ var ground: GroundWar = null  ## squads, firefights and turf on the roads (Groun
 var curses: Curses = null  ## cursed jobs: optional conditions for a premium (D-95)
 var black_market: BlackMarket = null  ## the weekly black market and the week's hot job (D-95)
 var heat_dial: HeatDial = null  ## the heat dial: more danger for more pay (D-95)
+var businesses: Businesses = null  ## the Living District's businesses and districts (L-1; the city coast only)
 var last_run: LastRun = null  ## the one-life extraction mode (D-95), only when asked for
 var wanted: Wanted = null  ## named lieutenants and captains with a prize each (D-95; built with the ground war)
 var pending_wanted := {}  ## a save's Wanted roster, kept until the ground war is built (a story opens it after the restore)
