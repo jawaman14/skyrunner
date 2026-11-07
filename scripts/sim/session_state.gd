@@ -132,6 +132,7 @@ var calendar: Calendar = null  ## loop idea 4: the island's week, posted ahead (
 var weekly: Weekly = null  ## the repeatable goal: the week's work (Weekly, D-93)
 var schedule: Schedule = null  ## things due at a time (F-6): the daily books, later production and the org AI
 var books: Books = null  ## the daily books, closed at 06:00 from the ledger (F-6)
+var breakaway: Breakaway = null  ## a stop on the ground the pilot can still get out of (D-95)
 var smugglers: Array = []
 var director: AISmuggler.Director
 var mapper: ControlMapper

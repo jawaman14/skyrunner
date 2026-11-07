@@ -1906,3 +1906,23 @@ Flight skill gives optional bonus goals in the story, one in each of the first t
 They count from the `landed` event (`touchdown_fpm`, `final_bank` - the most bank below 60 m since the aircraft was last above it, so a turn after take-off does not count - and the strip's code), and only a landing after a flight counts. Each
 pays 8 renown, once, a name earned for flying well, and no money (D-65: nobody gets money except through the same rules). The
 goal card says "optional: renown for flying well".
+
+## 58. Breakaway: a stop you can get out of (owner, 7 November 2026, D-95)
+
+From the Borderlands study (Fight For Your Life). A bust on the ground used to end the run in one event, so the most frightening
+moment had no decisions in it. Now an arrest on landing (customs, a patrol, a wanted pilot), a raid while a hot load is counted
+out, or a sting opens a window of `Breakaway.WINDOW_S` (45 s), shown on the HUD as a draining bar and a red line:
+
+- **Run:** take off and get `RUN_M` (1,200 m) from the stop. Free, with the patrol on your tail (wanted at least 1) and
+  suspicion +25.
+- **Dump (1):** leave the hot loads to them; they are seized as a bust's would be (the market's seizure, the weapons to the
+  task force). Free, suspicion +10. Cash bags aboard stay: money isn't contraband.
+- **Pay (2):** a bribe of $2,000 plus 40% of the hot loads' pay, raised by the suspicion on you (`bribe()`, rounded to $50),
+  booked to `outside:police` as "bribe". Free, suspicion +5.
+
+The window running out is `Session._bust_now`, the bust exactly as it was. Earned, not free: one breakaway an island day, one
+more for every second renown tier (1, 1, 2, 2, 3); after one, the task force is on alert for 10 minutes and the next stop goes
+straight through, as does a second stop inside an open window. Not covered: the air chase (it has its own escape, the bust
+meter) and an arrest on foot (the foot fight). No random draws. Saved (`breakaway` in the strategic save: today's count, the
+alert, an open window). Behind `Breakaway.ENABLED`, in the parity set.
+

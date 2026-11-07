@@ -471,6 +471,9 @@ func _wanted() -> void:
 	susp_bar.value = sp / 100
 	bust_bar.visible = s.police.bust_meter > 1
 	bust_bar.value = s.police.bust_meter / 100
+	if s.breakaway != null and s.breakaway.active():
+		bust_bar.visible = true  # Breakaway: the window draining
+		bust_bar.value = s.breakaway.seconds_left() / Breakaway.WINDOW_S
 	rival_bar.visible = s.police.rival_meter > 1
 	rival_bar.value = s.police.rival_meter / 100
 
@@ -534,6 +537,8 @@ func _warnings(st: FlightModel.FlightState, c: FlightModel.Controls) -> void:
 	var caution := []
 	if st.stall_warning:
 		critical.append("STALL")
+	if s.breakaway != null and s.breakaway.active():
+		critical.append("STOPPED %d s: TAKE OFF AND GET CLEAR   1 DUMP THE LOAD   2 PAY $%s" % [ceili(s.breakaway.seconds_left()), Py.money(s.breakaway.bribe())])
 	if s.police.bust_meter > 1:
 		caution.append("POLICE ON YOUR TAIL")
 	if s.police.rival_meter > 1:

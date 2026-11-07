@@ -8,7 +8,7 @@ func after_each() -> void:
 
 func test_registry_covers_role_commands_without_retaining_session_context() -> void:
 	var handlers := CommandDomains.handlers()
-	check_eq(handlers.size(), 107, "preserve the existing command surface (+ challenge_warrant, DESIGN §48; + auto_supply, the dealers' resupply toggle)")
+	check_eq(handlers.size(), 109, "preserve the existing command surface (+ challenge_warrant, DESIGN §48; + auto_supply, the dealers' resupply toggle; + breakaway_dump and breakaway_pay, D-95)")
 	for role in Roles.ALL:
 		for name in Roles.PERMISSIONS[role]:
 			check(handlers.has(name), "registered command for " + role + ": " + name)

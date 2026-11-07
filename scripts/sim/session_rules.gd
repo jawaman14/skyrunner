@@ -23,7 +23,9 @@ func _crash(reason: String) -> void:
 	bus.emit("crashed", time, "", ["runner", "law"], {"reason": reason})
 
 
-func _bust(how: String) -> void:
+## A stop. `breakable` = one the pilot can still get out of (Breakaway: an arrest on landing, a raid while unloading, a sting);
+## the air chase and an arrest on foot are not, they have their own fight.
+func _bust(how: String, breakable := false) -> void:
 	if _first_missions():
 		phase = "busted"  # no arrest, no fine, no seizure: the same airport, the same cargo, another try
 		last_outcome = "FORCED DOWN (%s). Nothing is lost; try the flight again." % how
@@ -32,6 +34,17 @@ func _bust(how: String) -> void:
 		return
 	if agency != null and agency.quash(how):
 		return  # friends in Washington
+	if breakaway != null:
+		if breakaway.active():
+			breakaway.cancel()  # stopped again while getting away: no second chance
+		elif breakable and breakaway.can_start():
+			breakaway.start(how)
+			return
+	_bust_now(how)
+
+
+## The bust itself: what a stop has always been, and what a Breakaway window running out comes to.
+func _bust_now(how: String) -> void:
 	if logistics != null:
 		logistics.seize_aboard()
 	if court != null:
@@ -155,9 +168,9 @@ func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
 	if af.kind == "foreign" and island != null:
 		island.on_arrive()  # the General's men, not the task force
 	elif police.landing_check(s, af, carrying_hot(), "runner", CoverCargo.factor(loadout.items.values())):
-		_bust("arrested on landing at %s" % af.name)
-		if phase == "busted":
-			return
+		_bust("arrested on landing at %s" % af.name, true)
+		if phase == "busted" or (breakaway != null and breakaway.active()):
+			return  # (stopped and getting out: nothing is delivered while the officer is at the door)
 		phase = "parked"
 	var waiting := active_jobs.filter(func(j): return j.dest == af.code and not Gigs.done(j))
 	if not waiting.is_empty():
@@ -433,7 +446,7 @@ func _complete_delivery(job: Jobs.Job, af: Airfield) -> void:
 			# the Company let the DEA have this one: the strip was a sting
 			active_jobs.erase(job)
 			loadout.remove_job(job.id)
-			_bust("a DEA sting at %s - the Agency's contact never came" % af.name)
+			_bust("a DEA sting at %s - the Agency's contact never came" % af.name, true)
 			return
 	if Arsenal.REALISM and not job.weapons.is_empty() and job.gun_mode == "stock" and not job.agency:
 		_stock_weapons(job.weapons, "")
@@ -487,8 +500,8 @@ func _unload_tick(dt: float) -> void:
 				and PyMath.hypot(u.x - s.x, u.y - s.y) < RAID_RANGE_M and u.z - s.alt < 600):
 			var held := unloading
 			unloading = []
-			_bust("raided on the ground at %s" % (airfield.name if airfield else "the strip"))
-			if phase != "busted":
+			_bust("raided on the ground at %s" % (airfield.name if airfield else "the strip"), true)
+			if phase != "busted" and (breakaway == null or not breakaway.active()):
 				unloading = held  # quashed: the count goes on
 			return
 	unload_t -= dt
