@@ -55,7 +55,7 @@ func _after_breakaway(kind: String, af_code: String, ids: Array) -> void:
 		"arrive":
 			var af := World.airfield(af_code)
 			if af != null:
-				_arrive(af, state)
+				_arrive(af, state, true)
 		"unload":
 			unloading = active_jobs.filter(func(j): return j.id in ids)
 
@@ -178,13 +178,14 @@ func _on_shoulder(x: float, y: float) -> bool:
 	return false
 
 
-func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
+## `checked`: the police have had their look at this landing already (a Breakaway settled it), so it is not asked again.
+func _arrive(af: Airfield, s: FlightModel.FlightState, checked := false) -> void:
 	var flown := log  # this flight's record, for the debrief on the "landed" event (the log is renewed below)
 	phase = "parked"
 	location = af.code
 	if af.kind == "foreign" and island != null:
 		island.on_arrive()  # the General's men, not the task force
-	elif police.landing_check(s, af, carrying_hot(), "runner", CoverCargo.factor(loadout.items.values())):
+	elif not checked and police.landing_check(s, af, carrying_hot(), "runner", CoverCargo.factor(loadout.items.values())):
 		_bust("arrested on landing at %s" % af.name, true)
 		if breakaway != null and breakaway.active():
 			breakaway.resume = "arrive"  # settled (dumped or paid), the landing goes on: _after_breakaway

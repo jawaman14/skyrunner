@@ -214,7 +214,39 @@ func test_an_arrest_on_landing_is_checked_once_and_paying_lets_the_landing_go_on
 	check(r[0], str(r))
 	check(not s.breakaway.active() and s.phase == "parked", "paid, and still parked: the landing went on (%s)" % s.phase)
 	check_eq(_busts(s), 0, "the same officer did not stop him again")
+	var heat: float = s.police.case("runner").suspicion  # (the landing settling the case rebuilds it)
+	check(heat >= Breakaway.HEAT_PAY - 0.01, "the bribe's heat outlives the landing settling the case: %.1f" % heat)
 	s.dispose()
+
+
+func test_customs_is_not_asked_twice_for_one_landing() -> void:
+	var s := _sess()
+	var af: Airfield = Py.first(s.world.airfields, func(a): return a.police)
+	s.police.frozen = false
+	s.police.units.clear()
+	s.police.case("runner").wanted = 1
+	s.money = 100000
+	s.phase = "parked"
+	s._arrive(af, s.state)
+	var streak: int = s.police.customs_streak
+	var draws: Array = s.police.rng.get_state()
+	s.breakaway.pay()
+	check_eq(s.police.customs_streak, streak, "no second inspection")
+	check(s.police.rng.get_state() == draws, "and no second draw")
+	s.dispose()
+
+
+func test_a_stop_under_way_is_not_saved() -> void:
+	var s := _sess()
+	_load(s)
+	s._bust("arrested on landing at Harbor", true)
+	var d: Dictionary = SaveVars.through_json(StrategicSave.capture(s))
+	var t := Session.new({"seed": 9, "location": "HAR"})
+	StrategicSave.restore(t, d)
+	check(not t.breakaway.active(), "it comes back parked, like any save mid-flight (the cargo aboard is not kept either)")
+	check_eq(t.breakaway.used, 1, "but the count is")
+	s.dispose()
+	t.dispose()
 
 
 func test_paying_off_a_raid_lets_the_count_go_on() -> void:

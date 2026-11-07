@@ -166,6 +166,14 @@ func _free(way: String) -> void:
 	if sess.fm != null:
 		sess.fm.apply_loadout(sess.loadout)  # a load lighter: the aircraft flies it
 	covered = way != "run"
+	var r := resume
+	var af := resume_af
+	var ids := held
+	resume = ""
+	resume_af = ""
+	held = []
+	if way != "run":
+		sess._after_breakaway(r, af, ids)  # still parked: what the stop interrupted goes on (first: a landing settles the case)
 	if sess.police != null:
 		var c = sess.police.case("runner")
 		c.suspicion = minf(100.0, c.suspicion + float({"run": HEAT_RUN, "dump": HEAT_DUMP, "pay": HEAT_PAY}[way]))
@@ -175,14 +183,6 @@ func _free(way: String) -> void:
 		"pay": "Free. The officer's pocket is heavier."}[way]
 	sess.say("BREAKAWAY: " + line)
 	sess.bus.emit("broke_away", sess.time, line, ["runner", "law"], {"how": how, "way": way})
-	var r := resume
-	var af := resume_af
-	var ids := held
-	resume = ""
-	resume_af = ""
-	held = []
-	if way != "run":
-		sess._after_breakaway(r, af, ids)  # still parked: what the stop interrupted goes on
 
 
 ## A breakable stop at the spot that was settled (dumped or paid), within the alert after it: nobody stops him twice for it.
@@ -200,21 +200,15 @@ func cancel() -> void:
 	lose = []
 
 
+## Only the count and the alert are kept: the strategic save does not keep the cargo aboard or a count under way, so a stop
+## under way at the save is not kept either (it comes back parked and empty-handed, as any save mid-flight does).
 func capture() -> Dictionary:
-	return {"how": how, "until": until, "at": at.duplicate(), "day": day, "used": used, "last_free": last_free, "covered": covered,
-		"resume": resume, "resume_af": resume_af, "held": held.duplicate(), "lose": lose.duplicate()}
+	return {"day": day, "used": used, "last_free": last_free}
 
 
 func restore(d: Dictionary) -> void:
-	how = str(d.get("how", ""))
-	until = float(d.get("until", -1.0))
-	var a: Array = d.get("at", [0.0, 0.0])
-	at = [float(a[0]), float(a[1])]
+	cancel()
+	covered = false
 	day = int(d.get("day", -1))
 	used = int(d.get("used", 0))
 	last_free = float(d.get("last_free", -1e9))
-	covered = bool(d.get("covered", false))
-	resume = str(d.get("resume", ""))
-	resume_af = str(d.get("resume_af", ""))
-	held = Array(d.get("held", [])).map(func(x): return int(x))
-	lose = Array(d.get("lose", [])).map(func(x): return int(x))
