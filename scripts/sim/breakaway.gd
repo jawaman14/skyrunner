@@ -34,6 +34,11 @@ var at := [0.0, 0.0]  ## where the pilot was stopped
 var day := -1  ## the island day the count below is for
 var used := 0  ## breakaways started today
 var last_free := -1e9  ## when the last one got away (the alert)
+var covered := false  ## dumped or paid: the stop is settled, and nobody at this spot stops him again until he leaves (or ALERT_S passes)
+var resume := ""  ## what the stop interrupted, picked up again once it is settled: "arrive" (the landing) or "unload" (the count)
+var resume_af := ""  ## the airfield of an interrupted landing
+var held: Array = []  ## job ids being counted out when a raid stopped it
+var lose: Array = []  ## job ids gone however he gets out (a sting's load: the Agency's buyer was the DEA)
 
 
 func _init(sess_) -> void:
@@ -74,6 +79,11 @@ func start(how_: String) -> void:
 		used = 0
 	used += 1
 	how = how_
+	covered = false
+	resume = ""
+	resume_af = ""
+	held = []
+	lose = []
 	until = sess.time + WINDOW_S
 	at = [sess.state.x, sess.state.y]
 	var line := "STOPPED (%s). %d s to get out: take off and get clear, 1 dump the load, 2 pay him off ($%s)." % [
@@ -98,14 +108,19 @@ func bribe() -> int:
 
 ## Each tick while a window is open: clear of the stop in the air is a run; the window shutting is the bust.
 func update() -> void:
+	var s = sess.state
+	if covered and not s.on_ground and PyMath.hypot(s.x - float(at[0]), s.y - float(at[1])) >= RUN_M:
+		covered = false  # gone from the stop: the next one is a new one
 	if not active():
 		return
-	var s = sess.state
+	if sess.phase in ["crashed", "busted"]:
+		cancel()  # the flight ended some other way
+		return
 	if not s.on_ground and PyMath.hypot(s.x - float(at[0]), s.y - float(at[1])) >= RUN_M:
 		_free("run")
 	elif sess.time >= until:
 		var h := how
-		until = -1.0
+		cancel()
 		sess.say("Out of time.")
 		sess._bust_now(h)
 
@@ -123,6 +138,7 @@ func dump() -> Array:
 		sess.loadout.remove_job(j.id)
 		sess.active_jobs.erase(j)
 	sess.unloading = []  # (the cash bags aboard stay: money isn't contraband)
+	held = []
 	_free("dump")
 	return [true, "You left them the load and walked."]
 
@@ -142,6 +158,14 @@ func pay() -> Array:
 func _free(way: String) -> void:
 	until = -1.0
 	last_free = sess.time
+	for id in lose:
+		for j in sess.active_jobs.filter(func(j): return j.id == id):
+			sess.loadout.remove_job(j.id)
+			sess.active_jobs.erase(j)
+	lose = []
+	if sess.fm != null:
+		sess.fm.apply_loadout(sess.loadout)  # a load lighter: the aircraft flies it
+	covered = way != "run"
 	if sess.police != null:
 		var c = sess.police.case("runner")
 		c.suspicion = minf(100.0, c.suspicion + float({"run": HEAT_RUN, "dump": HEAT_DUMP, "pay": HEAT_PAY}[way]))
@@ -151,15 +175,34 @@ func _free(way: String) -> void:
 		"pay": "Free. The officer's pocket is heavier."}[way]
 	sess.say("BREAKAWAY: " + line)
 	sess.bus.emit("broke_away", sess.time, line, ["runner", "law"], {"how": how, "way": way})
+	var r := resume
+	var af := resume_af
+	var ids := held
+	resume = ""
+	resume_af = ""
+	held = []
+	if way != "run":
+		sess._after_breakaway(r, af, ids)  # still parked: what the stop interrupted goes on
+
+
+## A breakable stop at the spot that was settled (dumped or paid), within the alert after it: nobody stops him twice for it.
+func settled_here() -> bool:
+	var s = sess.state
+	return covered and sess.time - last_free < ALERT_S and PyMath.hypot(s.x - float(at[0]), s.y - float(at[1])) < RUN_M
 
 
 ## A second stop while a window is open: no second chance.
 func cancel() -> void:
 	until = -1.0
+	resume = ""
+	resume_af = ""
+	held = []
+	lose = []
 
 
 func capture() -> Dictionary:
-	return {"how": how, "until": until, "at": at.duplicate(), "day": day, "used": used, "last_free": last_free}
+	return {"how": how, "until": until, "at": at.duplicate(), "day": day, "used": used, "last_free": last_free, "covered": covered,
+		"resume": resume, "resume_af": resume_af, "held": held.duplicate(), "lose": lose.duplicate()}
 
 
 func restore(d: Dictionary) -> void:
@@ -170,3 +213,8 @@ func restore(d: Dictionary) -> void:
 	day = int(d.get("day", -1))
 	used = int(d.get("used", 0))
 	last_free = float(d.get("last_free", -1e9))
+	covered = bool(d.get("covered", false))
+	resume = str(d.get("resume", ""))
+	resume_af = str(d.get("resume_af", ""))
+	held = Array(d.get("held", [])).map(func(x): return int(x))
+	lose = Array(d.get("lose", [])).map(func(x): return int(x))

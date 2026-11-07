@@ -15,6 +15,8 @@ func _first_missions() -> bool:
 
 func _crash(reason: String) -> void:
 	phase = "crashed"
+	if breakaway != null:
+		breakaway.cancel()  # crashed getting away: that ends the stop too
 	var fee := 0 if _first_missions() else maxi(2500, int(spec.price * 0.12))
 	move_money(-fee, "outside:market", "repair")
 	var lost := active_jobs.size()
@@ -35,12 +37,27 @@ func _bust(how: String, breakable := false) -> void:
 	if agency != null and agency.quash(how):
 		return  # friends in Washington
 	if breakaway != null:
+		if breakable and not breakaway.active() and breakaway.settled_here():
+			return  # dumped or paid here already: the same stop does not come round again
 		if breakaway.active():
 			breakaway.cancel()  # stopped again while getting away: no second chance
 		elif breakable and breakaway.can_start():
 			breakaway.start(how)
 			return
 	_bust_now(how)
+
+
+## A Breakaway settled by dumping or paying while still parked: the landing or the count it interrupted goes on.
+func _after_breakaway(kind: String, af_code: String, ids: Array) -> void:
+	if phase != "parked":
+		return
+	match kind:
+		"arrive":
+			var af := World.airfield(af_code)
+			if af != null:
+				_arrive(af, state)
+		"unload":
+			unloading = active_jobs.filter(func(j): return j.id in ids)
 
 
 ## The bust itself: what a stop has always been, and what a Breakaway window running out comes to.
@@ -169,8 +186,13 @@ func _arrive(af: Airfield, s: FlightModel.FlightState) -> void:
 		island.on_arrive()  # the General's men, not the task force
 	elif police.landing_check(s, af, carrying_hot(), "runner", CoverCargo.factor(loadout.items.values())):
 		_bust("arrested on landing at %s" % af.name, true)
-		if phase == "busted" or (breakaway != null and breakaway.active()):
+		if breakaway != null and breakaway.active():
+			breakaway.resume = "arrive"  # settled (dumped or paid), the landing goes on: _after_breakaway
+			breakaway.resume_af = af.code
+			log.airborne = false  # this landing is handled: no second check next frame
 			return  # (stopped and getting out: nothing is delivered while the officer is at the door)
+		if phase == "busted":
+			return
 		phase = "parked"
 	var waiting := active_jobs.filter(func(j): return j.dest == af.code and not Gigs.done(j))
 	if not waiting.is_empty():
@@ -444,9 +466,17 @@ func _complete_delivery(job: Jobs.Job, af: Airfield) -> void:
 	if job.agency and agency != null:
 		if agency.flight_done(job):
 			# the Company let the DEA have this one: the strip was a sting
+			# off the job list before the stop, as it always was (so Washington's protection reads it as it did)
 			active_jobs.erase(job)
-			loadout.remove_job(job.id)
+			var may_break := breakaway != null and breakaway.can_start()
+			if not may_break:
+				loadout.remove_job(job.id)
 			_bust("a DEA sting at %s - the Agency's contact never came" % af.name, true)
+			if breakaway != null and breakaway.active():
+				active_jobs.append(job)  # still aboard while he gets out: dump it, or it is burned anyway
+				breakaway.lose.append(job.id)
+			elif may_break:
+				loadout.remove_job(job.id)
 			return
 	if Arsenal.REALISM and not job.weapons.is_empty() and job.gun_mode == "stock" and not job.agency:
 		_stock_weapons(job.weapons, "")
@@ -495,13 +525,17 @@ func _unload_tick(dt: float) -> void:
 	if unloading.is_empty():
 		return
 	var s := state
-	for u in police.units:
+	var watched := breakaway == null or not breakaway.settled_here()  # paid off or dumped here: the count goes on under their eyes
+	for u in (police.units if watched else []):
 		if (u.faction() == "police" and u.state != "crashed"
 				and PyMath.hypot(u.x - s.x, u.y - s.y) < RAID_RANGE_M and u.z - s.alt < 600):
 			var held := unloading
 			unloading = []
 			_bust("raided on the ground at %s" % (airfield.name if airfield else "the strip"), true)
-			if phase != "busted" and (breakaway == null or not breakaway.active()):
+			if breakaway != null and breakaway.active():
+				breakaway.resume = "unload"  # settled, the count goes on: _after_breakaway
+				breakaway.held = held.map(func(j): return j.id)
+			elif phase != "busted":
 				unloading = held  # quashed: the count goes on
 			return
 	unload_t -= dt

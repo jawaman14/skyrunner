@@ -183,3 +183,107 @@ func test_off_means_the_old_bust() -> void:
 	check_eq(s.phase, "busted", "the bust as it always was")
 	s.dispose()
 	Breakaway.ENABLED = true
+
+
+# ------------------------------------------------------------------ the review's cases (#517)
+func _landed_at_quarry() -> Array:
+	var s := Session.new({"seed": 3, "location": "QRY", "features": Session.SANDBOX_FEATURES})
+	s.update(1.0 / 30)
+	var job: Jobs.Job = Py.first(s.boards["QRY"], func(j): return j.hot() and not j.is_airdrop())
+	job.dest = "QRY"
+	s.accept_job(job)
+	s.loadout.pending.clear()
+	s._arrive(s.airfield, s.state)
+	return [s, job]
+
+
+func test_an_arrest_on_landing_is_checked_once_and_paying_lets_the_landing_go_on() -> void:
+	var s := _sess()
+	var c = s.police.case("runner")
+	var af: Airfield = Py.first(s.world.airfields, func(a): return a.police)
+	s.police.frozen = false
+	s.police.units.clear()
+	c.wanted = 1  # a wanted pilot at a police field: the landing check says yes every time it is asked
+	s.money = 100000
+	s.phase = "parked"
+	s.log.airborne = true
+	s._arrive(af, s.state)
+	check(s.breakaway.active(), "stopped on landing")
+	check(not s.log.airborne, "this landing is handled: the next frame does not check it again")
+	var r: Array = s.breakaway.pay()
+	check(r[0], str(r))
+	check(not s.breakaway.active() and s.phase == "parked", "paid, and still parked: the landing went on (%s)" % s.phase)
+	check_eq(_busts(s), 0, "the same officer did not stop him again")
+	s.dispose()
+
+
+func test_paying_off_a_raid_lets_the_count_go_on() -> void:
+	var r := _landed_at_quarry()
+	var s: Session = r[0]
+	var job: Jobs.Job = r[1]
+	s.money = 100000
+	var af := World.airfield("QRY")
+	s.police.units.append(PoliceSystem.Pursuer.new("heli", af.x + 800, af.y, s.state.alt + 150, 0.0, [0, 0], {"id": "Hawk-9"}))
+	for i in 20:
+		s.update(0.1)
+	check(s.breakaway.active() and s.unloading.is_empty(), "raided: the count stopped")
+	check(s.breakaway.pay()[0], "paid")
+	check(s.unloading == [job], "the count goes on")
+	var m: int = s.money
+	for i in 62 * 10:
+		s.update(0.1)
+	check(s.phase != "busted" and not (job in s.active_jobs) and s.money > m, "and the load is delivered and paid, with the helicopter still there")
+	s.dispose()
+
+
+func test_dumping_lightens_the_aircraft() -> void:
+	var r := _landed_at_quarry()
+	var s: Session = r[0]
+	var w0 := _stations(s)
+	s._bust("raided on the ground at Quarry", true)
+	check(s.breakaway.dump()[0], "dumped")
+	check(_stations(s) < w0, "the flight model carries less: %.0f < %.0f lb" % [_stations(s), w0])
+	s.dispose()
+
+
+func _stations(s: Session) -> float:
+	var t := 0.0
+	for st in s.fm.fdm.stations:
+		t += float(st.lb)
+	return t
+
+
+func test_a_crash_ends_the_window() -> void:
+	var s := _sess()
+	_load(s)
+	s._bust("arrested on landing at Harbor", true)
+	s._crash("Ran off the strip into rough ground")
+	check(not s.breakaway.active(), "crashed getting away: no stop left to run out")
+	s.time += Breakaway.WINDOW_S + 1.0
+	s.breakaway.update()
+	check_eq(_busts(s), 0, "and no arrest after the crash")
+	s.dispose()
+
+
+func test_a_sting_keeps_its_load_aboard_until_he_is_out() -> void:
+	var s := Session.new({"seed": 6, "map_seed": MapCity.SEED, "location": "QRY", "features": Session.SANDBOX_FEATURES, "family": true, "agency": true})
+	s.police.frozen = true
+	s.family.ai = false
+	s.update(1.0 / 30)
+	var j = null
+	for i in 400:
+		var k = s.agency.job_from(World.airfield("QRY"), s.world.airfields)
+		if k != null and s.agency.stings.has(k.id):
+			j = k
+			break
+	s.active_jobs.append(j)
+	check(not s.agency.protecting(), "no call from Washington for that one")
+	s._complete_delivery(j, World.airfield(j.dest))
+	check(s.breakaway.active(), "stopped")
+	check(j in s.active_jobs, "the load is still aboard")
+	if j.hot():
+		check(s.breakaway.bribe() > Breakaway.BRIBE_BASE, "and the bribe counts it")
+	s.money = 1000000
+	check(s.breakaway.pay()[0], "paid")
+	check(not (j in s.active_jobs), "the sting's load is gone however he gets out")
+	s.dispose()
