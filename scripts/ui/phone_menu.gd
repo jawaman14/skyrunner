@@ -918,7 +918,7 @@ static func books_line(biz: Businesses, id: String) -> String:
 		line += ", %d lb on the shelf" % int(v.shelf)
 	if str(v.manager) != "":
 		line += ". %s runs it %s: %s" % [v.manager, v.shift, Businesses.ORDER_TEXT.get(str(v.order), str(v.order))]
-	if bool(v.front):
+	if bool(v.front) and Laundering.ENABLED:
 		line += ". Washes $%s a night (tonight $%s)" % [Py.money(int(v.allowance)), Py.money(int(v.washed))]
 		if int(v.waiting) > 0:
 			line += ", $%s on its way clean" % Py.money(int(v.waiting))
