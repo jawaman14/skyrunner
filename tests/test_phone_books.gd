@@ -116,3 +116,23 @@ func test_w_washes_street_cash_through_a_front() -> void:
 	_menu.key("w")
 	check_eq(int(s.businesses.wash.washed.get("biz-4", 0)), 2500, "W: the night's allowance, no heat")
 	check(_text(_menu).any(func(r): return str(r).contains("$2,125 on its way clean")), "and the line shows it coming: %s" % [_text(_menu)])
+
+
+func test_the_stock_ledger_page() -> void:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES, "trade": true, "logistics": true})
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	var st: String = s.logistics.stock.keys()[0]
+	s.logistics.book("outside:growers", "stash:" + st, "marijuana", 40.0, "arrive")
+	s.logistics.stock[st]["marijuana"] = float(s.logistics.stock[st].get("marijuana", 0.0)) + 40.0
+	_menu = PhoneMenu.new()
+	Engine.get_main_loop().root.add_child(_menu)
+	_menu.setup(s)
+	_menu.open()
+	_menu.open_app("empire")
+	check(_menu._empire.has("stock"), "Empire lists the stock ledger")
+	_menu.list.select(_menu._empire.find("stock"))
+	_menu.key("enter")
+	check_eq(_menu.page, "stock", "ENTER opens it")
+	check(_text(_menu).any(func(r): return str(r).contains("lb marijuana at %s, grade 50%%" % s.logistics.name_of(st))), "the lot, where and its grade: %s" % [_text(_menu)])
+	check(_menu.footer.text.contains("lb held, worth $"), "the header sums it: %s" % _menu.footer.text)

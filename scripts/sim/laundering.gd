@@ -131,7 +131,7 @@ func launder(id: String, amount: int, o := "org", stash := "") -> String:
 	var t: float = biz.sess.time
 	if o == "org":
 		var lg = biz.sess.logistics
-		lg.cash[stash] = int(lg.cash[stash]) - n
+		lg.cash[stash] = float(lg.cash[stash]) - float(n)  # the stashes' cash is kept as floats
 		lg.book_cash(Logistics.STREET, Businesses.till(id), float(fee), "sales")
 		lg.book_cash(Logistics.STREET, wash_account(id), float(net), "transfer")
 	else:

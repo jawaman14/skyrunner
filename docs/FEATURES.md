@@ -7,10 +7,10 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 
 | Status | Means | Count |
 |---|---|---|
-| Built | On `main` and wired into play (most behind an on-by-default switch). Automated tests only unless PROJECT_STATUS says a person checked it | 112 |
+| Built | On `main` and wired into play (most behind an on-by-default switch). Automated tests only unless PROJECT_STATUS says a person checked it | 122 |
 | In PR | Finished on a branch with tests, waiting on review and merge (#491, #493 to #497) | 9 |
-| Half done | Some code merged, but incomplete: a model with no call sites, part of the scope missing, or a gap found by measurement | 8 |
-| Planned | Decided or designed (a DECISIONS row, a DESIGN section or a roadmap slice), no gameplay code yet | 54 |
+| Half done | Some code merged, but incomplete: a model with no call sites, part of the scope missing, or a gap found by measurement | 10 |
+| Planned | Decided or designed (a DECISIONS row, a DESIGN section or a roadmap slice), no gameplay code yet | 42 |
 | Paused | Planned, then parked by D-75 until the Living District gate | 12 |
 | Deferred | On ROADMAP's Deferred list | 6 |
 | Removed | Built, then deliberately taken out | 2 |
@@ -113,7 +113,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Early-game content | Goal markers and HUD NEXT line | Built |  | D-92 |
 | Businesses | Hotel Cielo casino on Isla Soberana, the tables, walkable | Built | DESIGN §40-42 |  |
 | Businesses | Car dealership | Built | DESIGN §43 |  |
-| Businesses | Laundering on one authority (fronts, nightly cap, delay) | Planned | DESIGN §51 slice 5 |  |
+| Businesses | Laundering through the fronts (nightly allowance, soft ceiling, fee, delay) | Built | DESIGN §72; the casino cage stays its own path | #535 |
 
 ### Logistics, stock and arms
 
@@ -127,7 +127,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Physical logistics | Stash works (two works, two levels) | Built | DESIGN §28 |  |
 | Stock rework (DESIGN §51) | Stock lots with grade, age, provenance | Half done | StockLot, StockLedger, StockValue exist with tests; no gameplay call sites | slice 2 |
 | Stock rework (DESIGN §51) | Pickup orders and the pickup person; gun dealer replaces sell/keep | Half done | PickupOrder lifecycle model only | slice 3 |
-| Stock rework (DESIGN §51) | Storage places and the stock ledger screen | Planned |  | slice 4 |
+| Stock rework (DESIGN §51) | Storage places and the stock ledger screen | Half done | The ledger (lots, place, grade, age, best named quote) on the phone, DESIGN §73; storage caps and costs not built | slice 4 |
 | Stock rework (DESIGN §51) | Crew relationships, rackets that close under heat | Planned |  | slice 6 |
 | Stock rework (DESIGN §51) | Chapter objectives with deadlines, boss-level unlocks | Planned |  | slice 7 |
 | Arms and ammunition (DESIGN §50) | Arsenals for all three factions, gun runs, police arm from seizures | Built | Arsenal.REALISM |  |
@@ -211,7 +211,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Takeover and boss layer | Rafa killed by Los Cuervos (heard, not seen) in chapter 4 | Planned |  | D-09 · D-78 |
 | Takeover and boss layer | Half the empire survives the takeover | Planned | Own RNG stream | D-35 |
 | Takeover and boss layer | Boss layer: organise; delivering optional, direct play stays first-class | Planned |  | D-58 · D-79 |
-| Takeover and boss layer | Delegating a flight costs money | Planned |  | D-10 |
+| Takeover and boss layer | Delegating a flight costs money | Built | DESIGN §69 | D-10 |
 | Takeover and boss layer | Succession: next in line takes over when the boss dies or is jailed | Planned |  | D-82 |
 | Campaign pivot (Phase 3) | Story v6: Blotter, The House, arena become optional ventures | Planned |  | D-77 |
 | Campaign pivot (Phase 3) | Goals counted by org (direct or delegated) | Planned | Needs F-5 |  |
@@ -226,19 +226,19 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Foundations | F-2 ledger wrap: money and law funds booked as transfers | Built | ledger.gd; war chests tracked | D-65 |
 | Foundations | F-3 named transfers by domain | In PR | 166 named sites, 0 raw; an hour of live play books nothing unattributed | #496 |
 | Foundations | F-4 inventory lots and locations | Half done | Pure model plus a session wrap; call sites not moved |  |
-| Foundations | F-5 command_as and actors; job_delivered gets by and mode | Planned | job_delivered payload has neither yet | B-7 |
+| Foundations | F-5 command_as and actors; job_delivered gets by and mode | Built | Actor, command_as (L-3), Session.deliver by and mode (L-5) | B-7 |
 | Foundations | F-6 scheduler and daily books; nights become a report | Planned | No Nights.ENABLED switch yet | D-67 |
 | Foundations | F-7 desk time acceleration x1/x4/x16/x60 | Planned | After D-12 | D-85 |
-| Living District (P0 gate) | L-1 business entities and San Telmo Centro district state | Planned |  | D-72 |
-| Living District (P0 gate) | L-2 product chain on the ledger plus a legit import-to-retail chain | Planned |  |  |
-| Living District (P0 gate) | L-3 Morettis as an economic org; org AI v1 | Planned |  | D-84 |
-| Living District (P0 gate) | L-4 desk business books, staff, orders, blocked reasons | Planned |  | D-69 |
-| Living District (P0 gate) | L-5 direct vs delegated delivery equivalence | Planned |  | D-66 |
-| Living District (P0 gate) | L-6 operations settle while the player is away | Planned |  |  |
-| Living District (P0 gate) | L-7 acceptance A1-A9, P1 perf, N-days balance sim | Planned | Then the owner's G1 playtest |  |
+| Living District (P0 gate) | L-1 business entities and San Telmo Centro district state | Built | DESIGN §64 | D-72 |
+| Living District (P0 gate) | L-2 product chain on the ledger plus a legit import-to-retail chain | Built | DESIGN §65-66 |  |
+| Living District (P0 gate) | L-3 Morettis as an economic org; org AI v1 | Built | DESIGN §67 | D-84 |
+| Living District (P0 gate) | L-4 desk business books, staff, orders, blocked reasons | Built | DESIGN §70, on the phone | D-69 |
+| Living District (P0 gate) | L-5 direct vs delegated delivery equivalence | Built | DESIGN §69 | D-66 |
+| Living District (P0 gate) | L-6 operations settle while the player is away | Built | DESIGN §68 |  |
+| Living District (P0 gate) | L-7 acceptance A1-A9, P1 perf, N-days balance sim | Built | DESIGN §71; then the owner's G1 playtest |  |
 | After the gate | Org depth: hierarchy, schedules, budgets | Planned | Phase 2 |  |
 | After the gate | Boss desk: worker control, area marking, heat map, ledger tab | Planned |  | D-62 |
-| After the gate | Detail levels (tick_full / tick_aggregate) | Planned | Required before a second city | D-68 |
+| After the gate | Detail levels (tick_full / tick_aggregate) | Half done | Both ticks exist (L-6); no district runs on the aggregate one yet | D-68 |
 | After the gate | Co-op authority: who's boss, disconnects, simultaneous orders | Planned | Phase 6 |  |
 
 ### Multiplayer and seats
