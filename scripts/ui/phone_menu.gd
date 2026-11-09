@@ -551,6 +551,12 @@ func _empire_parts() -> Array:
 	if s.businesses != null:
 		var ours: Array = s.businesses.ours()
 		parts.append(["Businesses", [["The books: %d of ours, the district's others" % ours.size(), "books"]]])
+	if s.trade != null:  # trust with each crew (D-11)
+		var crews := []
+		for c in s.trade.trust.view():
+			crews.append(["%s: trust %d" % [c.name, int(round(float(c.trust)))], ""])
+		if not crews.is_empty():
+			parts.append(["The crews", crews])
 	var turf := []
 	if s.rackets != null:
 		turf.append(["The collectors: the streets we hold", "rackets"])

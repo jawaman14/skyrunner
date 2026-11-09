@@ -2324,3 +2324,29 @@ Not yet: bulk sales to the buyers (`Trade.settle`, by truck) still pay the quote
 Not yet: the gun dealer on the same flow (replacing "sell / keep guns"), a worker sent to collect (the desk's `collect` order),
 choosing the contact and good on the phone, and rivals intercepting.
 
+
+## 76. Trust with each crew (D-11)
+
+`scripts/sim/trust.gd` (`Trust`, held by `Trade` as `trust`; switch `Trust.ENABLED`, in the parity set; no random draws). The five
+crews' standing with the organisation, 0 to 100, and the owner's table of who resents whom:
+
+| Up | Down |
+|---|---|
+| the Morettis | Los Cuervos (half the rise) |
+| Los Cuervos | the Morettis and the dealers (half) |
+| the Company | the Collective (a quarter) |
+| the Collective | the Company (a quarter) |
+| the dealers | Los Cuervos (a quarter) |
+
+- **Where each lives.** The Morettis' is the Family's respect, the Company's `Agency.trust`, the Collective's `Psychedelics.trust`
+  (each saved by its system); Los Cuervos' (20 to start) and the dealers' (50) are kept here and saved under `trust`. A crew whose
+  system is off this game has none.
+- **What moves it.** The organisation's own dealings go through `Trust.nudge`: a bulk sale to the Morettis (+2), the Company (+3) or
+  Los Cuervos (+2, their rifles), a buyer's order filled or left short (section 49), a pickup missed (section 75), a barter with the
+  Collective. Only a rise spreads; a crew falling out with us does its enemies no favour. The world's own events (story beats, the
+  Family's offers, the casino) still move the old standings directly and spread nothing.
+- **The phone.** Empire lists "The crews" with each one's trust.
+
+Not yet: what Los Cuervos' and the dealers' trust change (the dealers' arrests and skill, a truce with Los Cuervos), what anything
+raises the dealers' trust, and crew trust unlocking things at boss level (slice 7).
+

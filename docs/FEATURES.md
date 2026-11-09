@@ -163,7 +163,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Turf | Rackets: tribute and prisoners | Built | DESIGN §27 |  |
 | Turf | Renown | Built | DESIGN §25 |  |
 | Turf | Rival depot raid | Paused | To be redesigned on rival inventories | D-19 · D-75 |
-| Turf | Trust per crew with the trust table | Planned |  | D-11 |
+| Turf | Trust per crew with the trust table | Half done | The table and the five standings, moved by our dealings, on the phone (DESIGN §76); what Los Cuervos' and the dealers' trust change is not built | D-11 |
 | Hired hands | Payroll: roles, hiring hall, payday, skim/walk/snitch | Built | DESIGN §17 |  |
 | Hired hands | Workers as bodies on the map with task queues | Built | agent.gd |  |
 | Hired hands | Explicit assignments (product step 2, part one) | Built | Payroll's fixed assignments only |  |

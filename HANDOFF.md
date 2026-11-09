@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-09 - Claude, trust with each crew (D-11):** `Trust` on Trade: five standings (three wrapped, Los Cuervos' and the
+  dealers' new and saved); a rise lowers the enemies' per the owner's table; Empire lists the crews (DESIGN 76).
 - **2026-11-09 - Claude, stock bought upfront (51.2 slice 3, the sim):** `stock_order`/`pickup_cancel`; brought to a stash in a
   15-min window, collected by the pilot or a lookout; late once comes again (-3 standing), twice lost; saved; phone B (DESIGN 75).
 - **2026-11-09 - Claude, grades at the till (51.3 slice 2):** own loads carry their strip's grade, island cocaine 0.6; the

@@ -191,7 +191,10 @@ func barter(stash: String, lb: float) -> String:
 		held += sheets
 	weed_left -= lb
 	bartered += lb
-	trust = minf(100.0, trust + 0.6 * lb / 100.0)
+	if sess.trade != null:
+		sess.trade.trust.nudge("collective", 0.6 * lb / 100.0)  # and the Company a little less (D-11)
+	else:
+		trust = minf(100.0, trust + 0.6 * lb / 100.0)
 	if st != null:
 		st.heat += STASH_HEAT_PER_100LB * lb / 100.0
 	last = "Traded %d lb of grass for %.1f sheets with %s." % [int(lb), sheets, CHEMIST]
