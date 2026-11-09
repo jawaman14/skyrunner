@@ -117,7 +117,7 @@ Order (D-75): land the queue above and finish heat step 1, then:
      `cli.gd -- days`. Placing the businesses in the 3D world and the owner's G1 playtest remain. The days sim's first read
      (fronts with costs and no revenue) is answered by laundering (DESIGN §72, 9 November): both the club and the Morettis
      now run in the black; the prices are for the owner to weigh at G1.
-4. **After the gate:** organisation depth (hierarchy, schedules, budgets, conditional orders, trust D-11), then the campaign pivot
+4. **After the gate:** organisation depth (hierarchy, schedules, budgets, conditional orders; trust D-11's table is built, DESIGN 76), then the campaign pivot
    (story v6 with ventures, the takeover on the ledger, both views kept, the ending and the sandbox), then more cities, each fully explorable (D-81).
 
 Paused by D-75 until the gate: the presentation layers, heat steps 2-3 and the rival depot raid (the map redesign was resumed by D-86 on 30 October). Every PR keeps

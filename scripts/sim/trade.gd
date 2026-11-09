@@ -70,6 +70,7 @@ var street_earned := 0  ## $ from the dealers' corners only (earned also counts 
 var street_sales := {}  ## market -> $ a minute (the last minute, ours)
 var last := ""
 var bulk_log: Array = []  ## [time, buyer, good, qty] - what following the money finds
+var trust: Trust  ## trust with each crew and who resents whom (D-11)
 var orders: Orders = null  ## buyers' orders with deadlines that follow demand (set by the session; null without)
 var _t := 0.0
 var _war_t := 0.0
@@ -80,6 +81,7 @@ func _init(sess_, rng_: PyRandom, career_ := false) -> void:
 	sess = sess_
 	rng = rng_
 	career = career_
+	trust = Trust.new(sess_)
 	connected = not career
 	for b in BUYERS:
 		appetite[b] = {}
@@ -212,7 +214,7 @@ func _effects(buyer: String, good: String, qty: float, pay: int) -> void:
 	var mk: Market = sess.econ.market
 	match buyer:
 		"family":
-			sess.family.respect = minf(100.0, sess.family.respect + 2.0)
+			trust.nudge("family", 2.0)  # (D-11: Los Cuervos think less of us)
 			if good == "guns":
 				# the Family arms its crews and goes after Los Cuervos
 				if sess.ground != null:
@@ -224,7 +226,7 @@ func _effects(buyer: String, good: String, qty: float, pay: int) -> void:
 				mk.flow(good, "town", FLOOD_PER_LB[good] * qty * 1.5, "the Family is moving our product")
 		"agency":
 			var a = sess.agency
-			a.trust = minf(100.0, a.trust + 3.0)
+			trust.nudge("agency", 3.0)  # (D-11: the Collective a little less)
 			a.exposure = minf(100.0, a.exposure + 0.5)
 			if good == "guns":
 				a.war_chest = maxf(0.0, a.war_chest - pay * 0.2)
@@ -242,6 +244,8 @@ func _effects(buyer: String, good: String, qty: float, pay: int) -> void:
 				mk.demand_shock("guns", "west", 0.9, 30)
 			var c = sess.police.case("runner")
 			c.suspicion = minf(100.0, c.suspicion + 0.3 * qty)  # guns to a gang get noticed
+			if Trust.ENABLED:
+				trust.nudge("rival", 2.0)  # Los Cuervos like our rifles; the Morettis and the dealers don't (D-11)
 
 
 # ------------------------------------------------------------------ own loads

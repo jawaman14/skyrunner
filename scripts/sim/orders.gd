@@ -166,13 +166,7 @@ func _log(o: Dictionary, result: String, filled: float) -> void:
 
 ## The buyer's crew trusts us more or less (until the per-crew trust table of D-11 exists, the standing each crew already has).
 func _trust(buyer: String, delta: float) -> void:
-	match buyer:
-		"family":
-			if sess.family != null:
-				sess.family.respect = clampf(sess.family.respect + delta, 0.0, 100.0)
-		"agency":
-			if sess.agency != null:
-				sess.agency.trust = clampf(sess.agency.trust + delta, 0.0, 100.0)
+	trade.trust.nudge(buyer, delta)  # and its enemies, on a rise (D-11)
 
 
 func _remember() -> void:

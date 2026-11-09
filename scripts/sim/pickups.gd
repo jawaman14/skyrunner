@@ -160,14 +160,8 @@ func _late(o: Dictionary) -> void:
 
 
 func _trust(contact: String, delta: float) -> void:
-	var sess = lg.sess
-	match contact:
-		"family":
-			if sess.family != null:
-				sess.family.respect = clampf(sess.family.respect + delta, 0.0, 100.0)
-		"agency":
-			if sess.agency != null:
-				sess.agency.trust = clampf(sess.agency.trust + delta, 0.0, 100.0)
+	if lg.sess.trade != null:
+		lg.sess.trade.trust.nudge(contact, delta)
 
 
 func _finish(o: Dictionary, result: String) -> void:

@@ -25,7 +25,7 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-08 | 2026-10-12 | One saves folder, one file per mode, with a migration of old saves | done | SavePaths (main) |
 | D-09 | 2026-10-12 | The boss is the player's uncle, Rafael "Rafa" Quintero; chapter 2 reveals his business; Los Cuervos kill him in chapter 4 (heard, not seen); the player takes his seat with a crumbling empire | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
 | D-10 | 2026-10-12 | Delegating a flight costs money (you hire people out) | done | L-5, DESIGN §69: `delegate_job`, a 10% contract fee |
-| D-11 | 2026-10-12 | Reputation is trust with each crew; the trust table (Morettis up: Cuervos down; Cuervos up: Morettis and dealers down; Company up: Collective down a little; Collective up: Company down a little; dealers up: Cuervos down a little) | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
+| D-11 | 2026-10-12 | Reputation is trust with each crew; the trust table (Morettis up: Cuervos down; Cuervos up: Morettis and dealers down; Company up: Collective down a little; Collective up: Company down a little; dealers up: Cuervos down a little) | done | #539 (DESIGN 76) |
 | D-12 | 2026-10-12 | The 3D pilot app gets a fixed 30 Hz step with the picture smoothed between steps, as its own task | planned | ROADMAP: Forgotten or half done (found 18 October) |
 | D-13 | 2026-10-14 | Only ground cargo can be stolen, in a firefight; first missions are free and can be retried at the same airport | done | #377, #376 |
 | D-14 | 2026-10-16 | Outages: either agent takes over the other's work without asking | done | memory, board |

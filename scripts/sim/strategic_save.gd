@@ -147,6 +147,7 @@ static func _capture_world(s: Session, d: Dictionary) -> void:
 		d["family"] = SaveVars.capture(s.family, FAMILY)
 	if s.trade != null:
 		d["trade"] = SaveVars.capture(s.trade, TRADE)
+		d["trust"] = s.trade.trust.capture()  # Los Cuervos' and the dealers' standing (D-11); the others are saved by their systems
 		if s.trade.orders != null:
 			d["orders"] = SaveVars.capture(s.trade.orders, ORDERS)
 	if s.econ != null:
@@ -463,6 +464,7 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 		SaveVars.restore(s.family, d.family, FAMILY, FAMILY_INTS)
 	if s.trade != null and d.get("trade") is Dictionary:
 		SaveVars.restore(s.trade, d.trade, TRADE)
+		s.trade.trust.restore(d.get("trust", {}))  # an older save: they start wary
 		if s.trade.orders != null and d.get("orders") is Dictionary:
 			SaveVars.restore(s.trade.orders, d.orders, ORDERS, ORDERS_INTS)
 	if s.econ != null and d.get("econ") is Dictionary:
