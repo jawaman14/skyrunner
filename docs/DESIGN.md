@@ -2280,3 +2280,24 @@ room (`Trade.quote`), and the street at the markets where our corners are. The v
 The phone shows it: Empire > Money > "The stock ledger". Read-only: no switch, no draws, nothing saved. Open in slice 4: storage
 places with caps and costs (the section 51.4 table). Slice 2's call sites (grade and age moving the sale price) are the next step.
 
+
+## 74. Grades and age at the till (section 51.3, ROADMAP "Stock, ownership and the money loop" slice 2, first call sites)
+
+`scripts/sim/grades.gd` (`Grades`, switch `Grades.ENABLED`, in the parity set; no random draws, no stream). The inventory's lots
+already carried a quality, an origin and a birth time (F-4); this slice gives them meaning:
+
+- **Where a grade is set.** Our own loads take their strip's grade (`Grades.OWN`: FRM 0.5, PNR 0.6, EGL 0.45, COV 0.6, QRY 0.4,
+  MGR 0.55; any other strip 0.5): the load's lots aboard are stamped with it and the strip as provenance (`own:<code>`) when it is
+  delivered (`Inventory.stamp`, which only touches lots that arrived unnamed). The island's cocaine is booked in from
+  `outside:island` at 0.6 (it was an unnamed reconcile before). Everything else arriving from outside, and anything the old code
+  put in a stash without naming it, is 0.5.
+- **What it pays.** A dealer's sale is paid at the street price times what the lots sold fetch: (0.5 + grade), halved every
+  half-life the lot has aged (`StockValue.value`). Grass has a 10-day half-life; cocaine and acid keep. `Inventory.transfer` now
+  records what it moved (`last_moved`), and `Logistics.take_market` returns the pound-weighted multiplier with the pounds.
+- **Par stays par.** A lot at 0.5, fresh, pays exactly the street price, and the home farm (FRM) is 0.5, so the early game's money
+  is unchanged; the good strips pay up to 10% more and the poor ones up to 10% less, and the island's cocaine 10% more.
+- The stock ledger (section 73) shows each lot's grade, so a player can learn where the good grass grows.
+
+Not yet: bulk sales to the buyers (`Trade.settle`, by truck) still pay the quote regardless of grade; which buyers take which grade
+(the Family and the casino paying for high grades); cutting a lot; acid degrading; provenance making stolen stock traceable.
+

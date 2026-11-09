@@ -312,7 +312,7 @@ func _land(lb: float, near: Vector2) -> String:
 	var site: String = lg.site_at("HAR")
 	if site == "" or site == Logistics.HQ or sess.stash_net.get_stash(site).burned:
 		site = lg.nearest_stash(near)
-	lg.add(site, "cocaine", lb)
+	lg.add(site, "cocaine", lb, "island" if Grades.ENABLED else "")  # booked from outside:island, at the island's grade
 	sess.stash_net.get_stash(site).heat += StashNet.HEAT_DELIVERY  # the pickup from the port or the airport is traffic too
 	return "%d lb into %s" % [int(lb), lg.name_of(site)]
 

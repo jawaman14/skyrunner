@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-09 - Claude, grades at the till (51.3 slice 2):** own loads carry their strip's grade, island cocaine 0.6; the
+  street pays (0.5 + grade) and grass dries (10-day half-life); par (FRM, 0.5) unchanged (DESIGN 74).
 - **2026-11-09 - Claude, the stock ledger (51.4 slice 4, the ledger):** `StockLedger.of_session`: our lots by place, grade, age,
   at the best named open quote; Empire > Money on the phone (DESIGN 73). FEATURES rows caught up (L-1 to L-7, F-5, laundering).
 - **2026-11-09 - Claude, fronts wash street cash (51.5 slice 5):** `business_launder`; nightly allowance, 1.5x ceiling with heat, 15%
