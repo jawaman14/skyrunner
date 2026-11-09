@@ -11,6 +11,7 @@ var lots := {}  ## id -> {id, good, lb, origin, quality, heat, born, at}
 var log: Array = []  ## {id, t, lot, good, lb, from, to, reason, actor}, the latest KEEP_LOG
 var boundary := {}  ## good -> pounds in across outside:* minus pounds out: what `held` must equal
 var _serial := 0
+var last_moved: Array = []  ## {lb, quality, born} of what the last transfer() moved, oldest first (Grades: what a sale sold); not saved
 var _rows := 0
 
 
@@ -51,13 +52,30 @@ func transfer(from: String, to: String, good: String, lb: float, reason: String,
 			ids.append(id)
 	ids.sort()
 	var moved := 0.0
+	last_moved = []
 	for id in ids:
 		if lb - moved <= 0.0001:
 			break
 		var take := minf(lb - moved, float(lots[id].lb))
+		var q := float(lots[id].quality)
+		var born := float(lots[id].born)
 		if move(id, take, to, reason, actor, t) != 0:
 			moved += take
+			last_moved.append({"lb": take, "quality": q, "born": born})
 	return moved
+
+
+## Set the grade and provenance of the lots of `good` at `at` that arrived unnamed (origin ""): what the old code put somewhere
+## without saying where it came from, now that the caller knows (an own load aboard, say). Returns the pounds stamped.
+func stamp(at: String, good: String, quality: float, origin: String) -> float:
+	var n := 0.0
+	for id in lots:
+		var l: Dictionary = lots[id]
+		if l.at == at and l.good == good and str(l.origin) == "":
+			l.quality = clampf(quality, 0.0, 1.0)
+			l.origin = origin
+			n += float(l.lb)
+	return n
 
 
 ## The F-4 wrap: make `at` hold `value` pounds of `good` for a change the old code made directly. A shortfall arrives from

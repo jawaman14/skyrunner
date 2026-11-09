@@ -286,6 +286,8 @@ func delivered(job) -> void:
 		if site == "" or site == Logistics.HQ:
 			site = sess.logistics.nearest_stash(Vector2(af.x, af.y))
 		sess.logistics.sync_aircraft_load()  # the load aboard as it is now, so the move has lots to take
+		if Grades.ENABLED:  # our own load carries its strip's grade (Grades.own)
+			sess.inventory.stamp("aircraft:" + str(sess.aircraft_key), job.own_good, Grades.own(job.origin), "own:" + job.origin)
 		sess.inventory.transfer("aircraft:" + str(sess.aircraft_key), "stash:" + str(site), job.own_good, lb, "delivery", "runner", sess.time)
 		sess.logistics.add(site, job.own_good, lb)
 		sess.say("Delivered '%s': %d lb of %s into %s" % [job.title, int(lb), job.own_good, sess.logistics.name_of(site)])
@@ -401,16 +403,18 @@ func _sell_street(o: String, step: float) -> void:
 			g = "cocaine"
 		var lb: float = DEALER_LB_MIN[g] * mins * share * (0.6 + 0.8 * float(w.skill))
 		var site := ""
+		var grade := 1.0  ## what the lots sold fetch against the street price (Grades)
 		if lg != null:
 			var got: Array = lg.take_market(g, m, lb)
 			lb = got[0]
 			site = got[1]
+			grade = float(got[2])
 			sold[g] += lb
 		elif o == "org":
 			lb = minf(lb, stock[g])
 			stock[g] -= lb
 			sold[g] += lb
-		var pay := lb * street_price(g, m)
+		var pay := lb * street_price(g, m) * grade
 		if lg != null:
 			lg.add_cash(site, pay, "outside:street", "sales")  # the corner's money goes to the stash, not the club (a sale, L-2)
 		else:

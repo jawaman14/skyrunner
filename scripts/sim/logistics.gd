@@ -232,21 +232,23 @@ func in_market(g: String, m: String) -> float:
 
 
 ## Take up to `lb` from the market's stashes, fullest first. Returns
-## [taken, the stash it mostly came from].
+## [taken, the stash it mostly came from, what it fetches against the street price (Grades: its grade and age)].
 func take_market(g: String, m: String, lb: float) -> Array:
 	var sites: Array = sess.stash_net.live().filter(func(st): return st.zone == m and stock[st.id][g] > 0.0)
 	sites.sort_custom(func(a, b): return stock[a.id][g] > stock[b.id][g])
 	var got := 0.0
+	var worth := 0.0
 	var main: String = sites[0].id if not sites.is_empty() else ""
 	for st in sites:
 		var t := minf(stock[st.id][g], lb - got)
 		_inv("stash:" + str(st.id), Inventory.OUTSIDE + "street", g, t, "street sale")
+		worth += t * Grades.mult(g, sess.inventory.last_moved, t, sess.time)
 		stock[st.id][g] -= t
 		got += t
 		if got >= lb - 0.0001:
 			break
 	sync()
-	return [got, main]
+	return [got, main, worth / got if got > 0.0001 else 1.0]
 
 
 ## `from`/`reason`: where new money came from (a sale, a buyer); left empty, it is street money already on the books (a truck in).
@@ -1136,7 +1138,8 @@ func book(from: String, to: String, g: String, lb: float, reason: String) -> voi
 	if lb <= 0.0001 or g == "":
 		return
 	if from.begins_with(Inventory.OUTSIDE):
-		sess.inventory.add(g, lb, to, from.substr(Inventory.OUTSIDE.length()), "", 0.5, 0.0, sess.time)
+		var src := from.substr(Inventory.OUTSIDE.length())
+		sess.inventory.add(g, lb, to, src, src if Grades.ENABLED else "", Grades.source(src), 0.0, sess.time)
 		return
 	_inv(from, to, g, lb, reason)
 
