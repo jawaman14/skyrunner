@@ -78,10 +78,12 @@ var orders := {}  ## business id -> {order: restock|hold|skim, budget: $ a day t
 var _spend_left := {}  ## business id -> what is left of today's budget, during the close
 var _hour := -1  ## the last whole game hour the shoppers were run for (tick_full)
 var ai: OrgAI = null  ## the Morettis' and Los Cuervos' AI (L-3); null with OrgAI off, and then only ours run
+var wash: Laundering  ## the fronts' laundering (DESIGN 51.5)
 
 
 func _init(sess_) -> void:
 	sess = sess_
+	wash = Laundering.new(self)
 	for b in DATA:
 		_add(b.duplicate(true))
 	for d in [DISTRICT, "the-docks", "barrio-chino"]:
@@ -230,6 +232,7 @@ func _ours(id: String, o := "org") -> String:
 func _on_books(_e) -> void:
 	if sess == null:
 		return
+	wash.close()  # the night's deposits start over; the clean money that is due arrives
 	if ai != null:
 		ai.policy()  # the AI orgs top their tills up first, through command_as
 	_trade_day()
@@ -420,6 +423,7 @@ static func open_hours(b: Dictionary) -> Array:
 
 ## The detailed tick (P0 runs it everywhere): each game hour a shop is open, its shoppers buy that hour's share of the day.
 func tick_full(_dt: float) -> void:
+	wash.mature()
 	var now := int(floorf(float(sess.time) / 3600.0))
 	if _hour < 0:
 		_hour = now
@@ -482,7 +486,8 @@ func view(id: String) -> Dictionary:
 		"arrears": int(arrears.get(id, 0)), "blocked": str(blocked.get(id, "")), "rent": int(b.rent), "utilities": int(b.utilities),
 		"price": int(b.price), "chain": b.chain, "hours": b.hours.duplicate(), "stock": id, "shelf": snappedf(shelf(id), 0.1),
 		"manager": str(manager(id).name) if manager(id) != null else "", "shift": shift_text(b), "order": order_of(id),
-		"budget": int(orders.get(id, {}).get("budget", 0))}
+		"budget": int(orders.get(id, {}).get("budget", 0)), "front": Laundering.is_front(b), "allowance": wash.allowance(id),
+		"washed": int(wash.washed.get(id, 0)), "waiting": wash.waiting(id)}
 
 
 func ours() -> Array:
@@ -501,6 +506,7 @@ func capture() -> Dictionary:
 	d["safes"] = {"moretti": sess.ledger.balance("moretti:safe")}
 	if ai != null:
 		d["ai"] = ai.capture()
+	d["wash"] = wash.capture()
 	return d
 
 
@@ -532,3 +538,4 @@ func restore(d: Dictionary) -> void:
 			orders[str(k)] = {"order": str(d.orders[k].get("order", "restock")), "budget": int(d.orders[k].get("budget", 0))}  # an older save starts counting from the load
 	if ai != null and d.get("ai") is Dictionary:
 		ai.restore(d.ai)
+	wash.restore(d.get("wash", {}))  # an older save had nothing in the wash

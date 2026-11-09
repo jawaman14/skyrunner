@@ -55,6 +55,8 @@ func test_policy_tops_up_and_the_shops_trade() -> void:
 
 
 func test_an_empty_safe_is_a_logged_refusal() -> void:
+	var saved := Switches.snapshot()
+	Laundering.ENABLED = false  # with it, the rackets' washing pays the laundromat's rent from the fee (test_laundering)
 	var c := _city()
 	c.ledger.transfer("moretti:safe", "outside:market", c.ledger.balance("moretti:safe"), "purchase", "moretti", c.time)
 	c.businesses._on_books(null)
@@ -62,6 +64,7 @@ func test_an_empty_safe_is_a_logged_refusal() -> void:
 	check(int(c.businesses.arrears.get("biz-3", 0)) > 0, "and the laundromat owes")
 	check(c.businesses.blocked.has("biz-3"), "with its blocked reason")
 	c.dispose()
+	Switches.restore(saved)
 
 
 func test_los_cuervos_buy_a_corner_with_the_war_on() -> void:
