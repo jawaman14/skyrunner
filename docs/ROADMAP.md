@@ -334,6 +334,8 @@ a switch and tests first (an RNG stream and a BALANCE entry where the slice draw
 
 1. The design note (this section and DESIGN 51). (Claude)
 2. Stock lots with grade, age and provenance. This is the stock side of F-4 (`docs/EMPIRE_PIVOT.md`, inventory lots, each lot in exactly one location per `EMPIRE_SIMULATION_SPEC.md` section 4) and uses its single wrap-first save migration rather than a second one. (Claude)
+   **First call sites built (DESIGN 74):** own loads carry their strip's grade, the island's cocaine its own; the street pays for
+   the grade and age sold. Open: bulk sales by grade, buyers by grade, cutting, provenance of stolen stock.
 3. Orders and the pickup person; the gun dealer on the same flow, replacing "sell / keep guns". (Claude the sim, Codex the dealer scenes)
    **The sim is built (DESIGN 75):** order from the Morettis or the Company, paid upfront, brought to a stash in a window and
    collected by the pilot or a lookout; late, cancelled; saved. Open: the gun dealer on it, a worker sent to collect, interception.
