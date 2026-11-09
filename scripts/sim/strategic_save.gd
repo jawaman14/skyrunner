@@ -105,7 +105,7 @@ static func capture(s: Session) -> Dictionary:
 	if s.logistics != null:
 		var l: Logistics = s.logistics
 		d["logistics"] = {"stock": l.stock.duplicate(true), "cash": l.cash.duplicate(true), "cash_since": l.cash_since.duplicate(true),
-			"aboard": l.aboard, "lost": l.lost.duplicate(true), "lost_by": l.lost_by.duplicate(true)}
+			"aboard": l.aboard, "lost": l.lost.duplicate(true), "lost_by": l.lost_by.duplicate(true), "pickups": l.pickups.capture()}
 	if s.payroll != null:
 		d["payroll"] = _payroll(s)
 		d["people"] = s.payroll.people.capture()
@@ -364,6 +364,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		l.aboard = int(ld.get("aboard", 0))
 		l.lost = {"product": float(ld.get("lost", {}).get("product", 0.0)), "cash": int(ld.get("lost", {}).get("cash", 0))}
 		l.lost_by = _ints(ld.get("lost_by", l.lost_by))
+		if ld.get("pickups") is Dictionary:
+			l.pickups.restore(ld.pickups)  # an older save had no pickups on
 	if s.payroll != null and d.get("payroll") is Dictionary:
 		_restore_payroll(s.payroll, d.payroll)
 	if s.airframe != null and d.get("airframe") is Dictionary:

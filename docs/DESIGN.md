@@ -2280,3 +2280,25 @@ room (`Trade.quote`), and the street at the markets where our corners are. The v
 The phone shows it: Empire > Money > "The stock ledger". Read-only: no switch, no draws, nothing saved. Open in slice 4: storage
 places with caps and costs (the section 51.4 table). Slice 2's call sites (grade and age moving the sale price) are the next step.
 
+
+## 75. Stock bought upfront and collected (section 51.2, ROADMAP "Stock, ownership and the money loop" slice 3, the sim)
+
+`scripts/sim/pickups.gd` (`Pickups`, held by `Logistics` as `pickups`; switch `Pickups.ENABLED`, in the parity set; no random draws).
+`stock_order {contact, good, lb, stash}` buys product from a contact and pays upfront; `pickup_cancel {id}` calls it off.
+
+- **Sellers.** The Morettis (grass and cocaine, at 1.6 times the board's wholesale price) and the Company (cocaine, 1.4 times),
+  when `Trade.available` says their door is open; cocaine only once we are connected. 5 to 400 lb an order, three on at once.
+- **Where.** The owner's open question (section 51.4) is answered for this slice as "the contact comes to a stash": the lot is brought
+  to one of our stash houses (the one nearest the HQ by default). A fixed meeting spot is the other answer and changes only the place.
+- **The window.** It opens ten minutes after the order and stays open fifteen (section 51.9's 10 to 20; fixed, so no draw). Whoever
+  is at the stash in the window takes it in: the pilot (the aircraft stopped on the ground within 600 m, or on foot within 80 m) or a
+  lookout of ours posted there. The lot is booked into the stash from `outside:<contact>` and is ours from then on.
+- **Late.** Nobody there when the window closes: the crew's standing drops 3 (the Family's respect, the Company's trust) and the
+  contact brings it once more an hour on; late a second time, the lot and the money are gone. **Cancelled**, the money is lost.
+  **Intercepted** is in the model but nothing sets it yet (the rivals acting on pickups need their own stream).
+- **Saved** in the strategic save, under the logistics key; an older save has none.
+- **The phone.** The stock ledger page lists the pickups on with their countdown; **B** orders 50 lb of grass from the Morettis.
+
+Not yet: the gun dealer on the same flow (replacing "sell / keep guns"), a worker sent to collect (the desk's `collect` order),
+choosing the contact and good on the phone, and rivals intercepting.
+

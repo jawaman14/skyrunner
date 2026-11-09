@@ -147,6 +147,22 @@ static func _cmd_sell_product(role: String, a: Dictionary, session: Session):
 	return err if err != "" else null
 
 
+## Stock bought upfront (DESIGN 51.2): order `lb` of `good` from `contact` (family, agency), brought to `stash` in a window.
+static func _cmd_stock_order(_role: String, a: Dictionary, session: Session):
+	if session.logistics == null:
+		return "No stash houses in this game."
+	var err: String = session.logistics.pickups.order(str(a.get("contact", "")), str(a.get("good", "")), float(session._num(a, "lb", 0)), str(a.get("stash", "")))
+	return err if err != "" else null
+
+
+## Call off pickup `id` (the money paid is lost).
+static func _cmd_pickup_cancel(_role: String, a: Dictionary, session: Session):
+	if session.logistics == null:
+		return "No stash houses in this game."
+	var err: String = session.logistics.pickups.cancel(int(session._num(a, "id", -1)))
+	return err if err != "" else null
+
+
 ## Logistics: a truck of product between stashes, or to a buyer's meet.
 static func _cmd_move_goods(role: String, a: Dictionary, session: Session):
 	if session.logistics == null:

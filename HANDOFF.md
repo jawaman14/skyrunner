@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-09 - Claude, stock bought upfront (51.2 slice 3, the sim):** `stock_order`/`pickup_cancel`; brought to a stash in a
+  15-min window, collected by the pilot or a lookout; late once comes again (-3 standing), twice lost; saved; phone B (DESIGN 75).
 - **2026-11-09 - Claude, the stock ledger (51.4 slice 4, the ledger):** `StockLedger.of_session`: our lots by place, grade, age,
   at the best named open quote; Empire > Money on the phone (DESIGN 73). FEATURES rows caught up (L-1 to L-7, F-5, laundering).
 - **2026-11-09 - Claude, fronts wash street cash (51.5 slice 5):** `business_launder`; nightly allowance, 1.5x ceiling with heat, 15%

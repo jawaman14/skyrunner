@@ -47,6 +47,7 @@ const GROUPS := [
 	["Rides", ["taxi"]],
 ]
 const BOOKS_FUND := 1000  ## what F puts in a till on the Books page
+const STOCK_ORDER_LB := 50  ## what B orders on the stock ledger (DESIGN 51.2)
 const W := 380.0
 const H := 540.0
 
@@ -649,6 +650,11 @@ func key(k: String) -> void:
 			show_feedback(str(rm[1]) if not rm[0] else ("Orders: " + Businesses.ORDER_TEXT[s.businesses.order_of(bid)] if k == "o" else "Done."), bool(rm[0]))
 			refresh()
 		return
+	if page == "stock" and k == "b" and s.logistics != null:
+		var rb: Array = s.command(Roles.PILOT, "stock_order", {"contact": "family", "good": "marijuana", "lb": STOCK_ORDER_LB})
+		show_feedback("Ordered: the Morettis bring it to the stash nearest the HQ." if rb[0] else str(rb[1]), bool(rb[0]))
+		refresh()
+		return
 	if page == "books" and k == "w" and s.businesses != null:  # wash street cash through a front of ours (DESIGN 51.5)
 		var bw := list.selected_row()
 		if bw >= 0 and bw < _books_rows.size() and str(_books_rows[bw]) != "":
@@ -916,10 +922,25 @@ func _stock_page() -> void:
 	var book: Dictionary = StockLedger.of_session(s)
 	for r in book.rows:
 		list.add_row([stock_line(r, float(s.time))])
+	if s.logistics != null and Pickups.ENABLED:  # stock bought upfront and on its way to a stash (DESIGN 51.2)
+		var due: Array = s.logistics.pickups.view()
+		if not due.is_empty():
+			list.section("Pickups on")
+			for o in due:
+				list.add_row(["%d lb %s from %s to %s: %s" % [int(o.lb), o.good, o.name, o.place, pickup_state(o, float(s.time))]])
 	var t: Dictionary = book.totals
 	footer.text = "Nothing in the stashes, the aircraft or on the road." if book.rows.is_empty() else \
 		"%d lb held, worth $%s at the best open quotes%s." % [int(t.lb), Py.money(int(t.value)), (", %d lb of it hot" % int(t.hot_lb)) if float(t.hot_lb) >= 1.0 else ""]
-	hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
+	hints.set_hints([["UP/DOWN", "scroll", "down"], ["B", "order %d lb of grass from the Morettis" % STOCK_ORDER_LB, "b"], ["ESC", "back", "esc"]])
+
+
+static func pickup_state(o: Dictionary, now: float) -> String:
+	match str(o.state):
+		PickupOrder.ORDERED:
+			return "there in %d min%s" % [int(ceil((float(o.opens) - now) / 60.0)), " (missed once)" if int(o.missed) > 0 else ""]
+		PickupOrder.WINDOW:
+			return "waiting at the door, %d min left: be there or post a lookout" % int(ceil((float(o.closes) - now) / 60.0))
+	return str(o.state)
 
 
 static func stock_line(r: Dictionary, _now: float) -> String:

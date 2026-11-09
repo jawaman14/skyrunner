@@ -104,6 +104,8 @@ static func handlers() -> Dictionary:
 		"court_charge": Callable(COURT, "_cmd_court_charge"),
 		"court_offer_plea": Callable(COURT, "_cmd_court_offer_plea"),
 		"sell_product": Callable(TRADE, "_cmd_sell_product"),
+		"stock_order": Callable(TRADE, "_cmd_stock_order"),
+		"pickup_cancel": Callable(TRADE, "_cmd_pickup_cancel"),
 		"move_goods": Callable(TRADE, "_cmd_move_goods"),
 		"auto_supply": Callable(TRADE, "_cmd_auto_supply"),
 		"move_cash": Callable(TRADE, "_cmd_move_cash"),
