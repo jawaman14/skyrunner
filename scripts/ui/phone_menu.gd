@@ -430,6 +430,8 @@ func refresh() -> void:
 			_heat_page()
 		"books":
 			_books_page()
+		"stock":
+			_stock_page()
 		"radio":
 			title.text = "Radio"
 			if radio != null:
@@ -534,6 +536,8 @@ func _empire_parts() -> Array:
 		money.append([line, ""])
 	if s.logistics != null:
 		money.append(["Dispatch: move product and cash", "logistics"])
+	if s.trade != null:
+		money.append(["The stock ledger: what we hold, where, and who'd buy it", "stock"])
 	var fleet := [["Flying the %s" % s.spec.name, ""]]
 	if s.owned.size() > 1:
 		fleet.append(["Aircraft owned: %d" % s.owned.size(), ""])
@@ -716,7 +720,7 @@ func key(k: String) -> void:
 						waypoint_to.emit(Vector2(float(xy[0]), float(xy[1])))
 				"empire":
 					if i >= 0 and i < _empire.size() and str(_empire[i]) != "":
-						if str(_empire[i]) in ["heat", "books"]:
+						if str(_empire[i]) in ["heat", "books", "stock"]:
 							open_app(str(_empire[i]))
 							return
 						if not _can_call(str(_empire[i])):
@@ -903,6 +907,28 @@ func _books_page() -> void:
 	footer.text = "The day's rent and bills come out of each till at 06:00; what a till can't pay is owed, never taken from the safe."
 	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "buy", "enter"], ["F", "fund $%s" % Py.money(BOOKS_FUND), "f"],
 		["T", "take the till", "t"], ["W", "wash street cash", "w"], ["M", "who runs it", "m"], ["O", "orders", "o"], ["ESC", "back", "esc"]])
+
+
+## The stock ledger (DESIGN 51.4): every lot of product we hold, where, its grade and age, and what it would fetch now at the best
+## open buyer, highest first.
+func _stock_page() -> void:
+	title.text = "The stock ledger"
+	var book: Dictionary = StockLedger.of_session(s)
+	for r in book.rows:
+		list.add_row([stock_line(r, float(s.time))])
+	var t: Dictionary = book.totals
+	footer.text = "Nothing in the stashes, the aircraft or on the road." if book.rows.is_empty() else \
+		"%d lb held, worth $%s at the best open quotes%s." % [int(t.lb), Py.money(int(t.value)), (", %d lb of it hot" % int(t.hot_lb)) if float(t.hot_lb) >= 1.0 else ""]
+	hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
+
+
+static func stock_line(r: Dictionary, _now: float) -> String:
+	var age_h := float(r.age_s) / 3600.0
+	var line := "%d lb %s at %s, grade %d%%, %s old" % [int(r.lb), r.good, r.place, int(round(float(r.grade) * 100.0)),
+		("%d h" % int(age_h)) if age_h >= 1.0 else "under an hour"]
+	if str(r.buyer) == "":
+		return line + ": nobody is buying"
+	return line + ": $%s at %s (%s)" % [Py.money(int(r.value)), r.buyer, r.market]
 
 
 ## One business on the books, as the desk reads it.

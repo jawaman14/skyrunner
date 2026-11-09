@@ -2268,6 +2268,19 @@ doesn't fly). First run (seed 1, 14 days): our safe rises about $2,125 a day and
 $1,385 a day and buy the travel agency on day 4. Every number is a draft for the owner's G1.
 
 
+## 73. The stock ledger (section 51.4, ROADMAP "Stock, ownership and the money loop" slice 4, the ledger half)
+
+`StockLedger.of_session(sess)` lists every lot of product the organisation holds (the inventory's lots at a stash, on the aircraft
+or in a truck on the road; a business's shelf and anything outside are not ours) with its place by name, grade, age and heat, and
+values it at the **best open quote** for its good, with the buyer and market named: the bulk buyers whose door is open and who have
+room (`Trade.quote`), and the street at the markets where our corners are. The value is `StockValue.value` at that price (grade
+0.5 is the quote as given; the goods don't spoil yet, so age is shown but costs nothing). Rows are highest first, with totals
+(pounds, worth, hot pounds) for the header.
+
+The phone shows it: Empire > Money > "The stock ledger". Read-only: no switch, no draws, nothing saved. Open in slice 4: storage
+places with caps and costs (the section 51.4 table). Slice 2's call sites (grade and age moving the sale price) are the next step.
+
+
 ## 74. Grades and age at the till (section 51.3, ROADMAP "Stock, ownership and the money loop" slice 2, first call sites)
 
 `scripts/sim/grades.gd` (`Grades`, switch `Grades.ENABLED`, in the parity set; no random draws, no stream). The inventory's lots
