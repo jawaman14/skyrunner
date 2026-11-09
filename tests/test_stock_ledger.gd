@@ -57,3 +57,36 @@ func test_totals_sums_lb_value_and_hot_lb() -> void:
 	check(absf(float(totals["lb"]) - 40.0) < 0.0001, "lb sums every row")
 	check(absf(float(totals["value"]) - 210.0) < 0.0001, "value sums every row")
 	check(absf(float(totals["hot_lb"]) - 30.0) < 0.0001, "hot_lb sums only flagged lots")
+
+
+func _city_trade() -> Session:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES, "trade": true, "logistics": true})
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	return s
+
+
+func test_the_session_ledger_lists_our_lots_with_a_named_buyer() -> void:
+	var s := _city_trade()
+	var st: String = s.logistics.stock.keys()[0]
+	s.logistics.book("outside:growers", "stash:" + st, "marijuana", 40.0, "arrive")
+	s.logistics.stock[st]["marijuana"] = float(s.logistics.stock[st].get("marijuana", 0.0)) + 40.0
+	s.inventory.add("groceries", 50.0, "biz-9", "market", "", 0.5, 0.0, s.time)
+	var book: Dictionary = StockLedger.of_session(s)
+	var mine: Array = book.rows.filter(func(r): return r.good == "marijuana")
+	check(not mine.is_empty(), "our grass is on the ledger: %s" % [book.rows])
+	check(book.rows.all(func(r): return r.good in Trade.GOODS), "a business's shelf isn't the organisation's stock")
+	var r: Dictionary = mine[0]
+	check_eq(str(r.place), s.logistics.name_of(st), "by the stash's name")
+	check(str(r.buyer) != "" and str(r.market) != "", "valued at a named buyer and market: %s at %s" % [r.buyer, r.market])
+	var q: Dictionary = StockLedger.best_quote(s, "marijuana")
+	check(absf(float(r.value) - float(q.price) * float(r.lb) * (0.5 + float(r.grade))) < 0.01, "at the best open quote, by grade")
+	check(float(book.totals.lb) >= 40.0, "and the header sums it")
+	s.dispose()
+	World.use_map(0)
+
+
+func test_no_trade_no_rows() -> void:
+	var s := Session.new({"seed": 5, "location": "HAR"})
+	check(StockLedger.of_session(s).rows.is_empty(), "nothing held, nothing listed")
+	s.dispose()

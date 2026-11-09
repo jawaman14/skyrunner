@@ -19,7 +19,7 @@ build an empire from nothing, starting as a hired pilot. Four steps, in order:
 | 3. Faction competition and the civilian economy | **In progress** | Turf districts (#378), roadside truck fights (#384, #387) and the end of the rival plane and air hijack (#377, #388) are on main. The visible territory map is #494. Every rival inflow is a named ledger account in #496; removing them (D-65) waits on the Living District. Rival depot raid paused (D-75). |
 | 4. Multiplayer: co-op and competitive modes for 2–16 players | **Furthest along** | Host service steps 1–9 of #97, protocol v3, seats, voice and the waiting room are on main. Two-machine play and voice are not yet verified by a person. New multiplayer features wait on the Living District (D-71). |
 
-The full mechanic-by-mechanic status (112 built, 9 in PR, 8 half done, 54 planned, 12 paused) is in [FEATURES.md](FEATURES.md).
+The full mechanic-by-mechanic status (122 built, 9 in PR, 10 half done, 42 planned, 12 paused) is in [FEATURES.md](FEATURES.md).
 
 ## Owner decisions of 17 October
 
@@ -114,8 +114,9 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - Progress on 8 November: L-1 to L-7 are built (DESIGN §64 to §71): the twelve businesses with tills and costs, the
      product chain's money and the legit chain on the ledger and inventory, the Morettis and Los Cuervos on org AI v1, the books
      with staff and orders on the phone, delegated deliveries (D-10), leaving the district, and the acceptance suite with P1 and
-     `cli.gd -- days`. Placing the businesses in the 3D world and the owner's G1 playtest remain. The days sim's first read:
-     fronts have costs and no revenue yet (laundering not built), for the owner to weigh at G1.
+     `cli.gd -- days`. Placing the businesses in the 3D world and the owner's G1 playtest remain. The days sim's first read
+     (fronts with costs and no revenue) is answered by laundering (DESIGN §72, 9 November): both the club and the Morettis
+     now run in the black; the prices are for the owner to weigh at G1.
 4. **After the gate:** organisation depth (hierarchy, schedules, budgets, conditional orders, trust D-11), then the campaign pivot
    (story v6 with ventures, the takeover on the ledger, both views kept, the ending and the sandbox), then more cities, each fully explorable (D-81).
 
@@ -335,6 +336,8 @@ a switch and tests first (an RNG stream and a BALANCE entry where the slice draw
 2. Stock lots with grade, age and provenance. This is the stock side of F-4 (`docs/EMPIRE_PIVOT.md`, inventory lots, each lot in exactly one location per `EMPIRE_SIMULATION_SPEC.md` section 4) and uses its single wrap-first save migration rather than a second one. (Claude)
 3. Orders and the pickup person; the gun dealer on the same flow, replacing "sell / keep guns". (Claude the sim, Codex the dealer scenes)
 4. Storage places and the stock ledger. (Claude the data, Codex the screen)
+   **The ledger is built (DESIGN 73):** every lot of product we hold, by place, grade and age, at its best named open quote, on
+   the phone (Empire > Money). Open: storage caps and costs per place.
 5. Laundering: one authority (`HQ.Org`), fronts with a per-night cap and a delay; the casino path moves onto it. (Claude)
    **Built (DESIGN 72):** the Living District's fronts wash street cash (nightly allowance, soft ceiling with heat, fee, delay; the
    Morettis wash their rackets on the same rules). Open: the casino cage onto the same rules.
