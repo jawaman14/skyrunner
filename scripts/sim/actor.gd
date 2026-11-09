@@ -8,7 +8,7 @@ const ORG_OF_SIDE := {"runner": "org", "law": "police"}
 ## L-3: the organisations an AI runs (OrgAI) act in the boss's seat, but only for the commands that work on the actor's own org
 ## (its own safe, its own businesses). Anything else stays refused: they can't use the player's boss seat for the player's org.
 const AI_ORGS := ["rival", "moretti"]
-const AI_COMMANDS := ["business_buy", "business_fund", "business_take"]
+const AI_COMMANDS := ["business_buy", "business_fund", "business_take", "business_launder"]
 
 
 static func of(org: String, role: String, person := "") -> Dictionary:

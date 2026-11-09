@@ -184,6 +184,14 @@ static func _cmd_business_take(_role: String, a: Dictionary, session: Session):
 	return err if err != "" else null
 
 
+## Laundering (DESIGN 51.5): deposit `amount` of dirty money with front `id`; the organisation's comes from `stash` (or its richest).
+static func _cmd_business_launder(_role: String, a: Dictionary, session: Session):
+	if session.businesses == null:
+		return "There are no businesses on this map."
+	var err: String = session.businesses.wash.launder(str(a.get("id", "")), int(session._num(a, "amount", 0)), str(session.bus.actor.get("org", "org")), str(a.get("stash", "")))
+	return err if err != "" else null
+
+
 ## A delegated delivery (L-5, D-10): hand active job `job_id` to free pilot `pilot`, for the contract fee.
 static func _cmd_delegate_job(_role: String, a: Dictionary, session: Session):
 	if session.delegation == null:

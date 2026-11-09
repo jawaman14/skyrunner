@@ -2226,5 +2226,44 @@ A1 and A2 on the desk and the businesses, A3 the seven days, A5 the delegated de
 seed. The organisation buys the warehouse and funds it and the club; the AI orgs run theirs. Each close it prints every org's
 money, who owns what, what is owed and the AI's moves, and checks conservation. It replaces the HQ nights as the way to judge
 the empire's economy over weeks. Its first run reads that the fronts (the laundromat, the restaurant, the club) have costs and
-no revenue yet, so the Morettis lose about $590 a day and our club goes into arrears from day six. Revenue for fronts
-(laundering) is not built. The prices are left for the owner's G1 playtest.
+no revenue yet, so the Morettis lose about $590 a day and our club goes into arrears from day six. Laundering (section 72) gives
+the fronts their revenue; with it, the same run reads both in the black. The prices are left for the owner's G1 playtest.
+
+
+## 72. Fronts wash street cash (section 51.5, ROADMAP "Stock, ownership and the money loop" slice 5)
+
+`scripts/sim/laundering.gd` (`Laundering`, owned by `Businesses` as `wash`; switch `Laundering.ENABLED`, in the parity set; no random
+draws, so no stream). A **front** is a Living District business whose chain names "front": the laundromat, the club, the restaurant
+and the travel agency. `business_launder {id, amount, stash}` deposits dirty money with one of the org's fronts:
+
+| Front | Allowance a night | Delay | Heat per $1,000 over |
+|---|---|---|---|
+| Laundromat | $1,500 | 24 h | 10 |
+| Bar (the club) | $2,500 | 12 h | 6 |
+| Restaurant | $3,500 | 6 h | 3 |
+| Travel agency | $5,000 | 6 h | 1 |
+
+- The night is the period between two 06:00 books closes; the allowance resets at each close.
+- Up to the allowance a deposit adds no heat. Between it and the ceiling (1.5 times it) each $1,000 over adds the front's heat to
+  the runner's case suspicion. Above the ceiling a deposit is clamped, and refused once the ceiling is reached.
+- The front keeps 15% in its till, booked as sales: that is a front's revenue, and what pays its rent. The rest waits in the front's
+  wash account (`biz-N:wash`) for the delay, then moves to the owner's safe.
+- At each close, street cash over $25,000 adds 2 suspicion per $10,000 over: a large dirty balance is heat (section 51.5).
+- **Equal rules.** The organisation's dirty money is a stash's cash (`Logistics.STREET`; the richest stash if none is named). An AI
+  org's is its `<org>:dirty` account, fed at each close by the rackets it runs off the map (the Morettis $2,200 a day, from
+  `outside:rackets`); its policy layer washes it through its own fronts with `command_as`, never over the allowance. The AI orgs have
+  no case file, so the heat is ours only.
+- **Saved** with the businesses: the night's deposits, the money in the wash (the wash accounts restated from it) and the AI's dirty
+  accounts.
+- The phone's books show each front's allowance, tonight's deposits and what is on its way clean; **W** washes the night's
+  allowance from the richest stash.
+
+**Where it departs from section 51.5.** The note named `HQ.Org` as the one authority. `HQ.Org` is the HQ season's board, which the
+live game no longer plays through; the live game's businesses are the Living District's, so their fronts are the authority here and
+`HQ.Org` keeps its own rules for the season. The casino's cage (`Casino.launder`) is unchanged and still a separate, hourly path;
+moving it onto the fronts' rules is left open.
+
+**The "N days" sim with it.** `cli.gd -- days` now washes $2,500 of street cash a night through the club (the sales the district sim
+doesn't fly). First run (seed 1, 14 days): our safe rises about $2,125 a day and the club owes nothing; the Morettis gain about
+$1,385 a day and buy the travel agency on day 4. Every number is a draft for the owner's G1.
+

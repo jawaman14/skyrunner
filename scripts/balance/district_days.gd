@@ -7,10 +7,14 @@ extends RefCounted
 ##
 ##   godot --headless --script res://scripts/balance/cli.gd -- days --n 14 --seeds 3
 ##
+## With laundering on, each night STREET_A_NIGHT of street cash (the sales the district sim doesn't fly) is washed through the club:
+## its fee pays the club's rent, the rest reaches the safe after the club's delay.
+##
 ## The district on its own (the shoppers hour by hour, the books at each 06:00), as tests/test_acceptance.gd steps it: the rest of
 ## the island isn't flown, so a seed's run is fast and the same every time.
 
 const START := 60000
+const STREET_A_NIGHT := 2500  ## the night's street takings the district sim doesn't fly, washed through the club (DESIGN 51.5)
 
 
 static func run(seed_: int, days: int, war := true) -> Array:
@@ -32,6 +36,10 @@ static func run(seed_: int, days: int, war := true) -> Array:
 	var moves_seen := 0
 	for d in days:
 		var end: float = Books.next_close(s.time)
+		if s.logistics != null and Laundering.ENABLED:  # the night's takings go through the club (its allowance) before the close
+			s.logistics.cash["stash:days"] = int(s.logistics.cash.get("stash:days", 0)) + STREET_A_NIGHT
+			s.logistics.book_cash("outside:street", Logistics.STREET, float(STREET_A_NIGHT), "sales")
+			b.wash.launder("biz-4", STREET_A_NIGHT, "org", "stash:days")
 		while s.time < end:
 			var step := minf(600.0, end - s.time)
 			s.time += step
@@ -50,7 +58,7 @@ static func run(seed_: int, days: int, war := true) -> Array:
 		for x in b.catalog:
 			if str(b.owner[x.id]) == "org":
 				tills += s.ledger.balance(Businesses.till(x.id))
-		out.append({"seed": seed_, "day": d + 1, "org_safe": int(s.money), "org_tills": int(tills),
+		out.append({"seed": seed_, "day": d + 1, "org_safe": int(s.money), "washing": b.wash.waiting("biz-4"), "org_tills": int(tills),
 			"moretti": int(s.ledger.balance("moretti:safe")), "rival": int(b.safe_balance("rival")), "owned": owned, "owed": owed,
 			"moves": moves.map(func(m): return "%s %s %s%s" % [m.org, m.layer, m.cmd, "" if m.ok else " (refused)"]),
 			"conserved": absf(s.ledger.total()) < 0.01})

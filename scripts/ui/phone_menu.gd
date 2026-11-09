@@ -645,6 +645,15 @@ func key(k: String) -> void:
 			show_feedback(str(rm[1]) if not rm[0] else ("Orders: " + Businesses.ORDER_TEXT[s.businesses.order_of(bid)] if k == "o" else "Done."), bool(rm[0]))
 			refresh()
 		return
+	if page == "books" and k == "w" and s.businesses != null:  # wash street cash through a front of ours (DESIGN 51.5)
+		var bw := list.selected_row()
+		if bw >= 0 and bw < _books_rows.size() and str(_books_rows[bw]) != "":
+			var wid := str(_books_rows[bw])
+			var room: int = int(s.businesses.wash.room(wid)[0])
+			var rw: Array = s.command(Roles.PILOT, "business_launder", {"id": wid, "amount": room if room >= Laundering.MIN_DEPOSIT else 1000000000})
+			show_feedback("Washing: the clean part reaches the safe after the front's hours." if rw[0] else str(rw[1]), bool(rw[0]))
+			refresh()
+		return
 	if page == "books" and k in ["f", "t"] and s.businesses != null:
 		var bi := list.selected_row()
 		if bi >= 0 and bi < _books_rows.size() and str(_books_rows[bi]) != "":
@@ -893,7 +902,7 @@ func _books_page() -> void:
 				_books_rows.append("")
 	footer.text = "The day's rent and bills come out of each till at 06:00; what a till can't pay is owed, never taken from the safe."
 	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "buy", "enter"], ["F", "fund $%s" % Py.money(BOOKS_FUND), "f"],
-		["T", "take the till", "t"], ["M", "who runs it", "m"], ["O", "orders", "o"], ["ESC", "back", "esc"]])
+		["T", "take the till", "t"], ["W", "wash street cash", "w"], ["M", "who runs it", "m"], ["O", "orders", "o"], ["ESC", "back", "esc"]])
 
 
 ## One business on the books, as the desk reads it.
@@ -909,6 +918,10 @@ static func books_line(biz: Businesses, id: String) -> String:
 		line += ", %d lb on the shelf" % int(v.shelf)
 	if str(v.manager) != "":
 		line += ". %s runs it %s: %s" % [v.manager, v.shift, Businesses.ORDER_TEXT.get(str(v.order), str(v.order))]
+	if bool(v.front):
+		line += ". Washes $%s a night (tonight $%s)" % [Py.money(int(v.allowance)), Py.money(int(v.washed))]
+		if int(v.waiting) > 0:
+			line += ", $%s on its way clean" % Py.money(int(v.waiting))
 	if int(v.arrears) > 0:
 		line += ". OWES $%s: %s" % [Py.money(int(v.arrears)), str(v.blocked)]
 	return line

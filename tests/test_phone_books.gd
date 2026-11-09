@@ -98,3 +98,21 @@ func test_m_puts_someone_in_charge_and_o_gives_the_orders() -> void:
 	_menu.key("o")
 	check_eq(s.businesses.order_of("biz-4"), "hold", "O: the next order")
 	check(_text(_menu).any(func(r): return str(r).contains("runs it 20:00-04:00: buy nothing")), "the line says who and what: %s" % [_text(_menu)])
+
+
+func test_w_washes_street_cash_through_a_front() -> void:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES, "trade": true, "logistics": true})
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	s.logistics.cash["stash:test"] = 4000
+	s.logistics.book_cash("outside:street", Logistics.STREET, 4000.0, "sales")
+	_menu = PhoneMenu.new()
+	Engine.get_main_loop().root.add_child(_menu)
+	_menu.setup(s)
+	_menu.open()
+	_menu.open_app("books")
+	check(_text(_menu).any(func(r): return str(r).contains("Washes $2,500 a night (tonight $0)")), "the club's line says what it washes")
+	_select(_menu, "biz-4")
+	_menu.key("w")
+	check_eq(int(s.businesses.wash.washed.get("biz-4", 0)), 2500, "W: the night's allowance, no heat")
+	check(_text(_menu).any(func(r): return str(r).contains("$2,125 on its way clean")), "and the line shows it coming: %s" % [_text(_menu)])

@@ -86,6 +86,9 @@ func policy() -> void:
 					"ok": false, "why": "The safe is empty: %s can't be topped up." % b.name})
 				continue
 			_act(o, "policy", "business_fund", {"id": b.id, "amount": int(ceil(short))})
+		if Laundering.ENABLED:
+			for m in biz.wash.ai_moves(o):  # then the rackets' money goes through its fronts, within the night's allowance
+				_act(o, "policy", "business_launder", m)
 
 
 # ------------------------------------------------------------------ strategy

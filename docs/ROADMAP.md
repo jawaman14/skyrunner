@@ -336,6 +336,8 @@ a switch and tests first (an RNG stream and a BALANCE entry where the slice draw
 3. Orders and the pickup person; the gun dealer on the same flow, replacing "sell / keep guns". (Claude the sim, Codex the dealer scenes)
 4. Storage places and the stock ledger. (Claude the data, Codex the screen)
 5. Laundering: one authority (`HQ.Org`), fronts with a per-night cap and a delay; the casino path moves onto it. (Claude)
+   **Built (DESIGN 72):** the Living District's fronts wash street cash (nightly allowance, soft ceiling with heat, fee, delay; the
+   Morettis wash their rackets on the same rules). Open: the casino cage onto the same rules.
 6. Crew relationships and rackets that close under heat. (Claude the sim, Codex the cards and dialogue)
 7. Chapter objectives with deadlines, and what Renown and crew trust unlock at boss level (no new currency). (Claude)
 8. The boss desk: worker control, area marking, heat map, ledger tab. (Codex lead, D-62)
