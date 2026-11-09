@@ -136,3 +136,20 @@ func test_the_stock_ledger_page() -> void:
 	check_eq(_menu.page, "stock", "ENTER opens it")
 	check(_text(_menu).any(func(r): return str(r).contains("lb marijuana at %s, grade 50%%" % s.logistics.name_of(st))), "the lot, where and its grade: %s" % [_text(_menu)])
 	check(_menu.footer.text.contains("lb held, worth $"), "the header sums it: %s" % _menu.footer.text)
+
+
+func test_b_orders_stock_and_the_pickup_shows() -> void:
+	var s := Session.new({"seed": 5, "map_seed": MapCity.SEED, "location": "HAR", "features": Session.SANDBOX_FEATURES, "trade": true,
+		"logistics": true, "family": true})
+	s.police.frozen = true
+	s.update(1.0 / 30)
+	s.money = 20000
+	_menu = PhoneMenu.new()
+	Engine.get_main_loop().root.add_child(_menu)
+	_menu.setup(s)
+	_menu.open()
+	_menu.open_app("stock")
+	_menu.key("b")
+	check_eq(s.logistics.pickups.orders.size(), 1, "B ordered grass from the Morettis")
+	check(_text(_menu).has("PICKUPS ON"), "the pickups have their own heading: %s" % [_text(_menu)])
+	check(_text(_menu).any(func(r): return str(r).begins_with("%d lb marijuana from the Morettis" % PhoneMenu.STOCK_ORDER_LB)), "with the order")

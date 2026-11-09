@@ -20,7 +20,7 @@ const BASE := 0.5
 ## the strips our own loads come from (Trade.OWN's bush and shady kinds, both maps), by code
 const OWN := {"FRM": 0.5, "PNR": 0.6, "EGL": 0.45, "COV": 0.6, "QRY": 0.4, "MGR": 0.55}
 const ISLAND := 0.6  ## the island's product is cut less than the street's
-const SOURCES := {"island": ISLAND}
+const SOURCES := {"island": ISLAND, "agency": 0.65}  ## the Company's cocaine (a pickup, DESIGN 75) is the purest on the coast
 const HALF_LIFE_S := {"marijuana": 10.0 * 86400.0}  ## grass dries; cocaine and acid keep (acid's degrading is a later slice)
 
 

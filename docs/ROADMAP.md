@@ -337,6 +337,8 @@ a switch and tests first (an RNG stream and a BALANCE entry where the slice draw
    **First call sites built (DESIGN 74):** own loads carry their strip's grade, the island's cocaine its own; the street pays for
    the grade and age sold. Open: bulk sales by grade, buyers by grade, cutting, provenance of stolen stock.
 3. Orders and the pickup person; the gun dealer on the same flow, replacing "sell / keep guns". (Claude the sim, Codex the dealer scenes)
+   **The sim is built (DESIGN 75):** order from the Morettis or the Company, paid upfront, brought to a stash in a window and
+   collected by the pilot or a lookout; late, cancelled; saved. Open: the gun dealer on it, a worker sent to collect, interception.
 4. Storage places and the stock ledger. (Claude the data, Codex the screen)
    **The ledger is built (DESIGN 73):** every lot of product we hold, by place, grade and age, at its best named open quote, on
    the phone (Empire > Money). Open: storage caps and costs per place.

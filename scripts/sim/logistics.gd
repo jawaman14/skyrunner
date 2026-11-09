@@ -54,10 +54,12 @@ var _watch_t := 0.0
 var _route_t := 0.0
 var _move_t := -1e9  ## the last product move (the AI waits AI_MOVE_EVERY_S between them)
 var _item_id := 0
+var pickups: Pickups  ## stock bought upfront and brought to a stash (DESIGN 51.2, slice 3)
 
 
 func _init(sess_) -> void:
 	sess = sess_
+	pickups = Pickups.new(self)
 	for st in sess.stash_net.stashes:
 		stock[st.id] = {"cocaine": 0.0, "marijuana": 0.0}
 		cash[st.id] = 0.0
@@ -1185,6 +1187,7 @@ func sync_aircraft_load() -> void:
 func update(dt: float) -> void:
 	_watch_t += dt
 	if _watch_t >= 5.0:
+		pickups.update()  # who is at a stash for a delivery, every five seconds
 		_sync_inventory()
 		_sync_street()
 		_pull_over(_watch_t)
