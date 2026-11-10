@@ -656,6 +656,11 @@ func key(k: String) -> void:
 			show_feedback(str(rm[1]) if not rm[0] else ("Orders: " + Businesses.ORDER_TEXT[s.businesses.order_of(bid)] if k == "o" else "Done."), bool(rm[0]))
 			refresh()
 		return
+	if page == "market" and k in ["m", "h"] and s.trade != null and s.trade.wars != null and s.trade.wars.active():  # answer a price war (loop idea 6)
+		var rw: Array = s.command(Roles.PILOT, "price_war", {"answer": "match" if k == "m" else "hold"})
+		show_feedback(("Our corners match the price." if k == "m" else "Our corners hold the stock.") if rw[0] else str(rw[1]), bool(rw[0]))
+		refresh()
+		return
 	if page == "stock" and k == "b" and s.logistics != null:
 		var rb: Array = s.command(Roles.PILOT, "stock_order", {"contact": "family", "good": "marijuana", "lb": STOCK_ORDER_LB})
 		show_feedback("Ordered: the Morettis bring it to the stash nearest the HQ." if rb[0] else str(rb[1]), bool(rb[0]))
@@ -818,6 +823,14 @@ func _market_page() -> void:
 	if s.trade == null or s.trade.orders == null:
 		footer.text = "The market board is not available in this game."
 		return
+	var war_hints := []
+	if s.trade.wars != null and s.trade.wars.active():  # a price war or a supply cut under way (loop idea 6)
+		var w: Dictionary = s.trade.wars.view().war
+		list.section("Price war" if str(w.kind) != "cut" else "Supply cut")
+		for line in war_lines(w):
+			list.add_row([line])
+		if bool(w.can_answer):
+			war_hints = [["M", "match the price", "m"], ["H", "hold the stock", "h"]]
 	var goods: Dictionary = s.trade.orders.board().goods
 	for good in goods:
 		list.section(str(good).capitalize())
@@ -826,7 +839,7 @@ func _market_page() -> void:
 			list.add_row(["%s: %d%% of usual, %s" % [str(market).capitalize(), roundi(float(quote.price) * 100.0), str(quote.trend)]])
 			list.add_row(["  demand / supply: %.2fx" % float(quote.pressure)])
 	footer.text = "Relative prices, not a sale quote. Call Benny for the buyer's terms."
-	hints.set_hints([["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
+	hints.set_hints(war_hints + [["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
 
 
 func _orders_page() -> void:
@@ -938,6 +951,23 @@ func _stock_page() -> void:
 	footer.text = "Nothing in the stashes, the aircraft or on the road." if book.rows.is_empty() else \
 		"%d lb held, worth $%s at the best open quotes%s." % [int(t.lb), Py.money(int(t.value)), (", %d lb of it hot" % int(t.hot_lb)) if float(t.hot_lb) >= 1.0 else ""]
 	hints.set_hints([["UP/DOWN", "scroll", "down"], ["B", "order %d lb of grass from the Morettis" % STOCK_ORDER_LB, "b"], ["ESC", "back", "esc"]])
+
+
+## The market page's lines for a price war or a supply cut under way (PriceWars.view().war).
+static func war_lines(w: Dictionary) -> Array:
+	var left := int(ceil(float(w.seconds_left) / 60.0))
+	var out := [str(w.text)]
+	match str(w.answer):
+		"match":
+			out.append("  We match the price: %d%% of the street, and it ends sooner. About %d min left." % [roundi(PriceWars.MATCH_PRICE * 100.0), int(ceil(left / (1.0 + PriceWars.MATCH_BURN)))])
+		"hold":
+			out.append("  We hold the stock there until it ends: %d min left." % left)
+		_:
+			if str(w.kind) == "cut":
+				out.append("  %d min left: sell into it, or wait it out." % left)
+			else:
+				out.append("  %d min left. M: match their price (%d%%, ends sooner). H: hold the stock (customers come back after)." % [left, roundi(PriceWars.MATCH_PRICE * 100.0)])
+	return out
 
 
 static func pickup_state(o: Dictionary, now: float) -> String:

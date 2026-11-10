@@ -105,7 +105,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Loop ideas (LOOP_IDEAS.md) | 3. Dirty money has a clock | Planned | After heat step 2 | D-90 |
 | Loop ideas (LOOP_IDEAS.md) | 4. A readable calendar (carnival, harvest, crackdowns) | Built | Latest merge on main | #490 |
 | Loop ideas (LOOP_IDEAS.md) | 5. The deal moves mid-flight (drop moves, pay doubles, cutter on picket) | Built | BALANCE entry 58 | #479 |
-| Loop ideas (LOOP_IDEAS.md) | 6. Price wars and supply cuts | Planned |  |  |
+| Loop ideas (LOOP_IDEAS.md) | 6. Price wars and supply cuts | Built | PriceWars.ENABLED: Los Cuervos undercut a market, the Company floods one, or a good runs short; match the price or hold the stock (phone market page, M and H). The depot raid answer waits on D-19 (DESIGN §78) |  |
 | Loop ideas (LOOP_IDEAS.md) | 7. Investments with a return (strip, depot, safehouse, informant) | Planned |  |  |
 | Loop ideas (LOOP_IDEAS.md) | 8. Comeback valves | In PR | Windfall built; lawyer's discount (review fixes pushed); a loan shark already exists as the Family's loan | #480 · #491 |
 | Early-game content | Side gigs: aerial photos, banner tow, flour-sack pass | Built | BALANCE entry 59 | D-92 |

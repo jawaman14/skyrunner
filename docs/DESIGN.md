@@ -1871,6 +1871,7 @@ that claim an offset are noted.
 | 187 | `Wanted` | `session_state.gd` | the Wanted names' prizes, one draw a take-down (D-95) |
 | 189 | `Curses` | `session.gd` | which board jobs offer a condition, and which one (D-95) |
 | 191 | `BlackMarket` | `session.gd` | the week's black-market stock and the week's hot job (D-95) |
+| 197 | `PriceWars` | `session_state.gd` | price wars and supply cuts: whether one starts, its kind, market and length (loop idea 6) |
 | 193, 195 | `Crates` | `session.gd` | a gun run's crates off the scarcity ladder; the second while the island's other boards are dealt (D-61 stage 1) |
 | 1202, 1203 | `OrgAI.rng` | `session.gd` | Los Cuervos' and the Morettis' strategy: a near-tie between the day's moves (L-3; seed + 1201 + org index) |
 | 1301 | `OrgAI.policy_rng` | `session.gd` | the businesses' policy layer (L-3; reserved, v1 draws nothing) |
@@ -2378,3 +2379,30 @@ raises the dealers' trust, and crew trust unlocking things at boss level (slice 
 
 Not yet: ammunition as a good (stage 2), the war's use of it (stage 3), the screens (stage 4); the Company's and Los Cuervos' own
 buying moving the ladder by type; orders that ask for crates of a type (they still ask for rifles).
+
+## 78. Price wars and supply cuts (loop idea 6, docs/LOOP_IDEAS.md)
+
+`scripts/sim/price_wars.gd` (`PriceWars`, held by `Trade` as `wars`; switch `PriceWars.ENABLED`, in the parity set). Now and then
+somebody moves a market against us and says so; one at a time, with fifteen quiet minutes after each.
+
+| Kind | Who | What it does | How long |
+|---|---|---|---|
+| Undercut | Los Cuervos (needs the street war, and a market where our dealers stand) | holds that market's supply of the good at 1.5 or more (the price falls about a fifth), and our corners there lose a third of their custom | 30 to 50 min |
+| Flood | the Company (its pipeline active, once we are connected) | holds one market's cocaine supply at 1.9 or more (the price falls about 30%); our custom is untouched | 20 to 35 min |
+| Cut | upstream (a boat taken, a field burned) | holds one good's source at 0.55 or less: wholesale and every street price rise | 25 to 45 min |
+
+- **Answers** (`price_war`, one a war, for the pilot and the boss; M and H on the phone's market page). **Match:** our dealers there
+  sell at 85% of the street, keep their custom (x1.1), and every minute matched takes two more off the war, so a war matched from
+  the start lasts a third as long; the dealers' trust rises 2 when an undercut ends that way. **Hold:** our dealers there stop
+  selling that good and the stock stays in the stash; when the war ends the customers who waited are back (demand x1.3 in that
+  market for 30 minutes). Unanswered, an undercut costs a third of the custom at the lower price for its whole length. A cut asks
+  for nothing: it is a window to sell into, or to wait out.
+- **Nobody in the chair.** The organisation's AI matches an undercut and holds through a flood.
+- **Where it shows.** A NEWS line when one starts and when it ends; the phone's market page heads its list with the war, what is
+  left of it and the two answers; `Trade.view` carries it for the desks (`wars`).
+- **Draws** on its own stream, `seed + 197`: one every ten minutes while no war is on (30% start one, about one every 35 minutes
+  of quiet), then the kind, the market and the length.
+- **Saved** under `price_wars` (the war under way, the last six, the clocks); an older save has none on.
+
+Not yet: raiding the depot the cheap product comes from (D-19, paused by D-75), Los Cuervos answering our own price cuts, and a
+war over guns (the ladder, section 77, has no undercut).

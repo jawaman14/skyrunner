@@ -49,6 +49,9 @@ func _initialize() -> void:
 	if OS.get_environment("NO_CRATES") != "" or a.has("nocrates"):  # the same run without the arms scarcity ladder (DESIGN 77)
 		Crates.ENABLED = false
 		a.erase("nocrates")
+	if a.has("nowars"):  # the same run without price wars and supply cuts (DESIGN 78)
+		PriceWars.ENABLED = false
+		a.erase("nowars")
 	if a.size() > 0:
 		seeds = int(a[0])
 	if a.size() > 1:

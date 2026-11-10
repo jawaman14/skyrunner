@@ -152,6 +152,8 @@ static func _capture_world(s: Session, d: Dictionary) -> void:
 		d["trust"] = s.trade.trust.capture()  # Los Cuervos' and the dealers' standing (D-11); the others are saved by their systems
 		if s.trade.orders != null:
 			d["orders"] = SaveVars.capture(s.trade.orders, ORDERS)
+		if s.trade.wars != null:
+			d["price_wars"] = s.trade.wars.capture()  # optional (loop idea 6): the war under way and the last few
 	if s.econ != null:
 		d["econ"] = SaveVars.capture(s.econ, ECON)
 		if s.econ.market != null:
@@ -471,6 +473,8 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 		s.trade.trust.restore(d.get("trust", {}))  # an older save: they start wary
 		if s.trade.orders != null and d.get("orders") is Dictionary:
 			SaveVars.restore(s.trade.orders, d.orders, ORDERS, ORDERS_INTS)
+		if s.trade.wars != null and d.get("price_wars") is Dictionary:
+			s.trade.wars.restore(d.price_wars)  # an older save: no war on
 	if s.econ != null and d.get("econ") is Dictionary:
 		SaveVars.restore(s.econ, d.econ, ECON)
 		if s.econ.market != null and d.get("market") is Dictionary:
