@@ -358,6 +358,8 @@ and all of it ties into the ground and turf war. The design, grounded in `arsena
 
 1. **Crates and the scarcity ladder.** A crate holds one type; each type has its own supply and price (pistols plentiful, rifles
    common, machine guns scarce, RPGs rare); gun runs and buyers follow the ladder. (Claude)
+   **Built (DESIGN 77):** `Crates`: a run is one to three crates of one type each, dealt off what the street holds; a type's price
+   follows its scarcity at the dealer, the fence and the bulk buyers; the dealer sells only what there is.
 2. **Ammunition as a good.** Rounds per weapon type, in crates, bought, trucked and stored; squads draw the rounds of the weapons
    they carry. (Claude)
 3. **The war uses it.** Fights consume rounds, a dry district's ammunition price climbs, a squad without rounds stops firing, and

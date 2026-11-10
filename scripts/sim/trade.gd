@@ -147,6 +147,8 @@ func quote(buyer: String, good: String, tier := "rifle") -> Dictionary:
 	var price := 0.0
 	if good == "guns":
 		price = Arsenal.TIERS[tier].price * sess.econ.mult("guns", m) * float(b.get("guns", 1.0))
+		if sess.crates != null:
+			price *= sess.crates.factor(tier)  # the buyers follow the ladder (D-61): the scarce types pay
 	elif why == "" or b.get("drugs", {}).has(good):
 		price = street_price(good, m) * float(b.get("drugs", {}).get(good, 0.0))
 	if sess.renown != null:

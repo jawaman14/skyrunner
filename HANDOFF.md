@@ -55,9 +55,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, alone: Codex is unavailable (owner, 7 November, D-96). Claude merges its own PRs, risk class included, under D-91 (CI green on the head, every finding fixed and answered, its own diff read), and covers Codex's QA, UX/UI and dialogue lanes meanwhile. |
-| **Task** | The Borderlands study (D-95): Breakaway (#517, DESIGN 58, BALANCE 69) and Wanted names (#519, DESIGN 59, BALANCE 70) merged; Makers (#518, DESIGN 43) the last of the three. |
-| **Branches / PRs** | `claude/makers` (#518). |
-| **Next step** | Merge Makers. Then the study's second round in order: cursed jobs, the weekly black market and hot job, the heat dial, the one-life extraction run. F-6b's second part (`NightDirector`) stays queued behind it. |
+| **Task** | The owner's 10 November order of work: the open mechanics, one PR each on `ccr-959fb031-mf68as` (restarted from `main` after each merge): ammunition stage 1 (crates and the ladder, DESIGN 77), then loop idea 6 (price wars and supply cuts), loop idea 7 (investments with a return), the takeover beat (D-09/D-78/D-35), the later stock rework parts (bulk sales by grade, the gun dealer on the pickup flow, rivals intercepting pickups); then gameplay additions and graphics. |
+| **Branches / PRs** | `ccr-959fb031-mf68as` (the cloud session's pinned branch; one PR at a time). |
+| **Next step** | Merge the open PR on green CI, restart the branch from `main`, take the next item in the Task row. |
 | **Codex task** | None: Codex is unavailable (D-96). |
 | **Watch out** | Codex's bot still posts reviews on some PRs; answer every thread before merging (`ci_then_merge` refuses an unanswered one). Breakaway holds `Session.save()` while a window is open. |
 
@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-10 - Claude, weapon crates and the scarcity ladder (D-61 stage 1):** `Crates`: a gun run is one to three crates of one
+  type, dealt off what the street holds (streams 193, 195); scarcity prices the dealer, the fence and the buyers; saved (DESIGN 77).
 - **2026-11-09 - Claude, trust with each crew (D-11):** `Trust` on Trade: five standings (three wrapped, Los Cuervos' and the
   dealers' new and saved); a rise lowers the enemies' per the owner's table; Empire lists the crews (DESIGN 76).
 - **2026-11-09 - Claude, stock bought upfront (51.2 slice 3, the sim):** `stock_order`/`pickup_cancel`; brought to a stash in a

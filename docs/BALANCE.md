@@ -146,8 +146,12 @@ Drivers pull over when they see police on the road ahead; a passing patrol pulls
 67. **The street war reads the case files.** *Found:* With the street war on, the war's police raided any stash at suspicion 55 and staked out anything from 10 to 55, skipping the case files entirely (found by BALANCE entry 63, #497): no warning, no stages, nothing a lawyer could challenge. *Changed:* Heat step 2, first piece (6 Nov): the case files run with the war on too; a warrant that runs out is queued for the war's police (`GroundWar.warrants`, kept until the breach so a save mid-approach keeps it), who raid only on a warrant, once they can beat the guards, and stake out the houses under surveillance. No new draws; off with `Investigation.ENABLED`. Measured (live_balance, 25 seeds x 3 h, noair: the war, no flights; main at b74682d against this, re-run after the streak guard and lying low landed): stashes burned 0.40 to 0.44 a run, product raided $1,189 to $2,055, net worth p50 $56.4k to $54.7k, money p50 $20.5k to $18.5k, fights 21.6 to 19.2; the stand-in also spent a little more on the war (recruits $100 to $200 a run, arms $0 to $202). The police raid about as often, but later and on a warrant, against a house that has had time to fill: each raid takes more. The player now gets the warning, the stakeout car and the lawyer's challenge to answer it. Inside the noise of 25 seeds on money (the means differ by about 1.5 standard errors, from the p10-p90 spread); a war seed costs 75 s.
 
 68. **Flying well pays a name.** *Found:* Flight skill (landings, short strips, steady approaches) counted for nothing in the story: a perfect landing and a bounced one paid the same, so there was no reason to fly well (D-38). *Changed:* Owner, 18 Oct (D-38): three optional story goals, one each in chapters 0 to 2 (`Story.FLIGHT`): a greaser (touchdown at 120 fpm or less), a short strip (under 650 m), and three steady landings (under 300 fpm, bank under 20 degrees). Each pays 8 renown once (`Story.FLIGHT_RENOWN`) and no money (D-65), and none blocks a chapter. At most 24 renown a playthrough, about three fifths of the 40 to reach the first tier (`Renown.TIERS`): a pilot who flies well reaches it sooner, so better hires (+3 skill, +2 loyalty), +1.5% from the bulk buyers and suspicion cooling 6% slower come earlier. No random draw. Not measured: the balance simulators do not fly the story, so this is the reward's ceiling, not a measured effect; behind `Story.FLIGHT_GOALS` (in the parity set).
+
 69. **Breakaway.** *Found:* Every stop on the ground was the end of the flight: an arrest on landing, a raid while unloading and a sting all went straight to the bust, so being caught was something that happened to the pilot, never a moment to play (the Borderlands study's Fight for Your Life, D-95). *Changed:* Owner, 7 Nov (D-95): `Breakaway`. An arrest on landing, a ground raid while unloading or a DEA sting opens a 45 s window (`WINDOW_S`): take off and get 1,200 m clear (heat +25 and a wanted level), dump the hot load (it is seized as a raid would; heat +10), or pay the officer (a $2,000 base plus 40% of the hot cargo's payout, scaled by suspicion; heat +5). The window running out is the bust as before. One a game day, plus one for every two renown tiers (`allowance`). The air chase (forced down) and the foot arrests are unchanged. No random draw; behind `Breakaway.ENABLED` (in the parity set). Not measured: the balance simulators' air risk busts through the chase, never a ground stop, so live_balance (25 seeds x 3 h, noair and air) is identical with and without it; this changes what a pilot can do when caught, not the simulated odds.
+
 70. **Wanted names.** *Found:* The street war's rival and police squads were faceless: beating one paid the same as beating any other, so there was nobody to hunt and no fight worth seeking out (the Borderlands study's named bosses and dedicated drops, D-95). *Changed:* Owner, 7 Nov (D-95): `Wanted`. Every third squad Los Cuervos or the task force raises is led by the next name on its roster still at large (three cartel lieutenants, two task-force captains), with a title card at first contact. Routing his squad is a take-down with a stated 1-in-3 chance (`ODDS`) of his one prize: an arms cache (8 rifles or 3 machine guns to the armoury), the week's take ($9,000 out of Los Cuervos' chest, no more than it holds) or a captain's file (25 or 35 suspicion off the organisation's case). Until it drops he gets away and leads again; once it has, he is finished. New stream seed + 187, drawn only on a take-down; behind `Wanted.ENABLED` (in the parity set). Measured (live_balance, 25 seeds x 3 h, noair: the war, no flights): money p50 $18,539 and law p50 $7,584, identical to main, because the stand-in organisation fields about half a squad a run (0.52) and rarely routs a named one; the prizes are for a player who goes hunting, and their ceiling is the roster: 11 rifles-and-guns, $9,000 and 60 suspicion a game.
+
+71. **Weapon crates and the scarcity ladder.** *Found:* Weapons had no supply of their own: a gun run's mix was the only place scarcity showed, the dealer sold any number of machine guns or RPGs at a fixed table price, and a crate was a weightless 25 to 45 kg box of anything (D-61, design section 50). *Changed:* Owner, 18 Oct (D-61 stage 1): `Crates`. A weapon travels in a crate of one type (12 pistols at 18 kg, 8 rifles at 40 kg, 2 machine guns at 60 kg, 2 RPGs at 35 kg) and each type has a supply on the street (normally 60, 33, about 11 and about 5 weapons). A gun run is one to three crates drawn in proportion to what the street holds; a type's price is its table price times (normal / street) ^ 0.5, between x0.7 and x2.5, at the dealer, the fence, the bulk buyers and in a run's pay; the dealer sells only what the street holds; a seizure takes half its count off the street, and it drifts back over about two hours. New streams seed + 193 and + 195, drawn only when a gun run is dealt (the old draws are still made, so where a run goes is unchanged); behind `Crates.ENABLED` (in the parity set). Measured (live_balance, the story, 10 seeds x 6 h, the same seeds with `nocrates`): the chapters are reached at the same minutes (chapter p50 6 of 12 either way); money p50 $44.7k against $46.3k and net worth p50 $64.5k against $70.9k without the ladder. The stand-in buys rifles two at a time whenever it holds under ten and sells the Company four at a time, a trade that already lost money; with the ladder each pair leaves fewer rifles on the street and the next pair costs more, so the loss is larger. By the tables, a mean gun run's street worth is about $7,500 (1.42 crates) against about $6,300 before, so a run pays a tenth to a fifth more, and it weighs about 42 kg against about 85 kg; no simulator flies gun runs, so that is arithmetic, not a measurement.
 
 ## 1. Can you get in and out? (feasibility)
 
@@ -205,81 +209,6 @@ Tactic × posture (delivered):
 Calibration fed to the season simulator: `Calibration(detect={'west': 0.233, 'north': 0.667, 'sea': 0.4}, aerostat_detect={'west': 0.467, 'north': 0.0, 'sea': 0.533}, intercept_per_unit={'heli': 0.7, 'interceptor': 1.0}, intercept_k=1.121, bust_given_intercept=0.809, crash={'west': 0.033, 'north': 0.033, 'sea': 0.01}, cutter_seize=0.35, boat_catch_if_spotted=0.5)`
 
 Returns on extra units: heavy (2 helicopters + 2 interceptors) vs standard (1 + 1) intercept hazard, flown 1.65x, season model 1.49x. The season model prices extra units with ln(1 + units); the closer the two, the better it prices the chief's helicopters (entry 14: spares patrol before the run).
-
-## 3. Whole seasons, HQ vs HQ (strategic)
-
-40000 simulated seasons, 8 organisation strategies × 5 task-force strategies. Cells are the organisation's win rate.
-
-| boss \ chief | interdiction | investigator | balanced | adaptive | random |
-|---|---|---|---|---|---|
-| greedy | 29% | 94% | 21% | 13% | 67% |
-| cautious | 68% | 8% | 38% | 74% | 57% |
-| corrupt | 31% | 4% | 13% | 10% | 8% |
-| shadow | 60% | 3% | 25% | 56% | 24% |
-| launderer | 54% | 82% | 29% | 29% | 71% |
-| adaptive | 74% | 96% | 60% | 37% | 79% |
-| smart | 62% | 56% | 35% | 32% | 45% |
-| random | 54% | 22% | 29% | 50% | 34% |
-
-- **Equilibrium win rate (organisation): 51.7%** (target 50 ± 5)
-- Equilibrium mix, organisation: cautious 39%, adaptive 61%
-- Equilibrium mix, task force: balanced 63%, adaptive 37%
-- Raw win rate over all pairings: 43% for the organisation
-- Average season length: 9.2 nights; decided before the last night: 29%
-- Comebacks (half-time leader loses): 22%; close finishes: 48%
-
-How seasons end:
-
-- law: season over: convicted at trial: 36%
-- runner: season over: walked free: 29%
-- runner: retired rich: 14%
-- law: boss indicted: 11%
-- law: organisation broke: 9%
-
-Dominance between archetypes (a bot archetype being beaten everywhere is fine; a *mechanic* nobody should use is not, see the next table): runner 'cautious' dominates 'corrupt'; runner 'cautious' dominates 'shadow'; runner 'shadow' dominates 'corrupt'; runner 'launderer' dominates 'corrupt'; runner 'adaptive' dominates 'greedy'; runner 'adaptive' dominates 'corrupt'; runner 'adaptive' dominates 'launderer'; runner 'adaptive' dominates 'smart'; runner 'smart' dominates 'corrupt'; runner 'random' dominates 'corrupt'; law 'balanced' dominates 'interdiction'
-
-What each organisation order is worth (win rate when the random bot used it vs didn't):
-
-| order | effect | uses |
-|---|---|---|
-| tip_off | +21 pts | 4688 |
-| buy_front | +16 pts | 1111 |
-| lie_low | +14 pts | 4708 |
-| loyalty | +12 pts | 3307 |
-| crews | +11 pts | 2998 |
-| lawyer | +10 pts | 4753 |
-| counterintel | +10 pts | 3111 |
-| gear | +9 pts | 3272 |
-| opsec | +9 pts | 3409 |
-| decoys | +7 pts | 3120 |
-| truce | +2 pts | 3361 |
-| hit_rival | -0 pts | 2847 |
-| bribe | -8 pts | 3377 |
-| upgrade | -20 pts | 17 |
-
-What each task-force order is worth (win rate when the random bot used it vs didn't):
-
-| order | effect | uses |
-|---|---|---|
-| audit | +34 pts | 7880 |
-| wiretap | +25 pts | 6317 |
-| press | +11 pts | 5995 |
-| ia_sweep | +10 pts | 7849 |
-| aerostat | +7 pts | 7848 |
-| gang_unit | +2 pts | 7868 |
-| canary | +0 pts | 6779 |
-| encryption | -1 pts | 7830 |
-| recruit | -2 pts | 7841 |
-
-Win conditions (target: each at least 8% of seasons):
-
-| ending | share |
-|---|---|
-| retired rich | 14% |
-| walked free | 29% |
-| convicted at trial | 36% |
-| boss indicted | 11% |
-| organisation broke | 9% |
 
 ## 4. The rival cartel (Los Cuervos)
 

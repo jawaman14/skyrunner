@@ -131,7 +131,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Stock rework (DESIGN §51) | Crew relationships, rackets that close under heat | Planned |  | slice 6 |
 | Stock rework (DESIGN §51) | Chapter objectives with deadlines, boss-level unlocks | Planned |  | slice 7 |
 | Arms and ammunition (DESIGN §50) | Arsenals for all three factions, gun runs, police arm from seizures | Built | Arsenal.REALISM |  |
-| Arms and ammunition (DESIGN §50) | Crates of one type and the scarcity ladder | Planned |  | D-61 stage 1 |
+| Arms and ammunition (DESIGN §50) | Crates of one type and the scarcity ladder | Built | Crates.ENABLED: a gun run is one to three crates of one type; each type's supply on the street prices it at the dealer, the fence and the bulk buyers (DESIGN §77) | D-61 stage 1 |
 | Arms and ammunition (DESIGN §50) | Ammunition as a traded, trucked good | Planned |  | D-61 stage 2 |
 | Arms and ammunition (DESIGN §50) | Fights consume rounds; dry districts, resupply by port/road | Planned |  | D-61 stage 3 |
 | Arms and ammunition (DESIGN §50) | Pack, logistics and market screens for ammo | Planned |  | D-61 stage 4 |
@@ -384,9 +384,10 @@ Beyond the prototype:
   the news. Contraband is paid at the street price on delivery; legal work as agreed. J, then
   LEFT/RIGHT, shows the market.
 - **Gun running and arsenals.** The organisation, the task force and Los Cuervos each hold weapons
-  (pistols, rifles, machine guns, RPGs) and ammunition. Gun runs bring crates in: on delivery sell
-  them at the street price or keep them for your soldiers (G on the job board). The fence buys, a
-  dealer sells. Whatever the police seize - a busted load, a stopped truck, a raided stash, the
+  (pistols, rifles, machine guns, RPGs) and ammunition. Gun runs bring crates in, each of one type
+  (12 pistols, 8 rifles, 2 machine guns or 2 RPGs): on delivery sell them at the street price or keep
+  them for your soldiers (G on the job board). The fence buys, a dealer sells what the island holds:
+  pistols are plentiful and machine guns and RPGs scarce, and a scarce type is dear. Whatever the police seize - a busted load, a stopped truck, a raided stash, the
   guns off men arrested in a firefight - goes into the police arsenal and arms their patrols.
 - **The ground war.** Soldiers, Los Cuervos' crews and narcotics squads on foot, in cars and trucks,
   driving the city's roads. Firefights are Lanchester's square law on weapons, cover and nerve.

@@ -205,7 +205,9 @@ static func from_dict(d: Dictionary) -> Arsenal:
 ## boat): weapon crates for a live stash (trucked in) or a shady strip. On
 ## delivery `job.gun_mode` decides: "sell" pays the street price, "stock" puts
 ## the weapons in the organisation's arsenal instead.
-static func gun_run(origin: Airfield, airfields: Array, stash_net, rng: PyRandom, price_mult := 1.0):
+## With `ladder` (Crates, D-61 stage 1) the load is one to three crates of one type each, dealt off the scarcity ladder on its
+## stream and priced by it; the draws on `rng` are made as before, so where a run goes is unchanged.
+static func gun_run(origin: Airfield, airfields: Array, stash_net, rng: PyRandom, price_mult := 1.0, ladder: Crates = null):
 	var jid := Jobs.new_id()
 	var weapons := {}
 	var r := rng.random()
@@ -221,8 +223,17 @@ static func gun_run(origin: Airfield, airfields: Array, stash_net, rng: PyRandom
 	for t in weapons:
 		crates += int(ceil(weapons[t] / 4.0)) if t in ["pistol", "rifle"] else int(weapons[t])
 	var items := []
-	for k in crates:
-		items.append(Jobs.item("Weapons crate", "cargo", rng.uniform(25, 45), jid, {"hot": true}))
+	var packed := []
+	if ladder != null:
+		for k in crates:
+			rng.uniform(25, 45)  # the old crates' weights: drawn and dropped, so this stream stays where it was
+		packed = ladder.deal()
+		weapons = Crates.contents(packed)
+		for t in packed:
+			items.append(Jobs.item(str(Crates.SPEC[t].name), "cargo", float(Crates.SPEC[t].kg), jid, {"hot": true}))
+	else:
+		for k in crates:
+			items.append(Jobs.item("Weapons crate", "cargo", rng.uniform(25, 45), jid, {"hot": true}))
 	var stash = null
 	var dest: Airfield = null
 	if stash_net != null and rng.random() < 0.6:
@@ -236,10 +247,11 @@ static func gun_run(origin: Airfield, airfields: Array, stash_net, rng: PyRandom
 			return null
 		dest = rng.choice(shady)
 	var dist := PyMath.hypot(origin.x - dest.x, origin.y - dest.y) / 1000
-	var pay := int((worth(weapons) * 0.55 + dist * 100) * Jobs._difficulty(dest) * price_mult)
+	var street_worth: float = ladder.worth(weapons) if ladder != null else float(worth(weapons))
+	var pay := int((street_worth * 0.55 + dist * 100) * Jobs._difficulty(dest) * price_mult)
 	var job := Jobs.Job.new(jid, "Gun run: %s -> %s" % [describe(weapons), dest.name if stash == null else stash.name],
 		"contraband", origin.code, dest.code, items, pay,
-		{"notes": "Weapons. Sell them on delivery, or keep them for the organisation's soldiers [G toggles]."})
+		{"notes": ("%s. " % Crates.describe(packed).capitalize() if ladder != null else "Weapons. ") + "Sell them on delivery, or keep them for the organisation's soldiers [G toggles]."})
 	job.weapons = weapons
 	if stash != null:
 		job.stash = stash.id
