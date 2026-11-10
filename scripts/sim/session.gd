@@ -61,6 +61,8 @@ func _init(opts := {}) -> void:
 		if not saved.is_empty():
 			arsenals["org"] = Arsenal.from_dict(saved)
 			arsenals["org"].side = "org"
+		if Crates.ENABLED:  # D-61 stage 1: gun runs dealt off the ladder on their own streams
+			crates = Crates.new(_rng(seed + 193), _rng(seed + 195))
 	if not world.map.stashes.is_empty():
 		stash_net = StashNet.new(world.map.stashes, _rng(seed + 41))
 		investigation = Investigation.new(_rng(seed + 163))
@@ -178,6 +180,7 @@ func dispose() -> void:
 	if black_market != null:
 		black_market.sess = null
 	black_market = null
+	crates = null
 	if heat_dial != null:
 		heat_dial.sess = null
 	heat_dial = null

@@ -1871,6 +1871,7 @@ that claim an offset are noted.
 | 187 | `Wanted` | `session_state.gd` | the Wanted names' prizes, one draw a take-down (D-95) |
 | 189 | `Curses` | `session.gd` | which board jobs offer a condition, and which one (D-95) |
 | 191 | `BlackMarket` | `session.gd` | the week's black-market stock and the week's hot job (D-95) |
+| 193, 195 | `Crates` | `session.gd` | a gun run's crates off the scarcity ladder; the second while the island's other boards are dealt (D-61 stage 1) |
 | 1202, 1203 | `OrgAI.rng` | `session.gd` | Los Cuervos' and the Morettis' strategy: a near-tie between the day's moves (L-3; seed + 1201 + org index) |
 | 1301 | `OrgAI.policy_rng` | `session.gd` | the businesses' policy layer (L-3; reserved, v1 draws nothing) |
 | 404, 505 | `Nights` | `nights.gd` | an HQ season's night; its bots |
@@ -2350,3 +2351,30 @@ crews' standing with the organisation, 0 to 100, and the owner's table of who re
 Not yet: what Los Cuervos' and the dealers' trust change (the dealers' arrests and skill, a truce with Los Cuervos), what anything
 raises the dealers' trust, and crew trust unlocking things at boss level (slice 7).
 
+
+## 77. Weapon crates and the scarcity ladder (D-61 stage 1; section 50's first stage)
+
+`scripts/sim/crates.gd` (`Crates`, on the session as `crates` when the arsenals are on; switch `Crates.ENABLED`, in the parity set).
+
+- **Crates.** A weapon travels in a crate of one type: 12 pistols (18 kg), 8 rifles (40 kg), 2 machine guns with mounts (60 kg),
+  2 RPG launchers (35 kg). A gun run is one to three crates (a second 35% of the time, a third 20% of those; 1.42 on average), each item on the
+  load planner one crate at its type's weight, named for what is in it.
+- **The ladder.** `street[type]` is how many of a type the island's dealers and fences hold between them. Normal levels are
+  60 x the ladder (pistols 1.0, rifles 0.55, machine guns 0.18, RPGs 0.08): 60, 33, about 11 and about 5. A run's crates are drawn
+  in proportion to what is on the street now, so about 55% of crates are pistols, 30% rifles, one in ten machine guns and fewer
+  than one in twenty RPGs, and a type that has just been seized or bought out turns up less.
+- **Prices.** A type's price is its table price (section 50) times the guns market's multiplier, as before, times
+  (normal / street) ^ 0.5, held between 0.7 and 2.5. It applies at the dealer (`buy_weapons`), the fence (`sell_weapons`), the bulk
+  buyers' quotes (the Morettis, the Company, Los Cuervos) and a gun run's pay.
+- **What moves the street.** The dealer sells only what the street holds, and what he sells leaves it. What we sell the fence, and
+  a gun run sold on delivery (by air or off the truck; not the Company's, which go south), goes onto it. A seizure takes half its
+  count off (the dealers go to ground). The street drifts back to normal with a two-hour time constant, and never holds more than
+  three times normal.
+- **The board.** The market page (J, LEFT/RIGHT) lists what is on the street by type with its price factor.
+- **Draws.** Only when a gun run is dealt: `seed + 193`, and `seed + 195` while the island's other boards are dealt
+  (`Session.stock_island_boards`), so a visit and a remote deal agree. The old draws on `arng` are still made in the same order
+  (the old crates' weights are drawn and dropped), so where a run goes for a given seed is unchanged; only its contents and pay move.
+- **Saved** under `crates` (the street by type); an older save starts at the normal levels.
+
+Not yet: ammunition as a good (stage 2), the war's use of it (stage 3), the screens (stage 4); the Company's and Los Cuervos' own
+buying moving the ladder by type; orders that ask for crates of a type (they still ask for rifles).

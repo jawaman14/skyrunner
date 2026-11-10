@@ -300,6 +300,8 @@ func _update_stashes(dt: float) -> void:
 			say("Truck in at %s: %s into the armoury here" % [st.name, Arsenal.describe(t.weapons)])
 			bus.emit("job_delivered", time, "", ["runner"], {"job_id": t.job_id, "pay": 0, "dest": t.stash, "hot": true, "by": str(t.driver), "mode": "trucked", "org": "org"})
 		elif r[1] == "delivered":
+			if crates != null and not t.weapons.is_empty():
+				crates.flow_all(t.weapons)  # sold where the truck left them: onto the street
 			move_money(t.pay, "outside:buyers", "delivery")
 			econ.record_delivery("guns" if not t.weapons.is_empty() else "cocaine", st.zone)
 			say("Truck in at %s: +$%s" % [st.name, Py.money(t.pay)])
@@ -359,6 +361,8 @@ func _update_economy(dt: float) -> void:
 		rivals += ground.positions("rival")
 		turf = ground.turf(turf)
 	econ.update(dt, time, cops, rivals, turf, ground)
+	if crates != null:
+		crates.update(dt)  # the street's arms drift back to the ladder
 	while _news_seen < econ.news.size():
 		say("Market news: " + econ.news[_news_seen][1])
 		_news_seen += 1
@@ -510,6 +514,8 @@ func _complete_delivery(job: Jobs.Job, af: Airfield) -> void:
 		island.defected(job)
 	var g := _grade(job)
 	move_money(g[0], "outside:buyers", "delivery")
+	if crates != null and not job.weapons.is_empty() and not job.agency:
+		crates.flow_all(job.weapons)  # a gun run sold on delivery: onto the street (the Company's go south)
 	if job.hot():
 		econ.record_delivery(Economy.good_of(job), Economy.job_market(job))
 	active_jobs.erase(job)

@@ -14,6 +14,8 @@ static func _cmd_sell_weapons(role: String, a: Dictionary, session: Session):
 	if k == 0:
 		return "None of those in the armoury."
 	var pay := session.weapon_price(tier, false) * k
+	if session.crates != null:
+		session.crates.flow(tier, k)  # onto the street: the next one sells for less
 	session.move_money(pay, "outside:buyers", "resale")
 	session.econ.record_delivery("guns", "town")
 	session.say("Sold %d %s to the fence: +$%s" % [k, Arsenal.TIERS[tier].name.to_lower(), Py.money(pay)])
@@ -29,11 +31,16 @@ static func _cmd_buy_weapons(role: String, a: Dictionary, session: Session):
 	var n := int(session._num(a, "n", 1))
 	if not Arsenal.TIERS.has(tier) or n <= 0:
 		return "Buy what?"
+	if session.crates != null and session.crates.available(tier) < n:
+		var have: int = session.crates.available(tier)
+		return "No dealer has %s to sell." % Arsenal.TIERS[tier].name.to_lower() if have == 0 else "The dealers have only %d %s between them." % [have, Arsenal.TIERS[tier].name.to_lower()]
 	var cost := session.weapon_price(tier, true) * n
 	if session.money < cost:
 		return "Need $%s." % Py.money(cost)
 	session.move_money(-cost, "outside:market", "purchase")
 	session.arsenals["org"].add(tier, n)
+	if session.crates != null:
+		session.crates.flow(tier, -n)  # off the street
 	session.say("Bought %d %s from a dealer: -$%s" % [n, Arsenal.TIERS[tier].name.to_lower(), Py.money(cost)])
 	return null
 

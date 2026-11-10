@@ -165,6 +165,11 @@ func _market() -> void:
 		footer.text += "\nArmoury (%s): %s, %d rounds - worth $%s to the fence" % [
 			"the club" if a.cache == "" else s.stash_net.get_stash(a.cache).name, Arsenal.describe(a.stock), a.ammo,
 			Py.money(int(a.value(s.econ.mult("guns", "town") * 0.8)))]
+		if s.crates != null:  # the scarcity ladder (D-61): what the dealers hold, and what scarcity does to its price
+			var on_street := []
+			for c in s.crates.view():
+				on_street.append("%s %d (x%.2f)" % [str(c.name).to_lower(), int(c.street), float(c.factor)])
+			footer.text += "\nOn the street: " + ", ".join(on_street)
 	hints.set_hints([["LEFT/RIGHT", "job board", "left"], ["ESC", "close", "esc"]])
 
 

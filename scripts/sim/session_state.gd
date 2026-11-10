@@ -170,6 +170,7 @@ var stash_net: StashNet = null  ## the organisation's stash houses (maps that ha
 var _stash_ai_t := 0.0
 var investigation: Investigation = null  ## the task force's case files on the stashes (DESIGN §48)
 var arsenals := {}  ## "org" | "law" | "rival" -> Arsenal (Arsenal.REALISM)
+var crates: Crates = null  ## weapon crates and the scarcity ladder (D-61 stage 1)
 var seats: Seats  ## who holds each role: the AI, or a human (Seats)
 var _ai_defaults := {}  ## what each seat's AI was set to before a human took it
 var remote_stick := {}  ## a remote pilot's controls {roll, pitch, throttle, rudder, brake} (the pilot seat over the wire)
@@ -579,7 +580,7 @@ func refresh_board(code: String) -> void:
 		if aj != null:
 			boards[code].append(aj)
 	if Arsenal.REALISM and stash_net != null and features.has("contraband") and af.kind in ["shady", "bush"] and unlocked("guns") and arng.random() < 0.5:
-		var gj = Arsenal.gun_run(af, world.airfields, stash_net, arng)
+		var gj = Arsenal.gun_run(af, world.airfields, stash_net, arng, 1.0, crates)
 		if gj != null:
 			boards[code].append(gj)
 	if trade != null and features.has("contraband") and af.kind in ["shady", "bush"]:
@@ -617,6 +618,8 @@ func _seize_weapons(weapons: Dictionary, where: String) -> void:
 	if not Arsenal.REALISM or weapons.is_empty() or not arsenals.has("law"):
 		return
 	var n: int = arsenals["law"].take_seized(weapons)
+	if n > 0 and crates != null:
+		crates.seized(weapons)  # the dealers go to ground: less on the street for a while
 	if n > 0:
 		law_say("Weapons recovered from %s: %s - into the arsenal" % [where, Arsenal.describe(weapons)])
 		bus.emit("weapons_seized", time, "", ["law"], {"weapons": weapons, "where": where})
@@ -633,6 +636,8 @@ func _stock_weapons(weapons: Dictionary, stash_id: String) -> void:
 ## The fence's price for one weapon (a cut under the street) and the dealer's (a mark-up).
 func weapon_price(tier: String, buying: bool) -> int:
 	var m := econ.mult("guns", "town")
+	if crates != null:
+		m *= crates.factor(tier)  # the scarcity ladder: a type the street is short of is dear
 	return int(Arsenal.TIERS[tier].price * m * (1.4 if buying else 0.8))
 
 

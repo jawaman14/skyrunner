@@ -46,6 +46,9 @@ func _initialize() -> void:
 	if OS.get_environment("NO_CASES") != "":  # the same run with the old stash-raid roll instead of the case files (DESIGN §48)
 		Investigation.ENABLED = false
 	var a := OS.get_cmdline_user_args()
+	if OS.get_environment("NO_CRATES") != "" or a.has("nocrates"):  # the same run without the arms scarcity ladder (DESIGN 77)
+		Crates.ENABLED = false
+		a.erase("nocrates")
 	if a.size() > 0:
 		seeds = int(a[0])
 	if a.size() > 1:
