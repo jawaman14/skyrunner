@@ -65,6 +65,7 @@ var _jobs: Array = []
 var _work: Array = []  ## the Work page's rows: [kind, payload] - "board", "job" (a Job), or "" for a heading
 var _empire: Array = []  ## the Empire page's rows: an action to call, or "" for a line
 var _order_rows: Array = []
+var _invest_rows: Array = []  ## the Investments page's rows: an offer {kind, at}, or {} for a heading or a line
 var _books_rows: Array = []  ## the Books page's rows: a business id, or "" for a heading or a line (L-4)
 var _week_rows: Array = []  ## the Week page's rows: a black-market offer index, or -1
 var _call_ids: Array = []  ## the ringing calls last drawn: a new one refreshes the phone
@@ -429,6 +430,8 @@ func refresh() -> void:
 			_orders_page()
 		"heat":
 			_heat_page()
+		"invest":
+			_invest_page()
 		"books":
 			_books_page()
 		"stock":
@@ -547,6 +550,8 @@ func _empire_parts() -> Array:
 		fleet.append(["Engine %s, airframe %s" % [v.get("engine", "?"), v.get("airframe", "?")], ""])
 	if s.dealer != null:
 		fleet.append(["The car lot: cars, vans and trucks", "dealer"])
+	if s.investments != null:
+		money.append(["Investments: %d held, $%d an hour" % [s.investments.held.size(), s.investments.upkeep()], "invest"])
 	var parts := [["Money", money], ["Fleet", fleet], ["The law", [["Heat and case files", "heat"]]]]
 	if s.businesses != null:
 		var ours: Array = s.businesses.ours()
@@ -605,8 +610,8 @@ func _update_info() -> void:
 
 ## ESC: back to the home screen, and from there away. With the chapter guide open it puts the phone away.
 func close() -> void:
-	if visible and page in ["market", "orders", "heat"] and not campaign_scroll.visible:
-		open_app("empire" if page == "heat" else "work")
+	if visible and page in ["market", "orders", "heat", "invest"] and not campaign_scroll.visible:
+		open_app("empire" if page in ["heat", "invest"] else "work")
 		return
 	if visible and page != "home" and not campaign_scroll.visible:
 		page = "home"
@@ -737,7 +742,7 @@ func key(k: String) -> void:
 						waypoint_to.emit(Vector2(float(xy[0]), float(xy[1])))
 				"empire":
 					if i >= 0 and i < _empire.size() and str(_empire[i]) != "":
-						if str(_empire[i]) in ["heat", "books", "stock"]:
+						if str(_empire[i]) in ["heat", "books", "stock", "invest"]:
 							open_app(str(_empire[i]))
 							return
 						if not _can_call(str(_empire[i])):
@@ -745,6 +750,12 @@ func key(k: String) -> void:
 						page = "home"
 						super.close()
 						called.emit(str(_empire[i]))
+				"invest":
+					if i >= 0 and i < _invest_rows.size() and not (_invest_rows[i] as Dictionary).is_empty():
+						var offer: Dictionary = _invest_rows[i]
+						var ri: Array = s.command(Roles.PILOT, "invest", {"what": str(offer.kind), "at": str(offer.at)})
+						show_feedback("Done: it is ours." if ri[0] else str(ri[1]), bool(ri[0]))
+						refresh()
 				"books":
 					if i >= 0 and i < _books_rows.size() and str(_books_rows[i]) != "":
 						var id := str(_books_rows[i])
@@ -887,6 +898,9 @@ func _heat_page() -> void:
 				for stash in s.stash_net.stashes:
 					if str(worker.assigned) == "stash-" + str(stash.id):
 						warned[str(stash.id)] = true
+	if s.investments != null and s.investments.warned() and s.stash_net != null:
+		for stash in s.stash_net.stashes:
+			warned[str(stash.id)] = true  # the informant's word is as good as a lookout's, for every house
 	var cases: Array = investigation.view(s.stash_net, s.time, warned) if s.stash_net != null else []
 	for case in cases:
 		var line := "%s: %s" % [str(case.name), str(case.stage)]
@@ -902,6 +916,42 @@ func _heat_page() -> void:
 
 ## The business books (L-4; spec A1): ours with their tills, what they owe and why, and their shelves; the free ones for sale; the
 ## other orgs' with their owner; then the AI orgs' moves that were refused or blocked, with the reasons.
+## Investments with a return (loop idea 7): what we hold and what it costs, then what can be bought here.
+func _invest_page() -> void:
+	title.text = "Investments"
+	_invest_rows = []
+	if s.investments == null:
+		footer.text = "Nothing to invest in in this game."
+		return
+	var v: Dictionary = s.investments.view()
+	list.section("Ours ($%d an hour)" % int(v.upkeep))
+	for h in v.held:
+		list.add_row([invest_line(h)])
+		_invest_rows.append({})
+	if (v.held as Array).is_empty():
+		list.add_row(["Nothing yet."])
+		_invest_rows.append({})
+	list.section("To buy (ENTER)")
+	for o in v.offers:
+		list.add_row([offer_line(o)])
+		_invest_rows.append({"kind": o.kind, "at": o.at})
+		list.add_row(["  " + (str(o.blurb).capitalize() if str(o.why) == "" else str(o.why))])
+		_invest_rows.append({})
+	footer.text = "A depot and a strip crew go at the bush or back-country strip you are parked at. Upkeep is paid on the hour; one we cannot pay lapses."
+	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "buy", "enter"], ["ESC", "back", "esc"]])
+
+
+static func invest_line(h: Dictionary) -> String:
+	return "%s%s: $%d an hour - %s" % [str(h.name), (" at " + str(h.where)) if str(h.where) != "" else "", int(h.upkeep), str(h.blurb)]
+
+
+static func offer_line(o: Dictionary) -> String:
+	var where := ""
+	if str(o.at) != "":
+		where = " at " + World.airfield(str(o.at)).name
+	return "%s%s: $%s, then $%d an hour" % [str(o.name), where, Py.money(int(o.cost)), int(o.upkeep)]
+
+
 func _books_page() -> void:
 	title.text = "The books"
 	_books_rows = []

@@ -110,6 +110,8 @@ func _init(opts := {}) -> void:
 		curses = Curses.new(self, _rng(seed + 189))
 	if BlackMarket.ENABLED:  # D-95: turns over with the week, on its own stream
 		black_market = BlackMarket.new(self, _rng(seed + 191))
+	if Investments.ENABLED:  # loop idea 7: no draws; nothing held is the game as it was
+		investments = Investments.new(self)
 	if HeatDial.ENABLED:  # D-95: no draws; Steady is the game as it was
 		heat_dial = HeatDial.new(self)
 	if Delegation.ENABLED:  # L-5: a hired pilot can fly a job of ours (no draws)
@@ -184,6 +186,9 @@ func dispose() -> void:
 	if heat_dial != null:
 		heat_dial.sess = null
 	heat_dial = null
+	if investments != null:
+		investments.sess = null
+	investments = null
 	if delegation != null:
 		delegation.sess = null
 	delegation = null

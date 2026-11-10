@@ -206,6 +206,8 @@ func _update_world(dt: float) -> void:
 		black_market.update()  # after the week: a new week posts new stock
 	if delegation != null:
 		delegation.update()  # the contract pilots' runs landing (L-5)
+	if investments != null:
+		investments.update(dt)  # upkeep on the hour; the informant's word of a warrant
 	if businesses != null:
 		businesses.tick_full(dt)  # the shoppers, hour by hour, wherever the player is (L-6)
 	if schedule != null:

@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-10 - Claude, investments with a return (loop idea 7):** `Investments`: a fuel depot, a strip crew, a safehouse, an
+  informant; a price once and an upkeep on the hour, lapsing unpaid; `invest`; phone Empire > Investments; saved (DESIGN 79).
 - **2026-11-10 - Claude, price wars and supply cuts (loop idea 6):** `PriceWars` on Trade: an undercut, a flood or a cut, one at a
   time (stream 197); `price_war` matches the price or holds the stock; phone market page M/H; saved (DESIGN 78).
 - **2026-11-10 - Claude, weapon crates and the scarcity ladder (D-61 stage 1):** `Crates`: a gun run is one to three crates of one
