@@ -155,6 +155,15 @@ static func _cmd_stock_order(_role: String, a: Dictionary, session: Session):
 	return err if err != "" else null
 
 
+## Answer the price war under way (loop idea 6): `answer` is "match" or "hold".
+static func _cmd_price_war(_role: String, a: Dictionary, session: Session):
+	if session.trade == null or session.trade.wars == null:
+		return "No price wars in this game."
+	var w: Dictionary = session.trade.wars.war
+	var err: String = session.trade.wars.answer(int(session._num(a, "id", int(w.get("id", -1)))), str(a.get("answer", "")))
+	return err if err != "" else null
+
+
 ## Call off pickup `id` (the money paid is lost).
 static func _cmd_pickup_cancel(_role: String, a: Dictionary, session: Session):
 	if session.logistics == null:

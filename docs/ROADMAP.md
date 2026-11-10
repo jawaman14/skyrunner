@@ -324,7 +324,9 @@ D-58 to D-60): deadlines follow demand, the boss layer organises while flying is
 - **Built (the simulation half of addition 1, #419):** `Orders` and the market board data in `Trade.view`, with tests; DESIGN section 49.
 - **Phone interface (#446):** Work has the market board and buyers' orders with premiums/deadlines; Enter calls Benny. Measured in BALANCE entry 62 (the stand-in
   misses most orders; the premiums pay it about $150 a run and the misses cost the Morettis' respect).
-- **Not started:** additions 2 to 8, in the order of LOOP_IDEAS section 2 (cover cargo next, then the calendar).
+- **Built since:** 2 (cover cargo), 4 (the calendar), 5 (the deal moves), 8 (comeback valves), and 6, **price wars and supply
+  cuts (DESIGN 78):** Los Cuervos undercut a market, the Company floods one, or a good runs short; match the price or hold the stock.
+- **Not started:** 3 (dirty money with a clock, after heat step 2) and 7 (investments with a return).
 
 ## Stock, ownership and the money loop (owner, 18 October; planned)
 
@@ -367,6 +369,11 @@ and all of it ties into the ground and turf war. The design, grounded in `arsena
 4. **The screens.** The pack and logistics menus, and the market board (it already carries guns; ammunition joins it). (Codex)
 
 Order: after the buyers' orders (D-59) land; each stage needs a BALANCE entry because the war economy is sensitive to it.
+
+**Degradation of weapons and vehicles** (owner, 10 November, D-97; not built). Weapons and vehicles wear with use and cost
+something to keep working, as the aircraft already does (`Airframe`, DESIGN 39). To design: what wears a weapon (rounds fired, a
+seizure, storage) and what a worn one does (jams, less fire); what wears a car or truck (distance, rough roads, a firefight) and
+what a worn one does (slower, a breakdown on the road); and who mends them (the mechanic, the gun dealer). After the planned items.
 
 ## Human release gates and owner decisions (#326)
 

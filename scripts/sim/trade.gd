@@ -72,6 +72,7 @@ var last := ""
 var bulk_log: Array = []  ## [time, buyer, good, qty] - what following the money finds
 var trust: Trust  ## trust with each crew and who resents whom (D-11)
 var orders: Orders = null  ## buyers' orders with deadlines that follow demand (set by the session; null without)
+var wars: PriceWars = null  ## price wars and supply cuts (loop idea 6; set by the session; null without)
 var _t := 0.0
 var _war_t := 0.0
 var _sales_acc := {}
@@ -346,6 +347,8 @@ func update(dt: float) -> void:
 			appetite[b][g] = minf(float(BUYERS[b].cap[g]), appetite[b][g] + float(BUYERS[b].cap[g]) * step / REFILL_S)
 	if orders != null:
 		orders.update(sess.time, step)
+	if wars != null:
+		wars.update(sess.time, step)
 	if sess.payroll == null:
 		return
 	_post_dealers()
@@ -399,15 +402,21 @@ func _sell_street(o: String, step: float) -> void:
 		var share := clampf(1.0 - 0.12 * dealers(other, m).size() - 0.4 * (sess.econ.rival[m] if o == "org" else 0.0), 0.3, 1.0)
 		var g := ""
 		var lg = sess.logistics if o == "org" else null
+		var war := {"share": 1.0, "price": 1.0, "hold": false}  ## a price war on this corner (PriceWars.street)
 		if o == "org":
-			# with Logistics, only what's in a stash in his own market
-			var have := func(gg: String) -> float: return lg.in_market(gg, m) if lg != null else float(stock[gg])
+			# with Logistics, only what's in a stash in his own market; a good held through a price war stays there
+			var have := func(gg: String) -> float:
+				if wars != null and wars.street(gg, m).hold:
+					return 0.0
+				return lg.in_market(gg, m) if lg != null else float(stock[gg])
 			g = "cocaine" if have.call("cocaine") >= DEALER_LB_MIN.cocaine * mins else ("marijuana" if have.call("marijuana") > 0.0 else "")
 			if g == "":
 				continue
+			if wars != null:
+				war = wars.street(g, m)
 		else:
 			g = "cocaine"
-		var lb: float = DEALER_LB_MIN[g] * mins * share * (0.6 + 0.8 * float(w.skill))
+		var lb: float = DEALER_LB_MIN[g] * mins * share * float(war.share) * (0.6 + 0.8 * float(w.skill))
 		var site := ""
 		var grade := 1.0  ## what the lots sold fetch against the street price (Grades)
 		if lg != null:
@@ -420,7 +429,7 @@ func _sell_street(o: String, step: float) -> void:
 			lb = minf(lb, stock[g])
 			stock[g] -= lb
 			sold[g] += lb
-		var pay := lb * street_price(g, m) * grade
+		var pay := lb * street_price(g, m) * grade * float(war.price)
 		if lg != null:
 			lg.add_cash(site, pay, "outside:street", "sales")  # the corner's money goes to the stash, not the club (a sale, L-2)
 		else:
@@ -552,5 +561,5 @@ func view(side: String) -> Dictionary:
 	for m in street_sales:
 		sales[m] = int(street_sales[m])
 	return {"stock": st, "corners": corners, "quotes": quotes, "connected": connected, "career": career, "last": last,
-		"orders": orders.view() if orders != null else {"open": [], "recent": [], "board": {"goods": {}}}, "sales": sales, "sold": {"cocaine": int(sold.cocaine), "marijuana": int(sold.marijuana)}, "earned": earned,
+		"orders": orders.view() if orders != null else {"open": [], "recent": [], "board": {"goods": {}}}, "wars": wars.view() if wars != null else {"war": {}, "history": []}, "sales": sales, "sold": {"cocaine": int(sold.cocaine), "marijuana": int(sold.marijuana)}, "earned": earned,
 		"street": {"cocaine": snappedf(street_price("cocaine", "town"), 0.1), "marijuana": snappedf(street_price("marijuana", "town"), 0.1)}}

@@ -191,7 +191,9 @@ notifications; **Guide** opens the chapter guide; **Help** shows the controls; *
 Only enabled systems appear in People; new numbers are marked NEW.
 
 In **Work → Market prices**, prices are percentages of the usual price, with a demand/supply ratio and trend. These are
-market indices, not cash sale quotes. **Buyers' orders** lists the named buyer, remaining cargo, premium and time left.
+market indices, not cash sale quotes. When Los Cuervos undercut a market or the Company floods one, the page says so at the
+top: **M** matches their price (thinner money, your corners keep their custom and the war ends sooner), **H** holds your stock
+there until it is over (the customers come back). A supply cut needs no answer: prices are up, sell into it. **Buyers' orders** lists the named buyer, remaining cargo, premium and time left.
 **Enter** calls Benny; it does not accept a sale. Deliver and sell to the named buyer before the deadline.
 **Enter** on one of your jobs sets a waypoint.
 

@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-10 - Claude, price wars and supply cuts (loop idea 6):** `PriceWars` on Trade: an undercut, a flood or a cut, one at a
+  time (stream 197); `price_war` matches the price or holds the stock; phone market page M/H; saved (DESIGN 78).
 - **2026-11-10 - Claude, weapon crates and the scarcity ladder (D-61 stage 1):** `Crates`: a gun run is one to three crates of one
   type, dealt off what the street holds (streams 193, 195); scarcity prices the dealer, the fence and the buyers; saved (DESIGN 77).
 - **2026-11-09 - Claude, trust with each crew (D-11):** `Trust` on Trade: five standings (three wrapped, Los Cuervos' and the
