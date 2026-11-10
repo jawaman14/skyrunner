@@ -326,7 +326,9 @@ D-58 to D-60): deadlines follow demand, the boss layer organises while flying is
   misses most orders; the premiums pay it about $150 a run and the misses cost the Morettis' respect).
 - **Built since:** 2 (cover cargo), 4 (the calendar), 5 (the deal moves), 8 (comeback valves), and 6, **price wars and supply
   cuts (DESIGN 78):** Los Cuervos undercut a market, the Company floods one, or a good runs short; match the price or hold the stock.
-- **Not started:** 3 (dirty money with a clock, after heat step 2) and 7 (investments with a return).
+- **7, investments with a return (DESIGN 79):** a fuel depot or a strip crew at a back-country strip, a safehouse, an informant;
+  a price once, an upkeep on the hour, a payoff you can see.
+- **Not started:** 3 (dirty money with a clock, after heat step 2).
 
 ## Stock, ownership and the money loop (owner, 18 October; planned)
 

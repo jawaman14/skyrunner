@@ -94,6 +94,16 @@ static func _cmd_heat_dial(role: String, a: Dictionary, session: Session):
 	return err if err != "" else null
 
 
+## Investments with a return (loop idea 7): buy `what` (depot, strip, safehouse, informant) at strip `at` (default: where we are
+## parked), or close one with `close`.
+static func _cmd_invest(_role: String, a: Dictionary, session: Session):
+	if session.investments == null:
+		return "Nothing to invest in."
+	var at := str(a.get("at", session.location if session.parked else ""))
+	var err: String = session.investments.close(str(a.get("what", "")), at) if bool(a.get("close", false)) else session.investments.buy(str(a.get("what", "")), at)
+	return err if err != "" else null
+
+
 ## The last run (D-95): cash out, parked at home.
 static func _cmd_last_run_out(role: String, a: Dictionary, session: Session):
 	if session.last_run == null:

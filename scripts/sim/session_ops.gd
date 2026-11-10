@@ -239,6 +239,8 @@ func fuel_source() -> Array:
 	if af == null:
 		return [FUEL_PRICE_PER_LB * econ.fuel_mult(), 0.0]
 	var cache: float = fuel_caches.get(af.code, 0.0)
+	if investments != null and investments.depot_price(af.code) >= 0.0:
+		return [investments.depot_price(af.code), 1e9]  # our own depot here (loop idea 7)
 	if af.kind in ["hub", "regional"]:
 		return [FUEL_PRICE_PER_LB * econ.fuel_mult(), 1e9]
 	if af.kind == "bush":

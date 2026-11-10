@@ -35,6 +35,7 @@ const SUSPICION_DECAY := 3.0
 ## The early game is gentle (owner, 12 Oct): the suspicion a sighting adds is multiplied by `suspicion_scale`, which the story sets per chapter
 ## (0.1 in chapters 1-2, 0.5 in chapter 3, 1 after). Off, or with no story, it stays 1. No random draws.
 static var EARLY_PACE := true
+var cool_mult := 1.0  ## > 1 while the organisation keeps a safehouse (Investments): suspicion cools faster
 var decay_mult := 1.0  ## < 1 when the runner has a name (Renown.heat_mult): the famous are watched
 const ODD_DESTINATION_SUSPICION := 100.0  ## shady strips: nobody legit goes there
 const BUSH_DESTINATION_SUSPICION := 30.0  ## farm and bush strips get honest traffic too
@@ -897,7 +898,7 @@ func _classify(t: Target, dt: float) -> void:
 			else:
 				c.wanted = 1
 	else:
-		c.suspicion = maxf(0.0, c.suspicion - SUSPICION_DECAY * decay_mult * dt)
+		c.suspicion = maxf(0.0, c.suspicion - SUSPICION_DECAY * decay_mult * cool_mult * dt)
 
 
 ## Center watches the Mode A code. The emergency codes get a response - 7700

@@ -128,8 +128,8 @@ func touchdown(fpm: float, limit_fpm: float, af) -> void:
 	var a := of()
 	var hard := maxf(0.0, fpm / maxf(1.0, limit_fpm) - HARD_FRACTION) / (1.0 - HARD_FRACTION)
 	var loss := hard * HARD_POINTS
-	if af != null:
-		loss += float(ROUGH_AIRFRAME.get(af.surface, 0.0))
+	if af != null and not (sess.investments != null and sess.investments.has("strip", af.code)):
+		loss += float(ROUGH_AIRFRAME.get(af.surface, 0.0))  # (a strip our crew keeps graded costs nothing: Investments)
 	if loss > 0.0:
 		a.airframe = maxf(0.0, float(a.airframe) - loss)
 		if hard > 0.3:
@@ -158,6 +158,8 @@ func update(dt: float, s) -> void:
 	if s != null and s.on_ground and s.gs_kts > ROLL_MIN_KTS:
 		var af = sess.world.airfield_at(s.x, s.y)
 		var pts: float = float(ROUGH_AIRFRAME.get(af.surface, 0.0)) if af != null else 0.0
+		if af != null and sess.investments != null and sess.investments.has("strip", af.code):
+			pts = 0.0  # our crew keeps this strip graded (Investments)
 		if pts > 0.0:
 			var before := band_of(float(a.airframe))
 			a.airframe = maxf(0.0, float(a.airframe) - pts * ROLL_WEAR_PER_MIN * dt / 60.0)

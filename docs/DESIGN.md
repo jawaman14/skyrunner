@@ -2406,3 +2406,26 @@ somebody moves a market against us and says so; one at a time, with fifteen quie
 
 Not yet: raiding the depot the cheap product comes from (D-19, paused by D-75), Los Cuervos answering our own price cuts, and a
 war over guns (the ladder, section 77, has no undercut).
+
+## 79. Investments with a return (loop idea 7, docs/LOOP_IDEAS.md)
+
+`scripts/sim/investments.gd` (`Investments`, on the session as `investments`; switch `Investments.ENABLED`, in the parity set; no
+random draws). Mount & Blade's village improvements, for the empire: each costs money once and an upkeep on the hour, and each
+gives something the player can see.
+
+| Investment | Price | Upkeep an hour | Where | What it gives |
+|---|---|---|---|---|
+| Fuel depot | $3,500 | $40 | a bush or back-country strip, one each | avgas there at 1.2x the pump, any amount (a back-country strip otherwise has only what you flew in; a farmer's drums cost 2x): a run with no fuel leg in it |
+| Strip crew | $4,500 | $50 | a bush or back-country strip, one each | the strip is kept graded: landing and rolling on it no longer wear the airframe (section 39) |
+| Safehouse | $4,000 | $60 | one | the task force's suspicion of us cools 30% faster (`PoliceSystem.cool_mult`) |
+| Informant | $2,500 | $90 | one (needs the case files) | the countdown to every raid on a stash, as a posted lookout gives for his own house (section 48), and a line when a warrant is signed |
+
+- **Buying** (`invest`, the pilot and the boss): `what`, and for a depot or a crew the strip `at` (default: where we are parked).
+  A hidden strip must have been found. `close` closes one; nothing comes back.
+- **Upkeep** is taken from the safe every 3,600 s, booked as a fee. One we cannot pay that hour lapses with a message (the depot
+  is drained, the crew walks, the clerk stops calling) and must be bought again.
+- **The phone.** Empire > Investments: what we hold with its upkeep, then what can be bought here (ENTER), with why not when it cannot.
+- **Saved** under `investments` when any is held; an older save has none.
+
+Not yet: a hidden strip of our own (a new strip on the map waits on the map rebuild, D-86), a pay-back figure on the page (hours
+of fuel legs or airframe points saved), and the organisation's AI buying any.
