@@ -449,6 +449,8 @@ func fire(q: Squad) -> float:
 	var p := Arsenal.power(q.loadout, q.men)
 	if q.ammo <= 0:
 		p *= 0.2
+	if q.faction == "org" and sess != null and sess.wear != null:
+		p *= sess.wear.arms_mult()  # a worn armoury: stoppages (Wear)
 	return p * (0.4 + 0.6 * q.morale) * q.vet()
 
 
@@ -1050,6 +1052,8 @@ func _rounds(step: float) -> void:
 				q.morale = maxf(0.0, q.morale - 0.03)
 			q.ammo = maxi(0, q.ammo - q.men * 6)
 			q.rounds += 1
+			if q.faction == "org" and sess != null and sess.wear != null:
+				sess.wear.fought()  # every round wears the armoury (Wear)
 		if f.surprise != "" and f.rounds >= 2:
 			f.surprise = ""
 		# hit and run: two rounds, then gone

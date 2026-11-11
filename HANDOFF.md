@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-11 - Claude, weapons and vehicles wear (D-97):** `Wear`: the armoury wears with firefight rounds and shots on foot, owned
+  trucks with distance; fire and speed fall to 75% at worst; `upkeep` puts them right; phone Empire > Fleet; saved (DESIGN 82).
 - **2026-11-11 - Claude, the stock rework's later parts (51):** bulk buyers pay for grade and age (`Grades.BULK`); the gun dealer
   on the pickup flow (`stock_order` with guns: crates to a stash, into the armoury); Los Cuervos intercept pickups
   (`Pickups.INTERCEPTS`, stream 201) (DESIGN 81).

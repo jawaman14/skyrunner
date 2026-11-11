@@ -223,6 +223,8 @@ func fire() -> bool:
 	if tier == "" or mag <= 0 or not active:
 		return false
 	mag -= 1
+	if sess != null and sess.wear != null:
+		sess.wear.shot()  # (Wear)
 	return true
 
 

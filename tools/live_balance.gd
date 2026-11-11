@@ -55,6 +55,9 @@ func _initialize() -> void:
 	if a.has("nobulkgrade"):  # the same run with the bulk buyers paying the quote whatever the grade (DESIGN 81)
 		Grades.BULK = false
 		a.erase("nobulkgrade")
+	if a.has("nowear"):  # the same run with weapons and trucks that never wear (DESIGN 82)
+		Wear.ENABLED = false
+		a.erase("nowear")
 	if a.has("nowars"):  # the same run without price wars and supply cuts (DESIGN 78)
 		PriceWars.ENABLED = false
 		a.erase("nowars")

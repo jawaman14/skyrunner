@@ -550,6 +550,9 @@ func _empire_parts() -> Array:
 		fleet.append(["Engine %s, airframe %s" % [v.get("engine", "?"), v.get("airframe", "?")], ""])
 	if s.dealer != null:
 		fleet.append(["The car lot: cars, vans and trucks", "dealer"])
+	if s.wear != null:  # weapons and vehicles wear with use (D-97): ENTER puts one right
+		for w in s.wear.view():
+			fleet.append([wear_line(w), "service:" + str(w.kind)])
 	if s.investments != null:
 		money.append(["Investments: %d held, $%d an hour" % [s.investments.held.size(), s.investments.upkeep()], "invest"])
 	var parts := [["Money", money], ["Fleet", fleet], ["The law", [["Heat and case files", "heat"]]]]
@@ -747,6 +750,11 @@ func key(k: String) -> void:
 						waypoint_to.emit(Vector2(float(xy[0]), float(xy[1])))
 				"empire":
 					if i >= 0 and i < _empire.size() and str(_empire[i]) != "":
+						if str(_empire[i]).begins_with("service:"):
+							var rs: Array = s.command(Roles.PILOT, "upkeep", {"what": str(_empire[i]).trim_prefix("service:")})
+							show_feedback("Done." if rs[0] else str(rs[1]), bool(rs[0]))
+							refresh()
+							return
 						if str(_empire[i]) in ["heat", "books", "stock", "invest"]:
 							open_app(str(_empire[i]))
 							return
@@ -944,6 +952,12 @@ func _invest_page() -> void:
 		_invest_rows.append({})
 	footer.text = "A depot and a strip crew go at the bush or back-country strip you are parked at. Upkeep is paid on the hour; one we cannot pay lapses."
 	hints.set_hints([["UP/DOWN", "select", "down"], ["ENTER", "buy", "enter"], ["ESC", "back", "esc"]])
+
+
+static func wear_line(w: Dictionary) -> String:
+	if int(w.condition) >= 100:
+		return "%s: as new" % str(w.name)
+	return "%s: %s (%d%%), %s at %d%% - ENTER puts it right for $%s" % [str(w.name), str(w.band), int(w.condition), str(w.what), int(w.effect), Py.money(int(w.cost))]
 
 
 static func invest_line(h: Dictionary) -> String:

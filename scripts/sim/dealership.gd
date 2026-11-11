@@ -321,7 +321,7 @@ func apply() -> void:
 	if sess.stash_net == null:
 		return
 	var f := fleet()
-	sess.stash_net.haul_ms = float(f.speed)
+	sess.stash_net.haul_ms = float(f.speed) * (sess.wear.fleet_mult() if sess.wear != null and int(f.count) > 0 else 1.0)  # worn trucks are slower (Wear)
 	sess.stash_net.risk_mult = 1.0 - float(f.stealth)
 	sess.stash_net.armour = float(f.armour)
 

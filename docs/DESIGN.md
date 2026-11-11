@@ -2484,3 +2484,22 @@ Three follow-ups to sections 74 and 75, each behind its own switch.
 
 Not yet: buyers that refuse a grade, cutting, provenance of stolen stock, a worker sent to collect, and an escort for the
 contact's car.
+
+## 82. Weapons and vehicles wear with use (owner, 10 November 2026, D-97)
+
+`scripts/sim/wear.gd` (`Wear`, on the session as `wear`; switch `Wear.ENABLED`, in the parity set; no random draws). The aircraft
+already wears (section 39); now the armoury and the trucks do. Each has one condition, 100 new and 0 worn out.
+
+| | Wears with | What a worn one does | Put right |
+|---|---|---|---|
+| The armoury (the organisation's weapons) | 0.4 a round of a firefight one of our squads fights; 0.05 a shot the pilot fires on foot | our squads' fire falls in proportion, to 75% of full at nothing | the armourer: $8 a point, plus a tenth of that for each weapon held |
+| The trucks we own (the dealership's haulers) | 0.25 a kilometre a stash truck drives (hired vans do not wear: they are not ours) | the trucks' speed falls in proportion, to 75% at nothing | the dealership's shop: $12 a point a truck |
+
+- Nothing breaks outright. A line is said as a condition passes 75, 50 and 25 ("good", "worn", "poor", "worn out").
+- **Putting it right** (`upkeep`, the pilot and the boss; `what`: `arms` or `fleet`): paid from the safe as a repair, back to 100.
+  The phone's Empire page lists each under Fleet with its condition, its effect and the price; ENTER pays.
+- Los Cuervos' and the task force's weapons do not wear: this is the organisation's cost of fighting, not a new war balance.
+- **Saved** under `wear` when either is under 100; an older save is as new.
+
+Not yet: wear by weapon type or by truck (one condition each for now), the pilot's own car (its distance is not counted in the
+sim), a breakdown on the road, storage wear, and the gun dealer or a hired armourer as a worker.

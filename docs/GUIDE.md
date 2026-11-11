@@ -197,6 +197,9 @@ there until it is over (the customers come back). A supply cut needs no answer: 
 **Enter** calls Benny; it does not accept a sale. Deliver and sell to the named buyer before the deadline.
 **Enter** on one of your jobs sets a waypoint.
 
+Weapons and trucks wear with use: **Empire → Fleet** shows the armoury's and your trucks' condition, what it is costing you
+(your squads' fire, your trucks' speed) and the price to put it right; **Enter** on the line pays it.
+
 **Empire → Investments** spends money on things that pay back: a fuel depot or a strip crew at the bush or back-country strip
 you are parked at (fuel where there was none; no more wear from the rough surface), a safehouse (the task force's case cools
 faster) and an informant (he times every raid on a stash and tells you when a warrant is signed). Each has a price and an

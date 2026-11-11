@@ -112,6 +112,8 @@ func _init(opts := {}) -> void:
 		black_market = BlackMarket.new(self, _rng(seed + 191))
 	if Takeover.ENABLED:  # D-09/D-35: only a story game ever has one; its draws on their own stream, made once
 		takeover = Takeover.new(self, _rng(seed + 199))
+	if Wear.ENABLED:  # D-97: no draws; nothing worn is the game as it was
+		wear = Wear.new(self)
 	if Investments.ENABLED:  # loop idea 7: no draws; nothing held is the game as it was
 		investments = Investments.new(self)
 	if HeatDial.ENABLED:  # D-95: no draws; Steady is the game as it was
@@ -191,6 +193,9 @@ func dispose() -> void:
 	if investments != null:
 		investments.sess = null
 	investments = null
+	if wear != null:
+		wear.sess = null
+	wear = null
 	if takeover != null:
 		takeover.sess = null
 	takeover = null
