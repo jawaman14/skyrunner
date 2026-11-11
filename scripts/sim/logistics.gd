@@ -957,6 +957,24 @@ func _spirit_away(site: String, saved: Dictionary, saved_cash: float) -> void:
 		sess.say("The vault held: %s spirited away%s." % [", ".join(told), (" to " + name_of(to)) if to != "" else ""])
 
 
+## Stash `site` is taken with everything in it by `who` (an outside name: "rival" at the takeover). No vault saves any of it.
+func taken(site: String, who: String) -> void:
+	if not stock.has(site):
+		return
+	for g in goods():
+		if stock[site][g] > 0.0:
+			_inv("stash:" + site, Inventory.OUTSIDE + who, g, stock[site][g], "hijacked")
+			lost.product += stock[site][g]
+			lost_by.hijacked += int(stock[site][g] * price_of(g))
+			stock[site][g] = 0.0
+	if cash[site] >= 0.01:
+		book_cash(STREET, "outside:" + who, cash[site], "loss")
+		lost.cash += int(cash[site])
+		lost_by.hijacked += int(cash[site])
+		cash[site] = 0.0
+	sync()
+
+
 func _raided(site: String) -> void:
 	if not stock.has(site):
 		return

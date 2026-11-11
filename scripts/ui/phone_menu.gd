@@ -242,7 +242,7 @@ func contacts() -> Array:
 		out.append(["dealer", "The dealership", "cars to drive, vans and trucks for the stash runs"])
 	if s.casino != null:
 		out.append(["casino", "The Hotel Cielo", "Lenny Vance: your stake, the cage, the General, the Lucky Palm"])
-	if s.nights != null or s.ground != null:
+	if (s.nights != null or s.ground != null) and not (s.takeover != null and s.takeover.pending()):  # Rafa's until the takeover (D-09)
 		out.append(["desk", "The desk", "the boss's orders (and the squads, if there's a war on)"])
 	if s.races != null:
 		out.append(["track", "The track", "races for prize money: the street race in the car, the air circuit"])
@@ -565,7 +565,7 @@ func _empire_parts() -> Array:
 	var turf := []
 	if s.rackets != null:
 		turf.append(["The collectors: the streets we hold", "rackets"])
-	if s.nights != null or s.ground != null:
+	if (s.nights != null or s.ground != null) and not (s.takeover != null and s.takeover.pending()):
 		turf.append(["The desk: orders and squads", "desk"])
 	if not turf.is_empty():
 		parts.append(["Turf", turf])

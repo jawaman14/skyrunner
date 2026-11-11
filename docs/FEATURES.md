@@ -205,11 +205,11 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Campaign | Twelve chapters, 1979 Square Grouper to 1988 Last Flight | Built | Includes Blotter and The House |  |
 | Campaign | Four-chapter flying-lessons campaign | Built |  |  |
 | Campaign | Employed-pilot opening (Costa Brava Air Services) | Built |  | #296 |
-| Campaign | Rafa as employer, Benny his fixer; rafa.dialogue cues | Built | Chapter 4 news beat still held for the takeover | D-76 · #422 |
+| Campaign | Rafa as employer, Benny his fixer; rafa.dialogue cues | Built | The chapter 4 news plays once the takeover has happened | D-76 · #422 |
 | Campaign | Optional tutorial for every seat and system | Built |  |  |
 | Campaign | Open mode with every system and a $10k float | Built |  |  |
-| Takeover and boss layer | Rafa killed by Los Cuervos (heard, not seen) in chapter 4 | Planned |  | D-09 · D-78 |
-| Takeover and boss layer | Half the empire survives the takeover | Planned | Own RNG stream | D-35 |
+| Takeover and boss layer | Rafa killed by Los Cuervos (heard, not seen) in chapter 4 | Built | Takeover.ENABLED: at their first incident in Cocaine Cowboys, or fifteen minutes in; a NEWS line and the chapter_four_news talk; the desk is the player's from then (DESIGN §80) | D-09 · D-78 |
+| Takeover and boss layer | Half the empire survives the takeover | Built | The least-known half of the stashes, half the crew, the parked trucks, a quarter of the street cash; the pilot's safe untouched; stream seed + 199 (DESIGN §80) | D-35 |
 | Takeover and boss layer | Boss layer: organise; delivering optional, direct play stays first-class | Planned |  | D-58 · D-79 |
 | Takeover and boss layer | Delegating a flight costs money | Built | DESIGN §69 | D-10 |
 | Takeover and boss layer | Succession: next in line takes over when the boss dies or is jailed | Planned |  | D-82 |

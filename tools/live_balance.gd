@@ -49,6 +49,9 @@ func _initialize() -> void:
 	if OS.get_environment("NO_CRATES") != "" or a.has("nocrates"):  # the same run without the arms scarcity ladder (DESIGN 77)
 		Crates.ENABLED = false
 		a.erase("nocrates")
+	if a.has("notakeover"):  # the same run with Rafa alive (DESIGN 80)
+		Takeover.ENABLED = false
+		a.erase("notakeover")
 	if a.has("nowars"):  # the same run without price wars and supply cuts (DESIGN 78)
 		PriceWars.ENABLED = false
 		a.erase("nowars")
@@ -181,6 +184,8 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 			if s.psych != null:
 				s.psych.auto = true  # the organisation's AI trades with the Collective (the story's Blotter wants it)
 			s.story.tick(s)
+			if s.takeover != null:
+				s.takeover.update(STEP)  # Rafa killed in Cocaine Cowboys: half the empire survives
 			nw_max = maxf(nw_max, float(s.story.progress.get("net_worth", 0.0)))
 			while chapter_min.size() < s.story.index + 1 + (1 if s.story.completed_all else 0):
 				chapter_min.append(t / 60.0)
@@ -305,6 +310,8 @@ func _run(sd: int, extra: Dictionary) -> Dictionary:
 				c.suspicion = maxf(0.0, c.suspicion - PoliceSystem.SUSPICION_DECAY * STEP * DECAY_SHARE)
 		# the markets: supply and demand move with everything above
 		s.econ.update(STEP, t, [], [], {}, s.ground)
+		if s.crates != null:
+			s.crates.update(STEP)  # the street's arms drift back to the ladder
 		if int(t) % 60 == 0:
 			var c := s.econ.mult("cocaine", "town")
 			coke = [minf(coke[0], c), maxf(coke[1], c)]

@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-10 - Claude, the takeover (D-09, D-78, D-35):** `Takeover`: in Cocaine Cowboys, at Los Cuervos' first incident or 15 min
+  in, Rafa is killed; the least-known half of the stashes, half the crew, parked trucks and a quarter of the street cash survive
+  (stream 199); the desk is the player's from then; the chapter_four_news talk plays; saved (DESIGN 80).
 - **2026-11-10 - Claude, investments with a return (loop idea 7):** `Investments`: a fuel depot, a strip crew, a safehouse, an
   informant; a price once and an upkeep on the hour, lapsing unpaid; `invest`; phone Empire > Investments; saved (DESIGN 79).
 - **2026-11-10 - Claude, price wars and supply cuts (loop idea 6):** `PriceWars` on Trade: an undercut, a flood or a cut, one at a
