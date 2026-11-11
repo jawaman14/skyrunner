@@ -376,10 +376,10 @@ and all of it ties into the ground and turf war. The design, grounded in `arsena
 
 Order: after the buyers' orders (D-59) land; each stage needs a BALANCE entry because the war economy is sensitive to it.
 
-**Degradation of weapons and vehicles** (owner, 10 November, D-97; not built). Weapons and vehicles wear with use and cost
-something to keep working, as the aircraft already does (`Airframe`, DESIGN 39). To design: what wears a weapon (rounds fired, a
-seizure, storage) and what a worn one does (jams, less fire); what wears a car or truck (distance, rough roads, a firefight) and
-what a worn one does (slower, a breakdown on the road); and who mends them (the mechanic, the gun dealer). After the planned items.
+**Degradation of weapons and vehicles** (owner, 10 November, D-97). **First version built (DESIGN 82):** `Wear`: the armoury wears
+with every round our squads fight and every shot on foot (their fire falls to 75% at nothing), and owned trucks with the road
+(their speed falls to 75%); the armourer and the dealership's shop put them right for a price. Open: wear by weapon type and by
+truck, the pilot's own car, breakdowns on the road, storage wear.
 
 ## Human release gates and owner decisions (#326)
 

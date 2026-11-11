@@ -282,6 +282,8 @@ func _update_stashes(dt: float) -> void:
 		ground.events.clear()
 	for r in results:
 		var t: StashNet.Truck = r[0]
+		if wear != null:
+			wear.hauled(maxf(0.0, float(t.dur) - StashNet.TRUCK_LOAD_S) * stash_net.haul_ms / 1000.0)  # the road it drove (Wear)
 		if r[1] == "seized":  # bad-luck protection (StreakGuard): seizures in a row ease the next stop on the road
 			stash_net.truck_streak += 1
 		elif r[1] == "delivered":

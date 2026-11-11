@@ -188,6 +188,7 @@ var races: Races = null  ## the arena: a street race and an air circuit for priz
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var curses: Curses = null  ## cursed jobs: optional conditions for a premium (D-95)
 var takeover: Takeover = null  ## the story's takeover: Rafa killed in Cocaine Cowboys, half the empire survives (D-09, D-35)
+var wear: Wear = null  ## weapons and vehicles wear with use (D-97)
 var investments: Investments = null  ## investments with a return: a depot, a strip crew, a safehouse, an informant (loop idea 7)
 var black_market: BlackMarket = null  ## the weekly black market and the week's hot job (D-95)
 var heat_dial: HeatDial = null  ## the heat dial: more danger for more pay (D-95)

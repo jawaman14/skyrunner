@@ -104,6 +104,14 @@ static func _cmd_invest(_role: String, a: Dictionary, session: Session):
 	return err if err != "" else null
 
 
+## Put the armoury or the trucks right (Wear, D-97): `what` is "arms" or "fleet".
+static func _cmd_upkeep(_role: String, a: Dictionary, session: Session):
+	if session.wear == null:
+		return "Nothing wears in this game."
+	var err: String = session.wear.service(str(a.get("what", "")))
+	return err if err != "" else null
+
+
 ## The last run (D-95): cash out, parked at home.
 static func _cmd_last_run_out(role: String, a: Dictionary, session: Session):
 	if session.last_run == null:

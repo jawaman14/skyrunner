@@ -132,6 +132,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Stock rework (DESIGN §51) | Chapter objectives with deadlines, boss-level unlocks | Planned |  | slice 7 |
 | Arms and ammunition (DESIGN §50) | Arsenals for all three factions, gun runs, police arm from seizures | Built | Arsenal.REALISM |  |
 | Arms and ammunition (DESIGN §50) | Crates of one type and the scarcity ladder | Built | Crates.ENABLED: a gun run is one to three crates of one type; each type's supply on the street prices it at the dealer, the fence and the bulk buyers (DESIGN §77) | D-61 stage 1 |
+| Arms and ammunition (DESIGN §50) | Weapons and trucks wear with use | Built | Wear.ENABLED: the armoury wears with firefights and shots (our squads' fire to 75% at worst), owned trucks with distance (speed to 75%); the armourer and the dealership's shop put them right (phone, Empire > Fleet; DESIGN §82) | D-97 |
 | Arms and ammunition (DESIGN §50) | Ammunition as a traded, trucked good | Planned |  | D-61 stage 2 |
 | Arms and ammunition (DESIGN §50) | Fights consume rounds; dry districts, resupply by port/road | Planned |  | D-61 stage 3 |
 | Arms and ammunition (DESIGN §50) | Pack, logistics and market screens for ammo | Planned |  | D-61 stage 4 |
