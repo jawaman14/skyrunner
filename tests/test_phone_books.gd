@@ -152,4 +152,4 @@ func test_b_orders_stock_and_the_pickup_shows() -> void:
 	_menu.key("b")
 	check_eq(s.logistics.pickups.orders.size(), 1, "B ordered grass from the Morettis")
 	check(_text(_menu).has("PICKUPS ON"), "the pickups have their own heading: %s" % [_text(_menu)])
-	check(_text(_menu).any(func(r): return str(r).begins_with("%d lb marijuana from the Morettis" % PhoneMenu.STOCK_ORDER_LB)), "with the order")
+	check(_text(_menu).any(func(r): return str(r).begins_with("%d lb of marijuana from the Morettis" % PhoneMenu.STOCK_ORDER_LB)), "with the order")

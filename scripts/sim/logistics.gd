@@ -911,7 +911,8 @@ func _settle(c: Dictionary) -> void:
 		back.lb = c.lb - take
 		_inv(road_of(c), Inventory.OUTSIDE + "buyer:" + str(c.buyer), c.good, take, "sale")  # what he didn't take rides back on the road
 		if take > 0.0:
-			back.cash += tr.settle(c.buyer, c.good, take)
+			var grade: float = Grades.mult(c.good, sess.inventory.last_moved, take, sess.time) if Grades.BULK else 1.0  # the lots just handed over
+			back.cash += tr.settle(c.buyer, c.good, take, "rifle", grade)
 			took.append("%d lb of %s" % [int(take), c.good])
 	for tier in c.get("weapons", {}):
 		var n: int = c.weapons[tier]

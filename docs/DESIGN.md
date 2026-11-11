@@ -1871,6 +1871,7 @@ that claim an offset are noted.
 | 187 | `Wanted` | `session_state.gd` | the Wanted names' prizes, one draw a take-down (D-95) |
 | 189 | `Curses` | `session.gd` | which board jobs offer a condition, and which one (D-95) |
 | 191 | `BlackMarket` | `session.gd` | the week's black-market stock and the week's hot job (D-95) |
+| 201 | `Pickups.rng` | `session_state.gd` | Los Cuervos intercepting a pickup: one draw as its window opens (section 81) |
 | 199 | `Takeover` | `session.gd` | the takeover, once: ties between equally known stashes, and who of the crew walks (D-35, D-78) |
 | 197 | `PriceWars` | `session_state.gd` | price wars and supply cuts: whether one starts, its kind, market and length (loop idea 6) |
 | 193, 195 | `Crates` | `session.gd` | a gun run's crates off the scarcity ladder; the second while the island's other boards are dealt (D-61 stage 1) |
@@ -2460,3 +2461,26 @@ game ever has one happen.
 Not built here: a scene for it, succession (D-82), the boss layer's new tools (D-58, D-62), and counting the chapter's goals by
 organisation. **Open for the owner:** "a quarter of his cash" is read as the street cash in the stashes; the alternative, taking
 three quarters of the safe as well, would also take the player's own savings.
+
+## 81. The stock rework's later parts: bulk sales by grade, the gun dealer on the pickup flow, intercepted pickups (section 51)
+
+Three follow-ups to sections 74 and 75, each behind its own switch.
+
+- **Bulk sales by grade** (`Grades.BULK`, in the parity set; no draws). When a truck reaches a bulk buyer, the lots it hands over
+  are priced as the street prices them: the buyer's quote times (0.5 + grade), less what a drying lot has lost
+  (`Grades.mult` over the lots the sale moved). A par lot pays the quote as before; the sale's message says a good or poor grade
+  when it moves the price 3% or more. A buyer's order premium (section 49) is still figured on the quote. Without logistics there
+  are no lots and nothing changes.
+- **The gun dealer on the pickup flow** (`Pickups.order_guns`, through `stock_order` with `good: "guns"`, `tier`, `crates`). One to
+  four crates of one type (section 77's sizes), paid upfront at 90% of the dealer's price for that many singles, taken off the
+  street's supply when ordered, brought to a stash in the usual window (ten minutes, then fifteen), and put in the armoury there,
+  which becomes the cache. Missed twice or called off, the weapons go back on the street and the money is gone. C on the phone's
+  stock ledger orders a crate of rifles. The dealer's counter (`buy_weapons`) and the G toggle on a gun run stay as they were.
+- **Intercepted pickups** (`Pickups.INTERCEPTS`, in the parity set; needs the street war). As a pickup's window opens, Los Cuervos
+  have the contact's car with a chance of 0.5 x their share of the stash's district, no more than 0.4, and half that with one of
+  ours at the door (the pilot, a lookout). A district nobody contests gives no chance. The lot and the money paid are gone: drugs
+  reach their corners in that district, weapons their armoury; a `pickup_intercepted` event and a line saying who. One draw a
+  window on its own stream, `seed + 201`.
+
+Not yet: buyers that refuse a grade, cutting, provenance of stolen stock, a worker sent to collect, and an escort for the
+contact's car.

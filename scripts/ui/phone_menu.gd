@@ -671,6 +671,11 @@ func key(k: String) -> void:
 		show_feedback("Ordered: the Morettis bring it to the stash nearest the HQ." if rb[0] else str(rb[1]), bool(rb[0]))
 		refresh()
 		return
+	if page == "stock" and k == "c" and s.logistics != null:  # the gun dealer, on the pickup flow (DESIGN 81)
+		var rg: Array = s.command(Roles.PILOT, "stock_order", {"good": "guns", "tier": "rifle", "crates": 1})
+		show_feedback("Ordered: the gun dealer brings the crate to the stash nearest the HQ." if rg[0] else str(rg[1]), bool(rg[0]))
+		refresh()
+		return
 	if page == "books" and k == "w" and s.businesses != null:  # wash street cash through a front of ours (DESIGN 51.5)
 		var bw := list.selected_row()
 		if bw >= 0 and bw < _books_rows.size() and str(_books_rows[bw]) != "":
@@ -996,11 +1001,14 @@ func _stock_page() -> void:
 		if not due.is_empty():
 			list.section("Pickups on")
 			for o in due:
-				list.add_row(["%d lb %s from %s to %s: %s" % [int(o.lb), o.good, o.name, o.place, pickup_state(o, float(s.time))]])
+				list.add_row(["%s from %s to %s: %s" % [str(o.what), o.name, o.place, pickup_state(o, float(s.time))]])
 	var t: Dictionary = book.totals
 	footer.text = "Nothing in the stashes, the aircraft or on the road." if book.rows.is_empty() else \
 		"%d lb held, worth $%s at the best open quotes%s." % [int(t.lb), Py.money(int(t.value)), (", %d lb of it hot" % int(t.hot_lb)) if float(t.hot_lb) >= 1.0 else ""]
-	hints.set_hints([["UP/DOWN", "scroll", "down"], ["B", "order %d lb of grass from the Morettis" % STOCK_ORDER_LB, "b"], ["ESC", "back", "esc"]])
+	var order_hints := [["B", "order %d lb of grass from the Morettis" % STOCK_ORDER_LB, "b"]]
+	if s.unlocked("guns") and s.arsenals.has("org"):
+		order_hints.append(["C", "order a crate of rifles from the gun dealer", "c"])
+	hints.set_hints([["UP/DOWN", "scroll", "down"]] + order_hints + [["ESC", "back", "esc"]])
 
 
 ## The market page's lines for a price war or a supply cut under way (PriceWars.view().war).

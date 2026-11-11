@@ -151,7 +151,11 @@ static func _cmd_sell_product(role: String, a: Dictionary, session: Session):
 static func _cmd_stock_order(_role: String, a: Dictionary, session: Session):
 	if session.logistics == null:
 		return "No stash houses in this game."
-	var err: String = session.logistics.pickups.order(str(a.get("contact", "")), str(a.get("good", "")), float(session._num(a, "lb", 0)), str(a.get("stash", "")))
+	var err: String = ""
+	if str(a.get("good", "")) == "guns":  # the gun dealer, on the same flow: `crates` of `tier`
+		err = session.logistics.pickups.order_guns(str(a.get("tier", "")), int(session._num(a, "crates", 1)), str(a.get("stash", "")))
+	else:
+		err = session.logistics.pickups.order(str(a.get("contact", "")), str(a.get("good", "")), float(session._num(a, "lb", 0)), str(a.get("stash", "")))
 	return err if err != "" else null
 
 

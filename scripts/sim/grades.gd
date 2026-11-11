@@ -15,6 +15,7 @@ extends RefCounted
 ## parity set): off, every lot is 0.5 and sales pay the street price.
 
 static var ENABLED := true
+static var BULK := true  ## the bulk buyers pay for the grade and age of what the truck brought, as the street does (DESIGN 81)
 
 const BASE := 0.5
 ## the strips our own loads come from (Trade.OWN's bush and shady kinds, both maps), by code

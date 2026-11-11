@@ -512,6 +512,8 @@ func enable_system(key: String, career := false) -> bool:
 			if logistics != null or trade == null or stash_net == null:
 				return false
 			logistics = Logistics.new(self)
+			if Pickups.INTERCEPTS:
+				logistics.pickups.rng = _rng(seed + 201)  # Los Cuervos intercepting pickups (own stream)
 			if psych != null:
 				logistics.ensure_acid()
 		"payroll":

@@ -192,9 +192,10 @@ func sell(buyer: String, good: String, qty: float, tier := "rifle", from := "", 
 
 ## The deal done: the buyer takes `qty` and pays (returned: the caller banks it,
 ## or Logistics trucks it home). The effects on the markets and the wars follow.
-func settle(buyer: String, good: String, qty: float, tier := "rifle") -> int:
+## `grade`: what the lots handed over fetch against the quote (Grades.mult; 1 = par, as before).
+func settle(buyer: String, good: String, qty: float, tier := "rifle", grade := 1.0) -> int:
 	var q := quote(buyer, good, tier)
-	var pay := int(q.price * qty)
+	var pay := int(q.price * qty * grade)
 	if orders != null:
 		pay += orders.on_settle(buyer, good, qty, q.price)  # an order filled in time pays its premium
 	if good != "guns":
@@ -206,6 +207,8 @@ func settle(buyer: String, good: String, qty: float, tier := "rifle") -> int:
 	_effects(buyer, good, qty, pay)
 	last = "Sold %s %s to %s: +$%s" % [("%d" % int(qty)) if good == "guns" else ("%d lb of" % int(qty)),
 		Arsenal.TIERS[tier].name.to_lower() if good == "guns" else good, BUYERS[buyer].name, Py.money(pay)]
+	if absf(grade - 1.0) >= 0.03:
+		last += " (%s grade: %+d%%)" % ["good" if grade > 1.0 else "poor", roundi((grade - 1.0) * 100.0)]
 	sess.say(last)
 	sess.bus.emit("bulk_sale", sess.time, last, ["runner"], {"buyer": buyer, "good": good, "qty": qty})
 	_check_connection()
