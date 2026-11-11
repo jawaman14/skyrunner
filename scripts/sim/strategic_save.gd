@@ -75,6 +75,8 @@ static func capture(s: Session) -> Dictionary:
 		d["calendar"] = s.calendar.capture()  # optional, like the weather
 	if Jobs.ISLAND_BOARD and not s._first_missions() and not s.boards.is_empty():
 		d["boards"] = capture_boards(s)  # optional: an older save has none and deals every board afresh, as it always did
+	if s.takeover != null and s.story != null:
+		d["takeover"] = s.takeover.capture()  # (D-35) whether it has happened, and what it cost
 	if s.investments != null and not s.investments.held.is_empty():
 		d["investments"] = s.investments.capture()  # optional (loop idea 7): absent is none held
 	if s.heat_dial != null and s.heat_dial.level != HeatDial.STEADY:
@@ -319,6 +321,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 		s.pending_boards = d.boards  # a story attached after this re-applies them (Story.attach)
 		if not s._first_missions():
 			restore_boards(s, d.boards)
+	if s.takeover != null:
+		s.takeover.restore(d.takeover if d.get("takeover") is Dictionary else {})  # an older save past the chapter: done, nothing lost
 	if s.investments != null and d.get("investments") is Dictionary:
 		s.investments.restore(d.investments)
 	if s.heat_dial != null and d.get("heat_dial") is Dictionary:

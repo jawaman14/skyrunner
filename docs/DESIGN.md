@@ -1871,6 +1871,7 @@ that claim an offset are noted.
 | 187 | `Wanted` | `session_state.gd` | the Wanted names' prizes, one draw a take-down (D-95) |
 | 189 | `Curses` | `session.gd` | which board jobs offer a condition, and which one (D-95) |
 | 191 | `BlackMarket` | `session.gd` | the week's black-market stock and the week's hot job (D-95) |
+| 199 | `Takeover` | `session.gd` | the takeover, once: ties between equally known stashes, and who of the crew walks (D-35, D-78) |
 | 197 | `PriceWars` | `session_state.gd` | price wars and supply cuts: whether one starts, its kind, market and length (loop idea 6) |
 | 193, 195 | `Crates` | `session.gd` | a gun run's crates off the scarcity ladder; the second while the island's other boards are dealt (D-61 stage 1) |
 | 1202, 1203 | `OrgAI.rng` | `session.gd` | Los Cuervos' and the Morettis' strategy: a near-tie between the day's moves (L-3; seed + 1201 + org index) |
@@ -2429,3 +2430,33 @@ gives something the player can see.
 
 Not yet: a hidden strip of our own (a new strip on the map waits on the map rebuild, D-86), a pay-back figure on the page (hours
 of fuel legs or airframe points saved), and the organisation's AI buying any.
+
+## 80. The takeover: Rafa killed, half the empire survives (D-09, D-78, D-35)
+
+`scripts/sim/takeover.gd` (`Takeover`, on the session as `takeover`; switch `Takeover.ENABLED`, in the parity set). Only a story
+game ever has one happen.
+
+- **When.** In Cocaine Cowboys (the chapter that opens the street war), at the first Los Cuervos incident: a firefight one of their
+  squads is in, or a hijack of one of our trucks or loads. If the streets stay quiet, fifteen minutes into the chapter; if the
+  chapter closes first, as it closes. The player hears of it and never sees it: a NEWS line with what it cost, a `takeover`
+  event, and on the ground the `chapter_four_news` conversation (`dialogue/rafa.dialogue`), once.
+- **What survives** (D-35).
+
+  | | Survives | Lost |
+  |---|---|---|
+  | Stashes | half the houses, the least known to the task force (heat plus intel); an odd one out survives | the better-known half go to Los Cuervos with the product, cash and armoury in them, and are closed to us |
+  | Crew | half the people on the payroll, who walks drawn at random; soldiers in a squad stay with it | the rest walk |
+  | Trucks | the ones parked | every truck on the road that hour, with its load and its driver |
+  | Cash | a quarter of the street money lying in the stashes | the rest, booked as a loss to Los Cuervos |
+
+  The pilot's own safe is not touched: until that day the organisation was Rafa's, and the savings are the pilot's (the employed
+  opening says so of the first aircraft too). Los Cuervos' standing with us (section 76) goes to nothing.
+- **The seat.** Until it happens the phone has no desk in that chapter: the desk is Rafa's. From then it is the player's. Flying,
+  driving and the ground stay as they were (D-79).
+- **Draws** on its own stream, `seed + 199`, once, when it happens: the order of equally known stashes, and who of the crew walks.
+- **Saved** under `takeover` (done, when, what it cost). A game first seen already past the chapter (a save from before this, a
+  chapter picked from the menu) is taken as done with nothing lost.
+
+Not built here: a scene for it, succession (D-82), the boss layer's new tools (D-58, D-62), and counting the chapter's goals by
+organisation. **Open for the owner:** "a quarter of his cash" is read as the street cash in the stashes; the alternative, taking
+three quarters of the safe as well, would also take the player's own savings.

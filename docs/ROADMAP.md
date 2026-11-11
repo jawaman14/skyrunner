@@ -150,6 +150,9 @@ The boss is the player's uncle, **Rafael "Rafa" Quintero**: jovial, bigger than 
 
 1. **Chapter 1-2:** name the employer as Rafa in the employed opening; two or three dialogue beats in chapter 2 as he
    reveals his business (talk scenes, `scripts/game/talk.gd`).
+   **Items 2 and 3 are built (DESIGN 80):** `Takeover`: at the first Los Cuervos incident of the chapter (or fifteen minutes in)
+   Rafa is killed; half the stashes, half the crew, the parked trucks and a quarter of the street cash survive; the desk is the
+   player's from then. Open: a scene, succession (D-82), the boss layer's tools.
 2. **Chapter 4 (Cocaine Cowboys):** after the first Los Cuervos incident a scripted beat: the player **hears** Rafa was
    killed by Los Cuervos (not witnessed). The turf war starts and the player **takes his seat**: the boss desk and its
    orders become the player's.

@@ -49,7 +49,7 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-32 | 2026-10-18 | The 52 design epics: the agents rank them by value and effort and post the order on #326 for the owner to veto | done | #326 |
 | D-48 | 2026-10-18 | The owner accepted the agreed epic order without a veto (Tier 1: #172 with #155, #138/#156, #142, #120/#151, #134/#148, #165 with #164, #147/#173; the nine foundations get a gap audit; #169 deferred) | planned | ROADMAP: The design epics, in order (owner, 18 October) |
 | D-33 | 2026-10-18 | The wake tool keeps starting Codex turns unattended (the local watcher runs with `--max-per-hour 40`; the checked-in default is 6) | done | wake watcher (local) |
-| D-35 | 2026-10-18 | When Rafa dies, half his empire survives: half the stashes (the least known), half the crew, the trucks that were parked, a quarter of his cash | planned | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
+| D-35 | 2026-10-18 | When Rafa dies, half his empire survives: half the stashes (the least known), half the crew, the trucks that were parked, a quarter of his cash | done | ROADMAP: Story: the uncle and the boss's seat (owner, 12 October; not built) |
 | D-36 | 2026-10-18 | The AI police and rivals know only what a human in their seat would see (radar, sightings, tips, informants) | planned | ROADMAP: After that: the four product steps |
 | D-37 | 2026-10-18 | HAR: flatten the hill on the approach to runway end 0 so both ends work | done | #514 |
 | D-38 | 2026-10-18 | Flight skill (landings, short strips, approaches) gives optional bonus goals in the story; it never blocks a chapter | done | #513 |
@@ -92,7 +92,7 @@ document but never given a roadmap section or an issue, and the 12 October roadm
 | D-75 | 2026-10-19 | Land the open PRs and finish heat step 1, then pause the presentation layers, heat steps 2-3, the depot raid and the map redesign; the depot raid and map redesign are redesigned on the new rival economy and district data | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-76 | 2026-10-19 | Rafa is the employer and early voice, Benny his fixer; after the takeover the story is told by characters, not one narrator | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-77 | 2026-10-19 | Blotter, The House and the arena become optional ventures with lasting economic and faction consequences | planned | ROADMAP: Empire pivot (owner, 19 October) |
-| D-78 | 2026-10-19 | The takeover stays in chapter 4, aiming at about two hours to the boss's seat (to be measured); the half-empire loss (D-35) stays, on its own RNG stream | planned | ROADMAP: Empire pivot (owner, 19 October) |
+| D-78 | 2026-10-19 | The takeover stays in chapter 4, aiming at about two hours to the boss's seat (to be measured); the half-empire loss (D-35) stays, on its own RNG stream | done | ROADMAP: Empire pivot (owner, 19 October) |
 | D-79 | 2026-10-19 | Walking, driving, flying and fighting stay first-class after the takeover: the boss desk and character play are two ways into one simulation (partly supersedes D-58's 'flying is not the focus') | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-80 | 2026-10-19 | A larger world with several cities, every one fully explorable (D-81) | planned | ROADMAP: Empire pivot (owner, 19 October) |
 | D-81 | 2026-10-19 | Every city is fully explorable on foot, by car and by air; none stays a strategy-only abstraction (answers O-1) | planned | ROADMAP: Empire pivot (owner, 19 October) |

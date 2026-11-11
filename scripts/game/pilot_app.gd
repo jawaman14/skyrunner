@@ -750,7 +750,7 @@ func _show_company_choice() -> void:
 
 
 ## Rafa's opening and chapter-two conversations are one-time story cues. The saved progress dictionary
-## remembers the cue without changing the story or save schema; the chapter-four news stays for the takeover scene.
+## remembers the cue without changing the story or save schema; the chapter-four news plays once the takeover has happened.
 func _rafa_story_cue() -> void:
 	if not s.parked:
 		_rafa_cue_offered = ""
@@ -767,6 +767,9 @@ func _rafa_story_cue() -> void:
 	elif story.chapter.num == 2:
 		title = "chapter_two_first"
 		flag = "rafa_chapter_two_seen"
+	elif s.takeover != null and s.takeover.done and float(s.takeover.at) >= 0.0:
+		title = "chapter_four_news"  # the takeover (D-09): heard on the ground, never seen
+		flag = "rafa_chapter_four_seen"
 	if flag == "" or flag == _rafa_cue_offered or bool(story.progress.get(flag, false)):
 		return
 	var balloon := open_talk("rafa", title)
