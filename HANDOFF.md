@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-11 - Claude, the stock rework's later parts (51):** bulk buyers pay for grade and age (`Grades.BULK`); the gun dealer
+  on the pickup flow (`stock_order` with guns: crates to a stash, into the armoury); Los Cuervos intercept pickups
+  (`Pickups.INTERCEPTS`, stream 201) (DESIGN 81).
 - **2026-11-10 - Claude, the takeover (D-09, D-78, D-35):** `Takeover`: in Cocaine Cowboys, at Los Cuervos' first incident or 15 min
   in, Rafa is killed; the least-known half of the stashes, half the crew, parked trucks and a quarter of the street cash survive
   (stream 199); the desk is the player's from then; the chapter_four_news talk plays; saved (DESIGN 80).

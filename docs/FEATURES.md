@@ -125,8 +125,8 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Physical logistics | Dealers auto-resupplied from another stash (toggle) | Built |  | D-88 · #472 |
 | Physical logistics | Checked vehicle routes for dispatch | Half done | All 99 audited pairs failed access; waits on the map rebuild's sites and connectors | #241 · D-86 |
 | Physical logistics | Stash works (two works, two levels) | Built | DESIGN §28 |  |
-| Stock rework (DESIGN §51) | Stock lots with grade, age, provenance | Half done | Grades at the source (own strips, the island) and the street pays for grade and age (DESIGN §74); bulk sales, buyers by grade, cutting not yet | slice 2 |
-| Stock rework (DESIGN §51) | Pickup orders and the pickup person; gun dealer replaces sell/keep | Half done | Ordering, the window at a stash, collection by the pilot or a lookout, late and cancel (DESIGN §75); the gun dealer and interception not yet | slice 3 |
+| Stock rework (DESIGN §51) | Stock lots with grade, age, provenance | Half done | Grades at the source (own strips, the island) and the street pays for grade and age (DESIGN §74); the bulk buyers pay for it too (Grades.BULK, DESIGN §81); buyers by grade and cutting not yet | slice 2 |
+| Stock rework (DESIGN §51) | Pickup orders and the pickup person; gun dealer replaces sell/keep | Half done | Ordering, the window at a stash, collection by the pilot or a lookout, late and cancel (DESIGN §75); the gun dealer brings crates on the same flow and Los Cuervos intercept where they hold the district (DESIGN §81); the sell/keep toggle on a gun run stays, and a worker sent to collect is not built | slice 3 |
 | Stock rework (DESIGN §51) | Storage places and the stock ledger screen | Half done | The ledger (lots, place, grade, age, best named quote) on the phone, DESIGN §73; storage caps and costs not built | slice 4 |
 | Stock rework (DESIGN §51) | Crew relationships, rackets that close under heat | Planned |  | slice 6 |
 | Stock rework (DESIGN §51) | Chapter objectives with deadlines, boss-level unlocks | Planned |  | slice 7 |

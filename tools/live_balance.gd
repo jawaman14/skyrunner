@@ -52,6 +52,9 @@ func _initialize() -> void:
 	if a.has("notakeover"):  # the same run with Rafa alive (DESIGN 80)
 		Takeover.ENABLED = false
 		a.erase("notakeover")
+	if a.has("nobulkgrade"):  # the same run with the bulk buyers paying the quote whatever the grade (DESIGN 81)
+		Grades.BULK = false
+		a.erase("nobulkgrade")
 	if a.has("nowars"):  # the same run without price wars and supply cuts (DESIGN 78)
 		PriceWars.ENABLED = false
 		a.erase("nowars")
