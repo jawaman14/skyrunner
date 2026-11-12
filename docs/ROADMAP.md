@@ -275,6 +275,11 @@ are foundations, not done: each gets a gap audit before it is scheduled. #169 is
 
 ## Working structure (owner, 18 October)
 
+**Claude alone (owner, 12 November, D-98).** Codex is removed from the process: Claude is the only agent and holds every lane.
+It merges its own PRs, risk class included, under D-91 (CI green on the exact head, every finding fixed and answered, its own
+diff read end to end). The board hand-offs, the other agent's exact-head review and the lane split below are history. Human
+release gates stay the owner's.
+
 **Codex unavailable (owner, 7 November, D-96).** Codex isn't available for now and Claude works on the project mostly alone:
 Claude merges its own PRs, risk class included, under D-91 (CI green on the exact head, every review finding fixed and
 answered, its own diff read end to end), with no wait for a second agent's review. Codex's QA lane (sims, full suites, sweeps,

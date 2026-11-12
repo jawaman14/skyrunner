@@ -54,12 +54,12 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 
 | | |
 |---|---|
-| **Holder** | Claude, alone: Codex is unavailable (owner, 7 November, D-96). Claude merges its own PRs, risk class included, under D-91 (CI green on the head, every finding fixed and answered, its own diff read), and covers Codex's QA, UX/UI and dialogue lanes meanwhile. |
+| **Holder** | Claude, the only agent: the owner removed Codex from the process (12 November, D-98). Claude merges its own PRs, risk class included, under D-91 (CI green on the head, every finding fixed and answered, its own diff read), and holds every lane. |
 | **Task** | The owner's 10 November order of work (D-97). Done and merged: ammunition stage 1 (#540), price wars (#541), investments (#542), the takeover (#543), the stock rework's later parts (#544), weapons and vehicles wear (#545); the road paint and pavements fix is the last open PR. Left: more gameplay additions and graphics, and the mechanics-tree artifact (updated this session). |
 | **Branches / PRs** | `ccr-959fb031-mf68as` (the cloud session's pinned branch; one PR at a time). |
 | **Next step** | Merge the road-paint PR on green CI. Then, from the order of work: graphics (look at the game with tools/screenshots.sh before and after), ammunition stage 2 (rounds as a good, D-61), and the open items each DESIGN section from 77 to 82 lists under "Not yet". The owner's open question: the takeover's "quarter of his cash" (DESIGN 80). |
-| **Codex task** | None: Codex is unavailable (D-96). |
-| **Watch out** | Codex's bot still posts reviews on some PRs; answer every thread before merging (`ci_then_merge` refuses an unanswered one). Breakaway holds `Session.save()` while a window is open. |
+| **Codex task** | None: Codex is removed from the process (D-98). |
+| **Watch out** | The Codex review bot may still post on PRs until its GitHub connector is removed (it fails on usage limits); answer every thread before merging (`ci_then_merge` refuses an unanswered one). Breakaway holds `Session.save()` while a window is open. |
 
 **Vehicle rebuild draft (Codex, 14 Oct), #374:** Separate branch off main, original procedural period bodies for all 12 dealer/squad model keys. IDs, catalogue prices/specs, saves, physics and collision remain unchanged. Five new render-contract tests pass clean locally; eight existing car-physics tests also pass with baseline cleanup resource warnings. Local full import retains ActionReview.COMMANDS error under 4.6.3. Capture script passes parse check; read-only pinned CI will render 15 staged asset views in WorldScene plus the actual dealership. References: 1981 Ford brochure, 1983 C/K pickup brochure, Mercedes W123/Porsche 944 archives, Vice City/Stories and Driver Parallel Lines (1978 fleet). No copied assets or real brands shipped. Scenery PR #373 remains independent. First pinned capture/import/inventory and export passed on f004e14. Visual review exposed dropped hull panels from mixed indexed/unindexed batches; fixed by expanding primitive indices and checking every triangle winding plus hull presence. Five render tests pass again. Next: inspect corrected captures, latest pinned CI and review; no merge or human gate passed.
 
@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-12 - Claude, Codex removed (D-98):** the owner removed Codex from the process; Claude is the only agent and merges
+  its own PRs on green CI at the exact head. AGENTS.md, ROADMAP "Working structure" and DECISIONS updated.
 - **2026-11-11 - Claude, the road paint and the pavements:** the lane lines were never drawn (one island-wide paint mesh with a
   2.5 km range measured to its far-off centre) and the pavements were wound face-down (lit from below: dark brown); paint now
   tiled at 2 km, strips wound up like the ribbon, concrete toned down. Screenshots before and after in the PR; docs/img refreshed.
