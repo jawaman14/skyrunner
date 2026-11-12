@@ -168,18 +168,26 @@ static func _samples(world: World, r: Array) -> Array:
 
 
 ## A flat strip from lateral offset `lo` to `hi` (metres from the centre line) between samples k-1 and k, `up` above the ribbon.
-static func _strip(st: SurfaceTool, s0: Array, s1: Array, lo: float, hi: float, up: float, col: Color) -> void:
+## Wound clockwise seen from above, as the road ribbon is (RoadSurface), so its face is the top one: the materials draw both sides,
+## and a back face is lit as if it faced down (the paint and the pavements came out dark brown and the lane lines all but vanished).
+## `origin`: subtracted from every vertex (a tile's paint is drawn relative to its tile).
+static func _strip(st: SurfaceTool, s0: Array, s1: Array, lo: float, hi: float, up: float, col: Color, origin := Vector3.ZERO) -> void:
 	var corners := []
 	for s in [s0, s1]:
 		var dir: Vector2 = s[1]
 		var side := Vector2(-dir.y, dir.x)
 		var p: Vector2 = s[0]
 		var z: float = s[2] + up
-		corners.append([Vector3(p.x + side.x * lo, z, -(p.y + side.y * lo)), Vector3(p.x + side.x * hi, z, -(p.y + side.y * hi))])
-	for v in [corners[0][0], corners[1][0], corners[1][1], corners[0][0], corners[1][1], corners[0][1]]:
+		corners.append([Vector3(p.x + side.x * lo, z, -(p.y + side.y * lo)) - origin, Vector3(p.x + side.x * hi, z, -(p.y + side.y * hi)) - origin])
+	for v in [corners[0][0], corners[1][1], corners[1][0], corners[0][0], corners[0][1], corners[1][1]]:
 		st.set_normal(Vector3.UP)
 		st.set_color(col)
 		st.add_vertex(v)
+
+
+const PAINT_TILE := 2000.0  ## the lane paint is cut into tiles this size, each drawn within PAINT_RANGE of the camera
+
+const PAINT_RANGE := 2500.0
 
 
 ## Lane markings and sidewalks. The markings are painted on the ribbon: a dashed yellow centre line and
@@ -189,14 +197,15 @@ static func _strip(st: SurfaceTool, s0: Array, s1: Array, lo: float, hi: float, 
 static func _road_details(world: World, roads: Array) -> Node3D:
 	var root := Node3D.new()
 	root.name = "road-details"
-	var paint := SurfaceTool.new()
-	paint.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# The paint is cut into tiles, each drawn relative to its own centre: a visibility range is measured to the instance, and
+	# one island-wide mesh had its centre kilometres from every street, so the lane lines were never drawn (found 11 Nov).
+	var tiles := {}  ## Vector2i -> SurfaceTool
 	var pave := SurfaceTool.new()
 	pave.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var yellow := Color(0.95, 0.78, 0.18)
 	var white := Color(0.9, 0.9, 0.88)
-	var concrete := Color(0.66, 0.65, 0.62)
-	var kerb := Color(0.5, 0.5, 0.48)
+	var concrete := Color(0.36, 0.35, 0.33)  # (vertex colours are linear: 0.66 read as near white in the sun)
+	var kerb := Color(0.25, 0.25, 0.24)
 	for r in roads:
 		var smp := _samples(world, r)
 		for k in range(1, smp.size()):
@@ -207,13 +216,20 @@ static func _road_details(world: World, roads: Array) -> Node3D:
 			var seg_len := p0.distance_to(p1)
 			if seg_len < 0.5:
 				continue
+			var mid0 := (p0 + p1) * 0.5
+			var key := Vector2i(floori(mid0.x / PAINT_TILE), floori(mid0.y / PAINT_TILE))
+			if not tiles.has(key):
+				tiles[key] = SurfaceTool.new()
+				(tiles[key] as SurfaceTool).begin(Mesh.PRIMITIVE_TRIANGLES)
+			var paint: SurfaceTool = tiles[key]
+			var o := _tile_origin(key)
 			# edge lines, continuous
-			_strip(paint, s0, s1, 3.7, 3.98, 0.03, white)
-			_strip(paint, s0, s1, -3.98, -3.7, 0.03, white)
+			_strip(paint, s0, s1, 3.7, 3.98, 0.03, white, o)
+			_strip(paint, s0, s1, -3.98, -3.7, 0.03, white, o)
 			# the centre line: a 3.6 m dash in each 12 m
 			var dash0 := _lerp_sample(s0, s1, 0.15)
 			var dash1 := _lerp_sample(s0, s1, minf(1.0, 0.15 + 4.2 / seg_len))
-			_strip(paint, dash0, dash1, -0.17, 0.17, 0.03, yellow)
+			_strip(paint, dash0, dash1, -0.17, 0.17, 0.03, yellow, o)
 			# the pavement, where the street is a street
 			var mid := (p0 + p1) * 0.5
 			var cls := MapCity.at(world.map.land_use, mid.x, mid.y)
@@ -235,17 +251,28 @@ static func _road_details(world: World, roads: Array) -> Node3D:
 						pave.set_normal(nrm.normalized())
 						pave.set_color(kerb)
 						pave.add_vertex(v)
-	for pair in [[paint, "markings", 0.7], [pave, "pavements", 0.9]]:
+	var markings := Node3D.new()
+	markings.name = "markings"
+	root.add_child(markings)
+	var paint_mat := _detail_material(0.7)
+	var keys := tiles.keys()
+	keys.sort()
+	for key in keys:
+		var tile := MeshInstance3D.new()
+		tile.name = "tile_%d_%d" % [key.x, key.y]
+		tile.position = _tile_origin(key)
+		tile.mesh = (tiles[key] as SurfaceTool).commit()
+		tile.material_override = paint_mat
+		tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		tile.visibility_range_end = PAINT_RANGE
+		markings.add_child(tile)
+	for pair in [[pave, "pavements", 0.9]]:
 		var mi := MeshInstance3D.new()
 		mi.name = pair[1]
 		mi.mesh = (pair[0] as SurfaceTool).commit()
-		var m := StandardMaterial3D.new()
-		m.vertex_color_use_as_albedo = true
-		m.roughness = pair[2]
-		m.cull_mode = BaseMaterial3D.CULL_DISABLED
-		mi.material_override = m
+		mi.material_override = _detail_material(pair[2])
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		mi.visibility_range_end = 2500.0
+		# (no range: the pavements are the town's only, and one range for the whole town hid the far side of it)
 		if mi.name == "pavements" and not mi.mesh.get_faces().is_empty():
 			# Characters stand on the same paving and kerbs that are rendered.
 			var body := StaticBody3D.new()
@@ -259,6 +286,18 @@ static func _road_details(world: World, roads: Array) -> Node3D:
 			mi.add_child(body)
 		root.add_child(mi)
 	return root
+
+
+static func _tile_origin(key: Vector2i) -> Vector3:
+	return Vector3((key.x + 0.5) * PAINT_TILE, 0.0, -(key.y + 0.5) * PAINT_TILE)
+
+
+static func _detail_material(roughness: float) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.vertex_color_use_as_albedo = true
+	m.roughness = roughness
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return m
 
 
 static func _lerp_sample(a: Array, b: Array, t: float) -> Array:

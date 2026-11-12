@@ -225,11 +225,13 @@ func test_the_roads_are_marked_and_the_town_has_pavements() -> void:
 	World.use_map(MapCity.SEED)
 	var w := World.new()
 	var d := CityRender._road_details(w, w.map.roads)
-	var paint := d.get_node("markings") as MeshInstance3D
+	var tiles := d.get_node("markings").get_children()
 	var pave := d.get_node("pavements") as MeshInstance3D
-	check(paint.mesh.get_surface_count() == 1, "lane markings are painted")
+	check(tiles.size() > 4, "lane markings are painted, in tiles (%d)" % tiles.size())
 	check(pave.mesh.get_surface_count() == 1, "and the town has pavements")
-	var pv := (paint.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+	var pv := 0
+	for t in tiles:
+		pv += ((t as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
 	var kv := (pave.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
 	check(pv > 1000 and kv > 500, "plenty of both (%d, %d vertices)" % [pv, kv])
 	# the paint sits just above the asphalt ribbon: every paint vertex is within 15 cm of it, above the ground
@@ -282,3 +284,53 @@ func test_no_stash_strip_or_headquarters_is_inside_a_building() -> void:
 		check(not inside, "%s is clear of the buildings" % k)
 	s.dispose()
 	World.use_map(0)
+
+
+## The paint and the pavements face up, as the road ribbon does. Their materials draw both sides, and Godot lights a back face as
+## if its normal pointed the other way, so a strip wound the wrong way round comes out dark (the pavements read as brown earth and
+## the lane lines all but vanished, 11 Nov). Every flat triangle must wind as the ribbon's do.
+func test_the_paint_and_the_pavements_face_up_like_the_road() -> void:
+	World.use_map(MapCity.SEED)
+	var w := World.new()
+	var ribbon: PackedVector3Array = w.road_surface().vertices
+	check(ribbon.size() >= 3, "a road ribbon")
+	var up := signf(Plane(ribbon[0], ribbon[1], ribbon[2]).normal.y)
+	check(up != 0.0, "the ribbon's triangles are flat and wound one way")
+	var d := CityRender._road_details(w, w.map.roads)
+	var meshes := {"markings": [], "pavements": [d.get_node("pavements")]}
+	meshes.markings = d.get_node("markings").get_children()
+	for name in meshes:
+		var v := PackedVector3Array()
+		for mi in meshes[name]:
+			v.append_array((mi as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX])
+		var flat := 0
+		var wrong := 0
+		for i in range(0, v.size() - 2, 3):
+			var n := Plane(v[i], v[i + 1], v[i + 2]).normal
+			if absf(n.y) < 0.9:
+				continue  # a kerb face: it stands up
+			flat += 1
+			if signf(n.y) != up:
+				wrong += 1
+		check(flat > 100, "%s: plenty of flat triangles (%d)" % [name, flat])
+		# (a strip can fold over itself where a road doubles back within a sample: a hairpin flips the odd triangle whichever way the
+		# strip is wound. The old winding had every one of them face down.)
+		check(wrong * 1000 < flat, "%s: the flat triangles face up, as the road does (%d of %d down)" % [name, wrong, flat])
+	d.free()
+
+
+## Each tile of paint is drawn from its own centre, within PAINT_RANGE: one island-wide mesh had its centre kilometres from every
+## street and a 2.5 km range, so the lane lines were never drawn (11 Nov). The pavements have no range (they are the town's only).
+func test_the_paint_is_drawn_near_the_camera() -> void:
+	World.use_map(MapCity.SEED)
+	var w := World.new()
+	var d := CityRender._road_details(w, w.map.roads)
+	var half := CityRender.PAINT_TILE * 0.5
+	for t in d.get_node("markings").get_children():
+		var mi := t as MeshInstance3D
+		check_eq(mi.visibility_range_end, CityRender.PAINT_RANGE, "%s: drawn within the range" % mi.name)
+		var box := mi.mesh.get_aabb()
+		var c := box.get_center()
+		check(absf(c.x) <= half + 20.0 and absf(c.z) <= half + 20.0, "%s: its paint is about its own centre (%s)" % [mi.name, c])
+	check_eq((d.get_node("pavements") as MeshInstance3D).visibility_range_end, 0.0, "the pavements: always")
+	d.free()
