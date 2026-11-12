@@ -175,6 +175,10 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-12 - Claude, chart labels:** the M chart's labels round HAR (the strip, the boss's, the club's stash, the docks, a
+  truck's destination) printed over one another; they are now laid out together by priority (`Minimap.place_labels`), moving
+  aside or dropping the least important. docs/img/trucks.png refreshed. A hangar-roof winding suspicion was checked and dropped:
+  its winding and normals are both inward, so Godot's double flip already lit it right.
 - **2026-11-12 - Claude, Codex removed (D-98):** the owner removed Codex from the process; Claude is the only agent and merges
   its own PRs on green CI at the exact head. AGENTS.md, ROADMAP "Working structure" and DECISIONS updated.
 - **2026-11-11 - Claude, the road paint and the pavements:** the lane lines were never drawn (one island-wide paint mesh with a

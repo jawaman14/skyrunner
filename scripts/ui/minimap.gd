@@ -40,6 +40,20 @@ var _wc := Vector2.ZERO  ## the world point at the scope's centre
 var _goals: Array = []  ## GoalMarks.of(s), refreshed about once a second
 var _goals_t := 0.0
 var ai_route: Array = []  ## the AI pilot's legs still to fly, [{x, y, kind}] (PilotApp sets it from the bot; empty when a human flies)
+var _queued: Array = []  ## the chart's labels this frame, laid out together at its end (place_labels)
+var _blocks: Array = []  ## the chart's marks this frame (Rect2): no label is laid over one
+var labels_dropped := 0  ## how many of the last frame's chart labels found no free spot
+
+## Label priorities on the chart: the higher is laid out first and keeps its spot; the lowest go first when the chart is crowded.
+const P_TURF := 1
+const P_TRUCK := 2
+const P_SQUAD := 3
+const P_STASH := 4
+const P_CARS := 4
+const P_MOVING := 5  ## boats, contacts, the AI's legs, a gig's points
+const P_PLACE := 7  ## strips, the boss's, the hotel
+const P_GOAL := 8
+const P_WAYPOINT := 9
 
 
 ## The legs an AI pilot still has to fly, nearest first: what the announcement (#391) names, drawn on the chart. A read of the bot's plan only.
@@ -263,9 +277,75 @@ func _inside(p: Vector2, pad := 0.0) -> bool:
 	return p.distance_to(_c) <= _r - pad
 
 
-func _label(font: Font, p: Vector2, text: String, fs: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
+## A label at baseline point `p`. On the radar it is drawn at once; on the chart it is queued with its priority and laid out at
+## the frame's end with every other (place_labels), so labels round a crowded spot (the club, the docks and the strip at HAR,
+## five names on one another until 12 Nov) move aside or give way instead of printing over each other.
+func _label(font: Font, p: Vector2, text: String, fs: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT, prio := -1) -> void:
+	if big and prio >= 0:
+		var sz := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
+		var x := p.x - (sz.x / 2.0 if align == HORIZONTAL_ALIGNMENT_CENTER else 0.0)
+		_queued.append({"rect": Rect2(x, p.y - font.get_ascent(fs), sz.x, sz.y), "prio": prio, "text": text, "fs": fs, "col": col,
+			"flip": align != HORIZONTAL_ALIGNMENT_CENTER})
+		return
+	_draw_label(font, p, text, fs, col, align)
+
+
+func _draw_label(font: Font, p: Vector2, text: String, fs: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
 	draw_string_outline(font, p, text, align, -1, fs, 4, Color(0, 0, 0, 0.85))
 	draw_string(font, p, text, align, -1, fs, col)
+
+
+## A mark on the chart that labels keep off (a stash's square, the boss's diamond).
+func _block(p: Vector2, half: float) -> void:
+	if big:
+		_blocks.append(Rect2(p - Vector2(half, half), Vector2(half, half) * 2.0))
+
+
+## Lays labels out without overlaps: highest priority first (ties in the order given); each tries its own spot, then a line
+## below, a line above, and (if `flip`) the same three on the mark's other side; a spot must lie inside `bounds` and clear of
+## every label already laid and every rect in `blocks`. Returns, per label, the offset it was moved by, or null if it found no
+## spot and is not drawn. Items: {rect: Rect2, prio: int, flip: bool}. Pure, for the tests.
+static func place_labels(items: Array, bounds: Rect2, blocks: Array = []) -> Array:
+	var order := range(items.size())
+	order.sort_custom(func(a, b): return int(items[a].prio) > int(items[b].prio) or (int(items[a].prio) == int(items[b].prio) and a < b))
+	var taken: Array = blocks.duplicate()
+	var out := []
+	out.resize(items.size())
+	for i in order:
+		var r: Rect2 = items[i].rect
+		var h := r.size.y + 1.0
+		var tries := [Vector2.ZERO, Vector2(0, h), Vector2(0, -h)]
+		if bool(items[i].get("flip", true)):
+			var dx := -(r.size.x + 20.0)  # past the mark: the label started about 10 px right of it
+			tries += [Vector2(dx, 0), Vector2(dx, h), Vector2(dx, -h)]
+		for d in tries:
+			var q := Rect2(r.position + d, r.size)
+			if not bounds.encloses(q):
+				continue
+			var clear := true
+			for o in taken:
+				if (o as Rect2).intersects(q):
+					clear = false
+					break
+			if clear:
+				taken.append(q)
+				out[i] = d
+				break
+	return out
+
+
+func _flush_labels(font: Font) -> void:
+	var placed := place_labels(_queued, Rect2(Vector2.ZERO, Vector2(_chart_px(), _chart_px() - 22.0)), _blocks)  # clear of the help line
+	labels_dropped = 0
+	for i in _queued.size():
+		if placed[i] == null:
+			labels_dropped += 1
+			continue
+		var q: Dictionary = _queued[i]
+		var r: Rect2 = q.rect
+		_draw_label(font, Vector2(r.position.x, r.position.y + font.get_ascent(int(q.fs))) + (placed[i] as Vector2), str(q.text), int(q.fs), q.col)
+	_queued.clear()
+	_blocks.clear()
 
 
 func _cross(p: Vector2, col: Color, r := 4.0) -> void:
@@ -308,6 +388,8 @@ func _draw() -> void:
 		return
 	_frame()
 	var font := UIStyle.mono()
+	_queued.clear()
+	_blocks.clear()
 	if big:
 		var chart := Rect2(Vector2.ZERO, Vector2(_chart_px(), _chart_px()))
 		draw_texture_rect(tex, chart, false)
@@ -324,6 +406,8 @@ func _draw() -> void:
 	_goal_marks(font)
 	_waypoint(font)
 	_me()
+	if big:
+		_flush_labels(font)
 	if not big:
 		_caption(font)
 	else:
@@ -385,9 +469,9 @@ func _world_marks(font: Font) -> void:
 			draw_line(pa, pb, col, 3.0 if big else 2.5, true)
 			var lp := to_screen(af.x, af.y) + Vector2(7, -7)
 			if _inside(lp, 12.0):
-				_label(font, lp, af.code, fs, Color(1, 1, 1, 0.92))
+				_label(font, lp, af.code, fs, Color(1, 1, 1, 0.92), HORIZONTAL_ALIGNMENT_LEFT, P_PLACE)
 				if s.dealer != null and af.kind in ["hub", "regional"]:  # the car lot beside the apron
-					_label(font, lp + Vector2(0, fs + 1), "CARS", maxi(fs - 3, 8), UIStyle.PINK)
+					_label(font, lp + Vector2(0, fs + 1), "CARS", maxi(fs - 3, 8), UIStyle.PINK, HORIZONTAL_ALIGNMENT_LEFT, P_CARS)
 		if af.radar_km:
 			_ring_world(af.x, af.y, af.radar_km * 1000.0, Color(1, 0.25, 0.25, 0.55), 1.5)
 	for j in s.active_jobs:
@@ -407,15 +491,17 @@ func _world_marks(font: Font) -> void:
 				var pc := Places.color_of(pl)
 				draw_colored_polygon(PackedVector2Array([pp + Vector2(0, -9), pp + Vector2(8, 0), pp + Vector2(0, 9), pp + Vector2(-8, 0)]), pc)
 				draw_circle(pp, 2.5, Color(0.05, 0.05, 0.08))
-				_label(font, pp + Vector2(11, 4), "BOSS" if pl.kind == "home" else "HOTEL", fs, pc)
+				_block(pp, 8.0)
+				_label(font, pp + Vector2(11, 4), "BOSS" if pl.kind == "home" else "HOTEL", fs, pc, HORIZONTAL_ALIGNMENT_LEFT, P_PLACE)
 	if s.stash_net != null:  # stash houses: a square (grey when burned), trucks as dots
 		for sh in s.stash_net.stashes:
 			var sp := to_screen(sh.x, sh.y)
 			if _inside(sp, 5.0):
 				var sc: Color = Color(0.5, 0.5, 0.5) if sh.burned else Color(1, 0.55, 0.2).lerp(Color(1, 0.15, 0.1), clampf(sh.heat / 60.0, 0, 1))
 				draw_rect(Rect2(sp - Vector2(4, 4), Vector2(8, 8)), sc, false, 2.0)
+				_block(sp, 5.0)
 				if big:
-					_label(font, sp + Vector2(8, 4), str(sh.name), 11, sc)
+					_label(font, sp + Vector2(8, 4), str(sh.name), 11, sc, HORIZONTAL_ALIGNMENT_LEFT, P_STASH)
 		for t in s.stash_net.trucks:
 			var tp: Array = t.pos(s.time)
 			var tq := to_screen(tp[0], tp[1])
@@ -432,7 +518,7 @@ func _world_marks(font: Font) -> void:
 					if info.get("kind", "load") == "load":  # a plain load: truck_info gives the stash id, so look the name up
 						var sh_to = s.stash_net.get_stash(t.stash)
 						dest_name = str(sh_to.name) if sh_to != null else "stash"
-					_label(font, to + Vector2(9, 12), "> %s" % dest_name, 10, col)
+					_label(font, to + Vector2(9, 12), "> %s" % dest_name, 10, col, HORIZONTAL_ALIGNMENT_LEFT, P_TRUCK)
 			draw_circle(tq, 3.5, col)
 	for b in s.maritime.boats:
 		if b.kind == "gofast" and b.state != "delivered":
@@ -451,7 +537,7 @@ func _world_marks(font: Font) -> void:
 				if _inside(dq, 8.0):
 					draw_arc(dq, 6.0, 0, TAU, 14, Color(0.3, 0.9, 1, 0.8), 1.5)
 					if big:
-						_label(font, dq + Vector2(9, 4), "%s > %s%s" % [b.id, dest_name, " (%d bales)" % b.cargo.size() if not b.cargo.is_empty() else ""], 11, Color(0.3, 0.9, 1))
+						_label(font, dq + Vector2(9, 4), "%s > %s%s" % [b.id, dest_name, " (%d bales)" % b.cargo.size() if not b.cargo.is_empty() else ""], 11, Color(0.3, 0.9, 1), HORIZONTAL_ALIGNMENT_LEFT, P_MOVING)
 			if _inside(bp, 4.0):
 				_cross(bp, Color(0.3, 0.9, 1), 4.0)
 	for bl in s.maritime.bales:
@@ -470,7 +556,7 @@ func _world_marks(font: Font) -> void:
 			if not seen:
 				draw_arc(kp, 8.0, 0, TAU, 12, Color(col, 0.4), 1.0)
 			if big and _inside(kp, 24.0):
-				_label(font, kp + Vector2(10, -6), "visual" if seen else "%s • %ds ago" % [contact.source, int(contact.age)], 10, col)
+				_label(font, kp + Vector2(10, -6), "visual" if seen else "%s • %ds ago" % [contact.source, int(contact.age)], 10, col, HORIZONTAL_ALIGNMENT_LEFT, P_MOVING)
 
 
 ## Reports keep their reported position and age; only direct sight supplies a live position.
@@ -507,7 +593,7 @@ func _waypoint(font: Font) -> void:
 		draw_circle(p, 6.0, UIStyle.PINK)
 		draw_circle(p, 2.5, Color(1, 1, 1))
 		draw_arc(p, 10.0, 0, TAU, 20, Color(UIStyle.PINK, 0.8), 1.5, true)
-		_label(font, p + Vector2(10, -8), text, 12 if big else 11, UIStyle.PINK)
+		_label(font, p + Vector2(10, -8), text, 12 if big else 11, UIStyle.PINK, HORIZONTAL_ALIGNMENT_LEFT, P_WAYPOINT)
 	elif not big:
 		_pointer(p, UIStyle.PINK, text, font)
 
@@ -550,7 +636,7 @@ func _turf_overlay(font: Font) -> void:
 		var p := to_screen(row.center.x, row.center.y)
 		if _inside(p, 4.0):
 			_label(font, p, ("%s  %s %d%%" % [row.name, StationMap.turf_name(row.leader, "org"), int(round(float(row.share) * 100.0))]) if row.leader != ""
-				else "%s  contested" % row.name, 10, Color(col, 0.8), HORIZONTAL_ALIGNMENT_CENTER)
+				else "%s  contested" % row.name, 10, Color(col, 0.8), HORIZONTAL_ALIGNMENT_CENTER, P_TURF)
 
 
 ## The part of the segment a-b that lies on the scope (the disc on the radar, the square on the chart), or [] when none does.
@@ -604,7 +690,7 @@ func _squad_lines(font: Font) -> void:
 		if _inside(b, 4.0):
 			_cross(b, Color(col, 0.8), 3.0)
 			if big:
-				_label(font, b + Vector2(7, 4), str(row.label), 10, col)
+				_label(font, b + Vector2(7, 4), str(row.label), 10, col, HORIZONTAL_ALIGNMENT_LEFT, P_SQUAD)
 
 
 ## The AI pilot's route: a dashed line through the legs it still has to fly, each leg's point ringed.
@@ -624,7 +710,7 @@ func _ai_route(font: Font) -> void:
 		if _inside(p, 8.0):
 			draw_arc(p, 7.0, 0, TAU, 16, col, 1.5, true)
 			if big:
-				_label(font, p + Vector2(9, -6), "AI %s" % ("drop" if leg.kind == "drop" else ("land" if leg.kind == "land" else str(k + 1))), 11, col)
+				_label(font, p + Vector2(9, -6), "AI %s" % ("drop" if leg.kind == "drop" else ("land" if leg.kind == "land" else str(k + 1))), 11, col, HORIZONTAL_ALIGNMENT_LEFT, P_MOVING)
 		elif k == 0 and not big:
 			_pointer(p, col, "AI", font)
 		prev = p
@@ -644,7 +730,7 @@ func _gig_points(font: Font) -> void:
 			if k == j.visited:
 				draw_circle(p, 6.0, cyan)
 			draw_arc(p, 9.0, 0, TAU, 20, cyan, 1.5, true)
-			_label(font, p + Vector2(10, -6), str(k + 1), 11, cyan)
+			_label(font, p + Vector2(10, -6), str(k + 1), 11, cyan, HORIZONTAL_ALIGNMENT_LEFT, P_MOVING)
 
 
 ## The next chapter goal's places (GoalMarks): gold diamonds, labelled on the chart, a pointer at the scope's edge when off it.
@@ -660,7 +746,7 @@ func _goal_marks(font: Font) -> void:
 			draw_colored_polygon(PackedVector2Array([p + Vector2(0, -8), p + Vector2(7, 0), p + Vector2(0, 8), p + Vector2(-7, 0)]), gold)
 			draw_arc(p, 11.0, 0, TAU, 20, Color(gold, 0.7), 1.5, true)
 			if big:
-				_label(font, p + Vector2(12, -6), "GOAL  " + str(g.label), 12, gold)
+				_label(font, p + Vector2(12, -6), "GOAL  " + str(g.label), 12, gold, HORIZONTAL_ALIGNMENT_LEFT, P_GOAL)
 		elif not big and _goals.size() <= 3:
 			_pointer(p, gold, "goal", font)
 
