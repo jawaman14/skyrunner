@@ -192,6 +192,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Look and sound | Kenney/KayKit/Quaternius models, docks and downtown dress | Built |  |  |
 | Look and sound | Period vehicles and Costa Brava frontage | Built | Merged after screenshot review | #373 · #374 |
 | Look and sound | Lane paint and town pavements | Built | The lane lines were never drawn and the pavements rendered dark (fixed 11 Nov: paint in 2 km tiles, strips wound face-up) |  |
+| Look and sound | Chart labels laid out without overlaps | Built | The M chart lays its labels out together by priority (waypoint, goals, places, then moving things, stashes, trucks, districts): each moves below, above or to the other side of its mark when crowded, or is left off; round HAR five names printed over one another until 12 Nov |  |
 | Look and sound | Synth sound; one radio for cockpit and car | Built | Radio redistribution rights unresolved | #175 |
 | Look and sound | Shift from low-poly towards a PS2-era look | Planned | Polygon/texture budgets need an owner call | #380 |
 | Presentation layers | Territory radio and era music | Paused |  | D-23 · D-75 |
