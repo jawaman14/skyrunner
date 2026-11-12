@@ -1,8 +1,14 @@
-# Skyrunner: notes for coding agents (Claude Code and Codex)
+# Skyrunner: notes for the coding agent (Claude Code)
 
 This is the single rules file. `CLAUDE.md` only imports it, so both agents read the same text.
 
-**Working mode: dual work** (owner, 18 October 2026, D-52). Each agent owns its lanes end to end: it writes, tests and
+**Working mode: Claude alone** (owner, 12 November 2026, D-98). Codex is removed from the process. Claude Code is the only
+agent: it plans, builds, tests, reviews its own diff and merges its own PRs, risk class included, through `github_pr_merge` when CI
+is green on the exact head and every review thread has a reply (D-91). The dual-work, board hand-off and lane rules below are
+kept as a record of how the project ran until November; where they ask for the other agent's review or a hand-off to Codex,
+they no longer apply. Human release gates stay the owner's.
+
+**Earlier mode: dual work** (owner, 18 October 2026, D-52). Each agent owns its lanes end to end: it writes, tests and
 merges its own work, and Codex is not only a reviewer. The lanes are in ROADMAP "Working structure". Jobs pass between
 the agents on the board: an `assign` note (`assign <task> | files | base SHA | test command | done when`) that the other
 agent answers by claiming the task. **The other agent's exact-head review is mandatory only for risk-class PRs:** any change
