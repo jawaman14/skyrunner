@@ -227,7 +227,8 @@ stream, tests first, as a follow-up to #384/#387. Depends on #378 and #387 landi
 
 ## Forgotten or half done (found 18 October)
 
-Rewritten 4 November against the code. The items from 18 October that are finished are listed once at the end.
+Rewritten 4 November against the code, and again 12 November (the owner: "finish the half done"). The items from 18 October
+that are finished are listed once at the end.
 
 **Half done (some code merged, not finished):**
 
@@ -235,14 +236,10 @@ Rewritten 4 November against the code. The items from 18 October that are finish
   behind `PilotApp.FIXED_STEP` (off by default; `--fixed-step` turns it on): whole 1/30 s steps through `HostLoop`, the
   aircraft and the chase camera drawn between the last two steps, key presses carried to the next step. What's left is a
   person at the controls judging the feel, then flipping the default; F-7 waits on that.
-- **Stock lots and pickup orders** (DESIGN 51 slices 2-3): `StockLot`, `StockLedger`, `StockValue` and `PickupOrder` exist with
-  tests and have no gameplay call sites. F-4's inventory (#509) is where they would land; not wired yet.
-- **Street-war police and the case files:** with the ground war on, `GroundWar._think_police` raids stashes without reading
-  the case files, so heat step 1 only runs when the war is off (found by BALANCE entry 63, #497). A heat step 2 item.
 - **Checked vehicle routes:** all 99 audited logistics pairs fail access; waits on the map rebuild's sites and connectors
   (D-86). Never raise connector limits to make the numbers pass.
-- **Full NPC truck and squad migration** to physical agents: partly done; needs its own evidence.
-- **District-control balance calibration:** the districts and their map are built (#378, #494); the tuning is not.
+- **Full NPC truck and squad migration** to physical agents: the code is in (`Agent` bodies for every stash truck's driver,
+  every squad member and the workers in `People`); what is owed is an evidence pass that nothing still moves on a bare timer.
 - **Two-machine multiplayer:** seat, action and voice are implemented and never run by a person (release gate).
 
 **Not started, still owed:**
@@ -251,7 +248,9 @@ Rewritten 4 November against the code. The items from 18 October that are finish
 - **Wallet and BOINC (owner's machine):** a new Gridcoin beacon needs a little GRC; the BOINC account manager was detached. Not part
   of the game, listed so it is not lost.
 
-**Finished or in PR since 18 October:** Backspace reverse (RB binding and help line were on main), map destination lines (#493), the
+**Finished or in PR since 18 October:** stock lots and pickup orders (grades and age at the till, the stock ledger on the
+phone, pickups wired by #544), the street war's police serving the case files' warrants (heat step 2), district-control
+calibration (DESIGN 83: gangs claim empty districts and spread out), Backspace reverse (RB binding and help line were on main), map destination lines (#493), the
 island job board gaps (#495), the BALANCE entries for orders and heat step 1 (#497), the rivals' unattributed money (#496),
 the lawyer's discount valve (#491), the docs' stream table, terrain cache, strip pins and pit (DESIGN §56, #505), the key audit (#506: the SHIFT shortcuts no longer fall through to the plain key when their system is missing; F1 and F8 match the code), the cleared approach to HAR end 0 (D-37, #514). The quarry's west end and PNR end 1 stay one-way by design (`STRIPS.md`).
 

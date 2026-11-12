@@ -77,6 +77,7 @@ const ORG_MIN_SQUADS := 1  ## ... and recruits past one squad only when Los Cuer
 const ORG_RECRUIT_S := 1800.0  ## ... a squad at most every 30 minutes, not a new army every time one dies
 const UPKEEP_MIN := 2.0  ## $ per man per minute
 static var VETERANS := true  ## squads learn from the fights they survive (Mount & Blade's troop tiers)
+static var SPREAD := true  ## district patrols claim empty districts and spread out instead of stacking (DESIGN 83)
 const RANKS := ["Green", "Blooded", "Veteran", "Elite"]
 const RANK_XP := [0.0, 4.0, 10.0, 20.0]  ## experience for each rank: a surviving fight is 1, a winning one 2
 const VET_FIRE := 0.07  ## more fire per man for each rank
@@ -86,6 +87,9 @@ const HOSTILE := {"org": ["police", "rival"], "rival": ["police", "org"], "polic
 const DOCTRINE := {"org": "guerrilla", "rival": "guerrilla", "police": "narcotics"}
 const MORALE0 := {"org": 0.75, "rival": 0.75, "police": 0.85}
 const CONTROL_TAU := 1800.0
+const CLAIM := 0.3  ## a gang's patrol score for a district nobody is in: worth taking, but less than one the enemy holds (DESIGN 83)
+const CROWD := 0.4  ## less for each of our squads already patrolling a district, so one faction's squads spread out
+const HOLD_MIN := 40.0  ## the presence a district needs before anyone holds it: about ten minutes of four men standing there (DESIGN 83)
 
 class Squad:
 	var id: String
@@ -1533,6 +1537,17 @@ func _control(dt: float) -> void:
 			_control_trends[market][faction] = "unestablished" if previous < 0 or current < 0 else ("rising" if current - previous > 0.000001 else ("falling" if previous - current > 0.000001 else "steady"))
 
 
+## Who holds a district, for the week's goal and the turf map: the share rule, but only once there is real presence (HOLD_MIN).
+## A squad passing through for a minute or two holds nothing; one that sat there until it settled (four men: 120) holds it about
+## half an hour after it leaves. -1: nobody holds it. Off (SPREAD false), the bare share rule as before.
+static func held_share(values: Dictionary, faction: String) -> float:
+	if SPREAD:
+		var total: float = float(values.get("org", 0.0)) + float(values.get("rival", 0.0)) + 0.5 * float(values.get("police", 0.0))
+		if total < HOLD_MIN:
+			return -1.0
+	return _control_share(values, faction)
+
+
 static func _control_share(values: Dictionary, faction: String) -> float:
 	var total: float = float(values.get("org", 0.0)) + float(values.get("rival", 0.0)) + 0.5 * float(values.get("police", 0.0))
 	if total <= 1.0: return -1.0
@@ -1681,7 +1696,7 @@ func _think_org() -> void:
 	# the rest hold the street where Los Cuervos push hardest
 	for q in mine:
 		if q.order.get("type", "hold") == "hold" or q.route.size() < 2 and q.order.get("type", "") == "patrol_zone":
-			order(q, _patrol_order("org", q.pos()))
+			order(q, _patrol_order("org", q.pos(), q))
 	# guerrilla doctrine: a small war, and only as big as Los Cuervos make it -
 	# rebuild past a reserve, while we have no squad or they outnumber us
 	var need := of("org").size() < ORG_MIN_SQUADS or of("rival").size() > of("org").size()
@@ -1727,7 +1742,7 @@ func _think_rival() -> void:
 				mine.erase(a)
 	for q in mine:
 		if q.order.get("type", "hold") == "hold":
-			order(q, _patrol_order("rival", q.pos()))
+			order(q, _patrol_order("rival", q.pos(), q))
 	_recruit_ai("rival", commanders.rival.cash > 8000)
 
 
@@ -1805,7 +1820,7 @@ func _think_police() -> void:
 		mine.erase(q)
 	for q in mine:
 		if q.order.get("type", "hold") == "hold":
-			order(q, _patrol_order("police", q.pos()))
+			order(q, _patrol_order("police", q.pos(), q))
 	var swat := arsenal("police") != null and (int(arsenal("police").stock.mg) > 0 or int(arsenal("police").stock.rifle) >= 8)
 	_recruit_ai("police", sess.law_funds > 6000.0, "truck" if swat and officers_down > 0 else "car")
 
@@ -1852,7 +1867,7 @@ func _contested(f: String) -> String:
 	return best
 
 
-func _contested_territory(f: String, from: Vector2) -> Dictionary:
+func _contested_territory(f: String, from: Vector2, q = null) -> Dictionary:
 	var best: Dictionary = {}
 	var best_score := -INF
 	for area: Dictionary in Territories.records(world.map):
@@ -1867,15 +1882,21 @@ func _contested_territory(f: String, from: Vector2) -> Dictionary:
 			if tag in tags:
 				strategic += 0.04
 		var score := hostile - own + strategic - Territories.center_of(area).distance_to(from) / 50000.0
+		if SPREAD:
+			if f != "police" and territory_share(key, f) < 0.0:
+				score += CLAIM  # nobody's: the police go where the crime is, a gang goes where the street is free
+			var id := str(area.get("id", ""))
+			var here := squads.filter(func(o): return o != q and o.faction == f and o.state != "gone" and str(o.order.get("territory", "")) == id)
+			score -= CROWD * here.size()
 		if score > best_score:
 			best_score = score
 			best = area
 	return best
 
 
-func _patrol_order(f: String, from: Vector2) -> Dictionary:
+func _patrol_order(f: String, from: Vector2, q = null) -> Dictionary:
 	if Territories.ENABLED:
-		var area := _contested_territory(f, from)
+		var area := _contested_territory(f, from, q)
 		if not area.is_empty():
 			return {"type": "patrol_zone", "territory": str(area.id), "market": str(area.market)}
 	return {"type": "patrol_zone", "market": _contested(f)}

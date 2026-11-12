@@ -22,8 +22,11 @@ func test_the_street_account_follows_the_street() -> void:
 	lg.stock[home]["marijuana"] = 2000.0
 	lg.sync()
 	s.money = 50000
-	for k in 3:
-		s.command(Roles.BOSS, "hire_worker", {"kind": "dealer"})
+	for k in 3:  # three dealers of our own: hire_worker takes a candidate's id (until 12 Nov this passed only because the payroll AI
+		# happened to hire dealers late in the hour; a different street war, DESIGN 83, spent that money on a soldier instead)
+		var w: Dictionary = s.payroll._person("org", "dealer")
+		s.payroll.candidates["org"].append(w)
+		check(s.command(Roles.BOSS, "hire_worker", {"id": w.id})[0], "dealer %d hired" % k)
 	for i in 3600:
 		s.update(1.0)
 	s.logistics._sync_street()

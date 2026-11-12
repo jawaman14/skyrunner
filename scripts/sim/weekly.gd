@@ -140,12 +140,12 @@ func _met(g: Dictionary) -> void:
 		sess.say("The week's work is done: every goal met.")
 
 
-## A district is held when our share of its streets is at least half (the ground war's own share rule).
+## A district is held when our share of its streets is at least half, with real presence there (GroundWar.held_share).
 func _holds_a_district() -> bool:
 	if sess.ground == null:
 		return false
 	for key in sess.ground.territory_control:
-		if GroundWar._control_share(sess.ground.territory_control[key], "org") >= 0.5:
+		if GroundWar.held_share(sess.ground.territory_control[key], "org") >= 0.5:
 			return true
 	return false
 

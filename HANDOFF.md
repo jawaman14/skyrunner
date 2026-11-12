@@ -175,6 +175,10 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-12 - Claude, the half done (owner: "finish the half done", D-99):** district control calibrated (DESIGN 83,
+  `GroundWar.SPREAD`, BALANCE 77): gangs claim empty districts and spread out; a district is held only with real presence. The
+  ROADMAP's half-done list rewritten: stock lots and the war police's case files were already done; what is left needs a person
+  (the 30 Hz feel, two-machine play), waits on the map rebuild (vehicle routes, D-86) or is an evidence pass (NPC agents).
 - **2026-11-12 - Claude, chart labels:** the M chart's labels round HAR (the strip, the boss's, the club's stash, the docks, a
   truck's destination) printed over one another; they are now laid out together by priority (`Minimap.place_labels`), moving
   aside or dropping the least important. docs/img/trucks.png refreshed. A hangar-roof winding suspicion was checked and dropped:

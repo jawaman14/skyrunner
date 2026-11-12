@@ -2503,3 +2503,37 @@ already wears (section 39); now the armoury and the trucks do. Each has one cond
 
 Not yet: wear by weapon type or by truck (one condition each for now), the pilot's own car (its distance is not counted in the
 sim), a breakdown on the road, storage wear, and the gun dealer or a hired armourer as a worker.
+
+## 83. District control, calibrated (section 47's "not yet"; the owner, 12 November: "finish the half done")
+
+`scripts/sim/ground.gd`, behind `GroundWar.SPREAD` (opt-in with the street war; no random draws, no save change). Section 47 left
+"balance calibration for district control" open. A probe of the live war (every AI commander on, 6 seeds x 6 h, holders sampled
+every 10 minutes) found two faults:
+
+1. **Most of the island was never visited.** A patrol's district score was the enemy's share less ours, a little for strategic
+   tags, less distance: a district nobody had entered scored below any the enemy held, so it was never chosen and stayed empty
+   (about six of ten in every seed: the Docks and Airport Coast, the port and the airfield, among them). And every squad of a side
+   picked the same district.
+2. **A district was held for nothing.** The share rule counts a district from a total presence of 1, and presence grows one point
+   per man per minute: four men walking through for two minutes "held" it, for about an hour after they left. The week's
+   "a district held" goal was close to free.
+
+**Changed:**
+- **Claim** (`CLAIM` 0.3): a gang's patrol scores a district nobody is in 0.3 higher, so an empty one within about 15 km beats
+  staying put, and one the enemy holds (up to 1.0) still comes first. The police are unchanged: they go where the crime is.
+- **Crowd** (`CROWD` 0.4): 0.4 less for each squad of the same side already patrolling a district (not counting the squad being
+  ordered). One enemy street is still worth two squads (1.0 - 0.4 beats 0.3), the third goes elsewhere.
+- **Holding takes presence** (`HOLD_MIN` 40, `GroundWar.held_share`): the week's goal and the turf map count a holder only once
+  the district's total presence is 40, about ten minutes of four men standing there. A squad that stayed until it settled (four
+  men: 120) holds it about half an hour after it leaves (120 to 40 at tau 30 min: 33 min). The market-level shares (prices,
+  rackets, interceptions) and the patrol scoring keep the bare rule.
+
+Off, the old targeting and the bare share rule.
+
+**Measured** (the same probe, the same 6 seeds x 6 h, SPREAD on against off): districts changing hands 23 -> 31; mean districts held
+(org/rival/police) 0.52/1.20/1.92 -> 0.55/0.72/0.68, fewer because passing through no longer counts; districts nobody holds
+6.1 -> 7.8 of 10; the organisation's AI still holds its first district at 10 minutes. BALANCE entry 77.
+
+Not changed, and why: the armies are small (by hour six the gangs field 0-2 squads and the police 1-4), so no targeting rule can
+cover ten districts. That is the organisation's guerrilla doctrine (its $30,000 reserve, BALANCE entry 29) and Los Cuervos'
+stand-in income (no rival economy yet, B-2), each tracked on its own.

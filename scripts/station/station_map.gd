@@ -272,7 +272,7 @@ static func turf_leader(control: Dictionary) -> Dictionary:
 	var best := ""
 	var best_share := 0.0
 	for f in ["org", "rival", "police"]:
-		var share := GroundWar._control_share(control, f)
+		var share := GroundWar.held_share(control, f)
 		if share > best_share:
 			best = f
 			best_share = share
