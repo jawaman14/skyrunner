@@ -58,6 +58,9 @@ func _initialize() -> void:
 	if a.has("nowear"):  # the same run with weapons and trucks that never wear (DESIGN 82)
 		Wear.ENABLED = false
 		a.erase("nowear")
+	if a.has("notrust"):  # the same run where Los Cuervos' and the dealers' trust change nothing (DESIGN 84)
+		Trust.EFFECTS = false
+		a.erase("notrust")
 	if a.has("nowars"):  # the same run without price wars and supply cuts (DESIGN 78)
 		PriceWars.ENABLED = false
 		a.erase("nowars")

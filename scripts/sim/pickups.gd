@@ -211,6 +211,9 @@ func _intercepted(o: Dictionary, watched: bool) -> bool:
 	var zone: String = str(st.zone) if st != null else "town"
 	var share: float = maxf(0.0, float(sess.ground.rival_share(zone)))  # (a district nobody holds reads -1)
 	var p: float = minf(INTERCEPT_MAX, INTERCEPT_SHARE * share) * (INTERCEPT_WATCHED if watched else 1.0)
+	var tr := Trust.of_session(sess)
+	if tr != null:
+		p *= tr.rival_odds()  # a truce with Los Cuervos (DESIGN 84; the same draw)
 	if rng.random() >= p:
 		return false
 	(o.order as PickupOrder).intercept()

@@ -2351,8 +2351,8 @@ crews' standing with the organisation, 0 to 100, and the owner's table of who re
   Family's offers, the casino) still move the old standings directly and spread nothing.
 - **The phone.** Empire lists "The crews" with each one's trust.
 
-Not yet: what Los Cuervos' and the dealers' trust change (the dealers' arrests and skill, a truce with Los Cuervos), what anything
-raises the dealers' trust, and crew trust unlocking things at boss level (slice 7).
+Not yet: crew trust unlocking things at boss level (slice 7). What Los Cuervos' and the dealers' trust change, and what raises the
+dealers', is section 84.
 
 
 ## 77. Weapon crates and the scarcity ladder (D-61 stage 1; section 50's first stage)
@@ -2537,3 +2537,29 @@ Off, the old targeting and the bare share rule.
 Not changed, and why: the armies are small (by hour six the gangs field 0-2 squads and the police 1-4), so no targeting rule can
 cover ten districts. That is the organisation's guerrilla doctrine (its $30,000 reserve, BALANCE entry 29) and Los Cuervos'
 stand-in income (no rival economy yet, B-2), each tracked on its own.
+
+
+## 84. What Los Cuervos' and the dealers' trust change (section 76's "not yet"; the owner, 13 November: "finish the half done")
+
+`scripts/sim/trust.gd`, switch `Trust.EFFECTS` (in the parity set; no random draws: every effect scales an existing draw's odds or
+adds to a value already drawn). Section 76 gave Los Cuervos and Manny's dealers a standing that nothing read.
+
+- **A truce with Los Cuervos.** From a trust of 40 (`TRUCE_FROM`) they hold back, fully from 80 (`TRUCE_FULL`): `rival_odds()` is
+  1 below 40 and falls to 0.25 at 80 (`RESTRAINT` 0.75). It multiplies the odds of their squads setting an ambush on a truck of
+  ours and raiding a stash they can take (`GroundWar._think_rival`), and of their taking a pickup (`Pickups._intercepted`). They
+  start at 20, so nothing changes until we earn it: selling them rifles (+2 a sale) raises it, doing well by the Morettis lowers it
+  (section 76's table). The phone's crews line says "a truce: they hold back N%".
+- **The hall's men.** Manny's dealers are the hiring hall. Their trust moves every candidate's skill and loyalty by up to 0.1
+  (`HALL`): (trust - 50) / 50 x 0.1, the way renown does (section 66), on the same draws. The phone says "the hall sends better
+  (or worse) men".
+- **What moves the dealers' trust.** A payday met in full +1 (`PAID`), one come up short -5 (`SHORT`), a lawyer paid for a man in
+  jail +3 (`LAWYER`); and, as before, standing by the corners in a price war (+2, section 78) and the table's spread.
+
+Off, nothing reads either standing and paydays and lawyers move neither.
+
+**Measured** (live_balance noair, 12 seeds x 3 h, against `notrust`): money p50 $16,234 -> $18,233, our men arrested 17.9 -> 15.7
+a run; most of it the hall's better men. The truce is not exercised by the stand-in (it never sells Los Cuervos rifles). BALANCE
+entry 78.
+
+Not yet: Los Cuervos' trust falling when our squads kill theirs, a formal truce bought from them (the season simulator's HQ truce
+is separate and stays), and crew trust unlocking things at boss level (slice 7).
