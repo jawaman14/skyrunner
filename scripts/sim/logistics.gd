@@ -55,11 +55,13 @@ var _route_t := 0.0
 var _move_t := -1e9  ## the last product move (the AI waits AI_MOVE_EVERY_S between them)
 var _item_id := 0
 var pickups: Pickups  ## stock bought upfront and brought to a stash (DESIGN 51.2, slice 3)
+var storage: Storage  ## what each house holds and costs (DESIGN 51 slice 4, DESIGN 87)
 
 
 func _init(sess_) -> void:
 	sess = sess_
 	pickups = Pickups.new(self)
+	storage = Storage.new(self)
 	for st in sess.stash_net.stashes:
 		stock[st.id] = {"cocaine": 0.0, "marijuana": 0.0}
 		cash[st.id] = 0.0
@@ -68,6 +70,7 @@ func _init(sess_) -> void:
 	for g in Trade.GOODS:
 		stock[home][g] = float(sess.trade.stock[g])
 	sess.bus.subscribe("stash_raided", func(ev): _raided(str(ev.data.get("stash", ""))))
+	sess.bus.subscribe("books", func(_ev): storage.close())  # the houses' upkeep at the 06:00 close
 
 
 # ------------------------------------------------------------------ places
@@ -329,7 +332,9 @@ func transfer_reason(from: String, to: String, what: String, amount: float) -> S
 			return why
 		if not Trade.BUYERS[to].cap.has(what):
 			return "%s don't buy %s." % [Trade.BUYERS[to].name, what]
-	return "No %s at %s." % [what, name_of(from)] if minf(amount, float(stock[from][what])) < 0.5 else ""
+	if minf(amount, float(stock[from][what])) < 0.5:
+		return "No %s at %s." % [what, name_of(from)]
+	return storage.full_reason(to, minf(amount, float(stock[from][what])))  # room at the house it goes to (DESIGN 87)
 
 
 func send(from: String, to: String, what: String, amount: float, careful := false) -> String:
@@ -1211,6 +1216,7 @@ func update(dt: float) -> void:
 		_sync_street()
 		_pull_over(_watch_t)
 		_watch_t = 0.0
+	storage.update(dt)
 	_route_t += dt
 	if _route_t >= 30.0:
 		_refresh_routes()
@@ -1320,7 +1326,7 @@ func view() -> Dictionary:
 	for st in sess.stash_net.stashes:
 		sites.append({"id": st.id, "name": st.name, "market": st.zone, "burned": st.burned, "strip": st.strip,
 			"cocaine": snappedf(stock[st.id].cocaine, 0.1), "marijuana": snappedf(stock[st.id].marijuana, 0.1), "acid": snappedf(float(stock[st.id].get("acid", 0.0)), 0.1), "cash": int(cash[st.id]),
-			"vault": StashWorks.level(st, "vault"), "guard": StashWorks.level(st, "guard")})
+			"vault": StashWorks.level(st, "vault"), "guard": StashWorks.level(st, "guard"), "room": storage.line(str(st.id))})
 	var trucks := []
 	for t in sess.stash_net.trucks:
 		if convoys.has(t.job_id):

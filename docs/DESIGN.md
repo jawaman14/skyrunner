@@ -2621,3 +2621,36 @@ and the businesses' tills ended the week $6,563 against $6,504 (+1%). BALANCE en
 Not yet: civilian jobs (residents employed by the businesses, wages into demand), demand per good moving with prosperity (cocaine
 up with money, groceries steady), the street's drug prices reading the district's prosperity, and prosperity for districts outside
 the Living District.
+
+
+## 87. Storage caps and costs per place (section 51's slice 4)
+
+`scripts/sim/storage.gd` (`Storage`, held by `Logistics` as `storage`; switch `Storage.ENABLED`, in the parity set; no random draws).
+Section 51.4's places ("a warehouse holds most, a hidden stash little") had no numbers: any house held any amount and cost nothing.
+
+| Kind | Holds (lb, every good together) | Upkeep a day |
+|---|---|---|
+| warehouse (the docks) | 4,000 | $150 |
+| barn | 2,500 | $80 |
+| villa | 1,500 | $120 |
+| boathouse | 1,200 | $60 |
+| lock-up | 1,000 | $60 |
+| shed | 800 | $40 |
+| camp | 600 | $30 |
+| shack | 400 | $20 |
+| (any other kind) | 1,000 | $50 |
+
+- **Room.** A house's room is its cap less what it holds and what is on its way there (vans and rounds bound for it, pickups
+  ordered to it). A van (`send`) or a pickup order with more than that is refused, with the room left in words.
+- **The cap is soft.** A landed load, a buyer's delivery, a harvest or anything else the boss did not choose that arrives over it
+  is kept, stacked in the yard; a house over its cap draws heat by the hour, in proportion to how far over it is, up to 3 an hour
+  at a full cap over (`YARD_HEAT`).
+- **Upkeep.** At the 06:00 close every live house's upkeep is paid from the safe (to the landlord, `fee`): $560 a day for the
+  city coast's eight. What the safe cannot pay is owed (saved under the logistics' `storage`) and paid first at the next close.
+- **On screen.** The logistics table shows each house's "held of cap lb".
+
+The owner left the cap's form open (DESIGN 51.8: a count, a weight, or floor space you buy). This takes weight, the unit every
+stock already uses; floor space bought (a cap that grows with money spent at a house, like the vault) is the natural next step.
+
+Not yet: buying more room at a house, upkeep scaled by the district, and guns and cash counting against the space. (A burned house
+already pays nothing: only live ones do.)
