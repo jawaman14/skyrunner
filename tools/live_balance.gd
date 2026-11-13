@@ -64,6 +64,9 @@ func _initialize() -> void:
 	if a.has("nosight"):  # the same run with the police and Los Cuervos knowing every truck on the road (D-36, DESIGN 85)
 		GroundWar.FAIR_SIGHT = false
 		a.erase("nosight")
+	if a.has("noammotype"):  # the same run with squads drawing rounds from one pool (DESIGN 92)
+		GroundWar.AMMO_BY_TYPE = false
+		a.erase("noammotype")
 	if a.has("nowars"):  # the same run without price wars and supply cuts (DESIGN 78)
 		PriceWars.ENABLED = false
 		a.erase("nowars")

@@ -413,12 +413,21 @@ func test_malformed_sim_save_is_not_loaded_or_overwritten() -> void:
 
 
 ## True when `got` has everything `want` has (a loader may add a zero entry for a good the save never listed).
+## Everything `want` wrote comes back in `got`: a dictionary's keys (a later version may add keys), an array's items in order,
+## element by element (so a squad entry that gained a key, DESIGN 92's rounds by type, still holds), the rest equal.
 func _holds(got, want) -> bool:
 	if want is Dictionary:
 		if not got is Dictionary:
 			return false
 		for k in want:
 			if not got.has(k) or not _holds(got[k], want[k]):
+				return false
+		return true
+	if want is Array:
+		if not got is Array or (got as Array).size() != (want as Array).size():
+			return false
+		for i in (want as Array).size():
+			if not _holds(got[i], want[i]):
 				return false
 		return true
 	return got == want

@@ -75,10 +75,18 @@ func add(tier: String, n: int) -> void:
 ## Set the pool's total: what is added goes in proportion to the guns held (rifle rounds with none), what is taken in proportion to
 ## the rounds held; whole rounds, the remainder by the largest fractions, ties in ORDER. Deterministic.
 func _set_total(v: int) -> void:
-	v = maxi(0, v)
-	var delta := v - ammo
+	var total := 0
+	for t in rounds:
+		total += int(rounds[t])
+	share(rounds, stock, maxi(0, v) - total)
+
+
+## Move `delta` rounds into (or out of) a by-type pool: added in proportion to `guns` (rifle rounds when it holds none), taken in
+## proportion to what the pool holds; whole rounds by largest remainder, ties in ORDER. Shared by the arsenals and the squads.
+static func share(rounds: Dictionary, guns: Dictionary, delta: int) -> void:
 	if delta == 0:
 		return
+	var stock := guns
 	var weights := {}
 	var wsum := 0.0
 	for t in ORDER:
@@ -90,25 +98,25 @@ func _set_total(v: int) -> void:
 			rounds["rifle"] = int(rounds["rifle"]) + delta
 		return
 	var n := absi(delta)
-	var share := {}
+	var part := {}
 	var given := 0
 	for t in ORDER:
-		share[t] = int(floor(float(n) * float(weights[t]) / wsum))
-		given += int(share[t])
+		part[t] = int(floor(float(n) * float(weights[t]) / wsum))
+		given += int(part[t])
 	var rest := ORDER.duplicate()
 	rest.sort_custom(func(a, b):
-		var fa: float = float(n) * float(weights[a]) / wsum - float(share[a])
-		var fb: float = float(n) * float(weights[b]) / wsum - float(share[b])
+		var fa: float = float(n) * float(weights[a]) / wsum - float(part[a])
+		var fb: float = float(n) * float(weights[b]) / wsum - float(part[b])
 		return fa > fb if absf(fa - fb) > 1e-12 else ORDER.find(a) < ORDER.find(b))
 	var k := 0
 	while given < n:
 		var t: String = rest[k % rest.size()]
 		if weights[t] > 0.0:
-			share[t] = int(share[t]) + 1
+			part[t] = int(part[t]) + 1
 			given += 1
 		k += 1
 	for t in ORDER:
-		rounds[t] = maxi(0, int(rounds[t]) + (int(share[t]) if delta > 0 else -int(share[t])))
+		rounds[t] = maxi(0, int(rounds[t]) + (int(part[t]) if delta > 0 else -int(part[t])))
 
 
 func add_all(weapons: Dictionary) -> void:

@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** ammunition in the war, stage 3 first part (DESIGN 92, `GroundWar.AMMO_BY_TYPE`,
+  BALANCE 86): squads draw each gun's own rounds; a dry gun fires like bare hands. The frozen v1 save test's `_holds` now compares
+  arrays item by item (a squad entry gained `by`); every key the fixture wrote still has to come back unchanged.
 - **2026-11-13 - Claude, the planned, cont.:** ammunition as a good, stage 2 first part (DESIGN 91, BALANCE 85): rounds by gun
   type, the old pool their exact total (full suite 1,737/0 unchanged), crates of rounds at the dealer, saves migrated.
 - **2026-11-13 - Claude, the planned, cont.:** chapter deadlines (DESIGN 90, `Story.PACE`, BALANCE 84): a bonus in renown for a
