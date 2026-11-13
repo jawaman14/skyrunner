@@ -51,7 +51,7 @@ func incoming(site: String) -> float:
 		if str(c.get("to", "")) == site and str(c.get("good", "")) not in ["", "cash"]:
 			total += float(c.get("lb", 0.0))
 	for o in lg.pickups.open_orders():
-		if str(o.stash) == site and str(o.good) != "guns":
+		if str(o.stash) == site and not str(o.good) in ["guns", "ammo"]:
 			total += float(o.lb)
 	return total
 

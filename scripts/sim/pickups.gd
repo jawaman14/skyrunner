@@ -146,8 +146,45 @@ func order_guns(tier: String, crates: int, stash := "") -> String:
 	return ""
 
 
-## What a lot is, in words: "50 lb of marijuana", "16 rifles".
+## Order `crates` crates of rounds for guns of `tier` from the dealer, brought to stash `stash` (DESIGN 94): the pickup flow, so
+## a delivery can go where the dealer won't drive himself (DESIGN 93), at the risk of Los Cuervos taking it. "" or why not.
+func order_ammo(tier: String, crates: int, stash := "") -> String:
+	if not ENABLED or not Arsenal.AMMO_TRADE:
+		return "Nobody takes orders for rounds in this game."
+	var sess = lg.sess
+	if not Arsenal.REALISM or not sess.arsenals.has("org"):
+		return "No arsenal."
+	if not sess.unlocked("guns"):
+		return "No gun dealer will talk to us yet."
+	if not Arsenal.AMMO.has(tier):
+		return "Rounds for what?"
+	if crates < 1 or crates > MAX_CRATES:
+		return "One to %d crates an order." % MAX_CRATES
+	if open_orders().size() >= MAX_OPEN:
+		return "Three pickups are already on: collect one first."
+	if stash == "":
+		stash = lg.nearest_stash(lg.hq_pos())
+	var st = sess.stash_net.get_stash(stash)
+	if st == null or st.burned:
+		return "That stash house can't take a delivery."
+	var n: int = crates * int(Arsenal.AMMO[tier].rounds)
+	var cost := int(ceil(float(sess.ammo_price(tier)) * crates * CRATE_PRICE))
+	if sess.money < cost:
+		return "%d %s cost $%s up front." % [n, Arsenal.AMMO[tier].name, Py.money(cost)]
+	sess.move_money(-cost, "outside:market", "purchase")
+	_serial += 1
+	var po := PickupOrder.make(cost, "stash:" + stash, float(sess.time), OPENS_S, WINDOW_S)
+	orders.append({"id": _serial, "contact": "dealer", "good": "ammo", "tier": tier, "lb": float(n), "stash": stash, "paid": cost, "order": po, "missed": 0, "by": ""})
+	sess.say("The gun dealer will bring %d crate%s of %s (%d) to %s in %d minutes and wait %d: be there, or have a lookout there ($%s paid)." % [
+		crates, "" if crates == 1 else "s", Arsenal.AMMO[tier].name, n, lg.name_of(stash), int(OPENS_S / 60.0), int(WINDOW_S / 60.0), Py.money(cost)])
+	sess.bus.emit("pickup_ordered", sess.time, "", ["runner"], {"id": _serial, "contact": "dealer", "good": "ammo", "tier": tier, "lb": float(n), "stash": stash})
+	return ""
+
+
+## What a lot is, in words: "50 lb of marijuana", "16 rifles", "1200 rifle rounds".
 static func describe(o: Dictionary) -> String:
+	if str(o.good) == "ammo":
+		return "%d %s" % [int(o.lb), str(Arsenal.AMMO[str(o.get("tier", "rifle"))].name)]
 	if str(o.good) == "guns":
 		return "%d %s" % [int(o.lb), str(Arsenal.TIERS[str(o.get("tier", "rifle"))].name).to_lower()]
 	return "%d lb of %s" % [int(o.lb), o.good]
@@ -224,6 +261,10 @@ func _intercepted(o: Dictionary, watched: bool) -> bool:
 	if str(o.good) == "guns":
 		if sess.arsenals.has("rival"):
 			sess.arsenals["rival"].add(str(o.get("tier", "rifle")), int(o.lb))
+	elif str(o.good) == "ammo":
+		if sess.arsenals.has("rival"):
+			var rt := str(o.get("tier", "rifle"))
+			sess.arsenals["rival"].rounds[rt] = int(sess.arsenals["rival"].rounds[rt]) + int(o.lb)  # their guns, our rounds
 	elif sess.econ.market != null:
 		sess.econ.market.flow(str(o.good), zone, 0.1, "Los Cuervos are selling a load they took")
 	var text := "Los Cuervos stopped %s's car on its way to %s: the %s and the $%s paid are gone." % [SELLERS[o.contact].name,
@@ -240,14 +281,19 @@ func _back_on_the_street(o: Dictionary) -> void:
 
 
 func _collected(o: Dictionary) -> void:
-	if str(o.good) == "guns":
+	if str(o.good) == "ammo":
+		var ars: Arsenal = lg.sess.arsenals["org"]
+		var at := str(o.get("tier", "rifle"))
+		ars.rounds[at] = int(ars.rounds[at]) + int(o.lb)
+		ars.cache = str(o.stash)  # the armoury is where the crates were taken in, as for guns
+	elif str(o.good) == "guns":
 		lg.sess.arsenals["org"].add(str(o.get("tier", "rifle")), int(o.lb))
 		lg.sess.arsenals["org"].cache = str(o.stash)  # the armoury is where the crates were taken in
 		lg.sess.bus.emit("weapons_stocked", lg.sess.time, "", ["runner"], {"weapons": {str(o.get("tier", "rifle")): int(o.lb)}, "cache": str(o.stash)})
 	else:
 		lg.add(str(o.stash), str(o.good), float(o.lb), str(o.contact))  # booked from outside:<contact>
 	_finish(o, PickupOrder.COLLECTED)
-	lg.sess.say("%s from %s %s in %s%s." % [describe(o).capitalize(), SELLERS[o.contact].name, "are" if str(o.good) == "guns" else "is", lg.name_of(str(o.stash)),
+	lg.sess.say("%s from %s %s in %s%s." % [describe(o).capitalize(), SELLERS[o.contact].name, "are" if str(o.good) in ["guns", "ammo"] else "is", lg.name_of(str(o.stash)),
 		" (the lookout took it in)" if o.by == "lookout" else ""])
 	lg.sess.bus.emit("pickup_collected", lg.sess.time, "", ["runner"], {"id": o.id, "good": o.good, "lb": o.lb, "by": o.by})
 
@@ -263,7 +309,7 @@ func _late(o: Dictionary) -> void:
 		return
 	var now: float = lg.sess.time
 	o.order = PickupOrder.make(int(o.paid), "stash:" + str(o.stash), now, REDO_S - WINDOW_S, WINDOW_S)
-	lg.sess.say("Nobody at %s to take the %s. %s will try once more in %d minutes." % [lg.name_of(str(o.stash)), "crates" if str(o.good) == "guns" else o.good,
+	lg.sess.say("Nobody at %s to take the %s. %s will try once more in %d minutes." % [lg.name_of(str(o.stash)), "crates" if str(o.good) in ["guns", "ammo"] else o.good,
 		str(SELLERS[o.contact].name).capitalize(), int((REDO_S - WINDOW_S) / 60.0)])
 
 
