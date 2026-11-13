@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** chapter deadlines (DESIGN 90, `Story.PACE`, BALANCE 84): a bonus in renown for a
+  chapter done in time, never a penalty. What renown and trust unlock at boss level stays the owner's (section 51.8).
 - **2026-11-13 - Claude, the planned, cont.:** crew relationships (DESIGN 89, `Payroll.BONDS`, BALANCE 83; new stream seed + 205):
   section 51 slice 6 done. Next: slice 7 (chapter objectives with deadlines; what renown and trust unlock at boss level).
 - **2026-11-13 - Claude, the planned, cont.:** rackets under heat (DESIGN 88, `Rackets.UNDER_HEAT`, BALANCE 82; new stream
