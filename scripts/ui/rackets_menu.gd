@@ -28,7 +28,8 @@ func refresh() -> void:
 	markets = v.get("markets", [])
 	for m in markets:
 		var share: float = float(m.share)
-		list.add_row([str(m.market).capitalize(), "-" if share < 0.0 else "%d%%" % int(share * 100.0), str(m.policy), "$%s" % Py.money(int(m.expected))])
+		list.add_row([str(m.market).capitalize(), "-" if share < 0.0 else "%d%%" % int(share * 100.0), str(m.policy), "$%s" % Py.money(int(m.expected))
+			+ (("   HOT: %d%% raid risk, close it" % int(round(100.0 * float(m.raid)))) if float(m.get("raid", 0.0)) > 0.0 else "")])
 	if not markets.is_empty():
 		var ids: Array = markets.map(func(m): return str(m.market))
 		list.select_near(ids.find(keep_id) if ids.has(keep_id) else maxi(0, keep))

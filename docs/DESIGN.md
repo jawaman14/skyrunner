@@ -1871,6 +1871,7 @@ that claim an offset are noted.
 | 187 | `Wanted` | `session_state.gd` | the Wanted names' prizes, one draw a take-down (D-95) |
 | 189 | `Curses` | `session.gd` | which board jobs offer a condition, and which one (D-95) |
 | 191 | `BlackMarket` | `session.gd` | the week's black-market stock and the week's hot job (D-95) |
+| 203 | `Rackets.rng` | `session.gd` | a raid on the collectors' round in a hot district: one draw a hot market a round (section 88) |
 | 201 | `Pickups.rng` | `session_state.gd` | Los Cuervos intercepting a pickup: one draw as its window opens (section 81) |
 | 199 | `Takeover` | `session.gd` | the takeover, once: ties between equally known stashes, and who of the crew walks (D-35, D-78) |
 | 197 | `PriceWars` | `session_state.gd` | price wars and supply cuts: whether one starts, its kind, market and length (loop idea 6) |
@@ -2654,3 +2655,24 @@ stock already uses; floor space bought (a cap that grows with money spent at a h
 
 Not yet: buying more room at a house, upkeep scaled by the district, and guns and cash counting against the space. (A burned house
 already pays nothing: only live ones do.)
+
+
+## 88. Rackets under heat (section 51's slice 6, first half)
+
+`Rackets.UNDER_HEAT` (opt-in with the rackets; its own stream, `seed + 203`). Section 51.6: "a racket in a hot district must be
+closed or risks a raid". The collectors' rounds (section 26) took tribute from every market we hold whatever the law was doing
+there; the case files (section 48) already keep a heat for each district (`Investigation.district_heat`, raised by seizures and
+raids, cooling by the minute).
+
+- **Hot.** A racket is hot where its district's heat is 40 or more (`HOT_AT`).
+- **The raid.** Each collectors' round, each hot market whose racket is open draws once: the odds are 0 at 40, rising in
+  proportion to 0.5 at 100 (`RAID_MAX`). Raided, nothing is taken there that round, the case against us gains 4 suspicion
+  (`RAID_CASE`) and the district 10 more heat (`RAID_DISTRICT`), so a racket kept open in a hot district feeds its own risk.
+- **Closing it.** A market set to "off" pays nothing and draws nothing. The collectors' screen marks a hot market "HOT: N% raid
+  risk, close it".
+- A market under 40 draws nothing: the stream is untouched outside hot districts.
+
+Off, the rounds pay as before.
+
+Not yet: section 51.6's other half, crew members' pairwise relationships (hate, friendship, love) changing who will work
+together; and the collectors themselves as workers who can be arrested in a raid.
