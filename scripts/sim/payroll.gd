@@ -79,6 +79,17 @@ var _run_t := {}  ## pilot id -> next run time
 var _t := 0.0
 
 
+## Crew relationships (DESIGN 89; section 51.6's other half): when we take a man on, one draw against each man already on our
+## crew decides what is between them. A man won't be posted with one he hates; a man killed or taken costs his friends' loyalty.
+static var BONDS := true
+const BOND_HATE := 0.06
+const BOND_FRIEND := 0.10
+const BOND_LOVE := 0.02
+const GRIEF := {"friend": -0.1, "love": -0.25, "hate": 0.05}  ## loyalty for the others when a man is killed or arrested
+const BOND_WORDS := {"hate": "hates", "friend": "is friends with", "love": "is in love with"}
+var bonds_rng: PyRandom = null  ## (seed + 205; set by the session)
+
+
 func _init(sess_, rng_: PyRandom) -> void:
 	sess = sess_
 	rng = rng_
@@ -156,6 +167,8 @@ func hire(o: String, id: String) -> String:
 	candidates[o].erase(w)
 	w.status = "free"
 	w.hired_at = sess.time
+	if o == "org":
+		_bond(w)
 	workers.append(w)
 	say(o, "Hired %s, %s (%s)." % [w.name, ROLES[w.role][2], w.hint])
 	return ""
@@ -219,7 +232,11 @@ func take(o: String, role: String, n: int, job: String, street := true) -> Array
 	var free := of(o, role, "free")
 	free.sort_custom(func(a, b): return a.skill > b.skill)
 	var got := []
-	for w in free.slice(0, n):
+	for w in free:
+		if got.size() >= n:
+			break
+		if not _will_work_with(w, job, got):
+			continue  # won't stand beside a man he hates (DESIGN 89)
 		w.status = "assigned"
 		w.assigned = job
 		got.append(w.id)
@@ -266,6 +283,7 @@ func lose(id: String, how: String, where := "") -> void:
 	if w == null:
 		return
 	lost[w.outfit] += 1
+	_grieve(w, how)
 	var suffix := " %s" % where if where != "" else ""
 	if how == "arrested":
 		w.status = "arrested"
@@ -339,10 +357,85 @@ func post_lookout(id: String, stash_id: String) -> String:
 		return "No free lookout by that name."
 	if sess.stash_net == null or sess.stash_net.get_stash(stash_id) == null:
 		return "No such stash house."
+	var foe := _foe_at(w, "stash-" + stash_id, [])
+	if foe != "":
+		return "%s won't watch a house with %s." % [w.name, foe]  # DESIGN 89
 	w.status = "assigned"
 	w.assigned = "stash-" + stash_id
 	say("org", "%s is watching %s." % [w.name, sess.stash_net.get_stash(stash_id).name])
 	return ""
+
+
+# ------------------------------------------------------------------ crew relationships (DESIGN 89)
+## One draw against each of our men already on the crew: hate, friendship, love or nothing, kept on both.
+func _bond(w: Dictionary) -> void:
+	if not BONDS or bonds_rng == null:
+		return
+	if not w.has("bonds"):
+		w["bonds"] = {}
+	for x in workers:
+		if x.outfit != "org" or not x.status in ["free", "assigned"] or x.id == w.id:
+			continue
+		var r := bonds_rng.random()
+		var kind := ""
+		if r < BOND_HATE:
+			kind = "hate"
+		elif r < BOND_HATE + BOND_FRIEND:
+			kind = "friend"
+		elif r < BOND_HATE + BOND_FRIEND + BOND_LOVE:
+			kind = "love"
+		if kind == "":
+			continue
+		w.bonds[str(x.id)] = kind
+		if not x.has("bonds"):
+			x["bonds"] = {}
+		x.bonds[str(w.id)] = kind
+
+
+func bond(a: String, b: String) -> String:
+	var w = get_worker(a)
+	return str(w.get("bonds", {}).get(b, "")) if w != null else ""
+
+
+## The name of a man he hates already at `job` (or among `with`), or "".
+func _foe_at(w: Dictionary, job: String, with: Array) -> String:
+	if not BONDS:
+		return ""
+	for id in w.get("bonds", {}):
+		if str(w.bonds[id]) != "hate":
+			continue
+		var x = get_worker(str(id))
+		if x != null and (with.has(x.id) or (x.status == "assigned" and str(x.assigned) == job)):
+			return str(x.name)
+	return ""
+
+
+func _will_work_with(w: Dictionary, job: String, with: Array) -> bool:
+	return _foe_at(w, job, with) == ""
+
+
+## A man is gone (killed or taken): those close to him take it hard, those who hated him less so.
+func _grieve(w: Dictionary, how: String) -> void:
+	if not BONDS:
+		return
+	for id in w.get("bonds", {}):
+		var x = get_worker(str(id))
+		if x == null or not x.status in ["free", "assigned"]:
+			continue
+		var kind := str(w.bonds[id])
+		x.loyalty = clampf(float(x.loyalty) + float(GRIEF.get(kind, 0.0)), 0.0, 1.0)
+		if kind in ["friend", "love"]:
+			say(str(x.outfit), "%s takes it hard that %s was %s." % [x.name, w.name, "killed" if how != "arrested" else "taken"])
+
+
+## "hates Tony Caruso; is friends with Joey Mejia" for the roster.
+func bonds_line(w: Dictionary) -> String:
+	var parts := []
+	for id in w.get("bonds", {}):
+		var x = get_worker(str(id))
+		if x != null and x.status in ["free", "assigned", "arrested"]:
+			parts.append("%s %s" % [BOND_WORDS.get(str(w.bonds[id]), str(w.bonds[id])), x.name])
+	return "; ".join(parts)
 
 
 # ------------------------------------------------------------------ payday and loyalty
@@ -680,7 +773,7 @@ func view(side: String) -> Dictionary:
 		"candidates": candidates.org.map(func(w): return {"id": w.id, "name": w.name, "role": w.role, "skill": w.skill,
 			"wage": w.wage, "hint": w.hint}),
 		"crew": of("org").filter(func(w): return w.status in ["free", "assigned"]).map(func(w): return {"id": w.id, "name": w.name,
-			"role": w.role, "skill": w.skill, "wage": w.wage, "status": w.status, "assigned": w.assigned, "doing": doing(w)}),
+			"role": w.role, "skill": w.skill, "wage": w.wage, "status": w.status, "assigned": w.assigned, "doing": doing(w), "bonds": bonds_line(w)}),
 		"jail": jail.filter(func(j): return j.outfit == "org").map(func(j):
 			var w = get_worker(j.id)
 			return {"id": j.id, "name": w.name if w != null else "?", "role": w.role if w != null else "?",

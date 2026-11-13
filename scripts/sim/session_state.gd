@@ -521,6 +521,7 @@ func enable_system(key: String, career := false) -> bool:
 			if payroll != null or not Payroll.ENABLED:
 				return false
 			payroll = Payroll.new(self, _rng(seed + 109))
+			payroll.bonds_rng = _rng(seed + 205)  # crew relationships (own stream; DESIGN 89)
 			payroll.ai["org"] = not (humans.has(Roles.BOSS) or humans.has(Roles.LIEUTENANT))
 		"court":
 			if court != null or not Court.ENABLED:
