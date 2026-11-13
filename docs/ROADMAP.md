@@ -238,8 +238,6 @@ that are finished are listed once at the end.
   person at the controls judging the feel, then flipping the default; F-7 waits on that.
 - **Checked vehicle routes:** all 99 audited logistics pairs fail access; waits on the map rebuild's sites and connectors
   (D-86). Never raise connector limits to make the numbers pass.
-- **Full NPC truck and squad migration** to physical agents: the code is in (`Agent` bodies for every stash truck's driver,
-  every squad member and the workers in `People`); what is owed is an evidence pass that nothing still moves on a bare timer.
 - **Two-machine multiplayer:** seat, action and voice are implemented and never run by a person (release gate).
 
 **Not started, still owed:**
@@ -250,7 +248,9 @@ that are finished are listed once at the end.
 
 **Finished or in PR since 18 October:** stock lots and pickup orders (grades and age at the till, the stock ledger on the
 phone, pickups wired by #544), the street war's police serving the case files' warrants (heat step 2), district-control
-calibration (DESIGN 83: gangs claim empty districts and spread out), Backspace reverse (RB binding and help line were on main), map destination lines (#493), the
+calibration (DESIGN 83: gangs claim empty districts and spread out), the NPC agents' evidence pass (tests/test_agents_everywhere.gd:
+every kind of truck has a driver, every squad its men, every worker a body, and a held truck is still on the road when its timer
+runs out), what Los Cuervos' and the dealers' trust change (DESIGN 84), Backspace reverse (RB binding and help line were on main), map destination lines (#493), the
 island job board gaps (#495), the BALANCE entries for orders and heat step 1 (#497), the rivals' unattributed money (#496),
 the lawyer's discount valve (#491), the docs' stream table, terrain cache, strip pins and pit (DESIGN §56, #505), the key audit (#506: the SHIFT shortcuts no longer fall through to the plain key when their system is missing; F1 and F8 match the code), the cleared approach to HAR end 0 (D-37, #514). The quarry's west end and PNR end 1 stay one-way by design (`STRIPS.md`).
 

@@ -562,7 +562,7 @@ func _empire_parts() -> Array:
 	if s.trade != null:  # trust with each crew (D-11)
 		var crews := []
 		for c in s.trade.trust.view():
-			crews.append(["%s: trust %d" % [c.name, int(round(float(c.trust)))], ""])
+			crews.append(["%s: trust %d%s" % [c.name, int(round(float(c.trust))), (" (%s)" % c.note) if str(c.get("note", "")) != "" else ""], ""])
 		if not crews.is_empty():
 			parts.append(["The crews", crews])
 	var turf := []

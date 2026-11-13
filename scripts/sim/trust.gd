@@ -24,6 +24,7 @@ extends RefCounted
 ## set): off, `nudge` moves only the crew named, as before.
 
 static var ENABLED := true
+static var EFFECTS := true  ## what Los Cuervos' and the dealers' trust change (DESIGN 84): a truce that grows, the hall's men
 
 const CREWS := ["family", "rival", "agency", "collective", "dealers"]
 const NAMES := {"family": "The Morettis", "rival": "Los Cuervos", "agency": "The Company", "collective": "The Sunrise Collective",
@@ -38,6 +39,13 @@ const TABLE := {
 	"dealers": {"rival": A_LITTLE},
 }
 const START := {"rival": 20.0, "dealers": 50.0}
+const TRUCE_FROM := 40.0  ## Los Cuervos hold back from here...
+const TRUCE_FULL := 80.0  ## ... fully from here
+const RESTRAINT := 0.75  ## at a full truce they raid, ambush and take pickups a quarter as often
+const HALL := 0.1  ## the hall's men: this much more (at 100) or less (at 0) skill and loyalty than at 50
+const PAID := 1.0  ## a payday met in full (the dealers' trust)
+const SHORT := -5.0  ## a payday come up short
+const LAWYER := 3.0  ## a lawyer paid for a man in jail
 
 var sess
 var own := {"rival": 20.0, "dealers": 50.0}  ## the standings kept here
@@ -94,13 +102,42 @@ func nudge(crew: String, delta: float) -> Dictionary:
 	return out
 
 
-## For the phone: each crew this game has, with its standing.
+## How much Los Cuervos hold back, 0 (at TRUCE_FROM or under) to 1 (at TRUCE_FULL or over). DESIGN 84.
+func restraint() -> float:
+	if not EFFECTS or of("rival") < 0.0:
+		return 0.0
+	return clampf((of("rival") - TRUCE_FROM) / (TRUCE_FULL - TRUCE_FROM), 0.0, 1.0)
+
+
+## What Los Cuervos' odds of raiding, ambushing or taking a pickup are multiplied by: 1 with no truce, 0.25 at a full one.
+func rival_odds() -> float:
+	return 1.0 - RESTRAINT * restraint()
+
+
+## The hall's men are this much more (or less) skilled and loyal: the dealers' trust, about 50.
+func hall_bonus() -> float:
+	if not EFFECTS or of("dealers") < 0.0:
+		return 0.0
+	return (of("dealers") - 50.0) / 50.0 * HALL
+
+
+## For the phone: each crew this game has, with its standing, and what it means where it means something.
 func view() -> Array:
 	var out := []
 	for c in CREWS:
 		if of(c) >= 0.0:
-			out.append({"crew": c, "name": NAMES[c], "trust": snappedf(of(c), 0.1)})
+			var row := {"crew": c, "name": NAMES[c], "trust": snappedf(of(c), 0.1), "note": ""}
+			if c == "rival" and restraint() > 0.0:
+				row.note = "a truce: they hold back %d%%" % int(round(100.0 * (1.0 - rival_odds())))
+			elif c == "dealers" and absf(hall_bonus()) >= 0.005:
+				row.note = "the hall sends %s men" % ("better" if hall_bonus() > 0.0 else "worse")
+			out.append(row)
 	return out
+
+
+## The session's Trust, or null (no trade this game). For the systems that read it.
+static func of_session(sess) -> Trust:
+	return sess.trade.trust if sess != null and sess.trade != null and sess.trade.get("trust") != null else null
 
 
 func capture() -> Dictionary:

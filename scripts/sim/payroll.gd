@@ -123,6 +123,10 @@ func _person(o: String, role: String, street := false) -> Dictionary:
 	if o == "org" and sess.renown != null:  # a name draws better men (no extra draws: the stream is the same)
 		skill = clampf(skill + sess.renown.skill_bonus(), 0.05, 1.0)
 		loyal = clampf(loyal + sess.renown.loyalty_bonus(), 0.05, 1.0)
+	var tr := Trust.of_session(sess) if o == "org" else null
+	if tr != null and tr.hall_bonus() != 0.0:  # the hall sends better men to a boss it trusts (DESIGN 84; no extra draws)
+		skill = clampf(skill + tr.hall_bonus(), 0.05, 1.0)
+		loyal = clampf(loyal + tr.hall_bonus(), 0.05, 1.0)
 	var wage: int = int(ROLES[role][0] * (0.7 + 0.6 * skill) * (1.5 if street else 1.0))
 	var hint_good := rng.random() < (0.8 if loyal >= 0.5 else 0.2)  # a hint, not a guarantee
 	return {"id": "W%d" % _serial, "name": "%s %s" % [FIRST[rng.randint(0, FIRST.size() - 1)], LAST[rng.randint(0, LAST.size() - 1)]],
@@ -358,6 +362,9 @@ func _payday() -> void:
 				short += int(w.wage)
 				w.loyalty = maxf(0.0, float(w.loyalty) - 0.25)
 		unpaid[o] = short
+		var tr := Trust.of_session(sess) if o == "org" and Trust.EFFECTS else null
+		if tr != null and not ws.is_empty():
+			tr.nudge("dealers", Trust.SHORT if short > 0 else Trust.PAID)  # the hall hears how we pay (DESIGN 84)
 		if short > 0:
 			say(o, "Payday came up $%s short: the crew is angry." % Py.money(short))
 		_accountant(o)
@@ -432,6 +439,9 @@ func pay_lawyer(o: String, id: String) -> String:
 		return "A lawyer costs $2,000."
 	spend(o, 2000)
 	j.lawyer = true
+	var tr := Trust.of_session(sess) if o == "org" and Trust.EFFECTS else null
+	if tr != null:
+		tr.nudge("dealers", Trust.LAWYER)  # the hall sees you look after your own (DESIGN 84)
 	var w = get_worker(id)
 	if w != null:
 		w.loyalty = minf(1.0, float(w.loyalty) + 0.15)

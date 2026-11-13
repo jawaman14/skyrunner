@@ -1720,9 +1720,13 @@ func _think_rival() -> void:
 				order(q, {"type": "melt"})
 				mine.erase(q)
 				break
+	var held_back := 1.0
+	var tr := Trust.of_session(sess)
+	if tr != null:
+		held_back = tr.rival_odds()  # trust with us holds them back (DESIGN 84): the same draws, lower odds
 	if sess.stash_net != null and not _truce():
 		for t in sess.stash_net.trucks:
-			if mine.is_empty() or rng.random() > 0.5:
+			if mine.is_empty() or rng.random() > 0.5 * held_back:
 				break
 			var r = mine[0]
 			var route: PackedVector2Array = t.remaining_route() if t.route.size() >= 2 else graph.route(Vector2(t.x0, t.y0), Vector2(t.x1, t.y1))
@@ -1736,7 +1740,7 @@ func _think_rival() -> void:
 			var guards := orgs.filter(func(q): return q.pos().distance_to(Vector2(st.x, st.y)) < 800.0)
 			var mine_str := Py.sum_by(mine, func(q): return strength(q))
 			var their := Py.sum_by(guards, func(q): return strength(q))
-			if mine_str > 1.4 * their and rng.random() < 0.25:
+			if mine_str > 1.4 * their and rng.random() < 0.25 * held_back:
 				var a = mine[0]
 				order(a, {"type": "attack", "stash": st.id})
 				mine.erase(a)
