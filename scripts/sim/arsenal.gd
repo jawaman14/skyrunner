@@ -49,6 +49,9 @@ var ammo: int:
 
 ## Ammunition crates (DESIGN 50's table): rounds a crate, its weight and its table price, before the market and the ladder.
 static var AMMO_TRADE := true  ## rounds bought by the crate at the dealer (D-61 stage 2, DESIGN 91)
+const AMMO_WAR_EACH := 0.1  ## dearer for each firefight of the last fifteen minutes (DESIGN 93)...
+const AMMO_WAR_MAX := 0.6  ## ... at most this much
+const AMMO_BLOCKED_SHARE := 0.5  ## Los Cuervos' share of the armoury's streets from which the dealer won't deliver
 const AMMO := {"pistol": {"rounds": 1000, "kg": 15, "price": 250, "name": "pistol rounds"},
 	"rifle": {"rounds": 600, "kg": 18, "price": 480, "name": "rifle rounds"},
 	"mg": {"rounds": 400, "kg": 20, "price": 900, "name": "machine-gun belts"},

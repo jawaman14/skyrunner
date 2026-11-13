@@ -379,7 +379,8 @@ and all of it ties into the ground and turf war. The design, grounded in `arsena
 3. **The war uses it.** Fights consume rounds, a dry district's ammunition price climbs, a squad without rounds stops firing, and
    holding a port or road changes who can resupply. (Claude, with the turf work)
    **First part built (DESIGN 92):** squads draw each gun's own rounds, a gun out of them fires like bare hands, the rest goes
-   back by type. Still to do: dry districts paying more, resupply by who holds the ports and roads, crates of rounds on trucks.
+   back by type. **Second part built (DESIGN 93):** rounds dearer while the street is shooting, no delivery into streets Los Cuervos
+   hold. Still to do: crates of rounds on trucks and pickups.
 4. **The screens.** The pack and logistics menus, and the market board (it already carries guns; ammunition joins it). (Codex)
 
 Order: after the buyers' orders (D-59) land; each stage needs a BALANCE entry because the war economy is sensitive to it.

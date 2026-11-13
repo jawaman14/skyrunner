@@ -118,3 +118,28 @@ func test_off_no_crates_of_rounds() -> void:
 	var s := _sess()
 	check(not s.command(Roles.BOSS, "buy_ammo", {"tier": "rifle", "crates": 1})[0], "off: nobody sells them")
 	s.dispose()
+
+
+## DESIGN 93: a street at war bids rounds up; the dealer won't deliver into streets Los Cuervos hold.
+func test_rounds_dearer_while_the_street_is_shooting() -> void:
+	var s := _sess()
+	var calm := s.ammo_price("rifle")
+	s.ground.hot_spots = [[s.time, 0.0, 0.0], [s.time, 0.0, 0.0], [s.time, 0.0, 0.0]]
+	check_near(float(s.ammo_price("rifle")), float(calm) * 1.3, 1.0, "three firefights: 30% dearer")
+	for i in 20:
+		s.ground.hot_spots.append([s.time, 0.0, 0.0])
+	check_near(float(s.ammo_price("rifle")), float(calm) * 1.6, 1.0, "at most 60%")
+	s.dispose()
+
+
+func test_no_delivery_into_los_cuervos_streets() -> void:
+	var s := _sess()
+	var ars: Arsenal = s.arsenals["org"]
+	ars.cache = ""
+	s.ground.control["town"] = {"org": 0.0, "rival": 10.0, "police": 0.0}
+	var r: Array = s.command(Roles.BOSS, "buy_ammo", {"tier": "rifle", "crates": 1})
+	check(not r[0] and str(r[1]).contains("Los Cuervos"), "they hold the town, where the armoury is: %s" % str(r[1]))
+	check_eq(s.money, 50000, "nothing paid")
+	s.ground.control["town"] = {"org": 10.0, "rival": 0.0, "police": 0.0}
+	check(s.command(Roles.BOSS, "buy_ammo", {"tier": "rifle", "crates": 1})[0], "ours again: delivered")
+	s.dispose()

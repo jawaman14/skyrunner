@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** ammunition stage 3 second part (DESIGN 93, BALANCE 87): rounds dearer in a war,
+  no delivery into Los Cuervos' streets. Next: crates of rounds on the pickup flow, then conditional orders.
 - **2026-11-13 - Claude, the planned, cont.:** ammunition in the war, stage 3 first part (DESIGN 92, `GroundWar.AMMO_BY_TYPE`,
   BALANCE 86): squads draw each gun's own rounds; a dry gun fires like bare hands. The frozen v1 save test's `_holds` now compares
   arrays item by item (a squad entry gained `by`); every key the fixture wrote still has to come back unchanged.

@@ -55,6 +55,9 @@ static func _cmd_buy_ammo(role: String, a: Dictionary, session: Session):
 	var n := int(session._num(a, "crates", 1))
 	if not Arsenal.AMMO.has(tier) or n <= 0 or n > 10:
 		return "Buy one to ten crates of pistol, rifle, mg or rpg rounds."
+	var blocked := session.ammo_blocked()
+	if blocked != "":
+		return blocked  # who holds the streets decides who can resupply (DESIGN 93)
 	var cost := session.ammo_price(tier) * n
 	if session.money < cost:
 		return "Need $%s." % Py.money(cost)
