@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** the civilian economy's first slice (DESIGN 86, `Businesses.CIVIC`, BALANCE 80):
+  district prosperity moves each close with the shooting, the open businesses and the collectors. Dirty money (D-90) skipped: it
+  waits on heat step 2, which D-75 paused.
 - **2026-11-13 - Claude, the planned, first (D-36):** the street war's AI acts only on what its seat would see (DESIGN 85,
   `GroundWar.FAIR_SIGHT`, BALANCE 79): ambushes and checkpoints only on trucks they see, tail or link to a known house. The half
   done is finished as far as it can be without a person or an owner gate (D-99 done).

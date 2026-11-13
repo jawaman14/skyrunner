@@ -2593,3 +2593,31 @@ trucks use) and money p50 $16,234 -> $14,103; net worth p50 $48,555 -> $47,487, 
 Not yet: the police's air units and radar (the flying side keeps its own sensor model, sections 3 and 22), informants naming a
 truck (the case files' tips feed the stash, not the truck), and an audit of the session-level AI (`AiSmuggler`, the season
 simulator's HQ), which have their own information models.
+
+
+## 86. The civilian economy, slice 1: prosperity that moves (DESIGN section 0's "formulas not designed")
+
+`Businesses._civic_day`, switch `Businesses.CIVIC` (in the parity set; no random draws; nothing new saved: prosperity was already
+saved with the district state). The Living District's three districts (San Telmo Centro, the Docks, Barrio Chino) have had a
+prosperity and a demand since L-1, and the shoppers already spend by prosperity (`daily_want`: 100 lb x demand x (0.5 +
+prosperity)) and pay by it (`price`: $4.50 x (0.8 + 0.4 x prosperity)); but nothing ever moved it from 0.5.
+
+At each 06:00 close, after the rents, every district's prosperity moves:
+
+    p += 0.1 x (0.5 - p)                       the neighbourhood's own life brings it back towards the middle
+       - 0.015 x firefights there that day     (at most five count; `GroundWar.shots_in`, counted where each fight starts)
+       + 0.002 x businesses there open with nothing owed
+       - 0.01 while the collectors squeeze the district's market (Rackets)
+
+held between 0.1 and 0.9. Where it settles: p* = 0.5 + (0.002 x open - 0.015 x fights a day - 0.01 x squeezed) / 0.1. A quiet
+San Telmo with its seven businesses open settles near 0.64; a firefight a day there takes it to about 0.5; three a day to about
+0.2. The phone's books page lists "The neighbourhoods", each with its prosperity and the day's reasons ("San Telmo Centro:
+prosperity 47% (2 firefights, 5 businesses open)").
+
+**Measured** (a scratch probe of the live war with the businesses ticking, 2 seeds x 7 days, against CIVIC off): the war reached
+San Telmo Centro once in the week; its prosperity rose 0.51 -> 0.55 with the businesses open, the Docks and Barrio Chino to 0.52,
+and the businesses' tills ended the week $6,563 against $6,504 (+1%). BALANCE entry 80.
+
+Not yet: civilian jobs (residents employed by the businesses, wages into demand), demand per good moving with prosperity (cocaine
+up with money, groceries steady), the street's drug prices reading the district's prosperity, and prosperity for districts outside
+the Living District.

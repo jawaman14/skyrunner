@@ -990,6 +990,12 @@ func _books_page() -> void:
 		for b in shown:
 			list.add_row([books_line(biz, str(b.id))])
 			_books_rows.append(str(b.id))
+	if Businesses.CIVIC:  # the neighbourhoods (DESIGN 86)
+		list.section("The neighbourhoods")
+		_books_rows.append("")
+		for d in biz.districts:
+			list.add_row([biz.prosperity_line(str(d))])
+			_books_rows.append("")
 	if biz.ai != null:
 		var refused: Array = biz.ai.refused().slice(0, 5)
 		if not refused.is_empty():

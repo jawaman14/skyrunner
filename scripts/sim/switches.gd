@@ -17,7 +17,7 @@ const PARITY := [
 	"Agency.ENABLED", "Agent.ENABLED", "Fuel.ENABLED", "Orders.ENABLED", "Jobs.ISLAND_BOARD",
 	"Investigation.ENABLED", "CoverCargo.ENABLED", "Comeback.ENABLED", "DealMoves.ENABLED", "Gigs.ENABLED", "StreakGuard.ENABLED", "Schedule.ENABLED", "Story.FLIGHT_GOALS",
 	"Breakaway.ENABLED",
-	"Wanted.ENABLED", "Curses.ENABLED", "BlackMarket.ENABLED", "HeatDial.ENABLED", "Businesses.ENABLED", "OrgAI.ENABLED", "Delegation.ENABLED", "Laundering.ENABLED", "Grades.ENABLED", "Pickups.ENABLED", "Trust.ENABLED", "Crates.ENABLED", "PriceWars.ENABLED", "Investments.ENABLED", "Takeover.ENABLED", "Pickups.INTERCEPTS", "Grades.BULK", "Wear.ENABLED", "Trust.EFFECTS",
+	"Wanted.ENABLED", "Curses.ENABLED", "BlackMarket.ENABLED", "HeatDial.ENABLED", "Businesses.ENABLED", "OrgAI.ENABLED", "Delegation.ENABLED", "Laundering.ENABLED", "Grades.ENABLED", "Pickups.ENABLED", "Trust.ENABLED", "Crates.ENABLED", "PriceWars.ENABLED", "Investments.ENABLED", "Takeover.ENABLED", "Pickups.INTERCEPTS", "Grades.BULK", "Wear.ENABLED", "Trust.EFFECTS", "Businesses.CIVIC",
 ]
 
 ## Switches no parity test touches. Most are opt-in anyway: the system only exists when the session's
@@ -40,7 +40,7 @@ static func snapshot() -> Dictionary:
 		"Agent.ENABLED": Agent.ENABLED, "Fuel.ENABLED": Fuel.ENABLED, "Orders.ENABLED": Orders.ENABLED,
 		"Jobs.ISLAND_BOARD": Jobs.ISLAND_BOARD,
 		"Investigation.ENABLED": Investigation.ENABLED, "CoverCargo.ENABLED": CoverCargo.ENABLED, "Comeback.ENABLED": Comeback.ENABLED, "DealMoves.ENABLED": DealMoves.ENABLED, "Gigs.ENABLED": Gigs.ENABLED,
-		"StreakGuard.ENABLED": StreakGuard.ENABLED, "Schedule.ENABLED": Schedule.ENABLED, "Story.FLIGHT_GOALS": Story.FLIGHT_GOALS, "Breakaway.ENABLED": Breakaway.ENABLED, "Wanted.ENABLED": Wanted.ENABLED, "Curses.ENABLED": Curses.ENABLED, "BlackMarket.ENABLED": BlackMarket.ENABLED, "HeatDial.ENABLED": HeatDial.ENABLED, "Businesses.ENABLED": Businesses.ENABLED, "OrgAI.ENABLED": OrgAI.ENABLED, "Delegation.ENABLED": Delegation.ENABLED, "Laundering.ENABLED": Laundering.ENABLED, "Grades.ENABLED": Grades.ENABLED, "Pickups.ENABLED": Pickups.ENABLED, "Trust.ENABLED": Trust.ENABLED, "Crates.ENABLED": Crates.ENABLED, "PriceWars.ENABLED": PriceWars.ENABLED, "Investments.ENABLED": Investments.ENABLED, "Takeover.ENABLED": Takeover.ENABLED, "Pickups.INTERCEPTS": Pickups.INTERCEPTS, "Grades.BULK": Grades.BULK, "Wear.ENABLED": Wear.ENABLED, "Trust.EFFECTS": Trust.EFFECTS}
+		"StreakGuard.ENABLED": StreakGuard.ENABLED, "Schedule.ENABLED": Schedule.ENABLED, "Story.FLIGHT_GOALS": Story.FLIGHT_GOALS, "Breakaway.ENABLED": Breakaway.ENABLED, "Wanted.ENABLED": Wanted.ENABLED, "Curses.ENABLED": Curses.ENABLED, "BlackMarket.ENABLED": BlackMarket.ENABLED, "HeatDial.ENABLED": HeatDial.ENABLED, "Businesses.ENABLED": Businesses.ENABLED, "OrgAI.ENABLED": OrgAI.ENABLED, "Delegation.ENABLED": Delegation.ENABLED, "Laundering.ENABLED": Laundering.ENABLED, "Grades.ENABLED": Grades.ENABLED, "Pickups.ENABLED": Pickups.ENABLED, "Trust.ENABLED": Trust.ENABLED, "Crates.ENABLED": Crates.ENABLED, "PriceWars.ENABLED": PriceWars.ENABLED, "Investments.ENABLED": Investments.ENABLED, "Takeover.ENABLED": Takeover.ENABLED, "Pickups.INTERCEPTS": Pickups.INTERCEPTS, "Grades.BULK": Grades.BULK, "Wear.ENABLED": Wear.ENABLED, "Trust.EFFECTS": Trust.EFFECTS, "Businesses.CIVIC": Businesses.CIVIC}
 
 static func restore(state: Dictionary) -> void:
 	# Validate the complete snapshot before changing any switch.
@@ -86,6 +86,7 @@ static func restore(state: Dictionary) -> void:
 	Grades.BULK = state["Grades.BULK"]
 	Wear.ENABLED = state["Wear.ENABLED"]
 	Trust.EFFECTS = state["Trust.EFFECTS"]
+	Businesses.CIVIC = state["Businesses.CIVIC"]
 
 static func parity_off() -> Dictionary:
 	var previous := snapshot()
@@ -127,6 +128,7 @@ static func parity_off() -> Dictionary:
 	Grades.BULK = false
 	Wear.ENABLED = false
 	Trust.EFFECTS = false
+	Businesses.CIVIC = false
 	return previous
 
 
@@ -169,3 +171,4 @@ static func parity_on() -> void:
 	Grades.BULK = true
 	Wear.ENABLED = true
 	Trust.EFFECTS = true
+	Businesses.CIVIC = true
