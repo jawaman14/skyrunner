@@ -113,6 +113,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Early-game content | Goal markers and HUD NEXT line | Built |  | D-92 |
 | Businesses | Hotel Cielo casino on Isla Soberana, the tables, walkable | Built | DESIGN §40-42 |  |
 | Businesses | Car dealership | Built | DESIGN §43 |  |
+| Businesses | The Living District's businesses on the street | Built | A sign at each of the twelve sites with the name and owner in the owner's colour, following the sim; close up only (DESIGN 98) |  |
 | Businesses | Laundering through the fronts (nightly allowance, soft ceiling, fee, delay) | Built | DESIGN §72; the casino cage stays its own path | #535 |
 
 ### Logistics, stock and arms

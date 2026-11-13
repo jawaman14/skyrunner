@@ -119,6 +119,7 @@ var bot = null  ## AutoRunner
 var server = null  ## HostServer
 var scene: WorldScene
 var cam: Camera3D
+var biz_signs: BusinessSigns
 var player: Node3D
 var props: Array = []
 var ac_lights := {}
@@ -187,6 +188,9 @@ func setup(sess: Session, graphics := "high", bot_ = null, server_ = null) -> Pi
 	_graphics = graphics
 	if sess.ground != null:
 		_make_squads()
+	if sess.businesses != null:
+		biz_signs = BusinessSigns.new(sess)  # the Living District's businesses on the street (DESIGN 98)
+		add_child(biz_signs)
 	nerves = Nerves.new().setup()
 	nerves.layer = 0  # over the 3D view, under the HUD (layer 1) and menus
 	add_child(nerves)
@@ -1593,6 +1597,9 @@ func _process(delta: float) -> void:
 		if banter != null:
 			banter.tick()
 		_sync_goal_beacons()
+		var view_cam := get_viewport().get_camera_3d()  # the walker's, the car's or the chase camera
+		if biz_signs != null and view_cam != null:
+			biz_signs.refresh(view_cam.global_position)
 		if scene != null and s.stash_net != null:
 			for stash in s.stash_net.stashes:
 				var node := scene.find_child("stash-" + str(stash.id), true, false) as Node3D

@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** the Living District's businesses on the street (DESIGN 98, `BusinessSigns`): a
+  sign at each site with name and owner, following the sim. Frontages wait for the map rebuild.
 - **2026-11-13 - Claude, the planned, cont.:** chapter goals count by organisation (`Story.ours`, DESIGN 80): another org's
   doings are theirs. Succession (D-82) waits on the owner: D-64 means the player is never jailed.
 - **2026-11-13 - Claude, the planned, cont.:** step 2's automation (DESIGN 95-97, `standing_order`): standing orders (keep a
