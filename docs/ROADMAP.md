@@ -213,6 +213,10 @@ stream, tests first, as a follow-up to #384/#387. Depends on #378 and #387 landi
 
 1. **Step 2, automation.** Conditional orders (stock thresholds) first, then task sequences. Workers follow instructions; AI
    never invents assignments. Needs a design note in `DESIGN.md` before any code.
+   **Conditional orders built (DESIGN 95):** standing orders to keep a stash stocked and to bring cash home.
+   **Task sequences built (DESIGN 96):** a route of up to six van runs and waits, once or over and over. Given and cancelled from the logistics
+   page too. A lookout can be told to follow the heat
+   (DESIGN 97). Step 2 is built.
 2. **Step 3, the rest.** The AI knowledge policy is decided (owner, 18 Oct): the AI police and rivals act only on what a
    human in their seat would see (radar, sightings, tips, informants); audit where they read more today and fix it. Then
    rivals' starting strengths and civilian jobs, demand and prosperity. The escort and stakeout balance (#244, #98) can now be tuned.

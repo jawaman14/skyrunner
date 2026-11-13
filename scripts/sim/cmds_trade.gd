@@ -161,6 +161,19 @@ static func _cmd_stock_order(_role: String, a: Dictionary, session: Session):
 	return err if err != "" else null
 
 
+## Standing orders (DESIGN 95): `action` "add" with {kind, stash, good, below, fill_to, from, over}, or "cancel" with {id}.
+static func _cmd_standing_order(_role: String, a: Dictionary, session: Session):
+	if session.logistics == null:
+		return "No stash houses in this game."
+	var so: StandingOrders = session.logistics.standing
+	var err := ""
+	if str(a.get("action", "add")) == "cancel":
+		err = so.cancel(int(session._num(a, "id", 0)))
+	else:
+		err = so.add(a)
+	return err if err != "" else null
+
+
 ## Answer the price war under way (loop idea 6): `answer` is "match" or "hold".
 static func _cmd_price_war(_role: String, a: Dictionary, session: Session):
 	if session.trade == null or session.trade.wars == null:

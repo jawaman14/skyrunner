@@ -56,12 +56,14 @@ var _move_t := -1e9  ## the last product move (the AI waits AI_MOVE_EVERY_S betw
 var _item_id := 0
 var pickups: Pickups  ## stock bought upfront and brought to a stash (DESIGN 51.2, slice 3)
 var storage: Storage  ## what each house holds and costs (DESIGN 51 slice 4, DESIGN 87)
+var standing: StandingOrders  ## the boss's standing orders: keep a stash stocked, bring cash home (DESIGN 95)
 
 
 func _init(sess_) -> void:
 	sess = sess_
 	pickups = Pickups.new(self)
 	storage = Storage.new(self)
+	standing = StandingOrders.new(self)
 	for st in sess.stash_net.stashes:
 		stock[st.id] = {"cocaine": 0.0, "marijuana": 0.0}
 		cash[st.id] = 0.0
@@ -1217,6 +1219,7 @@ func update(dt: float) -> void:
 		_pull_over(_watch_t)
 		_watch_t = 0.0
 	storage.update(dt)
+	standing.update(dt)
 	_route_t += dt
 	if _route_t >= 30.0:
 		_refresh_routes()
@@ -1341,6 +1344,7 @@ func view() -> Dictionary:
 		arm = {"site": armoury_site(), "at": name_of(armoury_site()), "weapons": sess.arsenals["org"].stock.duplicate(),
 			"count": sess.arsenals["org"].count()}
 	return {"sites": sites, "trucks": trucks, "aboard": aboard, "armoury": arm, "war": sess.ground != null, "auto_supply": auto_supply, "hq": name_of(HQ), "hq_strip": hq_strip(),
+		"standing": standing.orders.map(func(o): return {"id": int(o.id), "text": standing.describe(o)}), "standing_last": standing.last,
 		"lost": lost.duplicate(), "last": last,
 		"fuel": {"ground": snappedf(Fuel.price(sess, "ground"), 0.01), "avgas": snappedf(Fuel.price(sess, "avgas"), 0.01),
 			"trend": snappedf(Fuel.trend(sess), 0.01), "spent": int(sess.fuel_spent.org)}}
