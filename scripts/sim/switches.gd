@@ -25,7 +25,7 @@ const PARITY := [
 const OPT_IN := [
 	"Court.ENABLED", "Court.PILOT_FREE", "Family.ENABLED", "Island.ENABLED", "Payroll.ENABLED", "Trade.ENABLED", "Races.ENABLED",
 	"Rackets.ENABLED", "Renown.ENABLED", "StashWorks.ENABLED", "CityDress.ENABLED", "ModelLib.ENABLED",
-	"Scenery.ENABLED", "GroundWar.ENGAGEMENT", "GroundWar.SMART_ROUTES", "GroundWar.VETERANS", "GroundWar.SPREAD", "GroundWar.FAIR_SIGHT", "GroundWar.AMMO_BY_TYPE", "Arsenal.AMMO_TRADE", "Rackets.UNDER_HEAT",
+	"Scenery.ENABLED", "GroundWar.ENGAGEMENT", "GroundWar.SMART_ROUTES", "GroundWar.VETERANS", "GroundWar.SPREAD", "GroundWar.FAIR_SIGHT", "GroundWar.AMMO_BY_TYPE", "Arsenal.AMMO_TRADE", "StandingOrders.ENABLED", "Rackets.UNDER_HEAT",
 	"Logistics.ROUNDS", "Tactical.PYTHON", "RadioNet.REALISM", "Analyst.ENABLED", "Casino.ENABLED", "Casino.REVOLUTION", "Airframe.ENABLED", "Undercover.ENABLED", "PortDress.ENABLED", "AirfieldDress.ENABLED", "DowntownDress.ENABLED",
 	"CasinoBuilding.ENABLED", "Discovery.ENABLED", "DailyWeather.ENABLED", "Calendar.ENABLED", "Weekly.ENABLED", "Dealership.ENABLED", "Psychedelics.ENABLED", "Territories.ENABLED", "PoliceSystem.EARLY_PACE",
 	"PilotApp.FIXED_STEP", "Court.SPARE_ONLY", "LastRun.ENABLED", "NightDirector.ENABLED",

@@ -29,6 +29,8 @@ var status: Label
 var fuel_label: Label
 var round_label: Label
 var round_stops: Array = []  ## the stops of the round being planned, in order
+var route_label: Label
+var route_steps: Array = []  ## the steps of the standing route being planned (DESIGN 96)
 var _names := {}  ## site id -> name, from the last view
 var _sites: Array = []
 var _dests: Array = []
@@ -106,6 +108,33 @@ func _ready() -> void:
 		rb.focus_mode = Control.FOCUS_ALL
 		rb.pressed.connect(spec[1])
 		rnd.add_child(rb)
+	# Standing orders (DESIGN 95-96): the same pickers say what, from where, to where and how much.
+	var so_row := HBoxContainer.new()
+	so_row.add_theme_constant_override("separation", 8)
+	v.add_child(so_row)
+	so_row.add_child(UIStyle.label("Standing", 15))
+	for spec in [["Keep 'to' stocked", _order_keep, "Keep the good in 'Send' at the 'to' stash: refilled to the amount from 'from' when it falls to half"],
+			["Cash home over", _order_cash, "Bring the 'from' stash's cash to the club whenever it passes the amount"]]:
+		var sb := Button.new()
+		sb.text = spec[0]
+		sb.tooltip_text = spec[2]
+		sb.focus_mode = Control.FOCUS_ALL
+		sb.pressed.connect(spec[1])
+		so_row.add_child(sb)
+	var route_row := HBoxContainer.new()
+	route_row.add_theme_constant_override("separation", 8)
+	v.add_child(route_row)
+	route_row.add_child(UIStyle.label("Route", 15))
+	route_label = UIStyle.label(_route_text(), 14, UIStyle.DIM)
+	route_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	route_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	route_row.add_child(route_label)
+	for spec in [["Add run", _route_add_run], ["Add wait", _route_add_wait], ["Clear", _route_clear], ["Run once", _route_give.bind(false)], ["Run always", _route_give.bind(true)]]:
+		var qb := Button.new()
+		qb.text = spec[0]
+		qb.focus_mode = Control.FOCUS_ALL
+		qb.pressed.connect(spec[1])
+		route_row.add_child(qb)
 	if pilot:
 		var bags := HBoxContainer.new()
 		bags.add_theme_constant_override("separation", 8)
@@ -192,6 +221,20 @@ func refresh() -> void:
 			to_ob.add_item(str(s.name))
 	rows.add_child(UIStyle.label("%-26s  the safe: wages, loads, lawyers   cash aboard: $%s" % [str(lv.hq).left(26), Py.money(int(lv.aboard))], 14, UIStyle.CYAN))
 	rows.add_child(UIStyle.label("Dealers' corners: %s  [A]" % ("restocked by truck from the other stashes when they run dry" if bool(lv.get("auto_supply", true)) else "you move the product yourself"), 14, UIStyle.GREEN if bool(lv.get("auto_supply", true)) else UIStyle.DIM))
+	for so in lv.get("standing", []):  # the boss's standing orders (DESIGN 95)
+		var so_line := HBoxContainer.new()
+		var so_l := UIStyle.label("Standing order %d: %s" % [int(so.id), str(so.text)], 14, UIStyle.CYAN)
+		so_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		so_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		so_line.add_child(so_l)
+		var cb := Button.new()
+		cb.text = "Cancel"
+		cb.focus_mode = Control.FOCUS_ALL
+		cb.pressed.connect(func(): _act(_command("standing_order", {"action": "cancel", "id": int(so.id)})))
+		so_line.add_child(cb)
+		rows.add_child(so_line)
+	if str(lv.get("standing_last", "")) != "":
+		rows.add_child(UIStyle.label("Last standing order: %s" % str(lv.standing_last), 12, UIStyle.DIM))
 	var arm: Dictionary = lv.get("armoury", {})
 	if not arm.is_empty():
 		rows.add_child(UIStyle.label("The armoury at %s: %s" % [arm.at, Arsenal.describe(arm.weapons) if int(arm.count) > 0 else "empty"], 14, UIStyle.AMBER))
@@ -316,6 +359,92 @@ func _round_goods() -> void:
 	var r: Array = _command("goods_round", {"from": _sites[from_ob.selected], "stops": round_stops, "good": what, "lb": amount.value if amount.value > 0 else 1e9})
 	if r[0]:
 		_round_clear()
+	_act(r)
+
+
+## Standing orders from the pickers (DESIGN 95-96). Each builds the command's arguments, or a refusal ([false, why]).
+func keep_args() -> Dictionary:
+	var what: String = WHAT[what_ob.selected]
+	if not what in ["cocaine", "marijuana", "acid"]:
+		return {"why": "Keep cocaine, marijuana or acid stocked."}
+	var to: String = _dests[to_ob.selected] if not _dests.is_empty() else ""
+	if not to in _sites:
+		return {"why": "Keep which stash stocked? Pick it in 'to'."}
+	if amount.value < 20:
+		return {"why": "Say what to fill it to (20 lb or more) in the amount."}
+	var from: String = _sites[from_ob.selected]
+	return {"kind": "keep", "stash": to, "good": what, "fill_to": amount.value, "below": floorf(amount.value / 2.0), "from": "" if from == to else from}
+
+
+func cash_args() -> Dictionary:
+	if _sites.is_empty():
+		return {"why": "No stash houses."}
+	if amount.value < 100:
+		return {"why": "Bring it home over how much? Put $100 or more in the amount."}
+	return {"kind": "cash", "stash": _sites[from_ob.selected], "over": amount.value}
+
+
+func run_step() -> Dictionary:
+	var what: String = WHAT[what_ob.selected]
+	if not what in ["cash", "cocaine", "marijuana", "acid"] or _sites.is_empty() or _dests.is_empty():
+		return {"why": "A route's van carries cash, cocaine, marijuana or acid."}
+	return {"from": _sites[from_ob.selected], "to": _dests[to_ob.selected], "good": what, "lb": amount.value}
+
+
+func _order_keep() -> void:
+	var a := keep_args()
+	_act([false, a.why] if a.has("why") else _command("standing_order", a))
+
+
+func _order_cash() -> void:
+	var a := cash_args()
+	_act([false, a.why] if a.has("why") else _command("standing_order", a))
+
+
+func _route_text() -> String:
+	if route_steps.is_empty():
+		return "(Add run: the pickers above; Add wait: the amount in minutes)"
+	var parts: Array = []
+	for st in route_steps:
+		if st.has("wait_min"):
+			parts.append("wait %d min" % int(st.wait_min))
+		else:
+			parts.append("%s %s>%s" % ["all " + str(st.good) if int(st.lb) <= 0 else "%d %s" % [int(st.lb), st.good], _names.get(st.from, st.from), _names.get(st.to, st.to)])
+	return ", ".join(parts)
+
+
+func _route_add_run() -> void:
+	var st := run_step()
+	if st.has("why"):
+		_act([false, st.why])
+		return
+	_route_push(st)
+
+
+func _route_add_wait() -> void:
+	_route_push({"wait_min": clampf(amount.value if amount.value > 0 else 10.0, 1.0, StandingOrders.WAIT_MAX_MIN)})
+
+
+func _route_push(st: Dictionary) -> void:
+	if route_steps.size() >= StandingOrders.STEPS_MAX:
+		_act([false, "Six steps at most."])
+		return
+	route_steps.append(st)
+	route_label.text = _route_text()
+
+
+func _route_clear() -> void:
+	route_steps = []
+	route_label.text = _route_text()
+
+
+func _route_give(repeat: bool) -> void:
+	if route_steps.is_empty():
+		_act([false, "Add the route's steps first."])
+		return
+	var r: Array = _command("standing_order", {"kind": "route", "steps": route_steps.duplicate(true), "repeat": repeat})
+	if r[0]:
+		_route_clear()
 	_act(r)
 
 

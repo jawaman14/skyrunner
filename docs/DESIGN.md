@@ -2803,3 +2803,60 @@ pickup flow:
   at the risk of interception.
 
 Saved with the order (its good and tier).
+
+
+## 95. Standing orders: the crew carries out the boss's instructions (step 2's conditional orders; D-01)
+
+`scripts/sim/standing_orders.gd` (`StandingOrders`, held by `Logistics` as `standing`; the `standing_order` command; switch
+`StandingOrders.ENABLED`, opt-in: with no orders given nothing happens; no random draws). ROADMAP "After that", step 2: "conditional
+orders (stock thresholds) first, then task sequences. Workers follow instructions; AI never invents assignments."
+
+- **Keep a stash stocked.** "Keep at least `below` lb of `good` at `stash`, filled to `fill_to`, from `from`." When the stash falls
+  under its floor, a van brings it back up: from the named stash, or with none named from the live stash with the most to spare,
+  where spare is what it holds above its own keep orders' fill line (so one order never strips another's stash).
+- **Bring the cash home.** "When `stash` holds more than `over` dollars, take it to the club."
+- **How they run.** Every minute; one truck per order on the road at a time (a van already bound there with that good, or already
+  carrying that stash's cash, makes it wait); at most six orders; through `Logistics.send` like the boss's own vans (drivers, fuel,
+  the roadblock risk, the room at the other end, DESIGN 87), so an order that can't be carried out waits and says why.
+- **Who.** The boss, the lieutenant and the pilot can give and cancel them ("add" with the order, "cancel" with its id); the
+  task force can't. The organisation's AI never gives one (its own supply runs are the dealers' resupply, section 22).
+- **Saved** with the logistics (`standing`); an older save has none.
+
+**From the screen.** The logistics page lists each order in words with a Cancel button, and what the last one did. Its pickers give
+them: "Keep 'to' stocked" keeps the good in Send at the 'to' stash, refilled to the amount from 'from' (or wherever has most, when
+'from' is the same stash) once it falls to half; "Cash home over" brings the 'from' stash's cash home past the amount; a route
+(section 96) is built step by step with "Add run" (the pickers) and "Add wait" (the amount in minutes, ten if none), then given with
+"Run once" or "Run always".
+
+Task sequences are section 96; a lookout's order is section 97.
+
+## 96. Task sequences: a route the crew drives in order (step 2's second half; D-01)
+
+A third kind of standing order (section 95), `route`: the `standing_order` command with `kind` "route", `steps` and `repeat`. Same
+switch (`StandingOrders.ENABLED`), same limit of six orders, same permissions; no random draws. ROADMAP "After that", step 2: "then task
+sequences. Workers follow instructions; AI never invents assignments."
+
+- **Steps.** Up to six, done in order. A run is `{from, to, good, lb}`: a van from a stash (or the club, for cash) to a stash, the club
+  (cash only) or a buyer's meet, carrying `lb` pounds of a good, or `lb` dollars with `good` "cash"; `lb` 0 means all there is when the
+  step starts. A wait is `{wait_min}`, one minute to four hours.
+- **In order.** A run goes through `Logistics.send` like any van (drivers, fuel, the checkpoint wait, the room at the other end); if it
+  can't leave, the route holds on that step and says why (the logistics page shows the last thing each order did). The next step
+  starts once no van for that run (same from, to and good) is left on the road, whether it arrived or was lost.
+- **Once or again.** At the end a route with `repeat` starts over from the first step; one without is done, says so and goes.
+- **Shown** in words on the logistics page with the step it is on ("> wait 10 min").
+- **Saved** with the other standing orders: the steps, the step it is on, whether its van is out and when a wait ends.
+
+## 97. A lookout follows the heat (orders for the other workers; D-01)
+
+A fourth kind of standing order (sections 95-96), `watch`: the `standing_order` command with `kind` "watch" and `lookout` (a worker
+id). Same switch, limit and permissions; no random draws.
+
+- **What he does.** Every minute, the lookout moves to the hottest live house no other lookout of ours is watching, once it runs
+  `WATCH_MARGIN` (10) heat hotter than the house he is at, so two warm houses don't keep him on the road; unposted, he goes straight
+  to the hottest. The move is `Payroll.post_lookout`, so a man he hates there (DESIGN 89) keeps him where he is.
+- **Heat, not intel.** He judges by the traffic's heat, what the street sees; the task force's intel stays hidden (the knowledge
+  policy, ROADMAP step 3).
+- **One order a lookout**; it goes when he does (fired, taken, killed). Away on a job, it waits. Given by command (posting a lookout
+  has no screen yet either).
+- **Why not hours or corners.** The ROADMAP's examples were a lookout's watch hours and a dealer's corner by the time of day; a session
+  is one night with no day clock, and dealers work the market rather than a corner, so neither has anything to act on yet.

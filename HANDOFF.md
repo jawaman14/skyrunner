@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** step 2's automation (DESIGN 95-97, `standing_order`): standing orders (keep a
+  stash stocked, bring its cash home), task sequences (a route of up to six van runs and waits, once or repeating), a lookout
+  who follows the heat; given and cancelled from the logistics page. Next: goals by org, then the boss layer.
 - **2026-11-13 - Claude, the planned, cont.:** crates of rounds on the pickup flow (DESIGN 94): ammunition stage 3 done but the
   rival's own resupply rule. Next: conditional orders for hired hands (needs its DESIGN note first).
 - **2026-11-13 - Claude, the planned, cont.:** ammunition stage 3 second part (DESIGN 93, BALANCE 87): rounds dearer in a war,

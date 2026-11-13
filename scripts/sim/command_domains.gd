@@ -63,6 +63,7 @@ static func handlers() -> Dictionary:
 		"sell_weapons": Callable(GROUND, "_cmd_sell_weapons"),
 		"buy_weapons": Callable(GROUND, "_cmd_buy_weapons"),
 		"buy_ammo": Callable(GROUND, "_cmd_buy_ammo"),
+		"standing_order": Callable(TRADE, "_cmd_standing_order"),
 		"set_cache": Callable(GROUND, "_cmd_set_cache"),
 		"squad_order": Callable(GROUND, "_cmd_squad_order"),
 		"field_order": Callable(GROUND, "_cmd_field_order"),
