@@ -96,7 +96,7 @@ Order (D-75): land the queue above and finish heat step 1, then:
      as the safety net. (The trade's own `stock` with no logistics has no stashes and no inventory places, so nothing to move.)
    - F-5, `command_as` and actors. 7 November: `Actor`, `Session.command_as` with `command` as its shim, events tagged
      with the actor and org, and `job_delivered` gains `by` and `mode`. The ownership and manager-budget checks wait for
-     businesses (L-1) and managers (L-4); story goals counting by org is L-5.
+     businesses (L-1) and managers (L-4); story goals counting by org is L-5 (built 13 November: `Story.ours`, DESIGN 80).
    - F-6, the scheduler and daily books; nights become a report; `strategic_ref` parity retires (D-74). 7 November, F-6a:
      the scheduler (`Schedule`, saved) and the 06:00 books (`Books`, each org's day from the ledger, saved). F-6b first part:
      the day's debrief from the books and the day's events (`Debrief`, saved). 8 November: the nights behind a switch

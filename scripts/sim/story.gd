@@ -502,7 +502,15 @@ func _waive(key: String, reason: String, status := "waived") -> bool:
 	return false
 
 
+## Only the player's organisation's doings count (F-5, L-5; DESIGN 80): an event another org's actor ran (the Morettis' or Los Cuervos'
+## AI through `command_as`), or one that names another org, is theirs. The world's own events (no actor, no org) count as before.
+static func ours(ev: EventBus.Event) -> bool:
+	return ev.org == "" or ev.org == "org"
+
+
 func _on_event(ev: EventBus.Event) -> void:
+	if not ours(ev):
+		return
 	var d := ev.data
 	if employment != null and employment.active():
 		var previous = employment.chapter()
