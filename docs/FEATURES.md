@@ -196,6 +196,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Street war | District control calibrated | Built | Gangs claim empty districts and spread their squads instead of stacking; a district is held only with real presence (about ten minutes of four men), for the week's goal and the turf map (DESIGN 83, `GroundWar.SPREAD`) |  |
 | Organisations | Trust that counts: a truce with Los Cuervos, the hall's men | Built | From trust 40 Los Cuervos ambush, raid and take pickups less (a quarter as often from 80); the dealers' trust makes the hiring hall's men better or worse; paydays and lawyers move it (DESIGN 84, `Trust.EFFECTS`) |  |
 | Street war | The AI sees only what its seat would | Built | The police and Los Cuervos set checkpoints and ambushes only on trucks they can see, tail or link to a house they suspect (D-36, DESIGN 85, `GroundWar.FAIR_SIGHT`) |  |
+| Living District | Neighbourhood prosperity that moves | Built | Each close a district's prosperity drifts back to the middle, falls with its firefights and the collectors' squeeze, rises with the businesses kept open; the shoppers spend and pay by it; the phone's books page shows it with its reasons (DESIGN 86, `Businesses.CIVIC`) |  |
 | Look and sound | Synth sound; one radio for cockpit and car | Built | Radio redistribution rights unresolved | #175 |
 | Look and sound | Shift from low-poly towards a PS2-era look | Planned | Polygon/texture budgets need an owner call | #380 |
 | Presentation layers | Territory radio and era music | Paused |  | D-23 · D-75 |

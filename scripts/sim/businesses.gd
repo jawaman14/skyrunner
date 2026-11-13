@@ -18,6 +18,7 @@ extends RefCounted
 ## balances and the ledger is saved). Behind ENABLED (in the parity set).
 
 static var ENABLED := true
+static var CIVIC := true  ## the districts' prosperity moves with the streets, day by day (DESIGN 86)
 
 const DISTRICT := "san-telmo-centro"
 const LANDLORD := "outside:landlord"
@@ -72,7 +73,15 @@ var _by_id := {}
 var owner := {}  ## business id -> org id ("" free, "outside" not for sale)
 var arrears := {}  ## business id -> dollars owed
 var blocked := {}  ## business id -> why the day's costs weren't paid, or absent
-var districts := {}  ## district id -> {prosperity, demand{good: float}}
+var districts := {}  ## district id -> {prosperity, demand{good: float}, why (the last close's reasons)}
+
+const PROSPER_MIN := 0.1  ## a district's prosperity never falls below this...
+const PROSPER_MAX := 0.9  ## ... or rises above this
+const PROSPER_DRIFT := 0.1  ## each close it comes back this share of the way to 0.5: the neighbourhood's own life
+const PROSPER_SHOTS := 0.015  ## less for each firefight in the district that day...
+const PROSPER_SHOTS_CAP := 5  ## ... counting at most this many
+const PROSPER_OPEN := 0.002  ## more for each business there that is open with nothing owed
+const PROSPER_SQUEEZE := 0.01  ## less while the collectors squeeze the district's market (Rackets)
 var staff := {}  ## business id -> the worker in charge (L-4b): ours only
 var orders := {}  ## business id -> {order: restock|hold|skim, budget: $ a day the manager may spend on stock, 0 no cap}
 var _spend_left := {}  ## business id -> what is left of today's budget, during the close
@@ -243,8 +252,50 @@ func _on_books(_e) -> void:
 		arrears[id] = int(arrears.get(id, 0)) + int(b.rent) + int(b.utilities)
 		_settle_arrears(id)
 	_after_costs()
+	_civic_day()
 	if ai != null:
 		ai.strategy()  # then each picks the day's move
+
+
+## The day's close for the neighbourhoods (DESIGN 86): each district's prosperity comes back a little towards 0.5, falls with the
+## shooting there and while the collectors squeeze its market, and rises with the businesses kept open and paid up. Prosperity is
+## what the shoppers spend (shopper_lb) and pay (retail_price). No random draws.
+func _civic_day() -> void:
+	if not CIVIC:
+		return
+	var markets := {}
+	for area: Dictionary in Territories.records(World.layout):
+		markets[str(area.get("id", ""))] = str(area.get("market", "town"))
+	for d in districts:
+		var p := float(districts[d].prosperity)
+		var shots := 0
+		if sess.ground != null:
+			shots = mini(int(sess.ground.shots_in.get(Territories.key(World.layout, str(d)), 0)), PROSPER_SHOTS_CAP)
+		var open := catalog.filter(func(b): return str(b.district) == str(d) and runs(b.id) and int(arrears.get(b.id, 0)) <= 0).size()
+		var squeezed: bool = sess.rackets != null and str(sess.rackets.policy.get(markets.get(str(d), ""), "fair")) == "squeeze"
+		var dp := PROSPER_DRIFT * (0.5 - p) - PROSPER_SHOTS * shots + PROSPER_OPEN * open - (PROSPER_SQUEEZE if squeezed else 0.0)
+		districts[d].prosperity = snappedf(clampf(p + dp, PROSPER_MIN, PROSPER_MAX), 0.001)
+		var why := []
+		if shots > 0:
+			why.append("%d firefight%s" % [shots, "" if shots == 1 else "s"])
+		if squeezed:
+			why.append("the collectors squeezing")
+		if open > 0:
+			why.append("%d business%s open" % [open, "" if open == 1 else "es"])
+		districts[d]["why"] = ", ".join(why)
+	if sess.ground != null:
+		sess.ground.shots_in.clear()
+
+
+## A district's prosperity line for the phone: "San Telmo Centro: prosperity 47% (2 firefights, 5 businesses open)".
+func prosperity_line(id: String) -> String:
+	var d: Dictionary = districts.get(id, {})
+	var name := id
+	for area: Dictionary in Territories.records(World.layout):
+		if str(area.get("id", "")) == id:
+			name = str(area.get("name", id))
+	var why := str(d.get("why", ""))
+	return "%s: prosperity %d%%%s" % [name, int(round(100.0 * float(d.get("prosperity", 0.5)))), (" (%s)" % why) if why != "" else ""]
 
 
 ## Pay what is owed from the till, rent first; what can't be paid stays owed, with the reason.

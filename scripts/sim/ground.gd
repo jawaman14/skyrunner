@@ -207,6 +207,7 @@ var battle_reports: Array = []  ## Completed own-unit accounts, bounded and save
 var fights: Array = []
 var spent := {"recruit": 0, "upkeep": 0, "arms": 0}
 var fights_total := 0  ## firefights started (the balance tool)
+var shots_in := {}  ## territory key -> firefights started there since the last close (the districts' prosperity, DESIGN 86)
 var lost_men := {"org": 0, "rival": 0, "police": 0}  ## killed or wounded in firefights  ## what the war has cost the organisation (the desk, the balance tool)
 var commanders := {}
 var control := {}  ## market -> faction -> squad-men presence (decaying)
@@ -1038,6 +1039,8 @@ func _open(a: Squad, b: Squad) -> void:
 	f.cas = {a.faction: 0, b.faction: 0}
 	fights.append(f)
 	fights_total += 1
+	var where := territory_key_at(Vector2(f.x, f.y))
+	shots_in[where] = int(shots_in.get(where, 0)) + 1
 	hot_spots.append([sess.time, f.x, f.y])
 	var place := place_name(f.x, f.y)
 	_say("both", "Shots fired %s: %s vs %s%s" % [place, a.id, b.id, " - an ambush!" if f.surprise != "" else ""])
