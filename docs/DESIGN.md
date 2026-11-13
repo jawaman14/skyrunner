@@ -2700,3 +2700,23 @@ Off, no bonds are drawn and none are read.
 
 Not yet: bonds forming on the job (squads that win together become friends), a lover's revenge, Los Cuervos' crew bonds, and
 the hiring hall naming a candidate's bonds before you hire him.
+
+
+## 90. Chapter deadlines (section 51's slice 7, first half)
+
+`Story.PACE` (in the parity set; no random draws; the clock is saved as the story's optional `opened_at`). Section 51.8's slice 7:
+"chapter objectives with deadlines" (Tropico's objectives against the clock). A deadline here is a **bonus, never a penalty**: a
+chapter still finishes however long it takes, so the owner's rule that chapter goals are forgiving early (D-06) holds.
+
+- **The clock.** Each chapter from the second counts game minutes from when it opened: 60 for chapters 2-3, 90 for 4-7, 120 for
+  8-10, 150 for 11-12 (`PACE_MIN`). Chapter 1 and the employed opening have none.
+- **The bonus.** A chapter whose required goals are done in time pays renown when it closes: 6 plus one for each chapter after
+  the first (7 for chapter 2, up to 17 for chapter 12; 132 over the story). Renown, not money, as with the flying goals (D-38, D-65: no money from
+  nowhere). The chapter's history row records the minutes it took.
+- **The card.** The chapter card's last line is "[ ] Done within 60 min (42 min left: renown, optional)", then "[-] Done within
+  60 min (time's up: no bonus, the chapter goes on)".
+- **Saves.** A loaded chapter keeps its clock; a save from before has its clock start when it is loaded.
+
+Off, no clock and no bonus.
+
+Not yet, and open for the owner (section 51.8): what renown and crew trust unlock at boss level, the other half of slice 7.

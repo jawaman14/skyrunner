@@ -206,6 +206,14 @@ const FLIGHT := {
 	2: ["steady_landings", "Three steady landings in a row (under 300 ft/min, wings within 20 degrees)", 3],
 }
 const FLIGHT_RENOWN := 8.0
+
+## Chapter deadlines (DESIGN 90; section 51's slice 7, Tropico's objectives against the clock): finish a chapter's required goals
+## within its time and the name grows. A bonus, never a penalty: a chapter still finishes however long it takes (D-06: forgiving
+## early; nothing is lost late). Paid in renown, like the flying goals (D-65: no money from nowhere). Chapter 1 has none.
+static var PACE := true
+const PACE_MIN := [0, 60, 60, 90, 90, 90, 90, 120, 120, 120, 150, 150]  ## minutes of game time from the chapter opening, by index
+const PACE_RENOWN := 6.0  ## renown for a chapter done in time, plus PACE_RENOWN_STEP a chapter on
+const PACE_RENOWN_STEP := 1.0
 const GREASE_FPM := 120.0
 const SHORT_M := 650.0
 const STEADY_FPM := 300.0
@@ -215,6 +223,7 @@ const STEADY_BANK := 20.0
 var show_briefing := true
 var company_decision := ""  ## remove | spare | declined | skipped: the Company order at the end of Chapter 9 (declined: the player walked away; skipped: the Company cut us loose)
 var _last_t := -1.0  ## the clock at the last tick (for the goals that count minutes)
+var opened_at := -1.0  ## when the chapter now open was opened (the chapter's deadline counts from here; saved)
 var sess = null
 var _chapter: Campaign.Chapter = null
 
@@ -260,7 +269,7 @@ You turned the Company down without taking a side. The General remains in power,
 
 
 func to_dict() -> Dictionary:
-	return {"index": index, "progress": progress, "done": completed_all, "company_decision": company_decision, "outcomes": outcomes, "outcome_status": outcome_status, "history": history, "employment": employment.to_dict() if employment != null else null, "v": 5}
+	return {"index": index, "progress": progress, "done": completed_all, "company_decision": company_decision, "outcomes": outcomes, "outcome_status": outcome_status, "history": history, "employment": employment.to_dict() if employment != null else null, "v": 5, "opened_at": opened_at}
 
 
 static func from_dict(d) -> Story:
@@ -280,6 +289,7 @@ static func from_dict(d) -> Story:
 	st.outcomes = d.get("outcomes", {}).duplicate()
 	st.outcome_status = d.get("outcome_status", {}).duplicate()
 	st.history = d.get("history", []).duplicate(true)
+	st.opened_at = float(d.get("opened_at", -1.0))  # an older save: the clock starts when it is loaded
 	st.fresh = false  # a loaded story keeps the chart its save restored
 	return st
 
@@ -387,6 +397,8 @@ func _set_police_pace(i: int) -> void:
 
 func _open(i: int, announce: bool) -> void:
 	_set_police_pace(i)
+	if i == index and opened_at < 0.0:
+		opened_at = float(sess.time)  # the chapter's clock (DESIGN 90): a new story, or an older save; a loaded chapter keeps its own
 	var names := []
 	for key in CHAPTERS[i][3]:
 		opened[key] = true
@@ -442,7 +454,32 @@ func objective_lines() -> Array:
 		elif o.optional:
 			count += " (optional before chapter ends: +$%s)" % Py.money(o.bonus)
 		out.append("[%s] %s%s" % [mark, o.text, count])
+	var pace := pace_line()
+	if pace != "":
+		out.append(pace)
 	return out
+
+
+## The chapter's deadline: its minutes, or 0 when it has none (chapter 1, the prelude, the switch off).
+func pace_min() -> int:
+	if not PACE or (employment != null and employment.active()) or completed_all:
+		return 0
+	return int(PACE_MIN[index]) if index < PACE_MIN.size() else 0
+
+
+func pace_renown() -> float:
+	return PACE_RENOWN + PACE_RENOWN_STEP * index
+
+
+## "[ ] Done within 60 min (42 min left): renown" for the chapter card; "" with no deadline.
+func pace_line() -> String:
+	var m := pace_min()
+	if m <= 0 or sess == null or opened_at < 0.0:
+		return ""
+	var left := float(m) * 60.0 - (float(sess.time) - opened_at)
+	if left <= 0.0:
+		return "[-] Done within %d min (time's up: no bonus, the chapter goes on)" % m
+	return "[ ] Done within %d min (%d min left: renown, optional)" % [m, int(ceil(left / 60.0))]
 
 
 # ------------------------------------------------------------ progress
@@ -650,8 +687,10 @@ func advance() -> void:
 		"status": "completed" if Py.all(chapter.objectives, func(o): return o.optional or outcomes.has(o.key) or progress.get(o.key, 0.0) >= o.target) else "skipped", "aftermath": "Nico is hiding for six hours; the raid increased suspicion by 10 points." if chapter.title == "Blotter" else ""})
 	if chapter.title == "Blotter":
 		_blotter_ends()
+	_pace_paid()
 	if index + 1 < CHAPTERS.size():
 		index += 1
+		opened_at = float(s.time)  # the new chapter's clock starts now (DESIGN 90)
 		progress = {}
 		outcomes = {}
 		outcome_status = {}
@@ -667,6 +706,20 @@ func advance() -> void:
 		s.say(ending_summary())
 		s.say("1989. The story is told - the coast is yours, for as long as it lasts. Everything stays open.")
 	s.save()
+
+
+## The chapter's required goals done within its deadline: the name grows (DESIGN 90). Recorded on the chapter's history row.
+func _pace_paid() -> void:
+	var m := pace_min()
+	if m <= 0 or opened_at < 0.0 or history.is_empty() or str(history[-1].get("status", "")) != "completed":
+		return
+	var took := float(sess.time) - opened_at
+	if took > float(m) * 60.0:
+		return
+	history[-1]["pace"] = int(round(took / 60.0))
+	if sess.renown != null:
+		sess.renown.add(pace_renown(), "a chapter done in good time")
+	sess.say("Done in %d minutes, inside the %d: word gets round that you move fast." % [int(round(took / 60.0)), m])
 
 
 static func _is_flight(key: String) -> bool:
