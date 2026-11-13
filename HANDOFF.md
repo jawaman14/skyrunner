@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** crates of rounds on the pickup flow (DESIGN 94): ammunition stage 3 done but the
+  rival's own resupply rule. Next: conditional orders for hired hands (needs its DESIGN note first).
 - **2026-11-13 - Claude, the planned, cont.:** ammunition stage 3 second part (DESIGN 93, BALANCE 87): rounds dearer in a war,
   no delivery into Los Cuervos' streets. Next: crates of rounds on the pickup flow, then conditional orders.
 - **2026-11-13 - Claude, the planned, cont.:** ammunition in the war, stage 3 first part (DESIGN 92, `GroundWar.AMMO_BY_TYPE`,

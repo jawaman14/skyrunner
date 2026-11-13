@@ -2786,3 +2786,20 @@ port, a road or a depot decides who can resupply". Both act on the dealer's crat
 
 Not yet: crates of rounds on trucks, pickups and the load planner (a delivery to a chosen stash, interceptable as pickups are),
 and Los Cuervos' own resupply facing the same rule.
+
+
+## 94. Crates of rounds on the pickup flow (D-61; section 50's stage 3, last part)
+
+`Pickups.order_ammo` and `stock_order {good: "ammo", tier, crates, stash}` (under `Arsenal.AMMO_TRADE`; no new draws: a pickup's
+interception is its own stream already, section 81). The gun dealer's crates of rounds join his crates of guns (section 81) on the
+pickup flow:
+
+- **Ordered** to a stash, one to four crates of one type, paid up front at nine tenths of his price for the crate (section 93's
+  price, the war's mark-up included).
+- **Taken in** by whoever is at the door, the rounds join the armoury, which is at that stash from then on (as for guns).
+- **Taken on the way** by Los Cuervos (section 81's odds, a truce's restraint and a lookout's half included), the rounds are theirs.
+- **No stash room.** Crates of rounds and of guns do not count against a house's cap (section 87).
+- **Where the dealer won't drive** (section 93: Los Cuervos hold the armoury's streets), a pickup to another stash is the way round,
+  at the risk of interception.
+
+Saved with the order (its good and tier).
