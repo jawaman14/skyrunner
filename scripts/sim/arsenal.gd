@@ -34,7 +34,25 @@ const START := {
 
 var side := ""
 var stock := {}  ## tier -> count
-var ammo := 0  ## rounds
+## Rounds by the type of gun that fires them (D-61 stage 2, DESIGN 91). `ammo` is their total, kept for every caller that treats
+## rounds as one pool: reading it sums them; writing it adds in proportion to the guns held and takes in proportion to the rounds
+## held, settled by largest remainder, so the totals move exactly as they did when it was one number.
+var rounds := {"pistol": 0, "rifle": 0, "mg": 0, "rpg": 0}
+var ammo: int:
+	get:
+		var total := 0
+		for t in rounds:
+			total += int(rounds[t])
+		return total
+	set(v):
+		_set_total(int(v))
+
+## Ammunition crates (DESIGN 50's table): rounds a crate, its weight and its table price, before the market and the ladder.
+static var AMMO_TRADE := true  ## rounds bought by the crate at the dealer (D-61 stage 2, DESIGN 91)
+const AMMO := {"pistol": {"rounds": 1000, "kg": 15, "price": 250, "name": "pistol rounds"},
+	"rifle": {"rounds": 600, "kg": 18, "price": 480, "name": "rifle rounds"},
+	"mg": {"rounds": 400, "kg": 20, "price": 900, "name": "machine-gun belts"},
+	"rpg": {"rounds": 4, "kg": 25, "price": 1600, "name": "rockets"}}
 var cache := ""  ## the organisation's: the stash house the guns are kept in ("" = the HQ)
 var seized_total := 0  ## the task force's: weapons taken off the street, all time
 
@@ -51,7 +69,46 @@ func _init(side_ := "", start := true) -> void:
 func add(tier: String, n: int) -> void:
 	if TIERS.has(tier) and n > 0:
 		stock[tier] += n
-		ammo += n * ROUNDS_PER_WEAPON
+		rounds[tier] = int(rounds[tier]) + n * ROUNDS_PER_WEAPON  # a crate's worth with every gun, of its own kind
+
+
+## Set the pool's total: what is added goes in proportion to the guns held (rifle rounds with none), what is taken in proportion to
+## the rounds held; whole rounds, the remainder by the largest fractions, ties in ORDER. Deterministic.
+func _set_total(v: int) -> void:
+	v = maxi(0, v)
+	var delta := v - ammo
+	if delta == 0:
+		return
+	var weights := {}
+	var wsum := 0.0
+	for t in ORDER:
+		var w: float = float(stock.get(t, 0)) if delta > 0 else float(rounds[t])
+		weights[t] = w
+		wsum += w
+	if wsum <= 0.0:
+		if delta > 0:
+			rounds["rifle"] = int(rounds["rifle"]) + delta
+		return
+	var n := absi(delta)
+	var share := {}
+	var given := 0
+	for t in ORDER:
+		share[t] = int(floor(float(n) * float(weights[t]) / wsum))
+		given += int(share[t])
+	var rest := ORDER.duplicate()
+	rest.sort_custom(func(a, b):
+		var fa: float = float(n) * float(weights[a]) / wsum - float(share[a])
+		var fb: float = float(n) * float(weights[b]) / wsum - float(share[b])
+		return fa > fb if absf(fa - fb) > 1e-12 else ORDER.find(a) < ORDER.find(b))
+	var k := 0
+	while given < n:
+		var t: String = rest[k % rest.size()]
+		if weights[t] > 0.0:
+			share[t] = int(share[t]) + 1
+			given += 1
+		k += 1
+	for t in ORDER:
+		rounds[t] = maxi(0, int(rounds[t]) + (int(share[t]) if delta > 0 else -int(share[t])))
 
 
 func add_all(weapons: Dictionary) -> void:
@@ -156,8 +213,9 @@ func seize_into(other: Arsenal) -> Dictionary:
 			moved[t] = stock[t]
 			other.stock[t] += stock[t]
 			stock[t] = 0
-	other.ammo += ammo
-	ammo = 0
+	for t in rounds:
+		other.rounds[t] = int(other.rounds[t]) + int(rounds[t])
+		rounds[t] = 0
 	other.seized_total += Py.sum_by(moved.values(), func(v): return v)
 	return moved
 
@@ -170,7 +228,7 @@ func take_seized(weapons: Dictionary) -> int:
 		if TIERS.has(t) and k > 0:
 			stock[t] += k
 			n += k
-	ammo += n * ROUNDS_PER_WEAPON / 2  # half a crate's rounds come with a seizure
+			rounds[t] = int(rounds[t]) + k * ROUNDS_PER_WEAPON / 2  # half a crate's rounds come with a seizure
 	seized_total += n
 	return n
 
@@ -184,7 +242,7 @@ static func describe(weapons: Dictionary) -> String:
 
 
 func to_dict() -> Dictionary:
-	return {"side": side, "stock": stock.duplicate(), "ammo": ammo, "cache": cache, "seized": seized_total,
+	return {"side": side, "stock": stock.duplicate(), "ammo": ammo, "rounds": rounds.duplicate(), "cache": cache, "seized": seized_total,
 		"count": count(), "value": value()}
 
 
@@ -194,7 +252,12 @@ static func from_dict(d: Dictionary) -> Arsenal:
 	for t in s:
 		if TIERS.has(t):
 			a.stock[t] = int(s[t])
-	a.ammo = int(d.get("ammo", 0))
+	if d.get("rounds") is Dictionary:
+		for t in d.rounds:
+			if a.rounds.has(str(t)):
+				a.rounds[str(t)] = int(d.rounds[t])
+	else:
+		a.ammo = int(d.get("ammo", 0))  # an older save: the pool shared out over the guns it holds
 	a.cache = str(d.get("cache", ""))
 	a.seized_total = int(d.get("seized", 0))
 	return a
