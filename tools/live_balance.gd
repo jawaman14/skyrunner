@@ -61,6 +61,9 @@ func _initialize() -> void:
 	if a.has("notrust"):  # the same run where Los Cuervos' and the dealers' trust change nothing (DESIGN 84)
 		Trust.EFFECTS = false
 		a.erase("notrust")
+	if a.has("nosight"):  # the same run with the police and Los Cuervos knowing every truck on the road (D-36, DESIGN 85)
+		GroundWar.FAIR_SIGHT = false
+		a.erase("nosight")
 	if a.has("nowars"):  # the same run without price wars and supply cuts (DESIGN 78)
 		PriceWars.ENABLED = false
 		a.erase("nowars")
