@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, first (D-36):** the street war's AI acts only on what its seat would see (DESIGN 85,
+  `GroundWar.FAIR_SIGHT`, BALANCE 79): ambushes and checkpoints only on trucks they see, tail or link to a known house. The half
+  done is finished as far as it can be without a person or an owner gate (D-99 done).
 - **2026-11-13 - Claude, the half done, cont. (D-99):** trust that counts (DESIGN 84, `Trust.EFFECTS`): a truce with Los Cuervos
   from trust 40, the hiring hall's men better or worse with the dealers' trust, paydays and lawyers moving it; and the NPC agents'
   evidence pass (test_agents_everywhere). Next: rival money (B-2), then the planned items in the tree's order.

@@ -2563,3 +2563,33 @@ entry 78.
 
 Not yet: Los Cuervos' trust falling when our squads kill theirs, a formal truce bought from them (the season simulator's HQ truce
 is separate and stays), and crew trust unlocking things at boss level (slice 7).
+
+
+## 85. The AI acts only on what its seat would see (D-36)
+
+`GroundWar.truck_known_to(viewer, truck)`, switch `GroundWar.FAIR_SIGHT` (opt-in with the street war). The owner's rule (18
+October): the AI police and rivals know only what a human in their seat would see. An audit of the street war's commanders found
+two places where they read more:
+
+1. **Los Cuervos** set an ambush on every truck of ours on the road, at a chokepoint on its route.
+2. **The task force** set a checkpoint ahead of every truck of ours on the road.
+
+Their stash raids already went through what they know (the case files, suspicion; Los Cuervos raid houses with heat 20 or more)
+and the rest of their orders through `visible_to` (sightings). Now a truck is known to:
+
+- either of them when one of their squads, or their HQ, is within sight of it (`SIGHT_M`, 1,500 m);
+- the police when they tail it, or when it runs to a house in the case files (any stage; without the case files, a house at 10
+  suspicion or more, where they would stake it out);
+- Los Cuervos when it runs to a house they have heard of (heat 20, the same as for their raids).
+
+Only known trucks get an ambush or a checkpoint; the war's other orders are unchanged. No new random draws, but the war's stream
+is drawn once per known truck instead of once per truck, so a seeded war plays out differently from here. Off, every truck, as
+before.
+
+**Measured** (live_balance noair, 12 seeds x 3 h, against `nosight`): hijack losses $11,573 -> $9,469, stash raid losses $617 ->
+$60, our men arrested 17.9 -> 14.3 a run, but seizures $2,443 -> $3,591 (cars no longer sent to checkpoints patrol the roads the
+trucks use) and money p50 $16,234 -> $14,103; net worth p50 $48,555 -> $47,487, inside the noise of 12 seeds. BALANCE entry 79.
+
+Not yet: the police's air units and radar (the flying side keeps its own sensor model, sections 3 and 22), informants naming a
+truck (the case files' tips feed the stash, not the truck), and an audit of the session-level AI (`AiSmuggler`, the season
+simulator's HQ), which have their own information models.

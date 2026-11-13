@@ -77,6 +77,7 @@ const ORG_MIN_SQUADS := 1  ## ... and recruits past one squad only when Los Cuer
 const ORG_RECRUIT_S := 1800.0  ## ... a squad at most every 30 minutes, not a new army every time one dies
 const UPKEEP_MIN := 2.0  ## $ per man per minute
 static var VETERANS := true  ## squads learn from the fights they survive (Mount & Blade's troop tiers)
+static var FAIR_SIGHT := true  ## the police and Los Cuervos act only on trucks a human in their seat would know of (D-36, DESIGN 85)
 static var SPREAD := true  ## district patrols claim empty districts and spread out instead of stacking (DESIGN 83)
 const RANKS := ["Green", "Blooded", "Veteran", "Elite"]
 const RANK_XP := [0.0, 4.0, 10.0, 20.0]  ## experience for each rank: a surviving fight is 1, a winning one 2
@@ -483,6 +484,32 @@ func can_see(viewer: String, q: Squad) -> bool:
 			if Vector2(st.x, st.y).distance_to(q.pos()) < SIGHT_M * 0.6:
 				return true
 	return hq(viewer).distance_to(q.pos()) < SIGHT_M
+
+
+## Would a human in `viewer`'s seat know this truck of ours is on the road (D-36)? One of their squads or their HQ can see it;
+## the police are tailing it or suspect the house it runs to (the case files' surveillance, or 10 suspicion without them); Los
+## Cuervos have heard of that house (heat 20, as for their raids). Off (FAIR_SIGHT false): every truck, as before.
+func truck_known_to(viewer: String, t) -> bool:
+	if not FAIR_SIGHT:
+		return true
+	var p: Array = t.pos(sess.time)
+	var at := Vector2(float(p[0]), float(p[1]))
+	if hq(viewer).distance_to(at) < SIGHT_M:
+		return true
+	for o in squads:
+		if o.faction == viewer and o.state != "gone" and o.pos().distance_to(at) < SIGHT_M:
+			return true
+	var st = sess.stash_net.get_stash(str(t.stash)) if sess.stash_net != null else null
+	if viewer == "police":
+		if tails.has(t.job_id):
+			return true
+		if st != null:
+			if Investigation.ENABLED and sess.investigation != null:
+				return sess.investigation.stage_of(str(st.id)) != ""
+			return StashNet.suspicion(st) >= 10.0
+	elif viewer == "rival" and st != null:
+		return float(st.heat) >= 20.0
+	return false
 
 
 func visible_to(viewer: String) -> Array:
@@ -1725,7 +1752,7 @@ func _think_rival() -> void:
 	if tr != null:
 		held_back = tr.rival_odds()  # trust with us holds them back (DESIGN 84): the same draws, lower odds
 	if sess.stash_net != null and not _truce():
-		for t in sess.stash_net.trucks:
+		for t in sess.stash_net.trucks.filter(func(tt): return truck_known_to("rival", tt)):  # D-36
 			if mine.is_empty() or rng.random() > 0.5 * held_back:
 				break
 			var r = mine[0]
@@ -1800,8 +1827,8 @@ func _think_police() -> void:
 			var q = mine.back()
 			order(q, {"type": "buy_bust", "stash": st.id})
 			mine.erase(q)
-		# checkpoints on the trucks' roads (strip to stash)
-		for t in sess.stash_net.trucks:
+		# checkpoints on the roads of the trucks they know of (strip to stash; D-36)
+		for t in sess.stash_net.trucks.filter(func(tt): return truck_known_to("police", tt)):
 			if mine.is_empty():
 				break
 			if tails.has(t.job_id) or squads.any(func(q): return q.faction == "police" and q.tactic == "checkpoint" and int(q.order.get("job_id", -1)) == t.job_id):
