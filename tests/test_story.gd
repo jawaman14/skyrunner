@@ -55,6 +55,24 @@ func test_the_goals_count_what_happens() -> void:
 	s.dispose()
 
 
+## Goals count by organisation (DESIGN 80, F-5/L-5): another org's doings are theirs; ours and the world's count.
+func test_the_goals_count_only_our_organisation() -> void:
+	var s := _story()
+	var load := {"job_id": "J", "pay": 0, "dest": "X", "hot": true, "good": "marijuana", "lb": 100.0}
+	s.bus.actor = Actor.of("family", Roles.BOSS, "family:boss")
+	s.bus.emit("job_delivered", s.time, "", ["runner"], load.duplicate())
+	s.bus.actor = {}
+	s.bus.emit("job_delivered", s.time, "", ["runner"], load.merged({"org": "rival"}))
+	check_near(float(s.story.progress.get("weed_lb", 0.0)), 0.0, 0.01, "the Morettis' and Los Cuervos' loads aren't ours")
+	s.bus.emit("job_delivered", s.time, "", ["runner"], load.merged({"org": "org"}))
+	s.bus.actor = Actor.for_role(Roles.PILOT)
+	s.bus.emit("job_delivered", s.time, "", ["runner"], load.duplicate())
+	s.bus.actor = {}
+	s.bus.emit("job_delivered", s.time, "", ["runner"], load.duplicate())
+	check_near(float(s.story.progress.get("weed_lb", 0.0)), 300.0, 0.01, "ours, our seat's and the world's count")
+	s.dispose()
+
+
 ## The HUD's NEXT line asks `s.narrative` (a Story in play) for the first goal still to do.
 func test_the_hud_next_line_names_the_first_goal_still_to_do() -> void:
 	var s := _story()

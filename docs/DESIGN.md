@@ -2462,8 +2462,11 @@ game ever has one happen.
 - **Saved** under `takeover` (done, when, what it cost). A game first seen already past the chapter (a save from before this, a
   chapter picked from the menu) is taken as done with nothing lost.
 
-Not built here: a scene for it, succession (D-82), the boss layer's new tools (D-58, D-62), and counting the chapter's goals by
-organisation. **Open for the owner:** "a quarter of his cash" is read as the street cash in the stashes; the alternative, taking
+Not built here: a scene for it, succession (D-82) and the boss layer's new tools (D-58, D-62). **The chapter's goals count by
+organisation** (13 November): `Story.ours` lets through only an event our org did (its actor's org, or the org it names, is `org`) or
+the world's own (none); what the Morettis' or Los Cuervos' AI does through `command_as` is theirs. Nothing they do today reaches a
+goal, so it changes no game; it keeps the goals honest as their AI grows. Succession waits on the owner: D-64 says the pilot is
+never held, so "when the boss is jailed" never happens to the player, and a death has no rule yet. **Open for the owner:** "a quarter of his cash" is read as the street cash in the stashes; the alternative, taking
 three quarters of the safe as well, would also take the player's own savings.
 
 ## 81. The stock rework's later parts: bulk sales by grade, the gun dealer on the pickup flow, intercepted pickups (section 51)
