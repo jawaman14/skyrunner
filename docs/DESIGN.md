@@ -2720,3 +2720,28 @@ chapter still finishes however long it takes, so the owner's rule that chapter g
 Off, no clock and no bonus.
 
 Not yet, and open for the owner (section 51.8): what renown and crew trust unlock at boss level, the other half of slice 7.
+
+
+## 91. Ammunition as a good, stage 2 (D-61; section 50's second stage)
+
+`Arsenal.rounds`, the `buy_ammo` command (switch `Arsenal.AMMO_TRADE`, opt-in); no random draws. Section 50: "rounds are per weapon
+type, in crates, bought from the same sources, trucked and stored like weapons". Until now each arsenal kept one pool of rounds.
+
+- **Rounds by type.** Each arsenal keeps rounds for pistols, rifles, machine guns and RPGs. A gun added brings its own: 120 of its
+  type (`ROUNDS_PER_WEAPON`); a gun seized brings half that; a seized armoury hands its rounds over by type.
+- **The pool is their total.** `Arsenal.ammo` is now a property over `rounds`: reading it sums them; writing it adds in proportion
+  to the guns held (rifle rounds when there are none) and takes in proportion to the rounds held, settled to whole rounds by the
+  largest remainder, ties in `ORDER`. Every existing reader and writer (squads drawing 90 a man, a fight spending them, the pack on
+  foot, the papers' seizure) moves exactly the totals it moved before, so the parity runs are unchanged; stage 3 makes them draw
+  by type.
+- **Crates of rounds** (`buy_ammo {tier, crates}`, 1 to 10, the boss, the lieutenant or the pilot, once guns are open): section 50's
+  crates, 1,000 pistol rounds (15 kg, $250), 600 rifle rounds (18 kg, $480), 400 machine-gun rounds in belts (20 kg, $900), 4
+  rockets (25 kg, $1,600), each price times the guns market and the type's place on the scarcity ladder (section 77): a rare gun's
+  rounds are dear too. They go into the armoury.
+- **Saves** keep `rounds`; an older save's pool is shared out over the guns it holds.
+
+Measured: the full suite (1,737 tests) passes unchanged with the pool as a property, which is the parity evidence.
+
+Not yet (stages 3 and 4): squads drawing and fights spending rounds by the types they carry, a dry district's ammunition price
+climbing, resupply cut by who holds a port or road, crates of rounds on trucks and pickup orders and the load planner, and the
+screens (the pack, logistics and the market board).

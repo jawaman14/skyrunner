@@ -374,6 +374,8 @@ and all of it ties into the ground and turf war. The design, grounded in `arsena
    follows its scarcity at the dealer, the fence and the bulk buyers; the dealer sells only what there is.
 2. **Ammunition as a good.** Rounds per weapon type, in crates, bought, trucked and stored; squads draw the rounds of the weapons
    they carry. (Claude)
+   **First part built (DESIGN 91):** rounds kept by type in each arsenal (the old pool their total), crates of rounds at the dealer.
+   Trucking crates of rounds and squads drawing by type go with stage 3.
 3. **The war uses it.** Fights consume rounds, a dry district's ammunition price climbs, a squad without rounds stops firing, and
    holding a port or road changes who can resupply. (Claude, with the turf work)
 4. **The screens.** The pack and logistics menus, and the market board (it already carries guns; ammunition joins it). (Codex)

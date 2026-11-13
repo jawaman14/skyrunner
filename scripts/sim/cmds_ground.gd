@@ -45,6 +45,27 @@ static func _cmd_buy_weapons(role: String, a: Dictionary, session: Session):
 	return null
 
 
+## Crates of rounds for one type of gun, from a dealer, into the armoury (D-61 stage 2, DESIGN 91).
+static func _cmd_buy_ammo(role: String, a: Dictionary, session: Session):
+	if not Arsenal.REALISM or not Arsenal.AMMO_TRADE:
+		return "Nobody sells rounds by the crate here."
+	if not session.unlocked("guns"):
+		return "No gun dealer will talk to us yet."
+	var tier := str(a.get("tier", ""))
+	var n := int(session._num(a, "crates", 1))
+	if not Arsenal.AMMO.has(tier) or n <= 0 or n > 10:
+		return "Buy one to ten crates of pistol, rifle, mg or rpg rounds."
+	var cost := session.ammo_price(tier) * n
+	if session.money < cost:
+		return "Need $%s." % Py.money(cost)
+	session.move_money(-cost, "outside:market", "purchase")
+	var got: int = int(Arsenal.AMMO[tier].rounds) * n
+	var ars: Arsenal = session.arsenals["org"]
+	ars.rounds[tier] = int(ars.rounds[tier]) + got
+	session.say("Bought %d crate%s of %s (%d) from a dealer: -$%s" % [n, "" if n == 1 else "s", Arsenal.AMMO[tier].name, got, Py.money(cost)])
+	return null
+
+
 static func _cmd_set_cache(role: String, a: Dictionary, session: Session):
 	if not Arsenal.REALISM:
 		return "No arsenal."

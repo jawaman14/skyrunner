@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** ammunition as a good, stage 2 first part (DESIGN 91, BALANCE 85): rounds by gun
+  type, the old pool their exact total (full suite 1,737/0 unchanged), crates of rounds at the dealer, saves migrated.
 - **2026-11-13 - Claude, the planned, cont.:** chapter deadlines (DESIGN 90, `Story.PACE`, BALANCE 84): a bonus in renown for a
   chapter done in time, never a penalty. What renown and trust unlock at boss level stays the owner's (section 51.8).
 - **2026-11-13 - Claude, the planned, cont.:** crew relationships (DESIGN 89, `Payroll.BONDS`, BALANCE 83; new stream seed + 205):

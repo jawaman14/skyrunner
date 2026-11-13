@@ -649,6 +649,15 @@ func weapon_price(tier: String, buying: bool) -> int:
 	return int(Arsenal.TIERS[tier].price * m * (1.4 if buying else 0.8))
 
 
+## The dealer's price for a crate of rounds for guns of `tier` (DESIGN 91): its table price, by the guns market and the type's
+## place on the scarcity ladder (a rare gun's rounds are rare too).
+func ammo_price(tier: String) -> int:
+	var m := econ.mult("guns", "town")
+	if crates != null:
+		m *= crates.factor(tier)
+	return int(float(Arsenal.AMMO[tier].price) * m)
+
+
 func save() -> void:
 	if save_path == "":
 		return

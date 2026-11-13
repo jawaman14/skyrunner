@@ -46,7 +46,7 @@ const AGENCY := ["trust", "exposure", "protected_until", "quashed", "flights", "
 	"stings", "hung_out", "withheld", "last_read", "_game_t", "war_chest", "coke_lots", "gun_lots", "pipe_last", "_pipe_t", "_pipe_pause",
 	"next_market"]
 const CHRONICLE := ["history_i", "_hist_t", "fired", "entries", "counts", "_next", "_t"]
-const ARSENAL := ["stock", "ammo", "cache", "seized_total"]
+const ARSENAL := ["stock", "rounds", "ammo", "cache", "seized_total"]  ## rounds before ammo: an older save, with no rounds, shares its total out
 const RACKETS := ["rounds", "taken", "escaped", "ransomed", "ransom_cash", "turned", "released", "last_round", "_tt", "_te"]
 const WAR := ["spent", "fights_total", "lost_men", "arrests_total", "officers_down", "_round_t", "_informant_t", "_org_recruit_t",
 	"_upkeep_acc"]
@@ -516,8 +516,13 @@ static func _restore_world(s: Session, d: Dictionary) -> void:
 		for side in d.arsenals:
 			var a = s.arsenals.get(side)
 			if a != null:
+				var older: bool = not (d.arsenals[side] is Dictionary and d.arsenals[side].has("rounds"))
+				if older:
+					for t in a.rounds:
+						a.rounds[t] = 0  # an older save's pool is shared out over the guns it holds, not added to the start's
 				SaveVars.restore(a, d.arsenals[side], ARSENAL, Arsenal.ORDER)
 				a.stock = _ints(a.stock)
+				a.rounds = _ints(a.rounds)
 	if s.rackets != null and d.get("rackets") is Dictionary:
 		SaveVars.restore(s.rackets, d.rackets, RACKETS)
 
