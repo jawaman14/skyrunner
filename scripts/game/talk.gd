@@ -609,7 +609,8 @@ class State:
 			return "Nobody on the payroll yet."
 		var lines := []
 		for w in crew_list:
-			lines.append("- %s, %s: %s." % [w.name, Payroll.ROLES[w.role][2], w.doing])
+			var b := str(w.get("bonds", ""))
+			lines.append("- %s, %s: %s.%s" % [w.name, Payroll.ROLES[w.role][2], w.doing, (" (%s)" % b) if b != "" else ""])  # DESIGN 89
 		return "
 ".join(lines)
 

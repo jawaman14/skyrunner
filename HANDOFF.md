@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** crew relationships (DESIGN 89, `Payroll.BONDS`, BALANCE 83; new stream seed + 205):
+  section 51 slice 6 done. Next: slice 7 (chapter objectives with deadlines; what renown and trust unlock at boss level).
 - **2026-11-13 - Claude, the planned, cont.:** rackets under heat (DESIGN 88, `Rackets.UNDER_HEAT`, BALANCE 82; new stream
   seed + 203): a racket in a hot district risks a raid each round. Section 51 slice 6's other half (crew relationships) next.
 - **2026-11-13 - Claude, the planned, cont.:** storage caps and costs per place (DESIGN 87, `Storage.ENABLED`, BALANCE 81;

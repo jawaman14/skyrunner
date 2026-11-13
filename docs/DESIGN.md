@@ -1872,6 +1872,9 @@ that claim an offset are noted.
 | 189 | `Curses` | `session.gd` | which board jobs offer a condition, and which one (D-95) |
 | 191 | `BlackMarket` | `session.gd` | the week's black-market stock and the week's hot job (D-95) |
 | 203 | `Rackets.rng` | `session.gd` | a raid on the collectors' round in a hot district: one draw a hot market a round (section 88) |
+
+
+| 205 | `Payroll.bonds_rng` | `session_state.gd` | crew relationships: one draw a pair as a man joins our crew (section 89) |
 | 201 | `Pickups.rng` | `session_state.gd` | Los Cuervos intercepting a pickup: one draw as its window opens (section 81) |
 | 199 | `Takeover` | `session.gd` | the takeover, once: ties between equally known stashes, and who of the crew walks (D-35, D-78) |
 | 197 | `PriceWars` | `session_state.gd` | price wars and supply cuts: whether one starts, its kind, market and length (loop idea 6) |
@@ -2676,3 +2679,24 @@ Off, the rounds pay as before.
 
 Not yet: section 51.6's other half, crew members' pairwise relationships (hate, friendship, love) changing who will work
 together; and the collectors themselves as workers who can be arrested in a raid.
+
+
+## 89. Crew relationships (section 51's slice 6, second half)
+
+`Payroll.BONDS` (in the parity set; its own stream, `seed + 205`; nothing new in the save format: a bond is a key on each worker's
+dictionary, which the save already keeps whole). Section 51.6: "crew members get pairwise relationships (hate, friendship, love)
+that change who will work together" (Empire of Sin's idea).
+
+- **Bonds.** When we hire a man, one draw against each man already on our crew (free or posted): 6% they hate each other, 10%
+  they are friends, 2% they are in love, else nothing. Kept on both. A day's street hire (`take` with `street`) has none: he is
+  gone by night.
+- **Who works together.** A man won't watch a stash with one he hates (`post_lookout` says so), and a squad is raised from men
+  who will stand together: `take` passes over a man who hates one already chosen or posted to that job, and takes the next.
+- **Grief.** When one of ours is killed or arrested, his friends lose 0.1 loyalty, the one who loved him 0.25 (and the phone says
+  he takes it hard); one who hated him gains 0.05. Loyalty is what decides a man's betrayals and a jailed man's flipping (section 17).
+- **The roster.** Manny's roster lists each man's bonds ("hates Tony Caruso; is friends with Joey Mejia").
+
+Off, no bonds are drawn and none are read.
+
+Not yet: bonds forming on the job (squads that win together become friends), a lover's revenge, Los Cuervos' crew bonds, and
+the hiring hall naming a candidate's bonds before you hire him.
