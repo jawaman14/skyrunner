@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** storage caps and costs per place (DESIGN 87, `Storage.ENABLED`, BALANCE 81;
+  section 51's slice 4). The owner's open question (the cap's form) is answered with weight for now; say if you want floor space.
 - **2026-11-13 - Claude, the planned, cont.:** the civilian economy's first slice (DESIGN 86, `Businesses.CIVIC`, BALANCE 80):
   district prosperity moves each close with the shooting, the open businesses and the collectors. Dirty money (D-90) skipped: it
   waits on heat step 2, which D-75 paused.

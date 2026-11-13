@@ -91,6 +91,9 @@ func order(contact: String, good: String, lb: float, stash := "") -> String:
 	var st = sess.stash_net.get_stash(stash)
 	if st == null or st.burned:
 		return "That stash house can't take a delivery."
+	var full: String = lg.storage.full_reason(stash, lb) if lg.storage != null else ""
+	if full != "":
+		return full  # no room there, counting what is on its way (DESIGN 87)
 	var cost := int(ceil(lb * price(contact, good)))
 	if sess.money < cost:
 		return "%d lb costs $%s up front." % [int(lb), Py.money(cost)]

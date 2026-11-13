@@ -183,7 +183,7 @@ func refresh() -> void:
 		to_ob.clear()
 	for s in lv.sites:
 		var l := UIStyle.label("%-26s %-6s %9d %9d %9d %10s%s" % [str(s.name).left(26), s.market, int(s.cocaine), int(s.marijuana), int(s.get("acid", 0)),
-			"$" + Py.money(int(s.cash)), "  BURNED" if s.burned else (("  vault %d guard %d" % [int(s.get("vault", 0)), int(s.get("guard", 0))]) if int(s.get("vault", 0)) + int(s.get("guard", 0)) > 0 else "")], 14, UIStyle.RED if s.burned else UIStyle.WHITE, UIStyle.mono())
+			"$" + Py.money(int(s.cash)), "  BURNED" if s.burned else ((("  %s" % str(s.room)) if str(s.get("room", "")) != "" else "") + (("  vault %d guard %d" % [int(s.get("vault", 0)), int(s.get("guard", 0))]) if int(s.get("vault", 0)) + int(s.get("guard", 0)) > 0 else ""))], 14, UIStyle.RED if s.burned else UIStyle.WHITE, UIStyle.mono())
 		rows.add_child(l)
 		if not s.burned and rebuild:
 			_sites.append(s.id)
