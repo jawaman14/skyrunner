@@ -655,7 +655,27 @@ func ammo_price(tier: String) -> int:
 	var m := econ.mult("guns", "town")
 	if crates != null:
 		m *= crates.factor(tier)
-	return int(float(Arsenal.AMMO[tier].price) * m)
+	return int(float(Arsenal.AMMO[tier].price) * m * ammo_war_mult())
+
+
+## A street at war burns rounds and bids them up (DESIGN 93): 10% more a firefight of the last fifteen minutes, at most 60%.
+func ammo_war_mult() -> float:
+	if ground == null:
+		return 1.0
+	return 1.0 + minf(Arsenal.AMMO_WAR_MAX, Arsenal.AMMO_WAR_EACH * float(ground.hot_spots.size()))
+
+
+## "" or why the dealer won't bring rounds to the armoury: Los Cuervos hold the streets around it (DESIGN 93).
+func ammo_blocked() -> String:
+	if ground == null:
+		return ""
+	var ars: Arsenal = arsenals.get("org")
+	var zone := "town"
+	if ars != null and ars.cache != "" and stash_net != null and stash_net.get_stash(ars.cache) != null:
+		zone = str(stash_net.get_stash(ars.cache).zone)
+	if ground.rival_share(zone) >= Arsenal.AMMO_BLOCKED_SHARE:
+		return "The dealer won't drive into Los Cuervos' streets: they hold the %s, where the armoury is. Take the streets back, or keep the guns somewhere else." % zone
+	return ""
 
 
 func save() -> void:

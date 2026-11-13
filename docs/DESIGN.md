@@ -2769,3 +2769,20 @@ size: the stand-in's squads seldom run one type dry in three hours. BALANCE entr
 
 Not yet (the rest of stage 3): a district that is fighting raising its ammunition demand and a dry one paying more, holding a port
 or road deciding who can resupply, and crates of rounds on trucks, pickups and the load planner.
+
+
+## 93. Ammunition in the war, stage 3 second part: a street at war, and who can resupply (D-61)
+
+Two lines of section 50: "a district that is fighting raises its ammunition demand, and a dry one pays more" and "holding a
+port, a road or a depot decides who can resupply". Both act on the dealer's crates of rounds (section 91, `buy_ammo`, under
+`Arsenal.AMMO_TRADE`); no random draws.
+
+- **A street at war.** The price of a crate of rounds is its table price, by the guns market and the type's scarcity, now also
+  times 1 + 0.1 for each firefight of the last fifteen minutes (the war's `hot_spots`), at most 1.6 (`AMMO_WAR_EACH`,
+  `AMMO_WAR_MAX`). Buy between the fights.
+- **Who can resupply.** The dealer delivers to the armoury, which is kept at a stash or the club. Where Los Cuervos hold half or
+  more of the streets of the armoury's market (`AMMO_BLOCKED_SHARE`), he won't drive in: `buy_ammo` is refused, saying who holds
+  what and that the guns can be kept somewhere else (`set_cache`) or the streets taken back. Nothing is paid.
+
+Not yet: crates of rounds on trucks, pickups and the load planner (a delivery to a chosen stash, interceptable as pickups are),
+and Los Cuervos' own resupply facing the same rule.
