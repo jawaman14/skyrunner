@@ -175,6 +175,8 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-13 - Claude, the planned, cont.:** rackets under heat (DESIGN 88, `Rackets.UNDER_HEAT`, BALANCE 82; new stream
+  seed + 203): a racket in a hot district risks a raid each round. Section 51 slice 6's other half (crew relationships) next.
 - **2026-11-13 - Claude, the planned, cont.:** storage caps and costs per place (DESIGN 87, `Storage.ENABLED`, BALANCE 81;
   section 51's slice 4). The owner's open question (the cap's form) is answered with weight for now; say if you want floor space.
 - **2026-11-13 - Claude, the planned, cont.:** the civilian economy's first slice (DESIGN 86, `Businesses.CIVIC`, BALANCE 80):

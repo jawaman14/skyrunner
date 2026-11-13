@@ -89,6 +89,7 @@ func _init(opts := {}) -> void:
 		renown = Renown.new(self)
 	if opts.get("rackets", false) and Rackets.ENABLED and ground != null:
 		rackets = Rackets.new(self)
+		rackets.rng = _rng(seed + 203)  # raids on a hot racket (own stream; DESIGN 88)
 	if opts.get("races", false) and Races.ENABLED:
 		races = Races.new(self)
 	if opts.get("airframe", false) and Airframe.ENABLED:

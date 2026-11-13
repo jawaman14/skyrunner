@@ -15,6 +15,7 @@ extends RefCounted
 ## Off for the replays (Rackets.ENABLED = false); a session with a ground war asks for it with `rackets: true`.
 
 static var ENABLED := true
+static var UNDER_HEAT := true  ## a racket in a hot district risks a raid on the collectors (DESIGN 88; section 51 slice 6)
 
 const TRIBUTE_EVERY_S := 600.0
 const TRIBUTE_BASE := 160.0  ## $ a market a round at full control
@@ -23,6 +24,10 @@ const SQUEEZE_MULT := 2.2
 const SQUEEZE_RESENT := 0.85  ## what is left of our hold after a squeeze
 const SQUEEZE_HEAT := 2.0  ## suspicion on the case, per squeezed market
 const POLICIES := ["fair", "squeeze", "off"]
+const HOT_AT := 40.0  ## district heat (Investigation.district_heat) from which a racket there is hot
+const RAID_MAX := 0.5  ## the odds of a raid on a round at heat 100; nothing at HOT_AT, in proportion between
+const RAID_CASE := 4.0  ## suspicion on the case when the collectors are raided
+const RAID_DISTRICT := 10.0  ## and the district hotter still
 
 const CAPTURE_SHARE := 0.3  ## of the beaten squad's survivors
 const RANSOM_EACH := 350
@@ -41,6 +46,8 @@ var ransom_cash := 0
 var turned := 0
 var released := 0
 var last_round: Dictionary = {}  ## market -> $ the last time round
+var rng: PyRandom = null  ## raids on a hot racket (seed + 203; set by the session)
+var raids := 0  ## rounds the police broke up
 var _tt := 0.0
 var _te := 0.0
 
@@ -95,6 +102,9 @@ func collect() -> int:
 		var k := expected(m)
 		if k <= 0:
 			continue
+		if _raided(m):
+			parts.append("%s raided" % m)
+			continue
 		last_round[m] = k
 		total += k
 		parts.append("%s $%s" % [m, Py.money(k)])
@@ -112,6 +122,37 @@ func collect() -> int:
 		sess.say("TRIBUTE - the collectors brought $%s (%s)." % [Py.money(total), ", ".join(parts)])
 		sess.bus.emit("tribute", sess.time, "", ["runner"], {"amount": total})
 	return total
+
+
+## How hot the district is for a racket in market m (0..100), or -1 with no case files.
+func heat_of(m: String) -> float:
+	if sess.investigation == null:
+		return -1.0
+	return float(sess.investigation.district_heat.get(m, 0.0))
+
+
+## The odds the collectors are raided in market m this round: 0 below HOT_AT, up to RAID_MAX at 100. 0 when off.
+func raid_odds(m: String) -> float:
+	if not UNDER_HEAT or rng == null:
+		return 0.0
+	var h := heat_of(m)
+	if h < HOT_AT:
+		return 0.0
+	return RAID_MAX * (h - HOT_AT) / (100.0 - HOT_AT)
+
+
+## A round in a hot market: one draw. Raided, the take there is seized, the case warms and the district gets hotter.
+func _raided(m: String) -> bool:
+	var p := raid_odds(m)
+	if p <= 0.0 or rng.random() >= p:
+		return false
+	raids += 1
+	var c = sess.police.case("runner")
+	c.suspicion = minf(100.0, c.suspicion + RAID_CASE)
+	sess.investigation.heat_district(m, RAID_DISTRICT)
+	sess.say("RAID - the task force broke up the collectors' round in the %s: nothing taken there, and the case warms. Close the racket there until it cools." % m)
+	sess.bus.emit("racket_raided", sess.time, "", ["runner", "law"], {"market": m})
+	return true
 
 
 func set_policy(m: String, p: String) -> String:
@@ -198,6 +239,7 @@ func view() -> Dictionary:
 	var markets := []
 	for m in Economy.MARKETS:
 		var share: float = -1.0 if sess.ground == null else sess.ground.org_share(m)
-		markets.append({"market": m, "share": share, "policy": policy[m], "expected": expected(m)})
+		markets.append({"market": m, "share": share, "policy": policy[m], "expected": expected(m), "heat": heat_of(m),
+			"raid": raid_odds(m) if policy[m] != "off" else 0.0})
 	return {"markets": markets, "held": held, "collected": collected, "ransom_cash": ransom_cash,
 		"next_round": maxf(0.0, TRIBUTE_EVERY_S - _tt), "each": RANSOM_EACH}
