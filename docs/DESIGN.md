@@ -2745,3 +2745,27 @@ Measured: the full suite (1,737 tests) passes unchanged with the pool as a prope
 Not yet (stages 3 and 4): squads drawing and fights spending rounds by the types they carry, a dry district's ammunition price
 climbing, resupply cut by who holds a port or road, crates of rounds on trucks and pickup orders and the load planner, and the
 screens (the pack, logistics and the market board).
+
+
+## 92. Ammunition in the war, stage 3 first part (D-61; section 50's third stage)
+
+`GroundWar.AMMO_BY_TYPE` (opt-in with the war; no random draws; squads save their rounds by type). Section 50: "squads draw the
+rounds of the weapons they carry; fights spend them; a squad with no rounds stops firing".
+
+- **Drawing.** A squad raised draws, for each gun type it carries, 90 rounds a man of that type's own rounds from its arsenal
+  (section 91), as many as there are. A man with no gun draws none. (Off: 90 a man from the pool, as before.)
+- **The squad's pool.** `Squad.by` keeps them by type; `Squad.ammo` is now their total, as `Arsenal.ammo` is (the same
+  largest-remainder share, `Arsenal.share`): a fight's per-round cost and a shot on foot take in proportion to what is held, so
+  they spend exactly what they spent before.
+- **A dry gun.** A gun whose type has run out fires like bare hands (`UNARMED_FIRE`), in `fire` and in the range-aware `fire_at`:
+  a machine gun out of belts is a man with nothing, though his mates' rifles still fire. A squad out of every round keeps the old
+  rule, a fifth of its fire, so a fully dry squad behaves as it did.
+- **Back home.** A squad disbanded or wiped out hands what it still carries back to its arsenal by type.
+- **Saves.** Each squad saves `by`; an older save's pool is shared over its loadout.
+
+**Measured** (live_balance noair, 12 seeds x 3 h, against `noammotype`): fights 19.3 both ways; our men lost 5.8 -> 5.4, theirs
+9.0 -> 9.2; seizure losses $3,081 -> $2,096; money p50 $9,690 both ways, net worth p50 $47,953 -> $51,352. A small effect at this
+size: the stand-in's squads seldom run one type dry in three hours. BALANCE entry 86.
+
+Not yet (the rest of stage 3): a district that is fighting raising its ammunition demand and a dry one paying more, holding a port
+or road deciding who can resupply, and crates of rounds on trucks, pickups and the load planner.

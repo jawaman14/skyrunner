@@ -137,7 +137,7 @@ static func capture(s: Session) -> Dictionary:
 			if q.tag == "roadside":
 				continue  # trucks and in-progress fights do not survive a save
 			squads.append({"id": q.id, "faction": q.faction, "kind": q.kind, "men": q.men, "men0": q.men0, "loadout": q.loadout.duplicate(),
-				"ammo": q.ammo, "morale": q.morale, "tag": q.tag, "xp": q.xp, "x": q.x, "y": q.y, "hx": q.home.x, "hy": q.home.y})
+				"ammo": q.ammo, "by": q.by.duplicate(), "morale": q.morale, "tag": q.tag, "xp": q.xp, "x": q.x, "y": q.y, "hx": q.home.x, "hy": q.home.y})
 			if q.leader != "":
 				squads[-1]["leader"] = q.leader  # D-95: only a named squad carries it, so older records read the same
 		d["squads"] = {"list": squads, "serial": s.ground._serial, "full": true}
@@ -590,7 +590,12 @@ static func _restore_squads(s: Session, d: Dictionary) -> void:
 		q.men = int(sd.men)
 		q.men0 = int(sd.men0)
 		q.loadout = _ints(sd.get("loadout", {}))
-		q.ammo = int(sd.get("ammo", 0))
+		if sd.get("by") is Dictionary:  # rounds by type (DESIGN 92); an older save's are shared over the loadout
+			for t in sd.by:
+				if q.by.has(str(t)):
+					q.by[str(t)] = int(sd.by[t])
+		else:
+			q.ammo = int(sd.get("ammo", 0))
 		q.morale = float(sd.get("morale", GroundWar.MORALE0.org))
 		q.tag = str(sd.get("tag", ""))
 		q.xp = float(sd.get("xp", 0.0))

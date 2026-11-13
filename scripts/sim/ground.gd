@@ -78,6 +78,7 @@ const ORG_RECRUIT_S := 1800.0  ## ... a squad at most every 30 minutes, not a ne
 const UPKEEP_MIN := 2.0  ## $ per man per minute
 static var VETERANS := true  ## squads learn from the fights they survive (Mount & Blade's troop tiers)
 static var FAIR_SIGHT := true  ## the police and Los Cuervos act only on trucks a human in their seat would know of (D-36, DESIGN 85)
+static var AMMO_BY_TYPE := true  ## squads draw the rounds of the guns they carry; a gun out of its rounds fires like bare hands (DESIGN 92)
 static var SPREAD := true  ## district patrols claim empty districts and spread out instead of stacking (DESIGN 83)
 const RANKS := ["Green", "Blooded", "Veteran", "Elite"]
 const RANK_XP := [0.0, 4.0, 10.0, 20.0]  ## experience for each rank: a surviving fight is 1, a winning one 2
@@ -99,7 +100,20 @@ class Squad:
 	var men: int
 	var men0: int
 	var loadout := {}
-	var ammo := 0
+	## Rounds by the type of gun (DESIGN 92): `ammo` is their total, kept for every caller that spends rounds as one pool (a fight,
+	## a shot on foot): writing it takes in proportion to what is held and adds in proportion to the guns carried.
+	var by := {"pistol": 0, "rifle": 0, "mg": 0, "rpg": 0}
+	var ammo: int:
+		get:
+			var total := 0
+			for t in by:
+				total += int(by[t])
+			return total
+		set(v):
+			var total := 0
+			for t in by:
+				total += int(by[t])
+			Arsenal.share(by, loadout, maxi(0, int(v)) - total)
 	var morale := 0.8
 	var x := 0.0
 	var y := 0.0
@@ -150,7 +164,7 @@ class Squad:
 	func dict() -> Dictionary:
 		return {"id": id, "faction": faction, "kind": kind, "men": men, "men0": men0, "x": snappedf(x, 0.1),
 			"y": snappedf(y, 0.1), "state": state, "order": order.get("type", ""), "tactic": tactic,
-			"hidden": hidden, "rank": rank(), "xp": snappedf(xp, 0.1), "morale": snappedf(morale, 0.01), "loadout": loadout.duplicate(), "ammo": ammo, "tag": tag,
+			"hidden": hidden, "rank": rank(), "xp": snappedf(xp, 0.1), "morale": snappedf(morale, 0.01), "loadout": loadout.duplicate(), "ammo": ammo, "by": by.duplicate(), "tag": tag,
 			"at": men_at() if members.size() == men else [],
 			"route": Array(route.slice(0, 12)).map(func(p): return [snappedf(p.x, 1.0), snappedf(p.y, 1.0)])}
 
@@ -437,6 +451,8 @@ func fire_at(q: Squad, enemy: Squad) -> float:
 			for m: Agent in enemy.members:
 				d = minf(d, mp.distance_to(m.pos()))
 		var tier: String = guns[k]
+		if _dry(q, tier):
+			tier = ""  # out of its rounds: he fights with what he has
 		var power: float = Arsenal.UNARMED_FIRE if tier == "" else float(Arsenal.TIERS[tier].fire)
 		var reach: float = 50.0 if tier == "" else float(Arsenal.TIERS[tier].range)
 		total += power * eff(d, reach * RANGE_SCALE)
@@ -452,7 +468,13 @@ func safe_zone(q: Squad) -> bool:
 
 ## Firepower per man: the weapons, the ammunition, the nerve.
 func fire(q: Squad) -> float:
-	var p := Arsenal.power(q.loadout, q.men)
+	var loaded := q.loadout
+	if AMMO_BY_TYPE and q.ammo > 0:
+		loaded = {}
+		for t in q.loadout:
+			if not _dry(q, t):
+				loaded[t] = q.loadout[t]
+	var p := Arsenal.power(loaded, q.men)
 	if q.ammo <= 0:
 		p *= 0.2
 	if q.faction == "org" and sess != null and sess.wear != null:
@@ -559,9 +581,15 @@ func recruit(f: String, kind: String, at = null, pay := true):
 	var ars = arsenal(f)
 	if ars != null:
 		q.loadout = ars.issue(q.men)
-		var rounds := mini(ars.ammo, q.men * 90)
-		ars.ammo -= rounds
-		q.ammo = rounds
+		if AMMO_BY_TYPE:  # each gun's own rounds, 90 a man who carries it (DESIGN 92)
+			for t in q.loadout:
+				var take := mini(int(ars.rounds[t]), int(q.loadout[t]) * 90)
+				ars.rounds[t] = int(ars.rounds[t]) - take
+				q.by[t] = take
+		else:
+			var rounds := mini(ars.ammo, q.men * 90)
+			ars.ammo -= rounds
+			q.ammo = rounds
 	else:
 		q.loadout = {"pistol": q.men}
 		q.ammo = q.men * 90
@@ -581,7 +609,7 @@ func disband(q: Squad) -> void:
 	var ars = arsenal(q.faction)
 	if ars != null:
 		ars.give_back(q.loadout)
-		ars.ammo += q.ammo
+		_hand_back(ars, q)
 	q.state = "gone"
 	squads.erase(q)
 
@@ -1259,7 +1287,19 @@ func _gone(q: Squad) -> void:
 	squads.erase(q)
 	var ars = arsenal(q.faction)
 	if ars != null:
-		ars.ammo += q.ammo
+		_hand_back(ars, q)
+
+
+## What a squad still carries goes back to its arsenal, by type (the total as it always was).
+func _hand_back(ars: Arsenal, q: Squad) -> void:
+	for t in q.by:
+		ars.rounds[t] = int(ars.rounds[t]) + int(q.by[t])
+		q.by[t] = 0
+
+
+## A gun is out when the squad has none of its rounds left (DESIGN 92); with no rounds at all the old rule holds (a fifth of the fire).
+func _dry(q: Squad, tier: String) -> bool:
+	return AMMO_BY_TYPE and tier != "" and q.ammo > 0 and int(q.by.get(tier, 0)) <= 0
 
 
 func _end(f: Fight) -> void:
