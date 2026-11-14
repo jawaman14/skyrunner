@@ -56,8 +56,8 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 |---|---|
 | **Holder** | Claude, the only agent: the owner removed Codex from the process (12 November, D-98). Claude merges its own PRs, risk class included, under D-91 (CI green on the head, every finding fixed and answered, its own diff read), and holds every lane. |
 | **Task** | The owner's 10 November order of work (D-97) and the mechanics tree's planned items, in order. Merged through #562 (ammunition stages 1-3, step 2's automation, goals by org); #563 (business signs, DESIGN 98) is the last open PR. Work moved to the owner's Windows PC on 14 November: a plain clone at `Documents\skyrunner`, Godot 4.7.2 in `.tools/`, `gh` signed in; the `skyrunner` MCP did not connect, so `gh` and `tools/test.sh` (Git Bash, `GODOT=.tools/Godot_v4.7.2-stable_win64_console.exe`) stand in. |
-| **Branches / PRs** | `ccr-959fb031-mf68as` (#563). New work: one branch off `main` per slice. |
-| **Next step** | Merge #563 on green CI. Then from the tree: ammunition stage 4 (pack, logistics and market screens for rounds, D-61), graphics (screenshots before and after), and each DESIGN section's "Not yet". Owner questions open: the takeover's "quarter of his cash" (DESIGN 80), succession (D-82), what renown and trust unlock at boss level (51.8). |
+| **Branches / PRs** | `claude/ammo-screens` (ammunition stage 4, DESIGN 99), from the owner's PC. #563 merged. A cloud session (`ccr-959fb031-mf68as`) was also active on 14 November: check open PRs before starting a slice. |
+| **Next step** | Merge the ammo-screens PR on green CI. Then from the tree: graphics (screenshots before and after), and each DESIGN section's "Not yet". Owner questions open: the takeover's "quarter of his cash" (DESIGN 80), succession (D-82), what renown and trust unlock at boss level (51.8). |
 | **Codex task** | None: Codex is removed from the process (D-98). |
 | **Watch out** | The Codex review bot may still post on PRs until its GitHub connector is removed (it fails on usage limits); answer every thread before merging (`ci_then_merge` refuses an unanswered one). Breakaway holds `Session.save()` while a window is open. |
 
@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-14 - Claude, ammunition stage 4 (D-61, DESIGN 99):** the screens: the market board's Ammunition section, the armoury's
+  rounds by type on the stock ledger, the logistics desk and the pack, A orders a crate of the neediest rounds. Screens only; the
+  pack still carries one pool. First slice from the owner's Windows PC (local Godot 4.7.2, `gh`).
 - **2026-11-13 - Claude, the planned, cont.:** the Living District's businesses on the street (DESIGN 98, `BusinessSigns`): a
   sign at each site with name and owner, following the sim. Frontages wait for the map rebuild.
 - **2026-11-13 - Claude, the planned, cont.:** chapter goals count by organisation (`Story.ours`, DESIGN 80): another org's
