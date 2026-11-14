@@ -679,6 +679,13 @@ func key(k: String) -> void:
 		show_feedback("Ordered: the gun dealer brings the crate to the stash nearest the HQ." if rg[0] else str(rg[1]), bool(rg[0]))
 		refresh()
 		return
+	if page == "stock" and k == "a" and s.logistics != null and ammo_open(s):  # rounds for the guns we're shortest of (DESIGN 99)
+		var ars: Arsenal = s.arsenals["org"]
+		var need := Arsenal.neediest(ars.stock, ars.rounds)
+		var ra: Array = s.command(Roles.PILOT, "stock_order", {"good": "ammo", "tier": need, "crates": 1})
+		show_feedback(("Ordered: the gun dealer brings a crate of %s to the stash nearest the HQ." % Arsenal.AMMO[need].name) if ra[0] else str(ra[1]), bool(ra[0]))
+		refresh()
+		return
 	if page == "books" and k == "w" and s.businesses != null:  # wash street cash through a front of ours (DESIGN 51.5)
 		var bw := list.selected_row()
 		if bw >= 0 and bw < _books_rows.size() and str(_books_rows[bw]) != "":
@@ -862,6 +869,10 @@ func _market_page() -> void:
 			var quote: Dictionary = goods[good][market]
 			list.add_row(["%s: %d%% of usual, %s" % [str(market).capitalize(), roundi(float(quote.price) * 100.0), str(quote.trend)]])
 			list.add_row(["  demand / supply: %.2fx" % float(quote.pressure)])
+	if ammo_open(s):  # the gun dealer's rounds join the board (D-61 stage 4, DESIGN 99)
+		list.section("Ammunition (the gun dealer)")
+		for line in ammo_lines(s):
+			list.add_row([line])
 	footer.text = "Relative prices, not a sale quote. Call Benny for the buyer's terms."
 	hints.set_hints(war_hints + [["UP/DOWN", "scroll", "down"], ["ESC", "back", "esc"]])
 
@@ -1022,13 +1033,43 @@ func _stock_page() -> void:
 			list.section("Pickups on")
 			for o in due:
 				list.add_row(["%s from %s to %s: %s" % [str(o.what), o.name, o.place, pickup_state(o, float(s.time))]])
+	if ammo_open(s):  # the armoury's rounds by type (D-61 stage 4, DESIGN 99)
+		var ars: Arsenal = s.arsenals["org"]
+		list.section("The armoury's rounds")
+		list.add_row([Arsenal.rounds_text(ars.rounds)])
 	var t: Dictionary = book.totals
 	footer.text = "Nothing in the stashes, the aircraft or on the road." if book.rows.is_empty() else \
 		"%d lb held, worth $%s at the best open quotes%s." % [int(t.lb), Py.money(int(t.value)), (", %d lb of it hot" % int(t.hot_lb)) if float(t.hot_lb) >= 1.0 else ""]
 	var order_hints := [["B", "order %d lb of grass from the Morettis" % STOCK_ORDER_LB, "b"]]
 	if s.unlocked("guns") and s.arsenals.has("org"):
 		order_hints.append(["C", "order a crate of rifles from the gun dealer", "c"])
+	if ammo_open(s):
+		var org: Arsenal = s.arsenals["org"]
+		order_hints.append(["A", "order a crate of %s" % Arsenal.AMMO[Arsenal.neediest(org.stock, org.rounds)].name, "a"])
 	hints.set_hints([["UP/DOWN", "scroll", "down"]] + order_hints + [["ESC", "back", "esc"]])
+
+
+## Rounds are on the screens when the dealer sells them and the gun trade is open (D-61 stage 4, DESIGN 99).
+static func ammo_open(sess) -> bool:
+	return Arsenal.REALISM and Arsenal.AMMO_TRADE and sess.arsenals.has("org") and sess.unlocked("guns")
+
+
+## The market board's ammunition lines (DESIGN 99): the dealer's price now for a crate of each type's rounds, the war's mark-up,
+## and why he won't deliver, if he won't (DESIGN 91, 93).
+static func ammo_lines(sess) -> Array:
+	var out := []
+	for t in Arsenal.AMMO:
+		var c: Dictionary = Arsenal.AMMO[t]
+		var what := str(c.name)
+		out.append("%s: $%s a crate of %s, %d kg" % [what[0].to_upper() + what.substr(1), Py.money(int(sess.ammo_price(t))),
+			Py.money(int(c.rounds)), int(c.kg)])
+	var war: float = sess.ammo_war_mult()
+	if war > 1.0:
+		out.append("  The street is fighting: rounds cost %d%% more until it quiets." % roundi((war - 1.0) * 100.0))
+	var blocked := str(sess.ammo_blocked())
+	if blocked != "":
+		out.append("  " + blocked)
+	return out
 
 
 ## The market page's lines for a price war or a supply cut under way (PriceWars.view().war).

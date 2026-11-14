@@ -106,6 +106,8 @@ func refresh() -> void:
 		for button in [plus, minus]:
 			if button.get_meta("pack_action") == selected and not button.disabled:
 				button.grab_focus()
+	if ars != null:  # what the rack's rounds are for (D-61 stage 4, DESIGN 99); the pack itself carries one pool
+		rows.add_child(UIStyle.caption("The armoury's rounds: " + Arsenal.rounds_text(ars.rounds)))
 
 
 func _act(err: String) -> void:

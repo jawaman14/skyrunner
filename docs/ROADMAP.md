@@ -386,7 +386,10 @@ and all of it ties into the ground and turf war. The design, grounded in `arsena
    **First part built (DESIGN 92):** squads draw each gun's own rounds, a gun out of them fires like bare hands, the rest goes
    back by type. **Second part built (DESIGN 93):** rounds dearer while the street is shooting, no delivery into streets Los Cuervos
    hold. Still to do: crates of rounds on trucks and pickups.
-4. **The screens.** The pack and logistics menus, and the market board (it already carries guns; ammunition joins it). (Codex)
+4. **The screens.** The pack and logistics menus, and the market board (it already carries guns; ammunition joins it). (Claude)
+   **Built (DESIGN 99):** the market board's Ammunition section (crate prices, the war's mark-up, a blocked delivery's reason), the
+   armoury's rounds by type on the stock ledger, the logistics desk and the pack, and A on the stock ledger orders a crate of the
+   rounds we are shortest of. Screens only, so no BALANCE entry.
 
 Order: after the buyers' orders (D-59) land; each stage needs a BALANCE entry because the war economy is sensitive to it.
 

@@ -2877,3 +2877,22 @@ sim and changes nothing, so it has no switch and no draws.
   of labels from the air.
 - **Not yet.** The sites are the sim's points on the current city map, some on the pavement by the road, not storefronts; real
   frontages wait for the map rebuild (D-86), which places the district's buildings. The signs move with the data when it does.
+
+## 99. Ammunition on the screens (D-61 stage 4; section 50's last stage)
+
+Screens only: they read `Arsenal.rounds`, `Session.ammo_price` and `ammo_blocked` (sections 91 and 93) and order through the
+existing `stock_order` (section 94). No sim rule, save or draw changes. Shown wherever the dealer sells rounds (`Arsenal.AMMO_TRADE`)
+and guns are open (`PhoneMenu.ammo_open`).
+
+- **The market board** (phone, Work > Market) gains an Ammunition section: the dealer's price now for a crate of each type's rounds,
+  with its size and weight; a line for the war's mark-up while the street is fighting; and, when Los Cuervos hold the armoury's
+  streets, the reason he won't deliver.
+- **The stock ledger** (Empire > Money) lists the armoury's rounds by type (`Arsenal.rounds_text`), and **A** orders a crate on the
+  pickup flow for the guns we are shortest of: the fewest rounds a gun held, ties to the better gun, rifle rounds with no guns
+  (`Arsenal.neediest`). Like C for a crate of rifles, it goes to the stash nearest the HQ.
+- **The logistics desk** adds the rounds by type to its armoury line (the view carries `armoury.rounds`).
+- **The pack on foot** shows the armoury's rounds by type under its rows. The pack itself still carries one pool of rounds, drawn
+  in proportion as before (section 91); carrying them by type would change saves and the parity runs, so it waits for a reason.
+
+Not yet: choosing the type and the number of crates from the phone (A takes the neediest, one crate), and Los Cuervos' own resupply
+facing the dealer's rule (section 93).
