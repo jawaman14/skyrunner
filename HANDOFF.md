@@ -55,9 +55,9 @@ write it down. Nothing else is needed after a cut-off: the baton says where work
 | | |
 |---|---|
 | **Holder** | Claude, the only agent: the owner removed Codex from the process (12 November, D-98). Claude merges its own PRs, risk class included, under D-91 (CI green on the head, every finding fixed and answered, its own diff read), and holds every lane. |
-| **Task** | The owner's 10 November order of work (D-97). Done and merged: ammunition stage 1 (#540), price wars (#541), investments (#542), the takeover (#543), the stock rework's later parts (#544), weapons and vehicles wear (#545); the road paint and pavements fix is the last open PR. Left: more gameplay additions and graphics, and the mechanics-tree artifact (updated this session). |
-| **Branches / PRs** | `ccr-959fb031-mf68as` (the cloud session's pinned branch; one PR at a time). |
-| **Next step** | Merge the road-paint PR on green CI. Then, from the order of work: graphics (look at the game with tools/screenshots.sh before and after), ammunition stage 2 (rounds as a good, D-61), and the open items each DESIGN section from 77 to 82 lists under "Not yet". The owner's open question: the takeover's "quarter of his cash" (DESIGN 80). |
+| **Task** | The owner's 10 November order of work (D-97) and the mechanics tree's planned items, in order. Merged through #562 (ammunition stages 1-3, step 2's automation, goals by org); #563 (business signs, DESIGN 98) is the last open PR. Work moved to the owner's Windows PC on 14 November: a plain clone at `Documents\skyrunner`, Godot 4.7.2 in `.tools/`, `gh` signed in; the `skyrunner` MCP did not connect, so `gh` and `tools/test.sh` (Git Bash, `GODOT=.tools/Godot_v4.7.2-stable_win64_console.exe`) stand in. |
+| **Branches / PRs** | `ccr-959fb031-mf68as` (#563). New work: one branch off `main` per slice. |
+| **Next step** | Merge #563 on green CI. Then from the tree: ammunition stage 4 (pack, logistics and market screens for rounds, D-61), graphics (screenshots before and after), and each DESIGN section's "Not yet". Owner questions open: the takeover's "quarter of his cash" (DESIGN 80), succession (D-82), what renown and trust unlock at boss level (51.8). |
 | **Codex task** | None: Codex is removed from the process (D-98). |
 | **Watch out** | The Codex review bot may still post on PRs until its GitHub connector is removed (it fails on usage limits); answer every thread before merging (`ci_then_merge` refuses an unanswered one). Breakaway holds `Session.save()` while a window is open. |
 
