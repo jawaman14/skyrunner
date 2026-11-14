@@ -114,7 +114,8 @@ Order (D-75): land the queue above and finish heat step 1, then:
    - Progress on 8 November: L-1 to L-7 are built (DESIGN §64 to §71): the twelve businesses with tills and costs, the
      product chain's money and the legit chain on the ledger and inventory, the Morettis and Los Cuervos on org AI v1, the books
      with staff and orders on the phone, delegated deliveries (D-10), leaving the district, and the acceptance suite with P1 and
-     `cli.gd -- days`. Placing the businesses in the 3D world and the owner's G1 playtest remain. The days sim's first read
+     `cli.gd -- days`. The businesses are on the street as signs at their sites (DESIGN 98, 13 November; frontages wait for the map rebuild);
+     the owner's G1 playtest remains. The days sim's first read
      (fronts with costs and no revenue) is answered by laundering (DESIGN §72, 9 November): both the club and the Morettis
      now run in the black; the prices are for the owner to weigh at G1.
 4. **After the gate:** organisation depth (hierarchy, schedules, budgets, conditional orders; trust D-11's table is built, DESIGN 76), then the campaign pivot

@@ -2863,3 +2863,17 @@ id). Same switch, limit and permissions; no random draws.
   has no screen yet either).
 - **Why not hours or corners.** The ROADMAP's examples were a lookout's watch hours and a dealer's corner by the time of day; a session
   is one night with no day clock, and dealers work the market rather than a corner, so neither has anything to act on yet.
+
+## 98. The Living District's businesses on the street (L-1's 3D placement)
+
+`scripts/render/business_signs.gd` (`BusinessSigns`, made by the pilot app when the game has `Businesses`). Drawn only: it reads the
+sim and changes nothing, so it has no switch and no draws.
+
+- **A sign at each site.** A post at the business's site (`Businesses.DATA`'s `site`), on the ground, with a two-line label: the name,
+  then the kind and whose it is ("ours", "Los Cuervos", "The Morettis", "for sale: $42,000", "not for sale"), in that org's colour.
+- **It follows the sim.** Every thirty frames (twice a second at 60 fps) the names and colours are read again, on the pilot app's
+  slow tick with the goal beacons (twelve labels, so it costs nothing), so a business bought, taken or sold changes its sign.
+- **Close up only.** Shown within 140 m of the camera (the walker's, the car's or the chase camera), so the district isn't a wall
+  of labels from the air.
+- **Not yet.** The sites are the sim's points on the current city map, some on the pavement by the road, not storefronts; real
+  frontages wait for the map rebuild (D-86), which places the district's buildings. The signs move with the data when it does.
