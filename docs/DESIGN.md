@@ -1708,6 +1708,8 @@ saves or random draws are reviewed by the other agent.
 
 **Open for the owner:** where the pickup happens (a fixed spot or the contact comes to a stash), the warehouse cap (a count, a
 weight, or floor space you buy), what Renown and trust unlock at boss level, and whether the job board is limited to chapters 1 and 2.
+**Answered 22 November:** the cap is by weight (D-103); Renown is infamy, more heat from the other factions and higher-risk,
+higher-reward work (D-102).
 
 
 ### 51.9 Draft parameters (first drafts by MiMo, reviewed; every number is a starting point for balance runs)
@@ -2465,9 +2467,8 @@ game ever has one happen.
 Not built here: a scene for it, succession (D-82) and the boss layer's new tools (D-58, D-62). **The chapter's goals count by
 organisation** (13 November): `Story.ours` lets through only an event our org did (its actor's org, or the org it names, is `org`) or
 the world's own (none); what the Morettis' or Los Cuervos' AI does through `command_as` is theirs. Nothing they do today reaches a
-goal, so it changes no game; it keeps the goals honest as their AI grows. Succession waits on the owner: D-64 says the pilot is
-never held, so "when the boss is jailed" never happens to the player, and a death has no rule yet. **Open for the owner:** "a quarter of his cash" is read as the street cash in the stashes; the alternative, taking
-three quarters of the safe as well, would also take the player's own savings.
+goal, so it changes no game; it keeps the goals honest as their AI grows. Succession (D-101, 22 November): the boss dies only when a
+rival gang kills him (never jailed, D-64); a chain of command, with the player's close friend next in line, who helps the player. **Answered by the owner (D-100, 22 November):** "a quarter of his cash" is the street cash in the stashes; the safe is not touched.
 
 ## 81. The stock rework's later parts: bulk sales by grade, the gun dealer on the pickup flow, intercepted pickups (section 51)
 
@@ -2722,7 +2723,8 @@ chapter still finishes however long it takes, so the owner's rule that chapter g
 
 Off, no clock and no bonus.
 
-Not yet, and open for the owner (section 51.8): what renown and crew trust unlock at boss level, the other half of slice 7.
+Not yet: the other half of slice 7. The owner answered (D-102): renown is infamy, so a bigger name draws more heat from the
+other factions and opens higher-risk, higher-reward work.
 
 
 ## 91. Ammunition as a good, stage 2 (D-61; section 50's second stage)
