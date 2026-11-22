@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-22 - Claude:** the owner answered four questions (D-100 to D-103): the takeover takes the street cash only;
+  succession on a rival gang's hit, with a chain of command and the player's close friend next in line; renown is infamy (more
+  heat, higher-risk, higher-reward work); storage caps by weight. D-101 and D-102 are buildable now.
 - **2026-11-13 - Claude, the planned, cont.:** the Living District's businesses on the street (DESIGN 98, `BusinessSigns`): a
   sign at each site with name and owner, following the sim. Frontages wait for the map rebuild.
 - **2026-11-13 - Claude, the planned, cont.:** chapter goals count by organisation (`Story.ours`, DESIGN 80): another org's
