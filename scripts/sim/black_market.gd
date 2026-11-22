@@ -24,7 +24,7 @@ const FUEL_LB := 400.0
 const FUEL_PRICE := 150
 const FILE_HEAT := 20.0
 const FILE_PRICE := 4000  ## times (1 + renown tier)
-const HOT_PAY := 1.5
+const HOT_PAY := 1.5  ## plus Renown.HOT_PER_TIER a renown tier (D-102)
 const HOT_RENOWN := 20.0
 const HOT_TAG := "HOT JOB OF THE WEEK: "
 const CHECK_S := 60.0
@@ -186,11 +186,16 @@ func _post_hot() -> void:
 		if best == null:
 			continue
 		hot = {"job_id": int(best.id), "code": code, "base": int(best.payout)}
-		best.payout = int(round(float(best.payout) * HOT_PAY))
+		best.payout = int(round(float(best.payout) * hot_pay()))
 		best.title = HOT_TAG + str(best.title)
 		sess.say("The week's hot job is at %s: %s, $%s." % [World.airfield(code).name, str(best.title).trim_prefix(HOT_TAG),
 			Py.money(int(best.payout))])
 		return
+
+
+## The hot job's pay multiple: HOT_PAY, and more for a name the street knows (D-102).
+func hot_pay() -> float:
+	return HOT_PAY + Renown.hot_bonus_of(sess)
 
 
 func _on_delivered(e) -> void:
@@ -214,8 +219,8 @@ func rows() -> Array:
 		var taken: bool = j == null and sess.active_jobs.any(func(x): return x.id == int(hot.job_id))
 		if j != null or taken:
 			var af := World.airfield(str(hot.code))
-			out.append(["The hot job: at %s%s (x%.1f pay, +%d renown)" % [af.name if af != null else str(hot.code), ", taken" if taken else "",
-				HOT_PAY, int(HOT_RENOWN)], -1])
+			out.append(["The hot job: at %s%s (x%.2f pay, +%d renown)" % [af.name if af != null else str(hot.code), ", taken" if taken else "",
+				hot_pay(), int(HOT_RENOWN)], -1])
 	for i in offers.size():
 		var o: Dictionary = offers[i]
 		out.append([("SOLD  " if bool(o.sold) else "") + str(o.text), -1 if bool(o.sold) else i])

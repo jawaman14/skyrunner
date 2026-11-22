@@ -254,6 +254,7 @@ func _intercepted(o: Dictionary, watched: bool) -> bool:
 	var tr := Trust.of_session(sess)
 	if tr != null:
 		p *= tr.rival_odds()  # a truce with Los Cuervos (DESIGN 84; the same draw)
+	p *= Renown.rival_mult_of(sess)  # infamy draws them (D-102; the same draw)
 	if rng.random() >= p:
 		return false
 	(o.order as PickupOrder).intercept()
