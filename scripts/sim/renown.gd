@@ -13,11 +13,22 @@ extends RefCounted
 ##   * and the task force watches the famous: suspicion cools 6% slower a tier
 ## Off for the replays (Renown.ENABLED = false); a session asks for it with `renown: true`.
 ##
+## Infamy (owner, 22 Nov, D-102: "renown is the same as infamy, so more heat from other factions and higher-risk rewards"; DESIGN 100):
+##   * Los Cuervos come for a bigger name: their odds of ambushing our trucks and taking our pickups x (1 + RIVAL_PER_TIER x tier)
+##   * the heat dial's Infamous setting opens at tier INFAMOUS_TIER (Feared): the most heat for the most pay
+##   * the week's hot job pays HOT_PER_TIER more a tier
+## Behind INFAMY (in the parity set); no random draws: it scales odds that are already drawn.
+##
 ## Lying low (owner, 4 Nov, D-94: the World of Warcraft study's rested XP). Time away from hot work is not wasted: the longer since
 ## the last hot load (delivered, seized or busted), the more renown the next hot delivery earns, up to double after half an hour.
 ## A reward for pacing yourself, never a penalty for playing on. It reads the event times on the bus, so it needs no clock either.
 
 static var ENABLED := true
+static var INFAMY := true
+
+const RIVAL_PER_TIER := 0.15
+const HOT_PER_TIER := 0.25
+const INFAMOUS_TIER := 3
 
 const TIERS := [0.0, 40.0, 120.0, 300.0, 650.0]
 const NAMES := ["Nobody", "A name on the street", "Known", "Feared", "A legend"]
@@ -168,10 +179,29 @@ func heat_mult() -> float:
 	return 1.0 - 0.06 * tier()
 
 
+## How much more Los Cuervos come for us (D-102): 1 for a nobody, 1.6 for a legend.
+func rival_mult() -> float:
+	return 1.0 + RIVAL_PER_TIER * tier() if INFAMY else 1.0
+
+
+## The session's rival multiplier, 1 without renown.
+static func rival_mult_of(sess) -> float:
+	return sess.renown.rival_mult() if sess != null and sess.get("renown") != null else 1.0
+
+
+## The week's hot job's extra pay a tier (D-102).
+static func hot_bonus_of(sess) -> float:
+	return HOT_PER_TIER * sess.renown.tier() if INFAMY and sess != null and sess.get("renown") != null else 0.0
+
+
 static func effects_text(t: int) -> String:
 	if t <= 0:
 		return "Nobody knows you yet."
-	return "Better recruits (+%d skill), buyers pay +%.1f%%, and the task force cools %d%% slower." % [3 * t, 1.5 * t, 6 * t]
+	var s := "Better recruits (+%d skill), buyers pay +%.1f%%, and the task force cools %d%% slower." % [3 * t, 1.5 * t, 6 * t]
+	if INFAMY:
+		s += " Los Cuervos come for you %d%% more often; the week's hot job pays +%d%%%s." % [int(round(100.0 * RIVAL_PER_TIER * t)),
+			int(round(100.0 * HOT_PER_TIER * t)), "; the heat dial goes to Infamous" if t >= INFAMOUS_TIER else ""]
+	return s
 
 
 func view() -> Dictionary:

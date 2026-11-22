@@ -21,6 +21,7 @@ const LEVELS := [
 	{"name": "Steady", "heat": 1.0, "pay": 1.0},
 	{"name": "Hot", "heat": 1.3, "pay": 1.2},
 	{"name": "Burning", "heat": 1.6, "pay": 1.45},
+	{"name": "Infamous", "heat": 2.0, "pay": 1.75, "tier": Renown.INFAMOUS_TIER},  ## D-102: opens for a Feared name
 ]
 const STEADY := 1
 
@@ -35,6 +36,16 @@ func _init(sess_) -> void:
 
 func setting() -> Dictionary:
 	return LEVELS[level]
+
+
+## The hottest setting open: Infamous only for a name the street fears (D-102).
+func top() -> int:
+	var t: int = sess.renown.tier() if sess.get("renown") != null and Renown.INFAMY else 0
+	var out := 0
+	for i in LEVELS.size():
+		if t >= int(LEVELS[i].get("tier", 0)):
+			out = i
+	return out
 
 
 func pay_mult() -> float:
@@ -55,7 +66,9 @@ func set_level(to: int) -> String:
 	if not ENABLED:
 		return "There is no heat dial in this game."
 	if to < 0 or to >= LEVELS.size():
-		return "The dial goes from Quiet to Burning."
+		return "The dial goes from Quiet to %s." % LEVELS[top()].name
+	if to > top():
+		return "Infamous opens when your name is %s." % Renown.NAMES[Renown.INFAMOUS_TIER]
 	if to == level:
 		return ""
 	if not sess.parked:

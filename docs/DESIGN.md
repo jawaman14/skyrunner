@@ -2879,3 +2879,27 @@ sim and changes nothing, so it has no switch and no draws.
   of labels from the air.
 - **Not yet.** The sites are the sim's points on the current city map, some on the pavement by the road, not storefronts; real
   frontages wait for the map rebuild (D-86), which places the district's buildings. The signs move with the data when it does.
+
+## 100. Infamy: a bigger name draws more heat and opens bigger work (D-102)
+
+The owner, 22 November: "renown is the same as infamy, so more heat from other factions and higher-risk rewards". This answers section
+51.8's "what Renown unlocks at boss level" and finishes slice 7. Switch `Renown.INFAMY` (in the parity set); no random draws: it scales
+odds that are already drawn and pays that are already paid. Only a game with renown (`renown: true`) has any of it.
+
+| Renown tier | Los Cuervos' odds | The week's hot job pays | The heat dial |
+|---|---|---|---|
+| 0 Nobody | x1.00 | x1.50 | Quiet to Burning |
+| 1 A name on the street | x1.15 | x1.75 | |
+| 2 Known | x1.30 | x2.00 | |
+| 3 Feared | x1.45 | x2.25 | Infamous opens: the law notices x2.0, board jobs pay x1.75 |
+| 4 A legend | x1.60 | x2.50 | |
+
+- **More heat from the other factions.** Los Cuervos' odds of sending a squad to ambush one of our trucks (`GroundWar`, the same draw
+  the truce of section 84 scales) and of taking a pickup as its window opens (`Pickups._intercepted`) are multiplied by
+  `1 + 0.15 x tier`, after the truce. A truce with them still holds a famous name back; a legend at war is hit 60% more often. The task
+  force's side was already there: suspicion cools 6% slower a tier (section 25).
+- **Higher-risk, higher-reward work.** The heat dial (D-95) gains a fifth setting, Infamous, that only a Feared name can turn to; and the
+  week's hot job (D-95) pays 0.25 more a tier on top of its x1.5.
+- **Shown** on the renown panel's line of what the name is worth, and in the dial's refusal ("Infamous opens when your name is Feared").
+- **Not yet:** the Morettis' side. They deal by trust and offers (section 76), not by squads, so a bigger name has nothing to scale there
+  yet. Succession (D-101) will use infamy for the odds of a hit on the boss.

@@ -67,6 +67,9 @@ func _initialize() -> void:
 	if a.has("noammotype"):  # the same run with squads drawing rounds from one pool (DESIGN 92)
 		GroundWar.AMMO_BY_TYPE = false
 		a.erase("noammotype")
+	if a.has("noinfamy"):  # the same run where renown draws no extra heat nor pay (D-102, DESIGN 100)
+		Renown.INFAMY = false
+		a.erase("noinfamy")
 	if a.has("nowars"):  # the same run without price wars and supply cuts (DESIGN 78)
 		PriceWars.ENABLED = false
 		a.erase("nowars")
