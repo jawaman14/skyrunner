@@ -1,0 +1,221 @@
+{
+ "version": 1,
+ "approved": "2026-11-24 (D-106)",
+ "size_m": 32000,
+ "flight_minutes": [
+  2,
+  8
+ ],
+ "cruise_kt": 110,
+ "climb_and_approach_min": 1.5,
+ "note": "The map rebuild's L0 (docs/MAP_REDESIGN.md section 3): the owner-approved step-0 sketch as data. Strip positions are anchors; strips.json (L1) stays the authority for each strip's spot, heading and length until L1 moves PNR.",
+ "strips": [
+  {
+   "id": "S1",
+   "code": "HAR",
+   "status": "keep",
+   "at": [
+    -8003,
+    -10117
+   ],
+   "two_way": true,
+   "note": "The hub on reclaimed land west of town. D-37 already cleared the end-0 hill; L2 flattens both approach cones."
+  },
+  {
+   "id": "S2",
+   "code": "VAL",
+   "status": "keep",
+   "at": [
+    4845,
+    -4823
+   ],
+   "two_way": true,
+   "note": "Becomes the edge of Valle Verde town (D-46): the town grows on the strip's south side, clear of both cones."
+  },
+  {
+   "id": "S3",
+   "code": "FRM",
+   "status": "keep",
+   "at": [
+    -1673,
+    -2707
+   ],
+   "two_way": true,
+   "note": "The farm strip in the plain. The barn stash stays beside it."
+  },
+  {
+   "id": "S4",
+   "code": "MGR",
+   "status": "keep",
+   "at": [
+    -12032,
+    -9107
+   ],
+   "two_way": true,
+   "note": "The sand-bar strip in the estuary. 340 m stays short on purpose: it is the shady strip close to the hub."
+  },
+  {
+   "id": "S5",
+   "code": "QRY",
+   "status": "keep",
+   "at": [
+    10704,
+    702
+   ],
+   "two_way": false,
+   "note": "Stays one-way (land over the east end only): the quarry face is the point of it. 620 m from D-21."
+  },
+  {
+   "id": "S6",
+   "code": "EGL",
+   "status": "change",
+   "at": [
+    -7179,
+    8124
+   ],
+   "two_way": true,
+   "note": "Keep the spot; L2 drops the 170 m cliffs past both ends to a 3\u00b0 slope so the mesa is flyable both ways. Today's bots overrun it."
+  },
+  {
+   "id": "S7",
+   "code": "PNR",
+   "status": "change",
+   "at": [
+    4200,
+    6900
+   ],
+   "two_way": false,
+   "note": "The only strip over 8 minutes (8.4). I propose moving it 1.5 km south-west onto the ridge's lower shoulder (7.7 min) and keeping it one-way."
+  },
+  {
+   "id": "S8",
+   "code": "COV",
+   "status": "keep",
+   "at": [
+    12243,
+    -10377
+   ],
+   "two_way": true,
+   "note": "The beach strip in the cove, with the boat lane out to the cays."
+  },
+  {
+   "id": "S9",
+   "code": "ISL",
+   "status": "keep",
+   "at": [
+    13200,
+    -13300
+   ],
+   "two_way": true,
+   "note": "The cay strip offshore."
+  }
+ ],
+ "sites": [
+  {
+   "id": "A1",
+   "name": "The club (Rafa's, then yours)",
+   "enterable": true,
+   "status": "keep",
+   "anchors": [
+    [
+     -1500,
+     -9700
+    ]
+   ],
+   "note": "Downtown HQ. Enterable (D-45)."
+  },
+  {
+   "id": "A2",
+   "name": "Customs house",
+   "enterable": true,
+   "status": "keep",
+   "anchors": [
+    [
+     950,
+     -11170
+    ]
+   ],
+   "note": "On the docks east of the basin. Enterable (D-45)."
+  },
+  {
+   "id": "A3",
+   "name": "Your hangar at HAR",
+   "enterable": true,
+   "status": "keep",
+   "anchors": [
+    [
+     -7400,
+     -10500
+    ]
+   ],
+   "note": "South side of the hub. Enterable (D-45)."
+  },
+  {
+   "id": "A4",
+   "name": "Stash houses (8)",
+   "enterable": true,
+   "status": "keep",
+   "anchors": [
+    [
+     -700,
+     -3350
+    ],
+    [
+     -11200,
+     -8350
+    ],
+    [
+     -1700,
+     -10950
+    ],
+    [
+     1500,
+     -9500
+    ],
+    [
+     1500,
+     7450
+    ],
+    [
+     9750,
+     650
+    ],
+    [
+     13350,
+     -12700
+    ],
+    [
+     -5500,
+     5500
+    ]
+   ],
+   "note": "Barn, shack, Warehouse 7, the lock-up, jungle camp, quarry shed, cay boathouse, hillside villa, all where they are today. The ones you load at are enterable (D-45)."
+  },
+  {
+   "id": "A5",
+   "name": "The twelve businesses",
+   "enterable": false,
+   "status": "keep",
+   "anchors": [
+    [
+     -600,
+     -10200
+    ]
+   ],
+   "note": "The Living District's businesses stay in San Telmo Centro; L7 gives each a real storefront on a lot."
+  },
+  {
+   "id": "A6",
+   "name": "Rafa's hacienda",
+   "enterable": false,
+   "status": "new",
+   "anchors": [
+    [
+     -3300,
+     -4600
+    ]
+   ],
+   "note": "Proposed: on a rise in the plain west of the north road, for chapters 1 to 4. Not on today's map; say if you want it elsewhere or not at all."
+  }
+ ]
+}

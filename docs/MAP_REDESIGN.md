@@ -242,3 +242,19 @@ site anchors) went to the owner the same day as a page to mark up; its approval 
    the other buildings stay solid.
 4. **A second town?** Valle Verde could become a small town with streets instead of an airport in fields. That gives the
    presentation layers a second district identity.
+
+## 8. Progress
+
+- **24 November 2026: step 0 passed.** The owner approved the layout sketch in full (D-106) and kept 32 x 32 km (D-104).
+- **Step 1, first part: the layout as data.** The approved sketch is written out as the authored files the build tool will read:
+  `data/maps/costa_brava/brief.json` (L0: the flight-time target, the strip anchors with La Selva moved 1.5 km south-west, the site
+  anchors), `districts.json` (L4: thirteen polygons, Valle Verde town cut out of the Farm Plain) and `roads_plan.json` (L5: the
+  main roads by class). `strips.json` (L1) is unchanged and stays the authority for each strip until L1 moves PNR.
+  `tools/map_preview.gd` draws them top-down over today's terrain and land use, the step-1 check that the layout fits the ground.
+  **What the preview showed:** the real coast is a rounded island reaching about 13 km north, not the sketch's square edge, so the
+  northern districts run out over the sea (L4 clips them to the coast); the moved PNR lands on the range's southern slope, where L2
+  must cut its pad; and the real south coast reaches further south than the sketch drew it, so the coastal districts now run to
+  the sea (the sketch's lines, otherwise as approved). `tests/test_map_layout_data.gd` checks that every point on land is in exactly
+  one district. Nothing the game loads has changed yet: it still reads MapCity's ten rectangles and today's roads.
+- **Next in step 1:** the build tool's skeleton (`tools/build_map.gd`, per-layer seeds, `--from`), the loader in `map_city.gd`, and
+  the map audit run against the current map as a baseline.

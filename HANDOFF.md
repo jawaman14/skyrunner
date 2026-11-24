@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-24 - Claude:** map rebuild step 1, first part (MAP_REDESIGN section 8): the approved layout as data
+  (`brief.json`, `districts.json`, `roads_plan.json`) and `tools/map_preview.gd`, a top-down picture over today's terrain. Next:
+  `tools/build_map.gd` and the loader.
 - **2026-11-24 - Claude:** the owner approved the map sketch in full (D-106). Vehicles rebuilt at their reference cars'
   dimensions (D-107, DESIGN 102). The people's clothes by faction (D-108, DESIGN 103) in our own Vice City-style palettes until the
   owner's style guide image arrives (D-109).

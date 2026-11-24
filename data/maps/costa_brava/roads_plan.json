@@ -1,0 +1,254 @@
+{
+ "version": 1,
+ "note": "L5's main roads as approved in the sketch (D-106): the class and the course; the planner routes them over the shaped terrain in L5.",
+ "roads": [
+  {
+   "id": "R1",
+   "name": "Coastal highway",
+   "class": "road",
+   "status": "keep",
+   "points": [
+    [
+     -12000,
+     -9400
+    ],
+    [
+     -8600,
+     -9750
+    ],
+    [
+     -6200,
+     -9900
+    ],
+    [
+     -4600,
+     -10150
+    ],
+    [
+     -1200,
+     -10150
+    ],
+    [
+     2200,
+     -10000
+    ],
+    [
+     4800,
+     -9300
+    ],
+    [
+     7800,
+     -8700
+    ],
+    [
+     10300,
+     -8900
+    ],
+    [
+     12000,
+     -9900
+    ]
+   ],
+   "note": "Estuary to the cove along the south coast, through the city as a real street. Extended to the cove strip."
+  },
+  {
+   "id": "R2",
+   "name": "North road",
+   "class": "road",
+   "status": "keep",
+   "points": [
+    [
+     -1000,
+     -9900
+    ],
+    [
+     -900,
+     -7600
+    ],
+    [
+     -400,
+     -5600
+    ],
+    [
+     -900,
+     -3400
+    ],
+    [
+     -1600,
+     -1200
+    ],
+    [
+     -1900,
+     1400
+    ],
+    [
+     -900,
+     3800
+    ],
+    [
+     1200,
+     6200
+    ],
+    [
+     1600,
+     7600
+    ]
+   ],
+   "note": "Town, the plain, Finca Morales, up to the jungle camp."
+  },
+  {
+   "id": "R3",
+   "name": "East road",
+   "class": "road",
+   "status": "change",
+   "points": [
+    [
+     2200,
+     -10000
+    ],
+    [
+     2900,
+     -7400
+    ],
+    [
+     4000,
+     -5600
+    ],
+    [
+     5400,
+     -4000
+    ],
+    [
+     7300,
+     -2600
+    ],
+    [
+     9100,
+     -300
+    ],
+    [
+     9800,
+     800
+    ]
+   ],
+   "note": "Now runs through Valle Verde town's main street instead of skirting it, then on to the quarry."
+  },
+  {
+   "id": "R4",
+   "name": "Estuary track",
+   "class": "track",
+   "status": "keep",
+   "points": [
+    [
+     -6200,
+     -9900
+    ],
+    [
+     -7800,
+     -8600
+    ],
+    [
+     -9900,
+     -7400
+    ],
+    [
+     -11700,
+     -8000
+    ]
+   ],
+   "note": "To the mangrove shack and the sand bar."
+  },
+  {
+   "id": "R5",
+   "name": "Sierra road",
+   "class": "road",
+   "status": "change",
+   "points": [
+    [
+     -900,
+     -3400
+    ],
+    [
+     -4200,
+     2200
+    ],
+    [
+     -5600,
+     5600
+    ],
+    [
+     -7000,
+     7600
+    ]
+   ],
+   "note": "To the hillside villa, extended up to the mesa strip so EGL has a road."
+  },
+  {
+   "id": "R6",
+   "name": "City ring",
+   "class": "road",
+   "status": "new",
+   "points": [
+    [
+     -4600,
+     -10150
+    ],
+    [
+     -4200,
+     -8900
+    ],
+    [
+     -1000,
+     -8400
+    ],
+    [
+     2600,
+     -8700
+    ],
+    [
+     2200,
+     -10000
+    ]
+   ],
+   "note": "New: a ring north of downtown, so a checkpoint on the highway can be driven round (lesson 3)."
+  },
+  {
+   "id": "R7",
+   "name": "Jungle track",
+   "class": "track",
+   "status": "new",
+   "points": [
+    [
+     1600,
+     7600
+    ],
+    [
+     3000,
+     7400
+    ],
+    [
+     4200,
+     6900
+    ]
+   ],
+   "note": "New: camp to the La Selva strip (today the strip has no track)."
+  },
+  {
+   "id": "R8",
+   "name": "Quarry and cove tracks",
+   "class": "track",
+   "status": "keep",
+   "points": [
+    [
+     9800,
+     800
+    ],
+    [
+     10600,
+     700
+    ]
+   ],
+   "note": "The last few hundred metres to the quarry strip; the cove strip now sits on the highway (R1)."
+  }
+ ]
+}
