@@ -194,6 +194,8 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Look and sound | Terrain, sea, sky, vegetation, lights, fire, smoke, wet streets | Built |  |  |
 | Look and sound | Kenney/KayKit/Quaternius models, docks and downtown dress | Built |  |  |
 | Look and sound | Period vehicles and Costa Brava frontage | Built | Merged after screenshot review | #373 · #374 |
+| Look and sound | Vehicles at their reference cars' dimensions | Built | Twelve body styles authored at real era cars' length, width, height, wheelbase and glasshouse; fictional makes (DESIGN 102, D-107) |  |
+| Look and sound | What the people wear, by faction | Built | A 1980s Miami-crime look painted over the kit's bodies: pastel linen for our crew, tropical prints and gold for Los Cuervos, pinstripes for the Morettis, light-blue uniforms; animations kept (DESIGN 103, D-108) |  |
 | Look and sound | Lane paint and town pavements | Built | The lane lines were never drawn and the pavements rendered dark (fixed 11 Nov: paint in 2 km tiles, strips wound face-up) |  |
 | Look and sound | Chart labels laid out without overlaps | Built | The M chart lays its labels out together by priority (waypoint, goals, places, then moving things, stashes, trucks, districts): each moves below, above or to the other side of its mark when crowded, or is left off; round HAR five names printed over one another until 12 Nov |  |
 | Street war | District control calibrated | Built | Gangs claim empty districts and spread their squads instead of stacking; a district is held only with real presence (about ten minutes of four men), for the week's goal and the turf map (DESIGN 83, `GroundWar.SPREAD`) |  |

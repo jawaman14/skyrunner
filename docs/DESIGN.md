@@ -2945,3 +2945,64 @@ November: the friend is a new character.
 Not yet: a scene or a call for the hit; the number two's other help (running the desk while the boss flies, advice on the phone);
 a new number two named after he takes the seat; the Morettis' or the police's hand in a hit. No BALANCE entry: it moves renown
 and a man off the payroll, not money.
+
+## 102. Road vehicles at their reference cars' dimensions (owner, 24 November 2026, D-107)
+
+The owner: "get the manufacturing details of cars of that era like the dimensions of the cars and their shells, then use that to
+make the new models". `scripts/render/period_vehicles.gd` (`PeriodVehicles.SPEC`). Drawn only: collision and handling stay with
+their callers; no switch, no draws.
+
+Each of the twelve body styles is now authored at the published dimensions of a real car of its class, instead of one 4.4 m body
+scaled to every type: overall length, width and height, wheelbase, front overhang, tyre radius, waistline height, and where the
+glasshouse starts, peaks and closes along the body (A-pillar, roof, C-pillar), which is what gives each class its shell. The game's
+cars stay fictional, with no makes or badges; the reference only sets the proportions. A caller's length scales the whole body
+uniformly, so the shape holds; the dealership's lengths, the parked cars and the squads' cars now use the reference lengths.
+
+| Style (model key) | Reference class | Length x width x height, mm | Wheelbase, mm | Source |
+|---|---|---|---|---|
+| coupe (`sedan`) | 1978 GM A-body mid-size sedan | 4,895 x 1,816 x 1,354 | 2,745 | auto-data.net, vehiclesizes.com |
+| sport (`sedan-sports`) | 1979 Italian mid-engine V8 berlinetta | 4,230 x 1,720 x 1,120 | 2,340 | carsguide.com.au, Wikipedia |
+| hatch (`hatchback-sports`) | 1979 European C-segment hatchback | 3,705 x 1,610 x 1,410 | 2,400 | the maker's newsroom data, Wikipedia |
+| utility (`suv`) | 1979 US full-size 4x4 utility | 4,580 x 2,014 x 1,918 | 2,642 | Blue Oval Trucks chart, auto-data.net |
+| luxury (`suv-luxury`) | 1980 US luxury sedan | 5,613 x 1,941 x 1,412 | 3,084 | Wikipedia, amazingclassiccars.com |
+| patrol (`police`) | 1983 US full-size sedan, police package | 5,359 x 1,968 x 1,412 | 2,903 | Wikipedia (sedan figures; no police-specific sheet found) |
+| taxi (`taxi`) | 1981 US purpose-built cab | 5,202 x 1,930 x 1,595 | 3,048 | The Henry Ford's collection record, Wikipedia |
+| van (`van`) | 1983 US full-size van, short body | 4,724 x 2,007 x 2,032 | 3,150 | iseecars.com (1983; no 1980 sheet found) |
+| pickup (`truck-flat`) | 1980 US half-ton pickup, long bed | 5,291 x 2,007 x 1,857 | 3,378 | auto-data.net, ford-trucks.com wheelbase list |
+| delivery (`delivery`) | 1980 US one-ton walk-in step van | 5,800 x 2,200 x 2,750 (est.) | 3,560 (est.) | no period sheet found: estimated |
+| ambulance (`ambulance`) | 1980s Type III modular on a one-ton cutaway | 5,740 x 2,290 x 2,620 (est.) | 3,505 | chassis from iseecars.com's 1983 one-ton van (226 in, 138 in wb); box estimated |
+| armoured (`truck`) | 1980 US medium-duty cash-in-transit truck | 6,400 x 2,400 x 2,750 (est.) | 3,800 (est.) | no period sheet found: estimated |
+
+The estimated rows are marked `est.` in the code's `ref`; a period brochure would replace them. Within a few per cent the sources
+agree on every published row; where one disagreed (a 4,379 mm berlinetta length, a 105.5 in police-sedan wheelbase) the majority
+figure was used.
+
+Not yet: wheel and tyre sizes beyond the radius, period colour palettes by year (the presentation layers' liveries), and
+interiors.
+
+## 103. What the people wear: a 1980s Miami-crime look by faction (owner, 24 November 2026, D-108)
+
+The owner: "change the clothes and the models for the people, GTA Vice City-style NPCs", from the factions' style guide image; until
+that image is in hand, "go with your own Vice City-style palettes". `scripts/render/wardrobe.gd` (`Wardrobe`, switch
+`Wardrobe.ENABLED`: drawn only, no sim effect, no draws). The palettes and cuts are our own, in the era's look; nothing is taken from
+that game's characters or art.
+
+- **How.** The people are the kit's animated bodies, whose clothes are painted on one 1024 px skin sheet (a head, a torso cross,
+  sleeve and leg strips with hands and shoes at their ends). A look keeps the kit's head (face, hair, skin tone) and repaints the
+  body with flat colour blocks: shirt or T-shirt, an optional jacket with lapels, sleeves long, cuffed, short, pushed up or a vest,
+  a print (tropical leaves and flowers, pinstripes, stripes), a tie, a gold chain, a badge and belt, trousers or shorts, shoes. The
+  hands and any bare forearm or knee take the face's own skin tone. Each look is painted once and cached with its own copy of the
+  mesh, so every walk, run, idle and holding animation still plays.
+- **Who wears what** (each faction has two to five looks, picked by the man's variant as his face always was):
+
+  | Faction | The look |
+  |---|---|
+  | Our crew | pastel linen jackets (white, pink, mint, powder blue) over pastel T-shirts, sleeves pushed up, white trousers and loafers; one in a pink tropical shirt |
+  | Los Cuervos | loud tropical shirts (red, black, yellow) open at the neck with gold chains, dark jeans or khakis, boots; a white vest |
+  | The Morettis | charcoal and navy pinstripe suits, white or black shirts, a scarlet or silver tie, cuffs showing, black shoes |
+  | The task force | light-blue short-sleeved uniform shirts with badge, belt and navy tie, navy trousers; a detective in a tan sport coat |
+  | SWAT | navy and charcoal, badge and belt (the kit's hooded head) |
+  | Civilians | beach prints, striped vests and plain T-shirts, shorts and white sneakers (the kit's human faces only) |
+- **Not yet:** the owner's style guide image (the palettes above stand in until then); hairstyles, hats and sunglasses (the kit's
+  heads are kept); women's cuts (the kit's bodies are one build); the year-by-year wardrobe and crew colours of the presentation
+  layers.
