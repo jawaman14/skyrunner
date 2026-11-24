@@ -248,6 +248,8 @@ func test_the_pack_panel() -> void:
 	m.foot = s.foot
 	_tree().root.add_child(m)
 	check_eq(m.rows.get_child_count(), 6, "a row per thing you can carry")
+	if s.foot.armoury() != null:
+		check(m.rounds_label.visible and m.rounds_label.text.begins_with("The armoury's rounds: "), "the rack's rounds under the list, not a row (DESIGN 99)")
 	m._act(s.foot.pack_add("pistol"))
 	m.refresh()
 	check(m.weight_bar.value > 0.0, "the weight shows")

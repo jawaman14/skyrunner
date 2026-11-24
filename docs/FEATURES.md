@@ -134,9 +134,9 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Arms and ammunition (DESIGN §50) | Arsenals for all three factions, gun runs, police arm from seizures | Built | Arsenal.REALISM |  |
 | Arms and ammunition (DESIGN §50) | Crates of one type and the scarcity ladder | Built | Crates.ENABLED: a gun run is one to three crates of one type; each type's supply on the street prices it at the dealer, the fence and the bulk buyers (DESIGN §77) | D-61 stage 1 |
 | Arms and ammunition (DESIGN §50) | Weapons and trucks wear with use | Built | Wear.ENABLED: the armoury wears with firefights and shots (our squads' fire to 75% at worst), owned trucks with distance (speed to 75%); the armourer and the dealership's shop put them right (phone, Empire > Fleet; DESIGN §82) | D-97 |
-| Arms and ammunition (DESIGN §50) | Ammunition as a traded, trucked good | Planned |  | D-61 stage 2 |
-| Arms and ammunition (DESIGN §50) | Fights consume rounds; dry districts, resupply by port/road | Planned |  | D-61 stage 3 |
-| Arms and ammunition (DESIGN §50) | Pack, logistics and market screens for ammo | Planned |  | D-61 stage 4 |
+| Arms and ammunition (DESIGN §50) | Ammunition as a traded, trucked good | Built | Arsenal.AMMO_TRADE: rounds by gun type, crates at the dealer, ordered on the pickup flow (DESIGN §91, §94) | D-61 stage 2 |
+| Arms and ammunition (DESIGN §50) | Fights consume rounds; dry districts, resupply by port/road | Built | GroundWar.AMMO_BY_TYPE: squads draw and spend each gun's rounds, a dry gun fires like bare hands; rounds dearer in a war, no delivery into Los Cuervos' streets (DESIGN §92, §93) | D-61 stage 3 |
+| Arms and ammunition (DESIGN §50) | Pack, logistics and market screens for ammo | Built | The market board's Ammunition section, the armoury's rounds by type on the stock ledger, logistics desk and pack; A orders a crate of the neediest rounds (DESIGN §99) | D-61 stage 4 |
 | Isla Soberana | Air, mules on the airliner, containers on the freighter | Built | DESIGN §15 |  |
 | Isla Soberana | Customs odds from both sides' perks; the General's passage and purge | Built |  |  |
 | Job board | Island-wide boards that outlive visits | In PR | Remote desks list the other strips; boards saved (optional key, no version bump) | #383 · #495 |
