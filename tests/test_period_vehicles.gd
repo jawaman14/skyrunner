@@ -43,6 +43,9 @@ func test_period_body_geometry_budgets_and_facing() -> void:
 		# Cream headlamps occur at the negative-Z nose; red taillamps at +Z.
 		var front := false
 		var rear := false
+		var box := mi.mesh.get_aabb()
+		var nose := box.position.z
+		var tail := box.position.z + box.size.z
 		for surface in mi.mesh.get_surface_count():
 			var mat := mi.mesh.surface_get_material(surface) as StandardMaterial3D
 			var vertices: PackedVector3Array = mi.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
@@ -52,11 +55,11 @@ func test_period_body_geometry_budgets_and_facing() -> void:
 				var cross_ := (vertices[i + 1] - vertices[i]).cross(vertices[i + 2] - vertices[i]).normalized()
 				check(cross_.dot(normals[i]) < -0.9, "clockwise front-face winding: %s surface %d triangle %d" % [file, surface, i / 3])
 			if mat.albedo_color == PeriodVehicles.PAINT[PeriodVehicles.TYPES[file]]:
-				check(Array(vertices).any(func(v): return v.y < 0.45 and v.z < -1.8), "authored lower hull survives primitive-detail batching")
+				check(Array(vertices).any(func(v): return v.y < 0.45 and v.z < nose + 0.5), "authored lower hull survives primitive-detail batching")
 			for vertex in vertices:
-				if mat.albedo_color == Color(0.83, 0.80, 0.69) and vertex.z < -2.24 and vertex.y > 0.6:
+				if mat.albedo_color == Color(0.83, 0.80, 0.69) and vertex.z < nose + 0.15 and vertex.y > 0.45:
 					front = true
-				if mat.albedo_color == Color(0.60, 0.075, 0.04) and vertex.z > 2.21:
+				if mat.albedo_color == Color(0.60, 0.075, 0.04) and vertex.z > tail - 0.15:
 					rear = true
 		check(front and rear, "headlamps face -Z and taillamps face +Z")
 		node.free()
@@ -127,3 +130,20 @@ func test_disabled_models_keep_existing_procedural_fallback() -> void:
 	fallback.free()
 	check(PeriodVehicles.build("unknown-file", 4.6) == null, "unhandled kit names pass through")
 	check(PeriodVehicles.build("sedan", 0) == null, "invalid length cannot produce degenerate geometry")
+
+
+## The owner's ask (24 Nov): each body is built at its reference car's published dimensions (DESIGN 102).
+func test_bodies_are_built_at_their_reference_dimensions() -> void:
+	for style in PeriodVehicles.SPEC:
+		var sp: Dictionary = PeriodVehicles.SPEC[style]
+		var file: String = PeriodVehicles.TYPES.find_key(style)
+		var node := ModelLib.vehicle(file, float(sp.len))
+		var mi := node.get_node("body") as MeshInstance3D
+		var box := mi.mesh.get_aabb()
+		check_near(box.size.z, float(sp.len) + 0.18, 0.06, "%s: bumper to bumper is the reference length" % style)
+		check(box.size.x >= float(sp.wid) - 0.12 and box.size.x <= float(sp.wid) + 0.25, "%s: the body is the reference width, mirrors proud: %.2f" % [style, box.size.x])
+		check(box.size.y >= float(sp.hgt) - 0.05 and box.size.y <= float(sp.hgt) + 0.35, "%s: the roof at the reference height (a light bar or roof sign above it): %.2f" % [style, box.size.y])
+		check(float(sp.wb) < float(sp.len) and float(sp.fo) + float(sp.wb) < float(sp.len), "%s: the wheelbase fits inside the body" % style)
+		node.free()
+	check(PeriodVehicles.SPEC.sport.hgt < PeriodVehicles.SPEC.coupe.hgt and PeriodVehicles.SPEC.luxury.len > PeriodVehicles.SPEC.coupe.len and PeriodVehicles.SPEC.hatch.len < 3.8,
+		"distinct classes: a low sports car, a long luxury sedan, a short hatch")

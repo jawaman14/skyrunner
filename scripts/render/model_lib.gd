@@ -21,7 +21,7 @@ const ROOT := "res://assets/models/kenney/"
 const MAN_H := 1.8  ## metres, feet to the top of the head
 const CHAR_H := 2.7  ## the kit's characters, in its units
 const CHARACTERS := {"org": ["q", "k", "p", "b"], "rival": ["m", "a", "c"], "police": ["j", "i"], "swat": ["r"],
-	"family": ["q", "b"]}
+	"family": ["q", "b"], "civilian": ["e", "f", "a", "c", "m", "b"]}  ## the kit's human faces only (d, g, h, l, n, o are a dummy, robots and aliens)
 ## faction -> kind -> car model; SWAT rides the police van
 const CARS := {"org": {"car": "sedan-sports", "truck": "van"}, "rival": {"car": "suv", "truck": "truck-flat"},
 	"police": {"car": "police", "truck": "van"}, "family": {"car": "suv-luxury", "truck": "van"},
@@ -109,7 +109,37 @@ static func character(faction: String, variant := 0) -> Node3D:
 				ap.get_animation(a).loop_mode = Animation.LOOP_LINEAR
 	n.set_meta("anim", ap)
 	n.set_meta("look", c)
+	if Wardrobe.ENABLED:
+		dress(n, c, faction, variant)
 	return n
+
+
+static var _dressed := {}  ## (mesh, letter, faction, look) -> the dressed mesh
+
+
+## Put a character in its faction's clothes (Wardrobe, DESIGN 103): the kit's head, a repainted body, the same animations.
+static func dress(man: Node3D, letter: String, faction: String, variant: int) -> void:
+	var tex := Wardrobe.skin(letter, faction, variant)
+	if tex == null:
+		return
+	for mi in man.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null:
+			continue
+		# The look's own copy of the mesh with the painted sheet in its material, shared by every man in that look (no per-node
+		# override materials: the dummy renderer of the headless runs complains when one is freed).
+		var key := "%s|%s|%s|%d" % [m.mesh.resource_path if m.mesh.resource_path != "" else str(m.mesh.get_instance_id()), letter, faction, variant]
+		if not _dressed.has(key):
+			var mesh := m.mesh.duplicate() as Mesh
+			for i in mesh.get_surface_count():
+				var mat := mesh.surface_get_material(i) as StandardMaterial3D
+				if mat != null:
+					var own := mat.duplicate() as StandardMaterial3D
+					own.albedo_texture = tex
+					mesh.surface_set_material(i, own)
+			_dressed[key] = mesh
+		m.mesh = _dressed[key]
+	man.set_meta("outfit", "%s:%d" % [faction, posmod(variant, (Wardrobe.LOOKS.get(faction, Wardrobe.LOOKS.civilian) as Array).size())])
 
 
 ## Give a character a weapon (or change it); returns the weapon node (or null).
@@ -143,7 +173,9 @@ static func weapon(tier: String, mul := 1.0) -> Node3D:
 ## A squad's vehicle, facing -Z, wheels on the ground.
 static func car(faction: String, kind: String) -> Node3D:
 	var k := "truck" if kind == "truck" else "car"
-	return vehicle(str(CARS.get(faction, CARS.civilian)[k]), CAR_LEN[k])
+	var file := str(CARS.get(faction, CARS.civilian)[k])
+	var real := PeriodVehicles.length_of(file)  # the body's reference length (DESIGN 102); a kit car keeps the old size
+	return vehicle(file, real if real > 0.0 else float(CAR_LEN[k]))
 
 
 ## Existing dealership keys select original period vehicles; other kit names still load as before.

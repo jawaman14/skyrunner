@@ -32,27 +32,28 @@ const INSURANCE_HAUL := 90.0
 const AUTO_EVERY_S := 900.0
 const AUTO_RESERVE := 40000  ## the AI keeps this much in hand after a purchase
 
-## id, the name on the lot, what it is for, the price, the model (Kenney's Car Kit) and its length, then the numbers.
+## id, the name on the lot, what it is for, the price, the model (Kenney's Car Kit) and its length, then the numbers. The length is
+## the body's reference length (PeriodVehicles.SPEC, DESIGN 102): drawn only, never the car's collision or handling.
 ## drive: road m/s, cross-country m/s, acceleration m/s^2.  haul: m/s, stealth (cuts roadblock odds), armour (the chance it
 ## gets through a roadblock that would have seized it).
 const CATALOGUE := [
-	{"id": "hatch", "maker": "halcyon", "name": "Sunrise Hatch", "use": "drive", "price": 4000, "model": "hatchback-sports", "len": 4.0, "road": 23.0, "off": 10.0, "accel": 8.5,
+	{"id": "hatch", "maker": "halcyon", "name": "Sunrise Hatch", "use": "drive", "price": 4000, "model": "hatchback-sports", "len": 3.71, "road": 23.0, "off": 10.0, "accel": 8.5,
 		"blurb": "cheap, cheerful, and gone before the owner notices"},
-	{"id": "coupe", "maker": "halcyon", "name": "Harbor Coupe", "use": "drive", "price": 6500, "model": "sedan", "len": 4.6, "road": 26.0, "off": 11.0, "accel": 9.0,
+	{"id": "coupe", "maker": "halcyon", "name": "Harbor Coupe", "use": "drive", "price": 6500, "model": "sedan", "len": 4.9, "road": 26.0, "off": 11.0, "accel": 9.0,
 		"blurb": "the starter car's twin, in a better colour"},
-	{"id": "suv", "maker": "mercy", "name": "Valley SUV", "use": "drive", "price": 12000, "model": "suv", "len": 4.8, "road": 25.0, "off": 16.0, "accel": 8.0,
+	{"id": "suv", "maker": "mercy", "name": "Valley SUV", "use": "drive", "price": 12000, "model": "suv", "len": 4.58, "road": 25.0, "off": 16.0, "accel": 8.0,
 		"blurb": "the one for the cane roads and the farm tracks"},
-	{"id": "roadster", "maker": "corsair", "name": "Marlin GT", "use": "drive", "price": 21000, "model": "sedan-sports", "len": 4.5, "road": 34.0, "off": 12.0, "accel": 13.0,
+	{"id": "roadster", "maker": "corsair", "name": "Marlin GT", "use": "drive", "price": 21000, "model": "sedan-sports", "len": 4.23, "road": 34.0, "off": 12.0, "accel": 13.0,
 		"blurb": "the fastest thing on four wheels in the county"},
-	{"id": "luxury", "maker": "mercy", "name": "Palmetto Limited", "use": "drive", "price": 30000, "model": "suv-luxury", "len": 5.0, "road": 29.0, "off": 17.0, "accel": 10.0,
+	{"id": "luxury", "maker": "mercy", "name": "Palmetto Limited", "use": "drive", "price": 30000, "model": "suv-luxury", "len": 5.61, "road": 29.0, "off": 17.0, "accel": 10.0,
 		"blurb": "leather, air conditioning and a bar; the Family's own choice"},
-	{"id": "van", "maker": "halcyon", "name": "Courier Van", "use": "haul", "price": 14000, "model": "van", "len": 5.2, "speed": 12.5, "stealth": 0.15, "armour": 0.0,
+	{"id": "van", "maker": "halcyon", "name": "Courier Van", "use": "haul", "price": 14000, "model": "van", "len": 4.72, "speed": 12.5, "stealth": 0.15, "armour": 0.0,
 		"blurb": "a plain white van; nobody looks twice"},
-	{"id": "box", "maker": "bastion", "name": "Steel Box Truck", "use": "haul", "price": 24000, "model": "delivery", "len": 6.0, "speed": 11.5, "stealth": 0.05, "armour": 0.25,
+	{"id": "box", "maker": "bastion", "name": "Steel Box Truck", "use": "haul", "price": 24000, "model": "delivery", "len": 5.8, "speed": 11.5, "stealth": 0.05, "armour": 0.25,
 		"blurb": "a delivery truck with a steel liner and a heavy bumper"},
-	{"id": "fast", "maker": "corsair", "name": "Midnight Van", "use": "haul", "price": 38000, "model": "van", "len": 5.2, "speed": 15.0, "stealth": 0.25, "armour": 0.0,
+	{"id": "fast", "maker": "corsair", "name": "Midnight Van", "use": "haul", "price": 38000, "model": "van", "len": 4.72, "speed": 15.0, "stealth": 0.25, "armour": 0.0,
 		"blurb": "a van with the Marlin's engine in it"},
-	{"id": "ambulance", "maker": "mercy", "name": "Ambulance Conversion", "use": "haul", "price": 55000, "model": "ambulance", "len": 5.8, "speed": 14.0, "stealth": 0.45, "armour": 0.0,
+	{"id": "ambulance", "maker": "mercy", "name": "Ambulance Conversion", "use": "haul", "price": 55000, "model": "ambulance", "len": 5.74, "speed": 14.0, "stealth": 0.45, "armour": 0.0,
 		"blurb": "lights and a siren; no cop will stop it, and fewer will look in the back"},
 	{"id": "armoured", "maker": "bastion", "name": "Armoured Truck", "use": "haul", "price": 70000, "model": "truck", "len": 6.4, "speed": 9.5, "stealth": 0.0, "armour": 0.6,
 		"blurb": "slow, heavy, and a roadblock is a speed bump"},

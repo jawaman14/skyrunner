@@ -406,10 +406,10 @@ static func showroom(k: Kit, c: Vector3, w := 14.0, d := 9.0) -> void:
 		sign_text.rotation.y = PI if face < 0.0 else 0.0  # a label reads from +z; the lot side looks along +z at -z, so turn it round
 		k.root.add_child(sign_text)
 	k.interact(Vector3(c.x + 3.0, 1.0, c.z - d / 2 - 2.2), "dealer", "The car lot: cars to drive, trucks for the stash runs", 3.2)
-	k.vehicle("sedan-sports", 4.5, c + Vector3(-4.0, 0, -d / 2 - 4.0), 20.0)
-	k.vehicle("suv-luxury", 5.0, c + Vector3(1.0, 0, -d / 2 - 6.0), -15.0)
-	k.vehicle("van", 5.2, c + Vector3(5.5, 0, -d / 2 - 4.0), 10.0)
-	k.vehicle("delivery", 6.0, c + Vector3(-4.0, 0, -d / 2 - 11.0), 90.0)
+	k.vehicle("sedan-sports", 4.23, c + Vector3(-4.0, 0, -d / 2 - 4.0), 20.0)
+	k.vehicle("suv-luxury", 5.61, c + Vector3(1.0, 0, -d / 2 - 6.0), -15.0)
+	k.vehicle("van", 4.72, c + Vector3(5.5, 0, -d / 2 - 4.0), 10.0)
+	k.vehicle("delivery", 5.8, c + Vector3(-4.0, 0, -d / 2 - 11.0), 90.0)
 
 
 static func hangar(k: Kit, c: Vector3, w := 18.0, d := 20.0, with_board := true) -> void:
@@ -844,7 +844,7 @@ static func _task_force(k: Kit) -> void:
 	k.interact(Vector3(-2.0, 1.0, 0.6), "hq_law", "Task-force duty desk")
 	k.lamp(Vector3(-2.0, 3.0, 1.5))
 	for i in 3:  # patrol cars
-		k.vehicle("police", 4.4, Vector3(-6 + i * 5.5, 0, -12))
+		k.vehicle("police", 5.36, Vector3(-6 + i * 5.5, 0, -12))
 
 
 ## Los Cuervos: a walled compound, a corrugated warehouse, a watchtower, trucks.
@@ -936,7 +936,7 @@ static func _nightclub(k: Kit) -> void:
 	# a doorman's rope and the boss's car at the kerb
 	k.box(Vector3(0, 0.5, -d / 2 - 2.0), Vector3(4, 1.0, 0.08), "red", false)
 	# Keep the existing 4.6 x 2.0 m kerbside footprint clear of the club beds.
-	k.vehicle("suv-luxury", 4.6, Vector3(9, 0, -d / 2 - 4.5), 90.0)
+	k.vehicle("suv-luxury", 5.61, Vector3(9, 0, -d / 2 - 4.5), 90.0)
 
 
 ## The customs house extras: a lattice radar tower and a customs launch at the quay.

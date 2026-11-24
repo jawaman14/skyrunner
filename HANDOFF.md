@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-24 - Claude:** the owner approved the map sketch in full (D-106). Vehicles rebuilt at their reference cars'
+  dimensions (D-107, DESIGN 102). The people's clothes by faction (D-108, DESIGN 103) in our own Vice City-style palettes until the
+  owner's style guide image arrives (D-109).
 - **2026-11-24 - Claude:** succession (D-101, D-105, DESIGN 101): the chain of command (Lalo Medina, the pilot's friend, then
   the two most loyal captains), a rival hit on the boss on the ground, who takes the seat. The owner kept the map at 32 km (D-104);
   the step-0 layout sketch is with the owner. #564 fixed (the rounds caption under the pack list).
