@@ -53,7 +53,7 @@ func test_sizes_and_facing() -> void:
 	m.free()
 	var c := ModelLib.car("police", "car")
 	var cb := ModelLib.bounds(c)
-	check_near(maxf(cb.size.x, cb.size.z), ModelLib.CAR_LEN.car, 0.05, "a car 4.6 m long")
+	check_near(maxf(cb.size.x, cb.size.z), PeriodVehicles.length_of("police"), 0.05, "a squad car at its reference length (DESIGN 102: the police sedan's 5.36 m)")
 	check(cb.size.z > cb.size.x, "lengthwise along Z")
 	check_near(cb.get_center().x, 0.0, 0.05, "centred")
 	c.free()
