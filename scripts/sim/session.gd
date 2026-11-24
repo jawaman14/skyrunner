@@ -113,6 +113,8 @@ func _init(opts := {}) -> void:
 		black_market = BlackMarket.new(self, _rng(seed + 191))
 	if Takeover.ENABLED:  # D-09/D-35: only a story game ever has one; its draws on their own stream, made once
 		takeover = Takeover.new(self, _rng(seed + 199))
+		if Succession.ENABLED:  # D-101: the chain of command after the takeover; its own stream
+			succession = Succession.new(self, _rng(seed + 207))
 	if Wear.ENABLED:  # D-97: no draws; nothing worn is the game as it was
 		wear = Wear.new(self)
 	if Investments.ENABLED:  # loop idea 7: no draws; nothing held is the game as it was
@@ -200,6 +202,9 @@ func dispose() -> void:
 	if takeover != null:
 		takeover.sess = null
 	takeover = null
+	if succession != null:
+		succession.sess = null
+	succession = null
 	if delegation != null:
 		delegation.sess = null
 	delegation = null

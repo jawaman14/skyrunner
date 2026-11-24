@@ -77,6 +77,8 @@ static func capture(s: Session) -> Dictionary:
 		d["boards"] = capture_boards(s)  # optional: an older save has none and deals every board afresh, as it always did
 	if s.takeover != null and s.story != null:
 		d["takeover"] = s.takeover.capture()  # (D-35) whether it has happened, and what it cost
+	if s.succession != null and not s.succession.capture().is_empty():
+		d["succession"] = s.succession.capture()  # (D-101) optional: who the boss is now, the hits; absent is the pilot, unhurt
 	if s.wear != null and (s.wear.arms < 100.0 or s.wear.fleet < 100.0):
 		d["wear"] = s.wear.capture()  # optional (D-97): absent is as new
 	if s.investments != null and not s.investments.held.is_empty():
@@ -325,6 +327,8 @@ static func restore(s: Session, d: Dictionary) -> void:
 			restore_boards(s, d.boards)
 	if s.takeover != null:
 		s.takeover.restore(d.takeover if d.get("takeover") is Dictionary else {})  # an older save past the chapter: done, nothing lost
+	if s.succession != null:
+		s.succession.restore(d.succession if d.get("succession") is Dictionary else {})
 	if s.wear != null and d.get("wear") is Dictionary:
 		s.wear.restore(d.wear)
 	if s.investments != null and d.get("investments") is Dictionary:

@@ -208,6 +208,8 @@ func _update_world(dt: float) -> void:
 		delegation.update()  # the contract pilots' runs landing (L-5)
 	if takeover != null:
 		takeover.update(dt)  # the story's Cocaine Cowboys: Rafa killed, half the empire survives
+	if succession != null:
+		succession.update(dt)  # after it, a rival hit on the boss, and who takes the seat (D-101)
 	if investments != null:
 		investments.update(dt)  # upkeep on the hour; the informant's word of a warrant
 	if businesses != null:

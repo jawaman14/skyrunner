@@ -165,6 +165,7 @@ The README has the short version; [DESIGN.md](DESIGN.md) has how each system wor
 | Turf | Rackets: tribute and prisoners | Built | DESIGN §27 |  |
 | Turf | Renown | Built | DESIGN §25 |  |
 | Turf | Infamy: renown draws heat and opens bigger work | Built | Los Cuervos come for a bigger name (x1.15 a tier), the heat dial's Infamous setting for a Feared name, the hot job pays more a tier (DESIGN 100, D-102) |  |
+| Story | Succession: the chain of command and a hit on the boss | Built | After the takeover, a rival hit on the boss on the ground (infamy and a truce scale it); the number two, Lalo Medina, sees half of them; otherwise he takes the seat and you play on as him (DESIGN 101, D-101) |  |
 | Turf | Rival depot raid | Paused | To be redesigned on rival inventories | D-19 · D-75 |
 | Turf | Trust per crew with the trust table | Half done | The table and the five standings, moved by our dealings, on the phone (DESIGN §76); what Los Cuervos' and the dealers' trust change is not built | D-11 |
 | Hired hands | Payroll: roles, hiring hall, payday, skim/walk/snitch | Built | DESIGN §17 |  |

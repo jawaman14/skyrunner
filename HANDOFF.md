@@ -175,6 +175,9 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-24 - Claude:** succession (D-101, D-105, DESIGN 101): the chain of command (Lalo Medina, the pilot's friend, then
+  the two most loyal captains), a rival hit on the boss on the ground, who takes the seat. The owner kept the map at 32 km (D-104);
+  the step-0 layout sketch is with the owner. #564 fixed (the rounds caption under the pack list).
 - **2026-11-22 - Claude:** infamy (D-102, DESIGN 100, `Renown.INFAMY`): Los Cuervos come for a bigger name, the heat dial's
   Infamous setting for a Feared one, the hot job pays more a tier. Next: succession (D-101).
 - **2026-11-22 - Claude:** the owner answered four questions (D-100 to D-103): the takeover takes the street cash only;

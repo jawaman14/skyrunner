@@ -888,6 +888,9 @@ func _heat_page() -> void:
 	if s.heat_dial != null:  # D-95: more danger for more pay
 		list.section("The heat dial")
 		list.add_row([s.heat_dial.line()])
+	if s.succession != null and s.succession.live():  # D-101: who is gunning for the boss, and who is next in line
+		list.section("The chain of command")
+		list.add_row([s.succession.line()])
 	if s.investigation == null:
 		footer.text = "Case files are not available in this game."
 		if s.heat_dial != null:

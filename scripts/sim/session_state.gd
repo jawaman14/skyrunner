@@ -187,6 +187,7 @@ var rackets: Rackets = null  ## street tribute and prisoners (Rackets; `rackets:
 var races: Races = null  ## the arena: a street race and an air circuit for prize money (Races; `races: true`)
 var ground: GroundWar = null  ## squads, firefights and turf on the roads (GroundWar; live play asks for it)
 var curses: Curses = null  ## cursed jobs: optional conditions for a premium (D-95)
+var succession: Succession = null  ## the chain of command after the takeover: who takes the seat when a rival gang kills the boss (D-101)
 var takeover: Takeover = null  ## the story's takeover: Rafa killed in Cocaine Cowboys, half the empire survives (D-09, D-35)
 var wear: Wear = null  ## weapons and vehicles wear with use (D-97)
 var investments: Investments = null  ## investments with a return: a depot, a strip crew, a safehouse, an informant (loop idea 7)

@@ -1877,6 +1877,7 @@ that claim an offset are noted.
 
 
 | 205 | `Payroll.bonds_rng` | `session_state.gd` | crew relationships: one draw a pair as a man joins our crew (section 89) |
+| 207 | `Succession` | `session.gd` | a rival hit on the boss: one draw an hour on the ground after the takeover, one for the number two's eye (section 101) |
 | 201 | `Pickups.rng` | `session_state.gd` | Los Cuervos intercepting a pickup: one draw as its window opens (section 81) |
 | 199 | `Takeover` | `session.gd` | the takeover, once: ties between equally known stashes, and who of the crew walks (D-35, D-78) |
 | 197 | `PriceWars` | `session_state.gd` | price wars and supply cuts: whether one starts, its kind, market and length (loop idea 6) |
@@ -2903,3 +2904,25 @@ odds that are already drawn and pays that are already paid. Only a game with ren
 - **Shown** on the renown panel's line of what the name is worth, and in the dial's refusal ("Infamous opens when your name is Feared").
 - **Not yet:** the Morettis' side. They deal by trust and offers (section 76), not by squads, so a bigger name has nothing to scale there
   yet. Succession (D-101) will use infamy for the odds of a hit on the boss.
+
+## 101. Succession: the chain of command and a hit on the boss (D-82, D-101, D-105)
+
+`scripts/sim/succession.gd` (`Succession`, on the session as `succession`, made with the takeover; switch `Succession.ENABLED`, in the
+parity set; its own stream, `seed + 207`). The owner, 22 November: the boss dies only when a rival gang kills him (never jailed,
+D-64); the organisation gets a chain of command, and the next in line is the player's close friend, who helps the player. 24
+November: the friend is a new character.
+
+- **The chain.** Under the boss: the number two, **Lalo Medina**, the pilot's friend since flight school; then the two most loyal
+  men on the payroll (ties to the more skilled), read live with no saved rank. Shown on the phone's Heat page with the odds.
+- **The hit.** Nothing before the takeover. After it, every game hour the boss spends on the ground draws once: 4%, times the
+  infamy multiplier (x1.15 a renown tier, section 100) and the truce multiplier (a quarter at a full truce, section 84). In the
+  air the boss is out of their reach.
+- **The number two helps.** He sees half the hits coming and gets the boss out ("the same car went round the block twice").
+- **Who takes the seat.** A hit he doesn't see kills the boss. The number two takes the seat and the player plays on as him: the
+  same game, money, crew and stashes. The new boss is a smaller name: half the renown, so a smaller target. Then the most loyal
+  captain (he leaves the payroll), and with nobody left a man from the hall steps up: an ending is never a game over (D-83).
+- **Saved** under `succession` (optional): who the boss is, whether the number two still is, and the hits. An older save has none.
+
+Not yet: a scene or a call for the hit; the number two's other help (running the desk while the boss flies, advice on the phone);
+a new number two named after he takes the seat; the Morettis' or the police's hand in a hit. No BALANCE entry: it moves renown
+and a man off the payroll, not money.
