@@ -237,7 +237,10 @@ func refresh() -> void:
 		rows.add_child(UIStyle.label("Last standing order: %s" % str(lv.standing_last), 12, UIStyle.DIM))
 	var arm: Dictionary = lv.get("armoury", {})
 	if not arm.is_empty():
-		rows.add_child(UIStyle.label("The armoury at %s: %s" % [arm.at, Arsenal.describe(arm.weapons) if int(arm.count) > 0 else "empty"], 14, UIStyle.AMBER))
+		var arm_text: String = Arsenal.describe(arm.weapons) if int(arm.count) > 0 else "empty"
+		if arm.has("rounds"):  # the rounds by type (D-61 stage 4, DESIGN 99)
+			arm_text += "; " + Arsenal.rounds_text(arm.rounds)
+		rows.add_child(UIStyle.label("The armoury at %s: %s" % [arm.at, arm_text], 14, UIStyle.AMBER))
 	if rebuild:
 		_dests.append(Logistics.HQ)
 		to_ob.add_item(str(lv.hq) + " (cash)")

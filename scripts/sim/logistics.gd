@@ -1342,7 +1342,7 @@ func view() -> Dictionary:
 	var arm := {}
 	if sess.arsenals.has("org"):
 		arm = {"site": armoury_site(), "at": name_of(armoury_site()), "weapons": sess.arsenals["org"].stock.duplicate(),
-			"count": sess.arsenals["org"].count()}
+			"count": sess.arsenals["org"].count(), "rounds": sess.arsenals["org"].rounds.duplicate()}
 	return {"sites": sites, "trucks": trucks, "aboard": aboard, "armoury": arm, "war": sess.ground != null, "auto_supply": auto_supply, "hq": name_of(HQ), "hq_strip": hq_strip(),
 		"standing": standing.orders.map(func(o): return {"id": int(o.id), "text": standing.describe(o)}), "standing_last": standing.last,
 		"lost": lost.duplicate(), "last": last,

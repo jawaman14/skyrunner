@@ -252,6 +252,31 @@ static func describe(weapons: Dictionary) -> String:
 	return ", ".join(parts) if not parts.is_empty() else "nothing"
 
 
+## The rounds held by type, best gun first, for the screens (D-61 stage 4, DESIGN 99): "600 rifle rounds, 1,000 pistol rounds".
+static func rounds_text(held: Dictionary) -> String:
+	var parts := []
+	for t in ORDER:
+		if int(held.get(t, 0)) > 0:
+			parts.append("%s %s" % [Py.money(int(held[t])), AMMO[t].name])
+	return ", ".join(parts) if not parts.is_empty() else "no rounds"
+
+
+## The type of round the armoury is shortest of for the guns it holds: the fewest rounds a gun, ties to the better gun; rifle
+## rounds when it holds no guns (DESIGN 99: what the phone's A orders).
+static func neediest(guns: Dictionary, held: Dictionary) -> String:
+	var best := ""
+	var low := INF
+	for t in ORDER:
+		var n := int(guns.get(t, 0))
+		if n <= 0:
+			continue
+		var each := float(held.get(t, 0)) / float(n)
+		if each < low:
+			best = t
+			low = each
+	return best if best != "" else "rifle"
+
+
 func to_dict() -> Dictionary:
 	return {"side": side, "stock": stock.duplicate(), "ammo": ammo, "rounds": rounds.duplicate(), "cache": cache, "seized": seized_total,
 		"count": count(), "value": value()}
