@@ -231,7 +231,8 @@ Each step is its own PR, reviewed by the other agent at the exact head, with gre
 
 **Answered 18 October:** rebuild Costa Brava's geography properly (D-44); enterable: the club, the stashes you load at,
 the hangar and the customs house, everything else solid (D-45); Valle Verde becomes a small town (D-46). Still open:
-question 2 (the size); the plan assumes 32 x 32 km until the owner says otherwise. The original questions follow.
+nothing: the owner kept 32 x 32 km on 24 November (D-104). The step-0 layout sketch (strips, districts, coast, main roads,
+site anchors) went to the owner the same day as a page to mark up; its approval is step 0's gate. The original questions follow.
 
 1. **Same geography or a new one?** Recommended: keep Costa Brava's shape (the city on the south coast, the estuary in
    the west, the farm plain in the middle, the jungle range in the north, the quarry in the east, the cove and cays in
