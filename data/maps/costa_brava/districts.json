@@ -1,0 +1,384 @@
+{
+ "version": 1,
+ "note": "L4 districts (MAP_REDESIGN.md): one polygon set, no gaps or overlaps on land; metres, x east, y north. Authored from the approved sketch (D-106); the game still reads MapCity's ten rectangles until L4 lands. The southern districts run to the sea (y -13 km) so the real coast, further south than the sketch drew it, has no gaps.",
+ "districts": [
+  {
+   "id": "D1",
+   "name": "San Telmo Centro",
+   "status": "keep",
+   "note": "Downtown: the club, the twelve businesses, the Living District. Bounds as today.",
+   "polygon": [
+    [
+     -1700,
+     -13000
+    ],
+    [
+     -1700,
+     -9100
+    ],
+    [
+     400,
+     -8844
+    ],
+    [
+     400,
+     -13000
+    ]
+   ]
+  },
+  {
+   "id": "D2",
+   "name": "Barrio Chino",
+   "status": "keep",
+   "note": "Residential, the lock-up stash. Stretched to the waterfront so there is no gap.",
+   "polygon": [
+    [
+     400,
+     -13000
+    ],
+    [
+     400,
+     -8844
+    ],
+    [
+     2400,
+     -8600
+    ],
+    [
+     2400,
+     -13000
+    ]
+   ]
+  },
+  {
+   "id": "D3",
+   "name": "The Docks",
+   "status": "keep",
+   "note": "The port and Warehouse 7. The harbour basin sits between it and the customs house.",
+   "polygon": [
+    [
+     -4600,
+     -13000
+    ],
+    [
+     -4600,
+     -9600
+    ],
+    [
+     -1700,
+     -9100
+    ],
+    [
+     -1700,
+     -13000
+    ]
+   ]
+  },
+  {
+   "id": "D4",
+   "name": "Airport Coast",
+   "status": "keep",
+   "note": "HAR and the plain into town.",
+   "polygon": [
+    [
+     -9400,
+     -13000
+    ],
+    [
+     -9400,
+     -8400
+    ],
+    [
+     -4600,
+     -8400
+    ],
+    [
+     -4600,
+     -13000
+    ]
+   ]
+  },
+  {
+   "id": "D5",
+   "name": "Rio Negro Estuary",
+   "status": "keep",
+   "note": "Mangroves, swamp, the sand-bar strip and the shack.",
+   "polygon": [
+    [
+     -16000,
+     -13000
+    ],
+    [
+     -16000,
+     -2500
+    ],
+    [
+     -10500,
+     -2500
+    ],
+    [
+     -9400,
+     -5500
+    ],
+    [
+     -9400,
+     -13000
+    ]
+   ]
+  },
+  {
+   "id": "D6",
+   "name": "Valle Verde",
+   "status": "new",
+   "note": "New town (D-46): about 4 \u00d7 3 km of streets around the regional strip, the plain's market town. Split out of today's 18 km Valle Verde rectangle.",
+   "polygon": [
+    [
+     3000,
+     -6300
+    ],
+    [
+     3000,
+     -3400
+    ],
+    [
+     7000,
+     -3400
+    ],
+    [
+     7000,
+     -6300
+    ]
+   ]
+  },
+  {
+   "id": "D7",
+   "name": "The Farm Plain",
+   "status": "change",
+   "note": "The rest of today's Valle Verde, renamed: fields, hedgerows, Finca Morales.",
+   "polygon": [
+    [
+     -9400,
+     -8400
+    ],
+    [
+     -9400,
+     -5500
+    ],
+    [
+     -10500,
+     -2500
+    ],
+    [
+     -3000,
+     -1000
+    ],
+    [
+     9000,
+     -1000
+    ],
+    [
+     9000,
+     -7000
+    ],
+    [
+     7000,
+     -7000
+    ],
+    [
+     2400,
+     -8600
+    ],
+    [
+     -1700,
+     -9100
+    ],
+    [
+     -4600,
+     -9600
+    ],
+    [
+     -4600,
+     -8400
+    ]
+   ],
+   "hole": [
+    [
+     3000,
+     -6300
+    ],
+    [
+     3000,
+     -3400
+    ],
+    [
+     7000,
+     -3400
+    ],
+    [
+     7000,
+     -6300
+    ]
+   ]
+  },
+  {
+   "id": "D8",
+   "name": "Costa Este",
+   "status": "new",
+   "note": "New: the coast road east of town, beaches and holiday villas. Today this land falls in no district.",
+   "polygon": [
+    [
+     2400,
+     -13000
+    ],
+    [
+     2400,
+     -8600
+    ],
+    [
+     7000,
+     -7000
+    ],
+    [
+     9000,
+     -7000
+    ],
+    [
+     9000,
+     -13000
+    ]
+   ]
+  },
+  {
+   "id": "D9",
+   "name": "Sierra del Aguila",
+   "status": "keep",
+   "note": "The highland: the mesa strip and the hillside villa.",
+   "polygon": [
+    [
+     -16000,
+     -2500
+    ],
+    [
+     -16000,
+     16000
+    ],
+    [
+     -3000,
+     16000
+    ],
+    [
+     -3000,
+     -1000
+    ],
+    [
+     -10500,
+     -2500
+    ]
+   ]
+  },
+  {
+   "id": "D10",
+   "name": "La Selva",
+   "status": "change",
+   "note": "The jungle range. Takes the north-east corner nobody had.",
+   "polygon": [
+    [
+     -3000,
+     -1000
+    ],
+    [
+     -3000,
+     16000
+    ],
+    [
+     16000,
+     16000
+    ],
+    [
+     16000,
+     6500
+    ],
+    [
+     9000,
+     6500
+    ],
+    [
+     9000,
+     -1000
+    ]
+   ]
+  },
+  {
+   "id": "D11",
+   "name": "Old Quarry",
+   "status": "keep",
+   "note": "Dry scrub hills, the quarry and its shed; the east road's chokepoint.",
+   "polygon": [
+    [
+     9000,
+     -7000
+    ],
+    [
+     9000,
+     6500
+    ],
+    [
+     16000,
+     6500
+    ],
+    [
+     16000,
+     -7000
+    ]
+   ]
+  },
+  {
+   "id": "D12",
+   "name": "Smuggler's Cove",
+   "status": "keep",
+   "note": "The cove lowland and its beach strip.",
+   "polygon": [
+    [
+     9000,
+     -12000
+    ],
+    [
+     9000,
+     -7000
+    ],
+    [
+     16000,
+     -7000
+    ],
+    [
+     16000,
+     -12000
+    ]
+   ]
+  },
+  {
+   "id": "D13",
+   "name": "Cayo Largo",
+   "status": "new",
+   "note": "New as a district of its own: the cays offshore with their strip and the boathouse. Today they sit inside the cove's rectangle.",
+   "polygon": [
+    [
+     9000,
+     -16000
+    ],
+    [
+     9000,
+     -12000
+    ],
+    [
+     16000,
+     -12000
+    ],
+    [
+     16000,
+     -16000
+    ]
+   ]
+  }
+ ]
+}
