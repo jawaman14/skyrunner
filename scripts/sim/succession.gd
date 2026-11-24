@@ -25,11 +25,14 @@ const FRIEND_SPOTS := 0.5
 const RENOWN_KEPT := 0.5
 const CAPTAINS := 2
 const PILOT := "the pilot"
+const ADVICE_HEAT := 40.0  ## a stash this hot gets a word from the number two
+const ADVICE_CASH := 5000.0  ## ... and this much street cash lying in one
 
 var sess
 var rng: PyRandom
 var boss := PILOT  ## who the player is now
-var friend_alive := true  ## the number two is still the number two (not dead, not in the seat)
+var friend_alive := true  ## Lalo is still the number two (not dead, not in the seat)
+var second_id := ""  ## after Lalo: the man named number two from the payroll (a worker id), "" for none
 var hits: Array = []  ## {t, boss, foiled}
 var _t := 0.0
 
@@ -55,11 +58,27 @@ func hit_odds() -> float:
 	return clampf(p, 0.0, 1.0)
 
 
+## The number two's name: Lalo, or the man named after him; "" for none.
+func number_two() -> String:
+	if friend_alive:
+		return FRIEND
+	var w = _second()
+	return str(w.name) if w != null else ""
+
+
+## The named number two from the payroll, if he is still with us and free to act.
+func _second():
+	if second_id == "" or sess.payroll == null:
+		return null
+	var w = sess.payroll.get_worker(second_id)
+	return w if w != null and str(w.status) in ["free", "assigned"] else null
+
+
 ## Who is next in line, in order: the number two, then the captains (worker dicts).
 func chain() -> Array:
 	var out: Array = []
-	if friend_alive:
-		out.append({"name": FRIEND, "role": "number two"})
+	if number_two() != "":
+		out.append({"name": number_two(), "role": "number two"})
 	for w in captains():
 		out.append({"name": str(w.name), "role": "captain", "id": str(w.id)})
 	return out
@@ -70,7 +89,7 @@ func captains() -> Array:
 	var p = sess.payroll
 	if p == null:
 		return []
-	var men: Array = p.of("org").filter(func(w): return str(w.status) in ["free", "assigned"])
+	var men: Array = p.of("org").filter(func(w): return str(w.status) in ["free", "assigned"] and str(w.id) != second_id)
 	men.sort_custom(func(a, b): return float(a.loyalty) > float(b.loyalty) or (float(a.loyalty) == float(b.loyalty) and float(a.skill) > float(b.skill)))
 	return men.slice(0, CAPTAINS)
 
@@ -87,11 +106,11 @@ func update(dt: float) -> void:
 	var p := hit_odds()
 	if p <= 0.0 or rng.random() >= p:
 		return
-	if friend_alive and rng.random() < FRIEND_SPOTS:
+	if number_two() != "" and rng.random() < FRIEND_SPOTS:
 		hits.append({"t": sess.time, "boss": boss, "foiled": true})
-		var line := "%s saw the same car go round the block twice and got you out the back. Los Cuervos sent a hitter." % FRIEND
+		var line := "%s saw the same car go round the block twice and got you out the back. Los Cuervos sent a hitter." % number_two()
 		sess.say(line)
-		sess.bus.emit("hit_foiled", sess.time, line, ["runner"], {"boss": boss, "by": FRIEND})
+		sess.bus.emit("hit_foiled", sess.time, line, ["runner"], {"boss": boss, "by": number_two()})
 		return
 	_killed()
 
@@ -101,10 +120,17 @@ func _killed() -> void:
 	var was := boss
 	var heir := ""
 	var how := ""
+	var second = _second()
 	if friend_alive:
 		heir = FRIEND
 		how = "your number two"
 		friend_alive = false
+	elif second != null:
+		heir = str(second.name)
+		how = "your number two"
+		second.status = "gone"
+		sess.payroll.workers.erase(second)
+		second_id = ""
 	else:
 		var caps := captains()
 		if not caps.is_empty():
@@ -124,12 +150,50 @@ func _killed() -> void:
 		"you" if was == PILOT else was, heir, how, heir]
 	sess.say("NEWS - " + line)
 	sess.bus.emit("boss_killed", sess.time, line, ["runner"], {"was": was, "heir": heir, "by": "rival"})
+	_name_second()
+
+
+## Name a new number two: the most loyal man left on the payroll. He sees hits coming as Lalo did, and he is next in line.
+func _name_second() -> void:
+	second_id = ""
+	var caps := captains()
+	if caps.is_empty():
+		return
+	second_id = str(caps[0].id)
+	sess.say("%s is your number two now." % str(caps[0].name))
+
+
+## The number two's word for the boss: the most urgent thing he sees, "" for nothing (Heat page). No draws: it reads the state.
+func advice() -> String:
+	var who := number_two()
+	if not live() or who == "":
+		return ""
+	if hit_odds() >= 0.06:
+		return "%s: \"They're looking for you. Stay in the air, or stay off the street.\"" % who
+	var lg = sess.logistics
+	if sess.stash_net != null:
+		var hot = null
+		for st in sess.stash_net.live():
+			if float(st.heat) >= ADVICE_HEAT and (hot == null or float(st.heat) > float(hot.heat)):
+				hot = st
+		if hot != null:
+			return "%s: \"%s is getting hot. Move the product before they knock.\"" % [who, hot.name]
+	if lg != null:
+		var rich := ""
+		var most := ADVICE_CASH
+		for site in lg.cash:
+			if float(lg.cash[site]) > most:
+				most = float(lg.cash[site])
+				rich = str(site)
+		if rich != "":
+			return "%s: \"There's $%s sitting at %s. Bring it home.\"" % [who, Py.money(int(most)), lg.name_of(rich)]
+	return "%s: \"Quiet out there. Make the most of it.\"" % who
 
 
 ## For the phone: the chain, the odds, the history.
 func view() -> Dictionary:
 	return {"live": live(), "boss": boss, "chain": chain(), "odds": hit_odds(), "friend": FRIEND if friend_alive else "",
-		"hits": hits.duplicate(true)}
+		"number_two": number_two(), "advice": advice(), "hits": hits.duplicate(true)}
 
 
 ## One line for the Heat page.
@@ -137,18 +201,20 @@ func line() -> String:
 	if not live():
 		return "Rafa's desk: no one is gunning for you yet."
 	var next: Array = chain().map(func(c): return "%s (%s)" % [c.name, c.role])
-	return "Boss: %s. A hit %.0f%% an hour on the ground. Next in line: %s." % [
+	var word := advice()
+	return ("%s\n" % word if word != "" else "") + "Boss: %s. A hit %.0f%% an hour on the ground. Next in line: %s." % [
 		"you" if boss == PILOT else boss, 100.0 * hit_odds(), ", ".join(next) if not next.is_empty() else "a man from the hall"]
 
 
 func capture() -> Dictionary:
-	if boss == PILOT and friend_alive and hits.is_empty():
+	if boss == PILOT and friend_alive and second_id == "" and hits.is_empty():
 		return {}
-	return {"boss": boss, "friend_alive": friend_alive, "hits": hits.duplicate(true), "t": _t}
+	return {"boss": boss, "friend_alive": friend_alive, "second": second_id, "hits": hits.duplicate(true), "t": _t}
 
 
 func restore(d: Dictionary) -> void:
 	boss = str(d.get("boss", PILOT))
 	friend_alive = bool(d.get("friend_alive", true))
+	second_id = str(d.get("second", ""))
 	hits = (d.get("hits", []) as Array).duplicate(true) if d.get("hits") is Array else []
 	_t = float(d.get("t", 0.0))

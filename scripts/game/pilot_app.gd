@@ -710,6 +710,7 @@ var _phone_hold_started := false
 var _phone_owned_overlay := ""
 var talk: TalkBalloon = null  ## a conversation on screen (the Family, the General's aide)
 var company_choice_dialog: AcceptDialog = null
+var ending_dialog: AcceptDialog = null  ## how the story ends (D-70, D-83; DESIGN 104)
 var _offers_seen := {}
 var _rafa_cue_offered := ""  ## Offer once per parked visit; a hangup may retry after the next landing or reload.
 var _was_on_island := false
@@ -730,6 +731,30 @@ func open_talk(name: String, title := "start") -> TalkBalloon:
 	if talk != null:
 		talk.finished.connect(func(): talk = null)
 	return talk
+
+
+## The story is told: choose how it ends. Recorded, never a game over: play carries on in the sandbox.
+func _show_ending_choice() -> void:
+	var dialog := AcceptDialog.new()
+	dialog.title = "1989 - How it ends"
+	var parts: Array = []
+	for k in Story.ENDING_CHOICES:
+		parts.append("%s: %s" % [Story.ENDING_CHOICES[k].title, Story.ENDING_CHOICES[k].line])
+	dialog.dialog_text = "Ten years from square grouper to an empire. How does it end?\n\n" + "\n\n".join(parts) + "\n\nWhatever you choose, the coast stays open: you play on."
+	for k in Story.ENDING_CHOICES:
+		dialog.add_button(str(Story.ENDING_CHOICES[k].title), false, k)
+	dialog.get_ok_button().hide()
+	dialog.custom_action.connect(func(action: String):
+		s.story.choose_ending(action)
+		paused = false
+		ending_dialog = null
+		dialog.queue_free())
+	dialog.canceled.connect(func(): dialog.call_deferred("popup_centered"))
+	dialog.close_requested.connect(func(): dialog.call_deferred("popup_centered"))
+	ending_dialog = dialog
+	paused = true
+	ui.add_child(dialog)
+	dialog.popup_centered()
 
 
 func _show_company_choice() -> void:
@@ -1631,6 +1656,9 @@ func _process(delta: float) -> void:
 	elif s.story != null and s.story.company_choice_ready():
 		if company_choice_dialog == null:
 			_show_company_choice()
+	elif s.story != null and s.story.ending_choice_ready():
+		if ending_dialog == null:
+			_show_ending_choice()
 	elif not paused:
 		if _player_key != s.aircraft_key:
 			_build_player()
