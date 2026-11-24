@@ -142,3 +142,52 @@ func test_saved_and_off() -> void:
 	var o := _story()
 	check(o.succession == null, "off: no chain")
 	o.dispose()
+
+
+## After Lalo (DESIGN 101's number two, second part): the most loyal man left is named number two, watches the boss's back as Lalo
+## did and is next in line; the number two's word on the Heat page.
+func test_a_new_number_two_is_named_and_does_the_job() -> void:
+	var s := _story()
+	s.takeover.fire()
+	for w in s.payroll.of("org"):
+		w.loyalty = 0.1
+	var a := _hire(s, 0.95)
+	var b := _hire(s, 0.9)
+	_hour(s, [0.0, 0.9])  # Lalo takes the seat
+	check_eq(s.succession.boss, Succession.FRIEND, "Lalo is boss")
+	check_eq(s.succession.number_two(), str(a.name), "the most loyal is named number two")
+	check_eq(str(s.succession.chain()[1].name), str(b.name), "the next most loyal is the first captain")
+	_hour(s, [0.0, 0.1])
+	check(s.succession.hits[-1].foiled and s.succession.boss == Succession.FRIEND, "he sees it coming")
+	_hour(s, [0.0, 0.9])
+	check_eq(s.succession.boss, str(a.name), "and takes the seat when he doesn't")
+	check(s.payroll.get_worker(str(a.id)) == null, "off the payroll")
+	check_eq(s.succession.number_two(), str(b.name), "and the next is named")
+	var d: Dictionary = JSON.parse_string(JSON.stringify(StrategicSave.capture(s)))
+	s.dispose()
+	var r := _story()
+	StrategicSave.restore(r, d)
+	check_eq(r.succession.second_id, str(b.id), "the number two is saved")
+	r.dispose()
+
+
+func test_the_number_twos_word() -> void:
+	var s := _story()
+	check_eq(s.succession.advice(), "", "nothing before the takeover")
+	s.takeover.fire()
+	for st in s.stash_net.live():
+		st.heat = 0.0
+	for site in s.logistics.cash:
+		s.logistics.cash[site] = 0.0
+	check(s.succession.advice().contains("Quiet out there"), "a quiet day: %s" % s.succession.advice())
+	var lg: Logistics = s.logistics
+	var site: String = lg.cash.keys()[0]
+	lg.cash[site] = 9000.0
+	check(s.succession.advice().contains("Bring it home"), "cash lying about: %s" % s.succession.advice())
+	var hot: Dictionary = s.stash_net.live()[0]
+	hot.heat = 55.0
+	check(s.succession.advice().contains("getting hot"), "a hot house first: %s" % s.succession.advice())
+	s.renown.score = Renown.TIERS[4]
+	check(s.succession.advice().contains("looking for you"), "a likely hit before all: %s" % s.succession.advice())
+	check(s.succession.line().begins_with(Succession.FRIEND + ":"), "on the Heat page, first")
+	s.dispose()

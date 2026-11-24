@@ -180,12 +180,15 @@ func journal_text() -> String:
 		sections.append("%s - %s\n%s\n%s" % ["EMPLOYMENT" if int(entry.chapter) == 0 else "CHAPTER %d" % int(entry.chapter), entry.title, entry.briefing + "\n" + str(entry.get("aftermath", "")), "\n".join(entry.objectives)])
 	if completed_all:
 		sections.append("1989. Benny: You made enough to choose your next move. The coast is still here. So are the people who remember you.\n" + ending_summary())
+		sections.append("%d. %s" % [year(), ("The sandbox: the story is told (%s) and the coast goes on." % ENDING_CHOICES[ending].title) if ending != ""
+			else ("Choose how it ends." if ENDINGS else "The coast goes on.")])
 	return "\n\n".join(sections)
 
 func ending_summary() -> String:
 	if sess == null:
 		return "The coast remains open for continued play."
-	return "Family: %s. Company: %s. Hotel Cielo: %s. Crew still on payroll: %d. Continued play remains available." % [
+	return "%sFamily: %s. Company: %s. Hotel Cielo: %s. Crew still on payroll: %d. Continued play remains available." % [
+		("The ending: %s. " % ENDING_CHOICES[ending].title) if ending != "" else "",
 		"gone" if sess.family != null and sess.family.gone else "still present",
 		"unavailable" if sess.agency != null and (not sess.agency.active() or sess.agency.hung_out) else "still present",
 		sess.casino.status if sess.casino != null else "unavailable",
@@ -210,6 +213,18 @@ const FLIGHT_RENOWN := 8.0
 ## Chapter deadlines (DESIGN 90; section 51's slice 7, Tropico's objectives against the clock): finish a chapter's required goals
 ## within its time and the name grows. A bonus, never a penalty: a chapter still finishes however long it takes (D-06: forgiving
 ## early; nothing is lost late). Paid in renown, like the flying goals (D-65: no money from nowhere). Chapter 1 has none.
+## The ending choice and the sandbox after it (owner, 19 Oct: D-70, D-83; docs/DESIGN.md section 104): once the last chapter is done the
+## player chooses how it ends; it is recorded, never a game over, and the years go on in an alternate-history sandbox, one a
+## YEAR_S of play. In the parity set; no random draws.
+static var ENDINGS := true
+const YEAR_S := 14400.0  ## four game hours a sandbox year
+const ENDING_CHOICES := {
+	"out": {"title": "Walk away", "line": "You sell the routes, pay off the crew and take the boat to the cays. The case on you goes cold; the street forgets your name. The coast carries on without you, and you can still fly it."},
+	"straight": {"title": "Go straight", "line": "The fronts become the business. The Morettis like a man who knows when to stop; the task force finds less to look at. The money is slower now, and cleaner."},
+	"crown": {"title": "Keep the crown", "line": "You keep the seat and everything that comes with it. Every crew on the coast knows your name, and Los Cuervos will never stop coming for it."},
+}
+var ending := ""  ## out | straight | crown, once chosen (D-83: recorded, never a game over)
+var ended_at := -1.0  ## when the last chapter closed: the sandbox's years count from here
 static var PACE := true
 const PACE_MIN := [0, 60, 60, 90, 90, 90, 90, 120, 120, 120, 150, 150]  ## minutes of game time from the chapter opening, by index
 const PACE_RENOWN := 6.0  ## renown for a chapter done in time, plus PACE_RENOWN_STEP a chapter on
@@ -269,7 +284,8 @@ You turned the Company down without taking a side. The General remains in power,
 
 
 func to_dict() -> Dictionary:
-	return {"index": index, "progress": progress, "done": completed_all, "company_decision": company_decision, "outcomes": outcomes, "outcome_status": outcome_status, "history": history, "employment": employment.to_dict() if employment != null else null, "v": 5, "opened_at": opened_at}
+	return {"index": index, "progress": progress, "done": completed_all, "company_decision": company_decision, "outcomes": outcomes, "outcome_status": outcome_status, "history": history, "employment": employment.to_dict() if employment != null else null, "v": 5, "opened_at": opened_at,
+		"ending": ending, "ended_at": ended_at}
 
 
 static func from_dict(d) -> Story:
@@ -290,8 +306,58 @@ static func from_dict(d) -> Story:
 	st.outcome_status = d.get("outcome_status", {}).duplicate()
 	st.history = d.get("history", []).duplicate(true)
 	st.opened_at = float(d.get("opened_at", -1.0))  # an older save: the clock starts when it is loaded
+	st.ending = str(d.get("ending", "")) if ENDING_CHOICES.has(str(d.get("ending", ""))) else ""
+	st.ended_at = float(d.get("ended_at", -1.0))  # an older finished save: its sandbox years count from 0
 	st.fresh = false  # a loaded story keeps the chart its save restored
 	return st
+
+
+## The last chapter is done and no ending is chosen yet.
+func ending_choice_ready() -> bool:
+	return ENDINGS and completed_all and ending == ""
+
+
+## Choose how it ends (D-70, D-83): recorded in the journal, applied once, and play carries on.
+func choose_ending(choice: String) -> bool:
+	if not ending_choice_ready() or not ENDING_CHOICES.has(choice):
+		return false
+	ending = choice
+	var s = sess
+	var case_ = s.police.case("runner") if s.police != null else null
+	var tr := Trust.of_session(s)
+	match choice:
+		"out":
+			if case_ != null:
+				case_.suspicion *= 0.5
+			if s.renown != null:
+				s.renown.score *= 0.5
+		"straight":
+			if case_ != null:
+				case_.suspicion = maxf(0.0, case_.suspicion - 30.0)
+			if tr != null:
+				tr.own["family"] = minf(100.0, float(tr.own.get("family", 50.0)) + 20.0)
+			if s.renown != null:
+				s.renown.score *= 0.75
+		"crown":
+			if s.renown != null:
+				s.renown.score += 150.0
+			if tr != null:
+				tr.own["rival"] = 0.0
+	var e: Dictionary = ENDING_CHOICES[choice]
+	history.append({"chapter": CHAPTERS.size() + 1, "title": "The ending: " + str(e.title), "briefing": str(e.line), "objectives": ["[x] " + str(e.title)],
+		"time": s.time, "status": "completed", "milestone": "ending"})
+	s.say("THE ENDING - %s. %s" % [e.title, e.line])
+	s.bus.emit("ending", s.time, str(e.title), ["runner"], {"ending": choice})
+	s.save()
+	return true
+
+
+## The year: the chapter's until the story is told, then 1989 and on, one a YEAR_S of play (the alternate-history sandbox, D-70).
+func year() -> int:
+	if not completed_all:
+		return int(chapter.year)
+	var since := float(sess.time) - ended_at if sess != null and ended_at >= 0.0 else 0.0
+	return 1989 + int(maxf(0.0, since) / YEAR_S)
 
 
 func company_choice_ready() -> bool:
@@ -709,10 +775,11 @@ func advance() -> void:
 		s.say("CHAPTER %d (%d): %s" % [index + 1, chapter.year, chapter.title])
 	else:
 		completed_all = true
+		ended_at = float(s.time)
 		for k in Session.SYSTEMS:
 			s.enable_system(k)
 		s.say(ending_summary())
-		s.say("1989. The story is told - the coast is yours, for as long as it lasts. Everything stays open.")
+		s.say("1989. The story is told - the coast is yours, for as long as it lasts. Everything stays open." + (" Choose how it ends." if ENDINGS else ""))
 	s.save()
 
 

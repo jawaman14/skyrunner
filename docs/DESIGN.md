@@ -2942,9 +2942,15 @@ November: the friend is a new character.
   captain (he leaves the payroll), and with nobody left a man from the hall steps up: an ending is never a game over (D-83).
 - **Saved** under `succession` (optional): who the boss is, whether the number two still is, and the hits. An older save has none.
 
-Not yet: a scene or a call for the hit; the number two's other help (running the desk while the boss flies, advice on the phone);
-a new number two named after he takes the seat; the Morettis' or the police's hand in a hit. No BALANCE entry: it moves renown
-and a man off the payroll, not money.
+- **After Lalo** (24 November, second part). When the number two takes the seat, the most loyal man left on the payroll is named
+  number two (saved as `second`): he sees half the hits coming as Lalo did, and he is next in line; taking the seat, he leaves the
+  payroll and the next is named.
+- **The number two's word.** On the Heat page, above the chain, the most urgent thing he sees, in this order: a likely hit (6% an
+  hour or more: "stay in the air, or stay off the street"), the hottest house at 40 heat or more ("move the product"), the most
+  street cash lying in one stash over $5,000 ("bring it home"), else a quiet word. It reads the state; no draws.
+
+Not yet: a scene or a call for the hit; the number two running the desk while the boss flies; the Morettis' or the police's hand in
+a hit. No BALANCE entry: it moves renown and a man off the payroll, not money.
 
 ## 102. Road vehicles at their reference cars' dimensions (owner, 24 November 2026, D-107)
 
@@ -3006,3 +3012,24 @@ that game's characters or art.
 - **Not yet:** the owner's style guide image (the palettes above stand in until then); hairstyles, hats and sunglasses (the kit's
   heads are kept); women's cuts (the kit's bodies are one build); the year-by-year wardrobe and crew colours of the presentation
   layers.
+
+## 104. How it ends, and the sandbox after (D-70, D-83)
+
+The owner, 19 October: "the campaign runs 1979-1989, then an alternate-history sandbox continues indefinitely" (D-70); "after any
+ending the player just carries on in the sandbox; endings are recorded, not game-overs" (D-83). In `Story` (switch `Story.ENDINGS`,
+in the parity set; no random draws).
+
+- **The choice.** When the last chapter closes, the 3D app asks how it ends (`Story.choose_ending`, the same pattern as the
+  Company's order in chapter 9), once:
+
+  | Ending | What it does |
+  |---|---|
+  | Walk away | the routes sold, the crew paid off: the case on the pilot halves, the name (renown) halves |
+  | Go straight | the fronts become the business: suspicion 30 down, the Morettis' trust 20 up, the name to three quarters |
+  | Keep the crown | the seat kept: 150 renown more (so Los Cuervos come harder, section 100, and a hit is likelier, section 101), Los Cuervos' trust to nothing |
+- **Never a game over.** The choice is a journal entry ("The ending: ...") and an `ending` event; every system stays open and play
+  carries on.
+- **The years go on.** From 1989 the year counts up, one a `YEAR_S` (four game hours) of play; the journal heads the sandbox with it.
+- **Saved** in the story (`ending`, `ended_at`); a finished save from before has none and is asked.
+
+Not yet: anything the years change in the sandbox (prices, headlines, the period's look); a scene for each ending.

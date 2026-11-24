@@ -175,6 +175,10 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-24 - Claude:** succession, second part (DESIGN 101): a new number two named after Lalo takes the seat; the
+  number two's word on the Heat page.
+- **2026-11-24 - Claude:** how it ends (D-70, D-83, DESIGN 104): walk away, go straight or keep the crown, recorded, never a
+  game over, and the sandbox years count on from 1989.
 - **2026-11-24 - Claude:** map rebuild step 1, first part (MAP_REDESIGN section 8): the approved layout as data
   (`brief.json`, `districts.json`, `roads_plan.json`) and `tools/map_preview.gd`, a top-down picture over today's terrain. Next:
   `tools/build_map.gd` and the loader.
