@@ -1708,6 +1708,8 @@ saves or random draws are reviewed by the other agent.
 
 **Open for the owner:** where the pickup happens (a fixed spot or the contact comes to a stash), the warehouse cap (a count, a
 weight, or floor space you buy), what Renown and trust unlock at boss level, and whether the job board is limited to chapters 1 and 2.
+**Answered 22 November:** the cap is by weight (D-103); Renown is infamy, more heat from the other factions and higher-risk,
+higher-reward work (D-102).
 
 
 ### 51.9 Draft parameters (first drafts by MiMo, reviewed; every number is a starting point for balance runs)
@@ -2465,9 +2467,8 @@ game ever has one happen.
 Not built here: a scene for it, succession (D-82) and the boss layer's new tools (D-58, D-62). **The chapter's goals count by
 organisation** (13 November): `Story.ours` lets through only an event our org did (its actor's org, or the org it names, is `org`) or
 the world's own (none); what the Morettis' or Los Cuervos' AI does through `command_as` is theirs. Nothing they do today reaches a
-goal, so it changes no game; it keeps the goals honest as their AI grows. Succession waits on the owner: D-64 says the pilot is
-never held, so "when the boss is jailed" never happens to the player, and a death has no rule yet. **Open for the owner:** "a quarter of his cash" is read as the street cash in the stashes; the alternative, taking
-three quarters of the safe as well, would also take the player's own savings.
+goal, so it changes no game; it keeps the goals honest as their AI grows. Succession (D-101, 22 November): the boss dies only when a
+rival gang kills him (never jailed, D-64); a chain of command, with the player's close friend next in line, who helps the player. **Answered by the owner (D-100, 22 November):** "a quarter of his cash" is the street cash in the stashes; the safe is not touched.
 
 ## 81. The stock rework's later parts: bulk sales by grade, the gun dealer on the pickup flow, intercepted pickups (section 51)
 
@@ -2722,7 +2723,8 @@ chapter still finishes however long it takes, so the owner's rule that chapter g
 
 Off, no clock and no bonus.
 
-Not yet, and open for the owner (section 51.8): what renown and crew trust unlock at boss level, the other half of slice 7.
+Not yet: the other half of slice 7. The owner answered (D-102): renown is infamy, so a bigger name draws more heat from the
+other factions and opens higher-risk, higher-reward work.
 
 
 ## 91. Ammunition as a good, stage 2 (D-61; section 50's second stage)
@@ -2896,3 +2898,27 @@ and guns are open (`PhoneMenu.ammo_open`).
 
 Not yet: choosing the type and the number of crates from the phone (A takes the neediest, one crate), and Los Cuervos' own resupply
 facing the dealer's rule (section 93).
+
+## 100. Infamy: a bigger name draws more heat and opens bigger work (D-102)
+
+The owner, 22 November: "renown is the same as infamy, so more heat from other factions and higher-risk rewards". This answers section
+51.8's "what Renown unlocks at boss level" and finishes slice 7. Switch `Renown.INFAMY` (in the parity set); no random draws: it scales
+odds that are already drawn and pays that are already paid. Only a game with renown (`renown: true`) has any of it.
+
+| Renown tier | Los Cuervos' odds | The week's hot job pays | The heat dial |
+|---|---|---|---|
+| 0 Nobody | x1.00 | x1.50 | Quiet to Burning |
+| 1 A name on the street | x1.15 | x1.75 | |
+| 2 Known | x1.30 | x2.00 | |
+| 3 Feared | x1.45 | x2.25 | Infamous opens: the law notices x2.0, board jobs pay x1.75 |
+| 4 A legend | x1.60 | x2.50 | |
+
+- **More heat from the other factions.** Los Cuervos' odds of sending a squad to ambush one of our trucks (`GroundWar`, the same draw
+  the truce of section 84 scales) and of taking a pickup as its window opens (`Pickups._intercepted`) are multiplied by
+  `1 + 0.15 x tier`, after the truce. A truce with them still holds a famous name back; a legend at war is hit 60% more often. The task
+  force's side was already there: suspicion cools 6% slower a tier (section 25).
+- **Higher-risk, higher-reward work.** The heat dial (D-95) gains a fifth setting, Infamous, that only a Feared name can turn to; and the
+  week's hot job (D-95) pays 0.25 more a tier on top of its x1.5.
+- **Shown** on the renown panel's line of what the name is worth, and in the dial's refusal ("Infamous opens when your name is Feared").
+- **Not yet:** the Morettis' side. They deal by trust and offers (section 76), not by squads, so a bigger name has nothing to scale there
+  yet. Succession (D-101) will use infamy for the odds of a hit on the boss.

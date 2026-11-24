@@ -1794,6 +1794,7 @@ func _think_rival() -> void:
 	var tr := Trust.of_session(sess)
 	if tr != null:
 		held_back = tr.rival_odds()  # trust with us holds them back (DESIGN 84): the same draws, lower odds
+	held_back *= Renown.rival_mult_of(sess)  # ... and a bigger name draws them on (D-102)
 	if sess.stash_net != null and not _truce():
 		for t in sess.stash_net.trucks.filter(func(tt): return truck_known_to("rival", tt)):  # D-36
 			if mine.is_empty() or rng.random() > 0.5 * held_back:

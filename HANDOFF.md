@@ -175,6 +175,11 @@ TTS follow-up (14 Oct): after the owner reported that the game was still invisib
 
 ## Log
 
+- **2026-11-22 - Claude:** infamy (D-102, DESIGN 100, `Renown.INFAMY`): Los Cuervos come for a bigger name, the heat dial's
+  Infamous setting for a Feared one, the hot job pays more a tier. Next: succession (D-101).
+- **2026-11-22 - Claude:** the owner answered four questions (D-100 to D-103): the takeover takes the street cash only;
+  succession on a rival gang's hit, with a chain of command and the player's close friend next in line; renown is infamy (more
+  heat, higher-risk, higher-reward work); storage caps by weight. D-101 and D-102 are buildable now.
 - **2026-11-14 - Claude, ammunition stage 4 (D-61, DESIGN 99):** the screens: the market board's Ammunition section, the armoury's
   rounds by type on the stock ledger, the logistics desk and the pack, A orders a crate of the neediest rounds. Screens only; the
   pack still carries one pool. First slice from the owner's Windows PC (local Godot 4.7.2, `gh`).
