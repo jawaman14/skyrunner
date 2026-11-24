@@ -12,6 +12,7 @@ var rows: VBoxContainer
 var weight_bar: ProgressBar
 var weight_label: Label
 var status: Label
+var rounds_label: Label  ## the armoury's rounds by type, under the list (DESIGN 99): not a thing you carry, so not a row
 var _palette := ""
 var _invoker: WeakRef
 const STEP := {"ammo": 30}
@@ -49,6 +50,9 @@ func _ready() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(scroll)
 	scroll.add_child(rows)
+	rounds_label = UIStyle.caption("")
+	rounds_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(rounds_label)
 	status = UIStyle.caption("+ take from the armoury   - leave it   5 use a medkit   I or ESC close")
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(status)
@@ -106,8 +110,9 @@ func refresh() -> void:
 		for button in [plus, minus]:
 			if button.get_meta("pack_action") == selected and not button.disabled:
 				button.grab_focus()
-	if ars != null:  # what the rack's rounds are for (D-61 stage 4, DESIGN 99); the pack itself carries one pool
-		rows.add_child(UIStyle.caption("The armoury's rounds: " + Arsenal.rounds_text(ars.rounds)))
+	# what the rack's rounds are for (D-61 stage 4, DESIGN 99); the pack itself carries one pool
+	rounds_label.text = ("The armoury's rounds: " + Arsenal.rounds_text(ars.rounds)) if ars != null else ""
+	rounds_label.visible = ars != null
 
 
 func _act(err: String) -> void:
